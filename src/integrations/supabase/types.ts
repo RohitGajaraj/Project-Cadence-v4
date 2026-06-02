@@ -14,13 +14,1125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_runs: {
+        Row: {
+          agent_id: string | null
+          agent_name: string
+          agent_slug: string
+          created_at: string
+          duration_ms: number | null
+          id: string
+          input: string
+          output: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_name: string
+          agent_slug: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          input: string
+          output?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_name?: string
+          agent_slug?: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          input?: string
+          output?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agents: {
+        Row: {
+          color: string
+          created_at: string
+          cron_input: string | null
+          cron_schedule: string | null
+          enabled: boolean
+          id: string
+          last_scheduled_run_at: string | null
+          name: string
+          role: string
+          slug: string
+          system_prompt: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          cron_input?: string | null
+          cron_schedule?: string | null
+          enabled?: boolean
+          id?: string
+          last_scheduled_run_at?: string | null
+          name: string
+          role: string
+          slug: string
+          system_prompt: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          cron_input?: string | null
+          cron_schedule?: string | null
+          enabled?: boolean
+          id?: string
+          last_scheduled_run_at?: string | null
+          name?: string
+          role?: string
+          slug?: string
+          system_prompt?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          attendees: Json
+          calendar_id: string
+          created_at: string
+          description: string | null
+          end_at: string | null
+          external_id: string
+          hangout_link: string | null
+          html_link: string | null
+          id: string
+          last_synced_at: string
+          location: string | null
+          organizer_email: string | null
+          start_at: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          attendees?: Json
+          calendar_id?: string
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          external_id: string
+          hangout_link?: string | null
+          html_link?: string | null
+          id?: string
+          last_synced_at?: string
+          location?: string | null
+          organizer_email?: string | null
+          start_at: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          attendees?: Json
+          calendar_id?: string
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          external_id?: string
+          hangout_link?: string | null
+          html_link?: string | null
+          id?: string
+          last_synced_at?: string
+          location?: string | null
+          organizer_email?: string | null
+          start_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          model: string
+          project_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model?: string
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model?: string
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_briefs: {
+        Row: {
+          brief_date: string
+          created_at: string
+          focus_score: number
+          id: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          brief_date: string
+          created_at?: string
+          focus_score?: number
+          id?: string
+          summary?: string
+          user_id: string
+        }
+        Update: {
+          brief_date?: string
+          created_at?: string
+          focus_score?: number
+          id?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      decisions: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string | null
+          project_id: string | null
+          rationale: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          project_id?: string | null
+          rationale?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          project_id?: string | null
+          rationale?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      doc_versions: {
+        Row: {
+          content_json: Json
+          created_at: string
+          doc_id: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content_json: Json
+          created_at?: string
+          doc_id: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content_json?: Json
+          created_at?: string
+          doc_id?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doc_versions_doc_id_fkey"
+            columns: ["doc_id"]
+            isOneToOne: false
+            referencedRelation: "docs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      docs: {
+        Row: {
+          archived: boolean
+          content_json: Json
+          content_text: string
+          created_at: string
+          icon: string | null
+          id: string
+          parent_id: string | null
+          position: number
+          project_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          content_json?: Json
+          content_text?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          parent_id?: string | null
+          position?: number
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          content_json?: Json
+          content_text?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          parent_id?: string | null
+          position?: number
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "docs_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "docs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "docs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          action_items: Json
+          created_at: string
+          decisions_made: Json
+          end_at: string
+          id: string
+          notes: string | null
+          processed_at: string | null
+          stakeholder: string | null
+          start_at: string
+          summary: string | null
+          title: string
+          transcript: string | null
+          user_id: string
+        }
+        Insert: {
+          action_items?: Json
+          created_at?: string
+          decisions_made?: Json
+          end_at: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          stakeholder?: string | null
+          start_at: string
+          summary?: string | null
+          title: string
+          transcript?: string | null
+          user_id: string
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          decisions_made?: Json
+          end_at?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          stakeholder?: string | null
+          start_at?: string
+          summary?: string | null
+          title?: string
+          transcript?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          model: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          project_id: string | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          confidence: number
+          created_at: string
+          ease: number
+          hypothesis: string | null
+          ice_score: number | null
+          id: string
+          impact: number
+          problem: string
+          project_id: string | null
+          status: string
+          target_user: string | null
+          theme_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          ease?: number
+          hypothesis?: string | null
+          ice_score?: number | null
+          id?: string
+          impact?: number
+          problem?: string
+          project_id?: string | null
+          status?: string
+          target_user?: string | null
+          theme_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          ease?: number
+          hypothesis?: string | null
+          ice_score?: number | null
+          id?: string
+          impact?: number
+          problem?: string
+          project_id?: string | null
+          status?: string
+          target_user?: string | null
+          theme_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prds: {
+        Row: {
+          body_md: string
+          created_at: string
+          id: string
+          model: string | null
+          opportunity_id: string | null
+          project_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_md?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_md?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          default_model: string
+          display_name: string | null
+          full_name: string | null
+          id: string
+          onboarded: boolean
+          role: string | null
+          timezone: string | null
+          updated_at: string
+          working_hours_end: number
+          working_hours_start: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          default_model?: string
+          display_name?: string | null
+          full_name?: string | null
+          id: string
+          onboarded?: boolean
+          role?: string | null
+          timezone?: string | null
+          updated_at?: string
+          working_hours_end?: number
+          working_hours_start?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          default_model?: string
+          display_name?: string | null
+          full_name?: string | null
+          id?: string
+          onboarded?: boolean
+          role?: string | null
+          timezone?: string | null
+          updated_at?: string
+          working_hours_end?: number
+          working_hours_start?: number
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          north_star: string | null
+          status: string
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          north_star?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          north_star?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prototype_attachments: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          id: string
+          kind: string
+          message_id: string | null
+          name: string
+          prototype_id: string
+          size_bytes: number
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          name: string
+          prototype_id: string
+          size_bytes?: number
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          name?: string
+          prototype_id?: string
+          size_bytes?: number
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prototype_files: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          language: string
+          path: string
+          prototype_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          language?: string
+          path: string
+          prototype_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          language?: string
+          path?: string
+          prototype_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prototype_files_prototype_id_fkey"
+            columns: ["prototype_id"]
+            isOneToOne: false
+            referencedRelation: "prototypes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prototype_messages: {
+        Row: {
+          applied: boolean
+          changes_json: Json
+          content: string
+          created_at: string
+          id: string
+          prototype_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          applied?: boolean
+          changes_json?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          prototype_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          applied?: boolean
+          changes_json?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          prototype_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prototype_messages_prototype_id_fkey"
+            columns: ["prototype_id"]
+            isOneToOne: false
+            referencedRelation: "prototypes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prototypes: {
+        Row: {
+          created_at: string
+          description: string | null
+          entry_path: string
+          id: string
+          is_public: boolean
+          name: string
+          prd_id: string | null
+          project_id: string | null
+          share_slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entry_path?: string
+          id?: string
+          is_public?: boolean
+          name: string
+          prd_id?: string | null
+          project_id?: string | null
+          share_slug?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entry_path?: string
+          id?: string
+          is_public?: boolean
+          name?: string
+          prd_id?: string | null
+          project_id?: string | null
+          share_slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prototypes_prd_id_fkey"
+            columns: ["prd_id"]
+            isOneToOne: false
+            referencedRelation: "prds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prototypes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signals: {
+        Row: {
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          project_id: string | null
+          sentiment: string | null
+          source: string
+          tags: string[]
+          theme_id: string | null
+          title: string | null
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          project_id?: string | null
+          sentiment?: string | null
+          source?: string
+          tags?: string[]
+          theme_id?: string | null
+          title?: string | null
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          project_id?: string | null
+          sentiment?: string | null
+          source?: string
+          tags?: string[]
+          theme_id?: string | null
+          title?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sync_mappings: {
+        Row: {
+          conflict: boolean
+          created_at: string
+          external_id: string
+          external_url: string | null
+          id: string
+          last_pulled_at: string | null
+          last_pushed_at: string | null
+          local_id: string
+          local_kind: string
+          provider: string
+          updated_at: string
+          user_id: string
+          version_local: number
+          version_remote: number
+        }
+        Insert: {
+          conflict?: boolean
+          created_at?: string
+          external_id: string
+          external_url?: string | null
+          id?: string
+          last_pulled_at?: string | null
+          last_pushed_at?: string | null
+          local_id: string
+          local_kind: string
+          provider: string
+          updated_at?: string
+          user_id: string
+          version_local?: number
+          version_remote?: number
+        }
+        Update: {
+          conflict?: boolean
+          created_at?: string
+          external_id?: string
+          external_url?: string | null
+          id?: string
+          last_pulled_at?: string | null
+          last_pushed_at?: string | null
+          local_id?: string
+          local_kind?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+          version_local?: number
+          version_remote?: number
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          estimate_hours: number | null
+          id: string
+          is_deep_work: boolean
+          prd_id: string | null
+          priority: string
+          project_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          estimate_hours?: number | null
+          id?: string
+          is_deep_work?: boolean
+          prd_id?: string | null
+          priority?: string
+          project_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          estimate_hours?: number | null
+          id?: string
+          is_deep_work?: boolean
+          prd_id?: string | null
+          priority?: string
+          project_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      themes: {
+        Row: {
+          confidence: number
+          created_at: string
+          frequency: number
+          id: string
+          project_id: string | null
+          severity: number
+          status: string
+          summary: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          frequency?: number
+          id?: string
+          project_id?: string | null
+          severity?: number
+          status?: string
+          summary?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          frequency?: number
+          id?: string
+          project_id?: string | null
+          severity?: number
+          status?: string
+          summary?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_api_keys: {
+        Row: {
+          api_key: string
+          base_url: string | null
+          created_at: string
+          id: string
+          label: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_integrations: {
+        Row: {
+          account_label: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          metadata: Json
+          provider: string
+          scopes: string[]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_label?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_label?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider?: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_signals: {
+        Args: {
+          for_user?: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
+      }
+      seed_default_agents: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
