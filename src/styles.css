@@ -1,6 +1,6 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -59,77 +59,84 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-paper: var(--paper);
+  --color-paper-elevated: var(--paper-elevated);
+  --color-hairline: var(--hairline);
+  --color-violet: var(--violet);
+  --color-cyan: var(--cyan);
+  --color-emerald: var(--emerald);
+  --color-amber: var(--amber);
+  --color-rose: var(--rose);
+  /* Midnight Indigo + Mono Hybrid — JetBrains Mono headings (code-flavored,
+   * agent-native) + Work Sans body (humane, ultra-legible). */
+  --font-display: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-}
+  --radius: 1rem;
+  /* Motion system — Emil-grade easing.
+   * Built-in CSS easings are too weak; these are strong custom curves
+   * tuned for UI. Never use ease-in on UI (feels sluggish at the moment
+   * the user is watching most closely). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 140ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Midnight Indigo — deep navy base, electric indigo accent.
+   * Source palette: #0a0a1a → #141432 → #1e1e5a → #4f46e5 (electric indigo).
+   * Tuned in oklch for perceptual uniformity. */
+  --paper: oklch(0.13 0.04 275);              /* near-black with deep indigo undertone */
+  --paper-elevated: oklch(0.18 0.06 275);     /* navy plate */
+  --ink: oklch(0.97 0.008 270);
+  --ink-muted: oklch(0.66 0.022 270);
+  --hairline: oklch(0.78 0.08 270 / 14%);
+
+  /* Accent ramp — indigo-led, with supporting hues for charts/states. */
+  --violet: oklch(0.62 0.24 282);   /* electric indigo (#4f46e5 family) */
+  --cyan:   oklch(0.78 0.16 230);
+  --emerald:oklch(0.75 0.17 162);
+  --amber:  oklch(0.83 0.15 75);
+  --rose:   oklch(0.72 0.21 12);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-elevated);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-elevated);
+  --popover-foreground: var(--ink);
+  --primary: oklch(0.97 0.005 280);
+  --primary-foreground: oklch(0.16 0.012 280);
+  --secondary: oklch(0.24 0.05 278);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.22 0.045 278);
+  --muted-foreground: var(--ink-muted);
+  --accent: oklch(0.28 0.07 280);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.65 0.21 22);
+  --destructive-foreground: oklch(0.98 0.003 85);
+  --border: var(--hairline);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.68 0.22 295);
+  --chart-1: var(--violet);
+  --chart-2: var(--cyan);
+  --chart-3: var(--emerald);
+  --chart-4: var(--amber);
+  --chart-5: var(--rose);
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: oklch(0.24 0.06 278);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: oklch(0.62 0.24 282);
 }
 
 @layer base {
@@ -137,8 +144,170 @@
     border-color: var(--color-border);
   }
 
-  body {
+  html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body { min-height: 100vh; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    /* JetBrains Mono is wider than a proportional sans — tighten subtly
+     * but keep mono character intact. */
+    letter-spacing: -0.01em;
+    font-feature-settings: "ss01", "ss02", "calt", "zero";
+  }
+
+  /* Tabular numerals everywhere — dashboards, traces, budgets read cleaner. */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Focus ring — visible only for keyboard nav, soft violet glow */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--violet) 55%, transparent);
+    border-radius: var(--radius-md);
+  }
+
+  /* Press feedback — universal scale-down on active for interactive elements.
+   * Subtle (0.97) so it confirms touch without feeling rubbery. */
+  button:not(:disabled):active,
+  a:active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+  button, a, [role="button"] {
+    transition: transform var(--dur-fast) var(--ease-out),
+                background-color var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out),
+                border-color var(--dur-fast) var(--ease-out),
+                opacity var(--dur-fast) var(--ease-out);
+  }
+
+  /* Popovers / dropdowns / tooltips — origin-aware scale-in from trigger.
+   * Radix exposes the transform-origin so the surface grows from where it
+   * was triggered, not from the center. Modals are exempt (centered). */
+  [data-radix-popper-content-wrapper] > * {
+    transform-origin: var(--radix-popper-transform-origin);
   }
 }
+
+/* Accessibility — reduce motion but keep opacity/color for comprehension. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .animate-aurora { animation: none !important; }
+}
+
+@layer utilities {
+  .hairline { border-color: var(--color-hairline); }
+  .bento {
+    background-color: color-mix(in oklab, var(--color-card) 88%, transparent);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-2xl);
+    backdrop-filter: blur(8px);
+  }
+  .glass {
+    background-color: color-mix(in oklab, var(--color-paper) 60%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .text-balance { text-wrap: balance; }
+
+  /* Neural gradient — the signature gradient of the system */
+  .neural-gradient {
+    /* Midnight Indigo signature — electric indigo bloom over deep navy,
+     * with cyan halo and a faint emerald breath. */
+    background: radial-gradient(60% 80% at 20% 30%, color-mix(in oklab, var(--violet) 75%, transparent) 0%, transparent 70%),
+                radial-gradient(50% 70% at 80% 20%, color-mix(in oklab, var(--cyan) 55%, transparent) 0%, transparent 70%),
+                radial-gradient(45% 60% at 60% 95%, color-mix(in oklab, oklch(0.45 0.22 285) 60%, transparent) 0%, transparent 70%),
+                radial-gradient(35% 45% at 10% 90%, color-mix(in oklab, var(--emerald) 35%, transparent) 0%, transparent 70%);
+    filter: blur(0.5px) saturate(1.15);
+  }
+  .neural-text {
+    background: linear-gradient(120deg, oklch(0.78 0.18 270), var(--violet) 45%, var(--cyan) 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ring-glow-violet { box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent), 0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent); }
+
+  /* Indigo grid — subtle precision lattice for hero/empty surfaces. */
+  .indigo-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--violet) 12%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 12%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
+  }
+
+  /* Subtle scanline / film grain for craft feel. */
+  .grain::after {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px);
+    background-size: 3px 3px;
+    mix-blend-mode: overlay;
+    opacity: 0.5;
+  }
+
+  /* Aurora animation for hero */
+  @keyframes aurora {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+    100% { transform: translate3d(0,0,0) scale(1); }
+  }
+  .animate-aurora { animation: aurora 18s ease-in-out infinite; }
+
+  /* Stagger entrance — apply data-stagger-index to children of a list.
+   * Uses @starting-style with a tiny translate + opacity for natural feel.
+   * Never starts from scale(0): nothing in the real world appears from nothing. */
+  @keyframes cadence-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);  }
+  }
+  .stagger-rise > * {
+    animation: cadence-rise 320ms var(--ease-out) both;
+  }
+  .stagger-rise > *:nth-child(1)  { animation-delay: 0ms; }
+  .stagger-rise > *:nth-child(2)  { animation-delay: 24ms; }
+  .stagger-rise > *:nth-child(3)  { animation-delay: 48ms; }
+  .stagger-rise > *:nth-child(4)  { animation-delay: 72ms; }
+  .stagger-rise > *:nth-child(5)  { animation-delay: 96ms; }
+  .stagger-rise > *:nth-child(6)  { animation-delay: 120ms; }
+  .stagger-rise > *:nth-child(7)  { animation-delay: 144ms; }
+  .stagger-rise > *:nth-child(8)  { animation-delay: 168ms; }
+  .stagger-rise > *:nth-child(9)  { animation-delay: 192ms; }
+  .stagger-rise > *:nth-child(10) { animation-delay: 216ms; }
+  .stagger-rise > *:nth-child(n+11) { animation-delay: 240ms; }
+
+  /* Hover-lift — only on hover-capable pointers (no false touch positives). */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift {
+      transition: transform var(--dur-base) var(--ease-out),
+                  box-shadow var(--dur-base) var(--ease-out),
+                  border-color var(--dur-base) var(--ease-out);
+    }
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--violet) 35%, transparent);
+      border-color: color-mix(in oklab, var(--violet) 35%, var(--hairline));
+    }
+  }
+
+  /* Scrollbar polish */
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--ink) 12%, transparent); border-radius: 999px; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }

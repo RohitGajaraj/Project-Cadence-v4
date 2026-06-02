@@ -9,61 +9,902 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as ApiStudioChatRouteImport } from './routes/api/studio-chat'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
+import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated.sync'
+import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated.studio'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
+import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
+import { Route as AuthenticatedPrdsRouteImport } from './routes/_authenticated.prds'
+import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
+import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
+import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
+import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
+import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
+import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
+import { Route as AuthenticatedDocsRouteImport } from './routes/_authenticated.docs'
+import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authenticated.discovery'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticated.budgets'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
+import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
+import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
+import { Route as AuthenticatedStudioIdRouteImport } from './routes/_authenticated.studio.$id'
+import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
+import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
+import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/public/hooks/indexer-tick'
+import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/hooks/eval-tick'
+import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
+import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
+import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
+import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudioChatRoute = ApiStudioChatRouteImport.update({
+  id: '/api/studio-chat',
+  path: '/api/studio-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTracesRoute = AuthenticatedTracesRouteImport.update({
+  id: '/traces',
+  path: '/traces',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSyncRoute = AuthenticatedSyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRoadmapRoute = AuthenticatedRoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPrdsRoute = AuthenticatedPrdsRouteImport.update({
+  id: '/prds',
+  path: '/prds',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOpportunitiesRoute =
+  AuthenticatedOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedIntegrationsRoute =
+  AuthenticatedIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
+  id: '/guardrails',
+  path: '/guardrails',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEvalsRoute = AuthenticatedEvalsRouteImport.update({
+  id: '/evals',
+  path: '/evals',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDriftRoute = AuthenticatedDriftRouteImport.update({
+  id: '/drift',
+  path: '/drift',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDocsRoute = AuthenticatedDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDiscoveryRoute = AuthenticatedDiscoveryRouteImport.update({
+  id: '/discovery',
+  path: '/discovery',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBudgetsRoute = AuthenticatedBudgetsRouteImport.update({
+  id: '/budgets',
+  path: '/budgets',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTracesTraceIdRoute =
+  AuthenticatedTracesTraceIdRouteImport.update({
+    id: '/$traceId',
+    path: '/$traceId',
+    getParentRoute: () => AuthenticatedTracesRoute,
+  } as any)
+const AuthenticatedStudioIdRoute = AuthenticatedStudioIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedStudioRoute,
+} as any)
+const AuthenticatedPrdsIdRoute = AuthenticatedPrdsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedPrdsRoute,
+} as any)
+const AuthenticatedMeetingsIdRoute = AuthenticatedMeetingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMeetingsRoute,
+} as any)
+const ApiPublicHooksIndexerTickRoute =
+  ApiPublicHooksIndexerTickRouteImport.update({
+    id: '/api/public/hooks/indexer-tick',
+    path: '/api/public/hooks/indexer-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksEvalTickRoute = ApiPublicHooksEvalTickRouteImport.update({
+  id: '/api/public/hooks/eval-tick',
+  path: '/api/public/hooks/eval-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksEvalSuiteTickRoute =
+  ApiPublicHooksEvalSuiteTickRouteImport.update({
+    id: '/api/public/hooks/eval-suite-tick',
+    path: '/api/public/hooks/eval-suite-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDriftTickRoute = ApiPublicHooksDriftTickRouteImport.update({
+  id: '/api/public/hooks/drift-tick',
+  path: '/api/public/hooks/drift-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksAgentTickRoute = ApiPublicHooksAgentTickRouteImport.update({
+  id: '/api/public/hooks/agent-tick',
+  path: '/api/public/hooks/agent-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicA2aAgentsCadenceCardRoute =
+  ApiPublicA2aAgentsCadenceCardRouteImport.update({
+    id: '/api/public/a2a/agents/cadence/card',
+    path: '/api/public/a2a/agents/cadence/card',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/agents': typeof AuthenticatedAgentsRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/budgets': typeof AuthenticatedBudgetsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/discovery': typeof AuthenticatedDiscoveryRoute
+  '/docs': typeof AuthenticatedDocsRoute
+  '/drift': typeof AuthenticatedDriftRoute
+  '/evals': typeof AuthenticatedEvalsRoute
+  '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/inbox': typeof AuthenticatedInboxRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/prompts': typeof AuthenticatedPromptsRoute
+  '/roadmap': typeof AuthenticatedRoadmapRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRouteWithChildren
+  '/sync': typeof AuthenticatedSyncRoute
+  '/tasks': typeof AuthenticatedTasksRoute
+  '/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/api/chat': typeof ApiChatRoute
+  '/api/studio-chat': typeof ApiStudioChatRoute
+  '/p/$slug': typeof PSlugRoute
+  '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/studio/$id': typeof AuthenticatedStudioIdRoute
+  '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
+  '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
+  '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
+  '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/agents': typeof AuthenticatedAgentsRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/budgets': typeof AuthenticatedBudgetsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/discovery': typeof AuthenticatedDiscoveryRoute
+  '/docs': typeof AuthenticatedDocsRoute
+  '/drift': typeof AuthenticatedDriftRoute
+  '/evals': typeof AuthenticatedEvalsRoute
+  '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/inbox': typeof AuthenticatedInboxRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/prompts': typeof AuthenticatedPromptsRoute
+  '/roadmap': typeof AuthenticatedRoadmapRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRouteWithChildren
+  '/sync': typeof AuthenticatedSyncRoute
+  '/tasks': typeof AuthenticatedTasksRoute
+  '/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/api/chat': typeof ApiChatRoute
+  '/api/studio-chat': typeof ApiStudioChatRoute
+  '/p/$slug': typeof PSlugRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/studio/$id': typeof AuthenticatedStudioIdRoute
+  '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
+  '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
+  '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
+  '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/agents': typeof AuthenticatedAgentsRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/budgets': typeof AuthenticatedBudgetsRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/discovery': typeof AuthenticatedDiscoveryRoute
+  '/_authenticated/docs': typeof AuthenticatedDocsRoute
+  '/_authenticated/drift': typeof AuthenticatedDriftRoute
+  '/_authenticated/evals': typeof AuthenticatedEvalsRoute
+  '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
+  '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
+  '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
+  '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/studio': typeof AuthenticatedStudioRouteWithChildren
+  '/_authenticated/sync': typeof AuthenticatedSyncRoute
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/api/chat': typeof ApiChatRoute
+  '/api/studio-chat': typeof ApiStudioChatRoute
+  '/p/$slug': typeof PSlugRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
+  '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
+  '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
+  '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
+  '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/agents'
+    | '/analytics'
+    | '/budgets'
+    | '/calendar'
+    | '/chat'
+    | '/discovery'
+    | '/docs'
+    | '/drift'
+    | '/evals'
+    | '/guardrails'
+    | '/inbox'
+    | '/integrations'
+    | '/meetings'
+    | '/opportunities'
+    | '/prds'
+    | '/prompts'
+    | '/roadmap'
+    | '/settings'
+    | '/studio'
+    | '/sync'
+    | '/tasks'
+    | '/traces'
+    | '/api/chat'
+    | '/api/studio-chat'
+    | '/p/$slug'
+    | '/meetings/$id'
+    | '/prds/$id'
+    | '/studio/$id'
+    | '/traces/$traceId'
+    | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/drift-tick'
+    | '/api/public/hooks/eval-suite-tick'
+    | '/api/public/hooks/eval-tick'
+    | '/api/public/hooks/indexer-tick'
+    | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/login'
+    | '/signup'
+    | '/agents'
+    | '/analytics'
+    | '/budgets'
+    | '/calendar'
+    | '/chat'
+    | '/discovery'
+    | '/docs'
+    | '/drift'
+    | '/evals'
+    | '/guardrails'
+    | '/inbox'
+    | '/integrations'
+    | '/meetings'
+    | '/opportunities'
+    | '/prds'
+    | '/prompts'
+    | '/roadmap'
+    | '/settings'
+    | '/studio'
+    | '/sync'
+    | '/tasks'
+    | '/traces'
+    | '/api/chat'
+    | '/api/studio-chat'
+    | '/p/$slug'
+    | '/'
+    | '/meetings/$id'
+    | '/prds/$id'
+    | '/studio/$id'
+    | '/traces/$traceId'
+    | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/drift-tick'
+    | '/api/public/hooks/eval-suite-tick'
+    | '/api/public/hooks/eval-tick'
+    | '/api/public/hooks/indexer-tick'
+    | '/api/public/a2a/agents/cadence/card'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/signup'
+    | '/_authenticated/agents'
+    | '/_authenticated/analytics'
+    | '/_authenticated/budgets'
+    | '/_authenticated/calendar'
+    | '/_authenticated/chat'
+    | '/_authenticated/discovery'
+    | '/_authenticated/docs'
+    | '/_authenticated/drift'
+    | '/_authenticated/evals'
+    | '/_authenticated/guardrails'
+    | '/_authenticated/inbox'
+    | '/_authenticated/integrations'
+    | '/_authenticated/meetings'
+    | '/_authenticated/opportunities'
+    | '/_authenticated/prds'
+    | '/_authenticated/prompts'
+    | '/_authenticated/roadmap'
+    | '/_authenticated/settings'
+    | '/_authenticated/studio'
+    | '/_authenticated/sync'
+    | '/_authenticated/tasks'
+    | '/_authenticated/traces'
+    | '/api/chat'
+    | '/api/studio-chat'
+    | '/p/$slug'
+    | '/_authenticated/'
+    | '/_authenticated/meetings/$id'
+    | '/_authenticated/prds/$id'
+    | '/_authenticated/studio/$id'
+    | '/_authenticated/traces/$traceId'
+    | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/drift-tick'
+    | '/api/public/hooks/eval-suite-tick'
+    | '/api/public/hooks/eval-tick'
+    | '/api/public/hooks/indexer-tick'
+    | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
+  ApiChatRoute: typeof ApiChatRoute
+  ApiStudioChatRoute: typeof ApiStudioChatRoute
+  PSlugRoute: typeof PSlugRoute
+  ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
+  ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
+  ApiPublicHooksEvalSuiteTickRoute: typeof ApiPublicHooksEvalSuiteTickRoute
+  ApiPublicHooksEvalTickRoute: typeof ApiPublicHooksEvalTickRoute
+  ApiPublicHooksIndexerTickRoute: typeof ApiPublicHooksIndexerTickRoute
+  ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio-chat': {
+      id: '/api/studio-chat'
+      path: '/api/studio-chat'
+      fullPath: '/api/studio-chat'
+      preLoaderRoute: typeof ApiStudioChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/traces': {
+      id: '/_authenticated/traces'
+      path: '/traces'
+      fullPath: '/traces'
+      preLoaderRoute: typeof AuthenticatedTracesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sync': {
+      id: '/_authenticated/sync'
+      path: '/sync'
+      fullPath: '/sync'
+      preLoaderRoute: typeof AuthenticatedSyncRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/studio': {
+      id: '/_authenticated/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof AuthenticatedStudioRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/roadmap': {
+      id: '/_authenticated/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof AuthenticatedRoadmapRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/prompts': {
+      id: '/_authenticated/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/prds': {
+      id: '/_authenticated/prds'
+      path: '/prds'
+      fullPath: '/prds'
+      preLoaderRoute: typeof AuthenticatedPrdsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/opportunities': {
+      id: '/_authenticated/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/meetings': {
+      id: '/_authenticated/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof AuthenticatedMeetingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/integrations': {
+      id: '/_authenticated/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/guardrails': {
+      id: '/_authenticated/guardrails'
+      path: '/guardrails'
+      fullPath: '/guardrails'
+      preLoaderRoute: typeof AuthenticatedGuardrailsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/evals': {
+      id: '/_authenticated/evals'
+      path: '/evals'
+      fullPath: '/evals'
+      preLoaderRoute: typeof AuthenticatedEvalsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/drift': {
+      id: '/_authenticated/drift'
+      path: '/drift'
+      fullPath: '/drift'
+      preLoaderRoute: typeof AuthenticatedDriftRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/docs': {
+      id: '/_authenticated/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof AuthenticatedDocsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/discovery': {
+      id: '/_authenticated/discovery'
+      path: '/discovery'
+      fullPath: '/discovery'
+      preLoaderRoute: typeof AuthenticatedDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/budgets': {
+      id: '/_authenticated/budgets'
+      path: '/budgets'
+      fullPath: '/budgets'
+      preLoaderRoute: typeof AuthenticatedBudgetsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/agents': {
+      id: '/_authenticated/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/traces/$traceId': {
+      id: '/_authenticated/traces/$traceId'
+      path: '/$traceId'
+      fullPath: '/traces/$traceId'
+      preLoaderRoute: typeof AuthenticatedTracesTraceIdRouteImport
+      parentRoute: typeof AuthenticatedTracesRoute
+    }
+    '/_authenticated/studio/$id': {
+      id: '/_authenticated/studio/$id'
+      path: '/$id'
+      fullPath: '/studio/$id'
+      preLoaderRoute: typeof AuthenticatedStudioIdRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/prds/$id': {
+      id: '/_authenticated/prds/$id'
+      path: '/$id'
+      fullPath: '/prds/$id'
+      preLoaderRoute: typeof AuthenticatedPrdsIdRouteImport
+      parentRoute: typeof AuthenticatedPrdsRoute
+    }
+    '/_authenticated/meetings/$id': {
+      id: '/_authenticated/meetings/$id'
+      path: '/$id'
+      fullPath: '/meetings/$id'
+      preLoaderRoute: typeof AuthenticatedMeetingsIdRouteImport
+      parentRoute: typeof AuthenticatedMeetingsRoute
+    }
+    '/api/public/hooks/indexer-tick': {
+      id: '/api/public/hooks/indexer-tick'
+      path: '/api/public/hooks/indexer-tick'
+      fullPath: '/api/public/hooks/indexer-tick'
+      preLoaderRoute: typeof ApiPublicHooksIndexerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/eval-tick': {
+      id: '/api/public/hooks/eval-tick'
+      path: '/api/public/hooks/eval-tick'
+      fullPath: '/api/public/hooks/eval-tick'
+      preLoaderRoute: typeof ApiPublicHooksEvalTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/eval-suite-tick': {
+      id: '/api/public/hooks/eval-suite-tick'
+      path: '/api/public/hooks/eval-suite-tick'
+      fullPath: '/api/public/hooks/eval-suite-tick'
+      preLoaderRoute: typeof ApiPublicHooksEvalSuiteTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/drift-tick': {
+      id: '/api/public/hooks/drift-tick'
+      path: '/api/public/hooks/drift-tick'
+      fullPath: '/api/public/hooks/drift-tick'
+      preLoaderRoute: typeof ApiPublicHooksDriftTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/agent-tick': {
+      id: '/api/public/hooks/agent-tick'
+      path: '/api/public/hooks/agent-tick'
+      fullPath: '/api/public/hooks/agent-tick'
+      preLoaderRoute: typeof ApiPublicHooksAgentTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/a2a/agents/cadence/card': {
+      id: '/api/public/a2a/agents/cadence/card'
+      path: '/api/public/a2a/agents/cadence/card'
+      fullPath: '/api/public/a2a/agents/cadence/card'
+      preLoaderRoute: typeof ApiPublicA2aAgentsCadenceCardRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
+interface AuthenticatedMeetingsRouteChildren {
+  AuthenticatedMeetingsIdRoute: typeof AuthenticatedMeetingsIdRoute
+}
+
+const AuthenticatedMeetingsRouteChildren: AuthenticatedMeetingsRouteChildren = {
+  AuthenticatedMeetingsIdRoute: AuthenticatedMeetingsIdRoute,
+}
+
+const AuthenticatedMeetingsRouteWithChildren =
+  AuthenticatedMeetingsRoute._addFileChildren(
+    AuthenticatedMeetingsRouteChildren,
+  )
+
+interface AuthenticatedPrdsRouteChildren {
+  AuthenticatedPrdsIdRoute: typeof AuthenticatedPrdsIdRoute
+}
+
+const AuthenticatedPrdsRouteChildren: AuthenticatedPrdsRouteChildren = {
+  AuthenticatedPrdsIdRoute: AuthenticatedPrdsIdRoute,
+}
+
+const AuthenticatedPrdsRouteWithChildren =
+  AuthenticatedPrdsRoute._addFileChildren(AuthenticatedPrdsRouteChildren)
+
+interface AuthenticatedStudioRouteChildren {
+  AuthenticatedStudioIdRoute: typeof AuthenticatedStudioIdRoute
+}
+
+const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
+  AuthenticatedStudioIdRoute: AuthenticatedStudioIdRoute,
+}
+
+const AuthenticatedStudioRouteWithChildren =
+  AuthenticatedStudioRoute._addFileChildren(AuthenticatedStudioRouteChildren)
+
+interface AuthenticatedTracesRouteChildren {
+  AuthenticatedTracesTraceIdRoute: typeof AuthenticatedTracesTraceIdRoute
+}
+
+const AuthenticatedTracesRouteChildren: AuthenticatedTracesRouteChildren = {
+  AuthenticatedTracesTraceIdRoute: AuthenticatedTracesTraceIdRoute,
+}
+
+const AuthenticatedTracesRouteWithChildren =
+  AuthenticatedTracesRoute._addFileChildren(AuthenticatedTracesRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedBudgetsRoute: typeof AuthenticatedBudgetsRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedDiscoveryRoute: typeof AuthenticatedDiscoveryRoute
+  AuthenticatedDocsRoute: typeof AuthenticatedDocsRoute
+  AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
+  AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
+  AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
+  AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
+  AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedPrdsRoute: typeof AuthenticatedPrdsRouteWithChildren
+  AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
+  AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStudioRoute: typeof AuthenticatedStudioRouteWithChildren
+  AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedBudgetsRoute: AuthenticatedBudgetsRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedDiscoveryRoute: AuthenticatedDiscoveryRoute,
+  AuthenticatedDocsRoute: AuthenticatedDocsRoute,
+  AuthenticatedDriftRoute: AuthenticatedDriftRoute,
+  AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
+  AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
+  AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
+  AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedPrdsRoute: AuthenticatedPrdsRouteWithChildren,
+  AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
+  AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStudioRoute: AuthenticatedStudioRouteWithChildren,
+  AuthenticatedSyncRoute: AuthenticatedSyncRoute,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
+  ApiChatRoute: ApiChatRoute,
+  ApiStudioChatRoute: ApiStudioChatRoute,
+  PSlugRoute: PSlugRoute,
+  ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
+  ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
+  ApiPublicHooksEvalSuiteTickRoute: ApiPublicHooksEvalSuiteTickRoute,
+  ApiPublicHooksEvalTickRoute: ApiPublicHooksEvalTickRoute,
+  ApiPublicHooksIndexerTickRoute: ApiPublicHooksIndexerTickRoute,
+  ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
