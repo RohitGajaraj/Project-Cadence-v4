@@ -98,6 +98,228 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_budgets: {
+        Row: {
+          alert_at_pct: number
+          created_at: string
+          daily_token_cap: number | null
+          daily_tokens_used: number
+          daily_usd_cap: number | null
+          daily_usd_used: number
+          day_window: string
+          id: string
+          month_window: string
+          monthly_token_cap: number | null
+          monthly_tokens_used: number
+          monthly_usd_cap: number | null
+          monthly_usd_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_at_pct?: number
+          created_at?: string
+          daily_token_cap?: number | null
+          daily_tokens_used?: number
+          daily_usd_cap?: number | null
+          daily_usd_used?: number
+          day_window?: string
+          id?: string
+          month_window?: string
+          monthly_token_cap?: number | null
+          monthly_tokens_used?: number
+          monthly_usd_cap?: number | null
+          monthly_usd_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_at_pct?: number
+          created_at?: string
+          daily_token_cap?: number | null
+          daily_tokens_used?: number
+          daily_usd_cap?: number | null
+          daily_usd_used?: number
+          day_window?: string
+          id?: string
+          month_window?: string
+          monthly_token_cap?: number | null
+          monthly_tokens_used?: number
+          monthly_usd_cap?: number | null
+          monthly_usd_used?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_evals: {
+        Row: {
+          citations: Json
+          coherence: number | null
+          created_at: string
+          event_id: string
+          groundedness: number | null
+          hallucination_score: number | null
+          id: string
+          judge_model: string | null
+          judge_rationale: string | null
+          pii_risk: number | null
+          prompt_injection_risk: number | null
+          relevance: number | null
+          status: string
+          toxicity: number | null
+          unsupported_claims: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          citations?: Json
+          coherence?: number | null
+          created_at?: string
+          event_id: string
+          groundedness?: number | null
+          hallucination_score?: number | null
+          id?: string
+          judge_model?: string | null
+          judge_rationale?: string | null
+          pii_risk?: number | null
+          prompt_injection_risk?: number | null
+          relevance?: number | null
+          status?: string
+          toxicity?: number | null
+          unsupported_claims?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          citations?: Json
+          coherence?: number | null
+          created_at?: string
+          event_id?: string
+          groundedness?: number | null
+          hallucination_score?: number | null
+          id?: string
+          judge_model?: string | null
+          judge_rationale?: string | null
+          pii_risk?: number | null
+          prompt_injection_risk?: number | null
+          relevance?: number | null
+          status?: string
+          toxicity?: number | null
+          unsupported_claims?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_events: {
+        Row: {
+          cache_hit: boolean
+          completion_tokens: number
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          est_cost_usd: number
+          fallback: boolean
+          id: string
+          input_preview: string | null
+          latency_ms: number
+          model: string
+          output_preview: string | null
+          parent_event_id: string | null
+          prompt_tokens: number
+          provider: string
+          request_hash: string | null
+          status: string
+          surface: string
+          surface_ref: string | null
+          total_tokens: number
+          trace_id: string | null
+          ttft_ms: number | null
+          user_id: string
+          via: string
+        }
+        Insert: {
+          cache_hit?: boolean
+          completion_tokens?: number
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          est_cost_usd?: number
+          fallback?: boolean
+          id?: string
+          input_preview?: string | null
+          latency_ms?: number
+          model: string
+          output_preview?: string | null
+          parent_event_id?: string | null
+          prompt_tokens?: number
+          provider?: string
+          request_hash?: string | null
+          status?: string
+          surface: string
+          surface_ref?: string | null
+          total_tokens?: number
+          trace_id?: string | null
+          ttft_ms?: number | null
+          user_id: string
+          via?: string
+        }
+        Update: {
+          cache_hit?: boolean
+          completion_tokens?: number
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          est_cost_usd?: number
+          fallback?: boolean
+          id?: string
+          input_preview?: string | null
+          latency_ms?: number
+          model?: string
+          output_preview?: string | null
+          parent_event_id?: string | null
+          prompt_tokens?: number
+          provider?: string
+          request_hash?: string | null
+          status?: string
+          surface?: string
+          surface_ref?: string | null
+          total_tokens?: number
+          trace_id?: string | null
+          ttft_ms?: number | null
+          user_id?: string
+          via?: string
+        }
+        Relationships: []
+      }
+      ai_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          event_id: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           all_day: boolean
@@ -377,6 +599,225 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      eval_case_results: {
+        Row: {
+          actual: string | null
+          case_id: string
+          created_at: string
+          event_id: string | null
+          id: string
+          passed: boolean
+          reasons: Json
+          run_id: string
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          actual?: string | null
+          case_id: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          passed?: boolean
+          reasons?: Json
+          run_id: string
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          actual?: string | null
+          case_id?: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          passed?: boolean
+          reasons?: Json
+          run_id?: string
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eval_cases: {
+        Row: {
+          assertions: Json
+          created_at: string
+          expected: string | null
+          id: string
+          input: string
+          name: string
+          suite_id: string
+          user_id: string
+        }
+        Insert: {
+          assertions?: Json
+          created_at?: string
+          expected?: string | null
+          id?: string
+          input: string
+          name: string
+          suite_id: string
+          user_id: string
+        }
+        Update: {
+          assertions?: Json
+          created_at?: string
+          expected?: string | null
+          id?: string
+          input?: string
+          name?: string
+          suite_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eval_runs: {
+        Row: {
+          avg_score: number | null
+          created_at: string
+          fail_count: number
+          id: string
+          model: string
+          pass_count: number
+          status: string
+          suite_id: string
+          total_cost_usd: number
+          user_id: string
+        }
+        Insert: {
+          avg_score?: number | null
+          created_at?: string
+          fail_count?: number
+          id?: string
+          model: string
+          pass_count?: number
+          status?: string
+          suite_id: string
+          total_cost_usd?: number
+          user_id: string
+        }
+        Update: {
+          avg_score?: number | null
+          created_at?: string
+          fail_count?: number
+          id?: string
+          model?: string
+          pass_count?: number
+          status?: string
+          suite_id?: string
+          total_cost_usd?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eval_suites: {
+        Row: {
+          built_in: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          surface: string | null
+          user_id: string
+        }
+        Insert: {
+          built_in?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          surface?: string | null
+          user_id: string
+        }
+        Update: {
+          built_in?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          surface?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      guardrail_hits: {
+        Row: {
+          action: string
+          created_at: string
+          event_id: string | null
+          id: string
+          kind: string
+          matched: string | null
+          rule_id: string | null
+          rule_name: string
+          side: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          kind: string
+          matched?: string | null
+          rule_id?: string | null
+          rule_name: string
+          side: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          kind?: string
+          matched?: string | null
+          rule_id?: string | null
+          rule_name?: string
+          side?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      guardrail_rules: {
+        Row: {
+          action: string
+          applies_to: string
+          built_in: boolean
+          created_at: string
+          enabled: boolean
+          id: string
+          kind: string
+          name: string
+          pattern: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          applies_to?: string
+          built_in?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          kind: string
+          name: string
+          pattern: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          applies_to?: string
+          built_in?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          kind?: string
+          name?: string
+          pattern?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       meetings: {
         Row: {
@@ -851,6 +1292,99 @@ export type Database = {
           },
         ]
       }
+      rag_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          content_hash: string | null
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json
+          source_id: string | null
+          source_kind: string
+          title: string | null
+          token_estimate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_index?: number
+          content: string
+          content_hash?: string | null
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json
+          source_id?: string | null
+          source_kind: string
+          title?: string | null
+          token_estimate?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          content_hash?: string | null
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json
+          source_id?: string | null
+          source_kind?: string
+          title?: string | null
+          token_estimate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scheduler_proposals: {
+        Row: {
+          calendar_event_id: string | null
+          chosen_slot: Json | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          slots: Json
+          source_id: string | null
+          source_kind: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          chosen_slot?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          slots?: Json
+          source_id?: string | null
+          source_kind?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          chosen_slot?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          slots?: Json
+          source_id?: string | null
+          source_kind?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       signals: {
         Row: {
           content: string
@@ -1042,6 +1576,51 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_calls: {
+        Row: {
+          agent_id: string | null
+          args: Json
+          created_at: string
+          error: string | null
+          event_id: string | null
+          id: string
+          latency_ms: number
+          ok: boolean
+          result: Json | null
+          tool_name: string
+          trace_id: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          args?: Json
+          created_at?: string
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          latency_ms?: number
+          ok?: boolean
+          result?: Json | null
+          tool_name: string
+          trace_id?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          args?: Json
+          created_at?: string
+          error?: string | null
+          event_id?: string | null
+          id?: string
+          latency_ms?: number
+          ok?: boolean
+          result?: Json | null
+          tool_name?: string
+          trace_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_api_keys: {
         Row: {
           api_key: string
@@ -1119,6 +1698,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      match_rag_chunks: {
+        Args: {
+          for_user: string
+          match_count?: number
+          query_embedding: string
+          source_kinds?: string[]
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+          source_id: string
+          source_kind: string
+          title: string
+        }[]
+      }
       match_signals: {
         Args: {
           for_user?: string
@@ -1133,6 +1730,10 @@ export type Database = {
         }[]
       }
       seed_default_agents: { Args: { _user_id: string }; Returns: undefined }
+      seed_default_guardrails: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
