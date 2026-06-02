@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_approvals: {
+        Row: {
+          agent_id: string | null
+          agent_slug: string | null
+          args: Json
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          error: string | null
+          expires_at: string | null
+          id: string
+          rationale: string | null
+          result: Json | null
+          status: string
+          tool_name: string
+          trace_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_slug?: string | null
+          args?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          rationale?: string | null
+          result?: Json | null
+          status?: string
+          tool_name: string
+          trace_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_slug?: string | null
+          args?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          rationale?: string | null
+          result?: Json | null
+          status?: string
+          tool_name?: string
+          trace_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_memory: {
+        Row: {
+          agent_id: string | null
+          agent_slug: string | null
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          importance: number
+          kind: string
+          last_used_at: string | null
+          metadata: Json
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_slug?: string | null
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          importance?: number
+          kind?: string
+          last_used_at?: string | null
+          metadata?: Json
+          scope?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_slug?: string | null
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          importance?: number
+          kind?: string
+          last_used_at?: string | null
+          metadata?: Json
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           agent_id: string | null
@@ -49,6 +154,51 @@ export type Database = {
           input?: string
           output?: string | null
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_tools: {
+        Row: {
+          built_in: boolean
+          category: string
+          config: Json
+          created_at: string
+          description: string
+          display_name: string
+          enabled: boolean
+          id: string
+          mode: string
+          tool_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          built_in?: boolean
+          category?: string
+          config?: Json
+          created_at?: string
+          description: string
+          display_name: string
+          enabled?: boolean
+          id?: string
+          mode?: string
+          tool_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          built_in?: boolean
+          category?: string
+          config?: Json
+          created_at?: string
+          description?: string
+          display_name?: string
+          enabled?: boolean
+          id?: string
+          mode?: string
+          tool_name?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -95,6 +245,48 @@ export type Database = {
           slug?: string
           system_prompt?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      ai_budget_alerts: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          id: string
+          kind: string
+          pct: number
+          scope: string
+          surface: string | null
+          usd_cap: number
+          usd_used: number
+          user_id: string
+          window_kind: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          id?: string
+          kind: string
+          pct: number
+          scope: string
+          surface?: string | null
+          usd_cap: number
+          usd_used: number
+          user_id: string
+          window_kind: string
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          pct?: number
+          scope?: string
+          surface?: string | null
+          usd_cap?: number
+          usd_used?: number
+          user_id?: string
+          window_kind?: string
         }
         Relationships: []
       }
@@ -316,6 +508,93 @@ export type Database = {
           event_id?: string
           id?: string
           rating?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_surface_budgets: {
+        Row: {
+          created_at: string
+          daily_usd_cap: number | null
+          daily_usd_used: number
+          day_window: string
+          enabled: boolean
+          id: string
+          month_window: string
+          monthly_usd_cap: number | null
+          monthly_usd_used: number
+          surface: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_usd_cap?: number | null
+          daily_usd_used?: number
+          day_window?: string
+          enabled?: boolean
+          id?: string
+          month_window?: string
+          monthly_usd_cap?: number | null
+          monthly_usd_used?: number
+          surface: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_usd_cap?: number | null
+          daily_usd_used?: number
+          day_window?: string
+          enabled?: boolean
+          id?: string
+          month_window?: string
+          monthly_usd_cap?: number | null
+          monthly_usd_used?: number
+          surface?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      artifact_lineage: {
+        Row: {
+          ai_event_id: string | null
+          child_id: string
+          child_kind: string
+          created_at: string
+          created_by_agent: string | null
+          id: string
+          parent_id: string
+          parent_kind: string
+          rationale: string | null
+          relation: string
+          user_id: string
+        }
+        Insert: {
+          ai_event_id?: string | null
+          child_id: string
+          child_kind: string
+          created_at?: string
+          created_by_agent?: string | null
+          id?: string
+          parent_id: string
+          parent_kind: string
+          rationale?: string | null
+          relation?: string
+          user_id: string
+        }
+        Update: {
+          ai_event_id?: string | null
+          child_id?: string
+          child_kind?: string
+          created_at?: string
+          created_by_agent?: string | null
+          id?: string
+          parent_id?: string
+          parent_kind?: string
+          rationale?: string | null
+          relation?: string
           user_id?: string
         }
         Relationships: []
@@ -600,41 +879,240 @@ export type Database = {
           },
         ]
       }
+      drift_baselines: {
+        Row: {
+          baseline_days: number
+          cost_pct_threshold: number
+          created_at: string
+          enabled: boolean
+          error_rate_pct_threshold: number
+          id: string
+          latency_pct_threshold: number
+          score_pct_threshold: number
+          tokens_pct_threshold: number
+          updated_at: string
+          user_id: string
+          window_days: number
+        }
+        Insert: {
+          baseline_days?: number
+          cost_pct_threshold?: number
+          created_at?: string
+          enabled?: boolean
+          error_rate_pct_threshold?: number
+          id?: string
+          latency_pct_threshold?: number
+          score_pct_threshold?: number
+          tokens_pct_threshold?: number
+          updated_at?: string
+          user_id: string
+          window_days?: number
+        }
+        Update: {
+          baseline_days?: number
+          cost_pct_threshold?: number
+          created_at?: string
+          enabled?: boolean
+          error_rate_pct_threshold?: number
+          id?: string
+          latency_pct_threshold?: number
+          score_pct_threshold?: number
+          tokens_pct_threshold?: number
+          updated_at?: string
+          user_id?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
+      drift_incidents: {
+        Row: {
+          baseline_value: number
+          created_at: string
+          current_value: number
+          delta_pct: number
+          detail: Json
+          detected_at: string
+          id: string
+          metric: string
+          model: string
+          prompt_version_id: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          surface: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          baseline_value: number
+          created_at?: string
+          current_value: number
+          delta_pct: number
+          detail?: Json
+          detected_at?: string
+          id?: string
+          metric: string
+          model: string
+          prompt_version_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          surface: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          baseline_value?: number
+          created_at?: string
+          current_value?: number
+          delta_pct?: number
+          detail?: Json
+          detected_at?: string
+          id?: string
+          metric?: string
+          model?: string
+          prompt_version_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          surface?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drift_incidents_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drift_snapshots: {
+        Row: {
+          avg_cost_usd: number
+          avg_eval_score: number | null
+          avg_latency_ms: number
+          avg_total_tokens: number
+          bucket_date: string
+          created_at: string
+          error_count: number
+          id: string
+          model: string
+          p95_latency_ms: number
+          prompt_version_id: string | null
+          request_count: number
+          surface: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_cost_usd?: number
+          avg_eval_score?: number | null
+          avg_latency_ms?: number
+          avg_total_tokens?: number
+          bucket_date: string
+          created_at?: string
+          error_count?: number
+          id?: string
+          model: string
+          p95_latency_ms?: number
+          prompt_version_id?: string | null
+          request_count?: number
+          surface: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_cost_usd?: number
+          avg_eval_score?: number | null
+          avg_latency_ms?: number
+          avg_total_tokens?: number
+          bucket_date?: string
+          created_at?: string
+          error_count?: number
+          id?: string
+          model?: string
+          p95_latency_ms?: number
+          prompt_version_id?: string | null
+          request_count?: number
+          surface?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drift_snapshots_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eval_case_results: {
         Row: {
           actual: string | null
+          ai_event_id: string | null
           case_id: string
+          completion_tokens: number | null
+          cost_usd: number | null
           created_at: string
+          error: string | null
           event_id: string | null
           id: string
+          judge_event_id: string | null
+          judge_reasoning: string | null
+          latency_ms: number | null
           passed: boolean
+          prompt_tokens: number | null
           reasons: Json
           run_id: string
           score: number | null
+          status: string
           user_id: string
         }
         Insert: {
           actual?: string | null
+          ai_event_id?: string | null
           case_id: string
+          completion_tokens?: number | null
+          cost_usd?: number | null
           created_at?: string
+          error?: string | null
           event_id?: string | null
           id?: string
+          judge_event_id?: string | null
+          judge_reasoning?: string | null
+          latency_ms?: number | null
           passed?: boolean
+          prompt_tokens?: number | null
           reasons?: Json
           run_id: string
           score?: number | null
+          status?: string
           user_id: string
         }
         Update: {
           actual?: string | null
+          ai_event_id?: string | null
           case_id?: string
+          completion_tokens?: number | null
+          cost_usd?: number | null
           created_at?: string
+          error?: string | null
           event_id?: string | null
           id?: string
+          judge_event_id?: string | null
+          judge_reasoning?: string | null
+          latency_ms?: number | null
           passed?: boolean
+          prompt_tokens?: number | null
           reasons?: Json
           run_id?: string
           score?: number | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -643,70 +1121,115 @@ export type Database = {
         Row: {
           assertions: Json
           created_at: string
+          enabled: boolean
           expected: string | null
           id: string
           input: string
           name: string
+          rubric: string | null
           suite_id: string
+          tags: string[] | null
+          updated_at: string
           user_id: string
+          weight: number
         }
         Insert: {
           assertions?: Json
           created_at?: string
+          enabled?: boolean
           expected?: string | null
           id?: string
           input: string
           name: string
+          rubric?: string | null
           suite_id: string
+          tags?: string[] | null
+          updated_at?: string
           user_id: string
+          weight?: number
         }
         Update: {
           assertions?: Json
           created_at?: string
+          enabled?: boolean
           expected?: string | null
           id?: string
           input?: string
           name?: string
+          rubric?: string | null
           suite_id?: string
+          tags?: string[] | null
+          updated_at?: string
           user_id?: string
+          weight?: number
         }
         Relationships: []
       }
       eval_runs: {
         Row: {
           avg_score: number | null
+          completed_at: string | null
           created_at: string
+          error: string | null
+          errored: number
           fail_count: number
           id: string
+          judge_model: string | null
           model: string
+          notes: string | null
           pass_count: number
+          prompt_version_id: string | null
+          started_at: string
           status: string
           suite_id: string
+          total_cases: number
           total_cost_usd: number
+          total_latency_ms: number | null
+          trigger: string
           user_id: string
         }
         Insert: {
           avg_score?: number | null
+          completed_at?: string | null
           created_at?: string
+          error?: string | null
+          errored?: number
           fail_count?: number
           id?: string
+          judge_model?: string | null
           model: string
+          notes?: string | null
           pass_count?: number
+          prompt_version_id?: string | null
+          started_at?: string
           status?: string
           suite_id: string
+          total_cases?: number
           total_cost_usd?: number
+          total_latency_ms?: number | null
+          trigger?: string
           user_id: string
         }
         Update: {
           avg_score?: number | null
+          completed_at?: string | null
           created_at?: string
+          error?: string | null
+          errored?: number
           fail_count?: number
           id?: string
+          judge_model?: string | null
           model?: string
+          notes?: string | null
           pass_count?: number
+          prompt_version_id?: string | null
+          started_at?: string
           status?: string
           suite_id?: string
+          total_cases?: number
           total_cost_usd?: number
+          total_latency_ms?: number | null
+          trigger?: string
           user_id?: string
         }
         Relationships: []
@@ -716,27 +1239,51 @@ export type Database = {
           built_in: boolean
           created_at: string
           description: string | null
+          enabled: boolean
           id: string
+          judge_model: string
+          last_run_at: string | null
+          model: string | null
           name: string
+          pass_threshold: number
+          prompt_key: string | null
+          schedule_cron: string | null
           surface: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           built_in?: boolean
           created_at?: string
           description?: string | null
+          enabled?: boolean
           id?: string
+          judge_model?: string
+          last_run_at?: string | null
+          model?: string | null
           name: string
+          pass_threshold?: number
+          prompt_key?: string | null
+          schedule_cron?: string | null
           surface?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           built_in?: boolean
           created_at?: string
           description?: string | null
+          enabled?: boolean
           id?: string
+          judge_model?: string
+          last_run_at?: string | null
+          model?: string | null
           name?: string
+          pass_threshold?: number
+          prompt_key?: string | null
+          schedule_cron?: string | null
           surface?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1113,6 +1660,213 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      prompt_assignments: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          split_pct: number
+          template_id: string
+          updated_at: string
+          user_id: string
+          variant_a_version_id: string | null
+          variant_b_version_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          split_pct?: number
+          template_id: string
+          updated_at?: string
+          user_id: string
+          variant_a_version_id?: string | null
+          variant_b_version_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          split_pct?: number
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+          variant_a_version_id?: string | null
+          variant_b_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_assignments_variant_a_version_id_fkey"
+            columns: ["variant_a_version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_assignments_variant_b_version_id_fkey"
+            columns: ["variant_b_version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_runs: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          id: string
+          rendered_input: string | null
+          template_id: string | null
+          user_id: string
+          variant: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          rendered_input?: string | null
+          template_id?: string | null
+          user_id: string
+          variant?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          rendered_input?: string | null
+          template_id?: string | null
+          user_id?: string
+          variant?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_runs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_runs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_templates: {
+        Row: {
+          active_version_id: string | null
+          built_in: boolean
+          created_at: string
+          default_version_id: string | null
+          description: string | null
+          id: string
+          key: string
+          name: string
+          surface: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_version_id?: string | null
+          built_in?: boolean
+          created_at?: string
+          default_version_id?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          name: string
+          surface: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_version_id?: string | null
+          built_in?: boolean
+          created_at?: string
+          default_version_id?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          name?: string
+          surface?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prompt_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string | null
+          notes: string | null
+          status: string
+          system_prompt: string
+          temperature: number | null
+          template_id: string
+          updated_at: string
+          user_id: string
+          user_template: string
+          variables: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          status?: string
+          system_prompt?: string
+          temperature?: number | null
+          template_id: string
+          updated_at?: string
+          user_id: string
+          user_template?: string
+          variables?: Json
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          status?: string
+          system_prompt?: string
+          temperature?: number | null
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+          user_template?: string
+          variables?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prototype_attachments: {
         Row: {
@@ -1698,6 +2452,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      match_agent_memory: {
+        Args: {
+          for_agent_slug?: string
+          for_user: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          agent_slug: string
+          content: string
+          id: string
+          importance: number
+          kind: string
+          similarity: number
+        }[]
+      }
       match_rag_chunks: {
         Args: {
           for_user: string
@@ -1729,8 +2499,16 @@ export type Database = {
           title: string
         }[]
       }
+      seed_default_agent_tools: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       seed_default_agents: { Args: { _user_id: string }; Returns: undefined }
       seed_default_guardrails: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
+      seed_default_prompt_templates: {
         Args: { _user_id: string }
         Returns: undefined
       }
