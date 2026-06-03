@@ -201,4 +201,30 @@
 
 ---
 
+### 2026-06-03 — Reframe "YC demo cut" → "Agentic Proof Platform (v1)"; default seed = Cadence-on-Cadence
+
+**Decision:** Replace the framing "YC demo cut" with **Agentic Proof Platform (v1)**. The 8 capability bundles, the build sequence, the deferrals, and the reserved IDs (C5, C6, U6) are unchanged. What changes: every bundle now ships against an explicit **proof bar** — the minimum end-to-end behavior on real data that makes a claim true — mapped to **four claims** that legacy PM tools (Jira, Linear, Productboard, ProductPlan, Aha) structurally cannot make:
+- **C1** Agents operate, humans govern.
+- **C2** Agent-to-agent handoff is first-class (no human in the routing path).
+- **C3** The whole lifecycle is one governed loop.
+- **C4** Trust is earned and visible (dialed, not assumed).
+
+The YC application becomes a by-product of shipping the proof platform, not its primary driver.
+
+**Sub-decisions:**
+1. **Default real-data seed = Cadence-on-Cadence** (we run our own roadmap on Cadence). Most credible YC narrative; no dependency on a design partner; if one is signed before bundle 6, their product becomes an additional seed, not a replacement.
+2. **Proof bars are the new "done" criterion** for each bundle. "Renders" or "looks demo-able" is not enough; behavior must hold end-to-end on real data.
+3. **Public README still does not claim A2A** until bundle 4 hits its proof bar (≥3 hops via the orchestration layer with replayable trace).
+
+**Why:** A 90-second demo can be polished into untruth; a proof bar cannot. Framing the work as a proof platform forces every bundle to deliver something legacy tools cannot do — which is the only honest YC narrative, and the only narrative that survives first contact with a design-partner CTO.
+
+**Tradeoffs considered:**
+- *Keep the "YC demo cut" framing:* rejected — invites demo-driven development (Potemkin screens), which collapses on real-data evaluation.
+- *Pull S4–S6 (Build/Test/Ship) forward to widen the proof surface:* rejected — same reason the prior decision deferred them; widening surface without depth hurts more than it helps.
+- *Wait for a design partner before committing to bundle 6's seed:* rejected — Cadence-on-Cadence removes the dependency and is the better story regardless.
+
+**Impact:** `docs/feature-backlog.md` reframed: section title `▶ YC demo cut` → `▶ Agentic Proof Platform (v1)`, added four-claims table and per-bundle proof bars, added "Real-data seeding" subsection. Live status board "Next up" + "Progress" updated to reference the proof platform. `plan.md` §4 logged. `active-task.md` unchanged (FND-RUNTIME 0.9 still next; no work in flight is invalidated). No code, schema, or RLS changes in this session.
+
+---
+
 *This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-03.*

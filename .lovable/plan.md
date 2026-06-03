@@ -1,84 +1,97 @@
 
-# YC Showcase Scope — Cadence Core Demo Set
+# Plan: Agentic Proof Platform (supersedes the "YC demo cut" framing)
 
-This plan picks the **smallest feature set that proves the thesis** for a YC application: *agents run the product lifecycle; humans govern. Agents talk to agents, hand work to agents, and finish missions end-to-end.* Everything outside this list is explicitly **out of scope for the YC demo cut** and stays in the backlog for later.
+## 1. Why this changes
 
-## 1. The problem we're solving (one paragraph for YC)
+The previous cut optimized for a 90-second YC demo. Your ask is broader: prove — to YC, to design partners, to real PMs/founders — that Cadence delivers **agentic-native product management** that legacy PM tools (Jira/Linear/Productboard/ProductPlan/Aha) structurally cannot. The demo is a by-product; the platform is the point.
 
-Today a PM (or founder acting as PM) is the human glue across 10–15 disconnected tools: discovery in one place, specs in another, tickets in a third, build/ship somewhere else, GTM and support in yet more. AI copilots help one step at a time but **a human still relays context between every step**. Cadence removes that glue layer: a swarm of specialist agents runs discover → define → plan → build → ship → support → learn as one continuous loop, **communicating and handing off to each other**, while the human only approves the calls that matter. The moat is the governed end-to-end loop, not the model.
+Two shifts:
 
-## 2. The "demo-able core" — 8 capability bundles
+- **From "demo cut" → "proof cut."** Every bundle must work end-to-end on real data, not just present convincingly for 90 seconds.
+- **From "show 8 things" → "prove 4 claims."** Each claim is something legacy PM tools cannot do, and each maps to capability bundles + a measurable proof artifact.
 
-These are the **must-show** capabilities. Each is a bundle of existing backlog IDs from `docs/feature-backlog.md`, re-grouped around what a YC reviewer needs to see in 90 seconds.
+## 2. The four claims we are proving
 
-| # | Capability bundle (what the demo shows) | Why it's core for YC | Backlog IDs that compose it |
-|---|---|---|---|
-| **1** | **Governed foundation** — tenancy, AI chokepoint, trust tables, kill-switch, mission spend caps, approval gates | Proves "governance is a first-class product layer," not a slide | 0.1, 0.2, 0.3, 0.5, 0.6 ✅, 0.7 ✅, A1/A2, X3 |
-| **2** | **Strategic Briefing surface** | The single place the human sets intent; every agent reads it as operating context. This is the "humans govern" entry point. | New (from v2 positioning §8) |
-| **3** | **Agent roster + Trust Score + Autonomy Dial** | Makes "agents are operators, not tools" visible. Reviewer sees a team, not a chatbot. | C1–C4, C6 (new) |
-| **4** | **Agent-to-Agent comms + handoff + sub-agent spawning** ⭐ | The thesis. Orchestrator spawns specialists, they message each other, hand missions across stages with zero context loss. | E1, E2, E3, E4, E5 |
-| **5** | **Live Mission Graph** ("watch the agents work") | One screen showing the swarm: who's doing what, cost, status, where approval is needed. This is the screenshot for the YC deck. | E6, X1 |
-| **6** | **One vertical end-to-end slice** — Discover → Define → Plan executed by 3 agents handing off | Proves the loop actually runs, not just that the parts exist. Uses real seeded signals. | F1–F3, G1, H1 |
-| **7** | **Decision Queue + approval gates** | The "humans govern" surface. Every high-risk action shows up here with rationale + lineage. | D3, P-approvals |
-| **8** | **Product Memory + lineage + full data export** | Proves the compounding-value + anti-lock-in story (key positioning point from v2). | O1, O2, "Full Data Portability" (v2 §8) |
+| # | Claim (vs. legacy PM tools) | Proof artifact |
+|---|---|---|
+| C1 | **Agents operate, humans govern** — agents run multi-step missions, not assist with forms | Live Mission Graph + Decision Queue with real approval gates firing |
+| C2 | **Agent-to-agent handoff is first-class** — no human in the routing path | A2A trace: Discovery → Strategist → Planner, each reading prior agent's output, with full lineage |
+| C3 | **The whole lifecycle is one governed loop** — Discover → Define → Plan → (later: Build/Ship/Learn) | One vertical slice running on real product data, ending in a re-scored opportunity |
+| C4 | **Trust is earned and visible** — autonomy is dialed, not assumed | Trust Score + Autonomy Dial per agent, changing behavior of approval gates in real time |
 
-**Explicit deferrals** (great features, NOT in the YC demo cut): autonomous Build/Test/Ship (S4–S6 / I, J, K), GTM/Launch (L), Support (M), MCP/A2A external interop (Q), advanced eval/drift/guardrail UIs beyond what the chokepoint already does, multi-product portfolio view, BYO keys UI, billing. Cite these as "on the roadmap; foundation is built (chokepoint, trust stack, orchestration)" — reviewers reward focus.
+If a visitor cannot point to each claim being true in the running product within 5 minutes, we have not shipped the proof.
 
-## 3. The agent-to-agent story (the centerpiece — Capability #4)
+## 3. The 8 capability bundles (re-scoped for proof, not demo)
 
-This is what YC will ask about. The demo needs to show all four primitives working together, not as separate features:
+Order = build order. Each has an explicit **"proof bar"** — the minimum that makes the claim true, not just visible.
 
-1. **Sub-agent spawning** — Orchestrator receives a mission, decomposes it, spawns ephemeral specialists. (`E1`)
-2. **Structured A2A messaging** — agents pass typed messages (not free-text relay) inside a mission. (`E2`)
-3. **Mission handoff with full context** — Discovery agent → Strategist agent → Planner agent, each receives the prior agent's artifacts + memory + open questions. Zero human in the middle. (`E3`)
-4. **Parallel sub-agents + parallel sessions** — multiple specialists on one mission; multiple missions in flight. (`E4`, `E5`)
-5. **Mission Graph** as the operator surface — live DAG of all of the above. (`E6`)
+1. **Governed Foundation** (kill-switch, mission spend caps, approval gates, audit log)
+   *Proof bar:* killing an agent mid-mission halts spend within 1 tick; every action has a row in the audit log queryable from the UI. Supports C1, C4.
 
-This is the screenshot/video that goes in the YC application. Everything else supports it.
+2. **Strategic Briefing surface** (human intent → machine-readable brief every agent reads)
+   *Proof bar:* changing the brief visibly changes the next Discovery + Strategist output. Supports C1, C3.
 
-## 4. The 90-second demo script (what the reviewer sees)
+3. **Agent Roster + Trust Score + Autonomy Dial** (6 durable agents from `plan.md` §6 visible as operators)
+   *Proof bar:* dialing autonomy from Observing → Trusted removes a specific approval gate; Trust Score moves based on real outcomes. Supports C1, C4.
 
-```text
-0:00  Operator opens Cadence. Strategic Brief is already set (north star + constraints).
-0:10  Operator types one intent: "Find the top 3 churn drivers and propose a sprint."
-0:15  Orchestrator agent receives it, spawns: Discovery → Strategist → Planner.
-0:25  Mission Graph appears. 3 agent nodes light up in parallel where possible.
-0:35  Discovery agent finishes, hands off themes+citations to Strategist (visible A2A message).
-0:50  Strategist drafts opportunities, hands off to Planner.
-1:05  Planner proposes sprint. ONE item flagged "needs approval — affects roadmap."
-1:10  Operator clicks Approve in Decision Queue. Mission completes.
-1:20  Operator opens Product Memory — sees the lineage: signal → theme → decision.
-1:25  Click "Export" → JSON downloads. (Anti-lock-in proof.)
+4. **Agent-to-Agent comms + handoff + sub-agent spawning** ⭐ the thesis (E1–E5)
+   *Proof bar:* one mission with ≥3 hops between agents, each reading prior agent's structured output via the orchestration layer (not prompt-stuffing), full trace replayable. Supports C2.
+
+5. **Live Mission Graph** (one screen showing the swarm) (E6, X1)
+   *Proof bar:* the graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens. Supports C1, C2.
+
+6. **Vertical slice: Discover → Define → Plan** on real product data
+   *Proof bar:* seeded with real signals from a real product (per your earlier answer), produces a real PRD + sprint plan, one item routed to approval, operator approves, plan updates. Supports C3.
+
+7. **Decision Queue + approval gates UX** (the governance surface)
+   *Proof bar:* every gate the agents hit lands in the queue with context (what, why, cost-if-approved, who proposed), approve/reject changes downstream behavior. Supports C1, C4.
+
+8. **Product Memory + lineage + export** (anti-lock-in, learn-loop seed)
+   *Proof bar:* every artifact (signal, theme, opportunity, PRD, decision) has lineage backward to its source; "Export everything" produces a complete, re-importable archive. Supports C3, and is the foundation for the Analyst learn loop later.
+
+**Explicitly deferred** (named, dated, linked so reviewers see them as "foundation built, next milestone" — not gaps): autonomous Build/Test/Ship (S4–S6), GTM/Launch, Support, MCP/A2A external interop, advanced eval/drift/guardrail UIs, multi-product portfolio, BYO keys, billing.
+
+## 4. Build sequence (concrete, doc-loop closed)
+
+Reuse the sequence from the prior approved plan, but each step now ships against its **proof bar**, not just a demo screen:
+
+```
+FND-RUNTIME 0.9 (durable runtime) → FND-CACHE 0.2
+  → Bundle 1 (Governed Foundation: kill-switch UI + spend caps + audit log query)
+  → Bundle 2 (Strategic Briefing)
+  → Bundle 3 (Agent Roster + Trust + Autonomy skeleton)
+  → Bundle 4 (A2A handoff primitives) ← hardest, longest
+  → Bundle 5 (Mission Graph reading from bundle 4)
+  → Bundle 6 (Vertical slice on real data)
+  → Bundle 7 (Decision Queue polish)
+  → Bundle 8 (Product Memory lineage + Export)
 ```
 
-Every second of this script maps to one of the 8 capability bundles in §2.
+Each bundle, in the same unit of work:
+- Ships against its proof bar (not "looks done")
+- Updates `docs/feature-backlog.md` Live status board + entry
+- Appends a one-liner to `plan.md` §4
+- Updates the matching `architecture/*.md` contract
+- Adds "How to use / verify" block per the Core memory rule
+- If strategic, an entry in `docs/strategy/session-decisions.md`
 
-## 5. Build-order proposal (sequencing the demo cut)
+## 5. What changes in the docs (this turn, on approval)
 
-The foundation (Capability #1) is already mostly built — `0.6` kill-switch and `0.7` injection are ✅. The remaining sequence:
+- **`docs/feature-backlog.md`** — rename "▶ YC demo cut" to "▶ Agentic Proof Platform (v1)"; reframe each bundle with its claim + proof bar; keep reserved IDs C5/C6/U6.
+- **`docs/strategy/session-decisions.md`** — new entry: "Reframed YC demo cut into Agentic Proof Platform: proof bars, not demo screens; same 8 bundles, harder bar."
+- **`plan.md` §4** — one-line log entry referencing the reframe.
+- **`active-task.md`** — keep pointed at FND-RUNTIME 0.9 (unchanged; foundation work was already next).
+- **`README.md`** — no change yet; only update when bundle 4 ships (then we can publicly claim A2A).
 
-1. **Finish foundation gaps** — `0.9` durable runtime (long missions can't die mid-handoff), `0.2` cache stage. *(Already next-up on the status board.)*
-2. **Strategic Briefing surface** (Capability #2) — small, high-leverage, unblocks "agents read shared context."
-3. **Agent roster UI + Trust Score skeleton** (Capability #3) — read-only first; the scoring math comes later.
-4. **A2A messaging + handoff primitives** (Capability #4) — the protocol + DB tables + tracing. This is the hardest piece; budget the most time here.
-5. **Mission Graph** (Capability #5) — the visualization on top of #4. Without #4 it's a fake screenshot; with #4 it's the demo.
-6. **Vertical slice: Discover → Define → Plan** (Capability #6) — wire 3 existing agents through the new handoff primitives. Uses real seeded data.
-7. **Decision Queue polish** (Capability #7) — already partly exists; make it the obvious "govern here" surface.
-8. **Product Memory lineage view + Export button** (Capability #8) — small UI on top of existing tables.
+## 6. What this is NOT
 
-## 6. What I need from you before building
+- Not adding new agents beyond the 6 durable + ephemeral in `plan.md` §6.
+- Not changing the tech stack, the runtime chokepoint, or RLS model.
+- Not pulling S4–S6 (Build/Test/Ship) forward — they remain deferred with a public milestone.
+- Not building polish (animations, marketing pages) until the 8 bundles hit their proof bars.
 
-Three quick decisions so the plan is unambiguous:
+## 7. One open question before I start cutting docs
 
-- **Q1 — Demo persona.** Pick ONE of the three v2 personas to script the demo around (Solo PM / Founder-as-PM / Technical Founder). Recommend **Founder-as-PM** — it's the strongest YC narrative ("run the org you can't afford to hire") and it justifies the full lifecycle ambition.
-- **Q2 — Cut depth.** Are we OK explicitly deferring autonomous Build/Test/Ship (S4–S6) from the YC cut? I recommend yes — claiming end-to-end *autonomous coding* without a polished demo of it will hurt more than help. Position as "foundation built, next milestone."
-- **Q3 — Demo data.** Do you have a real product (yours or a design partner's) we can seed signals/specs from, or do we ship a polished synthetic dataset? Real beats synthetic for YC every time, even if small.
+The "real product data" you confirmed earlier — is it (a) **Cadence itself** (we eat our own dog food: real signals from this repo's issues, user feedback, decisions), or (b) **an external design partner's product** you already have access to? This changes the Bundle 6 seed plan and what we can show publicly. If you don't have a design partner lined up yet, I recommend (a) — Cadence-on-Cadence is the most credible YC story anyway ("we run our own roadmap on it").
 
-Once you answer, the next plan will break each of the 8 capability bundles into concrete backlog tickets with `active-task.md`-ready sub-steps, and I'll close the doc loop into `docs/feature-backlog.md` + `plan.md` §4 + `docs/strategy/session-decisions.md` in the same unit of work.
-
-## Out of scope (for this plan only)
-
-- Writing any code or migrations.
-- Rewriting positioning (v2 doc stands as-is).
-- Re-ordering the existing `0.x` foundation backlog — only choosing what's *demo-required*.
-- Pricing, naming, YC application copy itself.
+On approval, I'll close the doc loop in one turn (status board + session-decisions + plan §4 + reframed bundle entries) and then start FND-RUNTIME 0.9.
