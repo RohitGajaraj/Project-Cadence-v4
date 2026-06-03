@@ -23,7 +23,7 @@ export const getGovernanceOverview = createServerFn({ method: "POST" })
     }
 
     const [killState, systemRow, wsRow, runs, approvals] = await Promise.all([
-      supabase.rpc("current_kill_state", { ws: workspaceId }),
+      supabase.rpc("current_kill_state", { ws: workspaceId as unknown as string }),
       supabase.from("kill_switches").select("*").eq("scope", "system").maybeSingle(),
       workspaceId
         ? supabase.from("kill_switches").select("*").eq("scope", "workspace").eq("workspace_id", workspaceId).maybeSingle()
@@ -105,7 +105,7 @@ export const getWorkspacePauseState = createServerFn({ method: "POST" })
       const { data: ws } = await supabase.rpc("current_user_default_workspace");
       workspaceId = (ws as string | null) ?? null;
     }
-    const { data: state } = await supabase.rpc("current_kill_state", { ws: workspaceId });
+    const { data: state } = await supabase.rpc("current_kill_state", { ws: workspaceId as unknown as string });
     const row = Array.isArray(state) ? state[0] : state;
     const r = (row as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null) ?? null;
     return {
