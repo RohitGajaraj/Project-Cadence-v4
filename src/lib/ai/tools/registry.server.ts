@@ -8,6 +8,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { retrieve } from "@/lib/rag/retriever.server";
 import { embedOne } from "@/lib/rag/embed.server";
+import { withIdempotency } from "@/lib/runtime/idempotency.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -15,6 +16,8 @@ export type ToolCtx = {
   agentSlug?: string;
   agentId?: string | null;
   traceId?: string | null;
+  runId?: string | null;
+  stepIndex?: number | null;
 };
 
 export type ToolDef<S extends z.ZodTypeAny = z.ZodTypeAny> = {
@@ -243,8 +246,57 @@ const createCalendarEvent = def({
   },
 });
 
+// ── lifecycle / build tools ───────────────────────────────────────────
+/**
+ * github.issue.create — opens a real GitHub issue on the allow-listed repo.
+ * Allow-list = the single repo configured in GITHUB_REPO env (e.g. "owner/name").
+ * Idempotent via key = github_issue:{idempotency_key}; safe to retry across
+ * worker restarts without double-creating issues.
+ */
+const githubIssueCreate = def({
+  name: "github.issue.create",
+  description: "Open a GitHub issue on the connected product repo. Pass an idempotency_key (e.g. the PRD id) so re-execution does not double-create. Use to hand work from PRD → engineering backlog.",
+  category: "write",
+  argsSchema: z.object({
+    title: z.string().min(1).max(280),
+    body: z.string().min(1).max(60_000),
+    labels: z.array(z.string().min(1).max(50)).max(10).optional(),
+    idempotency_key: z.string().min(1).max(200),
+  }),
+  preview: (a) => `Open GitHub issue: "${a.title}"`,
+  run: async (a, { supabase, userId, runId }) => {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+    const outcome = await withIdempotency(
+      supabase, "github_issue", a.idempotency_key, userId, runId ?? null,
+      async () => {
+        const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "cadence-agent",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ title: a.title, body: a.body, labels: a.labels ?? [] }),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`GitHub ${res.status}: ${txt.slice(0, 400)}`);
+        }
+        const json = await res.json() as { number: number; html_url: string; id: number };
+        return { number: json.number, url: json.html_url, id: json.id, repo };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent]
+  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate]
     .map((t) => [t.name, t]),
 );
 
