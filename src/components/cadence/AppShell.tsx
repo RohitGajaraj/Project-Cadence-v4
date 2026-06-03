@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, Code2, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, GitBranch, ChevronDown, Plug,
+  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getWorkspacePauseState } from "@/lib/governance.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +67,7 @@ const groups: NavGroup[] = [
       { to: "/drift", label: "Drift", icon: TrendingUp },
       { to: "/budgets", label: "Budgets", icon: DollarSign },
       { to: "/guardrails", label: "Guardrails", icon: Shield },
+      { to: "/governance", label: "Governance", icon: ShieldAlert },
     ],
   },
   {
