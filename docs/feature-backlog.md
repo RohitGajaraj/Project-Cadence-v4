@@ -24,6 +24,7 @@
 | 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 4. Done: 1, 2, 6, 7. Not started: 3, 4, 8. Cross-cutting (S–X) pulled into step 1. |
 
 **Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-06-03` — Documented FND-KILLSWITCH (0.6) UI: added "How to use / verify" block under 0.6 with operator walkthrough (`/_authenticated/governance` panels, paused banner, verification checklist) and persisted standing doc-loop rules to project memory so every future session applies them automatically.
 - `2026-06-03` — Completed FND-KILLSWITCH (0.6): `kill_switches` table + `current_kill_state` RPC; `agent_runs` mission caps + atomic usage; `agent_approvals` TTL + `/api/public/hooks/approvals-tick` (pg_cron, every minute); chokepoint enforcement in `callModel`/`callModelStream` via typed `GovernanceHaltError`; `/_authenticated/governance` UI + AppShell paused indicator.
 - `2026-05-31` — Completed implementation of 0.7 (FND-INJECTION): XML-escaped and isolated RAG context chunks + tool results, and programmatic override to force injection rules to block.
 - `2026-05-31` — Completed code-side implementation of 0.2 (FND-CHOKEPOINT-STREAM): callModelStream chokepoint added and /api/chat + /api/studio-chat refactored.
@@ -133,6 +134,15 @@ ID. Feature name                         [status] · Pn · stage
 - States: cap reached mid-mission → checkpoint + pause (not data loss); kill-switch active → new runs refused with a clear message.
 - Done when: a runaway mission halts at its cap with a resumable checkpoint; kill-switch drains running work safely.
 - Depends: 0.6 needs P6 (budgets), E? (orchestration checkpoints).
+- **How to use / verify (2026-06-03):**
+  - **Where:** sidebar → AI Ops → **Governance** (`/_authenticated/governance`). Visible to any authenticated workspace member; system-pause toggle is admin-gated.
+  - **Panels:**
+    1. **Kill Switch** — workspace pause (owner/admin) with required reason; system pause is read-only for non-admins. When paused, `AppShell` shows a red banner on every route.
+    2. **Mission Caps** — per-mission `mission_token_cap` + `mission_spend_cap_usd` with live usage bars (`tokens_used` / `spend_used_usd` from `agent_runs`). Auto-halts the run on exceedance.
+    3. **Approvals** — pending `agent_approvals` with TTL countdown (default 24h), `escalation_state`, and Approve / Reject / Extend actions.
+  - **Server enforcement:** `callModel()` and `callModelStream()` in `src/lib/ai/runtime.server.ts` call `current_kill_state()` + `check_mission_caps()` before spend and throw `GovernanceHaltError`; the agent loop catches it, calls `halt_agent_run()`, and finalizes the run with `status='halted'`. Blocked attempts log `ai_events.status='blocked'` with `error_message='governance_halt:<kind>'`.
+  - **Cron:** `pg_cron` hits `/api/public/hooks/approvals-tick` every minute → expires approvals past `expires_at` and flips `escalation_state`.
+  - **Verification checklist:** (a) toggle workspace pause → start any mission → call is rejected with a `governance_halt:kill_switch` event; (b) set a tiny `mission_spend_cap_usd` on a run → next step halts with `governance_halt:mission_spend_cap` and the run row shows `status='halted'`; (c) leave an approval past its `expires_at` → within ~1 min it shows expired in the Approvals panel.
 
 **0.7 — Prompt-injection defense** `[new]` · `P0` · `FND/NFR`
 - What: treat all ingested/external content (signals, tickets, MCP/A2A results, web) as untrusted.

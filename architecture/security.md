@@ -31,6 +31,8 @@ This is the trust layer that makes autonomy sellable to enterprises — and a co
 - **Capability scopes** — per MCP token / A2A peer; per-tool rate limits. See [`integrations.md`](./integrations.md).
 - **Reversibility** — checkpoints + cancellation + replay; side effects gated so they can be reviewed before they happen.
 
+**Governance surface (operator UI).** The user-facing controls for everything above live at `/_authenticated/governance` (sidebar → AI Ops → Governance): kill-switch toggle (with paused-banner in `AppShell`), per-mission token/spend caps with live usage, and the stale-approvals panel (extend / approve / reject). Operator walkthrough + verification checklist: [`../docs/feature-backlog.md`](../docs/feature-backlog.md) §0.6 "How to use / verify".
+
 ## Compliance posture (future, designed-for-now)
 RLS multi-tenancy, audit logs, encrypted secrets, and approval trails are the substrate for SOC 2 / ISO-class controls. Self-host/data-residency options are a stack property (Supabase is self-hostable — see [`docs/decisions/tech-stack.md`](../docs/decisions/tech-stack.md)). Build these controls in from day one so enterprise sales is minor configuration, not a re-architecture.
 
