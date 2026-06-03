@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ workspaceId: z.string().uuid().optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}))
   .handler(async ({ context, data }) => {
     let workspaceId = data.workspaceId;
     
