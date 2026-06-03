@@ -227,4 +227,35 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 
 ---
 
+### 2026-06-03 — Extend Proof Platform → v1.1: full PM lifecycle on real systems via agentic orchestration
+
+**Decision:** Extend the Agentic Proof Platform from a front-half slice (Discover → Define → Plan) to the **entire product-management lifecycle**: Discover → Define → Plan → Build → Test → Ship → Launch → Support → Learn → re-feeds Discover. The previously deferred backlog (S4 Build, S5 Test, S6 Ship, L Launch, M Support) is **un-deferred** for the proof platform — but ships as **thin agentic orchestration over existing tools**, not as new autonomous IDEs / CI / helpdesks.
+
+**Realism rule (the constraint that keeps scope sane):** Agents orchestrate existing tools where the tool already exists; they don't replace them. Concretely:
+- Build = Builder opens a **real scoped PR** on the Cadence repo via GitHub MCP (not a new IDE; not Cursor/Devin).
+- Test = Builder reads **existing GitHub Actions** results (not a new test runner).
+- Ship = approval-gated merge + ingest the **existing deploy webhook** (not a new pipeline).
+- Launch = changelog + **one outbound channel** (Slack OR email), send-gated by approval.
+- Support = **one inbound channel** (email forward or webhook) → ticket → linked to PRD/opportunity → loops back as a signal.
+- Learn = Analyst attaches outcome → re-scores opportunity → next Discovery cycle reflects it.
+
+**Sub-decisions:**
+1. **Full-lifecycle by orchestration, not replacement.** The thesis is "agent-native operating *system*" — agents drive the existing PM stack. Building our own IDE/CI/helpdesk would dilute the thesis and is out of scope at any depth beyond what's listed above.
+2. **Builder agent writes to the Cadence repo itself** (option (a) in the plan). Requires a `GITHUB_TOKEN` runtime secret with `repo` scope, added when Bundle 9 starts (not now). Branch protection on `main` ensures no agent can bypass review; every merge is approval-gated through Cadence's own Decision Queue.
+3. **One channel per stage in v1.1.** One outbound channel (Slack OR email) for Launch; one inbound channel for Support. Depth comes after the loop closes, not before.
+4. **Proof bars are per-bundle and end-to-end.** Bundle 9 is not "done" until a real PR exists on the Cadence repo for a real planned task. Bundle 10 not "done" until a real merge fires a real deploy that lands in the Mission Graph. Etc.
+5. **Seven new reserved IDs:** N1 (GitHub-issues sync), I-thin (Builder scoped PR), J-thin (CI read), K-thin (merge gate + deploy webhook), L-thin (changelog + one channel), M-thin (one inbound channel), Z1 (Analyst learn loop).
+
+**Why:** A half-lifecycle demo (Discover → Plan) does not prove the product to a PM audience — a real PM walks the *whole* loop every week. v1's demo was credible to a YC reviewer but not yet credible to a design-partner CTO. v1.1 makes the loop close on real systems, so the same artifact (signal → opportunity → PRD → PR → deploy → ticket → re-scored opportunity) is the demo *and* the daily working surface.
+
+**Tradeoffs considered:**
+- *Build a full autonomous coding agent (compete with Cursor/Devin):* rejected — multi-quarter scope, off-thesis (we're the OS, not the IDE), and the operator-as-judge story is stronger with scoped PRs on a real repo.
+- *Keep S4–S6 deferred and ship v1 as-is:* rejected — user feedback explicitly: "the complete lifecycle should be covered, not half-baked." Half-lifecycle reads as half-product to a PM audience.
+- *Stage launch + support across multiple channels:* rejected — depth before the loop closes inverts the priority. One channel per stage now; multi-channel after Bundle 12 ships.
+- *Use a throwaway demo repo for Builder writes:* rejected — weakens the Cadence-on-Cadence story; branch protection makes the real-repo choice safe.
+
+**Impact:** `docs/feature-backlog.md` updated: section title `(v1)` → `(v1.1) — full product lifecycle, end-to-end on real systems`, added Realism Rule table (9 lifecycle stages), expanded bundles 8→12 (added 9 Build+Test, 10 Ship, 11 Launch, 12 Support→Learn), expanded build sequence 8→12 steps, added Demo narrative paragraph, expanded Real-data seeding to include repo-write decision, rewrote Explicitly-deferred list to reflect orchestration-not-replacement scope, added 7 new reserved-ID stubs (N1, I-thin, J-thin, K-thin, L-thin, M-thin, Z1), refreshed live status board (Next up + Progress + Recent log). `plan.md` §4 logged. `active-task.md` unchanged — FND-RUNTIME 0.9 is still next; no in-flight work invalidated. No code, schema, RLS, or secret changes in this session.
+
+---
+
 *This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-03.*
