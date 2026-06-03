@@ -1,0 +1,508 @@
+================================================================================
+LOVABLE KNOWLEDGE FIELD — Complete Co-Development Instructions
+Copy/Paste ENTIRE CONTENT into Lovable.dev Settings -> Knowledge field -> Save
+Last updated: 2026-06-03
+================================================================================
+
+HOW TO START EVERY SESSION:
+Before you write a single line of code, do this:
+  1. Pull the latest from GitHub (main branch) — this gives you all work done
+     by Claude Code, Antigravity, Gemini, and other Lovable sessions.
+  2. Read the files below in the order listed in Section 2. They give you the
+     full context: what we are building, where we left off, and what is next.
+  3. Do NOT start from this Knowledge field alone — it explains the system but
+     the live state (what task is active, what is built, what changed recently)
+     lives in the repository files. GitHub is the source of truth.
+
+The Knowledge field you are reading now is the orientation guide. The repository
+is where the actual work, decisions, and context live. Always start from git.
+
+================================================================================
+SECTION 1: WHAT YOU ARE BUILDING & WHY (READ FIRST)
+================================================================================
+
+PROJECT: Cadence — Autonomous Product OS
+
+POSITIONING (one paragraph):
+Cadence is the autonomous product OS — a swarm of specialist agents runs the
+entire product lifecycle (discover, define, plan, build, test, ship, launch,
+support, learn) continuously and in parallel, while a human governs the calls
+that matter. AGENTS DO. HUMANS GOVERN. It is not a PM tool with AI bolted on,
+and it is not a copilot. Agents are the operators. The human sets strategy and
+approves at governance gates. The platform runs continuously — it is never
+"done." Full thesis: README.md. Strategic positioning: docs/strategy/
+
+THREE EQUAL TARGET PERSONAS:
+- Solo / Lead PM at AI-native B2B SaaS: "Your agents handle the process. You
+  handle the judgment." Pain: mechanical work crowds out real product thinking.
+- Founder operating as the whole product org: "Run the product org you can't
+  afford to hire." Pain: tool sprawl + being the glue across the lifecycle.
+- Technical Founder / Indie Hacker: "Your product org, running itself." Pain:
+  everything that isn't coding falls on them.
+
+YOUR ROLE IN CADENCE:
+You (Lovable) build the UI/frontend layer — the interface through which humans
+govern agents and observe the autonomous product lifecycle. Every page, component,
+and surface you build is a governance interface: operators set intent, review
+outcomes, approve gates, and watch agents work. Design for the governor, not
+the operator.
+
+================================================================================
+SECTION 2: CONTEXT READING ORDER (READ BEFORE CODING)
+================================================================================
+
+FIRST SESSION OR WHEN CONTEXT IS STALE:
+1. README.md (5 min read)
+   — Autonomous product OS thesis, three personas, MOAT, operating model
+   — Go here when: you need to understand the product direction
+
+2. AGENTS.md sections 0-4 (10 min read)
+   — What we are building ("agents do, humans govern")
+   — Pre-action protocol, skill/agent/plugin/MCP scan mandate
+   — Engineering rules, behavioral guidelines
+   — Go here when: you need to understand how to work here
+
+3. docs/strategy/ (2 min — find latest version)
+   — Open docs/strategy/README.md to find the current version
+   — Read the latest positioning file (e.g., v2-positioning-2026-06-02.md)
+   — Go here when: you need the strategic USP, feature rationale, or personas
+
+4. plan.md section 1-3 (5 min read)
+   — Full feature scope, build order, active build log
+   — 6-agent durable roster + ephemeral model (section 6)
+   — Go here when: you need the big picture build sequence
+
+5. skills.md (scan, don't memorize)
+   — Available skills/agents/plugins for this project
+   — Go here when: you need to know what tools to invoke
+
+EVERY SESSION START:
+0. docs/strategy/README.md — find the latest positioning version, read it
+   — Strategic source of truth: personas, USP, what to build and why
+   — Always read the LATEST version (check the index for current file)
+
+1. docs/feature-backlog.md -> Live status board (2 min read)
+   — Now building, Next up, Blocked / stuck, Progress, Recent log
+   — Check "Now building" — is another tool already on your task?
+
+2. active-task.md (if it exists in repo root — REQUIRED)
+   — The exact sub-steps currently in-flight from the last tool
+   — If it exists, follow it precisely. Do NOT skip it.
+
+3. docs/strategy/session-decisions.md (1 min skim)
+   — Major strategic decisions from recent sessions
+   — Why things are the way they are — context without re-reading full history
+
+4. docs/git-discipline.md (cross-tool git standard)
+   — Every commit/push/pull must include a one-line WHY explaining impact
+   — Review before your first commit of the session
+
+FOR SPECIFIC DECISIONS:
+— "How should I build this component?" -> architecture/frontend.md
+— "What design tokens exist?" -> design.md + src/styles.css
+— "What's the AI message UI contract?" -> design.md section "AI message UI"
+— "How do server functions work?" -> architecture/frontend.md or CLAUDE.md
+— "What's the auth/tenancy model?" -> architecture/security.md
+— "How should I commit?" -> docs/git-discipline.md
+— "What's the product strategy/USP?" -> docs/strategy/ (latest version)
+— "What strategic decision was made?" -> docs/strategy/session-decisions.md
+— "What features are planned?" -> docs/feature-backlog.md
+— "What's the agent architecture?" -> plan.md section 6
+
+================================================================================
+SECTION 3: SKILL / AGENT / PLUGIN / MCP SCANNING (non-negotiable, every task)
+================================================================================
+
+MANDATORY FIRST STEP — fires before every task. Do not wait for the user to ask.
+
+Before any task, you MUST scan ALL FOUR categories:
+1. SKILLS — scan the full library (700+) across all namespaces
+2. AGENTS — check available specialist agents for the task type
+3. PLUGINS — check installed plugins that might apply
+4. MCP SERVERS — check available MCP tools for the task
+
+Rules: scan ALL categories equally · no vendor/namespace bias
+Examples below are NOT exhaustive · pick the absolute best fit from all four
+
+REFERENCE EXAMPLES (not exhaustive, not prescriptive):
+  Process & discipline: superpowers:brainstorming, superpowers:debugging, superpowers:tdd
+  Code review: ecc:typescript-reviewer, ecc:python-reviewer, pr-review-toolkit:code-reviewer
+  Security: ecc:security-reviewer, ecc:a11y-architect
+  Database: ecc:database-reviewer, ruflo-migrations:migrate-create
+  Design: frontend-design, design-taste-frontend, emil-design-eng, figma:*
+  Build: ecc:build-fix (language-specific variants also available)
+  Docs: context7-plugin, ecc:update-docs
+
+The full list has 700+ skills. You MUST search beyond these examples.
+
+================================================================================
+SECTION 4: BEHAVIORAL GUIDELINES (applies to ALL tools equally)
+================================================================================
+
+BEFORE YOU START CODING (after scanning skills, follow this):
+  - Read active-task.md if it exists — it is your exact checklist
+  - Check the Live status board — is another tool building this?
+  - State assumptions explicitly. If uncertain, ask. Do NOT guess.
+  - If multiple interpretations exist, present them. Do NOT pick silently.
+  - If a simpler approach exists, say so. Push back.
+  - State a brief plan before you code (even for 30-min tasks).
+
+WHILE CODING:
+  - Minimum code that solves the problem. Nothing speculative.
+  - No features beyond what was asked.
+  - No abstractions for single-use code.
+  - Touch ONLY what the task requires. Every changed line must trace to the request.
+  - Match existing style, even if you would do it differently.
+  - Commit small (5-15 min chunks), push immediately.
+  - Update docs in the same commit (design.md, architecture/frontend.md, etc.).
+
+SUCCESS CRITERIA (define upfront, verify before declaring done):
+  - "Build Signal card" -> "Component renders with mock data, fetches real data,
+    matches design.md tokens"
+  - "Fix the bug" -> "Write a test that reproduces it, then make it pass"
+  - Verify before declaring done. Don't assume.
+
+Full behavioral guidelines: AGENTS.md section 4
+
+================================================================================
+SECTION 5: PARALLEL DEVELOPMENT MODEL (No code silos, document-driven handoff)
+================================================================================
+
+NO CODE OWNERSHIP. All tools are equal. Whoever is working owns that task.
+
+Full detail: docs/decisions/parallel-development-model.md
+
+PRINCIPLE:
+You (Lovable) can work on ANY file in the codebase. So can Claude Code,
+Antigravity, and Gemini. There are no restricted files. There are no "Claude
+Code only" or "Lovable only" layers. This is a multi-tool workspace.
+
+RESPONSIBILITY:
+Whoever touches a file or task becomes its temporary owner. Your job is to:
+  1. Document what you are doing (in active-task.md, status board)
+  2. Document WHY you are doing it (thought process, decisions)
+  3. Document what you DID (what changed, why it changed)
+  4. Document what is NEXT (what the incoming tool should do)
+  5. Leave the codebase in a known state for the next tool
+
+THE HANDOFF MECHANISM (replaces code ownership):
+  - active-task.md — exact checklist of what is in-flight, what is done
+  - Live status board (docs/feature-backlog.md top) — current task ID, blocks
+  - docs/strategy/session-decisions.md — major strategic decisions made
+  - Git commits — clear messages explaining WHY changes were made
+  - Docs — architecture/frontend.md, design.md, AGENTS.md kept true with code
+
+CONFLICT AVOIDANCE:
+  - Always check the Live status board BEFORE you start
+  - If another tool is actively working on the same file: STOP and wait
+  - Commit often (5-15 min), push immediately so other tools see your work
+  - When you end, leave active-task.md true so the next tool knows where you stopped
+
+FILES ARE SHARED. DOCUMENTATION IS THE BOUNDARY.
+
+EVERY TOOL (Lovable, Claude Code, Antigravity, Gemini) OWNS:
+  - active-task.md — keep it true
+  - status board (docs/feature-backlog.md) — update it
+  - code quality — write clean, documented code
+  - code documentation — keep design.md, architecture/*, ENTRY.md in sync
+  - handoff documentation — leave the next tool with full context
+
+NO TOOL EXCLUSIVELY OWNS:
+  - Any file in src/
+  - Any file in supabase/
+  - Any doc in architecture/
+  - Any layer or "responsibility"
+
+================================================================================
+SECTION 6: SESSION WORKFLOW (START -> BUILD -> END)
+================================================================================
+
+EVERY SESSION: START HERE
+─────────────────────────
+0. SCAN SKILLS/AGENTS/PLUGINS/MCP — MANDATORY (see Section 3)
+
+1. PULL the latest from main (via GitHub sync)
+   -> Ensures you have all work from Claude Code, Antigravity, Gemini
+
+2. READ docs/strategy/README.md — find and read the latest positioning version
+   -> Understand the current strategic direction before touching any feature
+
+3. READ active-task.md (if it exists in repo root)
+   -> This is your exact handoff. Sub-steps, checklist, gotchas.
+   -> If it exists, follow it precisely. Do NOT skip it.
+
+4. OPEN docs/feature-backlog.md, find "Live status board" at the top
+   -> Check "Now building" — is another tool already on your task?
+      If YES: STOP. Wait or pick a different task.
+   -> Check "Next up" — this is your next task ID
+   -> Check "Blocked / stuck" — any unblocked issues you can help with?
+
+5. SKIM docs/strategy/session-decisions.md
+   -> Any recent decisions that affect what you are about to build?
+
+6. State your plan (before coding)
+   Example: "F1.2: Build Signal card component
+            1. Create src/components/SignalCard.tsx -> verify: renders with mock
+            2. Wire to TanStack Query -> verify: data loads
+            3. Style with design.md tokens -> verify: matches tokens"
+
+7. START BUILDING
+
+WHILE YOU BUILD (ongoing, every 5-15 minutes)
+─────────────────────────────────────────────
+  - COMMIT your work (logical, small units) with a WHY message
+  - PUSH immediately (so Claude Code sees it on next pull)
+  - If you touch design.md tokens or architecture: UPDATE those docs in same commit
+  - If you make a strategic decision: add to docs/strategy/session-decisions.md
+
+BEFORE YOU END YOUR SESSION (non-negotiable)
+─────────────────────────────────────────────
+1. PUSH all uncommitted work
+
+2. UPDATE the Live status board in docs/feature-backlog.md:
+   IF FEATURE IS DONE:
+   - Mark the feature as checked (checkbox filled)
+   - Add one line to "Recent log": "2026-MM-DD · Lovable · brief description"
+   - Reset "Now building" to empty
+   IF FEATURE IS PAUSED (mid-work):
+   - Leave "Now building" set: "TaskID · Lovable · main"
+   IF YOU HIT A BLOCKER:
+   - Add to "Blocked / stuck": "TaskID · blocker · unblocks when condition"
+
+3. CREATE or UPDATE active-task.md (repo root):
+   Task ID: F1.2
+   Name: Build Signal card component
+   Sub-steps:
+   - [x] Create SignalCard.tsx component
+   - [ ] Wire TanStack Query to /api/signals
+   - [ ] Style with design.md tokens
+   Gotchas: (any non-obvious facts for the next tool)
+   Done criteria: (what "done" looks like)
+
+4. ADD TO session-decisions.md if a strategic decision was made
+
+5. COMMIT and PUSH all status updates
+   Commit message: "docs: update status board — F1.2 Signal card in progress"
+
+================================================================================
+SECTION 7: MULTI-TOOL CONSISTENCY & SOURCE OF TRUTH
+================================================================================
+
+CANONICAL SOURCE OF TRUTH HIERARCHY:
+  - AGENTS.md: operating rules (ALL tools follow this)
+  - docs/strategy/: versioned positioning history (always read the latest version)
+  - docs/strategy/session-decisions.md: major strategic decisions log
+  - README.md: product face (derived from strategy/)
+  - docs/feature-backlog.md: feature list and live status
+  - architecture/: technical contracts
+
+TOOL-SPECIFIC POINTERS:
+  - CLAUDE.md — Claude Code specifics (references AGENTS.md for rules)
+  - GEMINI.md — Gemini/Antigravity specifics (references AGENTS.md for rules)
+  - This Knowledge field — Lovable specifics (references AGENTS.md for rules)
+  - docs/decisions/parallel-development-model.md — detailed parallel dev model
+
+WHY NO DUPLICATION?
+Duplication creates drift. Rules live in AGENTS.md once. Positioning lives in
+docs/strategy/ once. When you update a rule, update it in AGENTS.md. When you
+update positioning, update the latest docs/strategy/vN file and cascade to README.
+
+FINDING THE LATEST POSITIONING:
+Always open docs/strategy/README.md first — it indexes all versions and marks
+which is current. As of writing: v2-positioning-2026-06-02.md is current.
+A newer version may exist by the time you read this. Always read the latest.
+
+================================================================================
+SECTION 8: THE CLOSED DOCUMENTATION LOOP (standing order)
+================================================================================
+
+RULE: Every feature, every decision -> documented in the same commit.
+A change is not done until its documentation is true.
+
+SKILL-GENERATED DOCS RULE:
+When any skill (gstack-office-hours, gstack-document-release, to-prd, etc.)
+generates new files or folders, do NOT leave them in arbitrary new locations.
+  1. Check if an existing document serves the same purpose — merge if yes
+  2. If content is unique, place in the correct existing folder:
+     - Positioning/strategy -> docs/strategy/vN-positioning-YYYY-MM-DD.md
+     - Technical decisions -> docs/decisions/
+     - Research/reference -> docs/references/
+     - Feature specs -> docs/feature-backlog.md
+  3. Update the relevant README/index in that folder
+  4. Delete the skill-generated file from the wrong location
+  Example: gstack-office-hours creates docs/office-hours/ -> merge into
+  docs/strategy/ (a new version file) and delete docs/office-hours/
+
+SESSION DECISIONS RULE:
+When a session produces a major strategic decision or significant tradeoff,
+add an entry to docs/strategy/session-decisions.md in the same session.
+This is a continuous obligation — not a one-time activity.
+
+POSITIONING VERSION RULE:
+When a significant positioning change is made (new personas, USP change, major
+feature direction change), create a new version: docs/strategy/vN-positioning-YYYY-MM-DD.md
+and update docs/strategy/README.md index.
+
+WHEN YOU BUILD SOMETHING, ALSO UPDATE:
+  - New UI component? -> architecture/frontend.md
+  - New design token? -> design.md (token table)
+  - New route or page? -> ENTRY.md (file tree)
+  - Finished a task? -> Live status board + active-task.md (same commit)
+  - Strategic decision made? -> docs/strategy/session-decisions.md
+  - Pattern or gotcha discovered? -> AGENTS.md section 4
+
+================================================================================
+SECTION 9: TECH STACK & CONSTRAINTS (reference)
+================================================================================
+
+TECH STACK (do not change without explicit decision):
+  - React 19 + TanStack Start (full-stack framework)
+  - Vite 7 (build tool)
+  - Tailwind v4 (styling)
+  - shadcn/ui (component library, new-york variant)
+  - Radix (headless UI primitives)
+  - Lucide (icons — no mixed icon sets)
+  - TanStack Query (data fetching)
+  - Framer Motion / Motion (animations)
+  - Supabase (database — read-only from Lovable's side)
+
+TECH STACK DECISION RATIONALE:
+The existing stack was chosen deliberately for co-development across Lovable,
+Claude Code, Antigravity, and Gemini. Changing the stack risks breaking the
+co-development workflow. Any tech change must preserve Lovable compatibility.
+Full rationale: docs/decisions/tech-stack.md
+
+HARD LIMITS — these break the co-development workflow for all tools:
+  - Do not force-push to main (destroys committed work from other tools)
+  - Do not use long-lived feature branches (all tools work on main)
+  - Do not change the core tech stack without a decision doc in docs/decisions/
+
+PATTERNS TO FOLLOW:
+  - Use semantic Tailwind tokens from design.md (never hex literals)
+  - Loader + Suspense for data loading (not useEffect + fetch)
+  - TanStack Query for server state (useQuery, useMutation with queryKey)
+  - TanStack Server Functions for API calls (import from src/lib/*.functions.ts)
+  - Motion via Framer Motion (respect prefers-reduced-motion)
+  - Error boundaries on every route
+
+================================================================================
+SECTION 10: IF YOU HIT A BLOCKER
+================================================================================
+
+WHEN YOU ARE STUCK:
+1. Identify what is blocking you
+2. Update docs/feature-backlog.md "Blocked / stuck" field:
+   Example: "F1.2 · Missing /api/signals endpoint · unblocks when Claude Code delivers it"
+3. Leave "Now building" set (so next tool knows where you stopped)
+4. STOP working (do not hack around it)
+5. Another tool will see the blocker on next pull and help
+
+COMMON BLOCKERS:
+  "Need API endpoint" -> "F1.2 · Waiting for /api/signals from Claude Code"
+  "Need database schema info" -> "F1.2 · Need signals schema — check architecture/data.md or existing migrations"
+  "Unclear requirement" -> "F1.2 · Task spec unclear on signal fields · needs clarification"
+  "Design tokens missing" -> "F1.2 · Token --color-signal not in design.md · needs addition"
+  "Strategic decision needed" -> "F1.2 · Should this be a modal or a slide-over? · needs direction"
+
+================================================================================
+SECTION 11: SYNC PATTERN (how all tools stay in sync)
+================================================================================
+
+ACTIVE BRANCH: main (always)
+No long-lived feature branches. All tools work on main and push frequently.
+
+SYNC CADENCE:
+  - Lovable: push every 5-15 min
+  - Claude Code: pulls at session start + on demand
+  - Antigravity: pulls at session start
+  - Gemini: pulls at session start
+
+LIVE CURSOR (the shared state):
+  - docs/feature-backlog.md Live status board: what is being built right now
+  - active-task.md: exact sub-steps in flight
+  - docs/strategy/session-decisions.md: strategic context from sessions
+  - git log: recent 5 commits show what changed and why
+
+CONFLICT RESOLUTION:
+1. First tool to commit and push wins
+2. Second tool pulls, resolves merge conflict, pushes again
+3. Note in status board if it was tricky
+
+================================================================================
+SECTION 12: MEMORY & SESSION CONTEXT
+================================================================================
+
+HOW CONTEXT PERSISTS ACROSS SESSIONS:
+
+  - .remember/now.md — live buffer for the active session (Claude Code only)
+  - .remember/today-YYYY-MM-DD.md — daily log
+  - docs/strategy/session-decisions.md — major strategic decisions (ALL tools)
+  - docs/feature-backlog.md Live status board — current build state (ALL tools)
+  - active-task.md — in-flight task sub-steps (ALL tools)
+  - git log --oneline -5 — last 5 commits (what changed and why)
+
+WHAT THIS MEANS FOR YOU (LOVABLE):
+When you start a session, you have full context from:
+1. docs/strategy/ (what we are building and why)
+2. docs/feature-backlog.md (what task is next)
+3. active-task.md (exactly where the last tool stopped)
+4. docs/strategy/session-decisions.md (major decisions from prior sessions)
+5. git log (recent changes and their reasons)
+
+You do NOT need to re-derive context from scratch. Read these files, pick up
+where the last tool left off, and contribute your work with the same standards.
+
+================================================================================
+SECTION 13: PRODUCT AGENT ROSTER (what agents are running in Cadence)
+================================================================================
+
+Cadence runs 6 durable specialist agents (one per lifecycle band) plus ephemeral
+specialists spawned by the Orchestrator for sub-tasks. Full roster: plan.md section 6.
+
+DURABLE AGENTS:
+  - Orchestrator: coordinates missions, spawns specialists, manages approval routing
+  - Discovery: signal ingest, clustering, themes, opportunities, continuous feed
+  - Strategist: cited PRD/spec, task graph, roadmap, anti-feature-factory guardrail
+  - Builder: autonomous coding, test generation + QA gating, PR/deploy/release
+  - Growth: launch/GTM/pricing assets, support triage (closes loop to Discovery)
+  - Analyst: outcome measurement, re-score opportunities, insight memo, learn loop
+
+EPHEMERAL SPECIALISTS: spawned by Orchestrator per task (competitor scan, UX
+critique, stakeholder brief, data analysis, etc.). No permanent seats.
+
+TRUST ARC (product behavior, not a design spec):
+Agents start with closer governance (operator approves frequently) and earn
+autonomy through demonstrated performance. Four stages: Observing -> Proving ->
+Trusted -> Ambient. The Agent Trust Score (C6) and Autonomy Dial (C6) make this
+visible. Full feature spec: docs/feature-backlog.md feature C6, E8.
+
+================================================================================
+QUICK REFERENCE: WHERE TO FIND THINGS
+================================================================================
+
+Question                                         Go to
+──────────────────────────────────────────────  ─────────────────────────────
+"What is Cadence and why?"                       README.md
+"What is the current product strategy/USP?"      docs/strategy/ (latest version)
+"Why was this strategic decision made?"           docs/strategy/session-decisions.md
+"What are the rules and principles?"             AGENTS.md sections 0-4
+"What is the multi-tool co-dev model?"           docs/decisions/parallel-development-model.md
+"What is the build sequence and roadmap?"        plan.md sections 1-3
+"What agent roster does Cadence use?"            plan.md section 6
+"What is my next task?"                          docs/feature-backlog.md (status board)
+"How do I build a React component?"              architecture/frontend.md
+"What design tokens exist?"                      design.md + src/styles.css
+"How does auth work?"                            architecture/security.md
+"What is the database schema?"                   architecture/data.md (read-only)
+"How do server functions work?"                  architecture/frontend.md or CLAUDE.md
+"Am I duplicating existing code?"                src/components/ (read patterns)
+"What skills/agents are available?"              skills.md
+"How do I write a test?"                         AGENTS.md section 3
+"Is another tool already on this task?"          docs/feature-backlog.md (Live status board)
+"Where is the tech stack decision?"              docs/decisions/tech-stack.md
+"What is the naming shortlist?"                  docs/decisions/naming.md
+"How should I commit?"                           docs/git-discipline.md
+
+================================================================================
+END OF LOVABLE KNOWLEDGE FIELD
+================================================================================

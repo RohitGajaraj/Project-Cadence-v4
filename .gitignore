@@ -20,6 +20,19 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Secrets — never commit real env values; .env.example is the committed template
+.env
+.env.*
+!.env.example
+
+# Stray clones / not part of this project
+playwright-cli/
+
+# nango: a standalone integrations *service*, not app source — the app imports
+# nothing from it. Kept out of the repo; run it as a separate backend (Nango Cloud
+# or self-hosted) and reach it via SDK + env. See AGENTS.md §10 / plan.md §4.
+nango/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
