@@ -19,11 +19,12 @@
 | Field | Current |
 |---|---|
 | 🔨 **Now building** | — nothing in flight (set to the feature ID + tool + branch when work starts) |
-| ⏭️ **Next up** | **Step 1 — Foundation hardening** · FND-RUNTIME (0.9) durable runtime decision · then FND-CACHE (0.2 cache stage) · tickets in [`foundation-audit.md`](./foundation-audit.md) |
+| ⏭️ **Next up** | **YC demo cut — Step 1** · FND-RUNTIME (0.9) durable runtime · then FND-CACHE (0.2 cache stage). Full demo-cut sequence in [§ YC demo cut](#-yc-demo-cut-the-minimum-set-that-proves-the-thesis) below. |
 | 🚧 **Blocked / stuck** | — none (record the ID, the blocker, and what unblocks it) |
-| 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 4. Done: 1, 2, 6, 7. Not started: 3, 4, 8. Cross-cutting (S–X) pulled into step 1. |
+| 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 4. Done: 1, 2, 6, 7. Not started: 3, 4, 8. Cross-cutting (S–X) pulled into step 1. **YC-cut overlay:** capability bundles 1 (foundation) ◑ · 2–8 ☐. |
 
 **Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-06-03` — Locked YC demo cut: 8 capability bundles centered on agent-to-agent comms + handoff (E1–E6), Founder-as-PM persona, autonomous Build/Test/Ship (S4–S6) explicitly deferred, real demo data. Added [§ YC demo cut](#-yc-demo-cut-the-minimum-set-that-proves-the-thesis) with bundle→backlog-ID mapping + 6-step sequence; seeded `active-task.md` for FND-RUNTIME (0.9); logged decision in `docs/strategy/session-decisions.md`.
 - `2026-06-03` — Documented FND-KILLSWITCH (0.6) UI: added "How to use / verify" block under 0.6 with operator walkthrough (`/_authenticated/governance` panels, paused banner, verification checklist) and persisted standing doc-loop rules to project memory so every future session applies them automatically.
 - `2026-06-03` — Completed FND-KILLSWITCH (0.6): `kill_switches` table + `current_kill_state` RPC; `agent_runs` mission caps + atomic usage; `agent_approvals` TTL + `/api/public/hooks/approvals-tick` (pg_cron, every minute); chokepoint enforcement in `callModel`/`callModelStream` via typed `GovernanceHaltError`; `/_authenticated/governance` UI + AppShell paused indicator.
 - `2026-05-31` — Completed implementation of 0.7 (FND-INJECTION): XML-escaped and isolated RAG context chunks + tool results, and programmatic override to force injection rules to block.
@@ -36,6 +37,54 @@
 - **Hitting a wall** → add to **Blocked / stuck**: the ID, the blocker, what unblocks it.
 - **Finishing a feature** → flip its `[status]`/rollup mark to `☑`, append a one-liner to **Recent log** *and* [`../plan.md`](../plan.md) §4, recompute **Progress**, and reset **Next up** from the rollup.
 - Always refresh **Last updated** (date · tool · branch).
+
+---
+
+## ▶ YC demo cut — the minimum set that proves the thesis
+
+> **What this is.** A scope overlay — not a new roadmap. The exhaustive backlog below is unchanged. This section picks the smallest subset of existing features whose *combined demo* proves the Cadence thesis to a YC reviewer in ~90 seconds: **agents run the product lifecycle; humans govern. Agents talk to agents, hand work to agents, and finish missions end-to-end.**
+>
+> **Locked decisions (2026-06-03):** Demo persona = **Founder-as-PM** ("run the product org you can't afford to hire"). Autonomous Build/Test/Ship (S4–S6) **deferred** from the demo and positioned as "foundation built, next milestone." Demo data = **real product** (yours or a design partner), not synthetic. Reasoning + tradeoffs in [`../docs/strategy/session-decisions.md`](../docs/strategy/session-decisions.md).
+>
+> **The thesis demo, one sentence:** the operator types one intent → the Orchestrator spawns specialist agents → they message and hand off to each other across Discover → Define → Plan → one item triggers an approval gate → the operator approves → Product Memory shows the full lineage → the operator exports it.
+
+### The 8 capability bundles
+
+Each bundle composes existing backlog IDs; nothing here is a parallel scope. Bundles are ordered by the dependency chain, not priority.
+
+| # | Bundle | Why core for YC | Backlog IDs | Status |
+|---|---|---|---|---|
+| 1 | **Governed foundation** — tenancy, AI chokepoint, trust tables, blast-radius, kill-switch + spend caps, injection defense, durable runtime | Proves governance is a first-class product layer, not a slide. The reason enterprises will trust autonomous agents. | 0.1, 0.2, 0.3, 0.5, **0.6** ✅, **0.7** ✅, 0.9, A1/A2 | ◑ (0.6 + 0.7 done; 0.9 next) |
+| 2 | **Strategic Briefing surface** — set product north star, goals, constraints; every agent reads it as operating context | The "humans govern" entry point. One place the operator sets intent that the whole swarm honors. | C5 (new) | ☐ |
+| 3 | **Agent roster + Trust Score + Autonomy Dial** | Makes "agents are operators, not tools" visible. A reviewer sees a team, not a chatbot. | C1, C2, C3, C4, **C6** (new) | ☐ |
+| 4 ⭐ | **Agent-to-Agent comms + handoff + sub-agent spawning** | **The thesis.** Orchestrator spawns specialists; they message each other; missions hand off across stages with zero human relay. This is the YC differentiator. | E1, E2, E3, E4, E5 | ☐ |
+| 5 | **Live Mission Graph** — "watch the agents work" | The screenshot for the YC deck. Single DAG view of all running agents + sessions + cost + approval state. | E6, X1 | ☐ |
+| 6 | **One vertical end-to-end slice** — Discover → Define → Plan executed by 3 agents handing off via #4 | Proves the loop actually runs, not just that the parts exist. Uses real seeded signals. | F1, F2, F3, G1, H1 | ◑ (legacy parts reusable) |
+| 7 | **Decision Queue + approval gates** | The "humans govern" surface. Every high-risk action lands here with rationale + lineage. | D3, P-approvals | ◑ (reusable) |
+| 8 | **Product Memory + lineage + full data export** | Proves the compounding-value + anti-lock-in story. | O1, O2, U6 (new) | ☐ |
+
+### Build sequence (YC-cut overlay)
+
+1. **Finish foundation gaps** — **0.9 FND-RUNTIME** (long missions must survive worker restarts before handoff is meaningful) → **0.2 cache stage**. *(Matches existing Build-order rollup step 1.)*
+2. **C5 Strategic Briefing** — small, high-leverage; gives the swarm shared operating context.
+3. **C1/C4 + C6 skeleton** — roster UI + read-only Trust Score; scoring math can come later.
+4. **E1–E5** — the A2A primitives (protocol + tables + tracing). Hardest bundle; budget the most time here.
+5. **E6 Mission Graph** — the visualization on top of #4. Without #4 it's a fake screenshot.
+6. **Wire F1→G1→H1 through the new handoff primitives** — the demo run, using real seeded data.
+7. **D3 polish** — make it the obvious "govern here" surface.
+8. **O1/O2 lineage view + U6 Export** — anti-lock-in proof.
+
+### Explicitly deferred (NOT in the YC demo cut, NOT removed from the product)
+
+Autonomous **Build / Test / Ship** (S4–S6 — epics I, J, K), **Launch / GTM** (L), **Support** (M), external **MCP / A2A interop** (Q), advanced eval / drift / guardrail UIs beyond what the chokepoint already does, multi-product portfolio view (B3), BYO keys UI polish (A5), billing UI. Positioning for YC: *"foundation built (chokepoint, trust stack, orchestration); next milestone."*
+
+### New features this overlay adds to the backlog
+
+These need feature entries written in full when their bundle becomes the next-up task. Stubbed here so the IDs are reserved:
+
+- **C5 — Strategic Briefing surface** `[new]` · `P0` · `X1` — Single doc per product: north star, current goals, hard constraints, working agreements. Every agent loads it as system context. Versioned; changes propagate to in-flight missions on next step.
+- **C6 — Agent Trust Score + Autonomy Dial** `[new]` · `P0` · `X1` — Per-agent score derived from eval pass-rate, approval-acceptance-rate, mission success-rate. Operator can move each agent along the trust arc (Observing → Proving → Trusted → Ambient) and the dial changes the default approval mode.
+- **U6 — Full data portability / export** `[new]` · `P0` · `U` — Export signals, themes, opportunities, PRDs (markdown), decisions+lineage (JSON), agent configs (YAML), and the product-memory graph (JSON). One-click per product; scheduled exports later.
 
 ---
 

@@ -179,4 +179,26 @@
 
 ---
 
-*This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-02.*
+### 2026-06-03 — Lock a YC demo cut: 8 capability bundles, A2A as the centerpiece
+
+**Decision:** For the Y Combinator application, ship a focused demo cut composed of 8 capability bundles built from existing backlog IDs. The product scope is unchanged; this is a scope *overlay* that defines what must be demo-ready first. The centerpiece is bundle #4 — agent-to-agent communication, structured messaging, mission handoff across stages, sub-agent spawning, and parallel sessions (E1–E5) — surfaced through a Live Mission Graph (E6).
+
+**Sub-decisions:**
+1. **Demo persona = Founder-as-PM** ("run the product org you can't afford to hire"). Strongest YC narrative; justifies the full-lifecycle ambition; the other two personas (Solo PM, Technical Founder) remain equal in the product but are not the demo script.
+2. **Defer autonomous Build/Test/Ship (S4–S6, epics I/J/K) from the demo cut.** Position as "foundation built (chokepoint, trust stack, orchestration); next milestone." A polished partial demo beats an unpolished full one — and reviewers reward focus.
+3. **Demo data = real product** (mine or a design partner's), not synthetic. Real signals beat seeded signals every time for YC.
+4. **Three new backlog IDs reserved:** C5 Strategic Briefing surface, C6 Agent Trust Score + Autonomy Dial, U6 Full data portability / export.
+
+**Why:** The product backlog already contains everything needed to make the YC pitch — but if every feature is "in progress," nothing is demo-ready. The YC reviewer needs to see *one* clean 90-second demo that proves the thesis (agents do, humans govern; agents talk to agents and finish missions end-to-end). Bundling existing IDs by demo-readiness rather than by epic forces sequencing discipline without scope creep.
+
+**Tradeoffs considered:**
+- *Keep S4–S6 in the demo cut:* rejected — too much surface to polish in time; any visible seam in autonomous coding hurts more than it helps.
+- *Pick the Solo PM persona for safety:* rejected — Founder-as-PM is the larger market and the stronger YC story.
+- *Ship synthetic demo data for control:* rejected — reviewers can smell synthetic data, and the Founder-as-PM frame demands a real product behind it.
+- *Build a brand-new "YC demo" track separate from the backlog:* rejected — would create exactly the kind of doc drift §5 of `AGENTS.md` forbids. Overlay instead.
+
+**Impact:** `docs/feature-backlog.md` gained a new top section "▶ YC demo cut" with the 8-bundle table, sequence, deferrals, and three new feature stubs (C5/C6/U6). Live status board "Next up" now points at the YC-cut sequence (still starting with FND-RUNTIME 0.9). `plan.md` §4 logged. `active-task.md` seeded at repo root for the immediate next sub-task (FND-RUNTIME 0.9 scoping). No code, schema, or RLS changes in this session.
+
+---
+
+*This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-03.*
