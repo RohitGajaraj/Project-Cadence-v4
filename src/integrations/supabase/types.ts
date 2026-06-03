@@ -128,6 +128,51 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_run_checkpoints: {
+        Row: {
+          created_at: string
+          id: string
+          run_id: string
+          state: Json
+          step_index: number
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          run_id: string
+          state: Json
+          step_index: number
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          run_id?: string
+          state?: Json
+          step_index?: number
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_run_checkpoints_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_run_checkpoints_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_runs: {
         Row: {
           agent_id: string | null
@@ -139,11 +184,13 @@ export type Database = {
           halted_reason: string | null
           id: string
           input: string
+          last_checkpoint_at: string | null
           mission_spend_cap_usd: number | null
           mission_token_cap: number | null
           output: string | null
           spend_used_usd: number
           status: string
+          step_index: number
           tokens_used: number
           user_id: string
           workspace_id: string | null
@@ -158,11 +205,13 @@ export type Database = {
           halted_reason?: string | null
           id?: string
           input: string
+          last_checkpoint_at?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
           output?: string | null
           spend_used_usd?: number
           status?: string
+          step_index?: number
           tokens_used?: number
           user_id: string
           workspace_id?: string | null
@@ -177,11 +226,13 @@ export type Database = {
           halted_reason?: string | null
           id?: string
           input?: string
+          last_checkpoint_at?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
           output?: string | null
           spend_used_usd?: number
           status?: string
+          step_index?: number
           tokens_used?: number
           user_id?: string
           workspace_id?: string | null
@@ -1572,6 +1623,54 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          result: Json | null
+          run_id: string | null
+          scope: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          result?: Json | null
+          run_id?: string | null
+          scope: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          result?: Json | null
+          run_id?: string | null
+          scope?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idempotency_keys_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idempotency_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kill_switches: {
         Row: {
