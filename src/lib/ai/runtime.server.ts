@@ -32,7 +32,7 @@ export class GovernanceHaltError extends Error {
 
 async function checkKillSwitch(supabase: SupabaseClient, workspaceId: string | null | undefined): Promise<void> {
   try {
-    const { data, error } = await supabase.rpc("current_kill_state", { ws: workspaceId ?? null });
+    const { data, error } = await supabase.rpc("current_kill_state", { ws: (workspaceId ?? null) as unknown as string });
     if (error) { console.error("current_kill_state failed:", error); return; }
     const row = Array.isArray(data) ? (data[0] as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | undefined) : (data as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null);
     if (!row) return;
