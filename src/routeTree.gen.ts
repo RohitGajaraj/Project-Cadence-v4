@@ -46,6 +46,7 @@ import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/hooks/eval-tick'
 import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
+import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
 import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
@@ -238,6 +239,12 @@ const ApiPublicHooksDriftTickRoute = ApiPublicHooksDriftTickRouteImport.update({
   path: '/api/public/hooks/drift-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksApprovalsTickRoute =
+  ApiPublicHooksApprovalsTickRouteImport.update({
+    id: '/api/public/hooks/approvals-tick',
+    path: '/api/public/hooks/approvals-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAgentTickRoute = ApiPublicHooksAgentTickRouteImport.update({
   id: '/api/public/hooks/agent-tick',
   path: '/api/public/hooks/agent-tick',
@@ -284,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -324,6 +332,7 @@ export interface FileRoutesByTo {
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -366,6 +375,7 @@ export interface FileRoutesById {
   '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/studio/$id'
     | '/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -448,6 +459,7 @@ export interface FileRouteTypes {
     | '/studio/$id'
     | '/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -489,6 +501,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studio/$id'
     | '/_authenticated/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -504,6 +517,7 @@ export interface RootRouteChildren {
   ApiStudioChatRoute: typeof ApiStudioChatRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
+  ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
   ApiPublicHooksEvalSuiteTickRoute: typeof ApiPublicHooksEvalSuiteTickRoute
   ApiPublicHooksEvalTickRoute: typeof ApiPublicHooksEvalTickRoute
@@ -772,6 +786,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDriftTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/approvals-tick': {
+      id: '/api/public/hooks/approvals-tick'
+      path: '/api/public/hooks/approvals-tick'
+      fullPath: '/api/public/hooks/approvals-tick'
+      preLoaderRoute: typeof ApiPublicHooksApprovalsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agent-tick': {
       id: '/api/public/hooks/agent-tick'
       path: '/api/public/hooks/agent-tick'
@@ -899,6 +920,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioChatRoute: ApiStudioChatRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
+  ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
   ApiPublicHooksEvalSuiteTickRoute: ApiPublicHooksEvalSuiteTickRoute,
   ApiPublicHooksEvalTickRoute: ApiPublicHooksEvalTickRoute,
