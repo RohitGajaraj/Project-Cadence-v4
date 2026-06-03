@@ -1,97 +1,119 @@
 
-# Plan: Agentic Proof Platform (supersedes the "YC demo cut" framing)
+# Plan: Agentic Proof Platform (v1.1) — full product lifecycle, end-to-end working
 
-## 1. Why this changes
+## 1. What changes from v1
 
-The previous cut optimized for a 90-second YC demo. Your ask is broader: prove — to YC, to design partners, to real PMs/founders — that Cadence delivers **agentic-native product management** that legacy PM tools (Jira/Linear/Productboard/ProductPlan/Aha) structurally cannot. The demo is a by-product; the platform is the point.
-
-Two shifts:
-
-- **From "demo cut" → "proof cut."** Every bundle must work end-to-end on real data, not just present convincingly for 90 seconds.
-- **From "show 8 things" → "prove 4 claims."** Each claim is something legacy PM tools cannot do, and each maps to capability bundles + a measurable proof artifact.
-
-## 2. The four claims we are proving
-
-| # | Claim (vs. legacy PM tools) | Proof artifact |
-|---|---|---|
-| C1 | **Agents operate, humans govern** — agents run multi-step missions, not assist with forms | Live Mission Graph + Decision Queue with real approval gates firing |
-| C2 | **Agent-to-agent handoff is first-class** — no human in the routing path | A2A trace: Discovery → Strategist → Planner, each reading prior agent's output, with full lineage |
-| C3 | **The whole lifecycle is one governed loop** — Discover → Define → Plan → (later: Build/Ship/Learn) | One vertical slice running on real product data, ending in a re-scored opportunity |
-| C4 | **Trust is earned and visible** — autonomy is dialed, not assumed | Trust Score + Autonomy Dial per agent, changing behavior of approval gates in real time |
-
-If a visitor cannot point to each claim being true in the running product within 5 minutes, we have not shipped the proof.
-
-## 3. The 8 capability bundles (re-scoped for proof, not demo)
-
-Order = build order. Each has an explicit **"proof bar"** — the minimum that makes the claim true, not just visible.
-
-1. **Governed Foundation** (kill-switch, mission spend caps, approval gates, audit log)
-   *Proof bar:* killing an agent mid-mission halts spend within 1 tick; every action has a row in the audit log queryable from the UI. Supports C1, C4.
-
-2. **Strategic Briefing surface** (human intent → machine-readable brief every agent reads)
-   *Proof bar:* changing the brief visibly changes the next Discovery + Strategist output. Supports C1, C3.
-
-3. **Agent Roster + Trust Score + Autonomy Dial** (6 durable agents from `plan.md` §6 visible as operators)
-   *Proof bar:* dialing autonomy from Observing → Trusted removes a specific approval gate; Trust Score moves based on real outcomes. Supports C1, C4.
-
-4. **Agent-to-Agent comms + handoff + sub-agent spawning** ⭐ the thesis (E1–E5)
-   *Proof bar:* one mission with ≥3 hops between agents, each reading prior agent's structured output via the orchestration layer (not prompt-stuffing), full trace replayable. Supports C2.
-
-5. **Live Mission Graph** (one screen showing the swarm) (E6, X1)
-   *Proof bar:* the graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens. Supports C1, C2.
-
-6. **Vertical slice: Discover → Define → Plan** on real product data
-   *Proof bar:* seeded with real signals from a real product (per your earlier answer), produces a real PRD + sprint plan, one item routed to approval, operator approves, plan updates. Supports C3.
-
-7. **Decision Queue + approval gates UX** (the governance surface)
-   *Proof bar:* every gate the agents hit lands in the queue with context (what, why, cost-if-approved, who proposed), approve/reject changes downstream behavior. Supports C1, C4.
-
-8. **Product Memory + lineage + export** (anti-lock-in, learn-loop seed)
-   *Proof bar:* every artifact (signal, theme, opportunity, PRD, decision) has lineage backward to its source; "Export everything" produces a complete, re-importable archive. Supports C3, and is the foundation for the Analyst learn loop later.
-
-**Explicitly deferred** (named, dated, linked so reviewers see them as "foundation built, next milestone" — not gaps): autonomous Build/Test/Ship (S4–S6), GTM/Launch, Support, MCP/A2A external interop, advanced eval/drift/guardrail UIs, multi-product portfolio, BYO keys, billing.
-
-## 4. Build sequence (concrete, doc-loop closed)
-
-Reuse the sequence from the prior approved plan, but each step now ships against its **proof bar**, not just a demo screen:
+You're right that a half-lifecycle demo isn't a real demo for a PM audience. v1 stopped at **Plan**. v1.1 extends through the *entire* PM lifecycle a real product manager walks every week:
 
 ```
-FND-RUNTIME 0.9 (durable runtime) → FND-CACHE 0.2
-  → Bundle 1 (Governed Foundation: kill-switch UI + spend caps + audit log query)
-  → Bundle 2 (Strategic Briefing)
-  → Bundle 3 (Agent Roster + Trust + Autonomy skeleton)
-  → Bundle 4 (A2A handoff primitives) ← hardest, longest
-  → Bundle 5 (Mission Graph reading from bundle 4)
-  → Bundle 6 (Vertical slice on real data)
-  → Bundle 7 (Decision Queue polish)
-  → Bundle 8 (Product Memory lineage + Export)
+Discover → Define → Plan → Build → Test → Ship → Launch → Support → Learn → (re-feeds Discover)
 ```
 
-Each bundle, in the same unit of work:
-- Ships against its proof bar (not "looks done")
-- Updates `docs/feature-backlog.md` Live status board + entry
-- Appends a one-liner to `plan.md` §4
-- Updates the matching `architecture/*.md` contract
-- Adds "How to use / verify" block per the Core memory rule
-- If strategic, an entry in `docs/strategy/session-decisions.md`
+Every stage runs **end-to-end, on real data, no Potemkin screens** — but with one realism rule that keeps the scope sane: **agents orchestrate existing tools where the tool already exists; they don't replace IDEs, CI, or deploy systems.** That is the on-thesis answer ("agent-native operating *system*") and the only way one operator + an agent swarm can ship the full lifecycle credibly.
 
-## 5. What changes in the docs (this turn, on approval)
+This means we **un-defer** S4–S6 (Build/Test/Ship), L (Launch/GTM), and M (Support) — but as **thin agentic orchestration** over real integrations, not as new autonomous IDEs.
 
-- **`docs/feature-backlog.md`** — rename "▶ YC demo cut" to "▶ Agentic Proof Platform (v1)"; reframe each bundle with its claim + proof bar; keep reserved IDs C5/C6/U6.
-- **`docs/strategy/session-decisions.md`** — new entry: "Reframed YC demo cut into Agentic Proof Platform: proof bars, not demo screens; same 8 bundles, harder bar."
-- **`plan.md` §4** — one-line log entry referencing the reframe.
-- **`active-task.md`** — keep pointed at FND-RUNTIME 0.9 (unchanged; foundation work was already next).
-- **`README.md`** — no change yet; only update when bundle 4 ships (then we can publicly claim A2A).
+## 2. Realism rule (so "full lifecycle" doesn't become "half-baked everywhere")
 
-## 6. What this is NOT
+For each stage, the demo bar is: a real artifact is produced in a real external system that a PM would actually use, driven by an agent through a real integration. No mocks. No "click here and pretend it deployed."
 
-- Not adding new agents beyond the 6 durable + ephemeral in `plan.md` §6.
-- Not changing the tech stack, the runtime chokepoint, or RLS model.
-- Not pulling S4–S6 (Build/Test/Ship) forward — they remain deferred with a public milestone.
-- Not building polish (animations, marketing pages) until the 8 bundles hit their proof bars.
+| Stage | Real external system | Real artifact | What the agent owns | What we do NOT build |
+|---|---|---|---|---|
+| Discover | Cadence DB (own signals: feedback, issues, session-decisions) | Themes + scored opportunities | Discovery agent ingests + clusters + scores | New signal connectors beyond what 0.x already has |
+| Define | Cadence DB (PRD doc) | Versioned PRD with lineage to opportunities | Strategist agent drafts + iterates on approval | A new doc editor (use existing tiptap) |
+| Plan | Cadence DB + GitHub Issues (or Linear) | Sprint plan + real issues created in GitHub | Strategist proposes; on approval, Orchestrator writes issues via GitHub MCP | Replacing Linear/Jira |
+| Build | GitHub PR | A real PR opened on a real repo (Cadence itself for demo) | Builder agent generates a small, scoped diff for one task + opens PR via GitHub MCP | A custom autonomous IDE; competing with Cursor/Devin |
+| Test | GitHub Actions (existing CI) | CI run on the PR + agent reads results | Builder agent waits on CI, surfaces failures, proposes fix | A new test runner |
+| Ship | GitHub merge + existing deploy (Cloudflare/Vercel webhook) | Merged PR + deploy event recorded | Builder agent (with approval gate) merges; Cadence ingests deploy webhook | A new deploy pipeline |
+| Launch | Markdown changelog + outbound channel (email draft / Slack post via MCP) | Real changelog entry + a real draft message sitting in the channel awaiting send | Growth agent drafts on ship; sends on approval | A full marketing tool |
+| Support | One real inbound channel (email forward or webhook) | Tickets ingested → triaged → routed back as signals | Growth/Support agent triages, links to PRD/opportunity, closes loop | A full helpdesk |
+| Learn | Cadence DB | Outcome attached to the opportunity → re-scored → re-ranked next sprint | Analyst agent measures, writes insight memo, updates Trust Score inputs | A full analytics product |
 
-## 7. One open question before I start cutting docs
+Two of these are the realism crux:
+- **Build** — for the demo, the Builder agent produces *one small, real PR* on the Cadence repo for an opportunity surfaced by Discovery. Not "build a feature from scratch"; a scoped diff (e.g. add a new field, a config flag, a copy change). This is honest, real-world, and avoids competing with autonomous-coding tools.
+- **Support** — one real channel is enough for the loop to close. A forwarded email or a single webhook proves "support feeds back into Discover."
 
-The "real product data" you confirmed earlier — is it (a) **Cadence itself** (we eat our own dog food: real signals from this repo's issues, user feedback, decisions), or (b) **an external design partner's product** you already have access to? This changes the Bundle 6 seed plan and what we can show publicly. If you don't have a design partner lined up yet, I recommend (a) — Cadence-on-Cadence is the most credible YC story anyway ("we run our own roadmap on it").
+## 3. Updated capability bundles (12, was 8)
 
-On approval, I'll close the doc loop in one turn (status board + session-decisions + plan §4 + reframed bundle entries) and then start FND-RUNTIME 0.9.
+v1's 8 bundles stay. Four new bundles cover the back half of the lifecycle. Bundle numbers continue from v1 for traceability.
+
+| # | Bundle | Proof bar | Backlog IDs | Supports |
+|---|---|---|---|---|
+| 1 | Governed Foundation | (unchanged from v1) | 0.1–0.9, A1/A2 | C1, C4 |
+| 2 | Strategic Briefing | (unchanged) | C5 | C1, C3 |
+| 3 | Agent Roster + Trust + Autonomy | (unchanged) | C1–C4, C6 | C1, C4 |
+| 4 ⭐ | A2A comms + handoff + spawning | (unchanged) ≥3 hops, structured, replayable | E1–E5 | C2 |
+| 5 | Live Mission Graph | (unchanged) | E6, X1 | C1, C2 |
+| 6 | **Lifecycle slice — Discover → Define → Plan** | Real signals → real PRD → real sprint plan → real GitHub issues created on approval | F1, F2, F3, G1, H1 + **NEW: GitHub-issues sync via MCP** | C3 |
+| 7 | Decision Queue + approval gates | (unchanged) | D3, P-approvals | C1, C4 |
+| 8 | Product Memory + lineage + export | (unchanged) | O1, O2, U6 | C3 |
+| **9** | **Build + Test bundle** | Builder agent opens a real PR on the Cadence repo for one planned task; reads CI status; proposes a fix on failure | **S4 (I), S5 (J)** thin slice + GitHub MCP write scope | C2, C3 |
+| **10** | **Ship bundle** | Approval-gated merge → existing deploy fires → Cadence ingests deploy webhook and posts to Mission Graph | **S6 (K)** thin slice + deploy webhook ingest | C1, C3 |
+| **11** | **Launch bundle** | Growth agent drafts changelog + outbound message on ship; operator approves; message is really sent to one real channel | **L** thin slice (changelog + one outbound channel) | C3 |
+| **12** | **Support → Learn loop** | Real ticket arrives via one channel → Support agent triages + links to source PRD/opportunity → Analyst agent attaches outcome and re-scores → next Discovery cycle reflects it | **M** (one channel ingest) + Analyst learn loop on O1/O2 | C3 |
+
+**Net new backlog stubs (reserved IDs):**
+- **I-thin** — Builder agent: scoped PR generation + GitHub MCP write scope + CI-read scope
+- **K-thin** — Deploy webhook ingest + ship-event surfacing in Mission Graph
+- **L-thin** — Changelog generator + one outbound channel integration (Slack or email)
+- **M-thin** — One inbound support channel + ticket→signal linking
+- **Z1** — Analyst learn loop: outcome attach + opportunity re-score + insight memo
+
+## 4. Four claims (unchanged) — now provable across the *whole* lifecycle
+
+The four claims from v1 stay. Bundles 9–12 are what makes them true for the back half:
+- **C1 (agents operate / humans govern)** — now also: merge gate (bundle 10), send gate (bundle 11)
+- **C2 (A2A handoff)** — now also: Strategist→Builder (plan→PR), Builder→Growth (ship→launch), Growth→Support→Analyst→Discovery (the full loop closes)
+- **C3 (one governed loop)** — now literally the *whole* loop, not the front half
+- **C4 (trust is dialed)** — high-blast-radius actions (merge, send, deploy) start in `confirm`, can be dialed toward `auto` as the agent earns Trust
+
+## 5. Build sequence (v1.1)
+
+Foundation → governance → A2A → graph stays the same. Lifecycle bundles layer on top in the order the data actually flows:
+
+```
+[v1 steps 1–5 unchanged]
+0.9 FND-RUNTIME → 0.2 cache
+  → C5 Strategic Briefing
+  → C1/C4 + C6 roster + Trust skeleton
+  → E1–E5 A2A primitives           ← C2 becomes true here
+  → E6 Mission Graph
+[v1 step 6 expanded]
+  → Bundle 6: Discover→Define→Plan slice with GitHub-issues write on approval
+[NEW v1.1 lifecycle back half]
+  → Bundle 9: Builder agent + scoped PR + CI read   (Build + Test)
+  → Bundle 10: merge gate + deploy webhook ingest    (Ship)
+  → Bundle 11: changelog + one outbound channel      (Launch)
+  → Bundle 12: support channel ingest + Analyst learn loop  (Support + Learn — closes the loop)
+[v1 steps 7–8 unchanged]
+  → D3 polish + O1/O2 lineage + U6 Export
+```
+
+Each new bundle ships against its proof bar with the standard doc-loop close (status board + plan §4 + matching `architecture/*.md` + "How to use / verify" block + session-decisions if strategic).
+
+## 6. Demo narrative (one continuous mission, ~3 minutes)
+
+> Operator opens Strategic Briefing and updates a goal. Discovery agent ingests Cadence's own signals (issues, feedback, decisions) and surfaces a re-ranked opportunity. Strategist drafts a PRD via A2A handoff. Planner proposes a sprint; one item is high-blast-radius → lands in Decision Queue. Operator approves. Orchestrator writes a real GitHub issue. Builder picks it up, opens a real PR on the Cadence repo, watches CI. CI passes. Merge gate fires → operator approves → real merge → real deploy webhook lands → Ship node lights up on Mission Graph. Growth drafts a real changelog + a real Slack/email message; operator approves; message really sends. Two days later, a real support ticket lands; Support agent triages and links it back to the same opportunity; Analyst attaches the outcome, re-scores the opportunity, writes the insight memo. The next Discovery cycle reflects the learning. Operator opens Product Memory → sees full lineage from ticket → opportunity → PRD → PR → deploy → ticket. Clicks Export.
+
+Every step in that paragraph is real behavior on real systems, not a slide.
+
+## 7. What this does NOT add
+
+- No autonomous IDE — Builder uses GitHub MCP + scoped diffs, not a Devin/Cursor competitor.
+- No new analytics product — Learn is a re-score + insight memo, not dashboards.
+- No new helpdesk — Support is one channel + linking, not Zendesk.
+- No new CI — we read existing GitHub Actions, not run our own.
+- No marketing automation — Launch is one channel, on approval.
+- No stack changes; no new auth model; no RLS shape change.
+
+## 8. Open question (the only one that gates this)
+
+Bundle 9 (Builder) needs **write access to a real GitHub repo** for the PR demo. Two options:
+- **(a) Cadence's own repo** — most credible, aligns with Cadence-on-Cadence seeding, requires us to be comfortable with the Builder agent opening real PRs against `main` (always behind approval). Recommended.
+- **(b) A throwaway demo repo** — safer, but the "we run our own roadmap on Cadence" story weakens.
+
+If (a), we add a `GITHUB_TOKEN` secret with `repo` scope (PR + issues), confined by branch protection on `main` so the Builder agent can never bypass review. If (b), say the word and we'll provision a separate repo.
+
+---
+
+On approval, I'll close the doc loop in one turn (rename `▶ Agentic Proof Platform (v1)` → `(v1.1) — full lifecycle`, add bundles 9–12 with proof bars, add reserved IDs I-thin/K-thin/L-thin/M-thin/Z1, expand the Build-order rollup, update status board + plan §4 + session-decisions) and continue holding `active-task.md` at FND-RUNTIME 0.9 — the foundation work is unchanged and still the next thing to ship.
