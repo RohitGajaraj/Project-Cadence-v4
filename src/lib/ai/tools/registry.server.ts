@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { retrieve } from "@/lib/rag/retriever.server";
 import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
+import { callModel } from "@/lib/ai/runtime.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -295,8 +296,230 @@ const githubIssueCreate = def({
   },
 });
 
+// ── PM lifecycle tools ────────────────────────────────────────────────
+const DRAFT_MODEL = "google/gemini-2.5-flash";
+
+function safeJson<T = unknown>(s: string): T | null {
+  try { return JSON.parse(s) as T; } catch {
+    const m = s.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (!m) return null;
+    try { return JSON.parse(m[0]) as T; } catch { return null; }
+  }
+}
+
+/**
+ * research.synthesize — Discovery stage.
+ * Pulls recent ungrouped signals, asks the model to cluster them into themes,
+ * writes new `themes` rows and links the source signals via theme_id.
+ */
+const researchSynthesize = def({
+  name: "research.synthesize",
+  description: "Cluster recent user-research signals into themes. Reads signals (optionally filtered by tag/sentiment), uses AI to group them, writes themes and links signals. Use at the start of Discover→Define to turn raw feedback into themes.",
+  category: "write",
+  argsSchema: z.object({
+    lookback_days: z.number().int().min(1).max(180).optional(),
+    max_signals: z.number().int().min(5).max(200).optional(),
+    tag: z.string().max(40).optional(),
+    sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+    only_unclustered: z.boolean().optional(),
+  }),
+  preview: (a) => `Synthesize themes from last ${a.lookback_days ?? 30}d of signals${a.tag ? ` · #${a.tag}` : ""}`,
+  run: async (a, { supabase, userId, traceId, runId }) => {
+    const days = a.lookback_days ?? 30;
+    const since = new Date(Date.now() - days * 86400_000).toISOString();
+    let q = supabase.from("signals")
+      .select("id,title,content,source,sentiment,tags,theme_id,workspace_id")
+      .eq("user_id", userId).gte("created_at", since)
+      .order("created_at", { ascending: false }).limit(a.max_signals ?? 60);
+    if (a.sentiment) q = q.eq("sentiment", a.sentiment);
+    if (a.tag) q = q.contains("tags", [a.tag]);
+    if (a.only_unclustered !== false) q = q.is("theme_id", null);
+    const { data: signals, error } = await q;
+    if (error) throw new Error(error.message);
+    if (!signals || signals.length < 2) return { themes_created: 0, signals_linked: 0, reason: "not enough signals to cluster" };
+
+    const corpus = signals.map((s, i) => `[${i}] (${s.sentiment ?? "n/a"}) ${s.title ? s.title + " — " : ""}${(s.content ?? "").slice(0, 400)}`).join("\n");
+    const res = await callModel(supabase, userId, {
+      surface: "discovery", surface_ref: "research.synthesize",
+      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      responseFormat: "json_object",
+      messages: [
+        { role: "system", content: "You cluster product-research signals into THEMES. Return strict JSON: {\"themes\":[{\"title\":string,\"summary\":string,\"severity\":1-5,\"confidence\":0..1,\"signal_indices\":number[]}]}. Aim for 2-6 cohesive themes. Each signal_indices references the [n] tag in the input. Never invent indices." },
+        { role: "user", content: corpus },
+      ],
+    });
+    const parsed = (res.json ?? safeJson(res.output)) as { themes?: Array<{ title: string; summary: string; severity?: number; confidence?: number; signal_indices?: number[] }> } | null;
+    const themes = parsed?.themes ?? [];
+    if (!themes.length) return { themes_created: 0, signals_linked: 0, reason: "model returned no themes" };
+
+    let created = 0, linked = 0;
+    for (const t of themes) {
+      const idxs = (t.signal_indices ?? []).filter((i) => Number.isInteger(i) && i >= 0 && i < signals.length);
+      if (!idxs.length) continue;
+      const ws = signals[idxs[0]].workspace_id;
+      const { data: themeRow, error: tErr } = await supabase.from("themes").insert({
+        user_id: userId, workspace_id: ws,
+        title: t.title.slice(0, 200), summary: (t.summary ?? "").slice(0, 4000),
+        severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),
+        confidence: Math.min(1, Math.max(0, Number(t.confidence ?? 0.6))),
+        frequency: idxs.length,
+      }).select("id").single();
+      if (tErr || !themeRow) continue;
+      created++;
+      const sigIds = idxs.map((i) => signals[i].id);
+      const { error: uErr, count } = await supabase.from("signals")
+        .update({ theme_id: themeRow.id }, { count: "exact" })
+        .in("id", sigIds).eq("user_id", userId);
+      if (!uErr) linked += count ?? sigIds.length;
+    }
+    return { themes_created: created, signals_linked: linked, model: DRAFT_MODEL };
+  },
+});
+
+/**
+ * prd.draft — Define stage.
+ * Takes an opportunity_id, pulls the opportunity + linked theme + top signals,
+ * asks the model to draft a structured PRD, writes a `prds` row in draft status.
+ */
+const prdDraft = def({
+  name: "prd.draft",
+  description: "Draft a PRD from an opportunity. Reads the opportunity, its theme, and supporting signals, then writes a draft PRD with problem, goals, non-goals, user stories, success metrics, and risks. Use after research.synthesize + an opportunity exists.",
+  category: "write",
+  argsSchema: z.object({
+    opportunity_id: z.string().uuid(),
+    title: z.string().max(280).optional(),
+    audience: z.string().max(200).optional(),
+  }),
+  preview: (a) => `Draft PRD for opportunity ${a.opportunity_id.slice(0, 8)}${a.title ? ` — "${a.title}"` : ""}`,
+  run: async (a, { supabase, userId, traceId, runId }) => {
+    const { data: opp, error: oErr } = await supabase.from("opportunities")
+      .select("id,title,problem,target_user,hypothesis,impact,confidence,ease,theme_id,workspace_id,product_id")
+      .eq("id", a.opportunity_id).eq("user_id", userId).maybeSingle();
+    if (oErr) throw new Error(oErr.message);
+    if (!opp) throw new Error("opportunity not found");
+
+    let themeCtx = "";
+    if (opp.theme_id) {
+      const { data: th } = await supabase.from("themes")
+        .select("title,summary,severity,frequency").eq("id", opp.theme_id).maybeSingle();
+      if (th) themeCtx = `Theme: ${th.title}\n${th.summary}\n(severity ${th.severity}, frequency ${th.frequency})`;
+    }
+    let signalCtx = "";
+    if (opp.theme_id) {
+      const { data: sigs } = await supabase.from("signals")
+        .select("title,content,sentiment").eq("theme_id", opp.theme_id).limit(8);
+      if (sigs?.length) {
+        signalCtx = "Supporting signals:\n" + sigs.map((s) => `- (${s.sentiment ?? "n/a"}) ${s.title ? s.title + ": " : ""}${(s.content ?? "").slice(0, 240)}`).join("\n");
+      }
+    }
+
+    const res = await callModel(supabase, userId, {
+      surface: "prd", surface_ref: opp.id,
+      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      messages: [
+        { role: "system", content: "You are a senior product manager. Write a concise, decision-ready PRD in Markdown with these sections: ## Problem, ## Target user, ## Goals, ## Non-goals, ## User stories, ## Solution sketch, ## Success metrics, ## Risks & open questions. Be specific and grounded in the provided context. Do not invent metrics." },
+        { role: "user", content: [
+          `Opportunity: ${opp.title}`,
+          `Problem: ${opp.problem || "(not specified)"}`,
+          opp.target_user ? `Target user: ${opp.target_user}` : "",
+          opp.hypothesis ? `Hypothesis: ${opp.hypothesis}` : "",
+          a.audience ? `Audience override: ${a.audience}` : "",
+          themeCtx, signalCtx,
+        ].filter(Boolean).join("\n\n") },
+      ],
+    });
+    const body = res.output?.trim();
+    if (!body) throw new Error("model returned empty PRD body");
+
+    const { data: prd, error: pErr } = await supabase.from("prds").insert({
+      user_id: userId, workspace_id: opp.workspace_id, product_id: opp.product_id ?? null,
+      opportunity_id: opp.id,
+      title: (a.title ?? `PRD — ${opp.title}`).slice(0, 280),
+      body_md: body, status: "draft", model: DRAFT_MODEL,
+    }).select("id,title,status").single();
+    if (pErr) throw new Error(pErr.message);
+    return { prd_id: prd.id, title: prd.title, status: prd.status, opportunity_id: opp.id };
+  },
+});
+
+/**
+ * backlog.prioritize — Plan stage.
+ * Re-scores backlog opportunities (ICE) using AI grounded in supporting-signal
+ * counts/recency. Updates rows in place; returns the new ranked list.
+ */
+const backlogPrioritize = def({
+  name: "backlog.prioritize",
+  description: "Re-score and rank backlog opportunities. For each backlog opportunity, gathers supporting-signal counts and recency, asks the model to update impact/confidence/ease (1-10), writes the new scores, and returns the ranked list. Use weekly or when new themes land.",
+  category: "write",
+  argsSchema: z.object({
+    limit: z.number().int().min(1).max(30).optional(),
+    status: z.enum(["backlog", "discovery", "validated"]).optional(),
+  }),
+  preview: (a) => `Re-prioritize ${a.limit ?? 15} opportunities (${a.status ?? "backlog"})`,
+  run: async (a, { supabase, userId, traceId, runId }) => {
+    const status = a.status ?? "backlog";
+    const { data: opps, error } = await supabase.from("opportunities")
+      .select("id,title,problem,target_user,impact,confidence,ease,theme_id,workspace_id")
+      .eq("user_id", userId).eq("status", status)
+      .order("updated_at", { ascending: false }).limit(a.limit ?? 15);
+    if (error) throw new Error(error.message);
+    if (!opps?.length) return { rescored: 0, ranked: [], reason: "no opportunities in scope" };
+
+    const themeIds = Array.from(new Set(opps.map((o) => o.theme_id).filter(Boolean))) as string[];
+    const counts: Record<string, { n: number; recent: number }> = {};
+    if (themeIds.length) {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+      const { data: sigs } = await supabase.from("signals")
+        .select("theme_id,created_at").in("theme_id", themeIds).eq("user_id", userId);
+      for (const s of sigs ?? []) {
+        const k = s.theme_id as string;
+        counts[k] = counts[k] ?? { n: 0, recent: 0 };
+        counts[k].n++;
+        if (s.created_at && s.created_at > sevenDaysAgo) counts[k].recent++;
+      }
+    }
+
+    const payload = opps.map((o) => ({
+      id: o.id, title: o.title, problem: (o.problem ?? "").slice(0, 400),
+      target_user: o.target_user ?? null,
+      current: { impact: o.impact, confidence: o.confidence, ease: o.ease },
+      evidence: o.theme_id ? counts[o.theme_id] ?? { n: 0, recent: 0 } : { n: 0, recent: 0 },
+    }));
+    const res = await callModel(supabase, userId, {
+      surface: "discovery", surface_ref: "backlog.prioritize",
+      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      responseFormat: "json_object",
+      messages: [
+        { role: "system", content: "You re-score product opportunities on ICE (impact, confidence, ease), each 1-10 integers. Higher evidence.n and evidence.recent → higher confidence. Vague problem statements → lower confidence. Wide-scope problems → lower ease. Return strict JSON: {\"scores\":[{\"id\":string,\"impact\":int,\"confidence\":int,\"ease\":int,\"rationale\":string}]}. Include every input id once." },
+        { role: "user", content: JSON.stringify(payload) },
+      ],
+    });
+    const parsed = (res.json ?? safeJson(res.output)) as { scores?: Array<{ id: string; impact: number; confidence: number; ease: number; rationale?: string }> } | null;
+    const scores = parsed?.scores ?? [];
+    if (!scores.length) return { rescored: 0, ranked: [], reason: "model returned no scores" };
+
+    let rescored = 0;
+    const rationales: Record<string, string> = {};
+    for (const s of scores) {
+      const clamp = (n: number) => Math.min(10, Math.max(1, Math.round(n)));
+      const { error: uErr } = await supabase.from("opportunities")
+        .update({ impact: clamp(s.impact), confidence: clamp(s.confidence), ease: clamp(s.ease) })
+        .eq("id", s.id).eq("user_id", userId);
+      if (!uErr) { rescored++; if (s.rationale) rationales[s.id] = s.rationale.slice(0, 400); }
+    }
+    const { data: ranked } = await supabase.from("opportunities")
+      .select("id,title,impact,confidence,ease,ice_score")
+      .in("id", scores.map((s) => s.id))
+      .order("ice_score", { ascending: false });
+    return {
+      rescored, model: DRAFT_MODEL,
+      ranked: (ranked ?? []).map((r) => ({ ...r, rationale: rationales[r.id] ?? null })),
+    };
+  },
+});
+
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate]
+  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, researchSynthesize, prdDraft, backlogPrioritize]
     .map((t) => [t.name, t]),
 );
 
