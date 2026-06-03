@@ -29,6 +29,7 @@ import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
 import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
+import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
 import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
 import { Route as AuthenticatedDocsRouteImport } from './routes/_authenticated.docs'
@@ -151,6 +152,11 @@ const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
   path: '/guardrails',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedEvalsRoute = AuthenticatedEvalsRouteImport.update({
   id: '/evals',
   path: '/evals',
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -310,6 +317,7 @@ export interface FileRoutesByTo {
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/docs': typeof AuthenticatedDocsRoute
   '/_authenticated/drift': typeof AuthenticatedDriftRoute
   '/_authenticated/evals': typeof AuthenticatedEvalsRoute
+  '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
   '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
@@ -397,6 +406,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/drift'
     | '/evals'
+    | '/governance'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/drift'
     | '/evals'
+    | '/governance'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -479,6 +490,7 @@ export interface FileRouteTypes {
     | '/_authenticated/docs'
     | '/_authenticated/drift'
     | '/_authenticated/evals'
+    | '/_authenticated/governance'
     | '/_authenticated/guardrails'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
@@ -665,6 +677,13 @@ declare module '@tanstack/react-router' {
       path: '/guardrails'
       fullPath: '/guardrails'
       preLoaderRoute: typeof AuthenticatedGuardrailsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/governance': {
+      id: '/_authenticated/governance'
+      path: '/governance'
+      fullPath: '/governance'
+      preLoaderRoute: typeof AuthenticatedGovernanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/evals': {
@@ -866,6 +885,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDocsRoute: typeof AuthenticatedDocsRoute
   AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
   AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
+  AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
   AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
@@ -892,6 +912,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDocsRoute: AuthenticatedDocsRoute,
   AuthenticatedDriftRoute: AuthenticatedDriftRoute,
   AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
+  AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
   AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
