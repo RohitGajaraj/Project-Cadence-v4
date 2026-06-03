@@ -150,6 +150,14 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     setActiveProductId,
   } = useWorkspace();
 
+  const pauseFn = useServerFn(getWorkspacePauseState);
+  const { data: pauseState } = useQuery({
+    queryKey: ["governance", "pause-state", activeWorkspaceId],
+    queryFn: () => pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+    refetchInterval: 30_000,
+    enabled: true,
+  });
+
   async function signOut() {
     await supabase.auth.signOut();
     toast.success("Signed out");
@@ -283,6 +291,21 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
         </div>
 
         <div className="space-y-2">
+          {pauseState?.paused && (
+            <Link to="/governance" className="block rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/20 transition">
+              <div className="flex items-center gap-2">
+                <PauseCircle className="h-4 w-4 shrink-0" />
+                <div className="leading-tight overflow-hidden">
+                  <div className="text-[11px] font-medium truncate">
+                    {pauseState.systemPaused ? "System paused" : "Workspace paused"}
+                  </div>
+                  {pauseState.reason && (
+                    <div className="text-[10px] text-rose-300/80 truncate">{pauseState.reason}</div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          )}
           <BudgetBar />
           <div className="rounded-xl border hairline p-3 relative overflow-hidden">
             <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full neural-gradient opacity-50 blur-md" />
