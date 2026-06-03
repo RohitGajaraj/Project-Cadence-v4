@@ -15,6 +15,103 @@ import { resolvePrompt, logPromptRun } from "./prompts.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+/**
+ * Governance halt — thrown by the chokepoint when a kill-switch is engaged
+ * or a per-mission cap would be exceeded. Surfaced as status='blocked' in
+ * ai_events with error_message='governance_halt: <reason>'.
+ */
+export class GovernanceHaltError extends Error {
+  readonly code = "GOVERNANCE_HALT";
+  readonly kind: "kill_switch" | "mission_token_cap" | "mission_spend_cap";
+  constructor(kind: GovernanceHaltError["kind"], message: string) {
+    super(message);
+    this.name = "GovernanceHaltError";
+    this.kind = kind;
+  }
+}
+
+async function checkKillSwitch(supabase: SupabaseClient, workspaceId: string | null | undefined): Promise<void> {
+  try {
+    const { data, error } = await supabase.rpc("current_kill_state", { ws: workspaceId ?? null });
+    if (error) { console.error("current_kill_state failed:", error); return; }
+    const row = Array.isArray(data) ? (data[0] as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | undefined) : (data as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null);
+    if (!row) return;
+    if (row.system_paused) {
+      throw new GovernanceHaltError("kill_switch", `System paused${row.reason ? `: ${row.reason}` : ""}`);
+    }
+    if (row.workspace_paused) {
+      throw new GovernanceHaltError("kill_switch", `Workspace paused${row.reason ? `: ${row.reason}` : ""}`);
+    }
+  } catch (e) {
+    if (e instanceof GovernanceHaltError) throw e;
+    console.error("kill-switch check failed (allowing call):", e);
+  }
+}
+
+async function checkMissionCaps(supabase: SupabaseClient, runId: string | null | undefined): Promise<void> {
+  if (!runId) return;
+  const { data, error } = await supabase
+    .from("agent_runs")
+    .select("mission_spend_cap_usd,mission_token_cap,tokens_used,spend_used_usd,halted_reason,status")
+    .eq("id", runId)
+    .maybeSingle();
+  if (error || !data) return;
+  const r = data as { mission_spend_cap_usd: number | null; mission_token_cap: number | null; tokens_used: number | null; spend_used_usd: number | null; halted_reason: string | null; status: string };
+  if (r.status === "halted" || r.halted_reason) {
+    throw new GovernanceHaltError("kill_switch", `Mission halted${r.halted_reason ? `: ${r.halted_reason}` : ""}`);
+  }
+  if (r.mission_token_cap != null && Number(r.tokens_used ?? 0) >= Number(r.mission_token_cap)) {
+    throw new GovernanceHaltError("mission_token_cap", `Mission token cap reached (${r.tokens_used}/${r.mission_token_cap})`);
+  }
+  if (r.mission_spend_cap_usd != null && Number(r.spend_used_usd ?? 0) >= Number(r.mission_spend_cap_usd)) {
+    throw new GovernanceHaltError("mission_spend_cap", `Mission spend cap reached ($${Number(r.spend_used_usd).toFixed(4)}/$${Number(r.mission_spend_cap_usd).toFixed(4)})`);
+  }
+}
+
+async function recordMissionUsage(supabase: SupabaseClient, runId: string | null | undefined, tokens: number, costUsd: number): Promise<void> {
+  if (!runId) return;
+  try {
+    await supabase.rpc("record_mission_usage", { _run_id: runId, _tokens: tokens, _cost_usd: costUsd });
+  } catch (e) {
+    console.error("record_mission_usage failed:", e);
+  }
+}
+
+async function logGovernanceHalt(
+  supabase: SupabaseClient,
+  userId: string,
+  opts: CallOpts,
+  err: GovernanceHaltError,
+): Promise<void> {
+  try {
+    await supabase.from("ai_events").insert({
+      user_id: userId,
+      trace_id: opts.traceId ?? null,
+      parent_event_id: opts.parentEventId ?? null,
+      surface: opts.surface,
+      surface_ref: opts.surface_ref ?? null,
+      provider: "governance",
+      via: "gateway",
+      model: opts.model,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      est_cost_usd: 0,
+      latency_ms: 0,
+      status: "blocked",
+      error_message: `governance_halt:${err.kind} — ${err.message}`,
+      input_preview: (opts.messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+      output_preview: "",
+    });
+  } catch (e) {
+    console.error("governance_halt event insert failed:", e);
+  }
+  if (opts.runId) {
+    try { await supabase.rpc("halt_agent_run", { _run_id: opts.runId, _reason: `${err.kind}: ${err.message}` }); }
+    catch (e) { console.error("halt_agent_run failed:", e); }
+  }
+}
+
 export type CallSurface =
   | "agent" | "chat" | "copilot" | "prd" | "discovery"
   | "studio" | "brief" | "eval" | "judge" | "embed" | "scheduler" | "test";
