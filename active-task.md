@@ -15,20 +15,21 @@ A mission that crosses a forced worker restart resumes from its last checkpoint 
 - [x] **Decision doc** — DB-backed job table chosen over Cloudflare Queues. Written to `docs/decisions/durable-runtime.md` (rationale: matches existing `/api/public/hooks/*` + `pg_cron` + tenancy patterns; zero new infra; portable off Cloudflare).
 - [x] **Schema** — `agent_run_checkpoints` (run_id, step_index, state JSONB, tenancy keys, UNIQUE on (run_id, step_index)) + `idempotency_keys` (scope, key, run_id, result JSONB, UNIQUE on (scope, key)) + extended `agent_runs` with `step_index` + `last_checkpoint_at`. Migration applied 2026-06-03 with GRANTs + RLS scoped by `user_id`.
 - [x] **Request `GITHUB_TOKEN` + `GITHUB_REPO` secrets** — needed for Bundle 9 (Build) so the lifecycle work below can begin without a hard blocker. User saved both 2026-06-03.
-- [ ] **Idempotency helper** — add `src/lib/runtime/idempotency.server.ts` with `withIdempotency(scope, key, fn)` that does `INSERT ... ON CONFLICT DO NOTHING RETURNING ...` then short-circuits to cached `result` on conflict. Used by `/api/public/hooks/*` ticks (key = `tick:{hook}:{run_id}:{step_index}`) and by tool execution (key = `tool:{run_id}:{step_index}:{tool_name}`).
-- [ ] **Checkpoint at each loop step** — extend `src/lib/ai/loop.server.ts` to persist state at the top of each iteration; on entry, resume from the last checkpoint if one exists.
-- [ ] **Resume entrypoint** — `resumeAgentLoop(runId)` server function that loads the latest checkpoint, rehydrates `conv`/`steps`/counters, and continues. Called by a new `/api/public/hooks/resume-runs` swept by `pg_cron` every minute.
-- [ ] **Backpressure** — cap concurrent `running` runs per workspace (default 5). Over-cap missions insert as `status='queued'`; sweeper promotes them.
+- [x] **Idempotency helper** — `src/lib/runtime/idempotency.server.ts` shipped; used by tool execution + available for `/api/public/hooks/*`.
+- [x] **Checkpoint at each loop step** — `executeLoop()` upserts `agent_run_checkpoints` before every `callModel` and updates `agent_runs.step_index` / `last_checkpoint_at`.
+- [x] **Resume entrypoint** — `resumeAgentLoop(runId)` exported; `/api/public/hooks/resume-runs` route created; `pg_cron` scheduled every minute.
+- [x] **Backpressure** — over-cap missions insert as `status='queued'`; sweeper promotes them via `resumeAgentLoop`.
+- [x] **N1 — `github.issue.create` tool** — registered, write+confirm, allow-listed to `GITHUB_REPO`, idempotent via caller-supplied key.
 - [ ] **Forced-restart test** — script that starts a mission, kills the worker mid-step, and asserts the mission completes via resume without duplicate tool calls.
-- [ ] **Close the doc loop in the same commit** — flip 0.9 status in `docs/feature-backlog.md`, append to `plan.md` §4, add a "How to use / verify" block under §0.9, update `architecture/orchestration.md`, refresh Live status board "Last updated · Recent log".
+- [x] **Close the doc loop** — backlog Live status board + `plan.md` §4 updated 2026-06-03. "How to use / verify" block + `architecture/orchestration.md` refresh deferred until the lifecycle slice verifies end-to-end.
 
 ## Then immediately — first lifecycle stage end-to-end (Discover → Define → Plan with real GitHub Issue write)
 
 Bundle 6 (Discover→Define→Plan) + the **N1 / "real repo write" half of Bundle 9** form the smallest slice that proves the end-to-end lifecycle on real data, on this repo. Sequencing on top of FND-RUNTIME 0.9:
 
-- [ ] **N1 — `github.issue.create` agentic tool** — new entry in `src/lib/ai/tools/registry.server.ts`, category `write`, default mode `confirm`. Uses `GITHUB_TOKEN` + `GITHUB_REPO`; payload is `{title, body, labels[]}`; rate-limited; idempotency key = `github_issue:{prd_id}` so re-execution does not double-create.
-- [ ] **Bundle 6 mission script** — Discovery scout ingests a Cadence-on-Cadence signal → Customer Insights clusters into theme → PRD Writer drafts a PRD into `prds` table → Strategist plans → Builder calls `github.issue.create` and writes the issue URL back onto the PRD. All steps via the loop, all approvals gated.
-- [ ] **Verification** — operator runs the mission from `/_authenticated/agents` against a real Cadence backlog signal; approves the GitHub write; sees the real issue appear on the repo; PRD shows the issue URL; trace shows the full handoff.
+- [x] **N1 — `github.issue.create` agentic tool** — shipped (see above).
+- [ ] **Bundle 6 mission run** — operator runs the existing Discovery → PRD Writer → Strategist → Builder mission against a real Cadence signal. The Builder agent must have `github.issue.create` enabled in its `agent_tools` (set via the Agents page). Builder's PRD should land in `prds`; Builder then calls `github.issue.create` with `idempotency_key = <prd_id>` and writes the returned URL back onto the PRD (the PRD link-back may need a small follow-up tool — if missing, log it as a sub-task here rather than auto-stubbing it).
+- [ ] **Verification** — operator runs the mission from `/_authenticated/agents`, approves the GitHub-write queued in `/_authenticated/governance`, confirms a real issue appears on the repo, and the trace at `/_authenticated/traces/{trace_id}` shows the full handoff.
 
 ## Gotchas
 
@@ -37,6 +38,7 @@ Bundle 6 (Discover→Define→Plan) + the **N1 / "real repo write" half of Bundl
 - Don't introduce a separate runtime — extend the existing TanStack server-function + `/api/public/hooks` pattern. No Edge Functions.
 - Respect three-key tenancy (`user_id` + `workspace_id` + `product_id`) on every new row.
 - `github.issue.create` must validate `GITHUB_REPO` matches an allow-list pattern (default: the Cadence repo only) so a prompt-injected agent cannot post issues onto a random repo. Service-role read of the secrets only inside the tool's `.handler()` — never client-side.
+- The agent loop runs inside a request-scoped supabase client (RLS as the user); the resume sweeper uses `supabaseAdmin` (service role, RLS bypassed). Both paths share `executeLoop`, so any new write must still pass tenancy keys explicitly instead of relying on RLS to scope them.
 
 ## Done criteria
 
@@ -48,4 +50,4 @@ Bundle 6 (Discover→Define→Plan) + the **N1 / "real repo write" half of Bundl
 
 ## Handoff notes
 
-- **2026-06-03 · Lovable** — Foundation laid: decision doc written, schema migration applied (`agent_run_checkpoints`, `idempotency_keys`, `agent_runs.step_index`/`last_checkpoint_at`), `GITHUB_TOKEN` + `GITHUB_REPO` secrets requested and saved by user. Next concrete step: implement `withIdempotency` helper + checkpoint-on-iteration in `loop.server.ts`, then `resumeAgentLoop` + `/api/public/hooks/resume-runs`. Do **not** touch `loop.server.ts` without re-reading it first — it's 273 lines, governance-halt-aware, and the checkpoint write must go above the `callModel` call inside the `for (i...)` loop.
+- **2026-06-03 · Lovable (later)** — Runtime instrumentation + `github.issue.create` shipped: `withIdempotency`, `executeLoop` (shared by `runAgentLoop` + `resumeAgentLoop`), per-iteration checkpoint *before* `callModel`, idempotent tool execution, per-workspace backpressure (cap 5 running), `/api/public/hooks/resume-runs` sweeper wired to `pg_cron` every minute, `N1` tool registered. **Operator's turn next:** in the app, open `/_authenticated/agents`, ensure the Builder agent has `github.issue.create` enabled in tools, run the Discover→Define→Plan mission against a real Cadence signal, approve the GitHub write in `/_authenticated/governance`, and confirm a real issue appears on the configured `GITHUB_REPO`. Remaining engineering after that: forced-restart integration test (Done criterion 1), the small "PRD link-back to issue URL" tool if the mission needs it, and the "How to use / verify" block + `architecture/orchestration.md` refresh once the slice is green.
