@@ -560,6 +560,7 @@ export async function callModel(
     if (status === "ok" && totalTok > 0) {
       await incrementBudget(supabase, userId, totalTok, est);
       await incrementSurfaceBudget(supabase, userId, opts.surface, est);
+      await recordMissionUsage(supabase, opts.runId ?? null, totalTok, est);
     }
     if (resolvedPrompt && eventId) {
       await logPromptRun(supabase, userId, {
