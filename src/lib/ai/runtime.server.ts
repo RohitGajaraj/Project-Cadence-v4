@@ -26,6 +26,10 @@ export type CallOpts = {
   messages: { role: string; content: string }[];
   traceId?: string | null;
   parentEventId?: string | null;
+  /** Workspace the call belongs to — required for kill-switch check (skipped when null). */
+  workspaceId?: string | null;
+  /** When set, ties the call to an agent_runs row for per-mission caps + usage accounting. */
+  runId?: string | null;
   /** Whether to run guardrails (default true, false for internal judge/eval) */
   guardrails?: boolean;
   /** Optional override of LOVABLE_API_KEY (e.g. when test-running a BYO key) */
