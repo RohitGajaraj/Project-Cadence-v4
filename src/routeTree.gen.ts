@@ -29,6 +29,7 @@ import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
 import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
+import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
 import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
 import { Route as AuthenticatedDocsRouteImport } from './routes/_authenticated.docs'
@@ -46,6 +47,7 @@ import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/hooks/eval-tick'
 import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
+import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
 import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
@@ -150,6 +152,11 @@ const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
   path: '/guardrails',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedEvalsRoute = AuthenticatedEvalsRouteImport.update({
   id: '/evals',
   path: '/evals',
@@ -238,6 +245,12 @@ const ApiPublicHooksDriftTickRoute = ApiPublicHooksDriftTickRouteImport.update({
   path: '/api/public/hooks/drift-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksApprovalsTickRoute =
+  ApiPublicHooksApprovalsTickRouteImport.update({
+    id: '/api/public/hooks/approvals-tick',
+    path: '/api/public/hooks/approvals-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAgentTickRoute = ApiPublicHooksAgentTickRouteImport.update({
   id: '/api/public/hooks/agent-tick',
   path: '/api/public/hooks/agent-tick',
@@ -263,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -284,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -302,6 +317,7 @@ export interface FileRoutesByTo {
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -324,6 +340,7 @@ export interface FileRoutesByTo {
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -344,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/docs': typeof AuthenticatedDocsRoute
   '/_authenticated/drift': typeof AuthenticatedDriftRoute
   '/_authenticated/evals': typeof AuthenticatedEvalsRoute
+  '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
   '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
@@ -366,6 +384,7 @@ export interface FileRoutesById {
   '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
+  '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
@@ -387,6 +406,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/drift'
     | '/evals'
+    | '/governance'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -408,6 +428,7 @@ export interface FileRouteTypes {
     | '/studio/$id'
     | '/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -426,6 +447,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/drift'
     | '/evals'
+    | '/governance'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -448,6 +470,7 @@ export interface FileRouteTypes {
     | '/studio/$id'
     | '/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -467,6 +490,7 @@ export interface FileRouteTypes {
     | '/_authenticated/docs'
     | '/_authenticated/drift'
     | '/_authenticated/evals'
+    | '/_authenticated/governance'
     | '/_authenticated/guardrails'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
@@ -489,6 +513,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studio/$id'
     | '/_authenticated/traces/$traceId'
     | '/api/public/hooks/agent-tick'
+    | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
@@ -504,6 +529,7 @@ export interface RootRouteChildren {
   ApiStudioChatRoute: typeof ApiStudioChatRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
+  ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
   ApiPublicHooksEvalSuiteTickRoute: typeof ApiPublicHooksEvalSuiteTickRoute
   ApiPublicHooksEvalTickRoute: typeof ApiPublicHooksEvalTickRoute
@@ -653,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGuardrailsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/governance': {
+      id: '/_authenticated/governance'
+      path: '/governance'
+      fullPath: '/governance'
+      preLoaderRoute: typeof AuthenticatedGovernanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/evals': {
       id: '/_authenticated/evals'
       path: '/evals'
@@ -772,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDriftTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/approvals-tick': {
+      id: '/api/public/hooks/approvals-tick'
+      path: '/api/public/hooks/approvals-tick'
+      fullPath: '/api/public/hooks/approvals-tick'
+      preLoaderRoute: typeof ApiPublicHooksApprovalsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agent-tick': {
       id: '/api/public/hooks/agent-tick'
       path: '/api/public/hooks/agent-tick'
@@ -845,6 +885,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDocsRoute: typeof AuthenticatedDocsRoute
   AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
   AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
+  AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
   AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
@@ -871,6 +912,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDocsRoute: AuthenticatedDocsRoute,
   AuthenticatedDriftRoute: AuthenticatedDriftRoute,
   AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
+  AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
   AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
@@ -899,6 +941,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioChatRoute: ApiStudioChatRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
+  ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
   ApiPublicHooksEvalSuiteTickRoute: ApiPublicHooksEvalSuiteTickRoute,
   ApiPublicHooksEvalTickRoute: ApiPublicHooksEvalTickRoute,
@@ -908,13 +951,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

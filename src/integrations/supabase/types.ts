@@ -23,6 +23,9 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           error: string | null
+          escalated_at: string | null
+          escalated_to: string | null
+          escalation_state: string
           expires_at: string | null
           id: string
           rationale: string | null
@@ -41,6 +44,9 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           error?: string | null
+          escalated_at?: string | null
+          escalated_to?: string | null
+          escalation_state?: string
           expires_at?: string | null
           id?: string
           rationale?: string | null
@@ -59,6 +65,9 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           error?: string | null
+          escalated_at?: string | null
+          escalated_to?: string | null
+          escalation_state?: string
           expires_at?: string | null
           id?: string
           rationale?: string | null
@@ -126,11 +135,18 @@ export type Database = {
           agent_slug: string
           created_at: string
           duration_ms: number | null
+          halted_at: string | null
+          halted_reason: string | null
           id: string
           input: string
+          mission_spend_cap_usd: number | null
+          mission_token_cap: number | null
           output: string | null
+          spend_used_usd: number
           status: string
+          tokens_used: number
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           agent_id?: string | null
@@ -138,11 +154,18 @@ export type Database = {
           agent_slug: string
           created_at?: string
           duration_ms?: number | null
+          halted_at?: string | null
+          halted_reason?: string | null
           id?: string
           input: string
+          mission_spend_cap_usd?: number | null
+          mission_token_cap?: number | null
           output?: string | null
+          spend_used_usd?: number
           status?: string
+          tokens_used?: number
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string | null
@@ -150,13 +173,28 @@ export type Database = {
           agent_slug?: string
           created_at?: string
           duration_ms?: number | null
+          halted_at?: string | null
+          halted_reason?: string | null
           id?: string
           input?: string
+          mission_spend_cap_usd?: number | null
+          mission_token_cap?: number | null
           output?: string | null
+          spend_used_usd?: number
           status?: string
+          tokens_used?: number
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agent_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_tools: {
         Row: {
@@ -1535,6 +1573,50 @@ export type Database = {
         }
         Relationships: []
       }
+      kill_switches: {
+        Row: {
+          created_at: string
+          id: string
+          paused: boolean
+          reason: string | null
+          scope: string
+          set_at: string
+          set_by: string | null
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          paused?: boolean
+          reason?: string | null
+          scope: string
+          set_at?: string
+          set_by?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          paused?: boolean
+          reason?: string | null
+          scope?: string
+          set_at?: string
+          set_by?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kill_switches_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           action_items: Json
@@ -2847,7 +2929,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_mission_caps: {
+        Args: {
+          _projected_cost_usd: number
+          _projected_tokens: number
+          _run_id: string
+        }
+        Returns: string
+      }
+      current_kill_state: {
+        Args: { ws: string }
+        Returns: {
+          reason: string
+          system_paused: boolean
+          workspace_paused: boolean
+        }[]
+      }
       current_user_default_workspace: { Args: never; Returns: string }
+      halt_agent_run: {
+        Args: { _reason: string; _run_id: string }
+        Returns: undefined
+      }
       is_workspace_member: { Args: { ws: string }; Returns: boolean }
       match_agent_memory: {
         Args: {
@@ -2897,6 +2999,10 @@ export type Database = {
           similarity: number
           title: string
         }[]
+      }
+      record_mission_usage: {
+        Args: { _cost_usd: number; _run_id: string; _tokens: number }
+        Returns: undefined
       }
       seed_default_agent_tools: {
         Args: { _user_id: string }

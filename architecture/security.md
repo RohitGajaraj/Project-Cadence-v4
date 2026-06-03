@@ -22,10 +22,12 @@ Three nested scopes, enforced at every layer:
 
 ## Agent governance (security as a product feature)
 This is the trust layer that makes autonomy sellable to enterprises — and a core part of the moat ([`README.md`](../README.md)):
-- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval.
+- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval. Approvals carry a TTL (`agent_approvals.expires_at`, default 24h) and `escalation_state`; a per-minute cron (`/api/public/hooks/approvals-tick`) auto-expires stale ones so missions cannot stall forever.
 - **Guardrails** — input + output: PII, prompt-injection, secret-leak, custom rules; `block | warn | redact`. External/MCP/A2A results are treated as untrusted input and re-guarded. See [`runtime.md`](./runtime.md).
 - **Audit trail** — every AI call (`ai_events`), tool call (`tool_calls`), mission node, guardrail hit, and protocol action (`protocol_audit`) is logged and traceable.
 - **Budgets** — per-user/workspace/product daily + monthly token + USD caps, enforced server-side before spend.
+- **Kill-switch (`kill_switches`)** — one row per scope (`system` or `workspace`). System row is service-role-only; workspace row is writable by workspace `owner` / `admin` (RLS-enforced). `current_kill_state(workspace_id)` `SECURITY DEFINER` RPC is read by the chokepoint before every AI call; when paused, `callModel()` / `callModelStream()` throw `GovernanceHaltError` *before any spend* and log `ai_events.status='blocked'` with `error_message='governance_halt:kill_switch'`. The governance UI (`/_authenticated/governance`) toggles workspace pause with a required reason; the `AppShell` shows a red banner when paused.
+- **Per-mission caps (`agent_runs`)** — every mission can declare `mission_token_cap` + `mission_spend_cap_usd`; running totals (`tokens_used`, `spend_used_usd`) are atomically bumped via `record_mission_usage()` after each successful call. The next call in the mission sees the bump and is halted with `GovernanceHaltError('mission_token_cap' | 'mission_spend_cap')`; `halt_agent_run()` marks the run `status='halted'` with `halted_reason`.
 - **Capability scopes** — per MCP token / A2A peer; per-tool rate limits. See [`integrations.md`](./integrations.md).
 - **Reversibility** — checkpoints + cancellation + replay; side effects gated so they can be reviewed before they happen.
 

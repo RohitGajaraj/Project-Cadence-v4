@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, Code2, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, GitBranch, ChevronDown, Plug,
+  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getWorkspacePauseState } from "@/lib/governance.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +67,7 @@ const groups: NavGroup[] = [
       { to: "/drift", label: "Drift", icon: TrendingUp },
       { to: "/budgets", label: "Budgets", icon: DollarSign },
       { to: "/guardrails", label: "Guardrails", icon: Shield },
+      { to: "/governance", label: "Governance", icon: ShieldAlert },
     ],
   },
   {
@@ -145,6 +149,14 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     setActiveWorkspaceId,
     setActiveProductId,
   } = useWorkspace();
+
+  const pauseFn = useServerFn(getWorkspacePauseState);
+  const { data: pauseState } = useQuery({
+    queryKey: ["governance", "pause-state", activeWorkspaceId],
+    queryFn: () => pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+    refetchInterval: 30_000,
+    enabled: true,
+  });
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -279,6 +291,21 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
         </div>
 
         <div className="space-y-2">
+          {pauseState?.paused && (
+            <Link to="/governance" className="block rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/20 transition">
+              <div className="flex items-center gap-2">
+                <PauseCircle className="h-4 w-4 shrink-0" />
+                <div className="leading-tight overflow-hidden">
+                  <div className="text-[11px] font-medium truncate">
+                    {pauseState.systemPaused ? "System paused" : "Workspace paused"}
+                  </div>
+                  {pauseState.reason && (
+                    <div className="text-[10px] text-rose-300/80 truncate">{pauseState.reason}</div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          )}
           <BudgetBar />
           <div className="rounded-xl border hairline p-3 relative overflow-hidden">
             <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full neural-gradient opacity-50 blur-md" />

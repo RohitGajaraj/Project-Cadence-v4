@@ -14,20 +14,20 @@
 
 > **Every tool updates this, every session, in the same unit of work as the change** — Claude Code · Antigravity · Gemini · Lovable. This is the live *cursor*; the full append-only history is [`../plan.md`](../plan.md) §4. Update contract: [`../AGENTS.md`](../AGENTS.md) §5. Resolution of "Next up" is mechanical — see the [Build-order rollup](#build-order-rollup-status--build-sequence).
 
-**Last updated:** 2026-05-31 · **by:** Antigravity · **branch:** `main`
+**Last updated:** 2026-06-03 · **by:** Lovable · **branch:** `main`
 
 | Field | Current |
 |---|---|
 | 🔨 **Now building** | — nothing in flight (set to the feature ID + tool + branch when work starts) |
-| ⏭️ **Next up** | **Step 1 — Foundation hardening** · FND-KILLSWITCH (0.6) · tickets in [`foundation-audit.md`](./foundation-audit.md) |
+| ⏭️ **Next up** | **Step 1 — Foundation hardening** · FND-RUNTIME (0.9) durable runtime decision · then FND-CACHE (0.2 cache stage) · tickets in [`foundation-audit.md`](./foundation-audit.md) |
 | 🚧 **Blocked / stuck** | — none (record the ID, the blocker, and what unblocks it) |
-| 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 5. Done: 1, 2, 7. Not started: 3, 4, 6, 8. Cross-cutting (S–X) pulled into step 1. |
+| 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 4. Done: 1, 2, 6, 7. Not started: 3, 4, 8. Cross-cutting (S–X) pulled into step 1. |
 
 **Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-06-03` — Completed FND-KILLSWITCH (0.6): `kill_switches` table + `current_kill_state` RPC; `agent_runs` mission caps + atomic usage; `agent_approvals` TTL + `/api/public/hooks/approvals-tick` (pg_cron, every minute); chokepoint enforcement in `callModel`/`callModelStream` via typed `GovernanceHaltError`; `/_authenticated/governance` UI + AppShell paused indicator.
 - `2026-05-31` — Completed implementation of 0.7 (FND-INJECTION): XML-escaped and isolated RAG context chunks + tool results, and programmatic override to force injection rules to block.
 - `2026-05-31` — Completed code-side implementation of 0.2 (FND-CHOKEPOINT-STREAM): callModelStream chokepoint added and /api/chat + /api/studio-chat refactored.
 - `2026-05-31` — Completed code-side implementation of 0.1 (FND-TENANCY): use-workspace context, AppShell switcher UI, and server functions scoped with default workspace fallbacks.
-- `2026-05-30` — Co-dev next-task wiring: this status board added; Build-order rollup declared the canonical task queue; `TASKS.md` demoted to a strategic router; deterministic "what's next" rule added to `AGENTS.md` §1.
 
 ### How to update this board (any tool)
 - **Starting work** → set **Now building** to `‹ID› · ‹tool› · ‹branch›`; clear it from **Next up**.
