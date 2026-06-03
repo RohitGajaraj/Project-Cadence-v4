@@ -675,6 +675,15 @@ export async function callModelStream(
 }> {
   const useGuards = opts.guardrails !== false;
 
+  // 0. Governance — kill-switch + mission caps
+  try {
+    await checkKillSwitch(supabase, opts.workspaceId ?? null);
+    await checkMissionCaps(supabase, opts.runId ?? null);
+  } catch (e) {
+    if (e instanceof GovernanceHaltError) { await logGovernanceHalt(supabase, userId, opts, e); throw e; }
+    throw e;
+  }
+
   // 1. Budget
   await checkBudget(supabase, userId);
   await checkSurfaceBudget(supabase, userId, opts.surface);
