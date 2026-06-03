@@ -89,21 +89,24 @@
   --dur-base: 180ms;
   --dur-slow: 260ms;
 
-  /* Midnight Indigo — deep navy base, electric indigo accent.
-   * Source palette: #0a0a1a → #141432 → #1e1e5a → #4f46e5 (electric indigo).
+  /* Carbon & Ember — factory.ai-inspired industrial dark.
+   * Background: warm carbon black (Pantone Black 6 C ~ #101820).
+   * Signature accent: Pantone Orange 021 C (~#FE5000) — molten, mechanical.
+   * Supporting amber for warmth, ice for cool counterpoint in data viz.
    * Tuned in oklch for perceptual uniformity. */
-  --paper: oklch(0.13 0.04 275);              /* near-black with deep indigo undertone */
-  --paper-elevated: oklch(0.18 0.06 275);     /* navy plate */
-  --ink: oklch(0.97 0.008 270);
-  --ink-muted: oklch(0.66 0.022 270);
-  --hairline: oklch(0.78 0.08 270 / 14%);
+  --paper: oklch(0.13 0.006 60);              /* carbon — warm near-black */
+  --paper-elevated: oklch(0.17 0.008 60);     /* graphite plate */
+  --ink: oklch(0.97 0.004 75);                /* bone white, faint warmth */
+  --ink-muted: oklch(0.64 0.012 65);          /* concrete */
+  --hairline: oklch(0.85 0.02 70 / 12%);
 
-  /* Accent ramp — indigo-led, with supporting hues for charts/states. */
-  --violet: oklch(0.62 0.24 282);   /* electric indigo (#4f46e5 family) */
-  --cyan:   oklch(0.78 0.16 230);
-  --emerald:oklch(0.75 0.17 162);
-  --amber:  oklch(0.83 0.15 75);
-  --rose:   oklch(0.72 0.21 12);
+  /* Accent ramp — Pantone Orange 021 leads. Token names retained for
+   * backwards compatibility; --violet is now the primary ember accent. */
+  --violet: oklch(0.70 0.22 38);    /* Pantone Orange 021 C — signature ember */
+  --cyan:   oklch(0.82 0.08 220);   /* ice — cool counter-accent */
+  --emerald:oklch(0.78 0.16 158);   /* signal green, slightly desaturated */
+  --amber:  oklch(0.84 0.16 78);    /* warm amber halo */
+  --rose:   oklch(0.70 0.22 22);    /* alert red-orange */
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -111,19 +114,19 @@
   --card-foreground: var(--ink);
   --popover: var(--paper-elevated);
   --popover-foreground: var(--ink);
-  --primary: oklch(0.97 0.005 280);
-  --primary-foreground: oklch(0.16 0.012 280);
-  --secondary: oklch(0.24 0.05 278);
+  --primary: var(--violet);                   /* ember orange is the primary action */
+  --primary-foreground: oklch(0.14 0.01 60);  /* carbon on ember for max contrast */
+  --secondary: oklch(0.22 0.008 65);
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.22 0.045 278);
+  --muted: oklch(0.20 0.006 65);
   --muted-foreground: var(--ink-muted);
-  --accent: oklch(0.28 0.07 280);
+  --accent: oklch(0.26 0.04 50);              /* warm graphite hover surface */
   --accent-foreground: var(--ink);
   --destructive: oklch(0.65 0.21 22);
   --destructive-foreground: oklch(0.98 0.003 85);
   --border: var(--hairline);
   --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.68 0.22 295);
+  --ring: var(--violet);
   --chart-1: var(--violet);
   --chart-2: var(--cyan);
   --chart-3: var(--emerald);
@@ -133,10 +136,10 @@
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
   --sidebar-primary-foreground: var(--paper);
-  --sidebar-accent: oklch(0.24 0.06 278);
+  --sidebar-accent: oklch(0.22 0.01 60);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--hairline);
-  --sidebar-ring: oklch(0.62 0.24 282);
+  --sidebar-ring: var(--violet);
 }
 
 @layer base {
@@ -220,29 +223,29 @@
   }
   .text-balance { text-wrap: balance; }
 
-  /* Neural gradient — the signature gradient of the system */
+  /* Neural gradient — the signature gradient of the system.
+   * Carbon & Ember signature: molten orange bloom over carbon, with an
+   * amber halo and a faint ice breath for tension. */
   .neural-gradient {
-    /* Midnight Indigo signature — electric indigo bloom over deep navy,
-     * with cyan halo and a faint emerald breath. */
-    background: radial-gradient(60% 80% at 20% 30%, color-mix(in oklab, var(--violet) 75%, transparent) 0%, transparent 70%),
-                radial-gradient(50% 70% at 80% 20%, color-mix(in oklab, var(--cyan) 55%, transparent) 0%, transparent 70%),
-                radial-gradient(45% 60% at 60% 95%, color-mix(in oklab, oklch(0.45 0.22 285) 60%, transparent) 0%, transparent 70%),
-                radial-gradient(35% 45% at 10% 90%, color-mix(in oklab, var(--emerald) 35%, transparent) 0%, transparent 70%);
+    background: radial-gradient(60% 80% at 20% 30%, color-mix(in oklab, var(--violet) 78%, transparent) 0%, transparent 70%),
+                radial-gradient(50% 70% at 82% 18%, color-mix(in oklab, var(--amber) 50%, transparent) 0%, transparent 70%),
+                radial-gradient(45% 60% at 60% 95%, color-mix(in oklab, oklch(0.45 0.22 35) 65%, transparent) 0%, transparent 70%),
+                radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--cyan) 28%, transparent) 0%, transparent 70%);
     filter: blur(0.5px) saturate(1.15);
   }
   .neural-text {
-    background: linear-gradient(120deg, oklch(0.78 0.18 270), var(--violet) 45%, var(--cyan) 80%);
+    background: linear-gradient(120deg, var(--amber), var(--violet) 55%, oklch(0.62 0.24 28) 95%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .ring-glow-violet { box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent), 0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent); }
 
-  /* Indigo grid — subtle precision lattice for hero/empty surfaces. */
+  /* Precision lattice for hero/empty surfaces — ember-tinted. */
   .indigo-grid {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--violet) 12%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 12%, transparent) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in oklab, var(--violet) 14%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 14%, transparent) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
   }

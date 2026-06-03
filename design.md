@@ -49,6 +49,24 @@ The theme is **dark-mode first** (a Google Products-inspired "Neural Expressive"
 
 **That said you have full autonomy to pick the patterns, colours and design on your what would look good and makes sense here. Looking forward to dark background, preferably a shade of black and certain accent colours complimenting it.**
 
+### Active palette: Carbon & Ember (2026-06-03)
+
+Supersedes "Midnight Indigo." Factory.ai-adjacent industrial dark — carbon-black canvas, molten Pantone Orange 021 C as the signature accent, with amber warmth and a thin ice counterpoint for data viz. Conveys "heavy reasoning engine" without the generic AI-blue trope.
+
+| Role | Token | Pantone | OKLCH | Notes |
+|---|---|---|---|---|
+| Background (paper) | `--paper` | Black 6 C (~#101820) | `oklch(0.13 0.006 60)` | Warm carbon, never pure #000 |
+| Elevated surface | `--paper-elevated` | — | `oklch(0.17 0.008 60)` | Graphite plate for cards |
+| Foreground (ink) | `--ink` | Cool Gray 1 C | `oklch(0.97 0.004 75)` | Bone white, faint warmth |
+| Muted ink | `--ink-muted` | Cool Gray 7 C | `oklch(0.64 0.012 65)` | Concrete |
+| **Primary accent** | `--violet` *(retained name)* / `--primary` | **Orange 021 C (~#FE5000)** | `oklch(0.70 0.22 38)` | Signature ember — CTAs, rings, gradients |
+| Warm halo | `--amber` | 7548 C | `oklch(0.84 0.16 78)` | Gradient companion |
+| Cool counterpoint | `--cyan` | 7541 C | `oklch(0.82 0.08 220)` | Charts, info states |
+| Success | `--emerald` | 7480 C | `oklch(0.78 0.16 158)` | |
+| Alert | `--rose` / `--destructive` | Red 032 C | `oklch(0.70 0.22 22)` | Reads warm next to ember |
+
+Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are retained for backwards compatibility — only their values shifted to the Carbon & Ember language. WCAG AA: ember (`0.70 .22 38`) on carbon (`0.13 .006 60`) ≈ 7.4:1 for text and large UI.
+
 ### AI Color Selection Protocol (for agents, Lovable, and designers)
 
 **When selecting or evolving the color palette, follow this protocol:**
