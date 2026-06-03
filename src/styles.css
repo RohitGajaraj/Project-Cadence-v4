@@ -260,16 +260,23 @@
 
 @layer utilities {
   .hairline { border-color: var(--color-hairline); }
+  .hairline-strong { border-color: var(--hairline-strong); }
+  .text-ink-subtle { color: var(--ink-subtle); }
+  .surface-1 { background-color: var(--surface-1); }
+  .surface-2 { background-color: var(--surface-2); }
+  .surface-3 { background-color: var(--surface-3); }
+  .shadow-glass { box-shadow: var(--shadow-glass); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
   .bento {
-    background-color: color-mix(in oklab, var(--color-card) 88%, transparent);
-    border: 1px solid var(--color-hairline);
-    border-radius: var(--radius-2xl);
-    backdrop-filter: blur(8px);
+    background: var(--gradient-card);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-glass);
   }
   .glass {
-    background-color: color-mix(in oklab, var(--color-paper) 60%, transparent);
+    background-color: color-mix(in oklab, var(--surface-2) 70%, transparent);
+    border: 1px solid var(--hairline);
     backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
   .text-balance { text-wrap: balance; }
 
