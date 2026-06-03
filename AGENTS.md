@@ -9,39 +9,23 @@
 
 ## 0. What we are building (one paragraph, so every agent shares the same goal)
 
-Cadence (working name — see [`docs/decisions/naming.md`](./docs/decisions/naming.md)) is an **autonomous product OS**: the substrate on which a swarm of specialist AI agents runs the entire product lifecycle — discover, define, plan, build, test, ship, launch, support, learn — continuously, while a human governs the calls that matter. **Agents do. Humans govern.** It is not a PM tool with AI bolted on, and it is not a copilot. Agents are the operators; the human sets strategy and approves at governance gates. The platform is never "done" — it runs continuously, compounding with every mission. Full thesis + three-persona target market: [`README.md`](./README.md). Strategic session record: [`docs/strategy/v2-positioning-2026-06-02.md`](./docs/strategy/v2-positioning-2026-06-02.md).
+Cadence (working name — see [`docs/naming.md`](./docs/naming.md)) is an **agent-native product operating system**: the substrate on which a swarm of specialist AI agents runs the entire product lifecycle — discover, reason, plan, build, ship, GTM, support, learn — while a human sets intent and approves the calls that matter. It is **not** a PM tool with AI bolted on. AI is the core. The human is an orchestrator, not middleware. Full thesis: [`README.md`](./README.md).
 
-Four principles govern every decision in this repo:
+Three principles govern every decision in this repo:
 
-1. **Agents do. Humans govern.** Agents run multi-step missions end to end — discover → build → test → ship → launch → support. Humans set intent, approve at governance gates, and make judgment calls. Everything else: agents own. Autonomy is the product; governance makes it safe.
-2. **Continuous, not project-based.** Cadence is an OS that runs indefinitely, not a build tool you close when the product ships. Products never finish; the loop keeps running and compounding.
-3. **The moat is the end-to-end governed loop, not the model or the data.** Cadence is model-agnostic; frontier models are an input we orchestrate. Defensibility is owning the whole lifecycle orchestration + the trust/governance layer + compounding Product Memory. See [`README.md`](./README.md) §MOAT.
+1. **AI is the operating system, not a feature.** Every workflow flows through an intelligent layer with telemetry, evals, guardrails, and approval gates.
+2. **Fully autonomous super-agents, governed.** Agents don't just assist — they run multi-step missions end to end (discover → build → test → ship → launch → support), in parallel, behind approval gates. Autonomy is the product; governance makes it safe.
+3. **The moat is the end-to-end governed loop, not the model or the data.** Cadence is model-agnostic; frontier models are an input we orchestrate. Defensibility is owning + reliably orchestrating the *whole* lifecycle, the trust/governance layer, the switching cost of being system-of-record-and-action, and agent-native interop. See [`README.md`](./README.md). (Earlier "moat is data" framing is retired.)
 4. **Build for agents first.** APIs, MCP, A2A, and CLIs over dashboards. The next users are agents. See [`architecture/integrations.md`](./architecture/integrations.md).
 
 ---
 
-> ## STANDING ORDER 1 — scan skills, agents, plugins, and MCPs before every task (every tool, every session, non-negotiable)
->
-> This is the first rule. It applies before every task — code, docs, design, analysis, any action — in every tool: Claude Code, Antigravity, Gemini, Lovable, any future tool.
->
-> Before doing anything else:
-> 1. Scan the full available library of skills, agents, plugins, and MCP servers in the session context
-> 2. Include ALL categories equally — skills, agents, plugins, MCPs — not just one type
-> 3. Shortlist candidates across ALL namespaces with no namespace or vendor bias
-> 4. Pick the best fit and invoke it before acting from scratch
->
-> Do not wait for the user to ask. Do not skip this for simple tasks. Full protocol: section 2 below.
-
----
-
-> ## STANDING ORDER 2 — keep the Live status board and active-task.md current (every tool, every session)
+> ##  STANDING ORDER — keep the Live status board & active-task.md current (every tool, every session)
 >
 > **This is a continuous obligation, not a one-time setup.** On **every** session, in **every** tool — Claude Code · Antigravity · Gemini · Lovable · any future tool — you **must** check for in-progress tasks and update the status boards:
-> - **At session start:**
->   0. **`git pull origin main`** — sync all work from every other tool before touching anything. Never work on a stale codebase.
->   1. Check if `active-task.md` exists in the project root. If it does, read it to resume the in-flight sub-steps.
->   2. Read the **Live status board** at the top of [`docs/feature-backlog.md`](./docs/feature-backlog.md).
->   3. Read the latest file in `docs/strategy/` — check `docs/strategy/README.md` for the current version.
+> - **At session start:** 
+>   1. Check if `active-task.md` exists in the project root. If it does, you MUST read it to resume the exact sub-steps currently in-flight.
+>   2. Read the **Live status board** at the top of [`docs/feature-backlog.md`](./docs/feature-backlog.md) to align on the broader feature context.
 > - **While working:** Set **Now building** in [`docs/feature-backlog.md`](./docs/feature-backlog.md) and update checked/unchecked items in `active-task.md` as you make progress.
 > - **Before you end or pause — non-negotiable:** Leave the status boards true. If work on a feature is not 100% complete, verify that `active-task.md` details exactly what is left so the next tool/agent can pick it up. If the feature is complete, delete `active-task.md` from the project root and flip status checkmarks in the backlog.
 >
@@ -55,9 +39,8 @@ Four principles govern every decision in this repo:
    * **Active Task Check:** Check if `active-task.md` exists in the repository root. If yes, read it and immediately resume work from the listed checklist.
    * **Backlog Check:** If no `active-task.md` exists, go to the **Build-order rollup** in [`docs/feature-backlog.md`](./docs/feature-backlog.md#build-order-rollup-status--build-sequence): take the lowest-numbered step still `◑`/`☐` → expand its Key IDs to the feature entries above → pick the first whose `[status]` isn't `☑` → open its ticket in [`docs/foundation-audit.md`](./docs/foundation-audit.md) (step 1) or its entry (later steps).
    * **Task Initialization:** Once you identify the next task, create `active-task.md` in the project root with the detailed checklist of implementation sub-steps before writing code.
-0.5. **Read the latest positioning document in `docs/strategy/`** before any task involving features, UX, positioning, personas, or USP. Do not hardcode the filename — check `docs/strategy/README.md` to find the current version (as of writing: `v2-positioning-2026-06-02.md`; a newer version may exist). Read the latest. Earlier versions give context on evolution; the latest is the source of truth. Market research in `docs/references/` feeds positioning — read when doing competitive or market analysis.
 1. **State the request in one sentence.** If ambiguous, ask before acting.
-2. **Scan skills, agents, plugins, and MCPs first — then act.** Surface candidates from the full installed library (skills, agents, plugins, MCP servers) with a one-line "why," before invoking. Never reason from scratch when a skill or agent exists. References: [`skills.md`](./skills.md), [`subagents.md`](./subagents.md). This is non-negotiable — see the standing order above.
+2. **Scan skills and agents first, and then avaialble plugins and tools(MCP,etc) then act.** Surface candidate skills ([`skills.md`](./skills.md)) and subagents ([`subagents.md`](./subagents.md)) with a one-line "why," before invoking. Never reason from scratch when a skill exists. This is non-negotiable.
 3. **Invoke the smallest set that fits.** One or two skills, justified in one line. No invoking five overlapping skills "for completeness."
 4. **Track multi-step work as tasks.** Create tasks up front; update as you go. Do not batch-complete at the end.
 5. **Confirm destructive or shared-state actions.** Pushes, force-pushes, branch deletes, migrations, external sends. One past approval does not extend forward.
@@ -70,17 +53,15 @@ If you catch yourself thinking "this is a quick fix, I can skip the protocol" �
 
 ## 2. Skill-first & Agent-first protocol (scan, shortlist, pick, code)
 
-**CRITICAL: This is non-negotiable. Follow this protocol before any non-trivial task:**
-1. **Scan the FULL available library** — skills/agents/plugins/MCP servers in the session reminder + any local project skills
-2. **Shortlist candidates across ALL namespaces** — do not limit yourself to the examples below
-3. **Pick the absolute best fit** — no namespace bias; evaluate on merit alone
-4. **Invoke & execute** the best-fit skill, then code
+**Before any non-trivial task, follow this protocol:** 
+1. Scan available skills/agents/plugins/MCP servers (active list in session reminder)
+2. Shortlist candidates across ALL namespaces (GStack, ecc, superpowers, ruflo, design, context7, user-installed, etc.)
+3. Pick the best fit (no namespace bias; best-fit wins)
+4. Invoke & execute, then code
 
 **Why scan?** 700+ skills exist. Skipping the scan means hallucinating, burning tokens, and missing the right tool. A 30-second scan prevents a 30-minute wrong path.
 
-**IMPORTANT: The skill categories listed below are EXAMPLES AND REFERENCE ONLY. They are NOT prescriptive. They do NOT limit your search.** You MUST scan the full library and consider skills outside these categories. These are great tools worth knowing about, but you must also actively search for other skills, agents, plugins, and MCPs that might fit your specific task better.
-
-**Selection priority (all equal — no GStack bias):**
+**Selection priority - all equal:**
 1. **User instructions win.** If [`AGENTS.md`](./AGENTS.md), [`CLAUDE.md`](./CLAUDE.md), [`GEMINI.md`](./GEMINI.md), or the request says "use X," use X.
 2. **Scan the full installed set + project folders** — shortlist candidates across all namespaces.
 3. **Best fit wins.** Pick the most relevant skill for the task. All namespaces equal.
@@ -89,21 +70,20 @@ If you catch yourself thinking "this is a quick fix, I can skip the protocol" �
 6. **Repo-local convention beats cross-repo default** — see [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md).
 7. **When in doubt, ask.** A 10-second clarification beats a 10-minute wrong path.
 
-**Common skill categories (REFERENCE AND EXAMPLES ONLY — NOT EXHAUSTIVE, NOT PRESCRIPTIVE):**
-These are great skills worth knowing about. BUT you MUST also scan for other skills, agents, plugins, and MCPs beyond this list. Always check the full library first.
+**Common skill categories (examples, not exhaustive):**
 
 | Category | Examples | When to reach for |
 |---|---|---|
-| **Process & discipline** | `superpowers:brainstorming`, `superpowers:debugging`, `superpowers:test-driven-development`, `superpowers:systematic-debugging` | *Before* implementation — these shape how you code. |
-| **Code review** | `ecc:typescript-reviewer`, `ecc:python-reviewer`, `ecc:rust-reviewer`, `ecc:go-reviewer`, `ecc:csharp-reviewer`, `ecc:java-reviewer`, `pr-review-toolkit:code-reviewer` | Language-specific or pattern-specific review. Better than generic. |
-| **Security & compliance** | `ecc:security-reviewer`, `ecc:a11y-architect`, `ecc:healthcare-reviewer` | Security audits, accessibility, compliance. Domain-specific. |
-| **Database & data** | `ecc:database-reviewer`, `ecc:mle-workflow`, `ruflo-migrations:migrate-create` | Schema design, migrations, data patterns. |
-| **Build & deploy** | `ecc:build-fix`, `ecc:go-build`, `ecc:rust-build`, `ecc:kotlin-build`, `ecc:cpp-build` | Build errors. Language-specific is better than generic. |
-| **Design & frontend** | `emil-design-eng`, `design-taste-frontend`, `frontend-design`, `ecc:frontend-design-direction` | UI/UX work, motion, design systems. |
-| **Docs & context** | `context7-plugin:docs`, `ecc:update-docs`, `claude-api:doc-coauthoring` | Library docs, documentation, knowledge. |
-| **Architecture & planning** | `ecc:plan`, `ecc:architecture-decision-records`, `ecc:blueprint` | System design, ADR, multi-layer architecture. |
-| **Testing & validation** | `ecc:tdd-workflow`, `ecc:e2e-testing`, `ecc:test-coverage` | TDD, end-to-end tests, coverage analysis. |
-| **Performance & optimization** | `ecc:performance-optimizer`, `ecc:refactor-clean`, `ecc:cost-tracking` | Speed, memory, bundle size, cost. |
+| **Process & discipline** | `superpowers:brainstorming`, `superpowers:debugging`, `superpowers:test-driven-development`, `superpowers:systematic-debugging` , etc. | *Before* implementation — these shape how you code. |
+| **Code review** | `ecc:typescript-reviewer`, `ecc:python-reviewer`, `ecc:rust-reviewer`, `ecc:go-reviewer`, `ecc:csharp-reviewer`, `ecc:java-reviewer`, `pr-review-toolkit:code-reviewer` , , etc. | Language-specific or pattern-specific review. Better than generic. |
+| **Security & compliance** | `ecc:security-reviewer`, `ecc:a11y-architect`, `ecc:healthcare-reviewer` , etc. | Security audits, accessibility, compliance. Domain-specific. |
+| **Database & data** | `ecc:database-reviewer`, `ecc:mle-workflow`, `ruflo-migrations:migrate-create` , etc. | Schema design, migrations, data patterns. |
+| **Build & deploy** | `ecc:build-fix`, `ecc:go-build`, `ecc:rust-build`, `ecc:kotlin-build`, `ecc:cpp-build`, etc. | Build errors. Language-specific is better than generic. |
+| **Design & frontend** | `emil-design-eng`, `design-taste-frontend`, `frontend-design`, `ecc:frontend-design-direction` , etc. | UI/UX work, motion, design systems. |
+| **Docs & context** | `context7-plugin:docs`, `ecc:update-docs`, `claude-api:doc-coauthoring` , etc. | Library docs, documentation, knowledge. |
+| **Architecture & planning** | `ecc:plan`, `ecc:architecture-decision-records`, `ecc:blueprint` , etc. | System design, ADR, multi-layer architecture. |
+| **Testing & validation** | `ecc:tdd-workflow`, `ecc:e2e-testing`, `ecc:test-coverage` , etc. | TDD, end-to-end tests, coverage analysis. |
+| **Performance & optimization** | `ecc:performance-optimizer`, `ecc:refactor-clean`, `ecc:cost-tracking` , etc. | Speed, memory, bundle size, cost. |
 | **Workflow shortcuts** | `to-prd`, `to-issues`, `prototype`, and 700+ others | Domain-specific, user-installed, project-local. |
 
 Full skill-selection logic & anti-patterns: [`skills.md`](./skills.md). Subagent selection: [`subagents.md`](./subagents.md).
@@ -111,16 +91,6 @@ Full skill-selection logic & anti-patterns: [`skills.md`](./skills.md). Subagent
 ---
 
 ## 3. Engineering rules
-
-### Git Discipline (All Tools, Every Interaction)
-**Every git action (commit, push, pull, branch, merge) must include a clear one-line WHY.** The diff shows the WHAT; the message explains the WHY and context. This applies equally to Claude Code, Lovable, Antigravity, and Gemini.
-
-- **Commits:** Use `gstack` (or tool equivalent). Include a second sentence explaining why the change matters + ticket context.
-- **Pushes:** Include a one-liner about what is being pushed and why (e.g., `git push — FND-KILLSWITCH design audit complete; unblocks Lovable`)
-- **Pulls:** State your sync intent before pulling (e.g., `git pull — syncing latest auth fixes; checking design.md conflicts`)
-- **Merges/branches/resets:** Every action requires a message explaining the goal + any risks.
-
-Enforcement: Hooks block commits without explanatory messages; push-log is audited. Full discipline: [`docs/git-discipline.md`](./docs/git-discipline.md) (canonical reference for all tools).
 
 ### Architecture
 1. **Every AI call goes through the chokepoint** (`src/lib/ai/runtime.server.ts`). No second path. Contract: [`architecture/runtime.md`](./architecture/runtime.md).
@@ -223,24 +193,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 ## 5. Cross-document update protocol (the closed documentation loop)
-
-### Rule: skill-generated documents must be integrated, not siloed
-
-When any skill or agent generates documentation files — for example, `/gstack-office-hours` creates `docs/office-hours/`, `/gstack-document-release` creates changelog files, `/to-prd` creates spec files — follow this protocol:
-
-1. **Check first.** Does an existing document or folder already serve this purpose? If yes, merge the content there and delete the generated file.
-2. **Place correctly.** If the content is genuinely unique, place it in the most appropriate existing folder (`docs/strategy/`, `docs/decisions/`, `docs/references/`, etc.).
-3. **Update the index.** Add or update the relevant `README.md` in that folder.
-4. **Add to session-decisions.md** if the generated content contains a strategic decision or significant context.
-5. **Never leave generated files in new arbitrary folders.** A file in `docs/office-hours/` with content that belongs in `docs/strategy/` is documentation debt.
-
-Specific example: `/gstack-office-hours` creates `docs/office-hours/YYYY-MM-DD-design.md`. Correct action: extract the positioning/decision content, merge into `docs/strategy/vN-positioning-YYYY-MM-DD.md` (a new version), update `docs/strategy/README.md`, delete the `office-hours` file.
-
-### Rule: session decisions must be documented
-
-When a session produces a major strategic decision, significant tradeoff resolution, or positioning/architecture change — add an entry to `docs/strategy/session-decisions.md` in the same session. This is a continuous obligation, not a one-time activity. Format: decision, why, tradeoffs considered, impact on files.
-
-### Rule: new positioning version when warranted
 
 **This is a document-driven project. Documentation is a closed loop, not an afterthought.** Every time a feature is built, a decision is made, a convention changes, or a non-obvious learning emerges, the relevant docs **must** be updated in the same unit of work — before the task is considered done. Concretely, on every meaningful change:
 - Update the doc(s) the change touches (table below).
@@ -370,8 +322,8 @@ All tools meet at **git**, not at a shared brain. To co-develop without drift:
 
 1. **One canonical rule source.** If you change a rule, change it in `AGENTS.md`. The pointers (`CLAUDE.md`, `GEMINI.md`, Lovable Knowledge) only point.
 2. **MCP parity.** When you add a server to `.mcp.json`, mirror it into Antigravity/Gemini config in the same unit of work so the tools have matching capabilities.
-3. **No code silos. Document-driven coordination.** All tools (Lovable, Claude Code, Antigravity, Gemini) can edit any file. The Live status board (`docs/feature-backlog.md`) tells you if another tool is already working on that task. Use `active-task.md` for complete context handoff (what's done, what's in-flight, what's next). Every tool owns what it's actively working on, then documents the handoff for the next tool.
-4. **Reconcile through commits, frequently.** Multiple tools editing the same files diverge fast. Pull/sync before a session, commit small (5–15 min chunks), push immediately, and keep the Live status board true. Never let one tool sit on uncommitted work while another might pull stale code.
+3. **Divide by strength.** Let Lovable handle UI scaffolding; let Claude Code/Antigravity handle agent-heavy, server, and migration work (where skills/subagents/hooks earn their keep). Both land in the same repo.
+4. **Reconcile through commits, frequently.** Two tools editing the same files diverge fast. Pull/sync before a session, commit small, and never let one tool sit on a long-lived uncommitted working tree while another edits.
 5. **Secrets never enter committed config.** `.mcp.json` and rules files use `${ENV_VAR}` placeholders; real values live in `.env` (git-ignored) or the tool's own secret store.
 
 ---
