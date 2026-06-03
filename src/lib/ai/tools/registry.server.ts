@@ -339,7 +339,7 @@ const researchSynthesize = def({
     if (!signals || signals.length < 2) return { themes_created: 0, signals_linked: 0, reason: "not enough signals to cluster" };
 
     const corpus = signals.map((s, i) => `[${i}] (${s.sentiment ?? "n/a"}) ${s.title ? s.title + " — " : ""}${(s.content ?? "").slice(0, 400)}`).join("\n");
-    const res = await callModel({
+    const res = await callModel(supabase, userId, {
       surface: "discovery", surface_ref: "research.synthesize",
       model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
       responseFormat: "json_object",
@@ -413,7 +413,7 @@ const prdDraft = def({
       }
     }
 
-    const res = await callModel({
+    const res = await callModel(supabase, userId, {
       surface: "prd", surface_ref: opp.id,
       model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
       messages: [
@@ -485,7 +485,7 @@ const backlogPrioritize = def({
       current: { impact: o.impact, confidence: o.confidence, ease: o.ease },
       evidence: o.theme_id ? counts[o.theme_id] ?? { n: 0, recent: 0 } : { n: 0, recent: 0 },
     }));
-    const res = await callModel({
+    const res = await callModel(supabase, userId, {
       surface: "discovery", surface_ref: "backlog.prioritize",
       model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
       responseFormat: "json_object",
