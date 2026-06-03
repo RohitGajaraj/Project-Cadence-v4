@@ -9,7 +9,7 @@
  *   a review (mode=review). Memory is recalled and prepended.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { callModel } from "./runtime.server";
+import { callModel, GovernanceHaltError } from "./runtime.server";
 import { TOOL_REGISTRY, describeToolsForPrompt, type ToolCtx } from "./tools/registry.server";
 import { embedOne } from "@/lib/rag/embed.server";
 
@@ -28,6 +28,8 @@ export type LoopResult = {
   steps: LoopStep[];
   final: string;
   approvals_queued: number;
+  run_id?: string | null;
+  halted?: { kind: string; reason: string } | null;
 };
 
 type Action =
@@ -63,7 +65,7 @@ function xmlEscape(str: string): string {
 export async function runAgentLoop(
   supabase: SupabaseClient,
   userId: string,
-  input: { agentSlug: string; goal: string; model?: string },
+  input: { agentSlug: string; goal: string; model?: string; workspaceId?: string | null; missionSpendCapUsd?: number | null; missionTokenCap?: number | null },
 ): Promise<LoopResult> {
   const traceId = crypto.randomUUID();
 
@@ -71,6 +73,27 @@ export async function runAgentLoop(
     .select("id,slug,name,role,system_prompt")
     .eq("user_id", userId).eq("slug", input.agentSlug).maybeSingle();
   if (!agent) throw new Error(`Unknown agent: ${input.agentSlug}`);
+
+  // Resolve workspace (fallback to user's default) so kill-switch can scope.
+  let workspaceId: string | null = input.workspaceId ?? null;
+  if (!workspaceId) {
+    const { data: ws } = await supabase.rpc("current_user_default_workspace");
+    workspaceId = (ws as string | null) ?? null;
+  }
+
+  // Create an agent_runs row so mission caps + usage can be tracked.
+  const { data: runRow } = await supabase.from("agent_runs").insert({
+    user_id: userId,
+    agent_id: agent.id,
+    agent_slug: agent.slug,
+    agent_name: agent.name,
+    input: input.goal,
+    status: "running",
+    workspace_id: workspaceId,
+    mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
+    mission_token_cap: input.missionTokenCap ?? null,
+  }).select("id").single();
+  const runId = (runRow as { id: string } | null)?.id ?? null;
 
   const { data: toolRows } = await supabase.from("agent_tools")
     .select("tool_name,mode,enabled").eq("user_id", userId).eq("enabled", true);
@@ -100,26 +123,53 @@ export async function runAgentLoop(
   const ctx: ToolCtx = { supabase, userId, agentSlug: agent.slug, agentId: agent.id, traceId };
   const model = input.model ?? "google/gemini-2.5-flash";
 
+  let halted: { kind: string; reason: string } | null = null;
+  const finalize = async (finalMsg: string) => {
+    if (runId) {
+      try {
+        await supabase.from("agent_runs").update({
+          status: halted ? "halted" : "completed",
+          output: finalMsg,
+          duration_ms: 0,
+        }).eq("id", runId);
+      } catch (e) { console.error("agent_runs finalize failed:", e); }
+    }
+    return { trace_id: traceId, agent_slug: agent.slug, steps, final: finalMsg, approvals_queued: approvalsQueued, run_id: runId, halted };
+  };
+
   for (let i = 0; i < MAX_STEPS; i++) {
-    const r = await callModel(supabase, userId, {
-      surface: "agent",
-      surface_ref: agent.slug,
-      traceId,
-      model,
-      responseFormat: "json_object",
-      messages: conv,
-      promptKey: "planner_executor",
-    });
+    let r;
+    try {
+      r = await callModel(supabase, userId, {
+        surface: "agent",
+        surface_ref: agent.slug,
+        traceId,
+        model,
+        responseFormat: "json_object",
+        messages: conv,
+        promptKey: "planner_executor",
+        workspaceId,
+        runId,
+      });
+    } catch (e) {
+      if (e instanceof GovernanceHaltError) {
+        halted = { kind: e.kind, reason: e.message };
+        const msg = `Halted by governance (${e.kind}): ${e.message}`;
+        steps.push({ kind: "final", message: msg });
+        return finalize(msg);
+      }
+      throw e;
+    }
     const parsed = safeParseAction(r.output);
     if (!parsed?.action) {
       steps.push({ kind: "final", message: r.output || "(no reply)" });
-      return { trace_id: traceId, agent_slug: agent.slug, steps, final: r.output || "", approvals_queued: approvalsQueued };
+      return finalize(r.output || "");
     }
     if (parsed.thought) steps.push({ kind: "thought", text: parsed.thought });
 
     if (parsed.action.type === "final") {
       steps.push({ kind: "final", message: parsed.action.message });
-      return { trace_id: traceId, agent_slug: agent.slug, steps, final: parsed.action.message, approvals_queued: approvalsQueued };
+      return finalize(parsed.action.message);
     }
 
     const call = parsed.action;
@@ -186,7 +236,7 @@ export async function runAgentLoop(
   }
 
   steps.push({ kind: "final", message: "Reached step limit without finalizing." });
-  return { trace_id: traceId, agent_slug: input.agentSlug, steps, final: "Reached step limit.", approvals_queued: approvalsQueued };
+  return finalize("Reached step limit.");
 }
 
 /** Execute a previously approved approval. Returns the tool result or throws. */
