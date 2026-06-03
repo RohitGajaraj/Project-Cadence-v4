@@ -41,43 +41,56 @@
 
 ---
 
-## ▶ YC demo cut — the minimum set that proves the thesis
+## ▶ Agentic Proof Platform (v1) — prove the thesis on real data
 
-> **What this is.** A scope overlay — not a new roadmap. The exhaustive backlog below is unchanged. This section picks the smallest subset of existing features whose *combined demo* proves the Cadence thesis to a YC reviewer in ~90 seconds: **agents run the product lifecycle; humans govern. Agents talk to agents, hand work to agents, and finish missions end-to-end.**
+> **What this is.** A scope overlay — not a new roadmap. The exhaustive backlog below is unchanged. This section picks the smallest subset of existing features whose *combined, end-to-end behavior on real data* proves that Cadence delivers agentic-native product management that legacy PM tools (Jira, Linear, Productboard, ProductPlan, Aha) structurally cannot. **The YC demo is a by-product; the platform is the point.**
 >
-> **Locked decisions (2026-06-03):** Demo persona = **Founder-as-PM** ("run the product org you can't afford to hire"). Autonomous Build/Test/Ship (S4–S6) **deferred** from the demo and positioned as "foundation built, next milestone." Demo data = **real product** (yours or a design partner), not synthetic. Reasoning + tradeoffs in [`../docs/strategy/session-decisions.md`](../docs/strategy/session-decisions.md).
+> **Locked decisions (2026-06-03):** Demo persona = **Founder-as-PM** ("run the product org you can't afford to hire"). Autonomous Build/Test/Ship (S4–S6) **deferred** and positioned as "foundation built, next milestone." Demo data = **real product** (default: Cadence-on-Cadence; design partner if/when one is in scope) — see [`docs/strategy/session-decisions.md`](../docs/strategy/session-decisions.md) for the reframe.
 >
-> **The thesis demo, one sentence:** the operator types one intent → the Orchestrator spawns specialist agents → they message and hand off to each other across Discover → Define → Plan → one item triggers an approval gate → the operator approves → Product Memory shows the full lineage → the operator exports it.
+> **From demo cut → proof cut.** Every bundle now ships against an explicit **proof bar** — the minimum behavior that makes the claim true on real data, not just visible in a screenshot. If a visitor cannot point to each of the four claims being true in the running product within ~5 minutes, the bundle hasn't shipped.
 
-### The 8 capability bundles
+### The four claims we are proving
+
+| # | Claim (vs. legacy PM tools) | Proof artifact |
+|---|---|---|
+| **C1** | Agents **operate**, humans govern — agents run multi-step missions, not assist with forms | Live Mission Graph + Decision Queue with real approval gates firing |
+| **C2** | **Agent-to-agent handoff is first-class** — no human in the routing path | A2A trace: Discovery → Strategist → Planner, each reading prior agent's structured output, with full lineage |
+| **C3** | The **whole lifecycle is one governed loop** — Discover → Define → Plan (Build/Ship/Learn deferred, named) | One vertical slice running on real product data, ending in a re-scored opportunity |
+| **C4** | **Trust is earned and visible** — autonomy is dialed, not assumed | Trust Score + Autonomy Dial per agent, changing behavior of approval gates in real time |
+
+### The 8 capability bundles + proof bars
 
 Each bundle composes existing backlog IDs; nothing here is a parallel scope. Bundles are ordered by the dependency chain, not priority.
 
-| # | Bundle | Why core for YC | Backlog IDs | Status |
-|---|---|---|---|---|
-| 1 | **Governed foundation** — tenancy, AI chokepoint, trust tables, blast-radius, kill-switch + spend caps, injection defense, durable runtime | Proves governance is a first-class product layer, not a slide. The reason enterprises will trust autonomous agents. | 0.1, 0.2, 0.3, 0.5, **0.6** ✅, **0.7** ✅, 0.9, A1/A2 | ◑ (0.6 + 0.7 done; 0.9 next) |
-| 2 | **Strategic Briefing surface** — set product north star, goals, constraints; every agent reads it as operating context | The "humans govern" entry point. One place the operator sets intent that the whole swarm honors. | C5 (new) | ☐ |
-| 3 | **Agent roster + Trust Score + Autonomy Dial** | Makes "agents are operators, not tools" visible. A reviewer sees a team, not a chatbot. | C1, C2, C3, C4, **C6** (new) | ☐ |
-| 4 ⭐ | **Agent-to-Agent comms + handoff + sub-agent spawning** | **The thesis.** Orchestrator spawns specialists; they message each other; missions hand off across stages with zero human relay. This is the YC differentiator. | E1, E2, E3, E4, E5 | ☐ |
-| 5 | **Live Mission Graph** — "watch the agents work" | The screenshot for the YC deck. Single DAG view of all running agents + sessions + cost + approval state. | E6, X1 | ☐ |
-| 6 | **One vertical end-to-end slice** — Discover → Define → Plan executed by 3 agents handing off via #4 | Proves the loop actually runs, not just that the parts exist. Uses real seeded signals. | F1, F2, F3, G1, H1 | ◑ (legacy parts reusable) |
-| 7 | **Decision Queue + approval gates** | The "humans govern" surface. Every high-risk action lands here with rationale + lineage. | D3, P-approvals | ◑ (reusable) |
-| 8 | **Product Memory + lineage + full data export** | Proves the compounding-value + anti-lock-in story. | O1, O2, U6 (new) | ☐ |
+| # | Bundle | Proof bar (what makes the claim true) | Backlog IDs | Supports | Status |
+|---|---|---|---|---|---|
+| 1 | **Governed Foundation** — tenancy, AI chokepoint, trust tables, blast-radius, kill-switch + spend caps, injection defense, durable runtime | Killing an agent mid-mission halts spend within 1 tick; every action has an audit-log row queryable from the UI. | 0.1, 0.2, 0.3, 0.5, **0.6** ✅, **0.7** ✅, 0.9, A1/A2 | C1, C4 | ◑ (0.6 + 0.7 done; 0.9 next) |
+| 2 | **Strategic Briefing surface** | Changing the brief visibly changes the next Discovery + Strategist output (not just stored). | C5 (new) | C1, C3 | ☐ |
+| 3 | **Agent Roster + Trust Score + Autonomy Dial** | Dialing autonomy from Observing → Trusted removes a specific approval gate; Trust Score moves based on real outcomes (eval pass-rate, approval-acceptance, mission success). | C1, C2, C3, C4, **C6** (new) | C1, C4 | ☐ |
+| 4 ⭐ | **Agent-to-Agent comms + handoff + sub-agent spawning** | One mission with **≥3 hops** between agents, each reading prior agent's **structured** output via the orchestration layer (not prompt-stuffing), full trace replayable. | E1, E2, E3, E4, E5 | C2 | ☐ |
+| 5 | **Live Mission Graph** | The graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens + approval state. | E6, X1 | C1, C2 | ☐ |
+| 6 | **Vertical slice: Discover → Define → Plan on real data** | Seeded with real signals → produces a real PRD + sprint plan → one item routes to approval → operator approves → plan updates. End-to-end, no human routing. | F1, F2, F3, G1, H1 | C3 | ◑ (legacy parts reusable) |
+| 7 | **Decision Queue + approval gates UX** | Every gate the agents hit lands in the queue with context (what, why, cost-if-approved, who proposed); approve/reject changes downstream agent behavior. | D3, P-approvals | C1, C4 | ◑ (reusable) |
+| 8 | **Product Memory + lineage + full data export** | Every artifact (signal → theme → opportunity → PRD → decision) has lineage backward to its source; "Export everything" produces a complete, re-importable archive. | O1, O2, U6 (new) | C3 | ☐ |
 
-### Build sequence (YC-cut overlay)
+### Build sequence (Proof Platform v1)
 
 1. **Finish foundation gaps** — **0.9 FND-RUNTIME** (long missions must survive worker restarts before handoff is meaningful) → **0.2 cache stage**. *(Matches existing Build-order rollup step 1.)*
 2. **C5 Strategic Briefing** — small, high-leverage; gives the swarm shared operating context.
 3. **C1/C4 + C6 skeleton** — roster UI + read-only Trust Score; scoring math can come later.
-4. **E1–E5** — the A2A primitives (protocol + tables + tracing). Hardest bundle; budget the most time here.
+4. **E1–E5** — the A2A primitives (protocol + tables + tracing). Hardest bundle; budget the most time here. **This is where C2 becomes true.**
 5. **E6 Mission Graph** — the visualization on top of #4. Without #4 it's a fake screenshot.
-6. **Wire F1→G1→H1 through the new handoff primitives** — the demo run, using real seeded data.
+6. **Wire F1→G1→H1 through the new handoff primitives** — the vertical slice on real seeded data.
 7. **D3 polish** — make it the obvious "govern here" surface.
 8. **O1/O2 lineage view + U6 Export** — anti-lock-in proof.
 
-### Explicitly deferred (NOT in the YC demo cut, NOT removed from the product)
+### Real-data seeding (default: Cadence-on-Cadence)
 
-Autonomous **Build / Test / Ship** (S4–S6 — epics I, J, K), **Launch / GTM** (L), **Support** (M), external **MCP / A2A interop** (Q), advanced eval / drift / guardrail UIs beyond what the chokepoint already does, multi-product portfolio view (B3), BYO keys UI polish (A5), billing UI. Positioning for YC: *"foundation built (chokepoint, trust stack, orchestration); next milestone."*
+Bundle 6 runs on real product data. **Default seed = Cadence itself** (we run our own roadmap on Cadence: real signals from this repo's issues, decisions, session-decisions log, feature-backlog). This is the most credible YC story ("we eat our own dog food") and avoids the design-partner dependency. If a design partner is signed before bundle 6 ships, their product becomes an additional seed — not a replacement. Confirmed default; no decision pending.
+
+### Explicitly deferred (NOT in v1, NOT removed from the product)
+
+Autonomous **Build / Test / Ship** (S4–S6 — epics I, J, K), **Launch / GTM** (L), **Support** (M), external **MCP / A2A interop** (Q), advanced eval / drift / guardrail UIs beyond what the chokepoint already does, multi-product portfolio view (B3), BYO keys UI polish (A5), billing UI. Positioning: *"foundation built (chokepoint, trust stack, orchestration); next milestone."*
 
 ### New features this overlay adds to the backlog
 
