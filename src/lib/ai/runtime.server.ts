@@ -995,6 +995,7 @@ export async function callModelStream(
           if (!hits.some((h) => h.action === "block") && (inTok + outTok) > 0) {
             await incrementBudget(supabase, userId, inTok + outTok, estCost);
             await incrementSurfaceBudget(supabase, userId, opts.surface, estCost);
+            await recordMissionUsage(supabase, opts.runId ?? null, inTok + outTok, estCost);
           }
 
           if (resolvedPrompt && eventId) {
