@@ -1,0 +1,130 @@
+# docs/considerations.md — Holistic gap review (enterprise-architect lens)
+
+> Status: **STANDING REVIEW.** A deliberate, multi-stakeholder pass over what the rest of the docs have *not* yet called out — written wearing the hats of enterprise architect, CISO, SRE, data/privacy officer, finance, legal, GTM, support, and founder. Goal: surface what an enterprise-grade build needs so nothing blindsides us later. Operating rules: [`AGENTS.md`](../AGENTS.md). Feature scope: [`../plan.md`](../plan.md). Architecture: [`../architecture/`](../architecture/).
+>
+> **How to use this:** each item is a *gap to close*, not a feature already built. Pull each into [`../plan.md`](../plan.md) (sections 2/3) as it becomes relevant.
+>
+> **Priority precedence — P0 is highest, P2 is lowest. Do P0 first.** **P0** = needed for a credible first real user (build into the foundation now); **P1** = needed before/at the first enterprise sale; **P2** = scale/maturity. When in doubt, sequence P0 → P1 → P2.
+
+## Already covered (don't duplicate — pointers)
+Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../architecture/security.md`](../architecture/security.md). Orchestration, parallelism, multi-product isolation → [`../architecture/orchestration.md`](../architecture/orchestration.md). AI telemetry, evals, guardrails, budgets, drift → [`../architecture/runtime.md`](../architecture/runtime.md). Data model, migrations, pgvector → [`../architecture/data.md`](../architecture/data.md). a11y, design states → [`../design.md`](../design.md). Stack/OSS/lock-in → [`decisions/tech-stack.md`](./decisions/tech-stack.md). The items below are the *gaps beyond* those.
+
+## The five that will blindside us first (read these if nothing else)
+1. **Autonomous-agent blast radius.** An agent that can build, ship, and touch external systems can do real damage. We need spend caps per mission, scope limits on what an agent can touch, a global kill-switch/pause, sandboxed code execution, and review of agent-written code before merge. (P0)
+2. **Inference cost economics.** A "token-max" product can cost more to serve than it charges. We need per-customer/per-mission cost attribution, plan-limit enforcement, and a cost-to-serve vs. price model — or margins die silently. (P0/P1)
+3. **Prompt injection at scale.** Ingested signals, external MCP/A2A results, and support tickets are untrusted input feeding agents that take actions. One poisoned input could trigger an unwanted autonomous action. (P0)
+4. **Provider/model outage + deprecation.** The whole product stops if the gateway or a model is down or sunset. Need fallback routing, graceful degradation, and a model-deprecation playbook. (P0/P1)
+5. **Reliability of long-running parallel sessions on the current runtime.** Cloudflare Workers execution limits vs. multi-step missions — durability/queueing must be designed now (sequence, don't postpone). (P0)
+
+---
+
+## By lens
+
+### Product lead / PM (HIGHEST-PRECEDENCE lens — the feature list derives from here)
+This is the core role Cadence is built for and the lens that *generates* the feature catalog. The product's job is to run the PM's actual day. Map the day → the features.
+
+**A PM's real day (what the agents must run):** triage the overnight inbox (support, churn, usage anomalies, sales asks) → decide what matters today → synthesize signals into opportunities → write/refine a spec → break it into tickets → get it built, tested, shipped → write the launch/update → field stakeholder questions ("why is this on the roadmap, why not that?") → handle escalations → report status to leadership → repeat. Most of that is mechanical translation between tools — exactly what autonomous agents should own.
+
+| Gap / need (from the PM's day) | Why it matters | Priority |
+|---|---|---|
+| The whole day runnable end-to-end by agents (inbox → ship → report) | This *is* the product; every lifecycle stage in [`../plan.md`](../plan.md) section 2 maps to a PM task | P0 |
+| "Why is this on the roadmap?" answerable with cited evidence | The recurring senior-PM justification burden; the Product Memory + decisions graph answers it | P0/P1 |
+| One-keystroke status/stakeholder updates from live state | Coordination overhead is the #1 PM time-sink | P1 |
+| Outcome-oriented roadmap (not feature lists) | Anti-feature-factory; ties work to measurable outcomes | P1 |
+| The PM stays the approver/orchestrator, never the bottleneck | Trust + control without doing the mechanical work | P0 |
+
+Personas detail (P1-founder, P2-lead PM, P3-technical founder) and the derived feature list: [`../plan.md`](../plan.md) section 1-2.
+
+### Engineering manager / lead (secondary, but real)
+Less central than the PM, but the build/ship stages must respect how an eng lead works.
+
+| Gap / need | Why it matters | Priority |
+|---|---|---|
+| Agent-written code is reviewable, scoped, and standards-compliant | An eng lead won't accept opaque autonomous merges | P0 |
+| Clear ticket decomposition with acceptance criteria + dependencies | What eng actually consumes from a spec | P1 |
+| Visibility into what agents changed and why (diffs, traces) | Trust in autonomous engineering | P0 |
+| Respect for branch protection, CI gates, review policy | Fits existing eng process, not around it | P1 |
+
+### Security / CISO (beyond [`security.md`](../architecture/security.md))
+| Gap | Why it matters | Priority |
+|---|---|---|
+| Sandboxed execution for agent-run code | Agents that write+run code can exfiltrate or break things | P0 |
+| Supply-chain security (agents installing deps) | Agent-installed packages are an attack surface; need allow-list + scanning | P0 |
+| Secret scanning + SAST in the build pipeline | Agent code could leak/introduce secrets or vulns | P1 |
+| Key rotation + compromise response | BYO keys, gateway keys, DB creds | P1 |
+| Pen-test + threat model for MCP/A2A surface | External agents acting in a governed org | P1 |
+
+### SRE / Platform / Reliability
+| Gap | Why it matters | Priority |
+|---|---|---|
+| App-level monitoring + alerting (not just AI telemetry) | Uptime, errors, latency of the platform itself | P0 |
+| SLOs/SLAs + error budgets; status page | Enterprise buyers ask; trust signal | P1 |
+| Long-running job durability / queue + backpressure | Parallel missions exceed Workers limits without it | P0 |
+| Graceful degradation when a provider/model is down | Product must not hard-fail | P0 |
+| Incident response runbooks + on-call | When (not if) something breaks | P1 |
+| DR: backups, point-in-time restore, restore drills | Data loss is existential | P0/P1 |
+
+### Data / Privacy
+| Gap | Why it matters | Priority |
+|---|---|---|
+| Data retention + deletion (GDPR/CCPA right-to-be-forgotten) | Legal requirement; `ai_events` is currently unbounded | P1 |
+| Data export / portability | Anti-lock-in promise; enterprise ask | P1 |
+| Sub-processor list (model providers!) + DPA | Customers' data flows to LLM vendors — must disclose + contract | P1 |
+| Data residency / region options | EU/regulated customers | P2 |
+| PII classification + minimization before model calls | Reduce exposure; pairs with guardrails | P1 |
+
+### AI / autonomous-agent safety (the product's defining risk)
+| Gap | Why it matters | Priority |
+|---|---|---|
+| Per-mission spend caps + global kill-switch/pause | Stop runaway autonomy and cost | P0 |
+| Blast-radius scoping (what an agent may touch) | Limit damage of a wrong action | P0 |
+| Review gate on agent-written code before merge/deploy | Quality + safety of autonomous shipping | P0 |
+| Loop/runaway detection | Agents can spin; cap + detect | P1 |
+| Eval coverage targets per surface/agent | Today coverage is partial; autonomy needs broad coverage | P1 |
+| Model-deprecation + benchmark cadence | Models change; route to best/cheapest safely | P1 |
+
+### Build / ship pipeline (DevEx)
+| Gap | Why it matters | Priority |
+|---|---|---|
+| CI/CD + environments (dev/staging/prod) | Safe autonomous shipping needs real pipelines | P0 |
+| Feature flags + safe rollout/rollback | Ship behind flags; revert fast | P1 |
+| Migration rollback strategy | Schema changes are risky; data.md forbids in-place edits | P1 |
+| Test coverage gates beyond "Cadence core" | Autonomous build must not regress | P1 |
+
+### Finance / monetization
+| Gap | Why it matters | Priority |
+|---|---|---|
+| Usage metering + plan-limit enforcement | Bill correctly; cap free abuse | P0/P1 |
+| Cost-to-serve vs. price model | Inference-heavy product margins | P0 |
+| Payments, trials, dunning, invoicing | Revenue ops | P1 |
+| Per-customer cost attribution | Know unit economics | P1 |
+
+### Product / growth / GTM
+| Gap | Why it matters | Priority |
+|---|---|---|
+| Onboarding + activation + sample/templates | Time-to-value; aha moment | P0 |
+| Product usage analytics (separate from AI telemetry) | Activation/retention/funnels | P1 |
+| Marketing site, pricing page, waitlist, SEO | Distribution | P1 |
+| In-app support, help center, changelog, docs | Adoption + retention | P1 |
+| Mobile/PWA for approvals triage | Approvals can't block on a desktop | P2 |
+
+### Org / collaboration
+| Gap | Why it matters | Priority |
+|---|---|---|
+| RBAC / roles / team membership | The expanded-stakeholder personas (P4) need it | P1 |
+| Notifications + transactional email | Approvals, alerts, digests | P1 |
+| Multiplayer / concurrent editing | Teams on one product | P2 |
+
+### Legal / compliance
+| Gap | Why it matters | Priority |
+|---|---|---|
+| ToS, privacy policy, AUP, DPA | Required to sell | P1 |
+| IP ownership of agent-generated code/content | Who owns what the agent makes? | P1 |
+| Liability for autonomous actions | The governance gates are part of the answer | P1 |
+| OSS license compliance of agent-installed deps | Ties to [`../AGENTS.md`](../AGENTS.md) section 9 | P1 |
+| SOC 2 / ISO 27001 / ISO 42001 (AI) path | Enterprise gate; substrate exists in security.md | P2 |
+
+---
+
+## How this feeds the plan
+[`../plan.md`](../plan.md) section 2 carries the *product* features; this doc carries the *cross-cutting non-functional* requirements. The build order ([`../plan.md`](../plan.md) section 3) should pull P0 items into the foundation (especially agent blast-radius, cost controls, injection defense, provider fallback, and runtime durability) — they are architecture, not afterthoughts. [`TASKS.md`](../TASKS.md) P3 points back here. Revisit this review whenever scope expands.

@@ -1,0 +1,690 @@
+# docs/feature-backlog.md — The granular feature backlog (build-ready)
+
+> **What this is.** The exhaustive, sub-feature-level enumeration of *everything Cadence is built to ship* — the dev-ready expansion of [`../plan.md`](../plan.md) §2 (granular catalog). Every feature has a **stable ID** (e.g. `F2.3`) so it can become an issue/PR/spec and be referenced by traces, decisions, and the build log without re-describing scope.
+>
+> **Relationship to other docs (no duplication of rules).** Product thesis + USP/MOAT: [`../README.md`](../README.md). Build *order*: [`../plan.md`](../plan.md) §3. Cross-cutting non-functional rationale + P0/P1/P2 priorities: [`../docs/considerations.md`](./considerations.md). UI/IA/screen + AI-message contract: [`../design.md`](../design.md). Architecture contracts: [`../architecture/`](../architecture/). Operating rules: [`../AGENTS.md`](../AGENTS.md).
+>
+> **This file adds detail; it does not replace `plan.md`.** `plan.md` stays the narrative + build order; this is the flat, addressable scope list. Keep both true (closed doc loop, [`../AGENTS.md`](../AGENTS.md) §5).
+>
+> **Looking for the next task to pick up?** Jump to the [Build-order rollup](#build-order-rollup-status--build-sequence) at the bottom — it is the canonical task queue. The strategic P0–P3 view is [`../TASKS.md`](../TASKS.md), which points back here.
+
+---
+
+## ▶ Live status board — the single "where are we right now?" (keep current)
+
+> **Every tool updates this, every session, in the same unit of work as the change** — Claude Code · Antigravity · Gemini · Lovable. This is the live *cursor*; the full append-only history is [`../plan.md`](../plan.md) §4. Update contract: [`../AGENTS.md`](../AGENTS.md) §5. Resolution of "Next up" is mechanical — see the [Build-order rollup](#build-order-rollup-status--build-sequence).
+
+**Last updated:** 2026-05-31 · **by:** Antigravity · **branch:** `main`
+
+| Field | Current |
+|---|---|
+| 🔨 **Now building** | — nothing in flight (set to the feature ID + tool + branch when work starts) |
+| ⏭️ **Next up** | **Step 1 — Foundation hardening** · FND-KILLSWITCH (0.6) · tickets in [`foundation-audit.md`](./foundation-audit.md) |
+| 🚧 **Blocked / stuck** | — none (record the ID, the blocker, and what unblocks it) |
+| 📊 **Progress** | Step **1 of 8** in flight (◑). Partial: 5. Done: 1, 2, 7. Not started: 3, 4, 6, 8. Cross-cutting (S–X) pulled into step 1. |
+
+**Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-05-31` — Completed implementation of 0.7 (FND-INJECTION): XML-escaped and isolated RAG context chunks + tool results, and programmatic override to force injection rules to block.
+- `2026-05-31` — Completed code-side implementation of 0.2 (FND-CHOKEPOINT-STREAM): callModelStream chokepoint added and /api/chat + /api/studio-chat refactored.
+- `2026-05-31` — Completed code-side implementation of 0.1 (FND-TENANCY): use-workspace context, AppShell switcher UI, and server functions scoped with default workspace fallbacks.
+- `2026-05-30` — Co-dev next-task wiring: this status board added; Build-order rollup declared the canonical task queue; `TASKS.md` demoted to a strategic router; deterministic "what's next" rule added to `AGENTS.md` §1.
+
+### How to update this board (any tool)
+- **Starting work** → set **Now building** to `‹ID› · ‹tool› · ‹branch›`; clear it from **Next up**.
+- **Pausing/ending a session** → if work is mid-flight, leave **Now building** set so the next tool/session knows where you stopped; otherwise clear it.
+- **Hitting a wall** → add to **Blocked / stuck**: the ID, the blocker, what unblocks it.
+- **Finishing a feature** → flip its `[status]`/rollup mark to `☑`, append a one-liner to **Recent log** *and* [`../plan.md`](../plan.md) §4, recompute **Progress**, and reset **Next up** from the rollup.
+- Always refresh **Last updated** (date · tool · branch).
+
+---
+
+## How to read an entry
+
+```text
+ID. Feature name                         [status] · Pn · stage
+   What     — one sentence: what it is.
+   Build    — the granular sub-features (the actual checklist).
+   States   — loading/empty/error/edge cases that must be handled.
+   Done when— acceptance signal(s) that mark it shippable.
+   Depends  — prerequisite IDs.
+```
+
+**Status** (from `plan.md` §2): `[reuse]` legacy survives largely as-is · `[extend]` legacy base + new work · `[new]` build from scratch · `[found]` foundation/non-functional (architecture, not a screen).
+
+**Priority** (from `considerations.md` precedence, P0 highest): `P0` credible first user / built into foundation now · `P1` before/at first enterprise sale · `P2` scale & maturity.
+
+**Stage**: lifecycle `S1`–`S9` (Discover→Learn) · platform `X1`–`X6` · `FND` foundation · `NFR` cross-cutting non-functional.
+
+**Legend for the rollup tables:** ☐ not started · ◑ partial (legacy exists, needs hardening) · ☑ done & verified into the active build log.
+
+---
+
+## Epic map (24 epics)
+
+| # | Epic | Maps to |
+|---|---|---|
+| 0 | Foundation, tenancy & runtime | `plan.md` §3.1, architecture/* |
+| A | Identity & access | `plan.md` §2A |
+| B | Workspaces & products | §2B |
+| C | Agents — configuration | §2C |
+| D | Agent execution | §2D |
+| E | Agent communication, coordination & transfer | §2E |
+| F | Discover (S1) | §2F |
+| G | Define (S2) | §2G |
+| H | Plan (S3) | §2H |
+| I | Build — autonomous (S4) | §2I |
+| J | Test — autonomous (S5) | §2J |
+| K | Ship (S6) | §2K |
+| L | Launch / GTM / price (S7) | §2L |
+| M | Operate / support (S8) | §2M |
+| N | Learn (S9) | §2N |
+| O | Product Memory (X4) | §2O |
+| P | Trust & observability (X3) | §2P |
+| Q | Interop — MCP / A2A (X5) | §2Q |
+| R | Platform & ops | §2R |
+| S | Security & compliance (NFR) | considerations: CISO/Security |
+| T | Reliability / SRE (NFR) | considerations: SRE |
+| U | Data & privacy (NFR) | considerations: Data/Privacy |
+| V | Finance & monetization (NFR) | considerations: Finance |
+| W | Growth / GTM platform (NFR) | considerations: Growth |
+| X | Legal & compliance (NFR) | considerations: Legal |
+
+---
+
+## EPIC 0 — Foundation, tenancy & runtime `FND`
+*The base every later stage is an addition to, not a rewrite of. Build order step 1.*
+
+**0.1 — Three-key tenancy + RLS** `[extend]` · `P0` · `FND`
+- What: enforce `user_id` + `workspace_id` + `product_id` scoping on every table and RLS policy.
+- Build: add `product_id` to all product-scoped tables; RLS policies for select/insert/update/delete keyed on all three; tenancy helper in server fns; deny-by-default policies; tenancy assertion in the chokepoint and orchestrator.
+- States: missing-context request rejected (no silent cross-tenant read); workspace-with-no-product; product archived.
+- Done when: an integration test proves a row created under (W1,P1) is invisible to (W1,P2) and (W2,*) at the DB layer.
+- Depends: A2 (session), B2 (product entity).
+
+**0.2 — AI chokepoint pipeline** `[reuse]` · `P0` · `FND`
+- What: the single path every model call takes (`src/lib/ai/runtime.server.ts`).
+- Build: ordered stages — `budget → cache → pre-guard → retrieve(RAG) → PROVIDER → post-guard → persist(trace) → async eval → fallback`; one `ai_events` row + trace span per call; cache key salted by tenant (no cross-user poisoning); cache hit logs cost `$0.0000` explicitly.
+- States: budget exceeded → throw before provider; cache hit → short-circuit but still log; guardrail block → abort + log; provider error → fallback chain.
+- Done when: a call produces exactly one event + trace; budget throw fires before any provider spend; guardrail block aborts and is logged.
+- Depends: 0.1, P1, P2.
+
+**0.3 — Trust-stack tables** `[reuse]` · `P0` · `FND`
+- What: the telemetry/governance schema the chokepoint writes to.
+- Build: `ai_events`, `ai_traces`, `ai_evals`, `ai_feedback`, prompt-version tables, guardrail-rule tables, budget tables — all 3-key scoped, all with `parent_event_id` for trace nesting.
+- Done when: schema migrations applied; chokepoint writes resolve; trace nesting renders in the viewer (P4).
+- Depends: 0.1.
+
+**0.4 — Design tokens & system** `[reuse]` · `P0` · `FND`
+- What: OKLCH token system in `src/styles.css`; components consume tokens only.
+- Build: semantic colors, gradients, shadows, `--surface-*` palette, type ramp, motion tokens, radii; `prefers-reduced-motion` hook; dark-first theme; lint/review guard against hex literals.
+- Done when: a token edit changes the surface globally; a11y spot-check passes 4.5:1; no hex literals in components.
+- Depends: —. See [`../design.md`](../design.md).
+
+**0.5 — Agent blast-radius limits** `[new]` · `P0` · `FND/NFR`
+- What: hard scope limits on what any agent run may touch.
+- Build: per-agent tool allow-list enforced at the chokepoint/orchestrator; resource scope (which products/tables/external systems); deny external side-effects without an approval gate; record attempted-out-of-scope actions.
+- States: out-of-scope tool call → blocked + logged + surfaced in trace; escalates to Decision Queue if `confirm`.
+- Done when: an agent cannot call a tool outside its allow-list, proven by test.
+- Depends: 0.2, C2, D2.
+
+**0.6 — Per-mission spend caps + global kill-switch** `[new]` · `P0` · `FND/NFR`
+- What: cost ceilings per mission/agent and a one-action pause/stop for everything.
+- Build: per-mission and per-workspace cost budgets; soft-warn → hard-stop thresholds; global kill-switch that pauses all running sessions and blocks new ones; per-agent run cap.
+- States: cap reached mid-mission → checkpoint + pause (not data loss); kill-switch active → new runs refused with a clear message.
+- Done when: a runaway mission halts at its cap with a resumable checkpoint; kill-switch drains running work safely.
+- Depends: 0.6 needs P6 (budgets), E? (orchestration checkpoints).
+
+**0.7 — Prompt-injection defense** `[new]` · `P0` · `FND/NFR`
+- What: treat all ingested/external content (signals, tickets, MCP/A2A results, web) as untrusted.
+- Build: input sanitization + delimiting; instruction-isolation prompt pattern; injection classifier on ingested text; external tool-result quarantine before it can drive an action; high-risk actions require approval regardless of agent mode.
+- States: detected injection → flag + strip + log; unverified external instruction never auto-executes a side-effect.
+- Done when: a seeded poisoned signal cannot trigger an autonomous external action without approval.
+- Depends: 0.2, F1, Q2.
+
+**0.8 — Provider/model fallback & graceful degradation** `[new]` · `P0` · `FND/NFR`
+- What: the product keeps working when a model/gateway is down or deprecated.
+- Build: ordered fallback routing per surface; health checks; circuit-breaker per provider; degraded-mode UX (queue/retry, not hard-fail); model-deprecation playbook + config.
+- States: primary provider 5xx/timeout → next in chain; all down → queue + friendly degraded state.
+- Done when: killing the primary provider in a test still returns answers via fallback.
+- Depends: 0.2, 5a (model gateway + BYO).
+
+**0.9 — Durable runtime for long/parallel missions** `[new]` · `P0` · `FND/NFR`
+- What: missions survive Cloudflare Workers execution limits.
+- Build: durable job/queue model; checkpointing + resume; backpressure; idempotent ticks; long-op state in DB not memory.
+- States: worker eviction mid-step → resume from last checkpoint; duplicate tick → no double effect.
+- Done when: a multi-step mission survives a forced worker restart and completes.
+- Depends: 0.2, E5/E6 (parallel sessions), architecture/orchestration.md.
+
+**0.10 — Sandboxed execution + review gate for agent code** `[new]` · `P0` · `FND/NFR`
+- What: agent-written code runs isolated and is reviewed before merge/deploy.
+- Build: sandboxed exec environment; no ambient secrets in sandbox; mandatory human/policy review gate before merge; supply-chain allow-list for agent-installed deps.
+- Done when: agent code executes without access to prod secrets; no merge without passing the review gate.
+- Depends: I1 (Studio), K1 (PR/deploy), S1.
+
+**0.11 — App monitoring, backups & DR** `[new]` · `P0/P1` · `FND/NFR`
+- What: platform-level (not just AI) observability + recoverability.
+- Build: uptime/error/latency monitoring + alerting; DB backups + point-in-time restore; restore drill; basic status signal.
+- Done when: an induced app error alerts; a restore drill recovers to a point in time.
+- Depends: 0.3 (telemetry base), T1/T5.
+
+**0.12 — CI/CD + environments** `[new]` · `P0` · `FND/NFR`
+- What: dev/staging/prod pipelines so autonomous shipping is safe.
+- Build: environment separation; build/test/lint gates in CI; migration apply step; deploy + rollback path (Cloudflare Workers + Supabase).
+- Done when: a PR runs gates green and deploys to staging; rollback restores the prior release.
+- Depends: 0.12 underpins K (Ship).
+
+---
+
+## EPIC A — Identity & access `X6`
+
+**A1 — Sign up / onboarding** `[reuse]` · `P0` · `X6`
+- What: account creation + first-run setup.
+- Build: email+password + Google OAuth; create first workspace + product; capture display name, timezone, working hours; email verification on by default; sample/template seed (ties W1 onboarding).
+- States: duplicate email; unverified email; OAuth cancel; partial onboarding resume.
+- Done when: a new user lands in a seeded, usable workspace with a product.
+- Depends: 0.1.
+
+**A2 — Login / logout / session** `[reuse]` · `P0` · `X6`
+- Build: authenticated session; sign-out-everywhere; session refresh; `Last-Event-ID` resume for SSE streams; global auth middleware on all `_authenticated.*` routes.
+- States: expired token; refresh failure; stream resume after reconnect.
+- Done when: streams resume after a reconnect; sign-out invalidates all sessions.
+- Depends: 0.1.
+
+**A3 — Password reset / email verification** `[reuse]` · `P0` · `X6`
+- Build: reset request → email → set-new; verification link; rate-limited.
+- States: expired/used token; unknown email (no enumeration leak).
+
+**A4 — Profile & preferences** `[reuse]` · `P0` · `X6`
+- Build: display name, role, timezone, working hours, default model per surface.
+- Done when: greeting, scheduling windows, and model routing all read these values.
+- Depends: A1.
+
+**A5 — BYO model keys** `[reuse]` · `P0` · `X6`
+- Build: add/test/rotate/delete provider keys; encrypted (pgsodium); masked display; per-provider validation ping.
+- States: invalid key; rotation while a mission is mid-run; revoked key fallback to gateway.
+- Done when: a BYO key is used for the chosen surface and never rendered in plaintext.
+- Depends: 0.8, S4.
+
+**A6 — Roles & membership (future)** `[new]` · `P1` · `X6`
+- Build: invite flow; per-workspace roles (owner/admin/member/viewer); SSO/SAML readiness; RBAC enforcement at RLS + UI.
+- Depends: 0.1, B1. (See S6.)
+
+---
+
+## EPIC B — Workspaces & products `X2`
+
+**B1 — Create / switch workspace** `[extend]` · `P0` · `X2`
+- Build: workspace as top-level tenancy boundary; create/rename/switch; membership stub.
+- States: last-workspace delete guard; switch persists per session.
+
+**B2 — Create product under workspace** `[extend]` · `P0` · `X2`
+- Build: product entity with vision/problem/target-users/metrics/stage; create/edit; `product_id` scoping everywhere.
+- Done when: a second product under the same workspace is fully isolated (see 0.1).
+
+**B3 — Product switcher + portfolio view** `[new]` · `P1` · `X2`
+- Build: fast product switcher (⌘K + header); cross-product portfolio overview (health, activity, budgets per product).
+- States: zero products; many products (search/scroll).
+
+**B4 — Per-product isolation** `[extend]` · `P0` · `X2`
+- Build: data, agents, memory, budgets, access all scoped by the three keys.
+- Done when: covered by the 0.1 isolation test extended to agents/memory/budgets.
+
+**B5 — Archive / delete product** `[new]` · `P1` · `X2`
+- Build: archive (soft, reversible) + delete (hard, with export prompt); cascade rules; audit entry.
+- States: delete with running missions → block or drain; archived product hidden from switcher but queryable.
+- Depends: U2 (export), U1 (retention/deletion).
+
+---
+
+## EPIC C — Agents (configuration) `X1`
+
+**C1 — Agent roster** `[extend]` · `P0` · `X1`
+- Build: list durable lifecycle agents + spawned sub-agents per product; status dots; last-run summary.
+- Done when: the roster shows the ~10 durable agents (`plan.md` §6) + live sub-agents.
+
+**C2 — Create / clone / configure agent** `[reuse]` · `P0` · `X1`
+- Build: schema `slug, name, system_prompt, tool_allowlist[], default_model, temperature/top_p/seed, max_tokens, schedule_cron?, approval_mode(auto|confirm|review), memory_enabled`; clone from template; validation.
+- States: invalid prompt/model; tool not permitted; duplicate slug.
+- Done when: a configured agent runs through the chokepoint honoring its allow-list + approval mode.
+- Depends: 0.5.
+
+**C3 — Enable / disable / schedule agent** `[reuse]` · `P0` · `X1`
+- Build: cron schedule with next-run preview; enable/disable; advisory-lock to prevent duplicate fan-out (legacy bug fixed).
+- States: disabled mid-schedule; overlapping runs deduped.
+
+**C4 — Agent detail + run history + memory inspector** `[reuse]` · `P1` · `X1`
+- Build: last runs (status/duration/score/cost); memory inspector (shared vs private); per-agent eval coverage.
+- Depends: P1, O1.
+
+---
+
+## EPIC D — Agent execution `X1`
+
+**D1 — Run on-demand / scheduled** `[reuse]` · `P0` · `X1`
+- Build: manual trigger + cron fan-out via `/api/public/hooks/*`; idempotent ticks.
+- Depends: 0.9, C3.
+
+**D2 — Planner/executor loop** `[reuse]` · `P0` · `X1`
+- Build: plan → tool calls → observe → reflect → answer; max-step + max-cost caps; loop/runaway detection.
+- States: step cap hit → stop + escalate; runaway detected → halt.
+- Done when: a capped loop terminates and records partial trace.
+- Depends: 0.2, 0.6.
+
+**D3 — Approval gates + Decision Queue** `[reuse]` · `P0` · `X1`
+- Build: `auto|confirm|review` per run; queue of `awaiting_review` runs with summary + proposed action; approve/reject; one-click resume from checkpoint.
+- States: approve → resume; reject → record + stop; timeout policy.
+- Done when: a `confirm` action pauses, appears in the queue, and resumes on approve. See `design.md` DecisionQueue card.
+- Depends: D2, P (trace).
+
+**D4 — Cancellation / replay-and-branch / checkpoints** `[reuse]` · `P1` · `X1`
+- Build: stop mid-run saving partial; checkpoint persistence; re-run against a different model/prompt; show the diff (ties AI-message "Replay with…").
+- Depends: D2, 0.9.
+
+---
+
+## EPIC E — Agent communication, coordination & transfer `X1` *(the autonomous spine — do not defer)*
+
+**E1 — Sub-agent spawning** `[new]` · `P1` · `X1`
+- Build: Orchestrator spawns ephemeral specialists per task; spawned agents inherit chokepoint + allow-list + governance; lifecycle (spawn→work→retire).
+- Done when: the Orchestrator spawns a specialist that runs governed and retires cleanly.
+- Depends: D2, 0.5.
+
+**E2 — Agent-to-agent (internal) messaging** `[new]` · `P1` · `X1`
+- Build: structured internal A2A messages between agents in a mission; message log; ordering.
+- States: recipient busy/dead; message loop guard.
+
+**E3 — Agent transfer / handoff** `[new]` · `P1` · `X1`
+- Build: pass a mission + its context, memory, and artifacts across stages (Planner → Engineer → QA → Release) with zero context loss; handoff record.
+- Done when: a mission moves Planner→Engineer→QA and each stage sees full prior context.
+- Depends: E2, O (memory), 0.9.
+
+**E4 — Parallel sub-agents** `[new]` · `P1` · `X1`
+- Build: many specialists on one mission concurrently; shared mission context; conflict/merge handling.
+- Depends: E1, 0.9.
+
+**E5 — Parallel agent sessions** `[new]` · `P1` · `X1`
+- Build: many missions running at once across products; isolation per session; fair scheduling + backpressure.
+- Done when: N missions across 2 products run concurrently without cross-bleed.
+- Depends: 0.9, B4.
+
+**E6 — Orchestration / mission graph view** `[new]` · `P1` · `X1`
+- Build: live DAG of agents/sessions; per-node status, cost, approval state; pause/steer/approve from the graph.
+- States: huge graph (zoom/collapse); node failed; node awaiting approval.
+- Done when: the graph reflects live mission state and supports pause/steer. See `design.md`.
+- Depends: E1–E5, P.
+
+**E7 — Shared vs. private memory** `[extend]` · `P1` · `X1`
+- Build: mission-shared context + per-agent long-term memory with importance decay; access rules (no leakage across missions/products).
+- Depends: O1, 0.1.
+
+---
+
+## EPIC F — Discover `S1` *(first end-to-end slice)*
+
+**F1 — Signal ingest** `[extend]` · `P0` · `S1`
+- Build: paste + CSV now (chunked inserts, params cap fixed); sentiment on insert; source typing (support/churn/usage/sales/reviews/NPS/interviews); injection-screened on ingest (0.7); connectors next (R2).
+- States: huge CSV (chunking); malformed rows; duplicate signals.
+- Done when: pasted + CSV signals land scoped, sentiment-tagged, injection-screened.
+- Depends: 0.1, 0.7.
+
+**F2 — Clustering → themes → opportunities** `[reuse]` · `P0` · `S1`
+- Build: embed + cluster (k-medoid) + synthesize with `evidence_ids[]`; ICE scoring; dedupe by similarity; known limit: degrades past ~1000 signals/run (chunk runs).
+- States: too-few signals; noisy cluster; re-run idempotency.
+- Done when: signals produce themes → ICE-scored opportunities each citing evidence ids.
+- Depends: F1, P (chokepoint), 0.3.
+
+**F3 — Continuous discovery feed** `[extend]` · `P0` · `S1`
+- Build: always-fresh per-product feed; incremental synthesis (not one-shot); new-signal → re-cluster delta; feed UI with filters.
+- States: empty feed; high-velocity inflow; stale-fact flag (O).
+- Done when: new signals update the feed without a full recompute. *This is the lead use case.*
+- Depends: F2.
+
+---
+
+## EPIC G — Define `S2`
+
+**G1 — PRD/spec generation** `[reuse]` · `P0` · `S2`
+- Build: opportunity → structured cited draft (acceptance criteria, non-goals, risks, success metrics auto-drafted); retrieval-grounded with citation ids.
+- States: low-evidence opportunity (warn); regeneration vs. edit conflict.
+- Done when: an opportunity yields a cited PRD a human can edit + approve.
+- Depends: F2, O (RAG), P.
+
+**G2 — Doc editor + `/ai` + versions/diff** `[reuse]` · `P0` · `S2`
+- Build: Tiptap editor; inline `/ai` slash menu; 1.5s autosave to `prd_versions`; version diff; citation pills; side-anchored comments.
+- States: autosave conflict; offline edit; long doc.
+- Done when: edits autosave + version; `/ai` edits inline with citations; diff renders. See `design.md` DocEditor.
+- Depends: G1.
+
+---
+
+## EPIC H — Plan `S3`
+
+**H1 — Task graph** `[reuse]` · `P0` · `S3`
+- Build: spec → dependency-aware tasks with estimates/owners/risk flags; cycle detection; acceptance criteria per task (eng-lead need).
+- States: cyclic dependency; orphan task; unestimated task.
+- Done when: a PRD generates a valid dependency-ordered task graph agents can execute.
+- Depends: G1.
+
+**H2 — Outcome roadmap (Now/Next/Later)** `[extend]` · `P1` · `S3`
+- Build: `@dnd-kit` board; each item declares the outcome it pursues + how it's measured; drag reorder; link to tasks/opportunities.
+- States: empty lane; large board; drag on touch.
+- Done when: every roadmap item ties to a measurable outcome (anti-feature-factory).
+- Depends: H1.
+
+**H3 — Scheduling** `[reuse]` · `P1` · `S3`
+- Build: agent proposes work blocks within profile working hours; calendar-aware (R2 Calendar).
+- Depends: A4, H1.
+
+---
+
+## EPIC I — Build (autonomous) `S4` *(the differentiator)*
+
+**I1 — Studio multi-file coding** `[extend]` · `P1` · `S4`
+- Build: three-pane Studio; virtual `studio_files`; JSON edit-plan multi-file edits; per-hunk accept/reject; atomic `studio_revisions`; known limit: truncates files >2k lines (chunk).
+- States: large file; conflicting hunks; failed apply rollback.
+- Done when: an agent edits across files with per-hunk review and atomic commit.
+- Depends: 0.10 (sandbox), D2.
+
+**I2 — Watch-the-agents-build surface** `[new]` · `P1` · `S4`
+- Build: live per-session view — current step, files touched, tool calls, cost, status; pause/steer/approve mid-run; streaming.
+- States: many concurrent sessions; paused; errored step.
+- Done when: a building agent's steps/files/cost stream live and can be paused. See README capability surface + `design.md`.
+- Depends: E6, I1, P.
+
+**I3 — Branch/worktree isolation per mission** `[new]` · `P1` · `S4`
+- Build: each mission on its own branch/worktree; isolation; merge path to Ship.
+- States: branch conflict; abandoned branch cleanup.
+- Depends: 0.12, K1.
+
+---
+
+## EPIC J — Test (autonomous) `S5`
+
+**J1 — Test generation + run** `[new]` · `P1` · `S5`
+- Build: agents author + run unit/integration/E2E + evals; runner wiring (note: no test runner configured yet — see CLAUDE.md); results persisted.
+- States: flaky test; timeout; environment missing.
+- Done when: the QA agent generates and runs tests producing a pass/fail gate signal.
+- Depends: I1, 0.12.
+
+**J2 — QA gate + self-correct loop** `[new]` · `P1` · `S5`
+- Build: failing tests feed back to the build agent until green or escalate; regression gate (≥0.1 eval regression blocks without override); ties "Cadence core" eval suite (P5).
+- States: infinite-correct guard (cap); unrecoverable → escalate to Decision Queue.
+- Done when: a failing suite loops the Engineer until green or escalates; a regression blocks Ship.
+- Depends: J1, P5, D3.
+
+---
+
+## EPIC K — Ship `S6`
+
+**K1 — PR / deploy / release notes** `[new]` · `P1` · `S6`
+- Build: open PRs; run deploy checklist; deploy; draft release notes — all behind approval gates; respect branch protection + CI gates.
+- States: CI red → block; deploy failure → rollback; approval rejected.
+- Done when: an approved mission opens a PR, passes gates, deploys, and drafts notes.
+- Depends: 0.12, I3, D3, 0.10.
+
+**K2 — Rollback triggers** `[new]` · `P1` · `S6`
+- Build: documented rollback per release; automated revert path; feature-flag kill (W?).
+- Done when: a release can be reverted from the UI within one action.
+- Depends: K1, 0.12.
+
+---
+
+## EPIC L — Launch / GTM / price `S7`
+
+**L1 — Launch + positioning + pricing + distribution drafts** `[new]` · `P2` · `S7`
+- Build: agent-drafted launch assets, positioning, pricing pages, distribution plans; human-approved before anything external.
+- States: nothing external sends without approval (governance gate).
+- Done when: an agent produces a launch package that requires approval to publish.
+- Depends: G/H/N (context), D3, Q (publish targets).
+
+**L2 — Customer-facing pages / announcements** `[new]` · `P2` · `S7`
+- Build: generate public pages (`p.$slug`) + announcement copy; preview; approval to publish.
+- Depends: L1.
+
+---
+
+## EPIC M — Operate / support `S8`
+
+**M1 — Ticket triage + draft answers + route/escalate** `[new]` · `P2` · `S8`
+- Build: agents triage inbound tickets, draft answers, route, escalate; support themes flow back into Discover (closes the loop into F1).
+- States: low-confidence → escalate; PII handling (U5).
+- Done when: a ticket is triaged + draft-answered and its theme appears as a new signal.
+- Depends: F1, 0.7, Q.
+
+---
+
+## EPIC N — Learn `S9`
+
+**N1 — Decisions + `supersedes`** `[reuse]` · `P0` · `S9`
+- Build: outcomes write `decisions` with `supersedes` lineage; decision timeline (Mission Control widget).
+- Done when: a decision supersedes a prior one and the lineage renders as soft arrows.
+- Depends: 0.3, O1.
+
+**N2 — Re-score + insight memo + daily brief** `[extend]` · `P1` · `S9`
+- Build: outcomes re-rank opportunities; insight memo; daily brief surfaced in Today's Focus.
+- States: no outcomes yet (empty brief copy); conflicting outcomes.
+- Done when: an outcome re-scores its opportunity and the brief reflects it.
+- Depends: F2, N1.
+
+---
+
+## EPIC O — Product Memory `X4`
+
+**O1 — Knowledge graph + query** `[new]` · `P1` · `X4`
+- Build: typed nodes/edges — signals → themes → opportunities → decisions → experiments → outcomes — with `supersedes`; queryable; "why is this on the roadmap?" answerable with cited evidence.
+- Done when: a roadmap item resolves to its evidence chain via one query.
+- Depends: F2, G1, H1, N1.
+
+**O2 — RAG retrieval (citations)** `[reuse]` · `P0` · `X4`
+- Build: pgvector hybrid retrieval (512/64 chunks, 1536-d); citation ids returned; salted cache; chunker boundary handling.
+- Done when: retrieved chunks produce `[1][2]` citations in the AI-message contract.
+- Depends: 0.2, 5b (pgvector).
+
+**O3 — Currency / drift on facts + skill packs** `[new]` · `P2` · `X4`
+- Build: flag stale facts; export versioned skill bundles over MCP.
+- Depends: O1, Q1.
+
+---
+
+## EPIC P — Trust & observability `X3`
+
+**P1 — Telemetry + traces + judge scores** `[reuse]` · `P0` · `X3`
+- Build: per-call `ai_events`; trace waterfall (`/traces/$traceId`, one row per span, depth from `parent_event_id`, surface color-coding); LLM-as-judge composite (groundedness/relevance/coherence/hallucination); recursion blow-up fixed.
+- Done when: every AI call is inspectable end-to-end in the trace viewer with a judge score.
+- Depends: 0.2, 0.3.
+
+**P2 — Guardrails (input + output)** `[reuse]` · `P0` · `X3`
+- Build: rule kinds for pre- and post-guard; block aborts + logs; per-rule unit tests; injection rules tie 0.7.
+- Done when: a blocking rule aborts a call and is visible in the trace.
+
+**P3 — Prompt studio (versioning + A/B)** `[reuse]` · `P1` · `X3`
+- Build: versioned prompts; A/B assignment; pin per agent/surface; rollback.
+- Depends: 0.3.
+
+**P4 — Eval harness + regression gate** `[reuse]` · `P1` · `X3`
+- Build: "Cadence core" eval suite; per-surface/agent coverage targets; ≥0.1 regression blocks deploy without override.
+- Done when: a regression blocks Ship (ties J2/K1).
+
+**P5 — Drift watch** `[reuse]` · `P1` · `X3`
+- Build: monitor score/cost/latency drift per surface/model; alert on threshold.
+
+**P6 — Budgets** `[reuse]` · `P0` · `X3`
+- Build: daily/monthly caps per workspace/product/mission; BudgetBar (today vs cap, month vs cap; muted→accent→destructive; per-surface popover); breach is friendly (not a crash).
+- Done when: a breach degrades gracefully and the BudgetBar reflects burn. See `design.md` BudgetBar.
+- Depends: 0.6, V1.
+
+**P7 — Incidents log** `[reuse]` · `P1` · `X3`
+- Build: record safety/guardrail/cost incidents; link to traces; resolution notes.
+
+**P8 — AI message UI contract** `[reuse]` · `P0` · `X3`
+- Build: one shared component rendering score/model+via/latency/tokens/cost/citations/feedback/view-trace/replay on every AI message; cache hit shows `$0.0000`; no citations box when `retrieval=false`.
+- Done when: every AI surface (chat, copilot, PRD `/ai`, Studio, agent summaries, brief) uses the one contract component. Non-negotiable per `design.md` + `AGENTS.md` rule 9.
+- Depends: P1, O2.
+
+---
+
+## EPIC Q — Interop (agent-native) `X5`
+
+**Q1 — MCP server + client** `[new]` · `P2` · `X5`
+- Build: expose Cadence capabilities as MCP tools (server); consume external MCP tools (client); capability scopes; rate limits; audit.
+- States: untrusted tool result → quarantine (0.7); scope-exceeded call blocked.
+- Done when: an external agent calls a scoped Cadence tool and the call is audited.
+- Depends: 0.7, S5.
+
+**Q2 — A2A server/client + Agent Cards + scopes/limits/audit** `[new]` · `P2` · `X5`
+- Build: Agent Cards; delegate-to-agent; peer registry; per-peer scopes + rate limits; prompt-injection guard on external results; audit log.
+- Depends: Q1, 0.7.
+
+---
+
+## EPIC R — Platform & ops
+
+**R1 — Command palette (⌘K) + global search** `[reuse]` · `P0` · `X6`
+- Build: `cmdk`-based; resolves every destination/create-action/recent-artifact; keyboard-first.
+- Done when: ⌘K reaches every route + create action + recent artifact. See `design.md`.
+
+**R2 — Connectors / integrations** `[extend]` · `P1` · `X5`
+- Build: Google Docs/Notion two-way sync, Linear pull/push + Sync Inbox, Google Calendar read+write, GitHub, Slack, CRM; integration health surface; OAuth + token storage (encrypted); reuse Nango engine (`nango/`); known limits: Docs sync drops comments, Notion BFS reorder fixed.
+- States: token expired; sync conflict; partial sync; rate limit.
+- Done when: at least Docs/Notion/Linear/Calendar round-trip with health visible. See `integrations` epic in `plan.md` §5.
+- Depends: A5/secrets, nango.
+
+**R3 — Notifications** `[extend]` · `P1` · `X6`
+- Build: approvals, budget breaches, guardrail hits, integration health, digests; in-app + transactional email; preferences.
+- Depends: D3, P6, W?(email).
+
+**R4 — Settings** `[extend]` · `P1` · `X6`
+- Build: profile, keys, budgets config, guardrail rules, integration health, notification prefs, workspace/product admin.
+- Depends: A4, A5, P2, P6.
+
+---
+
+## EPIC S — Security & compliance `NFR`
+**S1 — Sandboxed execution for agent code** `P0` → see **0.10**.
+**S2 — Supply-chain security (agent-installed deps)** `[new]` · `P0`: allow-list + scanning before install; ties bunfig `minimumReleaseAge`.
+**S3 — Secret scanning + SAST in build pipeline** `[new]` · `P1`: scan agent code for secrets/vulns pre-merge.
+**S4 — Key rotation + compromise response** `[new]` · `P1`: rotate BYO/gateway/DB creds; revoke + re-issue runbook. Depends A5.
+**S5 — Pen-test + threat model for MCP/A2A** `[new]` · `P1`: threat model the external-agent surface. Depends Q.
+**S6 — RBAC / roles / team membership** `[new]` · `P1`: enforce at RLS + UI. Depends A6.
+
+## EPIC T — Reliability / SRE `NFR`
+**T1 — App monitoring + alerting** `P0` → see **0.11**.
+**T2 — SLOs/SLAs + error budgets + status page** `[new]` · `P1`.
+**T3 — Long-running job durability / queue + backpressure** `P0` → see **0.9**.
+**T4 — Graceful degradation on provider/model down** `P0` → see **0.8**.
+**T5 — Incident response runbooks + on-call** `[new]` · `P1`. Depends P7.
+**T6 — DR: backups, PITR, restore drills** `P0/P1` → see **0.11**.
+
+## EPIC U — Data & privacy `NFR`
+**U1 — Data retention + deletion (GDPR/CCPA)** `[new]` · `P1`: `ai_events` currently unbounded → retention + right-to-be-forgotten.
+**U2 — Data export / portability** `[new]` · `P1`: per-workspace/product export (anti-lock-in). Depends B5.
+**U3 — Sub-processor list + DPA** `[new]` · `P1`: disclose model-vendor data flows; contracts.
+**U4 — Data residency / region options** `[new]` · `P2`.
+**U5 — PII classification + minimization before model calls** `[new]` · `P1`: strip/mask PII pre-provider; pairs with guardrails P2.
+
+## EPIC V — Finance & monetization `NFR`
+**V1 — Usage metering + plan-limit enforcement** `[new]` · `P0/P1`: meter tokens/missions; enforce caps. Depends P6.
+**V2 — Cost-to-serve vs. price model** `[new]` · `P0`: per-mission cost attribution feeding margin analysis.
+**V3 — Payments, trials, dunning, invoicing** `[new]` · `P1`.
+**V4 — Per-customer cost attribution** `[new]` · `P1`. Depends V1.
+
+## EPIC W — Growth / GTM platform `NFR`
+**W1 — Onboarding + activation + samples/templates** `[new]` · `P0`: time-to-value; seeded sample product. Depends A1.
+**W2 — Product usage analytics (separate from AI telemetry)** `[new]` · `P1`: activation/retention/funnels.
+**W3 — Marketing site, pricing page, waitlist, SEO** `[new]` · `P1`.
+**W4 — In-app support, help center, changelog, docs** `[new]` · `P1`.
+**W5 — Mobile/PWA for approvals triage** `[new]` · `P2`: approvals can't block on desktop. Depends D3.
+
+## EPIC X — Legal & compliance `NFR`
+**X1 — ToS, privacy policy, AUP, DPA** `[new]` · `P1` (required to sell).
+**X2 — IP ownership of agent-generated code/content** `[new]` · `P1`.
+**X3 — Liability for autonomous actions** `[new]` · `P1` (governance gates are part of the answer).
+**X4 — OSS license compliance of agent-installed deps** `[new]` · `P1`. Ties S2, AGENTS.md §9.
+**X5 — SOC 2 / ISO 27001 / ISO 42001 path** `[new]` · `P2` (substrate in security.md).
+
+---
+
+## New features — v2 Positioning Session (2026-06-02)
+
+*Derived from strategic repositioning to "autonomous product OS." Full reasoning: [`strategy/product-positioning-v2.md`](./strategy/product-positioning-v2.md).*
+
+**C5 — Strategic Briefing surface** `[new]` · `P1` · `X1`
+- What: one place where the operator defines product north star, goals, constraints, and priorities once; every agent reads it as their operating context before each mission.
+- Build: `strategic_briefings` table (per product); editor surface; agents read via chokepoint context injection; version history; "last briefed" timestamp per agent.
+- States: no brief yet (agents warn before first mission); stale brief (>30 days, prompt to update).
+- Done when: a new agent mission reads the briefing and it shapes its plan output (verifiable via trace).
+- Depends: C2, G2 (editor), O2 (RAG context).
+
+**C6 — Agent Trust Score + Autonomy Dial** `[new]` · `P1` · `X1`
+- What: each agent builds a visible trust score from mission outcomes, eval scores, and human feedback; higher trust = more autonomy unlocked via a configurable dial (auto → confirm → review thresholds).
+- Build: `agent_trust_scores` table (composite of eval scores, feedback, mission success rate, approval rate); trust score badge on agent card; autonomy dial in agent config (overrides default approval mode at score thresholds); trust history chart.
+- States: new agent (low trust, defaults to `review`); trust regression (score drops → dial tightens automatically); manual override by operator.
+- Done when: an agent's approval mode automatically upgrades from `review` → `confirm` after sustained high-score missions.
+- Depends: C2, D3, P1, P4.
+
+**E8 — Loop Health Monitor** `[new]` · `P1` · `X1`
+- What: single view showing whether the autonomous product loop is running, where it's stuck, and what needs human attention — the "is my product org operating?" dashboard.
+- Build: per-product loop status (active missions, stalled missions, approval queue depth, last signal ingest, last deploy); health score composite; alert when loop stalls >N hours; one-click resume from each stall point.
+- States: healthy (all stages active); degraded (one stage stalled); stalled (multiple stages blocked or no activity).
+- Done when: stall in the Discover stage appears in the monitor within 1 hour with the reason and unblock action.
+- Depends: E6 (orchestration graph), D3, F3.
+
+**N3 — Mission Compounding View** `[new]` · `P2` · `S9`
+- What: show how each mission built on previous memory — make Product Memory accumulation visible and rewarding; counter the "is it getting smarter?" question.
+- Build: per-mission "context used" panel (which past decisions, signals, outcomes informed this mission's plan); memory growth chart (nodes + edges over time); "this mission referenced N prior decisions" badge; exportable context snapshot.
+- States: first mission (no prior context, explain what will be remembered); mature product (rich context graph visible).
+- Done when: a mission trace shows which prior Product Memory nodes were retrieved and used in the plan.
+- Depends: O1, O2, N1, N2.
+
+**U6 — Full data portability / export** `[new]` · `P1` · `NFR`
+- What: export all product data in open, standard formats — the anti-lock-in commitment made concrete. Operator can take their data to any tool at any time.
+- Build: export wizard (per product or workspace); exports: signals (CSV/JSON), themes + opportunities (JSON), decisions + lineage (JSON), PRDs (Markdown), task graphs (JSON), agent configs (YAML), Product Memory graph (JSON), trace logs (JSON); scheduled export option; export audit log.
+- States: large export (async + download link); partial export (per-data-type selection); export history.
+- Done when: a full workspace export produces files importable into standard tools (CSV → spreadsheet, Markdown → Notion, JSON → any processor).
+- Depends: B4, O1, G2, plan.md §9 (portability commitment).
+
+**W6 — Persona-specific onboarding tracks** `[new]` · `P0` · `NFR`
+- What: three onboarding paths matching the three primary personas — each emphasises the pain point most relevant to that user type and gets them to first value faster.
+- Build: onboarding flow selector post-signup (Solo PM / Founding PM / Technical Founder); per-track: different sample data, different first-mission suggestion, different "first win" moment; track stored in profile; can switch tracks.
+- States: existing user (skip or re-run track); partial onboarding (resume).
+- Done when: each track gets a user to their first completed mission in <10 min (time-to-value measured).
+- Depends: A1, W1, C5 (Strategic Briefing seeded as part of onboarding).
+
+---
+
+## Build-order rollup (status × build sequence)
+
+Sequence from [`../plan.md`](../plan.md) §3. Status: ☐ not started · ◑ legacy partial (harden) · ☑ verified into `plan.md` §4. **Per-item code-verified grades + step-1 tickets: [`foundation-audit.md`](./foundation-audit.md) (2026-05-30).**
+
+> **▶ This table is the canonical "what do I build next?" source.** To resolve the next actionable task deterministically (any tool, any human):
+> 1. Take the **lowest-numbered step** that is still `◑` or `☐` (the `∥` cross-cutting row is pulled into step 1, not sequenced separately).
+> 2. Expand its **Key IDs** to the feature entries above; pick the first whose own `[status]` is not `☑`.
+> 3. Open its concrete ticket in [`foundation-audit.md`](./foundation-audit.md) (step 1) or its entry above (later steps), then build.
+>
+> `TASKS.md` (repo root) is the **strategic** P0–P3 view — it points here for the concrete next step; it is not itself the task queue.
+
+| Step | Scope | Key IDs | Status |
+|---|---|---|---|
+| 1 | Foundation hardening + P0 non-functionals | 0.1–0.12, A1–A5, B1–B2, P1–P2, P6, P8, O2, R1 | ◑ |
+| 2 | First slice: Discover→Define→Plan | F1–F3, G1–G2, H1–H3, N1 | ◑ |
+| 3 | Orchestration layer (X1) | E1–E7, D1–D4, C1–C4, E6 graph | ☐ |
+| 4 | Build→Test→Ship (autonomous) | I1–I3, J1–J2, K1–K2, 0.10, 0.12 | ☐ |
+| 5 | Multi-product / multi-workspace | B3–B5, B4, E5 | ◑ |
+| 6 | Launch/GTM/Price + Operate/Support | L1–L2, M1 | ☐ |
+| 7 | Learn + Product Memory | N2, O1, O3 | ◑ |
+| 8 | Interop (MCP/A2A) | Q1–Q2 | ☐ |
+| ∥ | Cross-cutting (pull P0s into step 1, rest as relevant) | S, T, U, V, W, X | ☐ |
+
+**P0 critical path (the must-haves for a credible first user):** 0.1, 0.2, 0.5, 0.6, 0.7, 0.8, 0.9, 0.10, A1, A2, B1, B2, F1, F2, F3, G1, P6, P8, W1.
+
+---
+
+## Open scoping questions (decide before/early in the build)
+
+1. **Name + stack lock** (`TASKS.md` P0) — blocks a cheap find-replace later.
+2. **Durable runtime choice** (0.9) — Workers + queue (Durable Objects / external queue) vs. a longer-running worker. Architecture decision; everything autonomous depends on it.
+3. **Test runner** (J1) — none configured today; pick before the autonomous test loop is real.
+4. **Roster cardinality** (`plan.md` §6) — confirm the ~10 durable agents vs. dynamic-only.
+5. **Monetization model** (V2) — needed to instrument cost-to-serve from day one, even if billing ships later.
+
+> **Out of scope (now):** fine-tuning from `ai_events`; cross-workspace vector sharing; public skill-pack marketplace; cross-workspace SSO; fully autonomous *strategic* decisions (always human-gated). Per [`../plan.md`](../plan.md) §9.
