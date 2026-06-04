@@ -19,6 +19,8 @@ const createSchema = z.object({
   is_deep_work: z.boolean().default(false),
   due_date: z.string().nullable().optional(),
   project_id: z.string().uuid().nullable().optional(),
+  assignee_kind: z.enum(["human", "agent"]).default("human"),
+  agent_id: z.string().uuid().nullable().optional(),
 });
 
 export const createTask = createServerFn({ method: "POST" })
@@ -41,6 +43,8 @@ const updateSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).optional(),
   is_deep_work: z.boolean().optional(),
   due_date: z.string().nullable().optional(),
+  assignee_kind: z.enum(["human", "agent"]).optional(),
+  agent_id: z.string().uuid().nullable().optional(),
 });
 
 export const updateTask = createServerFn({ method: "POST" })
@@ -54,6 +58,8 @@ export const updateTask = createServerFn({ method: "POST" })
       priority?: "low" | "medium" | "high";
       is_deep_work?: boolean;
       due_date?: string | null;
+      assignee_kind?: "human" | "agent";
+      agent_id?: string | null;
       updated_at: string;
       completed_at?: string | null;
     } = { ...rest, updated_at: new Date().toISOString() };

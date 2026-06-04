@@ -2856,6 +2856,8 @@ export type Database = {
       }
       tasks: {
         Row: {
+          agent_id: string | null
+          assignee_kind: string
           completed_at: string | null
           created_at: string
           due_date: string | null
@@ -2873,6 +2875,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          agent_id?: string | null
+          assignee_kind?: string
           completed_at?: string | null
           created_at?: string
           due_date?: string | null
@@ -2890,6 +2894,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          agent_id?: string | null
+          assignee_kind?: string
           completed_at?: string | null
           created_at?: string
           due_date?: string | null
@@ -2907,6 +2913,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_product_id_fkey"
             columns: ["product_id"]
