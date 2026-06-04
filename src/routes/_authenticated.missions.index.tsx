@@ -6,7 +6,7 @@ import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { listMissions } from "@/lib/missions.functions";
 
-export const Route = createFileRoute("/_authenticated/missions")({
+export const Route = createFileRoute("/_authenticated/missions/")({
   component: MissionsPage,
   head: () => ({ meta: [{ title: "Missions · Cadence" }] }),
 });
