@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github, Hammer } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github, Hammer, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
@@ -135,68 +135,95 @@ function PrdEditor() {
           <ArrowLeft className="h-3 w-3" /> All PRDs
         </Link>
 
-        {prdQ.data?.prd?.github_issue_url ? (
-          <div className="inline-flex items-center gap-2 mb-3 ml-3">
-            <a
-              href={prdQ.data.prd.github_issue_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-violet-300 hover:text-violet-200 rounded-md border hairline px-2 py-1 bg-background/40"
-              title={prdQ.data.prd.github_issue_url}
-            >
-              <Github className="h-3 w-3" />
-              GitHub issue
-              {(() => {
-                const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
-                return m ? <span className="text-muted-foreground">#{m[1]}</span> : null;
-              })()}
-            </a>
-            <button
-              onClick={() => sendToBuilder.mutate()}
-              disabled={sendToBuilder.isPending}
-              className="inline-flex items-center gap-1.5 text-xs rounded-md border hairline px-2 py-1 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
-              title="Dispatch the Builder agent to open a scoped PR for this issue"
-            >
-              <Hammer className="h-3 w-3" />
-              {sendToBuilder.isPending ? "Dispatching…" : "Send to Builder"}
-            </button>
-          </div>
-        ) : (
-          <div className="mb-3 ml-3 inline-flex items-center gap-2 rounded-md border hairline bg-background/40 px-2 py-1 text-xs">
-            <Github className="h-3 w-3 text-muted-foreground" />
-            <span className="text-muted-foreground">No GitHub issue linked yet.</span>
-            <button
-              onClick={() => createIssue.mutate()}
-              disabled={createIssue.isPending}
-              className="inline-flex items-center gap-1 rounded-sm bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 px-1.5 py-0.5 disabled:opacity-50"
-              title="Create a GitHub issue from this PRD on the connected repo, then unlock Send to Builder."
-            >
-              {createIssue.isPending ? "Creating…" : "Create GitHub issue → unlock Builder"}
-            </button>
-          </div>
-        )}
+        {/* Document metadata row */}
+        <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground mb-3">
+          <span className="rounded-full bg-secondary px-2 py-0.5">{prdQ.data.prd.status}</span>
+          <span>Updated {new Date(prdQ.data.prd.updated_at).toLocaleDateString()}</span>
+          <span>·</span>
+          <span>{prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"}</span>
+          {prdQ.data.prd.github_issue_url ? (() => {
+            const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
+            return m ? (
+              <>
+                <span>·</span>
+                <a
+                  href={prdQ.data.prd.github_issue_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-violet-300 hover:text-violet-200 normal-case tracking-normal"
+                >
+                  <Github className="h-3 w-3" /> Issue #{m[1]} <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              </>
+            ) : null;
+          })() : null}
+        </div>
 
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="flex-1 bg-transparent font-display text-3xl tracking-tight outline-none border-b hairline focus:border-violet-400 pb-2"
           />
-          <div className="flex items-center rounded-xl border hairline overflow-hidden">
-            <button onClick={() => setMode("edit")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-secondary" : "text-muted-foreground"}`}>
+        </div>
+
+        {/* Sticky actions bar */}
+        <div className="sticky top-2 z-20 mb-6 rounded-xl border hairline bg-background/85 backdrop-blur px-3 py-2 flex flex-wrap items-center gap-2">
+          <div className="flex items-center rounded-lg border hairline overflow-hidden">
+            <button onClick={() => setMode("edit")} className={`px-2.5 py-1 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-secondary" : "text-muted-foreground"}`}>
               <Pencil className="h-3 w-3" /> Edit
             </button>
-            <button onClick={() => setMode("preview")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-secondary" : "text-muted-foreground"}`}>
+            <button onClick={() => setMode("preview")} className={`px-2.5 py-1 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-secondary" : "text-muted-foreground"}`}>
               <Eye className="h-3 w-3" /> Preview
             </button>
           </div>
           <button
             onClick={() => save.mutate()}
             disabled={save.isPending}
-            className="rounded-xl bg-foreground text-background px-3 py-1.5 text-sm inline-flex items-center gap-1.5"
+            className="rounded-lg bg-foreground text-background px-2.5 py-1 text-xs inline-flex items-center gap-1.5"
           >
-            <Save className="h-3.5 w-3.5" /> Save
+            <Save className="h-3 w-3" /> {save.isPending ? "Saving…" : "Save"}
           </button>
+
+          <span className="mx-1 h-4 w-px bg-border" />
+
+          {prdQ.data.prd.github_issue_url ? (
+            <button
+              onClick={() => sendToBuilder.mutate()}
+              disabled={sendToBuilder.isPending}
+              className="rounded-lg border hairline px-2.5 py-1 text-xs inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+              title="Dispatch the Builder agent to open a scoped PR for this issue"
+            >
+              <Hammer className="h-3 w-3" />
+              {sendToBuilder.isPending ? "Dispatching…" : "Send to Builder"}
+            </button>
+          ) : (
+            <button
+              onClick={() => createIssue.mutate()}
+              disabled={createIssue.isPending}
+              className="rounded-lg border hairline px-2.5 py-1 text-xs inline-flex items-center gap-1.5 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 disabled:opacity-50"
+              title="Create a GitHub issue from this PRD, then unlock Send to Builder."
+            >
+              <Github className="h-3 w-3" />
+              {createIssue.isPending ? "Creating…" : "Create GitHub issue"}
+            </button>
+          )}
+
+          <span className="mx-1 h-4 w-px bg-border" />
+
+          <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 text-violet-300" /> AI:
+          </span>
+          {(["rewrite", "expand", "shorten", "critique"] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => assist.mutate(a)}
+              disabled={assist.isPending}
+              className="rounded-md border hairline px-2 py-0.5 text-[11px] hover:bg-secondary capitalize disabled:opacity-50"
+            >
+              {a}
+            </button>
+          ))}
         </div>
 
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (
@@ -222,21 +249,6 @@ function PrdEditor() {
             </button>
           </div>
         )}
-
-        <div className="flex flex-wrap items-center gap-2 mb-4 text-xs">
-          <span className="text-muted-foreground inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-violet-300" /> AI assist:</span>
-          {(["rewrite", "expand", "shorten", "critique"] as const).map((a) => (
-            <button
-              key={a}
-              onClick={() => assist.mutate(a)}
-              disabled={assist.isPending}
-              className="rounded-lg border hairline px-2.5 py-1 hover:bg-secondary capitalize disabled:opacity-50"
-            >
-              {a}
-            </button>
-          ))}
-          <span className="text-[10px] text-muted-foreground ml-2">Select text first, or it'll work on the whole doc.</span>
-        </div>
 
         {mode === "edit" ? (
           <textarea

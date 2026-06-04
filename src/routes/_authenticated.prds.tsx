@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileText, Sparkles, Trash2, GitBranch, ListTodo } from "lucide-react";
+import { FileText, Sparkles, Trash2, GitBranch, ListTodo, Github, Hammer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import { listProjects } from "@/lib/projects.functions";
-import { listPrds, deletePrd, generatePrd } from "@/lib/discovery.functions";
+import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
+import { dispatchBuilderMission } from "@/lib/build.functions";
 import FolderInteraction from "@/components/ui/folder";
 
 export const Route = createFileRoute("/_authenticated/prds")({
@@ -24,6 +25,8 @@ function PrdsPage() {
   const mDelete = useServerFn(deletePrd);
   const mGen = useServerFn(generatePrd);
   const mTasks = useServerFn(promotePrdToTasks);
+  const mCreateIssue = useServerFn(createGithubIssueForPrd);
+  const mDispatch = useServerFn(dispatchBuilderMission);
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prds = useQuery({ queryKey: ["prds"], queryFn: () => fPrds() });
@@ -35,6 +38,31 @@ function PrdsPage() {
     onSuccess: (r) => {
       toast.success(`Generated ${r.count} task${r.count === 1 ? "" : "s"}`);
       qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const createIssue = useMutation({
+    mutationFn: (id: string) => mCreateIssue({ data: { id } }),
+    onSuccess: (r) => {
+      toast.success(r.cached ? "GitHub issue already linked" : `GitHub issue #${r.number} created`);
+      inv();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const sendToBuilder = useMutation({
+    mutationFn: (p: { id: string; title: string }) =>
+      mDispatch({
+        data: {
+          prdId: p.id,
+          goal: `Ship the changes described in PRD "${p.title}".`,
+          missionTitle: `Build · ${p.title.slice(0, 60)}`,
+        },
+      }),
+    onSuccess: (r) => {
+      toast.success("Builder mission dispatched");
+      const missionId = (r as { mission_id?: string | null }).mission_id;
+      if (missionId) navigate({ to: "/missions/$missionId", params: { missionId } });
+      else navigate({ to: "/build" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -95,8 +123,12 @@ function PrdsPage() {
               <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
                 <span className="rounded-full bg-secondary px-2 py-0.5">{p.status}</span>
                 <span>{new Date(p.updated_at).toLocaleDateString()}</span>
+                {p.github_issue_url ? (() => {
+                  const m = p.github_issue_url.match(/\/issues\/(\d+)/);
+                  return m ? <span className="rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5">#{m[1]}</span> : null;
+                })() : null}
               </div>
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => promote.mutate(p.id)}
                   disabled={promote.isPending}
@@ -105,6 +137,37 @@ function PrdsPage() {
                   <ListTodo className="h-3 w-3" />
                   {promote.isPending && promote.variables === p.id ? "Generating…" : "Generate tasks"}
                 </button>
+                {p.github_issue_url ? (
+                  <>
+                    <a
+                      href={p.github_issue_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-violet-200 hover:bg-violet-500/10"
+                      title={p.github_issue_url}
+                    >
+                      <Github className="h-3 w-3" /> Open issue
+                    </a>
+                    <button
+                      onClick={() => sendToBuilder.mutate({ id: p.id, title: p.title })}
+                      disabled={sendToBuilder.isPending}
+                      className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+                    >
+                      <Hammer className="h-3 w-3" />
+                      {sendToBuilder.isPending && sendToBuilder.variables?.id === p.id ? "Dispatching…" : "Send to Builder"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => createIssue.mutate(p.id)}
+                    disabled={createIssue.isPending}
+                    className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 disabled:opacity-50"
+                    title="Create a GitHub issue from this PRD and unlock Send to Builder"
+                  >
+                    <Github className="h-3 w-3" />
+                    {createIssue.isPending && createIssue.variables === p.id ? "Creating…" : "Create GitHub issue"}
+                  </button>
+                )}
                 <button
                   onClick={() => setLineage({ id: p.id, title: p.title })}
                   className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
