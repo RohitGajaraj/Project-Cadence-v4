@@ -3334,6 +3334,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      seed_demo_workspace: { Args: { _user_id: string }; Returns: string }
       seed_pm_lifecycle_tools: {
         Args: { _user_id: string }
         Returns: undefined
