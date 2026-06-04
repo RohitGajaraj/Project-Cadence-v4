@@ -28,6 +28,16 @@
 - **Cancellation** stops a session mid-run and saves the partial trace.
 - **Replay-and-branch** re-runs a mission (or a node) against a different model/prompt for comparison.
 
+## Autonomy dial (Trust Score → effective approval mode)
+The effective approval mode at each gate is **not** read directly from `agent_tools.mode`. It is the result of `resolveApprovalMode(toolMode, arc)` (`src/lib/ai/trust.server.ts`), which composes the tool's own mode with the agent's position on the trust arc (`agent_autonomy.arc` ∈ `observing | proving | trusted | ambient`). Rules:
+- `review` is sticky — the dial NEVER downgrades a `review` tool.
+- `Observing` forces `review` on every `write`/`planning` tool (everything visible).
+- `Proving` forces `confirm` on `auto` tools.
+- `Trusted` lets `confirm`-mode tools execute inline; `review` stays sticky.
+- `Ambient` lets everything execute inline EXCEPT hard-locked tools (`calendar.create`, future destructive ones) which keep `confirm`.
+- Trust score (0–100) is computed on read from real signals — mission success rate, approval acceptance rate, eval mean — Bayesian-shrunk toward 0.5 when sample <10. The score never lives in a column; it can never go stale.
+- The dial is set by the operator on `/agents`; the loop reads `loadAgentArc(userId, agentId)` once per run.
+
 ## Automation engine
 - **Triggers:** schedule (`pg_cron` → `/api/public/hooks/*`), event (a signal arrives, a ticket lands, a PR merges), and webhook (external).
 - **Workflows:** declarative multi-step definitions binding triggers → missions → approval policy. Saved, versioned, reusable (the "skills/saved-workflow" idea, generalized).
