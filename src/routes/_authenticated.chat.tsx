@@ -169,13 +169,14 @@ function ChatPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="grid grid-cols-[260px,1fr] h-screen">
+      <div className="grid grid-cols-[260px,1fr] h-[100dvh] max-h-[100dvh] overflow-hidden">
         {/* Conversation rail */}
-        <aside className="border-r hairline bg-background/40 backdrop-blur-xl flex flex-col">
+        <aside className="border-r hairline bg-background/40 backdrop-blur-xl flex flex-col min-h-0">
           <div className="p-3 border-b hairline">
             <button
               onClick={() => mNew.mutate()}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-foreground text-background px-3 py-2 text-sm font-medium hover:opacity-90"
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
+              style={{ background: "var(--gradient-primary, linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, #a78bfa)))" }}
             >
               <Plus className="h-3.5 w-3.5" /> New chat
             </button>
@@ -207,8 +208,8 @@ function ChatPage() {
         </aside>
 
         {/* Conversation pane */}
-        <section className="flex flex-col h-screen relative">
-          <header className="flex items-center justify-between gap-4 px-6 h-14 border-b hairline glass">
+        <section className="flex flex-col min-h-0 h-[100dvh] relative">
+          <header className="flex items-center justify-between gap-4 px-6 h-14 border-b hairline glass shrink-0">
             <div className="text-sm text-muted-foreground truncate">
               {active.data?.conversation?.title ?? "New conversation"}
             </div>
@@ -228,20 +229,20 @@ function ChatPage() {
             </select>
           </header>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin">
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
             {isEmpty ? (
-              <div className="h-full grid place-items-center px-6">
-                <div className="max-w-xl text-center">
-                  <div className="mx-auto h-14 w-14 rounded-2xl ring-glow-violet relative overflow-hidden">
+              <div className="h-full grid place-items-center px-6 py-10">
+                <div className="max-w-2xl text-center">
+                  <div className="mx-auto h-16 w-16 rounded-2xl ring-glow-violet relative overflow-hidden">
                     <div className="absolute inset-0 neural-gradient animate-aurora" />
                   </div>
-                  <h1 className="mt-6 font-display text-3xl tracking-tight">
+                  <h1 className="mt-8 font-display text-4xl md:text-5xl tracking-tight leading-tight">
                     Hi <span className="neural-text">{firstName}</span>. How can I help?
                   </h1>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-3 text-sm md:text-base text-muted-foreground">
                     Ask anything about your products, tasks, or strategy. I'm grounded in your workspace.
                   </p>
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-2 text-left">
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                     {[
                       "Summarize today and tell me what to focus on",
                       "Draft a PRD outline for my top product",
@@ -251,7 +252,7 @@ function ChatPage() {
                       <button
                         key={s}
                         onClick={() => setInput(s)}
-                        className="bento p-3 text-sm text-left text-muted-foreground hover:text-foreground transition"
+                        className="bento p-4 text-sm text-left text-muted-foreground hover:text-foreground hover:ring-1 hover:ring-primary/30 transition"
                       >
                         {s}
                       </button>
@@ -260,7 +261,7 @@ function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+              <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
                 {liveMessages.map((m) => (
                   <MessageBubble key={m.id} role={m.role} content={m.content} streaming={streaming && m === liveMessages[liveMessages.length - 1]} />
                 ))}
@@ -269,31 +270,37 @@ function ChatPage() {
           </div>
 
           {/* Composer */}
-          <div className="border-t hairline glass">
+          <div className="border-t hairline glass shrink-0">
             <form
               onSubmit={(e) => { e.preventDefault(); send(); }}
-              className="max-w-3xl mx-auto p-4"
+              className="max-w-3xl mx-auto px-6 py-4"
             >
-              <div className="bento p-2 flex items-end gap-2">
+              <div
+                className="relative rounded-2xl p-[1px] transition"
+                style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 55%, transparent), color-mix(in oklab, #a78bfa 45%, transparent), color-mix(in oklab, #38bdf8 35%, transparent))" }}
+              >
+                <div className="flex items-end gap-2 rounded-2xl bg-background/80 backdrop-blur-xl p-2">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
                   }}
-                  rows={1}
+                  rows={2}
                   placeholder="Message Cadence…   (Enter to send · Shift+Enter for newline)"
-                  className="flex-1 bg-transparent px-3 py-2 text-sm outline-none resize-none max-h-40"
+                  className="flex-1 bg-transparent px-3 py-2 text-sm outline-none resize-none max-h-40 placeholder:text-muted-foreground/70"
                 />
                 <button
                   type="submit"
                   disabled={streaming || !input.trim()}
-                  className="h-9 w-9 grid place-items-center rounded-xl bg-foreground text-background disabled:opacity-40"
+                  className="h-10 w-10 grid place-items-center rounded-xl text-white shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] disabled:opacity-40 transition hover:scale-[1.03]"
+                  style={{ background: "linear-gradient(135deg, var(--primary), #a78bfa)" }}
                 >
                   {streaming ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
                 </button>
+                </div>
               </div>
-              <div className="mt-2 text-[10px] text-muted-foreground text-center">
+              <div className="mt-2.5 text-[10px] text-muted-foreground text-center tracking-wide">
                 Grounded in your workspace · {MODELS.find((m) => m.id === model)?.label ?? model}
               </div>
             </form>
