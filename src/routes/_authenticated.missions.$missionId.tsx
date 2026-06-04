@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, AlertTriangle, Chevr
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, type HopStep, type HopToolCall } from "@/lib/missions.functions";
+import { MissionGraph } from "@/components/cadence/MissionGraph";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetail,
@@ -165,6 +166,19 @@ function MissionDetail() {
     });
   };
 
+  const handleSelectHop = (runId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.add(runId);
+      return next;
+    });
+    // Scroll to the hop card on the next paint so the panel is mounted.
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`hop-${runId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
   const data = m.data;
 
   return (
@@ -204,6 +218,7 @@ function MissionDetail() {
         ) : (
           <div className="space-y-3">
             <AgentTimeline hops={data.hops} />
+            <MissionGraph hops={data.hops} messages={data.messages} onSelectHop={handleSelectHop} />
             <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Hops (chronological)</div>
             {data.hops.length === 0 && (
               <div className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
@@ -217,7 +232,7 @@ function MissionDetail() {
               const outbound = data.messages.find((mm) => mm.source_run_id === h.run_id);
               const isExpanded = expanded.has(h.run_id);
               return (
-                <div key={h.run_id}>
+                <div key={h.run_id} id={`hop-${h.run_id}`} className="scroll-mt-24">
                   {inbound && (
                     <div className="ml-4 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 rounded-md border border-indigo-400/30 bg-indigo-500/10 px-2 py-0.5 text-indigo-300">
