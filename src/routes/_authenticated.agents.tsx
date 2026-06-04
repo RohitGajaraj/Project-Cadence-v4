@@ -135,8 +135,16 @@ function AgentsPage() {
                   <div className="absolute inset-0 neural-gradient opacity-20" />
                   <div className="relative">
                     <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{selected.role}</div>
-                    <h2 className="font-display text-2xl mt-1">{selected.name}</h2>
+                    <div className="mt-1 flex items-center gap-3 flex-wrap">
+                      <h2 className="font-display text-2xl">{selected.name}</h2>
+                      <TrustChip trust={trustByAgent.get(selected.id)} />
+                    </div>
                     <p className="mt-3 text-sm text-muted-foreground max-w-2xl">{selected.system_prompt}</p>
+                    <AutonomyDial
+                      trust={trustByAgent.get(selected.id)}
+                      onChange={(arc) => arcMutation.mutate({ agentId: selected.id, arc })}
+                      pending={arcMutation.isPending}
+                    />
                   </div>
                 </div>
 
