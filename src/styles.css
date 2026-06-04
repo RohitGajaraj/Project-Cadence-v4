@@ -1169,4 +1169,12 @@ html:not(.dark):not(.aurora) {
   --color-fuchsia-200: oklch(0.52 0.20 330);
   --color-fuchsia-300: oklch(0.48 0.22 328);
   --color-fuchsia-400: oklch(0.46 0.23 326);
+
+  /* Violet / Indigo — deep-work, intel, agent chips */
+  --color-violet-200:  oklch(0.50 0.18 295);
+  --color-violet-300:  oklch(0.46 0.20 293);
+  --color-violet-400:  oklch(0.44 0.21 291);
+  --color-indigo-200:  oklch(0.50 0.17 268);
+  --color-indigo-300:  oklch(0.46 0.18 266);
+  --color-indigo-400:  oklch(0.44 0.19 264);
 }
