@@ -551,6 +551,66 @@ const backlogPrioritize = def({
 });
 
 // ── A2A handoff ───────────────────────────────────────────────────────
+// ── web I/O tools ─────────────────────────────────────────────────────
+// Outbound web access via Firecrawl. Defaults to `auto` for read-only
+// search/fetch/map; `web.crawl` defaults to `confirm` because it spends
+// real credits and time. Results re-enter the loop as untrusted input —
+// the next callModel runs pre-guardrails (PII / prompt-injection / secret).
+const webSearchTool = def({
+  name: "web.search",
+  description: "Search the public web. Returns ranked results (url, title, snippet). Set scrape=true to also fetch markdown of each result (cheap recon). Use this BEFORE making claims about products, companies, news, or competitors you don't already have workspace context on.",
+  category: "read",
+  argsSchema: z.object({
+    query: z.string().min(1).max(300),
+    limit: z.number().int().min(1).max(10).optional(),
+    scrape: z.boolean().optional(),
+    recency: z.enum(["day", "week", "month", "year"]).optional(),
+  }),
+  preview: (a) => `Web search: "${a.query}"${a.recency ? ` · past ${a.recency}` : ""}`,
+  run: async (a) => webSearch(a),
+});
+
+const webFetchTool = def({
+  name: "web.fetch",
+  description: "Fetch a single URL and return its main content as markdown. Use after web.search to read a specific page in full. Always cite the returned URL when you use facts from it.",
+  category: "read",
+  argsSchema: z.object({
+    url: z.string().url().max(2000),
+    maxChars: z.number().int().min(2000).max(20000).optional(),
+  }),
+  preview: (a) => `Fetch ${a.url}`,
+  run: async (a) => webFetch(a),
+});
+
+const webMapTool = def({
+  name: "web.map",
+  description: "Discover URLs on a domain (cheap sitemap). Optionally filter by keyword. Use BEFORE web.crawl to pick a small set of pages instead of crawling blindly.",
+  category: "read",
+  argsSchema: z.object({
+    url: z.string().url().max(500),
+    search: z.string().max(120).optional(),
+    limit: z.number().int().min(1).max(500).optional(),
+    includeSubdomains: z.boolean().optional(),
+  }),
+  preview: (a) => `Map ${a.url}${a.search ? ` · "${a.search}"` : ""}`,
+  run: async (a) => webMap(a),
+});
+
+const webCrawlTool = def({
+  name: "web.crawl",
+  description: "Crawl a bounded set of pages on a domain (max 25 pages, depth 2). Costs real credits — prefer web.search + web.fetch unless you genuinely need many pages. Defaults to a confirm approval gate.",
+  category: "read",
+  argsSchema: z.object({
+    url: z.string().url().max(500),
+    limit: z.number().int().min(1).max(25).optional(),
+    maxDepth: z.number().int().min(1).max(2).optional(),
+    includePaths: z.array(z.string().min(1).max(200)).max(10).optional(),
+    excludePaths: z.array(z.string().min(1).max(200)).max(10).optional(),
+  }),
+  preview: (a) => `Crawl up to ${a.limit ?? 10} pages from ${a.url}`,
+  run: async (a) => webCrawl(a),
+});
+
 /**
  * agent.handoff — pass the mission to another agent with a STRUCTURED payload.
  * Defaults to `confirm` mode (operator sees the structured payload + receiver
