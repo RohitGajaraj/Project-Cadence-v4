@@ -37,6 +37,7 @@ The effective approval mode at each gate is **not** read directly from `agent_to
 - `Ambient` lets everything execute inline EXCEPT hard-locked tools (`calendar.create`, future destructive ones) which keep `confirm`.
 - Trust score (0–100) is computed on read from real signals — mission success rate, approval acceptance rate, eval mean — Bayesian-shrunk toward 0.5 when sample <10. The score never lives in a column; it can never go stale.
 - The dial is set by the operator on `/agents`; the loop reads `loadAgentArc(userId, agentId)` once per run.
+- **Operator-facing explanation** (what the 0–100 score means, qualitative label bands, the three ingredients, per-arc behavior, safety floors, operator playbook): [`../docs/trust-and-autonomy.md`](../docs/trust-and-autonomy.md). Keep that doc in sync when the score formula or arc behavior changes.
 
 ## Automation engine
 - **Triggers:** schedule (`pg_cron` → `/api/public/hooks/*`), event (a signal arrives, a ticket lands, a PR merges), and webhook (external).
