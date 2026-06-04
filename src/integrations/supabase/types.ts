@@ -169,6 +169,68 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_messages: {
+        Row: {
+          consumed_at: string | null
+          consumed_by_run_id: string | null
+          created_at: string
+          from_agent_id: string | null
+          from_agent_slug: string | null
+          id: string
+          kind: string
+          mission_id: string
+          payload: Json
+          source_run_id: string | null
+          source_trace_id: string | null
+          to_agent_id: string
+          to_agent_slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_by_run_id?: string | null
+          created_at?: string
+          from_agent_id?: string | null
+          from_agent_slug?: string | null
+          id?: string
+          kind?: string
+          mission_id: string
+          payload?: Json
+          source_run_id?: string | null
+          source_trace_id?: string | null
+          to_agent_id: string
+          to_agent_slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_by_run_id?: string | null
+          created_at?: string
+          from_agent_id?: string | null
+          from_agent_slug?: string | null
+          id?: string
+          kind?: string
+          mission_id?: string
+          payload?: Json
+          source_run_id?: string | null
+          source_trace_id?: string | null
+          to_agent_id?: string
+          to_agent_slug?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_run_checkpoints: {
         Row: {
           created_at: string
@@ -226,6 +288,7 @@ export type Database = {
           id: string
           input: string
           last_checkpoint_at: string | null
+          mission_id: string | null
           mission_spend_cap_usd: number | null
           mission_token_cap: number | null
           output: string | null
@@ -247,6 +310,7 @@ export type Database = {
           id?: string
           input: string
           last_checkpoint_at?: string | null
+          mission_id?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
           output?: string | null
@@ -268,6 +332,7 @@ export type Database = {
           id?: string
           input?: string
           last_checkpoint_at?: string | null
+          mission_id?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
           output?: string | null
@@ -1855,6 +1920,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      missions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_agent_id: string | null
+          goal: string
+          hop_count: number
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_agent_id?: string | null
+          goal: string
+          hop_count?: number
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_agent_id?: string | null
+          goal?: string
+          hop_count?: number
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       notes: {
         Row: {
