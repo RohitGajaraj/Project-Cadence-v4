@@ -138,7 +138,7 @@ function PrdsPage() {
           <button
             onClick={() => { if (brief.trim()) { gen.mutate(brief.trim()); setBrief(""); } }}
             disabled={gen.isPending || !brief.trim()}
-            className="mt-4 btn-pill disabled:opacity-50"
+            className="mt-4 btn-agentic rounded-lg px-4 py-2 text-xs font-medium inline-flex items-center gap-1.5"
           >
             <Sparkles className="h-3.5 w-3.5" /> {gen.isPending ? "Drafting…" : "Generate PRD"}
           </button>
