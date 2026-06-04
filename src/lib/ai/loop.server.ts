@@ -287,9 +287,14 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
       continue;
     }
     
-    // Force approval gate for high-risk tools like calendar.create
+    // Force approval gate for high-risk tools like calendar.create (safety floor,
+    // not overridable by the dial).
     const isHighRisk = call.name === "calendar.create";
-    const mode = isHighRisk ? "confirm" : (modeOf.get(call.name) ?? "confirm");
+    const rawToolMode = (modeOf.get(call.name) ?? "confirm") as ToolMode;
+    // The autonomy dial composes with the tool's own mode. `review` is sticky,
+    // and high-risk tools force at least `confirm`.
+    const dialedMode = resolveApprovalMode(rawToolMode, arc);
+    const mode: ToolMode = isHighRisk && dialedMode === "auto" ? "confirm" : dialedMode;
     const isWrite = def.category === "write" || def.category === "planning";
 
     if (isWrite && (mode === "confirm" || mode === "review")) {
