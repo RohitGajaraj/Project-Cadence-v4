@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, Code2, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle,
+  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair,
   type LucideIcon,
 } from "lucide-react";
@@ -45,6 +45,7 @@ const groups: NavGroup[] = [
       { to: "/opportunities", label: "Opportunities", icon: Target },
       { to: "/meetings", label: "Meetings", icon: Calendar },
       { to: "/calendar", label: "Calendar", icon: Calendar },
+      { to: "/studio", label: "Prototype Sandbox", icon: Code2 },
     ],
   },
   {
@@ -54,7 +55,7 @@ const groups: NavGroup[] = [
       { to: "/prds", label: "PRDs", icon: FileText },
       { to: "/docs", label: "Docs", icon: BookOpen },
       { to: "/roadmap", label: "Roadmap", icon: Map },
-      { to: "/studio", label: "Code Studio", icon: Code2 },
+      { to: "/build", label: "Build Console", icon: Hammer },
       { to: "/tasks", label: "Tasks", icon: ListTodo },
       { to: "/sync", label: "Sync Inbox", icon: Inbox },
     ],
