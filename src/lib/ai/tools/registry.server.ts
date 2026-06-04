@@ -549,6 +549,64 @@ const backlogPrioritize = def({
   },
 });
 
+// ── A2A handoff ───────────────────────────────────────────────────────
+/**
+ * agent.handoff — pass the mission to another agent with a STRUCTURED payload.
+ * Defaults to `confirm` mode (operator sees the structured payload + receiver
+ * in the approval card). When executed, it inserts an `agent_messages` row and
+ * enqueues a child `agent_runs` row with the same `mission_id`; the resume-runs
+ * sweeper picks it up on its next tick.
+ * Only usable from inside a mission — fails fast otherwise so the operator can
+ * see this in the trace.
+ */
+const agentHandoff = def({
+  name: "agent.handoff",
+  description: "Hand the current mission off to another agent with a structured payload (task + context + artifacts + open questions + constraints). Use when your stage is done and a different specialist should pick up. Requires you to be inside a mission (the operator started it that way).",
+  category: "write",
+  argsSchema: z.object({
+    to_agent_slug: z.string().min(1).max(60),
+    task: z.string().min(1).max(1000),
+    context: z.record(z.string(), z.unknown()).optional(),
+    artifacts: z.array(z.object({
+      kind: z.string().min(1).max(40),
+      id: z.string().min(1).max(200),
+      title: z.string().max(280).optional(),
+    })).max(20).optional(),
+    open_questions: z.array(z.string().min(1).max(400)).max(10).optional(),
+    constraints: z.array(z.string().min(1).max(400)).max(10).optional(),
+  }),
+  preview: (a) => `Handoff to ${a.to_agent_slug}: "${a.task.slice(0, 80)}"`,
+  run: async (a, { supabase, userId, agentId, agentSlug, traceId, runId, missionId, workspaceId }) => {
+    if (!missionId) throw new Error("agent.handoff requires a mission_id (start the run with a mission)");
+    if (!workspaceId) throw new Error("agent.handoff requires a workspace_id");
+    const to = await resolveAgent(supabase, userId, { agent_slug: a.to_agent_slug });
+    if (to.id === agentId) throw new Error("agent.handoff: cannot hand off to yourself");
+    const payload: HandoffPayload = {
+      task: a.task,
+      context: a.context as Record<string, unknown> | undefined,
+      artifacts: a.artifacts,
+      open_questions: a.open_questions,
+      constraints: a.constraints,
+    };
+    const result = await enqueueHandoff(supabase, userId, {
+      mission_id: missionId,
+      workspace_id: workspaceId,
+      from_agent_id: agentId ?? null,
+      from_agent_slug: agentSlug ?? null,
+      to,
+      payload,
+      source_run_id: runId ?? null,
+      source_trace_id: traceId ?? null,
+    });
+    return {
+      message_id: result.message_id,
+      queued_run_id: result.queued_run_id,
+      to_agent_slug: to.slug,
+      mission_id: missionId,
+    };
+  },
+});
+
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
   [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff]
     .map((t) => [t.name, t]),
