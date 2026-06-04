@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Bot, Sparkles, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
-import { listAgents, listAgentRuns, runAgent, updateAgentSchedule } from "@/lib/agents.functions";
+import { listAgents, listAgentRuns, updateAgentSchedule } from "@/lib/agents.functions";
+import { runAgent } from "@/lib/agent_loop.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listApiKeys } from "@/lib/byokeys.functions";
 
@@ -27,8 +28,12 @@ function AgentsPage() {
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
 
   const dispatch = useMutation({
-    mutationFn: (data: { agentId: string; input: string; model?: string }) => mRun({ data }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["runs"] }); toast.success("Agent finished"); },
+    mutationFn: (data: { agentSlug: string; goal: string; model?: string }) => mRun({ data }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["runs"] });
+      const tid = (res as { trace_id?: string } | undefined)?.trace_id;
+      toast.success("Agent finished" + (tid ? " — trace ready" : ""));
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -116,7 +121,7 @@ function AgentsPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => { e.preventDefault(); if (!input.trim()) return; dispatch.mutate({ agentId: selected.id, input: input.trim(), model }); setInput(""); }}
+                  onSubmit={(e) => { e.preventDefault(); if (!input.trim()) return; dispatch.mutate({ agentSlug: selected.slug, goal: input.trim(), model }); setInput(""); }}
                   className="bento p-4 flex flex-col gap-3"
                 >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -143,6 +148,12 @@ function AgentsPage() {
                     className="w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring resize-none"
                   />
                   <div className="flex justify-end">
+                    <Link
+                      to="/traces"
+                      className="mr-auto inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                    >
+                      View traces →
+                    </Link>
                     <button disabled={dispatch.isPending} className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-3.5 py-2 text-sm disabled:opacity-60">
                       <Send className="h-3.5 w-3.5" /> {dispatch.isPending ? "Running…" : "Dispatch"}
                     </button>
