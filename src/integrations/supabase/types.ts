@@ -3095,6 +3095,10 @@ export type Database = {
         }[]
       }
       current_user_default_workspace: { Args: never; Returns: string }
+      ensure_user_default_workspace: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       halt_agent_run: {
         Args: { _reason: string; _run_id: string }
         Returns: undefined
