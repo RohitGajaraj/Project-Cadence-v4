@@ -45,12 +45,14 @@ function AgentsPage() {
   });
 
   const dispatch = useMutation({
-    mutationFn: (data: { agentSlug: string; goal: string; model?: string }) => mRun({ data }),
+    mutationFn: (data: { agentSlug: string; goal: string; model?: string; asMission?: boolean; missionTitle?: string }) => mRun({ data }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
       qc.invalidateQueries({ queryKey: ["agent-trust"] });
+      const mid = (res as { mission_id?: string | null } | undefined)?.mission_id;
       const tid = (res as { trace_id?: string } | undefined)?.trace_id;
-      toast.success("Agent finished" + (tid ? " — trace ready" : ""));
+      if (mid) toast.success("Mission started — open Missions to follow the hops");
+      else toast.success("Agent finished" + (tid ? " — trace ready" : ""));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -60,6 +62,7 @@ function AgentsPage() {
   const [schedule, setSchedule] = useState<string>("");
   const [cronInput, setCronInput] = useState<string>("");
   const [model, setModel] = useState<string>("google/gemini-2.5-flash");
+  const [asMission, setAsMission] = useState<boolean>(false);
 
   const fKeys = useServerFn(listApiKeys);
   const keysQ = useQuery({ queryKey: ["byo-keys"], queryFn: () => fKeys(), retry: false });
@@ -151,7 +154,18 @@ function AgentsPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => { e.preventDefault(); if (!input.trim()) return; dispatch.mutate({ agentSlug: selected.slug, goal: input.trim(), model }); setInput(""); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!input.trim()) return;
+                    dispatch.mutate({
+                      agentSlug: selected.slug,
+                      goal: input.trim(),
+                      model,
+                      asMission,
+                      missionTitle: asMission ? input.trim().slice(0, 80) : undefined,
+                    });
+                    setInput("");
+                  }}
                   className="bento p-4 flex flex-col gap-3"
                 >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -171,6 +185,24 @@ function AgentsPage() {
                         );
                       })}
                     </select>
+                    <label className="ml-auto inline-flex items-center gap-1.5 text-[11px] cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={asMission}
+                        onChange={(e) => setAsMission(e.target.checked)}
+                        className="h-3 w-3 accent-violet-400"
+                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted decoration-muted-foreground/60 underline-offset-2">
+                            Start as mission
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-left p-3 text-[11px] leading-snug">
+                          Wraps this run in a mission so the agent can hand off to other agents using the <code>agent.handoff</code> tool. Each hop appears in <Link to="/missions" className="underline">Missions</Link> with structured payloads.
+                        </TooltipContent>
+                      </Tooltip>
+                    </label>
                   </div>
                   <textarea
                     value={input} onChange={(e) => setInput(e.target.value)} rows={3}

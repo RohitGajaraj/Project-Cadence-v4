@@ -7,6 +7,8 @@ const RunSchema = z.object({
   agentSlug: z.string().min(1).max(60),
   goal: z.string().min(1).max(4000),
   model: z.string().min(1).max(120).optional(),
+  asMission: z.boolean().optional(),
+  missionTitle: z.string().max(200).optional(),
 });
 
 export const runAgent = createServerFn({ method: "POST" })
@@ -14,8 +16,25 @@ export const runAgent = createServerFn({ method: "POST" })
   .inputValidator((input) => RunSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const result = await runAgentLoop(supabase, userId, data);
-    return result;
+    let missionId: string | null = null;
+    if (data.asMission) {
+      // Resolve workspace + starting agent, create mission, then run.
+      const { data: ws } = await supabase.rpc("current_user_default_workspace");
+      const workspaceId = (ws as string | null) ?? null;
+      const { data: agent } = await supabase.from("agents")
+        .select("id").eq("user_id", userId).eq("slug", data.agentSlug).maybeSingle();
+      if (workspaceId && agent) {
+        const { createMission } = await import("@/lib/ai/handoff.server");
+        const m = await createMission(supabase, userId, workspaceId, {
+          title: data.missionTitle?.trim() || data.goal.slice(0, 80),
+          goal: data.goal,
+          starting_agent_id: (agent as { id: string }).id,
+        });
+        missionId = m.id;
+      }
+    }
+    const result = await runAgentLoop(supabase, userId, { ...data, missionId });
+    return { ...result, mission_id: missionId };
   });
 
 export const listApprovals = createServerFn({ method: "POST" })

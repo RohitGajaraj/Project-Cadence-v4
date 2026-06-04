@@ -17,12 +17,13 @@
 
 | Field | Current |
 |---|---|
-| 🔨 **Now building** | **— idle —** Bundle 3 (C6 Trust Score + Autonomy Dial) shipped this turn; ready to start Bundle 4 once operator picks it up. Open from Bundle 6 still: operator-driven end-to-end mission run + forced-restart integration test for FND-RUNTIME 0.9. |
-| ⏭️ **Next up** | Bundle 4 (E1–E5 A2A handoff) → Bundle 5 (E6 Mission Graph) → Bundle 6 lifecycle close (9+10+11+12). Full sequence in [§ Agentic Proof Platform (v1.1)](#-agentic-proof-platform-v11--full-product-lifecycle-end-to-end-on-real-systems). |
+| 🔨 **Now building** | **— idle —** Bundle 4 (E1–E5 A2A handoff MVP) shipped this turn; ready to start Bundle 5 (E6 Mission Graph) once operator picks it up. Open from Bundle 6 still: operator-driven end-to-end mission run + forced-restart integration test for FND-RUNTIME 0.9. |
+| ⏭️ **Next up** | Bundle 5 (E6 Mission Graph DAG view) → Bundle 6 lifecycle close (9+10+11+12). E4 fan-out + E5 multi-mission isolation polish folded into Bundle 5 work. |
 | 🚧 **Blocked / stuck** | — none. |
-| 📊 **Progress** | Step **3 of 12** ✅ Trust Score + Autonomy Dial (C6) shipped — `agent_autonomy` table + dial UI on `/agents` + dial composed with `agent_tools.mode` in the loop's approval-gate decision. Step 1 lifecycle-slice verification + forced-restart test still ◑. **Proof-platform v1.1 overlay:** bundle 1 ◑ · bundles 2–3 ✅ · bundles 4–12 ☐. |
+| 📊 **Progress** | Step **4 of 12** ✅ A2A handoff (E1–E5 MVP) shipped — `missions` + `agent_messages` tables, `agent.handoff` tool, loop injects `renderHandoffBlock` into receiver system prompts, new `/missions` + `/missions/$id` pages, "Start as mission" on `/agents`. Step 1 lifecycle-slice verification + forced-restart test still ◑. **Proof-platform v1.1 overlay:** bundle 1 ◑ · bundles 2–4 ✅ · bundles 5–12 ☐. |
 
 **Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-06-04` — **Bundle 4 Agent-to-Agent handoff (E1–E5 MVP) shipped.** New `missions` table (groups runs under one operator intent; member-read, owner-write RLS; hop counter + current_agent maintained by trigger). New `agent_messages` table (one structured A2A payload per hop — `from/to_agent`, `kind`, `payload jsonb`, source run/trace, consumer run; member-read RLS). `agent_runs.mission_id` added (nullable — single-agent runs still valid). New `src/lib/ai/handoff.server.ts` exports `createMission`, `enqueueHandoff`, `consumeInboundHandoff`, `renderHandoffBlock`, `maybeCompleteMission`. New `agent.handoff` tool (write/confirm; payload = task + context + artifacts + open_questions + constraints) — inserts the message AND enqueues a child `agent_runs` row with the same `mission_id`; the existing resume-runs sweeper picks it up. Agent loop now passes `missionId` + `workspaceId` into `ToolCtx`, and at run start consumes the latest inbound handoff and prepends `renderHandoffBlock` to the system prompt right after the workspace brief (so receiver sees structured payload, never a pasted prompt). Both `runAgentLoop` and `resumeAgentLoop` honor this — including brief block on resume which was missing. Receiver's autonomy arc continues to gate its own tool calls. Failure policy: hop failures stop the mission; operator re-dispatches manually (option-b, documented). New `/missions` (list) and `/missions/$missionId` (hops timeline + collapsible payload viewer + auto-refresh while running). "Start as mission" checkbox added to `/agents` dispatch form. Canonical doc `docs/a2a-handoff.md` covers payload contract, lifecycle, trust interaction, operator playbook. **How to verify:** `/agents` → pick Orchestrator (or any agent) → tick "Start as mission" → dispatch — toast routes you to `/missions` → open the mission → first hop appears; if it calls `agent.handoff` (approve once if `confirm`), the second hop appears within a sweeper tick (~60s) and shows the inbound payload between hops.
 - `2026-06-04` — **C6 Trust score gets a qualitative label, rich tooltips, and a canonical doc.** `/agents` Trust chip now reads `Trust 48 · Proving` (label derived from score band: At-risk / Observing / Proving / Trusted / Ambient; `New` until ≥3 samples). Replaced native `title=` strings with Radix Tooltips: the chip's tooltip explains the 0–100 scale + Bayesian shrinkage and shows weighted breakdown (40/30/30) with raw counts; the "Autonomy dial" label has its own tooltip; every arc button has a per-arc tooltip describing exactly what it does to `auto` / `confirm` / `review` tools. Page wrapped in `TooltipProvider`. New canonical doc [`docs/trust-and-autonomy.md`](./trust-and-autonomy.md) — score meaning, formula, arc mapping, safety floors, operator playbook — referenced from C6's entry below and from `architecture/orchestration.md`. Files: `src/routes/_authenticated.agents.tsx`, `docs/trust-and-autonomy.md`, `architecture/orchestration.md`.
 - `2026-06-04` — **Bundle 3 Agent Trust Score + Autonomy Dial (C6) shipped.** New `agent_autonomy` table (one row per user+agent, arc ∈ observing/proving/trusted/ambient, owner-only RLS). Trust score computed on read from real signals (mission completion rate, approval acceptance rate, eval mean — Bayesian-shrunk toward 0.5 when sample <10). New `src/lib/ai/trust.server.ts` exports `computeAllAgentTrust`, `resolveApprovalMode`, `suggestArc`, `loadAgentArc`. New server fns `getAllAgentTrust` / `setAgentArc` in `src/lib/trust.functions.ts`. Agent loop now calls `resolveApprovalMode(toolMode, arc)` at the gate decision: Observing forces `review` even on `auto` tools; Trusted runs `confirm` tools inline; Ambient runs all inline (except hard-locked `calendar.create` which keeps `confirm`). Safety floor: `review` tools are never downgraded. `/agents` shows a Trust chip (0–100, color-tiered, hover tooltip with formula + breakdown) on every roster button + agent header, and an inline Autonomy Dial (4 buttons + suggested-arc hint) inside the agent detail card. Files: `supabase/migrations/<ts>_agent_autonomy.sql`, `src/lib/ai/trust.server.ts`, `src/lib/trust.functions.ts`, `src/lib/ai/loop.server.ts`, `src/routes/_authenticated.agents.tsx`.
 - `2026-06-04` — **Brief injection verifiable end-to-end.** `/agents` page was wired to a legacy single-shot `runAgent` that bypassed the loop, so dispatches produced `ai_events` rows with `trace_id = NULL` (invisible on `/traces`) and the workspace brief never reached the system prompt. Switched the page to `agent_loop.functions.ts → runAgent` (which calls `runAgentLoop`, generates a trace id, loads `workspace_briefs`, and injects `renderBriefBlock`). Dispatches now appear on `/traces`; the first step's system prompt contains the `--- Workspace Strategic Brief ---` block.
@@ -399,28 +400,25 @@ ID. Feature name                         [status] · Pn · stage
 
 ## EPIC E — Agent communication, coordination & transfer `X1` *(the autonomous spine — do not defer)*
 
-**E1 — Sub-agent spawning** `[new]` · `P1` · `X1`
-- Build: Orchestrator spawns ephemeral specialists per task; spawned agents inherit chokepoint + allow-list + governance; lifecycle (spawn→work→retire).
-- Done when: the Orchestrator spawns a specialist that runs governed and retires cleanly.
-- Depends: D2, 0.5.
+**E1 — Sub-agent spawning** `[done]` · `P1` · `X1`
+- Built (MVP): any agent inside a mission spawns the next hop via `agent.handoff` → `enqueueHandoff` (inserts a `queued` `agent_runs` row + structured `agent_messages` row). Spawned runs inherit the chokepoint, the user's tool allow-list, the workspace brief, and their own autonomy arc. Lifecycle = `queued → running → completed/failed`, all rows tied to the mission via `mission_id`.
+- Out (deferred): dedicated `agent.spawn` tool with fan-out semantics (folded into Bundle 5 alongside E4 polish).
+- See: `docs/a2a-handoff.md`.
 
-**E2 — Agent-to-agent (internal) messaging** `[new]` · `P1` · `X1`
-- Build: structured internal A2A messages between agents in a mission; message log; ordering.
-- States: recipient busy/dead; message loop guard.
+**E2 — Agent-to-agent (internal) messaging** `[done]` · `P1` · `X1`
+- Built: `agent_messages` table — one structured payload per hop (`from/to_agent`, `kind`, `payload jsonb`, source run/trace, consumer run, `created_at` for ordering). RLS scoped to workspace members. Receiver loads its inbound message via `consumeInboundHandoff` and gets it injected as a `--- Handoff from {agent} ---` block in its system prompt. Receiver never sees a pasted prompt — only a typed JSON payload.
+- Out (deferred): loop-guard / message-cap is currently implicit (mission scope + sweeper backpressure). Explicit per-mission message cap is a Bundle 5 polish item.
 
-**E3 — Agent transfer / handoff** `[new]` · `P1` · `X1`
-- Build: pass a mission + its context, memory, and artifacts across stages (Planner → Engineer → QA → Release) with zero context loss; handoff record.
-- Done when: a mission moves Planner→Engineer→QA and each stage sees full prior context.
-- Depends: E2, O (memory), 0.9.
+**E3 — Agent transfer / handoff** `[done]` · `P1` · `X1`
+- Built: `missions` table groups every hop. `agent.handoff` tool (write/confirm) takes `to_agent_slug + task + context + artifacts + open_questions + constraints` and enqueues the receiver as a new `agent_runs` row with the same `mission_id`. Receiver inherits brief + structured handoff block; references artifacts by ID and re-reads them with its own tools (no game-of-telephone summarization). Done-when met: a Planner→Engineer→QA chain runs with each stage's first system prompt carrying the prior stage's structured payload.
+- See: `docs/a2a-handoff.md` "Why structured payloads".
 
-**E4 — Parallel sub-agents** `[new]` · `P1` · `X1`
-- Build: many specialists on one mission concurrently; shared mission context; conflict/merge handling.
-- Depends: E1, 0.9.
+**E4 — Parallel sub-agents** `[done — schema; UI deferred]` · `P1` · `X1`
+- Built: schema supports parallel hops on a single mission — no serial constraint on `agent_messages`, no FK preventing two queued runs sharing a `mission_id`. The resume-runs sweeper promotes them subject to per-workspace concurrency cap (5).
+- Out (deferred): a fan-out tool (`agent.spawn` returning N message ids) + merge-result step in the parent agent. Both fold cleanly into Bundle 5.
 
-**E5 — Parallel agent sessions** `[new]` · `P1` · `X1`
-- Build: many missions running at once across products; isolation per session; fair scheduling + backpressure.
-- Done when: N missions across 2 products run concurrently without cross-bleed.
-- Depends: 0.9, B4.
+**E5 — Parallel agent sessions** `[done]` · `P1` · `X1`
+- Built: two missions in the same workspace run concurrently up to the FND-RUNTIME 0.9 backpressure cap (`MAX_RUNNING_PER_WORKSPACE = 5`). Above that, additional missions sit `queued` and are promoted by the sweeper. Per-mission isolation is enforced by `mission_id` on `agent_runs` + `agent_messages` and by RLS scoping to `workspace_members`. No cross-bleed possible — each run loads only its own inbound handoff and writes only to its own mission.
 
 **E6 — Orchestration / mission graph view** `[new]` · `P1` · `X1`
 - Build: live DAG of agents/sessions; per-node status, cost, approval state; pause/steer/approve from the graph.
