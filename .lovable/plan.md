@@ -1,72 +1,118 @@
-## What you actually want
 
-A "Build" phase that, the moment a PRD lands on the roadmap, **picks itself up, gets coded by an agent (or several in parallel), tested, and shipped** — while you watch the swarm work, like Claude Code's terminal but multi-agent and governed. Conflicts (two agents touching the same file, failing CI on the same PR, contradicting each other) must surface, not silently overwrite.
+## What you're asking for
 
-Good news: the spine for this already exists. Bad news: nothing is hooked into the *Build* lane yet. The agentic plumbing (mission graph, hops, tool calls, approval gates, idempotency, traces) is real and shipped — it just stops at `github.issue.create`. We never built the agent that **picks up the issue and codes**.
+Two real gaps:
 
-## What we already have (don't rebuild)
+1. **PRDs feel half-wired.** The list page (`/prds`) shows no GitHub / Builder actions on the cards, and the detail page hides the most important actions in a tiny chip above the title. There's no clear "open as full document → edit → ship" flow.
+2. **Build Console is too narrow.** It only knows how to receive a mission dispatched from a PRD that already has a linked GitHub issue. A user with a paragraph of intent, a link to a doc, or just an existing PRD reference should be able to kick off a build right from `/build`.
 
-- **Discover → Define → Plan** is live end-to-end. A mission can ingest signals, draft a PRD, prioritise backlog, open a real GitHub issue on `RohitGajaraj/Test-Project-Cadence`, link it back to the PRD. (Bundle 6, shipped today.)
-- **Mission Graph** (`/missions/$id`) already renders parallel agent hops as a live DAG with handoff edges, per-step `thought/tool_call/final`, tool-call latency, and trace links — refreshing every 2 s. This is the visualization substrate.
-- **Approval gates + Decision Queue + `withIdempotency`** are real — every write tool can be `auto`/`confirm`/`review`, every approval logs a trace, re-runs return the cached result.
-- **Prompt Studio** (`/prompts`) is a versioned system-prompt manager with publish/rollback/A-B/assignment. It is *not* the same thing as Code Studio.
-- **Code Studio** (`/studio`) is a multi-file HTML/CSS/JS prototype sandbox (templates: blank/landing/pricing/dashboard/form) with AI co-editing. It's a Lovable-lite for **design prototypes**, not for shipping product code.
+This plan keeps changes UI-shaped (frontend + one thin server fn) and does not touch the Builder agent's tool contract.
 
-## Code Studio + Prompt Studio — keep, rename, or repurpose?
+---
 
-| Surface | Verdict | Why |
-|---|---|---|
-| **Prompt Studio** (`/prompts`, in AI Ops) | **Keep as-is.** | It's the engineering control panel for our own AI surfaces — version/A-B/rollback system prompts. Different audience (you/AI Ops), different concern from "ship a feature." Don't conflate. |
-| **Code Studio** (`/studio`, in Build) | **Rename + move out of Build → "Prototype Sandbox" in Discover.** | It only emits standalone HTML/JS artifacts — it cannot edit `src/`, open PRs, or run CI. Calling it "Build" is misleading; it's a *spec/prototype* tool that belongs next to PRDs and Discovery, not next to the Builder agent. |
-| **(new) Build Console** (`/build`, in Build) | **Build this.** | The actual "agent codes, tests, ships while you watch" surface. This is Bundle 9 done right. |
+## 1 · Fix PRD structure & actions
 
-This kills the "is Code Studio our Builder?" ambiguity in one move and frees the Build lane for the real thing.
+### `/prds` (list page)
+Add a small actions row on each PRD card with the right action for its state:
 
-## The strategy — Bundle 9 as a Build Console (3 thin slices, each ~1 day, each demoable)
+- No issue linked → **Create GitHub issue** (violet) + **Open PRD** (ghost)
+- Issue linked → **Open issue ↗** + **Send to Builder** (cyan) + **Open PRD**
+- Always present: **Generate tasks** (existing) and **Lineage** (existing)
 
-### Slice 1 — Builder agent + scoped PR (one agent, one issue, one PR)
+Status chip next to the title also shows `#123` when an issue is linked, so you can see lineage at a glance without opening the doc.
 
-End state: from `/agents`, dispatch "Build the issue `#42`". A new **Builder** agent picks it up via the existing handoff/A2A bus, opens a real PR on `RohitGajaraj/Test-Project-Cadence` with a scoped diff and a description that links back to the issue and PRD. Approval-gated at the PR-open step. The PR shows up live on the Mission Graph as a `github.pr.open` node.
+### `/prds/$id` (detail page) — proper full-doc view
+Restructure the header into a real document layout:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  ← All PRDs           [status] [updated]                   │
+│  ─────────────────────────────────────────────────────────  │
+│  Title (large, editable inline)                            │
+│  ─────────────────────────────────────────────────────────  │
+│  Actions bar (sticky):                                     │
+│   [Edit/Preview toggle]  [Save]                            │
+│   [Create GitHub issue]  OR  [Open issue #N ↗][Send to Builder] │
+│   [Generate tasks]  [Push to Linear]  [Lineage]            │
+│   [AI assist: rewrite · expand · shorten · critique]       │
+└────────────────────────────────────────────────────────────┘
+                       Document body
+```
 
 Concretely:
-- New agent persona `builder` (seeded alongside the existing 6) with a tight system prompt: "you only ship one file at a time, you must read the issue body before diffing, you must call `github.pr.open` with `{issue_number, branch, files: [{path, contents}], title, body}`."
-- New tool `github.pr.open` in `src/lib/ai/tools/registry.server.ts` next to `github.issue.create` — same auth, same idempotency wrapper (`pr:{issue_number}`), default mode `confirm`. Uses the contents/refs/pulls REST APIs (no native git in the Worker runtime).
-- Wire `agent_handoff` so the Planner finishes with `→ builder` when an issue exists.
+- Promote the GitHub / Builder controls into the **primary actions bar** (not a chip above the back link).
+- Make the bar **sticky** while you scroll the doc, so actions are always reachable.
+- Preview mode renders as a real article (already exists) — just widen and clean spacing so it looks like a finished spec.
+- Add a thin metadata row (status pill, last updated, linked issue, linked tasks count) so the PRD reads as a document, not a form.
 
-### Slice 2 — CI-read + failure-loop (one agent, one PR, real CI feedback)
+No business-logic change — same `createGithubIssueForPrd`, `runAgent`, `promotePrdToTasks`, `savePrd`, `prdAssist` server fns. Just visible, well-placed actions.
 
-End state: Builder watches GitHub Actions on its own PR (poll every ~10 s via existing tick infra), surfaces pass/fail to the Mission Graph as a CI node, and on red proposes a follow-up commit on the same branch — gated again. Two iterations max before it escalates to Decision Queue.
+---
 
-- New tool `github.ci.status({pr_number})` — read-only, `auto`.
-- New tool `github.commit.append({pr_number, files})` — write, `confirm`.
-- CI nodes render on the Mission Graph with the same status glyph vocabulary you already have.
+## 2 · Build Console accepts free-form input
 
-### Slice 3 — Build Console UI (parallel + conflict-aware)
+Replace the empty-state-only Build Console with a **"Start a build" composer** at the top of `/build`, always visible:
 
-End state: a new route `/build` that is *the* place to watch the swarm. Per-PR card columns (Queued / Drafting / In Review / CI Running / CI Failed / Awaiting Merge / Merged), each card is a mini Mission Graph (you already have the component) plus PR diff link, CI badge, current step, owning agent. Multiple PRs/agents render side-by-side and update at 2 s.
+```
+┌─ Start a build ────────────────────────────────────────────┐
+│  Goal (required)                                            │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ What should the Builder ship? Be specific.            │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                             │
+│  Reference PRD (optional)  [ Select PRD ▾ ]                 │
+│  Reference links (optional)                                 │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ https://… (one URL per line)                           │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  GitHub issue (optional)  ( ) Use linked PRD issue          │
+│                           ( ) Issue # [____]                │
+│                           (•) Auto-create issue from goal   │
+│                                                             │
+│             [ Dispatch Builder ]  scope: single-file, gated │
+└────────────────────────────────────────────────────────────┘
+```
 
-- **Parallelism is already real** — the agent loop runs N missions concurrently, each with its own `agent_runs` chain. The Build Console is just a filtered, columnar view over `agent_runs WHERE agent='builder'` joined with `tool_calls WHERE name LIKE 'github.%'`.
-- **Conflict detection** = a small server fn that flags: (a) two open PRs touching the same file path (from `github.pr.open` tool-call inputs), (b) two Builder hops with the same `issue_number` in-flight, (c) Builder proposing changes to a path another Builder is mid-edit on. Hits raise a row in `agent_messages` of kind `conflict` and pulse a red dot on both cards. No auto-resolve — surface to you.
-- Click a card → existing `/missions/$id` for deep view. No new deep-view surface needed.
+Behavior:
+- **Goal alone** is enough to dispatch. If "Auto-create issue" is selected and a PRD isn't picked, we create a lightweight GitHub issue from the goal + reference links and feed its number to the Builder.
+- **Reference PRD** — when picked, we use its `github_issue_url` if present; otherwise we offer to create one. The PRD title + body get included as context in the Builder's goal prompt.
+- **Reference links** — appended to the Builder goal as a `Context:` block. No fetching, no scraping — they're hints for the agent.
+- The composer collapses into a compact "+ New build" button once you have any runs, to keep the Kanban above the fold.
 
-### Nav changes (the same patch that ships Slice 3)
+Below the composer, the existing 5-column Kanban stays exactly as-is.
 
-- Rename **Build → Code Studio** to **Discover → Prototype Sandbox** (move `/studio` route into the Discover group, change the label, keep the route path for now to avoid breaking old links — a redirect can come later).
-- Add **Build → Build Console** (`/build`, icon: `Hammer` or `Cpu`).
-- **Build → Roadmap** gets a "Send to Builder" button on each PRD with a linked issue → dispatches a Builder mission with the issue id.
+### Server fn changes (minimal)
 
-## What this does NOT do (out of scope, explicit)
+- **New:** `dispatchBuilderMission` in `src/lib/build.functions.ts` — takes `{ goal, prdId?, issueNumber?, autoCreateIssue?, referenceLinks?[] }`. Resolves the issue number using one of three paths (linked PRD → explicit number → auto-create via the existing `createGithubIssueForPrd`-style helper, generalized to accept a free-form title/body), then calls the existing `runAgent({ agentSlug: "builder", asMission: true, … })`. Same idempotency contract as today.
+- **Reused:** `runAgent`, `createGithubIssueForPrd` logic (extract its issue-creation core into a small `createGithubIssue({ title, body })` helper inside `discovery.functions.ts` so the Build Console can use it without going through a PRD).
 
-- **Not an autonomous IDE.** Builder writes scoped diffs (one file or a small file set per PR), not refactors across the codebase. Cursor/Devin is a different product.
-- **Not a custom CI.** We read GitHub Actions; we don't run tests in-Worker.
-- **Not auto-merge.** Merge stays a separate slice (Bundle 10 — Ship) with its own gate. PRs sit awaiting human merge.
-- **No new schema** in Slice 1 or 2. Slice 3 may add one nullable column on `tool_calls` for the file-path conflict index — TBD on implementation.
+No database migration. No new tables. No tool registry changes. The Builder agent still calls `github.pr.open` with the same allow-list + idempotency.
 
-## What I need from you before I start building
+---
 
-Two product calls:
+## 3 · Empty state & copy fixes
 
-1. **Builder scope** — confirm "Builder opens scoped PRs (single file or small file set) on `RohitGajaraj/Test-Project-Cadence`, never auto-merges, defaults to `confirm` on every write." Or push back if you want it tighter/looser.
-2. **Code Studio rename** — confirm renaming `/studio` to "Prototype Sandbox" under Discover. (Route stays `/studio` so nothing breaks; only the nav label + group move.) Or tell me to delete it instead — it has no users yet.
+- Build Console empty state changes from "Go to PRDs" to "Start your first build above ↑".
+- PRD list empty state already exists — leave it.
+- Update one line in `architecture/orchestration.md` and the Build Console entry in `docs/feature-backlog.md` to note that builds can be dispatched from `/build` directly, not only from PRDs. Update `active-task.md`.
 
-Once those are confirmed I'll build Slice 1 + the nav patch in the next turn, then Slice 2, then Slice 3. Each slice lands its own status-board entry per the closed doc loop.
+---
+
+## Out of scope (intentionally)
+
+- Attaching real files (PDFs, images) to a build — links only for now; file attachments are a bigger Storage + RAG change.
+- Loosening the Builder agent's "single-file, confirm-gated" scope (you chose Tight last round; keeping it).
+- Touching `prototypes` tables or anything related to the removed Prototype Sandbox.
+
+---
+
+## Files I'll touch (in build mode)
+
+- `src/routes/_authenticated.prds.tsx` — add per-card actions row
+- `src/routes/_authenticated.prds.$id.tsx` — restructured doc header + sticky actions bar
+- `src/routes/_authenticated.build.tsx` — composer at top, updated empty state
+- `src/lib/build.functions.ts` — new `dispatchBuilderMission` server fn
+- `src/lib/discovery.functions.ts` — extract `createGithubIssue({title, body})` helper so Build Console can auto-create issues without a PRD
+- `docs/feature-backlog.md`, `architecture/orchestration.md`, `plan.md`, `active-task.md` — close the doc loop
+
+Want me to proceed?
