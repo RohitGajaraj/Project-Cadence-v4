@@ -379,9 +379,9 @@ function AutonomyDial({
   const current: Arc = trust?.arc ?? "observing";
   const suggested: Arc | undefined = trust?.suggested_arc;
   return (
-    <div className="mt-4 rounded-xl border hairline bg-background/40 p-3">
+    <div>
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-        <Gauge className="h-3 w-3 text-violet-300" />
+        <Gauge className="h-3 w-3 text-violet-400" />
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="cursor-help">Autonomy dial</span>
