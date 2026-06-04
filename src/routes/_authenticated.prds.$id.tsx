@@ -1,15 +1,16 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github, Hammer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { getPrd, savePrd, prdAssist } from "@/lib/discovery.functions";
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
+import { runAgent } from "@/lib/agent_loop.functions";
 
 export const Route = createFileRoute("/_authenticated/prds/$id")({
   component: PrdEditor,
@@ -19,10 +20,12 @@ export const Route = createFileRoute("/_authenticated/prds/$id")({
 function PrdEditor() {
   const { id } = useParams({ from: "/_authenticated/prds/$id" });
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fProjects = useServerFn(listProjects);
   const fGet = useServerFn(getPrd);
   const mSave = useServerFn(savePrd);
   const mAssist = useServerFn(prdAssist);
+  const fRunAgent = useServerFn(runAgent);
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prdQ = useQuery({ queryKey: ["prd", id], queryFn: () => fGet({ data: { id } }) });
@@ -44,6 +47,31 @@ function PrdEditor() {
         data: { teamId, taskIds: prdTasks.map((t: { id: string }) => t.id) },
       }),
     onSuccess: (r) => toast.success(`Created ${r.created.length} Linear issue(s)`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendToBuilder = useMutation({
+    mutationFn: () => {
+      const url = prdQ.data?.prd?.github_issue_url ?? "";
+      const m = url.match(/\/issues\/(\d+)/);
+      if (!m) throw new Error("PRD has no linked GitHub issue yet");
+      const issueNumber = Number(m[1]);
+      const prdTitle = prdQ.data?.prd?.title ?? "PRD";
+      return fRunAgent({
+        data: {
+          agentSlug: "builder",
+          goal: `Pick up GitHub issue #${issueNumber} ("${prdTitle}") on the connected repo. Read the issue body, then ship a single-file scoped PR via github.pr.open with idempotency_key="issue-${issueNumber}". Closes #${issueNumber}.`,
+          asMission: true,
+          missionTitle: `Build · ${prdTitle.slice(0, 60)} (#${issueNumber})`,
+        },
+      });
+    },
+    onSuccess: (r) => {
+      toast.success("Builder mission dispatched");
+      const missionId = (r as { mission_id?: string | null }).mission_id;
+      if (missionId) navigate({ to: "/missions/$missionId", params: { missionId } });
+      else navigate({ to: "/build" });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
