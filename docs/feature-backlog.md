@@ -719,12 +719,17 @@ ID. Feature name                         [status] · Pn · stage
 
 *Derived from strategic repositioning to "autonomous product OS." Full reasoning: [`strategy/product-positioning-v2.md`](./strategy/product-positioning-v2.md).*
 
-**C5 — Strategic Briefing surface** `[new]` · `P1` · `X1`
-- What: one place where the operator defines product north star, goals, constraints, and priorities once; every agent reads it as their operating context before each mission.
-- Build: `strategic_briefings` table (per product); editor surface; agents read via chokepoint context injection; version history; "last briefed" timestamp per agent.
-- States: no brief yet (agents warn before first mission); stale brief (>30 days, prompt to update).
-- Done when: a new agent mission reads the briefing and it shapes its plan output (verifiable via trace).
+**C5 — Strategic Briefing surface** `[status: ☑ shipped 2026-06-04]` · `P0` · `X1`
+- What: one place where the operator defines mission, target user, current focus, anti-goals and notes once; every agent reads it as their operating context before each mission.
+- Built: `workspace_briefs` table (one per workspace; mission / target_user / current_focus / anti_goals / notes; member-read, owner-write RLS). Editor at `/_authenticated/briefing` (5 textareas with hint copy + char counts + Save). `renderBriefBlock()` helper emits a labelled fenced text block (skipped when every field is empty). Agent loop injects the rendered block **between the agent's persona prompt and memory recall** in `src/lib/ai/loop.server.ts` so Discovery / Strategist / Builder all see the operator's shared context first. Migration also added `prds.github_issue_url` + a `prd.link_issue` tool to close PRD↔issue link-back.
+- Done when: ✅ a mission's system prompt visibly contains the brief; editing the brief changes the next mission's plan.
 - Depends: C2, G2 (editor), O2 (RAG context).
+
+#### How to use / verify
+- **Where to find it.** Sidebar → **Briefing** (Crosshair icon, pinned right after Today). Route: `/briefing`.
+- **What each control does.** Five textareas — **Mission** (what this workspace exists to do), **Target user (ICP)** (who you're building for), **Current focus** (this quarter's priorities), **Anti-goals** (what to refuse to spend effort on), **Notes** (tone / constraints / decisions). Top-right **Save brief** button (disabled until dirty).
+- **Server enforcement.** Read via `getActiveBrief` server fn (workspace-member RLS). Write via `upsertBrief` (workspace-owner only — RLS rejects everyone else). Brief content is injected into the agent loop's system prompt *before* the tools list and quarantined tool-output rules, so it can't be overridden by tool output.
+- **Verification checklist:** (1) Open `/briefing`, type a Current focus + Anti-goal, hit Save (toast confirms). (2) Run a mission from `/agents` (Discovery Scout / PRD Writer / Strategist). (3) Open the trace at `/traces/{trace_id}` and inspect the first model call's system prompt — the **Workspace Strategic Brief** block must appear between the persona prompt and the tools list. (4) Edit the brief, re-run the mission, confirm the Strategist's draft now reflects the new focus and refuses the anti-goal.
 
 **C6 — Agent Trust Score + Autonomy Dial** `[new]` · `P1` · `X1`
 - What: each agent builds a visible trust score from mission outcomes, eval scores, and human feedback; higher trust = more autonomy unlocked via a configurable dial (auto → confirm → review thresholds).
