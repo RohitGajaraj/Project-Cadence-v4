@@ -6,7 +6,10 @@
  * pending agent_approvals for that run. Feeds the /build page.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runAgentLoop } from "@/lib/ai/loop.server";
+import { createMission } from "@/lib/ai/handoff.server";
 
 export type BuilderRun = {
   run_id: string;
