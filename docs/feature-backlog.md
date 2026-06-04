@@ -400,28 +400,25 @@ ID. Feature name                         [status] · Pn · stage
 
 ## EPIC E — Agent communication, coordination & transfer `X1` *(the autonomous spine — do not defer)*
 
-**E1 — Sub-agent spawning** `[new]` · `P1` · `X1`
-- Build: Orchestrator spawns ephemeral specialists per task; spawned agents inherit chokepoint + allow-list + governance; lifecycle (spawn→work→retire).
-- Done when: the Orchestrator spawns a specialist that runs governed and retires cleanly.
-- Depends: D2, 0.5.
+**E1 — Sub-agent spawning** `[done]` · `P1` · `X1`
+- Built (MVP): any agent inside a mission spawns the next hop via `agent.handoff` → `enqueueHandoff` (inserts a `queued` `agent_runs` row + structured `agent_messages` row). Spawned runs inherit the chokepoint, the user's tool allow-list, the workspace brief, and their own autonomy arc. Lifecycle = `queued → running → completed/failed`, all rows tied to the mission via `mission_id`.
+- Out (deferred): dedicated `agent.spawn` tool with fan-out semantics (folded into Bundle 5 alongside E4 polish).
+- See: `docs/a2a-handoff.md`.
 
-**E2 — Agent-to-agent (internal) messaging** `[new]` · `P1` · `X1`
-- Build: structured internal A2A messages between agents in a mission; message log; ordering.
-- States: recipient busy/dead; message loop guard.
+**E2 — Agent-to-agent (internal) messaging** `[done]` · `P1` · `X1`
+- Built: `agent_messages` table — one structured payload per hop (`from/to_agent`, `kind`, `payload jsonb`, source run/trace, consumer run, `created_at` for ordering). RLS scoped to workspace members. Receiver loads its inbound message via `consumeInboundHandoff` and gets it injected as a `--- Handoff from {agent} ---` block in its system prompt. Receiver never sees a pasted prompt — only a typed JSON payload.
+- Out (deferred): loop-guard / message-cap is currently implicit (mission scope + sweeper backpressure). Explicit per-mission message cap is a Bundle 5 polish item.
 
-**E3 — Agent transfer / handoff** `[new]` · `P1` · `X1`
-- Build: pass a mission + its context, memory, and artifacts across stages (Planner → Engineer → QA → Release) with zero context loss; handoff record.
-- Done when: a mission moves Planner→Engineer→QA and each stage sees full prior context.
-- Depends: E2, O (memory), 0.9.
+**E3 — Agent transfer / handoff** `[done]` · `P1` · `X1`
+- Built: `missions` table groups every hop. `agent.handoff` tool (write/confirm) takes `to_agent_slug + task + context + artifacts + open_questions + constraints` and enqueues the receiver as a new `agent_runs` row with the same `mission_id`. Receiver inherits brief + structured handoff block; references artifacts by ID and re-reads them with its own tools (no game-of-telephone summarization). Done-when met: a Planner→Engineer→QA chain runs with each stage's first system prompt carrying the prior stage's structured payload.
+- See: `docs/a2a-handoff.md` "Why structured payloads".
 
-**E4 — Parallel sub-agents** `[new]` · `P1` · `X1`
-- Build: many specialists on one mission concurrently; shared mission context; conflict/merge handling.
-- Depends: E1, 0.9.
+**E4 — Parallel sub-agents** `[done — schema; UI deferred]` · `P1` · `X1`
+- Built: schema supports parallel hops on a single mission — no serial constraint on `agent_messages`, no FK preventing two queued runs sharing a `mission_id`. The resume-runs sweeper promotes them subject to per-workspace concurrency cap (5).
+- Out (deferred): a fan-out tool (`agent.spawn` returning N message ids) + merge-result step in the parent agent. Both fold cleanly into Bundle 5.
 
-**E5 — Parallel agent sessions** `[new]` · `P1` · `X1`
-- Build: many missions running at once across products; isolation per session; fair scheduling + backpressure.
-- Done when: N missions across 2 products run concurrently without cross-bleed.
-- Depends: 0.9, B4.
+**E5 — Parallel agent sessions** `[done]` · `P1` · `X1`
+- Built: two missions in the same workspace run concurrently up to the FND-RUNTIME 0.9 backpressure cap (`MAX_RUNNING_PER_WORKSPACE = 5`). Above that, additional missions sit `queued` and are promoted by the sweeper. Per-mission isolation is enforced by `mission_id` on `agent_runs` + `agent_messages` and by RLS scoping to `workspace_members`. No cross-bleed possible — each run loads only its own inbound handoff and writes only to its own mission.
 
 **E6 — Orchestration / mission graph view** `[new]` · `P1` · `X1`
 - Build: live DAG of agents/sessions; per-node status, cost, approval state; pause/steer/approve from the graph.
