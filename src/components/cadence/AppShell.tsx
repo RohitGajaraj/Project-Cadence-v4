@@ -1,8 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
+  Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
-  Crosshair,
+  Crosshair, Users,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -25,17 +25,18 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Top-level pinned items — daily, high-frequency surfaces.
-const pinned: NavItem[] = [
+// Workspace — your daily rail. Always visible, never collapsed.
+// Calendar and Meetings live here (they're inputs to every phase, not Discover).
+const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/briefing", label: "Briefing", icon: Crosshair },
-  { to: "/chat", label: "AI Chat", icon: MessageSquare },
-  { to: "/agents", label: "Agents", icon: Bot },
-  { to: "/missions", label: "Missions", icon: GitBranch },
   { to: "/inbox", label: "Approvals", icon: Inbox },
+  { to: "/calendar", label: "Calendar", icon: Calendar },
+  { to: "/meetings", label: "Meetings", icon: Users },
+  { to: "/chat", label: "AI Chat", icon: MessageSquare },
 ];
 
-// Grouped, collapsible sections.
+// Phase + Ops + Govern groups. Collapsible; auto-open the active group.
 const groups: NavGroup[] = [
   {
     id: "discover",
@@ -43,19 +44,26 @@ const groups: NavGroup[] = [
     items: [
       { to: "/discovery", label: "Discovery", icon: Telescope },
       { to: "/opportunities", label: "Opportunities", icon: Target },
-      { to: "/meetings", label: "Meetings", icon: Calendar },
-      { to: "/calendar", label: "Calendar", icon: Calendar },
     ],
   },
   {
-    id: "build",
-    label: "Build",
+    id: "deliver",
+    label: "Deliver",
     items: [
       { to: "/prds", label: "PRDs", icon: FileText },
       { to: "/docs", label: "Docs", icon: BookOpen },
       { to: "/roadmap", label: "Roadmap", icon: Map },
-      { to: "/build", label: "Build Console", icon: Hammer },
       { to: "/tasks", label: "Tasks", icon: ListTodo },
+      { to: "/build", label: "Build Console", icon: Hammer },
+    ],
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    items: [
+      { to: "/agents", label: "Agents", icon: Bot },
+      { to: "/missions", label: "Missions", icon: GitBranch },
+      { to: "/prompts", label: "Prompt Studio", icon: FileCode },
       { to: "/sync", label: "Sync Inbox", icon: Inbox },
     ],
   },
@@ -65,18 +73,17 @@ const groups: NavGroup[] = [
     items: [
       { to: "/analytics", label: "AI Analytics", icon: Activity },
       { to: "/traces", label: "Traces", icon: GitBranch },
-      { to: "/prompts", label: "Prompt Studio", icon: FileCode },
       { to: "/evals", label: "Eval Harness", icon: FlaskConical },
       { to: "/drift", label: "Drift", icon: TrendingUp },
-      { to: "/budgets", label: "Budgets", icon: DollarSign },
-      { to: "/guardrails", label: "Guardrails", icon: Shield },
-      { to: "/governance", label: "Governance", icon: ShieldAlert },
     ],
   },
   {
-    id: "interop",
-    label: "Interop",
+    id: "govern",
+    label: "Govern",
     items: [
+      { to: "/guardrails", label: "Guardrails", icon: Shield },
+      { to: "/governance", label: "Governance", icon: ShieldAlert },
+      { to: "/budgets", label: "Budgets", icon: DollarSign },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
@@ -89,19 +96,19 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       to={item.to}
-      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
+      className={`group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] ${
         active
-          ? "bg-secondary text-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+          ? "bg-secondary text-foreground font-medium"
+          : "text-ink-muted hover:text-foreground hover:bg-secondary/60"
       }`}
     >
       {active && (
         <span
           aria-hidden
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-full bg-gradient-to-b from-violet-400 to-cyan-400"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full bg-foreground"
         />
       )}
-      <Icon className={`h-4 w-4 shrink-0 transition-transform duration-150 ease-out ${active ? "text-foreground" : "group-hover:scale-110"}`} />
+      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
       <span className="truncate">{item.label}</span>
     </Link>
   );
@@ -111,7 +118,7 @@ function useOpenGroups(path: string) {
   // Auto-open the group containing the active route; persist user toggles.
   // SSR-safe: always start from defaults on first render so server + client
   // markup match, then rehydrate from localStorage in an effect.
-  const def: Record<string, boolean> = { discover: false, build: true, aiops: false };
+  const def: Record<string, boolean> = { discover: false, deliver: true, agents: false, aiops: false, govern: false };
   const [open, setOpen] = useState<Record<string, boolean>>(def);
   const [hydrated, setHydrated] = useState(false);
 
@@ -169,38 +176,31 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
 
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
-      {/* Ambient neural backdrop */}
-      <div className="pointer-events-none fixed inset-0 -z-10 opacity-40 animate-aurora">
-        <div className="absolute inset-0 neural-gradient" />
-      </div>
-
-      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col justify-between border-r hairline px-4 py-6 bg-background/60 backdrop-blur-xl">
+      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col justify-between border-r hairline px-3 py-5 bg-canvas">
         <div>
-          {/* Workspace Selector */}
-          <div className="px-1.5">
+          {/* Workspace selector — restrained editorial card */}
+          <div className="px-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="w-full flex items-center justify-between gap-2 rounded-xl border hairline px-2.5 py-1.5 bg-secondary/35 hover:bg-secondary/60 transition group text-left">
+                <button type="button" className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-2.5 py-2 hover:bg-secondary/60 transition group text-left">
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="relative h-7 w-7 rounded-lg overflow-hidden shrink-0 ring-glow-violet">
-                      <div className="absolute inset-0 neural-gradient" />
+                    <div className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 bg-primary text-primary-foreground flex items-center justify-center">
+                      <span className="font-display text-sm leading-none">
+                        {(activeWorkspace?.name?.[0] ?? "C").toUpperCase()}
+                      </span>
                     </div>
                     <div className="leading-tight overflow-hidden">
-                      <div className="font-display text-sm tracking-tight truncate">
+                      <div className="font-sans text-[13px] font-medium tracking-tight truncate">
                         {activeWorkspace?.name || "Select Workspace"}
                       </div>
-                      <div className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground truncate">
-                        Workspace
-                      </div>
+                      <div className="mono-label truncate" style={{ fontSize: "9px" }}>Workspace</div>
                     </div>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0 transition" />
+                  <ChevronDown className="h-3.5 w-3.5 text-ink-faint group-hover:text-foreground shrink-0 transition" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-52" align="start">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
-                  Switch Workspace
-                </DropdownMenuLabel>
+                <DropdownMenuLabel className="mono-label">Switch workspace</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {workspaces.map((w) => (
                   <DropdownMenuItem
@@ -210,7 +210,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   >
                     <span className="truncate font-medium">{w.name}</span>
                     {w.id === activeWorkspaceId && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
                     )}
                   </DropdownMenuItem>
                 ))}
@@ -218,29 +218,34 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             </DropdownMenu>
           </div>
 
-          <nav className="mt-8 flex flex-col gap-0.5 stagger-rise">
-            {pinned.map((n) => (
-              <NavRow key={n.to} item={n} active={path === n.to} />
-            ))}
+          <nav className="mt-6 flex flex-col">
+            {/* Workspace rail — always-on daily surfaces */}
+            <div className="px-3 mb-1.5 mono-label">Workspace</div>
+            <div className="flex flex-col gap-0.5">
+              {workspace.map((n) => (
+                <NavRow key={n.to} item={n} active={path === n.to} />
+              ))}
+            </div>
 
             {groups.map((g) => {
               const isOpen = open[g.id];
               const hasActive = g.items.some((i) => i.to === path);
               return (
-                <div key={g.id} className="mt-3">
+                <div key={g.id} className="mt-4">
                   <button
                     type="button"
                     onClick={() => setOpen((s) => ({ ...s, [g.id]: !s[g.id] }))}
-                    className="w-full flex items-center justify-between px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80 hover:text-foreground transition"
+                    className="w-full flex items-center justify-between px-3 py-1 mono-label hover:text-foreground transition"
                   >
                     <span className="flex items-center gap-1.5">
                       {g.label}
                       {hasActive && !isOpen && (
-                        <span aria-hidden className="h-1 w-1 rounded-full bg-violet-400" />
+                        <span aria-hidden className="h-1 w-1 rounded-full bg-foreground" />
                       )}
                     </span>
                     <ChevronDown
                       className={`h-3 w-3 transition-transform duration-200 ease-out ${isOpen ? "rotate-0" : "-rotate-90"}`}
+                      strokeWidth={1.75}
                     />
                   </button>
                   {isOpen && (
@@ -254,14 +259,14 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
               );
             })}
 
-            <div className="mt-3 pt-3 border-t hairline">
+            <div className="mt-4 pt-3 border-t hairline">
               <NavRow item={{ to: "/settings", label: "Settings", icon: Settings }} active={path === "/settings"} />
             </div>
           </nav>
 
-          <div className="mt-8 px-3 flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80">
+          <div className="mt-6 px-3 flex items-center justify-between mono-label">
             <span>Products</span>
-            <Compass className="h-3 w-3" />
+            <Compass className="h-3 w-3" strokeWidth={1.75} />
           </div>
           <div className="mt-2 flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
             {products.map((p) => {
@@ -271,16 +276,16 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   key={p.id}
                   type="button"
                   onClick={() => setActiveProductId(isActive ? null : p.id)}
-                  className={`w-full text-left rounded-lg px-3 py-1.5 text-sm transition relative ${
+                  className={`w-full text-left rounded-md px-3 py-1.5 text-[13px] transition relative ${
                     isActive
                       ? "bg-secondary/50 text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+                      : "text-ink-muted hover:text-foreground hover:bg-secondary/30"
                   }`}
                 >
                   {isActive && (
                     <span
                       aria-hidden
-                      className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-violet-400"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-foreground"
                     />
                   )}
                   <span className="truncate block">{p.name}</span>
@@ -288,14 +293,14 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
               );
             })}
             {products.length === 0 && (
-              <div className="px-3 py-1.5 text-xs text-muted-foreground/60 italic">No products yet</div>
+              <div className="px-3 py-1.5 text-xs text-ink-faint italic">No products yet</div>
             )}
           </div>
         </div>
 
         <div className="space-y-2">
           {pauseState?.paused && (
-            <Link to="/governance" className="block rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/20 transition">
+            <Link to="/governance" className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition">
               <div className="flex items-center gap-2">
                 <PauseCircle className="h-4 w-4 shrink-0" />
                 <div className="leading-tight overflow-hidden">
@@ -303,22 +308,19 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                     {pauseState.systemPaused ? "System paused" : "Workspace paused"}
                   </div>
                   {pauseState.reason && (
-                    <div className="text-[10px] text-rose-300/80 truncate">{pauseState.reason}</div>
+                    <div className="text-[10px] opacity-80 truncate">{pauseState.reason}</div>
                   )}
                 </div>
               </div>
             </Link>
           )}
           <BudgetBar />
-          <div className="rounded-xl border hairline p-3 relative overflow-hidden">
-            <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full neural-gradient opacity-50 blur-md" />
-            <div className="relative">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Mission mode</div>
-              <div className="font-display text-sm mt-1 flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-violet-400" /> AI co-pilot</div>
-              <div className="text-[11px] text-muted-foreground mt-1">8 agents standing by</div>
-            </div>
+          <div className="rounded-md border hairline p-3 bg-soft-stone/40">
+            <div className="mono-label">Mission mode</div>
+            <div className="font-display text-base mt-1 leading-none">AI co-pilot</div>
+            <div className="text-[11px] text-ink-muted mt-1">8 agents standing by</div>
           </div>
-          <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-xl border hairline px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition">
+          <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition">
             <LogOut className="h-3 w-3" /> Sign out
           </button>
         </div>
