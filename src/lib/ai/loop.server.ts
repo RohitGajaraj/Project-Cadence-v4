@@ -197,6 +197,7 @@ type LoopState = {
   model: string;
   tools: { tool_name: string; mode: string }[];
   modeOf: Map<string, string>;
+  arc: Arc;
   conv: { role: string; content: string }[];
   steps: LoopStep[];
   ctx: ToolCtx;
@@ -207,7 +208,7 @@ type LoopState = {
 };
 
 async function executeLoop(s: LoopState): Promise<LoopResult> {
-  const { supabase, userId, agent, workspaceId, runId, traceId, model, modeOf, conv, steps, ctx } = s;
+  const { supabase, userId, agent, workspaceId, runId, traceId, model, modeOf, arc, conv, steps, ctx } = s;
   let approvalsQueued = s.approvalsQueued;
   let halted: { kind: string; reason: string } | null = null;
 
