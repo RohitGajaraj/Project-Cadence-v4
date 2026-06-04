@@ -94,7 +94,7 @@ function DiscoveryPage() {
           <button
             onClick={() => cluster.mutate()}
             disabled={cluster.isPending || unclustered.length === 0}
-            className="rounded-xl px-4 py-2.5 text-sm inline-flex items-center gap-2 neural-gradient text-white shadow-lg disabled:opacity-50"
+            className="btn-agentic rounded-xl px-4 py-2.5 text-sm font-medium inline-flex items-center gap-2"
           >
             <Wand2 className="h-4 w-4" />
             {cluster.isPending ? "Clustering…" : `Cluster ${unclustered.length} signal${unclustered.length === 1 ? "" : "s"}`}

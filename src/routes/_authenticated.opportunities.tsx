@@ -97,7 +97,7 @@ function OppsPage() {
                     <button
                       onClick={() => prd.mutate(o.id)}
                       disabled={prd.isPending}
-                      className="rounded-lg neural-gradient text-white px-2.5 py-1.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+                      className="btn-agentic rounded-lg px-2.5 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
                     >
                       <FileText className="h-3 w-3" /> {prd.isPending ? "Generating…" : "Generate PRD"}
                     </button>
