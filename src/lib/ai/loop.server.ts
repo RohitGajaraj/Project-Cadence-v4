@@ -14,6 +14,7 @@ import { TOOL_REGISTRY, describeToolsForPrompt, type ToolCtx } from "./tools/reg
 import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
+import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 
 const MAX_STEPS = 6;
 const MAX_RUNNING_PER_WORKSPACE = 5;
