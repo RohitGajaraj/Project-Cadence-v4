@@ -101,6 +101,7 @@ async function logGovernanceHalt(
       status: "blocked",
       error_message: `governance_halt:${err.kind} — ${err.message}`,
       input_preview: (opts.messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+      system_preview: (opts.messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
       output_preview: "",
     });
   } catch (e) {
@@ -540,6 +541,7 @@ export async function callModel(
       status,
       error_message: errMsg ?? null,
       input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+      system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
       output_preview: outputText.slice(0, 1000),
     }).select("id").single();
     eventId = (evt as { id: string } | null)?.id ?? null;
@@ -855,6 +857,7 @@ export async function callModelStream(
       status: "error",
       error_message: errMsg,
       input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+      system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
       trace_id: opts.traceId,
     });
     throw new Error(errMsg);
@@ -974,6 +977,7 @@ export async function callModelStream(
               ? `Blocked by guardrail: ${hits.find((h) => h.action === "block")?.rule_name}`
               : null,
             input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+            system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
             output_preview: outputText.slice(0, 1000),
           }).select("id").single();
           
