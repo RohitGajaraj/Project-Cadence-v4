@@ -131,26 +131,27 @@ function PrdEditor() {
   return (
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
-        <Link to="/prds" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4">
+        <Link to="/prds" className="inline-flex items-center gap-1.5 mono-label hover:text-foreground mb-6">
           <ArrowLeft className="h-3 w-3" /> All PRDs
         </Link>
 
         {/* Document metadata row */}
-        <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground mb-3">
-          <span className="rounded-full bg-secondary px-2 py-0.5">{prdQ.data.prd.status}</span>
+        <div className="mono-label flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+          <span>{prdQ.data.prd.status}</span>
+          <span aria-hidden>/</span>
           <span>Updated {new Date(prdQ.data.prd.updated_at).toLocaleDateString()}</span>
-          <span>·</span>
+          <span aria-hidden>/</span>
           <span>{prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"}</span>
           {prdQ.data.prd.github_issue_url ? (() => {
             const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
             return m ? (
               <>
-                <span>·</span>
+                <span aria-hidden>/</span>
                 <a
                   href={prdQ.data.prd.github_issue_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-violet-300 hover:text-violet-200 normal-case tracking-normal"
+                  className="inline-flex items-center gap-1 link-action"
                 >
                   <Github className="h-3 w-3" /> Issue #{m[1]} <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -159,39 +160,39 @@ function PrdEditor() {
           })() : null}
         </div>
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-6">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 bg-transparent font-display text-3xl tracking-tight outline-none border-b hairline focus:border-violet-400 pb-2"
+            className="flex-1 bg-transparent font-display text-4xl tracking-tight leading-[1.05] outline-none border-b hairline focus:border-foreground pb-2"
           />
         </div>
 
         {/* Sticky actions bar */}
-        <div className="sticky top-2 z-20 mb-6 rounded-xl border hairline bg-background/85 backdrop-blur px-3 py-2 flex flex-wrap items-center gap-2">
-          <div className="flex items-center rounded-lg border hairline overflow-hidden">
-            <button onClick={() => setMode("edit")} className={`px-2.5 py-1 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-secondary" : "text-muted-foreground"}`}>
+        <div className="sticky top-2 z-20 mb-8 rounded-lg border hairline bg-card/95 backdrop-blur px-3 py-2 flex flex-wrap items-center gap-2">
+          <div className="flex items-center rounded-md border hairline overflow-hidden">
+            <button onClick={() => setMode("edit")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>
               <Pencil className="h-3 w-3" /> Edit
             </button>
-            <button onClick={() => setMode("preview")} className={`px-2.5 py-1 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-secondary" : "text-muted-foreground"}`}>
+            <button onClick={() => setMode("preview")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>
               <Eye className="h-3 w-3" /> Preview
             </button>
           </div>
           <button
             onClick={() => save.mutate()}
             disabled={save.isPending}
-            className="rounded-lg bg-foreground text-background px-2.5 py-1 text-xs inline-flex items-center gap-1.5"
+            className="btn-pill px-4 py-1.5 text-xs disabled:opacity-50"
           >
             <Save className="h-3 w-3" /> {save.isPending ? "Saving…" : "Save"}
           </button>
 
-          <span className="mx-1 h-4 w-px bg-border" />
+          <span className="mx-1 h-4 w-px bg-[var(--hairline)]" />
 
           {prdQ.data.prd.github_issue_url ? (
             <button
               onClick={() => sendToBuilder.mutate()}
               disabled={sendToBuilder.isPending}
-              className="rounded-lg border hairline px-2.5 py-1 text-xs inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+              className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
               title="Dispatch the Builder agent to open a scoped PR for this issue"
             >
               <Hammer className="h-3 w-3" />
@@ -201,7 +202,7 @@ function PrdEditor() {
             <button
               onClick={() => createIssue.mutate()}
               disabled={createIssue.isPending}
-              className="rounded-lg border hairline px-2.5 py-1 text-xs inline-flex items-center gap-1.5 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 disabled:opacity-50"
+              className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
               title="Create a GitHub issue from this PRD, then unlock Send to Builder."
             >
               <Github className="h-3 w-3" />
@@ -209,17 +210,17 @@ function PrdEditor() {
             </button>
           )}
 
-          <span className="mx-1 h-4 w-px bg-border" />
+          <span className="mx-1 h-4 w-px bg-[var(--hairline)]" />
 
-          <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-violet-300" /> AI:
+          <span className="mono-label inline-flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" /> AI
           </span>
           {(["rewrite", "expand", "shorten", "critique"] as const).map((a) => (
             <button
               key={a}
               onClick={() => assist.mutate(a)}
               disabled={assist.isPending}
-              className="rounded-md border hairline px-2 py-0.5 text-[11px] hover:bg-secondary capitalize disabled:opacity-50"
+              className="rounded-md border hairline px-2.5 py-1 text-[11px] hover:bg-[var(--soft-stone)] capitalize disabled:opacity-50"
             >
               {a}
             </button>
@@ -227,13 +228,13 @@ function PrdEditor() {
         </div>
 
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border hairline bg-background/40 px-3 py-2 text-xs">
-            <Send className="h-3 w-3 text-violet-300" />
+          <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border hairline bg-card px-3 py-2.5 text-xs">
+            <Send className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">Push {prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"} to Linear:</span>
             <select
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
-              className="rounded-md bg-secondary border hairline px-2 py-1 text-xs outline-none"
+              className="rounded-md border hairline bg-background px-2 py-1 text-xs outline-none"
             >
               <option value="">Select team…</option>
               {teamsQ.data.teams.map((t: { id: string; key: string; name: string }) => (
@@ -243,7 +244,7 @@ function PrdEditor() {
             <button
               onClick={() => pushLinear.mutate()}
               disabled={!teamId || prdTasks.length === 0 || pushLinear.isPending}
-              className="rounded-md bg-foreground text-background px-2.5 py-1 text-xs disabled:opacity-40"
+              className="btn-pill px-3 py-1 text-xs disabled:opacity-40"
             >
               {pushLinear.isPending ? "Creating…" : "Create issues"}
             </button>
@@ -255,11 +256,11 @@ function PrdEditor() {
             ref={taRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full min-h-[600px] rounded-xl border hairline bg-background/60 p-5 text-sm font-mono outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed"
+            className="w-full min-h-[600px] rounded-lg border hairline bg-card p-6 text-sm font-mono outline-none focus:border-foreground resize-y leading-relaxed"
             spellCheck={false}
           />
         ) : (
-          <article className="bento p-8 prose prose-invert max-w-none prose-headings:font-display prose-headings:tracking-tight prose-h2:text-xl prose-h2:mt-8 prose-p:text-sm prose-li:text-sm prose-strong:text-foreground">
+          <article className="rounded-lg border hairline bg-card p-10 prose prose-neutral max-w-none prose-headings:font-display prose-headings:tracking-tight prose-h1:text-3xl prose-h2:text-xl prose-h2:mt-10 prose-p:text-[15px] prose-p:leading-relaxed prose-li:text-[15px] prose-strong:text-foreground">
             <ReactMarkdown>{body || "_Empty PRD_"}</ReactMarkdown>
           </article>
         )}

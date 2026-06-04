@@ -118,31 +118,34 @@ function PrdsPage() {
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1300px] mx-auto">
         <header className="mb-8">
-          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Phase 2 · Specs</div>
-          <h1 className="mt-3 font-display text-4xl tracking-tight">Product <span className="neural-text">requirement docs</span></h1>
+          <div className="mono-label">Deliver · Phase 2 · Specs</div>
+          <h1 className="mt-3 font-display text-5xl tracking-tight leading-[1.02]">
+            Product <em className="not-italic neural-text">requirement docs</em>
+          </h1>
         </header>
 
-        <div className="bento p-5 mb-6">
-          <h3 className="font-display text-sm mb-3 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-violet-300" /> Draft a PRD from a brief
-          </h3>
+        <div className="rounded-lg border hairline bg-card p-6 mb-8">
+          <div className="mono-label flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" /> Draft a PRD from a brief
+          </div>
           <textarea
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
             placeholder="Describe the problem, who it's for, and any constraints. The AI will produce a structured PRD."
             rows={3}
-            className="w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring resize-none"
+            className="mt-3 w-full rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground resize-none"
           />
           <button
             onClick={() => { if (brief.trim()) { gen.mutate(brief.trim()); setBrief(""); } }}
             disabled={gen.isPending || !brief.trim()}
-            className="mt-2 rounded-xl neural-gradient text-white px-4 py-2 text-sm inline-flex items-center gap-2 disabled:opacity-50"
+            className="mt-4 btn-pill disabled:opacity-50"
           >
             <Sparkles className="h-3.5 w-3.5" /> {gen.isPending ? "Drafting…" : "Generate PRD"}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mono-label mb-3">All PRDs</div>
+        <div className="border-t hairline">
           {all.map((p) => (
             <div
               key={p.id}
@@ -156,11 +159,11 @@ function PrdsPage() {
                   navigate({ to: "/prds/$id", params: { id: p.id } });
                 }
               }}
-              className="bento p-4 group hover:ring-1 hover:ring-ring transition cursor-pointer text-left"
+              className="rule-hairline py-5 group cursor-pointer text-left hover:bg-[var(--soft-stone)] -mx-3 px-3 transition-colors"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <FileText className="h-4 w-4 text-violet-300 shrink-0" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                   {renamingId === p.id ? (
                     <input
                       ref={renameInputRef}
@@ -173,10 +176,10 @@ function PrdsPage() {
                         if (e.key === "Enter") { e.preventDefault(); commitRename(p.id, p.title); }
                         if (e.key === "Escape") { e.preventDefault(); setRenamingId(null); }
                       }}
-                      className="flex-1 min-w-0 bg-transparent font-display text-sm outline-none border-b hairline focus:border-violet-400"
+                      className="flex-1 min-w-0 bg-transparent font-display text-base outline-none border-b hairline focus:border-foreground"
                     />
                   ) : (
-                    <h3 className="font-display text-sm truncate">{p.title}</h3>
+                    <h3 className="font-display text-base truncate text-foreground">{p.title}</h3>
                   )}
                 </div>
                 <div onClick={(e) => e.stopPropagation()}>
@@ -210,7 +213,6 @@ function PrdsPage() {
                           <DropdownMenuItem
                             onSelect={() => sendToBuilder.mutate({ id: p.id, title: p.title })}
                             disabled={sendToBuilder.isPending}
-                            className="text-cyan-300 focus:text-cyan-200"
                           >
                             <Hammer className="h-3.5 w-3.5 mr-2" />
                             {sendToBuilder.isPending && sendToBuilder.variables?.id === p.id ? "Dispatching…" : "Send to Builder"}
@@ -220,7 +222,6 @@ function PrdsPage() {
                         <DropdownMenuItem
                           onSelect={() => createIssue.mutate(p.id)}
                           disabled={createIssue.isPending}
-                          className="text-violet-300 focus:text-violet-200"
                         >
                           <Github className="h-3.5 w-3.5 mr-2" />
                           {createIssue.isPending && createIssue.variables === p.id ? "Creating issue…" : "Create GitHub issue"}
@@ -241,20 +242,21 @@ function PrdsPage() {
                   </DropdownMenu>
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                <span className="rounded-full bg-secondary px-2 py-0.5">{p.status}</span>
-                <span className="normal-case tracking-normal text-[11px]">Updated {fmtDateTime(p.updated_at)}</span>
+              <div className="mt-2 ml-7 mono-label flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>{p.status}</span>
+                <span aria-hidden>/</span>
+                <span>Updated {fmtDateTime(p.updated_at)}</span>
                 {p.github_issue_url ? (() => {
                   const m = p.github_issue_url.match(/\/issues\/(\d+)/);
-                  return m ? <span className="rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5">#{m[1]}</span> : null;
+                  return m ? <><span aria-hidden>/</span><span>#{m[1]}</span></> : null;
                 })() : null}
               </div>
             </div>
           ))}
           {all.length === 0 && (
-            <div className="col-span-full py-10 flex flex-col items-center justify-center">
+            <div className="py-16 flex flex-col items-center justify-center">
               <FolderInteraction label="Your PRDs land here" />
-              <div className="text-xs text-muted-foreground mt-2">
+              <div className="text-sm text-muted-foreground mt-4">
                 No PRDs yet. Draft one above or generate from an opportunity.
               </div>
             </div>

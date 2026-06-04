@@ -13,13 +13,13 @@
 - [x] Restyle AppShell sidebar to editorial light (white canvas, mono-label group headings, hairline dividers, near-black active indicator, logomark workspace tile)
 - [x] Update `plan.md` §4, `docs/feature-backlog.md` Live status board
 
-## Phase 2 — High-traffic page restyles  ☐
-- [ ] `/` Today — editorial card grid, mono labels, deep-green CTA band, remove `neural-gradient`/`ring-glow-violet`/`indigo-grid` direct uses
-- [ ] `/briefing` — editorial layout
-- [ ] `/inbox` (Approvals) — research-table list pattern (rule-separated rows, title left, status right)
-- [ ] `/prds` list — research-table pattern with editorial chips
-- [ ] `/prds/$id` detail — editorial document, near-black pill CTAs in sticky actions bar
-- [ ] Verify no remaining direct `neural-*` / `ring-glow-*` uses in these routes
+## Phase 2 — High-traffic page restyles  ✅ DONE
+- [x] `/` Today — deep-green hero band, mono labels, btn-pill CTAs, neutral progress bars, neutral agent chips (single accent palette)
+- [x] `/briefing` — editorial layout, mono-label tag, btn-pill save, band-stone verify hint
+- [x] `/inbox` (Approvals) — research-table list pattern (rule-hairline rows, mono-label metadata, dot+label status, btn-pill actions)
+- [x] `/prds` list — research-table list, mono-label metadata, btn-pill generate, neutral file icon
+- [x] `/prds/$id` detail — editorial document (prose-neutral), near-black btn-pill in sticky actions bar, link-action GitHub
+- [x] Verified: no remaining `text-violet-*`, `from-violet*`, `neural-gradient`, `prose-invert`, or bright dark-theme accent classes in these five routes
 
 ## Phase 3 — Discover + Deliver + Agents pages  ☐
 - [ ] `/discovery` · `/opportunities` (Discover)

@@ -10,7 +10,6 @@ import {
   Calendar, Bot, Zap, Activity, CheckCircle2, XCircle, Clock, ArrowRight,
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
-import { ShaderAnimation } from "@/components/ui/shader-animation";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
 import { listProjects, createProject } from "@/lib/projects.functions";
@@ -24,16 +23,10 @@ export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Mission Control · Cadence" }] }),
 });
 
-const AGENT_COLORS: Record<string, string> = {
-  violet: "from-violet-500/30 to-fuchsia-500/20 text-violet-200",
-  cyan: "from-cyan-500/30 to-sky-500/20 text-cyan-200",
-  emerald: "from-emerald-500/30 to-teal-500/20 text-emerald-200",
-  amber: "from-amber-500/30 to-yellow-500/20 text-amber-200",
-  blue: "from-blue-500/30 to-indigo-500/20 text-blue-200",
-  rose: "from-rose-500/30 to-pink-500/20 text-rose-200",
-  orange: "from-orange-500/30 to-amber-500/20 text-orange-200",
-  pink: "from-pink-500/30 to-rose-500/20 text-pink-200",
-};
+// Editorial agent accent — single coral-ink ribbon, no per-agent palette.
+// All agent chips share the same Cohere-style stone+coral treatment for visual
+// coherence; differentiation is via the agent name + role, not color.
+const AGENT_ACCENT = "bg-[var(--soft-stone)]";
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -130,10 +123,10 @@ function Dashboard() {
       <header className="sticky top-0 z-30 glass border-b hairline">
         <div className="flex items-center gap-4 px-6 lg:px-10 h-14">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--deep-green)] pulse-dot" />
             <span>{today}</span>
             {activeAgents > 0 && (
-              <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-violet-300">
+              <span className="ml-3 inline-flex items-center gap-1.5 mono-label">
                 <Activity className="h-3 w-3" /> {activeAgents} agent{activeAgents > 1 ? "s" : ""} running
               </span>
             )}
@@ -142,7 +135,7 @@ function Dashboard() {
           <button
             onClick={() => regenBrief.mutate()}
             disabled={regenBrief.isPending}
-            className="flex items-center gap-2 rounded-xl bg-foreground text-background px-3.5 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-60"
+            className="btn-pill px-4 py-2 text-sm disabled:opacity-60"
           >
             <Sparkles className="h-3.5 w-3.5" />
             {regenBrief.isPending ? "Thinking…" : "Refresh brief"}
@@ -151,25 +144,20 @@ function Dashboard() {
       </header>
 
       <div className="px-6 lg:px-10 py-8 max-w-[1500px] mx-auto">
-        {/* HERO */}
-        <section className="bento p-7 md:p-10 relative overflow-hidden mb-5">
-          <div className="absolute inset-0 opacity-70 mix-blend-screen">
-            <ShaderAnimation className="h-full w-full" />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-paper/85 via-paper/40 to-transparent" />
-          <div className="absolute inset-0 neural-gradient opacity-15 animate-aurora" />
-          <div className="relative grid md:grid-cols-[1fr,auto] gap-8 items-end">
+        {/* HERO — editorial deep-green band */}
+        <section className="band-deep-green rounded-lg p-8 md:p-12 mb-6">
+          <div className="grid md:grid-cols-[1fr,auto] gap-8 items-end">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                <Sparkles className="h-3.5 w-3.5 text-violet-300" /> Mission control
+              <div className="mono-label text-[color:var(--canvas)]/70 flex items-center gap-2">
+                <Sparkles className="h-3 w-3" /> Workspace · Today
               </div>
-              <h1 className="mt-4 font-display text-3xl md:text-5xl leading-[1.05] tracking-tight text-balance">
-                Good morning, <span className="neural-text">{profileName}</span>.
+              <h1 className="mt-5 font-display text-4xl md:text-6xl leading-[1.02] tracking-tight text-balance text-[color:var(--canvas)]">
+                Good morning, <em className="not-italic">{profileName}</em>.
               </h1>
-              <p className="mt-3 text-base text-muted-foreground">
-                Your AI team is ready. Hit <em className="not-italic text-foreground">Refresh brief</em> to orient the day.
+              <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
+                Your AI team is ready. Hit <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient the day.
               </p>
-              <div className="mt-5 flex flex-wrap gap-2 text-xs">
+              <div className="mt-6 flex flex-wrap gap-2">
                 <Pill icon={Brain} label={`${(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)} deep blocks`} />
                 <Pill icon={Calendar} label={`${Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}h meetings`} />
                 <Pill icon={Target} label={`${(d?.projects ?? []).length} products`} />
@@ -178,32 +166,32 @@ function Dashboard() {
             </div>
             <div className="flex flex-col items-end gap-3 shrink-0">
               <div className="text-right">
-                <div className="font-display text-6xl tracking-tight tabular-nums neural-text">{focusScore}</div>
-                <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground mt-1">Focus score</div>
+                <div className="font-display text-7xl tracking-tight tabular-nums text-[color:var(--canvas)]">{focusScore}</div>
+                <div className="mono-label text-[color:var(--canvas)]/70 mt-1">Focus score</div>
               </div>
-              <div className="h-1.5 w-40 rounded-full bg-secondary overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-400 via-cyan-400 to-emerald-400" style={{ width: `${focusScore}%` }} />
+              <div className="h-1 w-40 rounded-full bg-[color:var(--canvas)]/20 overflow-hidden">
+                <div className="h-full rounded-full bg-[color:var(--canvas)]" style={{ width: `${focusScore}%` }} />
               </div>
             </div>
           </div>
         </section>
 
         {/* TODAY'S BRIEF — clean bullets */}
-        <section className="bento p-5 md:p-6 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-sm tracking-tight flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" /> Today's brief
-            </h2>
+        <section className="rounded-lg border hairline bg-card p-6 md:p-8 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="mono-label flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3" /> Today's brief
+            </div>
             <button
               onClick={() => regenBrief.mutate()}
               disabled={regenBrief.isPending}
-              className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 disabled:opacity-60"
+              className="link-action text-xs inline-flex items-center gap-1 disabled:opacity-60"
             >
               <RefreshCw className={`h-3 w-3 ${regenBrief.isPending ? "animate-spin" : ""}`} /> refresh
             </button>
           </div>
           {d?.brief?.summary ? (
-            <div className="prose prose-sm prose-invert max-w-none prose-ul:my-2 prose-li:my-0.5 prose-p:my-2 text-sm">
+            <div className="prose prose-sm prose-neutral max-w-none prose-ul:my-2 prose-li:my-0.5 prose-p:my-2 text-[15px] leading-relaxed">
               <ReactMarkdown>{normalizeBrief(d.brief.summary)}</ReactMarkdown>
             </div>
           ) : (
@@ -212,17 +200,17 @@ function Dashboard() {
         </section>
 
         {/* AGENT RAIL — always visible */}
-        <section className="mb-5">
+        <section className="mb-6">
           <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-center gap-2">
-              <h2 className="font-display text-sm tracking-tight flex items-center gap-2"><Bot className="h-3.5 w-3.5 text-violet-300" /> AI agents</h2>
-              <span className="text-[11px] text-muted-foreground">Tap to dispatch · grounded in your workspace</span>
+            <div className="flex items-baseline gap-3">
+              <div className="mono-label flex items-center gap-1.5"><Bot className="h-3 w-3" /> AI agents</div>
+              <span className="text-xs text-muted-foreground">Tap to dispatch · grounded in your workspace</span>
             </div>
-            <Link to="/agents" className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <Link to="/agents" className="link-action text-xs inline-flex items-center gap-1">
               Manage <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
             {(agents.data?.agents ?? []).map((a) => (
               <AgentChip
                 key={a.id}
@@ -246,9 +234,9 @@ function Dashboard() {
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-12 gap-4 md:gap-5">
               <section className="bento p-5 col-span-12 lg:col-span-6">
-                <h3 className="font-display text-sm tracking-tight flex items-center gap-2 mb-4">
-                  <Target className="h-3.5 w-3.5 text-emerald-300" /> Priority alignment
-                </h3>
+                <div className="mono-label flex items-center gap-1.5 mb-4">
+                  <Target className="h-3 w-3" /> Priority alignment
+                </div>
                 <div className="space-y-3">
                   {(d?.projects ?? []).map((p) => (
                     <div key={p.id}>
@@ -256,8 +244,8 @@ function Dashboard() {
                         <span className="truncate pr-2">{p.name}</span>
                         <span className="tabular-nums text-muted-foreground">{p.done}/{p.total}</span>
                       </div>
-                      <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" style={{ width: `${p.pct}%` }} />
+                      <div className="mt-1.5 h-1 rounded-full bg-[var(--soft-stone)] overflow-hidden">
+                        <div className="h-full rounded-full bg-[var(--deep-green)]" style={{ width: `${p.pct}%` }} />
                       </div>
                     </div>
                   ))}
@@ -269,8 +257,8 @@ function Dashboard() {
               </section>
 
               <section className="bento p-5 col-span-6 lg:col-span-3">
-                <h3 className="font-display text-sm tracking-tight flex items-center gap-2"><Brain className="h-3.5 w-3.5 text-violet-300" /> Deep work</h3>
-                <div className="mt-4 font-display text-4xl tabular-nums">
+                <div className="mono-label flex items-center gap-1.5"><Brain className="h-3 w-3" /> Deep work</div>
+                <div className="mt-4 font-display text-5xl tabular-nums">
                   {(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)}
                   <span className="text-sm text-muted-foreground"> /wk</span>
                 </div>
@@ -278,7 +266,7 @@ function Dashboard() {
                   {(d?.deepWorkSeries ?? []).map((b, i) => {
                     const max = Math.max(1, ...(d?.deepWorkSeries ?? []).map((s) => s.count));
                     return (
-                      <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-violet-500/80 to-cyan-400/80" style={{ height: `${(b.count / max) * 100}%`, minHeight: 4 }} />
+                      <div key={i} className="flex-1 rounded-sm bg-foreground" style={{ height: `${(b.count / max) * 100}%`, minHeight: 4 }} />
                     );
                   })}
                 </div>
@@ -288,8 +276,8 @@ function Dashboard() {
               </section>
 
               <section className="bento p-5 col-span-6 lg:col-span-3">
-                <h3 className="font-display text-sm tracking-tight flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-cyan-300" /> Today's meetings</h3>
-                <div className="mt-4 font-display text-4xl tabular-nums">
+                <div className="mono-label flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Today's meetings</div>
+                <div className="mt-4 font-display text-5xl tabular-nums">
                   {Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}
                   <span className="text-lg text-muted-foreground">h</span>
                 </div>
@@ -319,10 +307,10 @@ function Dashboard() {
               />
               <section className="bento p-5 col-span-12 lg:col-span-4 flex flex-col">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-display text-sm tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-300" /> Copilot
-                  </h3>
-                  <button onClick={() => invalidate("copilot")} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                  <div className="mono-label flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3" /> Copilot
+                  </div>
+                  <button onClick={() => invalidate("copilot")} className="link-action text-xs inline-flex items-center gap-1">
                     <RefreshCw className="h-3 w-3" /> refresh
                   </button>
                 </div>
@@ -339,19 +327,19 @@ function Dashboard() {
             <div className="grid grid-cols-12 gap-4 md:gap-5">
               <section className="bento p-5 col-span-12 lg:col-span-7">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-sm tracking-tight flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-cyan-300" /> Agent activity
-                  </h3>
-                  <span className="text-[11px] text-muted-foreground">{runs.data?.runs?.length ?? 0} recent</span>
+                  <div className="mono-label flex items-center gap-1.5">
+                    <Activity className="h-3 w-3" /> Agent activity
+                  </div>
+                  <span className="mono-label">{runs.data?.runs?.length ?? 0} recent</span>
                 </div>
                 <ul className="space-y-2.5 max-h-[420px] overflow-y-auto scrollbar-thin pr-1">
                   {(runs.data?.runs ?? []).length === 0 && (
-                    <li className="text-xs text-muted-foreground py-6 text-center border hairline rounded-xl">
+                    <li className="text-xs text-muted-foreground py-6 text-center border hairline rounded-md">
                       No agent runs yet — dispatch one above.
                     </li>
                   )}
                   {(runs.data?.runs ?? []).map((r) => (
-                    <li key={r.id} className="rounded-xl border hairline p-3 bg-background/40">
+                    <li key={r.id} className="rounded-md border hairline p-3 bg-background">
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-medium text-foreground">{r.agent_name}</span>
                         <StatusBadge status={r.status} />
@@ -376,17 +364,17 @@ function Dashboard() {
           <TabsContent value="pulse" className="space-y-4">
             <div className="grid grid-cols-12 gap-4 md:gap-5">
               <section className="bento p-5 col-span-12 lg:col-span-6">
-                <h3 className="font-display text-sm tracking-tight flex items-center gap-2 mb-4">
-                  <Users className="h-3.5 w-3.5 text-pink-300" /> Stakeholder pulse
-                </h3>
+                <div className="mono-label flex items-center gap-1.5 mb-4">
+                  <Users className="h-3 w-3" /> Stakeholder pulse
+                </div>
                 {(d?.stakeholders ?? []).length === 0 ? (
                   <p className="text-xs text-muted-foreground">Add meetings with a stakeholder to populate this.</p>
                 ) : (
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-[var(--hairline)]">
                     {d!.stakeholders.map((p) => (
                       <div key={p.name} className="flex items-center justify-between py-2.5">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500/40 to-violet-500/40 grid place-items-center text-[11px] font-medium">
+                          <div className="h-8 w-8 rounded-full bg-[var(--soft-stone)] border hairline grid place-items-center text-[11px] font-medium text-foreground">
                             {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                           </div>
                           <div>
@@ -394,32 +382,29 @@ function Dashboard() {
                             <div className="text-[11px] text-muted-foreground">{p.count} meeting{p.count > 1 ? "s" : ""} · last {new Date(p.last).toLocaleDateString()}</div>
                           </div>
                         </div>
-                        <div className="h-1.5 w-16 rounded-full bg-secondary overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-pink-400 to-rose-400" style={{ width: `${Math.min(100, p.count * 20)}%` }} />
+                        <div className="h-1 w-16 rounded-full bg-[var(--soft-stone)] overflow-hidden">
+                          <div className="h-full bg-[var(--coral)]" style={{ width: `${Math.min(100, p.count * 20)}%` }} />
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </section>
-              <section className="bento p-5 col-span-12 lg:col-span-6 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20"><div className="absolute inset-0 neural-gradient" /></div>
-                <div className="relative">
-                  <h3 className="font-display text-sm tracking-tight flex items-center gap-2 mb-4"><Zap className="h-3.5 w-3.5 text-amber-300" /> Product health</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Metric label="Velocity" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status === "done").length}`} sub="tasks shipped" />
-                    <Metric label="In flight" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status !== "done").length}`} sub="open" />
-                    <Metric label="Agent runs" value={`${runs.data?.runs?.length ?? 0}`} sub="last 24h" />
-                  </div>
+              <section className="band-stone rounded-lg p-6 col-span-12 lg:col-span-6">
+                <div className="mono-label flex items-center gap-1.5 mb-4"><Zap className="h-3 w-3" /> Product health</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <Metric label="Velocity" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status === "done").length}`} sub="tasks shipped" />
+                  <Metric label="In flight" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status !== "done").length}`} sub="open" />
+                  <Metric label="Agent runs" value={`${runs.data?.runs?.length ?? 0}`} sub="last 24h" />
                 </div>
               </section>
             </div>
           </TabsContent>
         </Tabs>
 
-        <footer className="mt-12 pt-6 border-t hairline flex items-center justify-between text-xs text-muted-foreground">
+        <footer className="mt-12 pt-6 border-t hairline flex items-center justify-between mono-label">
           <span>Cadence · the operating system for AI Product Managers</span>
-          <span className="neural-text font-medium">Neural Expressive · v0.1</span>
+          <span>Editorial · v0.2</span>
         </footer>
       </div>
     </AppShell>
@@ -442,7 +427,7 @@ function normalizeBrief(text: string): string {
 
 function Pill({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border hairline bg-background/40 px-2.5 py-1 text-[11px] text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--canvas)]/30 bg-[color:var(--canvas)]/10 px-3 py-1 text-[11px] text-[color:var(--canvas)]/85">
       <Icon className="h-3 w-3" /> {label}
     </span>
   );
@@ -451,7 +436,7 @@ function Pill({ icon: Icon, label }: { icon: React.ComponentType<{ className?: s
 function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mono-label">{label}</div>
       <div className="font-display text-3xl tabular-nums mt-1">{value}</div>
       <div className="text-[11px] text-muted-foreground">{sub}</div>
     </div>
@@ -460,13 +445,13 @@ function Metric({ label, value, sub }: { label: string; value: string; sub: stri
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { icon: React.ComponentType<{ className?: string }>; cls: string; label: string }> = {
-    running: { icon: Clock, cls: "text-amber-300", label: "running" },
-    complete: { icon: CheckCircle2, cls: "text-emerald-300", label: "complete" },
-    failed: { icon: XCircle, cls: "text-rose-300", label: "failed" },
+    running: { icon: Clock, cls: "text-foreground", label: "running" },
+    complete: { icon: CheckCircle2, cls: "text-[var(--deep-green)]", label: "complete" },
+    failed: { icon: XCircle, cls: "text-[var(--coral)]", label: "failed" },
   };
   const v = map[status] ?? map.complete;
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider ${v.cls}`}>
+    <span className={`mono-label inline-flex items-center gap-1 ${v.cls}`}>
       <v.icon className="h-3 w-3" /> {v.label}
     </span>
   );
@@ -483,18 +468,17 @@ function AgentChip({
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const grad = AGENT_COLORS[agent.color] ?? AGENT_COLORS.violet;
 
   return (
     <div className="relative">
       <button
         onClick={() => setOpen((s) => !s)}
-        className={`w-full text-left bento p-3 hover:ring-1 hover:ring-white/10 transition relative overflow-hidden`}
+        className="w-full text-left rounded-md border hairline bg-card p-3 hover:border-foreground transition-colors relative overflow-hidden"
       >
-        <div className={`absolute -right-4 -top-4 h-16 w-16 rounded-full bg-gradient-to-br ${grad} blur-md opacity-60`} />
+        <div className={`absolute -right-3 -top-3 h-12 w-12 rounded-full ${AGENT_ACCENT} opacity-70`} />
         <div className="relative">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{agent.role.replace("AI ", "")}</div>
-          <div className="font-display text-sm mt-0.5 truncate">{agent.name}</div>
+          <div className="mono-label">{agent.role.replace("AI ", "")}</div>
+          <div className="font-display text-base mt-1 truncate text-foreground">{agent.name}</div>
           <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
             <Bot className="h-2.5 w-2.5" /> dispatch
           </div>
@@ -503,16 +487,16 @@ function AgentChip({
       {open && (
         <form
           onSubmit={(e) => { e.preventDefault(); if (!text.trim()) return; onRun(text.trim()); setText(""); setOpen(false); }}
-          className="absolute z-20 top-full mt-2 left-0 right-0 bento p-3 shadow-xl"
+          className="absolute z-20 top-full mt-2 left-0 right-0 rounded-md border hairline bg-card p-3 shadow-elevated"
         >
           <textarea
             autoFocus value={text} onChange={(e) => setText(e.target.value)} rows={3}
             placeholder={`Brief ${agent.name}…`}
-            className="w-full rounded-lg border hairline bg-background/60 px-2.5 py-2 text-xs outline-none focus:ring-1 focus:ring-ring resize-none"
+            className="w-full rounded-md border hairline bg-background px-2.5 py-2 text-xs outline-none focus:border-foreground resize-none"
           />
           <div className="mt-2 flex justify-end gap-2">
             <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-muted-foreground">Cancel</button>
-            <button disabled={pending} className="rounded-lg bg-foreground text-background px-2.5 py-1 text-[11px] disabled:opacity-60">
+            <button disabled={pending} className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60">
               {pending ? "Running…" : "Dispatch"}
             </button>
           </div>
@@ -535,27 +519,27 @@ function TaskPanel({
   return (
     <section className="bento p-5 col-span-12 lg:col-span-8">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-sm tracking-tight">Today's tasks</h3>
-        <span className="text-[11px] text-muted-foreground">{tasks.filter((t) => t.status !== "done").length} open</span>
+        <div className="mono-label">Today's tasks</div>
+        <span className="mono-label">{tasks.filter((t) => t.status !== "done").length} open</span>
       </div>
       <form
         onSubmit={(e) => { e.preventDefault(); if (!title.trim()) return; onAdd(title.trim(), deep); setTitle(""); setDeep(false); }}
         className="flex items-center gap-2 mb-4"
       >
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to happen today?"
-          className="flex-1 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep
         </label>
-        <button className="rounded-lg bg-foreground text-background px-3 py-2 text-sm"><Plus className="h-3.5 w-3.5" /></button>
+        <button className="btn-pill px-3 py-2 text-sm"><Plus className="h-3.5 w-3.5" /></button>
       </form>
-      <ul className="divide-y divide-border max-h-72 overflow-y-auto scrollbar-thin">
+      <ul className="divide-y divide-[var(--hairline)] max-h-72 overflow-y-auto scrollbar-thin">
         {tasks.length === 0 && <li className="py-3 text-xs text-muted-foreground">Nothing planned yet.</li>}
         {tasks.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-2.5">
             <input type="checkbox" checked={t.status === "done"} onChange={(e) => onToggle(t.id, e.target.checked)} className="h-4 w-4" />
             <span className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}>{t.title}</span>
-            {t.is_deep_work && <span className="text-[10px] uppercase tracking-wider rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5">deep</span>}
+            {t.is_deep_work && <span className="mono-label rounded-full border border-[var(--coral)] text-[var(--coral)] px-2 py-0.5">deep</span>}
             <button onClick={() => onDelete(t.id)} className="text-xs text-muted-foreground hover:text-destructive">×</button>
           </li>
         ))}
@@ -568,8 +552,8 @@ function QuickProjectForm({ onAdd }: { onAdd: (name: string) => void }) {
   const [name, setName] = useState("");
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; onAdd(name.trim()); setName(""); }} className="pt-3 flex items-center gap-2">
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New product" className="flex-1 rounded-lg border hairline bg-background/60 px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring" />
-      <button className="rounded-lg bg-foreground text-background px-2.5 py-1.5 text-xs">Add</button>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New product" className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
+      <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
     </form>
   );
 }
@@ -589,10 +573,10 @@ function QuickMeetingForm({ onAdd }: { onAdd: (data: { title: string; start_at: 
       }}
       className="mt-4 flex flex-col gap-2"
     >
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New meeting" className="rounded-lg border hairline bg-background/60 px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring" />
+      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New meeting" className="rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
       <div className="flex gap-2">
-        <input value={stakeholder} onChange={(e) => setStakeholder(e.target.value)} placeholder="With…" className="flex-1 rounded-lg border hairline bg-background/60 px-2.5 py-1.5 text-xs outline-none" />
-        <button className="rounded-lg bg-foreground text-background px-2.5 py-1.5 text-xs">Add</button>
+        <input value={stakeholder} onChange={(e) => setStakeholder(e.target.value)} placeholder="With…" className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
+        <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
       </div>
     </form>
   );
@@ -609,24 +593,24 @@ function DecisionPanel({
   return (
     <section className="bento p-5 col-span-12 lg:col-span-8">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display text-sm tracking-tight flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5 text-rose-300" /> Decisions awaiting you</h3>
-        <span className="text-[11px] text-muted-foreground">{decisions.filter((d) => d.status === "pending").length} pending</span>
+        <div className="mono-label flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> Decisions awaiting you</div>
+        <span className="mono-label">{decisions.filter((d) => d.status === "pending").length} pending</span>
       </div>
       <form onSubmit={(e) => { e.preventDefault(); if (!title.trim()) return; onAdd(title.trim()); setTitle(""); }} className="flex items-center gap-2 mb-3">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Log a decision the AI surfaced…"
-          className="flex-1 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
-        <button className="rounded-lg bg-foreground text-background px-3 py-2 text-xs">Log</button>
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+        <button className="btn-pill px-3 py-2 text-xs">Log</button>
       </form>
       <ul className="space-y-2">
         {decisions.length === 0 && <li className="text-xs text-muted-foreground py-4">No decisions logged yet.</li>}
         {decisions.map((d) => (
-          <li key={d.id} className="flex items-center gap-3 rounded-xl border hairline px-3 py-2.5">
+          <li key={d.id} className="flex items-center gap-3 rounded-md border hairline px-3 py-2.5 bg-card">
             <span className="flex-1 text-sm">{d.title}</span>
-            <span className={`text-[10px] uppercase tracking-wider ${d.status === "approved" ? "text-emerald-300" : d.status === "rejected" ? "text-rose-300" : "text-amber-300"}`}>{d.status}</span>
+            <span className={`mono-label ${d.status === "approved" ? "text-[var(--deep-green)]" : d.status === "rejected" ? "text-[var(--coral)]" : "text-foreground"}`}>{d.status}</span>
             {d.status === "pending" && (
               <div className="flex gap-1">
-                <button onClick={() => onSet(d.id, "approved")} className="text-[11px] rounded-md bg-emerald-500/15 text-emerald-200 px-2 py-1">Approve</button>
-                <button onClick={() => onSet(d.id, "rejected")} className="text-[11px] rounded-md bg-rose-500/15 text-rose-200 px-2 py-1">Reject</button>
+                <button onClick={() => onSet(d.id, "approved")} className="btn-pill px-3 py-1 text-[11px]">Approve</button>
+                <button onClick={() => onSet(d.id, "rejected")} className="btn-pill-outline px-3 py-1 text-[11px]">Reject</button>
               </div>
             )}
           </li>
@@ -653,8 +637,8 @@ function CopilotChat({
           </p>
         )}
         {messages.map((m) => (
-          <div key={m.id} className={`rounded-xl px-3 py-2 text-sm ${m.role === "user" ? "bg-secondary ml-6" : "bg-background/60 border hairline mr-6"}`}>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{m.role === "user" ? "you" : "cadence"}</div>
+          <div key={m.id} className={`rounded-md px-3 py-2 text-sm ${m.role === "user" ? "bg-[var(--soft-stone)] ml-6" : "bg-card border hairline mr-6"}`}>
+            <div className="mono-label mb-1">{m.role === "user" ? "you" : "cadence"}</div>
             <div className="whitespace-pre-wrap">{m.content}</div>
           </div>
         ))}
@@ -665,8 +649,8 @@ function CopilotChat({
         className="flex items-center gap-2"
       >
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask anything…"
-          className="flex-1 rounded-xl border hairline bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
-        <button disabled={pending} className="rounded-xl bg-foreground text-background px-3 py-2.5 text-sm disabled:opacity-60"><Send className="h-3.5 w-3.5" /></button>
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground" />
+        <button disabled={pending} className="btn-pill px-3 py-2.5 text-sm disabled:opacity-60"><Send className="h-3.5 w-3.5" /></button>
       </form>
     </div>
   );
