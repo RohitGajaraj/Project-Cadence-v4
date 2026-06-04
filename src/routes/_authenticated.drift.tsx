@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { AppShell } from "@/components/cadence/AppShell";
 
 export const Route = createFileRoute("/_authenticated/drift")({
   component: DriftPage,
@@ -115,7 +116,8 @@ function DriftPage() {
   }, [snapshots]);
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <AppShell>
+    <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Drift Detection</h1>
@@ -199,6 +201,7 @@ function DriftPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </AppShell>
   );
 }
 
