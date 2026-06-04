@@ -328,9 +328,15 @@ export const createGithubIssueForPrd = createServerFn({ method: "POST" })
     }
 
     const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    if (!token || !repo) throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+    const rawRepo = process.env.GITHUB_REPO;
+    if (!token || !rawRepo) throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
+    const repo = rawRepo
+      .trim()
+      .replace(/^https?:\/\/github\.com\//i, "")
+      .replace(/^git@github\.com:/i, "")
+      .replace(/\.git$/i, "")
+      .replace(/\/+$/, "");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${rawRepo} (expected owner/name)`);
 
     const body = `${(prd.body_md ?? "").slice(0, 55_000)}\n\n---\n_Opened from Cadence PRD ${prd.id}_`;
     const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
