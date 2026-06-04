@@ -1,34 +1,102 @@
-## Diagnosis
+## Bundle 3 — Agent Trust Score + Autonomy Dial (C6)
 
-You ran the agent, but the Traces page is empty because the **/agents page is wired to the wrong `runAgent`**.
+**Goal:** make every agent's earned trust visible, and let the operator move each agent along the trust arc (Observing → Proving → Trusted → Ambient). Moving the dial changes the default approval mode for that agent's write/planning tools, so trust visibly buys autonomy.
 
-Two server functions share the name `runAgent`:
+**Proof bar (C4 — "trust is dialed, not assumed"):** dialing one agent from Observing → Trusted removes a specific approval gate on its next mission, and the change is visible in the trace + Decision Queue.
 
-1. `src/lib/agents.functions.ts` — **legacy single-shot path**. Calls `callModel` directly with no `traceId`, no tool loop, and **no brief injection**. This is what `_authenticated.agents.tsx` currently uses.
-2. `src/lib/agent_loop.functions.ts` → `runAgentLoop` in `src/lib/ai/loop.server.ts` — the real path. Generates a `traceId`, loads `workspace_briefs`, calls `renderBriefBlock`, and stamps `trace_id` on every `ai_events` row.
+Scope is deliberately narrow: ship the working loop end-to-end (score → badge → dial → enforcement). E8 Loop Health and trust-history charts are explicitly **out of scope** and stay in the backlog.
 
-Confirmed in the DB: your last two `agent_runs` succeeded, but the corresponding `ai_events` rows have `trace_id = NULL`. The Traces list filters `trace_id IS NOT NULL`, so they're invisible — and the brief never reached the system prompt either.
+---
 
-## Fix (one file, surgical)
+### What ships
 
-Update `src/routes/_authenticated.agents.tsx`:
+1. **Trust Score per agent**, computed from real signals already in the DB:
+   - mission success rate (`agent_runs.status = completed` vs `failed`/`halted`)
+   - approval acceptance rate (`agent_approvals.status = approved` vs `rejected`)
+   - eval pass-rate (mean of `ai_evals` numeric scores on the agent's events)
+   - sample size (so a 1-run agent doesn't show 100%)
+2. **Trust arc per agent**: Observing · Proving · Trusted · Ambient — auto-suggested from the score, operator-overridable.
+3. **Autonomy Dial** on each agent card: choose the arc level. The level maps to a **default approval mode** that's applied to that agent's `write`/`planning` tool calls during the loop (overriding the per-tool `agent_tools.mode` only when the agent dial is *more* permissive, never more strict than the tool's own setting — safety floor preserved).
+4. **Roster polish (C1)** — surface the score badge, current arc, last-run summary, and the dial inline on each agent card on `/agents`.
 
-1. Change the import from `@/lib/agents.functions` to `@/lib/agent_loop.functions` for `runAgent` only (keep `listAgents`, `listAgentRuns`, `updateAgentSchedule` from the legacy module).
-2. Update the mutation signature from `{ agentId, input, model }` to `{ agentSlug, goal, model }` — that's what `agent_loop.functions.ts` validates.
-3. Update the two call sites (form submit + any other dispatch) to pass `agentSlug: selected.slug` and `goal: input.trim()`.
-4. Adapt the result handling: the loop returns `{ trace_id, agent_slug, steps, final, run_id, ... }` instead of a single `run` row. Show `final` as the output and (nice-to-have) link to `/traces/$traceId` using `trace_id`.
+### Where it lives in the UI
 
-## Verification
+- `/agents` page — each agent card gets:
+  - a **Trust score** chip (0–100) with a tooltip breaking down the 4 inputs
+  - the **Arc** label (Observing / Proving / Trusted / Ambient) with a small dial control to change it
+  - a one-line "why" ("12 missions, 91% approval acceptance, 3 evals avg 0.82")
 
-1. Open `/agents`, pick **Discovery Scout**, send a goal like "Top 3 opportunities for our current focus."
-2. Open `/traces` — a new row appears with root surface `agent`.
-3. Open the trace → first step's system prompt contains the `--- Workspace Strategic Brief ---` block from your brief.
-4. Edit the brief on `/briefing`, re-run — the new trace's system prompt reflects the edit.
+### Enforcement points (server)
 
-## Doc loop
+- New module `src/lib/ai/trust.server.ts` exports:
+  - `computeAgentTrust(supabase, userId, agentId) → { score, arc, breakdown }` (read-only aggregation)
+  - `resolveApprovalMode(toolMode, arc) → "auto" | "confirm" | "review"` — the safety-floor combiner
+- `src/lib/ai/loop.server.ts` calls `resolveApprovalMode` instead of using `modeOf.get(toolName)` directly. The high-risk `calendar.create` hard-force-confirm stays.
 
-- `docs/feature-backlog.md`: log "Wired /agents page to loop-based runAgent so brief + traces fire" under the Bundle 2 / C5 entry, bump Last updated.
-- `plan.md` §4: one-liner with the WHY.
-- `architecture/orchestration.md`: note that `/agents` UI now consumes `agent_loop.functions.ts` (legacy `agents.functions.ts → runAgent` left for back-compat but no longer the active path).
+### Done when
 
-No DB migration, no new files. Single-route edit.
+- Every agent on `/agents` shows a trust score + arc.
+- Operator can switch an agent to **Trusted**, dispatch a goal that uses a `confirm`-mode tool, and the loop executes immediately instead of queuing an approval (visible in the trace as `status: "executed"` not `"queued"`).
+- Dropping the same agent back to **Observing** re-introduces the approval queue on the next run.
+- Tool-level `mode = "review"` is never downgraded by the dial (safety floor).
+
+---
+
+### Technical details
+
+**New table** `agent_autonomy` (one row per `(user_id, agent_id)`):
+- `arc text not null default 'observing' check (arc in ('observing','proving','trusted','ambient'))`
+- `set_by uuid` (auth.users id) · `set_at timestamptz default now()`
+- RLS: owner-only read/write, scoped by `user_id`. Standard GRANTs to `authenticated` + `service_role`.
+- No score column — score is computed on read so it can never go stale.
+
+**Arc → default mode mapping** (applied only when the per-tool mode is `auto` or `confirm`; `review` is sticky):
+| Arc | Default mode for write/planning |
+|---|---|
+| Observing | `review` (operator inspects every action) |
+| Proving | `confirm` (one-click approve) |
+| Trusted | `auto` for `confirm`-mode tools; `confirm` for `review`-mode tools |
+| Ambient | `auto` for everything except hard-locked tools (`calendar.create`, future destructive ones) |
+
+**Trust score formula** (transparent, in the tooltip):
+```
+score = 0.4 * mission_success_rate
+      + 0.3 * approval_acceptance_rate
+      + 0.3 * mean_eval_score
+shrunk toward 0.5 by a Bayesian prior when sample size < 10
+```
+
+**Server functions** (new file `src/lib/trust.functions.ts`):
+- `getAgentTrust({ agentId })` → `{ score, breakdown, arc, samples }`
+- `getAllAgentTrust()` → batch version for `/agents` page (one round-trip)
+- `setAgentArc({ agentId, arc })` → upsert into `agent_autonomy`
+
+**Files touched**
+- New: `supabase/migrations/<ts>_agent_autonomy.sql`, `src/lib/ai/trust.server.ts`, `src/lib/trust.functions.ts`
+- Edited: `src/lib/ai/loop.server.ts` (use `resolveApprovalMode`), `src/routes/_authenticated.agents.tsx` (badge + dial), `src/integrations/supabase/types.ts` (auto-regen after migration)
+
+**Doc loop (mandatory, same turn)**
+- `docs/feature-backlog.md` — flip C6 to `[status: ☑ shipped <date>]`, update Live status board (Now building → Next up = Bundle 4), add "How to use / verify" block to C6 entry, mark Step 3 progress in rollup.
+- `plan.md` §4 — one-line append.
+- `architecture/orchestration.md` — note the dial as the new approval-mode resolver upstream of `agent_tools.mode`.
+- `active-task.md` — created at start with sub-step checklist; deleted on completion.
+
+---
+
+### Explicitly out of scope (stays in backlog)
+
+- Trust history chart over time (later, after we have weeks of data).
+- Auto-promotion ("score >0.85 for 7 days → suggest Trusted") — manual dial only in v1.
+- E8 Loop Health Monitor (separate ticket).
+- Per-tool overrides inside an agent (use the existing `agent_tools` table).
+
+---
+
+### Verification checklist
+
+1. Run migration → `/agents` loads with a trust chip on every agent.
+2. Dispatch a goal as **Discovery Scout** (default `confirm` tools, default arc Observing) → approval gets queued, as today.
+3. Open the dial on Discovery Scout, set arc to **Trusted**, dispatch the same goal → loop executes the tool inline; trace shows `status: "executed"`, Decision Queue is not touched.
+4. Set the same agent to **Observing**, dispatch again → approval queue resumes.
+5. Confirm `calendar.create` still hard-forces approval at Trusted (safety floor).
+6. Tooltip on the trust chip shows the 4 inputs + the formula and current sample size.
