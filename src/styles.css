@@ -350,7 +350,10 @@
 .aurora {
   --radius: 0.875rem;
 
-  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Futuristic display: Space Grotesk's geometric forms + tightened tracking
+   * read modern + technical. Inter Tight as fallback keeps weight match. */
+  --font-display: "Space Grotesk", "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
   /* Deep cosmic canvas — near-black with a violet/indigo bias. */
   --canvas:         oklch(0.13 0.025 285);
@@ -854,3 +857,209 @@
   50% { opacity: 0.5; transform: scale(0.85); }
 }
 .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ==========================================================================
+ * Aurora polish — typography rhythm, form controls, alignment.
+ * Scoped to .aurora so Nightshift + Editorial themes are unchanged.
+ * ========================================================================== */
+
+/* Body — slightly larger, looser line-height for breathing room on the
+ * darker canvas. Tabular numerals everywhere for dashboard readability. */
+.aurora, .aurora body {
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  font-feature-settings: "ss01", "cv11", "tnum", "cv05";
+}
+
+/* Display headings — geometric, tightly tracked, with a soft neon wash on
+ * the largest sizes. Weight ramps with size so h1 feels heroic, h3 clean. */
+.aurora h1, .aurora h2, .aurora h3, .aurora h4, .aurora h5, .aurora h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+}
+.aurora h1 {
+  font-size: clamp(2rem, 3.4vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  text-shadow: 0 0 32px color-mix(in oklab, var(--violet) 22%, transparent);
+}
+.aurora h2 {
+  font-size: clamp(1.5rem, 2.1vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.aurora h3 {
+  font-size: clamp(1.175rem, 1.4vw, 1.375rem);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  text-shadow: none;
+}
+.aurora h4 { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.018em; }
+.aurora h5, .aurora h6 { font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.012em; }
+
+/* Mono labels — brighter under aurora, slightly tighter tracking. */
+.aurora .mono-label {
+  color: color-mix(in oklab, var(--cyan) 78%, var(--ink-faint));
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+
+/* ----- Form controls ----- */
+
+/* Inputs / textareas / selects — unified height, padding, hairline,
+ * subtle inner glass, neon focus halo. Aligns across forms + filters. */
+.aurora input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.aurora textarea,
+.aurora select {
+  background-color: color-mix(in oklab, var(--surface-1) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--violet) 16%, var(--hairline-strong));
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px 14px;
+  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 4%),
+              inset 0 0 0 1px transparent;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              background-color var(--dur-fast) var(--ease-out);
+}
+.aurora input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
+  height: 40px;
+}
+.aurora textarea { min-height: 96px; line-height: 1.55; }
+
+.aurora input::placeholder,
+.aurora textarea::placeholder {
+  color: var(--ink-faint);
+  opacity: 0.85;
+}
+
+.aurora input:hover:not(:disabled):not(:focus),
+.aurora textarea:hover:not(:disabled):not(:focus),
+.aurora select:hover:not(:disabled):not(:focus) {
+  border-color: color-mix(in oklab, var(--violet) 28%, var(--hairline-strong));
+  background-color: color-mix(in oklab, var(--surface-1) 85%, transparent);
+}
+
+.aurora input:focus,
+.aurora input:focus-visible,
+.aurora textarea:focus,
+.aurora textarea:focus-visible,
+.aurora select:focus,
+.aurora select:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklab, var(--violet) 65%, transparent);
+  background-color: color-mix(in oklab, var(--surface-1) 95%, transparent);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--violet) 22%, transparent),
+    0 0 24px -4px color-mix(in oklab, var(--violet) 45%, transparent),
+    inset 0 1px 0 0 oklch(1 0 0 / 6%);
+}
+
+.aurora input:disabled,
+.aurora textarea:disabled,
+.aurora select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Checkbox / radio — neon-tinted accent for native controls. */
+.aurora input[type="checkbox"],
+.aurora input[type="radio"] {
+  accent-color: var(--violet);
+}
+
+/* Buttons (shadcn .btn / generic <button>) under aurora get crisp alignment
+ * and a consistent height to line up with inputs in toolbars / forms. */
+.aurora button:not(.btn-pill):not(.btn-pill-outline):not([data-no-aurora]) {
+  font-family: var(--font-sans);
+  letter-spacing: -0.005em;
+}
+
+/* Pill CTA size bump under aurora for stronger visual weight. */
+.aurora .btn-pill {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  padding: 11px 22px;
+  height: 40px;
+  line-height: 1;
+}
+.aurora .btn-pill-outline {
+  font-weight: 500;
+  padding: 9px 18px;
+  height: 40px;
+  line-height: 1;
+  border-color: color-mix(in oklab, var(--violet) 45%, var(--hairline-strong));
+  color: var(--ink);
+  background-color: color-mix(in oklab, var(--surface-1) 50%, transparent);
+  backdrop-filter: blur(8px);
+}
+.aurora .btn-pill-outline:hover {
+  background-color: color-mix(in oklab, var(--violet) 14%, var(--surface-2));
+  border-color: color-mix(in oklab, var(--violet) 60%, transparent);
+}
+
+/* Cards / bento — tighter inner padding rhythm, gradient hairline on hover. */
+.aurora .bento { padding: 1rem; }
+@media (min-width: 768px) { .aurora .bento { padding: 1.25rem; } }
+
+@media (hover: hover) and (pointer: fine) {
+  .aurora .hover-lift:hover {
+    box-shadow: 0 14px 38px -14px color-mix(in oklab, var(--violet) 55%, transparent),
+                0 0 40px -10px color-mix(in oklab, var(--magenta) 35%, transparent);
+    border-color: color-mix(in oklab, var(--violet) 55%, var(--hairline-strong));
+  }
+}
+
+/* Selection — neon violet wash. */
+.aurora ::selection {
+  background-color: color-mix(in oklab, var(--violet) 50%, transparent);
+  color: oklch(0.99 0.005 280);
+}
+
+/* Focus ring (keyboard) globally polished under aurora. */
+.aurora :focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 4px color-mix(in oklab, var(--violet) 55%, transparent),
+    0 0 28px -4px color-mix(in oklab, var(--violet) 50%, transparent);
+  border-radius: var(--radius-md);
+}
+
+/* Links — gradient underline that brightens on hover. */
+.aurora .link-action,
+.aurora a.underline,
+.aurora a[data-link="action"] {
+  color: var(--cyan);
+  text-decoration-color: color-mix(in oklab, var(--cyan) 55%, transparent);
+  text-underline-offset: 4px;
+  transition: color var(--dur-fast) var(--ease-out), text-decoration-color var(--dur-fast) var(--ease-out);
+}
+.aurora .link-action:hover,
+.aurora a.underline:hover {
+  color: color-mix(in oklab, var(--cyan) 80%, var(--violet));
+  text-decoration-color: var(--violet);
+}
+
+/* Scrollbar — thinner + neon-glow thumb. */
+.aurora .scrollbar-thin::-webkit-scrollbar { width: 10px; height: 10px; }
+.aurora .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--violet), var(--magenta));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Tabular numerals on numeric-looking spans (metrics, counts). */
+.aurora .tabular-nums,
+.aurora [data-numeric] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "ss01";
+}
