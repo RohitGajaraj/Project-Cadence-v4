@@ -10,6 +10,7 @@ import { runAgent } from "@/lib/agent_loop.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listApiKeys } from "@/lib/byokeys.functions";
 import { getAllAgentTrust, setAgentArc, type AgentTrust, type Arc } from "@/lib/trust.functions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated/agents")({
   component: AgentsPage,
@@ -95,6 +96,7 @@ function AgentsPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
+      <TooltipProvider delayDuration={150}>
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8">
           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
