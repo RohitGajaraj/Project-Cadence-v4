@@ -17,6 +17,7 @@ import { createMeeting } from "@/lib/meetings.functions";
 import { listCopilotMessages, sendCopilotMessage, generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { listDecisions, createDecision, updateDecision } from "@/lib/decisions.functions";
+import { getGreeting } from "@/lib/greeting.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -37,6 +38,7 @@ function Dashboard() {
   const fetchAgents = useServerFn(listAgents);
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchDecisions = useServerFn(listDecisions);
+  const fetchGreeting = useServerFn(getGreeting);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -56,6 +58,18 @@ function Dashboard() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const decisions = useQuery({ queryKey: ["decisions"], queryFn: () => fetchDecisions() });
+
+  // Localized + time-of-day greeting. Passes the user's local hour so the
+  // bucket matches their wall clock, not the server's UTC. Country comes
+  // from the request headers (Cloudflare edge).
+  const [localHour, setLocalHour] = useState<number | null>(null);
+  useEffect(() => { setLocalHour(new Date().getHours()); }, []);
+  const greeting = useQuery({
+    queryKey: ["greeting", localHour],
+    queryFn: () => fetchGreeting({ data: { localHour: localHour ?? new Date().getHours() } }),
+    enabled: localHour !== null,
+    staleTime: 30 * 60 * 1000,
+  });
 
   const invalidate = (k: string) => qc.invalidateQueries({ queryKey: [k] });
 
@@ -115,6 +129,7 @@ function Dashboard() {
   }, []);
   const focusScore = d?.focusScore ?? 0;
   const profileName = d?.profile?.display_name?.split(" ")[0] ?? "there";
+  const greetText = greeting.data?.greeting ?? "Hello";
   const activeAgents = (runs.data?.runs ?? []).filter((r) => r.status === "running").length;
 
   return (
