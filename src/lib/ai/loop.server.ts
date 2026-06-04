@@ -414,7 +414,9 @@ export async function resumeAgentLoop(
 
   return executeLoop({
     supabase, userId: run.user_id, agent, workspaceId: run.workspace_id, runId,
-    traceId, model, tools, modeOf, conv, steps, ctx, approvalsQueued,
+    traceId, model, tools, modeOf,
+    arc: await loadAgentArc(supabase, run.user_id, agent.id),
+    conv, steps, ctx, approvalsQueued,
     startStep, goal: run.input, finalize,
   });
 }
