@@ -2,12 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileText, Sparkles, Trash2, GitBranch, ListTodo, Github, Hammer } from "lucide-react";
+import { FileText, Sparkles, Trash2, GitBranch, ListTodo, Github, Hammer, Pencil, FileEdit } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import { listProjects } from "@/lib/projects.functions";
-import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd } from "@/lib/discovery.functions";
+import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd, savePrd } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
 import { dispatchBuilderMission } from "@/lib/build.functions";
 import FolderInteraction from "@/components/ui/folder";
@@ -27,6 +27,12 @@ function PrdsPage() {
   const mTasks = useServerFn(promotePrdToTasks);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
   const mDispatch = useServerFn(dispatchBuilderMission);
+  const mSave = useServerFn(savePrd);
+  const rename = useMutation({
+    mutationFn: (v: { id: string; title: string }) => mSave({ data: { id: v.id, title: v.title } }),
+    onSuccess: () => { inv(); toast.success("Renamed"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prds = useQuery({ queryKey: ["prds"], queryFn: () => fPrds() });
@@ -129,6 +135,26 @@ function PrdsPage() {
                 })() : null}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <Link
+                  to="/prds/$id"
+                  params={{ id: p.id }}
+                  className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-foreground text-background hover:opacity-90"
+                  title="Open the full PRD document (edit title, body, actions)"
+                >
+                  <FileEdit className="h-3 w-3" /> Open
+                </Link>
+                <button
+                  onClick={() => {
+                    const next = window.prompt("Rename PRD", p.title);
+                    if (next && next.trim() && next !== p.title) {
+                      rename.mutate({ id: p.id, title: next.trim().slice(0, 200) });
+                    }
+                  }}
+                  className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                  title="Rename PRD"
+                >
+                  <Pencil className="h-3 w-3" /> Rename
+                </button>
                 <button
                   onClick={() => promote.mutate(p.id)}
                   disabled={promote.isPending}

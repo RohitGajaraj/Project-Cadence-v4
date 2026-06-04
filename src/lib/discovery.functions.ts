@@ -372,9 +372,9 @@ export const generatePrd = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    let title = "Untitled PRD";
     let source = data.brief ?? "";
     let oppId: string | null = null;
+    let title = "";
 
     if (data.opportunity_id) {
       const { data: opp, error } = await supabase.from("opportunities").select("*").eq("id", data.opportunity_id).single();
@@ -388,6 +388,28 @@ Hypothesis: ${opp.hypothesis ?? ""}
 ICE — Impact:${opp.impact} Confidence:${opp.confidence} Ease:${opp.ease}`;
     }
     if (!source.trim()) throw new Error("Provide an opportunity or a brief.");
+
+    // Derive a concise title from the brief when there's no opportunity.
+    if (!title) {
+      try {
+        const titleResult = await callModel(supabase, userId, {
+          surface: "prd",
+          surface_ref: "title",
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "Return a single concise PRD title (max 70 chars, Title Case, no quotes, no trailing punctuation). Only the title, nothing else." },
+            { role: "user", content: source.slice(0, 2000) },
+          ],
+        });
+        title = (titleResult.output || "").trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0].slice(0, 120);
+      } catch {
+        // fall through to heuristic
+      }
+      if (!title) {
+        const firstLine = source.trim().split(/[\n.!?]/)[0] ?? "";
+        title = firstLine.slice(0, 80).trim() || "Untitled PRD";
+      }
+    }
 
     const system = `You are a senior product manager writing a crisp, opinionated PRD in Markdown.
 Sections (use ## headings, in this exact order):
