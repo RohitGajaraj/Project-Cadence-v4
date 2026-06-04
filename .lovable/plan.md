@@ -1,49 +1,64 @@
-## What's next (per the status board)
+## What's next
 
-The Live status board says **Now building: idle**, and **Next up: Bundle 5 — E6 Mission Graph DAG view**, followed by Bundle 6 (lifecycle close: Discover→Define→Plan slice + N1 GitHub-issues sync). E4 fan-out polish and E5 multi-mission isolation are folded into Bundle 5.
+Per the Live status board and Build-order rollup, Bundle 5 (E6 Mission Graph) just shipped. The mechanical "next up" is **Bundle 6 — Discover→Define→Plan lifecycle slice + N1 `github.issue.create`** (GitHub secrets `GITHUB_TOKEN` + `GITHUB_REPO` are already staged from FND-RUNTIME 0.9, so we are unblocked).
 
-The mission page already has the *timeline strip* and *live progress panel* (just shipped). What's missing — and what the rollup explicitly calls out as Step 5 — is the **graph view**: nodes for each agent hop + edges for each `agent.handoff` message, updating live, clickable into traces/costs/approvals. This is the "Live Mission Graph" success criterion in `plan.md` §3.
+After Bundle 6, the queue is fixed: Bundle 9 → 10 → 11 → 12 (Build/Test → Ship → Launch → Support+Learn). Bundle 12 is where the full PM lifecycle loop closes.
 
-## Plan — Bundle 5: Live Mission Graph
+---
+
+## Plan — Bundle 6: Discover→Define→Plan slice on real data
+
+### Goal
+Run the first end-to-end *lifecycle* mission on real Cadence signals and have the Plan step write a **real GitHub issue** on this repo. Closes capability claim C3 ("one governed loop") for the first three lifecycle stages.
 
 ### Scope (in)
-1. **Mission Graph card on `/missions/$missionId`** — a DAG view rendered above (or toggled with) the existing hops list.
-   - **Nodes** = one per `agent_runs` row in the mission. Show: agent slug + name, status pill (queued / running / completed / failed), step count, elapsed time, tiny cost/tokens chip when available.
-   - **Edges** = one per `agent_messages` row, drawn `from_agent_slug → to_agent_slug`, labelled with `kind` (e.g. `handoff`) and a tooltip preview of `payload.task`. Source = `source_run_id`, target = `consumed_by_run_id` (fallback: next run for that `to_agent_slug`).
-   - **Live**: re-uses the existing 2s refresh while mission `status='running'`.
-   - **Click a node** → opens the existing hop card (scroll/expand) and exposes the per-hop **Trace** link, cost/tokens, current approval state if any.
-2. **Fan-out readiness (E4 polish)** — render correctly when one parent hop produces ≥2 outbound messages (parallel children). No new tool yet; just make sure layout + edge routing handle branching without overlap. (Explicit `agent.spawn` tool stays deferred per backlog note.)
-3. **Multi-mission isolation check (E5 polish)** — quick audit that `getMission` + the new graph only ever read rows scoped by `mission_id` and the existing workspace RLS; add a test mission with two concurrent missions in the same workspace and confirm no cross-bleed.
-4. **Docs loop (mandatory, same commit)**:
-   - Flip board: *Now building → Bundle 5 (E6)*, then on completion *Next up → Bundle 6*.
+1. **`N1 github.issue.create` tool** — agentic write tool in `src/lib/ai/tools/registry.server.ts`.
+   - Mode: `confirm` (default; arc-gated like any write tool).
+   - Allow-listed to the single `GITHUB_REPO` env (no arbitrary-repo writes).
+   - Idempotent via caller-supplied `idempotency_key` (e.g. `prd:{prd_id}`) using the existing `withIdempotency` helper — re-execution NEVER double-creates an issue.
+   - Input: `{ title, body, labels?, idempotency_key }`. Output: `{ issue_url, issue_number }`.
+   - Seeded for new signups via `seed_default_agent_tools` + backfilled for every existing user in the same migration.
+2. **`prd.link_issue` wiring on the happy path** — the tool already exists (shipped Bundle 2). After `github.issue.create` returns, the Strategist/Planner agent calls `prd.link_issue` with the new `issue_url` so `prds.github_issue_url` is set and the Mission Graph + PRD page surface the link.
+3. **Discover→Define→Plan mission script** — a canonical operator dispatch from `/agents` ("Start as mission") that exercises:
+   - Discovery Scout: `research.synthesize` over real ungrouped signals → writes a theme.
+   - Strategist (PRD Writer): `prd.draft` → writes a real `prds` row in `draft`.
+   - Planner: `backlog.prioritize` (re-score) + `github.issue.create` (gated) + `prd.link_issue`.
+   - Handoffs use the existing `agent.handoff` tool (Bundle 4) so each hop appears in the Mission Graph (Bundle 5) with labelled edges.
+4. **PRD page link-back surface** — on `/prds/$id`, if `github_issue_url` is set, show a "GitHub issue #N" link next to the title. (Tiny UI add; no new server fn.)
+5. **Forced-restart verification** — restart the worker mid-mission and confirm `resumeAgentLoop` picks up from the latest checkpoint without double-billing or duplicate issue creation (validates FND-RUNTIME 0.9 end-to-end against a real write tool). This is the step-1 ◑ item still owed on the status board.
+6. **Docs loop (mandatory, same commit)**:
+   - Flip Live status board: *Now building → Bundle 6*, then on completion *Next up → Bundle 9 (Build+Test)*.
    - Append entry to `plan.md` §4 and `docs/feature-backlog.md` Recent log.
-   - Update E6 entry in `docs/feature-backlog.md` with the verification checklist + a "How to use" block (where the graph lives, what clicking does).
-   - Cross-link from `architecture/orchestration.md` ("Mission graph is the live read model of `missions` + `agent_runs` + `agent_messages`").
+   - Update N1 + F1–F3 entries with verification checklist + "How to use" block (where to dispatch, what to approve, where the issue appears).
+   - Cross-link from `architecture/integrations.md` (GitHub connector) and `architecture/orchestration.md` (lifecycle slice now real).
 
-### Scope (out — deferred)
-- Dedicated `agent.spawn` tool with explicit fan-out semantics + parent merge step (kept deferred; folded forward).
-- Explicit per-mission message cap / loop-guard (Bundle 5 polish item, but cheap — will add only if implementation already touches the sweeper).
-- Graph editing, drag-to-rearrange, persisted layout — not needed for the success criterion.
+### Scope (out — explicit deferrals)
+- **PR-opening (Bundle 9, I-thin / J-thin)**: `github.pr.open` + CI read. Issues only in Bundle 6.
+- **Approval UI polish**: re-use the existing Decision Queue surface; no new approval UX.
+- **Multi-repo writes**: single `GITHUB_REPO` only.
+- **Issue updates/closes**: create-only for v1.
 
 ### Technical approach
-- **No new tables.** Pure read model over `missions` + `agent_runs` + `agent_messages` (+ `agent_run_checkpoints` already joined). `getMission` already returns all three — graph is a frontend transform.
-- **Rendering**: lightweight in-house SVG layout (topological columns by hop depth, vertical stacking for parallel children). Avoid pulling in `reactflow`/`dagre` for v1 — the missions we're shipping have ≤6 nodes, hand-rolled layout keeps bundle + complexity down. If layout gets gnarly for fan-out, revisit.
-- **Files to touch**:
-  - `src/routes/_authenticated.missions.$missionId.tsx` — add `<MissionGraph>` component, wire click handler to scroll/expand the matching hop card.
-  - New `src/components/cadence/MissionGraph.tsx` — pure presentational; props = `{hops, messages, onSelectHop}`.
-  - `src/lib/missions.functions.ts` — only if we discover a missing field during build (e.g. cost/tokens roll-up per run); otherwise untouched.
-  - Docs: `docs/feature-backlog.md`, `plan.md`, `architecture/orchestration.md`.
-- **Tokens only** from `src/styles.css` (status colors, edge stroke). No hex literals.
-- **A11y**: nodes are real buttons, edges have aria-labels, keyboard-focusable.
+- One small migration: register the new tool + seed/backfill for existing users (same shape as previous `seed_default_agent_tools` migrations). No new tables.
+- `github.issue.create` implementation: thin `fetch` to `api.github.com/repos/{GITHUB_REPO}/issues` with the PAT; wrap the call in `withIdempotency('tool', idempotency_key, ...)`. Returns the GitHub response slice the loop needs.
+- Wire into `TOOL_REGISTRY` next to existing write tools; mode `confirm`; category `write`; allow-list metadata so the registry can render its risk badge.
+- Files to touch (estimate):
+  - `src/lib/ai/tools/registry.server.ts` — new tool entry + handler (or a sibling `github.server.ts` helper if it grows).
+  - `src/routes/_authenticated.prds.$id.tsx` — surface `github_issue_url` link.
+  - New migration `supabase/migrations/<ts>_seed_github_issue_create.sql`.
+  - Docs: `feature-backlog.md`, `plan.md`, `architecture/integrations.md`, `architecture/orchestration.md`.
 
 ### Success criteria (verify before declaring done)
-1. Dispatching a single-agent mission shows **1 node, 0 edges**, status flips live.
-2. Dispatching a multi-hop mission (Orchestrator handing off to Discovery → Strategist) shows **≥3 nodes connected by labelled edges**, updating within 2s as each hop starts/finishes.
-3. Clicking a node scrolls to that hop's card and the **Trace** link works.
-4. Two concurrent missions in the same workspace render independently — no edges or nodes leak between them.
-5. Status board + `plan.md` §4 + E6 entry all updated in the same commit.
+1. From `/agents`, dispatching the Orchestrator with "Start as mission" against a real signal produces a 3-hop mission (Discovery → Strategist → Planner) visible on `/missions/$id` Mission Graph.
+2. Approving the `github.issue.create` gate creates a **real GitHub issue** on the configured repo.
+3. The resulting PRD row has `github_issue_url` populated; `/prds/$id` shows the link.
+4. Re-running the exact same mission step (or restarting the worker mid-call) does **not** create a duplicate issue (idempotency proven).
+5. The mission's Trace shows `research.synthesize → prd.draft → github.issue.create → prd.link_issue` with costs/latencies; the Mission Graph shows 3 nodes connected by 2 labelled handoff edges.
+6. Status board + `plan.md` §4 + N1/F1–F3 entries all updated in the same commit.
 
-### After Bundle 5
-Pick up **Bundle 6**: Discover→Define→Plan lifecycle slice on real data + `N1 github.issue.create` (we already have `GITHUB_TOKEN` + `GITHUB_REPO` secrets staged from the FND-RUNTIME work).
+### After Bundle 6
+Pick up **Bundle 9 (Build + Test)** — `github.pr.open` against this repo + CI read into the Mission Graph. Then Bundle 10 (Ship/deploy webhook), 11 (Launch/changelog + one outbound channel), 12 (Support→Learn + Analyst re-score) — the lifecycle loop closes at Bundle 12.
 
-Want me to proceed with this, or would you rather jump straight to Bundle 6 (GitHub-issue creation closes a more visible loop end-to-end)?
+---
+
+Want me to proceed with Bundle 6 as scoped, or would you rather (a) first do the forced-restart verification on its own to harden FND-RUNTIME 0.9 before any new write tool, or (b) jump straight to Bundle 9 PR-opening (more visible end product, but skips the simpler issue-write proof point)?
