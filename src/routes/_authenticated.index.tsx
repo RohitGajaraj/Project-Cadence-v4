@@ -17,6 +17,7 @@ import { createMeeting } from "@/lib/meetings.functions";
 import { listCopilotMessages, sendCopilotMessage, generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { listDecisions, createDecision, updateDecision } from "@/lib/decisions.functions";
+import { getGreeting } from "@/lib/greeting.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -37,6 +38,7 @@ function Dashboard() {
   const fetchAgents = useServerFn(listAgents);
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchDecisions = useServerFn(listDecisions);
+  const fetchGreeting = useServerFn(getGreeting);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -56,6 +58,18 @@ function Dashboard() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const decisions = useQuery({ queryKey: ["decisions"], queryFn: () => fetchDecisions() });
+
+  // Localized + time-of-day greeting. Passes the user's local hour so the
+  // bucket matches their wall clock, not the server's UTC. Country comes
+  // from the request headers (Cloudflare edge).
+  const [localHour, setLocalHour] = useState<number | null>(null);
+  useEffect(() => { setLocalHour(new Date().getHours()); }, []);
+  const greeting = useQuery({
+    queryKey: ["greeting", localHour],
+    queryFn: () => fetchGreeting({ data: { localHour: localHour ?? new Date().getHours() } }),
+    enabled: localHour !== null,
+    staleTime: 30 * 60 * 1000,
+  });
 
   const invalidate = (k: string) => qc.invalidateQueries({ queryKey: [k] });
 
@@ -115,6 +129,7 @@ function Dashboard() {
   }, []);
   const focusScore = d?.focusScore ?? 0;
   const profileName = d?.profile?.display_name?.split(" ")[0] ?? "there";
+  const greetText = greeting.data?.greeting ?? "Hello";
   const activeAgents = (runs.data?.runs ?? []).filter((r) => r.status === "running").length;
 
   return (
@@ -144,15 +159,18 @@ function Dashboard() {
       </header>
 
       <div className="px-6 lg:px-10 py-8 max-w-[1500px] mx-auto">
-        {/* HERO — editorial deep-green band */}
-        <section className="band-deep-green rounded-lg p-8 md:p-12 mb-6">
-          <div className="grid md:grid-cols-[1fr,auto] gap-8 items-end">
+        {/* HERO — refined editorial ink band with warm radial accent */}
+        <section className="hero-editorial relative overflow-hidden rounded-2xl p-8 md:p-12 mb-6">
+          <div className="relative z-10 grid md:grid-cols-[1fr,auto] gap-8 items-end">
             <div className="max-w-3xl">
               <div className="mono-label text-[color:var(--canvas)]/70 flex items-center gap-2">
                 <Sparkles className="h-3 w-3" /> Workspace · Today
+                {greeting.data?.country && (
+                  <span className="ml-1 opacity-70">· {greeting.data.country}</span>
+                )}
               </div>
               <h1 className="mt-5 font-display text-4xl md:text-6xl leading-[1.02] tracking-tight text-balance text-[color:var(--canvas)]">
-                Good morning, <em className="not-italic">{profileName}</em>.
+                {greetText}, <em className="italic font-normal text-[color:var(--coral-soft)]">{profileName}</em>.
               </h1>
               <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
                 Your AI team is ready. Hit <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient the day.
