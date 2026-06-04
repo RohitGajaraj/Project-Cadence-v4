@@ -143,7 +143,8 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // Resolve PRD context if provided.
-    let prd: { id: string; title: string; body_md: string | null; github_issue_url: string | null } | null = null;
+    type PrdCtx = { id: string; title: string; body_md: string | null; github_issue_url: string | null };
+    let prd: PrdCtx | null = null;
     if (data.prdId) {
       const { data: row, error } = await supabase
         .from("prds")
@@ -151,7 +152,7 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
         .eq("id", data.prdId)
         .single();
       if (error) throw new Error(`PRD lookup failed: ${error.message}`);
-      prd = row as typeof prd;
+      prd = row as unknown as PrdCtx;
     }
 
     // Resolve issue number.
