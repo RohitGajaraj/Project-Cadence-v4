@@ -3,7 +3,7 @@ import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
-  Sun, Moon,
+  Sun, Moon, Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { useTheme } from "@/hooks/use-theme";
+import { useTheme, type Theme } from "@/hooks/use-theme";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspacePauseState } from "@/lib/governance.functions";
@@ -170,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     enabled: true,
   });
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -327,21 +327,32 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition">
             <LogOut className="h-3 w-3" /> Sign out
           </button>
-          <button
-            onClick={toggleTheme}
-            type="button"
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition"
-          >
-            <span className="mono-label" style={{ fontSize: "9px" }}>
-              {theme === "dark" ? "Nightshift" : "Editorial"}
-            </span>
-            {theme === "dark" ? (
-              <Sun className="h-3.5 w-3.5" strokeWidth={1.75} />
-            ) : (
-              <Moon className="h-3.5 w-3.5" strokeWidth={1.75} />
-            )}
-          </button>
+          <div className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30">
+            {([
+              { id: "dark",   label: "Nightshift", Icon: Moon },
+              { id: "aurora", label: "Aurora",     Icon: Sparkles },
+              { id: "light",  label: "Editorial",  Icon: Sun },
+            ] as { id: Theme; label: string; Icon: LucideIcon }[]).map(({ id, label, Icon }) => {
+              const active = theme === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTheme(id)}
+                  title={label}
+                  aria-pressed={active}
+                  className={`flex-1 flex items-center justify-center gap-1 rounded px-2 py-1.5 text-[10px] transition ${
+                    active
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-ink-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3 w-3" strokeWidth={1.75} />
+                  {active && <span className="mono-label" style={{ fontSize: "9px" }}>{label}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </aside>
 
