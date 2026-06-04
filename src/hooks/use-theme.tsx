@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 export type Theme = "dark" | "light" | "aurora";
 
 const STORAGE_KEY = "cadence.theme";
-const DEFAULT_THEME: Theme = "dark";
+const DEFAULT_THEME: Theme = "light";
 
 type ThemeContextValue = {
   theme: Theme;
