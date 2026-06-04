@@ -237,6 +237,7 @@ function AgentsPage() {
           </section>
         </div>
       </div>
+      </TooltipProvider>
     </AppShell>
   );
 }
