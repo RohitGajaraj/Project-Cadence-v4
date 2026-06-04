@@ -13,6 +13,7 @@ import { callModel, GovernanceHaltError } from "./runtime.server";
 import { TOOL_REGISTRY, describeToolsForPrompt, type ToolCtx } from "./tools/registry.server";
 import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
+import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 
 const MAX_STEPS = 6;
 const MAX_RUNNING_PER_WORKSPACE = 5;
@@ -127,8 +128,24 @@ export async function runAgentLoop(
 
   const memories = await recallMemory(supabase, userId, input.agentSlug, input.goal);
 
+  // Workspace Strategic Brief (Bundle 2 / C5) — shared operating context.
+  // Injected into every agent's system prompt so editing the brief visibly
+  // changes downstream agent behavior. Read failures are non-fatal.
+  let briefBlock = "";
+  if (workspaceId) {
+    try {
+      const { data: brief } = await supabase
+        .from("workspace_briefs")
+        .select("id,workspace_id,mission,target_user,current_focus,anti_goals,notes,updated_at")
+        .eq("workspace_id", workspaceId)
+        .maybeSingle();
+      briefBlock = renderBriefBlock(brief as WorkspaceBrief | null);
+    } catch (e) { console.error("brief load failed:", e); }
+  }
+
   const system = [
     agent.system_prompt,
+    briefBlock,
     memories.length ? `\nRelevant memories from past sessions:\n${memories.map((m) => `- ${m}`).join("\n")}` : "",
     `\nYou can call these tools when needed:\n${describeToolsForPrompt(tools as { tool_name: string; mode: string }[])}`,
     `\nRespond with STRICT JSON only — one step at a time — using one of these shapes:
