@@ -22,7 +22,7 @@ Three nested scopes, enforced at every layer:
 
 ## Agent governance (security as a product feature)
 This is the trust layer that makes autonomy sellable to enterprises — and a core part of the moat ([`README.md`](../README.md)):
-- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval. Approvals carry a TTL (`agent_approvals.expires_at`, default 24h) and `escalation_state`; a per-minute cron (`/api/public/hooks/approvals-tick`) auto-expires stale ones so missions cannot stall forever.
+- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval. Approvals carry a TTL (`agent_approvals.expires_at`, default 24h) and `escalation_state`; a per-minute cron (`/api/public/hooks/approvals-tick`) auto-expires stale ones so missions cannot stall forever. Per-agent autonomy arcs (Observing → Proving → Trusted → Ambient) modulate the effective approval mode at the gate — operator-facing explanation in [`../docs/trust-and-autonomy.md`](../docs/trust-and-autonomy.md). Multi-agent handoffs respect the receiver's arc; see [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md).
 - **Guardrails** — input + output: PII, prompt-injection, secret-leak, custom rules; `block | warn | redact`. External/MCP/A2A results are treated as untrusted input and re-guarded. See [`runtime.md`](./runtime.md).
 - **Audit trail** — every AI call (`ai_events`), tool call (`tool_calls`), mission node, guardrail hit, and protocol action (`protocol_audit`) is logged and traceable.
 - **Budgets** — per-user/workspace/product daily + monthly token + USD caps, enforced server-side before spend.
