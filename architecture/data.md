@@ -13,8 +13,10 @@
 ## Scoping
 Every server function that touches user data scopes by **both** `user_id` and `workspace_id`. Workspace is a first-class boundary, not a label.
 
+Every signed-in profile must have at least one workspace membership. `current_user_default_workspace()` is the durable fallback: it creates/returns a default workspace + owner membership when none exists, and new-user setup calls the same helper. UI code may pass an explicit workspace, but server functions that can operate on the user's default workspace must resolve it server-side instead of trusting browser hydration.
+
 ## Core tables (by domain)
-- **Identity/workspace:** `profiles`, `workspaces`, `projects` (vision, problem, target_users, metrics_json, stage, workspace_id).
+- **Identity/workspace:** `profiles`, `workspaces`, `workspace_members`, `workspace_briefs`, `projects` (vision, problem, target_users, metrics_json, stage, workspace_id).
 - **Conversations:** `conversations`, `messages` (tokens, cost_usd, event_id).
 - **Discovery:** `signals`, `themes` (evidence_ids[]), `opportunities` (ICE: impact·confidence·ease).
 - **Reasoning/planning:** `prds`, `prd_versions`, `roadmap_items`, `tasks`, `meetings`, `decisions` (supersedes), `experiments`.

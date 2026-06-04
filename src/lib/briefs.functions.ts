@@ -61,7 +61,7 @@ export const getActiveBrief = createServerFn({ method: "GET" })
   });
 
 const UpsertSchema = z.object({
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string().uuid().nullable().optional(),
   mission: z.string().max(2000).optional().default(""),
   target_user: z.string().max(2000).optional().default(""),
   current_focus: z.string().max(2000).optional().default(""),
@@ -74,11 +74,14 @@ export const upsertBrief = createServerFn({ method: "POST" })
   .inputValidator((d: z.input<typeof UpsertSchema>) => UpsertSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveWorkspaceId(supabase, data.workspaceId ?? null);
+    if (!workspaceId) throw new Error("No workspace is available for this account.");
+
     const { data: row, error } = await supabase
       .from("workspace_briefs")
       .upsert(
         {
-          workspace_id: data.workspaceId,
+          workspace_id: workspaceId,
           mission: data.mission,
           target_user: data.target_user,
           current_focus: data.current_focus,
