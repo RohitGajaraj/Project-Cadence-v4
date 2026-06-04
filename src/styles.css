@@ -1112,3 +1112,61 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum", "ss01";
 }
+
+/* ===========================================================================
+ * Editorial (light) theme — accessible status palette
+ * ---------------------------------------------------------------------------
+ * Many components were authored against the dark themes and use Tailwind's
+ * light hues (text-amber-300, text-emerald-300, text-cyan-300, text-rose-300,
+ * …) for status chips, badges, and inline highlights. Those shades sit at
+ * ~85% lightness — perfectly readable on a dark canvas, but they wash out to
+ * near-invisible yellow / mint / pink on the Editorial white canvas
+ * (well below WCAG AA, ~1.4:1 contrast).
+ *
+ * Rather than rewrite every component, we redefine the relevant Tailwind
+ * color tokens *only* when neither `.dark` nor `.aurora` is active on the
+ * <html> element. This keeps the same class names everywhere; they just
+ * resolve to legible mid-tones on white and to their original light tones
+ * on Nightshift / Aurora.
+ *
+ * Translucent fills like `bg-amber-500/15` already pass contrast on white,
+ * so we only retune the 200/300/400 text shades — not the 500 fills. */
+html:not(.dark):not(.aurora) {
+  /* Amber / Yellow — warnings, queued states */
+  --color-amber-200:   oklch(0.58 0.13 72);
+  --color-amber-300:   oklch(0.54 0.14 70);
+  --color-amber-400:   oklch(0.50 0.14 68);
+  --color-yellow-200:  oklch(0.58 0.13 90);
+  --color-yellow-300:  oklch(0.54 0.14 88);
+  --color-yellow-400:  oklch(0.50 0.14 86);
+
+  /* Emerald / Lime / Teal — success, completed */
+  --color-emerald-200: oklch(0.52 0.13 158);
+  --color-emerald-300: oklch(0.48 0.14 156);
+  --color-emerald-400: oklch(0.46 0.14 154);
+  --color-lime-200:    oklch(0.52 0.14 140);
+  --color-lime-300:    oklch(0.48 0.15 138);
+  --color-lime-400:    oklch(0.46 0.15 136);
+  --color-teal-200:    oklch(0.52 0.10 190);
+  --color-teal-300:    oklch(0.48 0.11 188);
+  --color-teal-400:    oklch(0.46 0.11 186);
+
+  /* Cyan / Sky — in-flight, info */
+  --color-cyan-200:    oklch(0.52 0.11 220);
+  --color-cyan-300:    oklch(0.48 0.12 222);
+  --color-cyan-400:    oklch(0.46 0.13 224);
+  --color-sky-200:     oklch(0.52 0.13 240);
+  --color-sky-300:     oklch(0.48 0.14 242);
+  --color-sky-400:     oklch(0.46 0.15 244);
+
+  /* Rose / Pink / Fuchsia — errors, halted, blocked */
+  --color-rose-200:    oklch(0.55 0.17 22);
+  --color-rose-300:    oklch(0.50 0.18 20);
+  --color-rose-400:    oklch(0.48 0.20 20);
+  --color-pink-200:    oklch(0.55 0.16 0);
+  --color-pink-300:    oklch(0.50 0.18 0);
+  --color-pink-400:    oklch(0.48 0.20 0);
+  --color-fuchsia-200: oklch(0.52 0.20 330);
+  --color-fuchsia-300: oklch(0.48 0.22 328);
+  --color-fuchsia-400: oklch(0.46 0.23 326);
+}
