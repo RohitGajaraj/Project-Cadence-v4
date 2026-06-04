@@ -554,6 +554,7 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     .map((t) => [t.name, t]),
 );
 
+
 /** Tool descriptors safe for inclusion in a system prompt (no schemas). */
 export function describeToolsForPrompt(enabled: { tool_name: string; mode: string }[]): string {
   return enabled
