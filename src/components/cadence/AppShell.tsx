@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, Code2, BookOpen, Inbox, Activity,
+  Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair,
   type LucideIcon,
@@ -45,7 +45,6 @@ const groups: NavGroup[] = [
       { to: "/opportunities", label: "Opportunities", icon: Target },
       { to: "/meetings", label: "Meetings", icon: Calendar },
       { to: "/calendar", label: "Calendar", icon: Calendar },
-      { to: "/studio", label: "Prototype Sandbox", icon: Code2 },
     ],
   },
   {

@@ -1,6 +1,6 @@
 # Active task — Bundle 9 Build lane
 
-_Last updated: 2026-06-04 · Lovable. Slice 1 (Builder agent + scoped PR pipeline) is **done**. Slices 2 and 3 are still in flight; next session, pick the lowest-numbered unchecked box and resume._
+_Last updated: 2026-06-04 · Lovable. Slice 1 done + discoverability follow-ups (one-click "Create GitHub issue" on PRD detail; Prototype Sandbox removed). Slices 2 and 3 still in flight; next session, pick the lowest-numbered unchecked box and resume._
 
 ## Slice 1 — Builder agent + scoped PR — DONE ✓
 
@@ -12,6 +12,8 @@ _Last updated: 2026-06-04 · Lovable. Slice 1 (Builder agent + scoped PR pipelin
 - [x] New `/build` route — 5-column Kanban, 2s refresh
 - [x] `/prds/$id` **Send to Builder** chip (dispatches Builder mission via `runAgent({ asMission: true })`)
 - [x] Docs closed loop: status board, plan §4, architecture/orchestration.md
+- [x] Discoverability: PRD detail page now shows a **Create GitHub issue → unlock Builder** button when `github_issue_url` is null (server fn `createGithubIssueForPrd` in `discovery.functions.ts`). Eliminates "I can't find a PRD with a linked issue" dead-end.
+- [x] Removed Prototype Sandbox (`/studio`, `studio.functions.ts`, `studio-chat.ts`, nav + palette entries). Kept stack lean — Build Console is the only build surface.
 - [ ] Operator end-to-end smoke (you, not the agent): open a PRD with a linked issue → Send to Builder → approve the `github.pr.open` gate → confirm a real PR opens on `RohitGajaraj/Test-Project-Cadence` from a `builder/issue-…` branch, one file changed, body says `Closes #N`. (Cannot be done from the sandbox — needs your approval click.)
 
 ## Slice 2 — CI read + failure loop — TODO

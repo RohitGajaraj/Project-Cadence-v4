@@ -7,7 +7,7 @@ import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github, Hammer } from "lu
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
-import { getPrd, savePrd, prdAssist } from "@/lib/discovery.functions";
+import { getPrd, savePrd, prdAssist, createGithubIssueForPrd } from "@/lib/discovery.functions";
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { runAgent } from "@/lib/agent_loop.functions";
@@ -26,6 +26,7 @@ function PrdEditor() {
   const mSave = useServerFn(savePrd);
   const mAssist = useServerFn(prdAssist);
   const fRunAgent = useServerFn(runAgent);
+  const mCreateIssue = useServerFn(createGithubIssueForPrd);
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prdQ = useQuery({ queryKey: ["prd", id], queryFn: () => fGet({ data: { id } }) });
@@ -71,6 +72,15 @@ function PrdEditor() {
       const missionId = (r as { mission_id?: string | null }).mission_id;
       if (missionId) navigate({ to: "/missions/$missionId", params: { missionId } });
       else navigate({ to: "/build" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createIssue = useMutation({
+    mutationFn: () => mCreateIssue({ data: { id } }),
+    onSuccess: (r) => {
+      toast.success(r.cached ? "GitHub issue already linked" : `GitHub issue #${r.number} created`);
+      qc.invalidateQueries({ queryKey: ["prd", id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -151,7 +161,20 @@ function PrdEditor() {
               {sendToBuilder.isPending ? "Dispatching…" : "Send to Builder"}
             </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="mb-3 ml-3 inline-flex items-center gap-2 rounded-md border hairline bg-background/40 px-2 py-1 text-xs">
+            <Github className="h-3 w-3 text-muted-foreground" />
+            <span className="text-muted-foreground">No GitHub issue linked yet.</span>
+            <button
+              onClick={() => createIssue.mutate()}
+              disabled={createIssue.isPending}
+              className="inline-flex items-center gap-1 rounded-sm bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 px-1.5 py-0.5 disabled:opacity-50"
+              title="Create a GitHub issue from this PRD on the connected repo, then unlock Send to Builder."
+            >
+              {createIssue.isPending ? "Creating…" : "Create GitHub issue → unlock Builder"}
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 mb-6">
           <input

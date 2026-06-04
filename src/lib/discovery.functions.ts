@@ -306,6 +306,59 @@ export const deletePrd = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Create a GitHub issue from a PRD and link it back on the PRD row.
+ * One-click bridge between Build → PRDs and the Build Console: once an issue
+ * exists, the "Send to Builder" button on the PRD detail page lights up.
+ * Idempotent on the PRD: if github_issue_url is already set, returns it.
+ */
+export const createGithubIssueForPrd = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: prd, error: prdErr } = await supabase
+      .from("prds")
+      .select("id,title,body_md,github_issue_url")
+      .eq("id", data.id)
+      .single();
+    if (prdErr) throw new Error(prdErr.message);
+    if (prd.github_issue_url) {
+      return { url: prd.github_issue_url, cached: true };
+    }
+
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo) throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+
+    const body = `${(prd.body_md ?? "").slice(0, 55_000)}\n\n---\n_Opened from Cadence PRD ${prd.id}_`;
+    const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "cadence-agent",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: prd.title.slice(0, 250), body, labels: ["cadence", "prd"] }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`GitHub ${res.status}: ${txt.slice(0, 400)}`);
+    }
+    const json = (await res.json()) as { number: number; html_url: string };
+
+    const { error: upErr } = await supabase
+      .from("prds")
+      .update({ github_issue_url: json.html_url, updated_at: new Date().toISOString() })
+      .eq("id", prd.id);
+    if (upErr) throw new Error(upErr.message);
+
+    return { url: json.html_url, number: json.number, cached: false };
+  });
+
 /** AI: generate a PRD from an opportunity (or from a freeform brief). */
 export const generatePrd = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

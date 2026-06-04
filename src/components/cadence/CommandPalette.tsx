@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
 import {
-  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar, Code2,
+  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar,
 } from "lucide-react";
 
 export function CommandPalette() {
@@ -60,7 +60,6 @@ export function CommandPalette() {
                 <Item icon={FileText} label="PRDs" hint="G P" onSelect={() => go("/prds")} />
                 <Item icon={Map} label="Roadmap · Now/Next/Later" hint="G R" onSelect={() => go("/roadmap")} />
                 <Item icon={Calendar} label="Meetings · transcripts & decisions" hint="G M" onSelect={() => go("/meetings")} />
-                <Item icon={Code2} label="Code Studio · prototypes" hint="G U" onSelect={() => go("/studio")} />
                 <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
                 <Item icon={Settings} label="Settings & profile" hint="G S" onSelect={() => go("/settings")} />
               </Command.Group>
@@ -111,7 +110,7 @@ export function GotoShortcuts() {
         if (timer) clearTimeout(timer);
         const map: Record<string, string> = {
           d: "/", c: "/chat", a: "/agents", t: "/tasks", s: "/settings",
-          i: "/discovery", o: "/opportunities", p: "/prds", r: "/roadmap", m: "/meetings", u: "/studio",
+          i: "/discovery", o: "/opportunities", p: "/prds", r: "/roadmap", m: "/meetings",
         };
         const to = map[e.key.toLowerCase()];
         if (to) {
