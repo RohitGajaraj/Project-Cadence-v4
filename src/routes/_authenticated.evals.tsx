@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Play, Plus, Trash2, ChevronRight, ChevronDown, FlaskConical, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
+import { AppShell } from "@/components/cadence/AppShell";
 
 export const Route = createFileRoute("/_authenticated/evals")({
   component: EvalsPage,
@@ -44,7 +45,8 @@ function EvalsPage() {
   const [showCreate, setShowCreate] = useState(false);
 
   return (
-    <div className="flex h-full">
+    <AppShell>
+    <div className="flex h-screen">
       <aside className="w-80 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
@@ -99,6 +101,7 @@ function EvalsPage() {
       </main>
       <CreateSuiteDialog open={showCreate} onOpenChange={setShowCreate} onCreated={(id) => setSelectedId(id)} />
     </div>
+    </AppShell>
   );
 }
 
