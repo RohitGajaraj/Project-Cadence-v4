@@ -49,7 +49,7 @@ function TasksPage() {
   const [title, setTitle] = useState("");
   const [deep, setDeep] = useState(false);
   const [newKind, setNewKind] = useState<"human" | "agent">("human");
-  const [filter, setFilter] = useState<"all" | "human" | "agent">("all");
+  const [agentOnly, setAgentOnly] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<"todo" | "doing" | "done" | null>(null);
   const [linearOpen, setLinearOpen] = useState(false);
@@ -75,7 +75,7 @@ function TasksPage() {
   });
 
   const allRaw = tasks.data?.tasks ?? [];
-  const all = allRaw.filter((t) => filter === "all" ? true : (t.assignee_kind ?? "human") === filter);
+  const all = allRaw.filter((t) => (agentOnly ? (t.assignee_kind ?? "human") === "agent" : true));
   const groups = {
     todo: all.filter((t) => t.status === "todo"),
     doing: all.filter((t) => t.status === "doing"),
@@ -84,31 +84,29 @@ function TasksPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="px-6 lg:px-10 py-8 max-w-[1300px] mx-auto">
-        <header className="mb-8">
-          <div className="flex items-start justify-between gap-4">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-[1300px] mx-auto">
+        <header className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Workstream</div>
-              <h1 className="mt-3 font-display text-4xl tracking-tight">All <span className="neural-text">tasks</span></h1>
+              <h1 className="mt-3 font-display text-3xl sm:text-4xl tracking-tight">All <span className="neural-text">tasks</span></h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="inline-flex items-center rounded-xl border hairline p-0.5 text-xs">
-                {(["all", "human", "agent"] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-2.5 py-1 rounded-lg capitalize transition-colors ${filter === f ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-              onClick={() => setLinearOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border hairline px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-              title="Import from Linear"
-            >
-              <span className="text-xs font-semibold tracking-wide">L</span> Import from Linear
+                onClick={() => setAgentOnly((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-xl border hairline px-3 py-2 text-xs transition-colors ${agentOnly ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"}`}
+                title="Show only agent-assigned tasks"
+              >
+                <Bot className="h-3.5 w-3.5" /> Agent only
+              </button>
+              <button
+                onClick={() => setLinearOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border hairline px-3 py-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                title="Import from Linear"
+              >
+                <span className="text-xs font-semibold tracking-wide">L</span>
+                <span className="hidden sm:inline">Import from Linear</span>
+                <span className="sm:hidden">Linear</span>
               </button>
             </div>
           </div>
@@ -116,27 +114,29 @@ function TasksPage() {
 
         <form
           onSubmit={(e) => { e.preventDefault(); if (!title.trim()) return; add.mutate({ title: title.trim(), is_deep_work: deep, assignee_kind: newKind }); setTitle(""); setDeep(false); setNewKind("human"); }}
-          className="bento p-4 flex items-center gap-2 mb-6"
+          className="bento p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-2 mb-6"
         >
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Capture a new task…"
-            className="flex-1 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
-          <div className="inline-flex items-center rounded-lg border hairline p-0.5 text-xs">
-            <button type="button" onClick={() => setNewKind("human")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "human" ? "bg-foreground text-background" : "text-muted-foreground"}`}>
-              <User className="h-3 w-3" /> Human
-            </button>
-            <button type="button" onClick={() => setNewKind("agent")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "agent" ? "bg-foreground text-background" : "text-muted-foreground"}`}>
-              <Bot className="h-3 w-3" /> Agent
-            </button>
+            className="flex-1 min-w-0 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center rounded-lg border hairline p-0.5 text-xs">
+              <button type="button" onClick={() => setNewKind("human")}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "human" ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+                <User className="h-3 w-3" /> Human
+              </button>
+              <button type="button" onClick={() => setNewKind("agent")}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "agent" ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+                <Bot className="h-3 w-3" /> Agent
+              </button>
+            </div>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep work
+            </label>
+            <button className="rounded-xl bg-foreground text-background px-3 py-2 text-sm inline-flex items-center gap-1.5 ml-auto sm:ml-0"><Plus className="h-3.5 w-3.5" /> Add</button>
           </div>
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep work
-          </label>
-          <button className="rounded-xl bg-foreground text-background px-3 py-2 text-sm inline-flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Add</button>
         </form>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
           {(["todo", "doing", "done"] as const).map((col) => (
             <section
               key={col}
@@ -152,7 +152,7 @@ function TasksPage() {
                 if (!t || t.status === col) return;
                 move.mutate({ id, status: col });
               }}
-              className={`bento p-4 transition-colors ${dragOverCol === col ? "ring-2 ring-ring/60 bg-secondary/30" : ""}`}
+              className={`bento p-3 sm:p-4 transition-colors ${dragOverCol === col ? "ring-2 ring-ring/60 bg-secondary/30" : ""}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display text-sm capitalize">{col}</h3>
@@ -167,26 +167,22 @@ function TasksPage() {
                     onDragEnd={() => { setDragId(null); setDragOverCol(null); }}
                     className={`rounded-xl border hairline px-3 py-2 flex items-center gap-2 cursor-grab active:cursor-grabbing ${dragId === t.id ? "opacity-50" : ""}`}
                   >
-                    <input type="checkbox" checked={t.status === "done"} onChange={(e) => toggle.mutate({ id: t.id, status: e.target.checked ? "done" : "todo" })} className="h-4 w-4" />
-                    <span className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}>{t.title}</span>
-                    {(t.assignee_kind ?? "human") === "agent" ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider rounded-full bg-secondary text-foreground px-2 py-0.5">
+                    <input type="checkbox" checked={t.status === "done"} onChange={(e) => toggle.mutate({ id: t.id, status: e.target.checked ? "done" : "todo" })} className="h-4 w-4 shrink-0" />
+                    <span className={`flex-1 min-w-0 text-sm break-words ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}>{t.title}</span>
+                    {(t.assignee_kind ?? "human") === "agent" && (
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider rounded-full bg-secondary text-foreground px-2 py-0.5 shrink-0">
                         <Bot className="h-3 w-3" /> agent
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider rounded-full bg-secondary/60 text-muted-foreground px-2 py-0.5">
-                        <User className="h-3 w-3" /> human
-                      </span>
                     )}
-                    {t.is_deep_work && <span className="text-[10px] uppercase tracking-wider rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5">deep</span>}
+                    {t.is_deep_work && <span className="text-[10px] uppercase tracking-wider rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5 shrink-0">deep</span>}
                     <button
                       onClick={() => setLineage({ id: t.id, title: t.title })}
                       title="Lineage"
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
                     >
                       <GitBranch className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => remove.mutate(t.id)} className="text-muted-foreground hover:text-destructive text-xs">×</button>
+                    <button onClick={() => remove.mutate(t.id)} className="text-muted-foreground hover:text-destructive text-xs shrink-0">×</button>
                   </li>
                 ))}
                 {groups[col].length === 0 && <li className="text-xs text-muted-foreground py-2">Nothing here.</li>}
