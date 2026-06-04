@@ -381,7 +381,7 @@ export async function resumeAgentLoop(
   runId: string,
 ): Promise<LoopResult> {
   const { data: run } = await supabase.from("agent_runs")
-    .select("id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_spend_cap_usd,mission_token_cap")
+    .select("id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,mission_spend_cap_usd,mission_token_cap")
     .eq("id", runId).maybeSingle();
   if (!run) throw new Error(`run not found: ${runId}`);
 
@@ -416,8 +416,31 @@ export async function resumeAgentLoop(
     conv = st.conv; steps = st.steps; approvalsQueued = st.approvalsQueued ?? 0;
   } else {
     const memories = await recallMemory(supabase, run.user_id, agent.slug, run.input);
+    // Workspace brief + inbound handoff (Bundle 2 + Bundle 4).
+    let briefBlock = "";
+    if (run.workspace_id) {
+      try {
+        const { data: brief } = await supabase
+          .from("workspace_briefs")
+          .select("id,workspace_id,mission,target_user,current_focus,anti_goals,notes,updated_at")
+          .eq("workspace_id", run.workspace_id)
+          .maybeSingle();
+        briefBlock = renderBriefBlock(brief as WorkspaceBrief | null);
+      } catch (e) { console.error("brief load failed (resume):", e); }
+    }
+    let handoffBlock = "";
+    if (run.mission_id) {
+      try {
+        const inbound = await consumeInboundHandoff(supabase, {
+          mission_id: run.mission_id, to_agent_id: agent.id, run_id: runId,
+        });
+        handoffBlock = renderHandoffBlock(inbound);
+      } catch (e) { console.error("handoff load failed (resume):", e); }
+    }
     const system = [
       agent.system_prompt,
+      briefBlock,
+      handoffBlock,
       memories.length ? `\nRelevant memories from past sessions:\n${memories.map((m) => `- ${m}`).join("\n")}` : "",
       `\nYou can call these tools when needed:\n${describeToolsForPrompt(tools as { tool_name: string; mode: string }[])}`,
       `\nRespond with STRICT JSON only — one step at a time — using one of these shapes:
@@ -430,7 +453,10 @@ export async function resumeAgentLoop(
     steps = [];
   }
 
-  const ctx: ToolCtx = { supabase, userId: run.user_id, agentSlug: agent.slug, agentId: agent.id, traceId };
+  const ctx: ToolCtx = {
+    supabase, userId: run.user_id, agentSlug: agent.slug, agentId: agent.id, traceId,
+    missionId: run.mission_id ?? null, workspaceId: run.workspace_id ?? null,
+  };
   let halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {
     try {
@@ -438,6 +464,9 @@ export async function resumeAgentLoop(
         status: halted ? "halted" : "completed", output: finalMsg, duration_ms: 0,
       }).eq("id", runId);
     } catch (e) { console.error("agent_runs finalize failed:", e); }
+    if (run.mission_id && !halted) {
+      try { await maybeCompleteMission(supabase, run.mission_id); } catch (e) { console.error("mission close failed (resume):", e); }
+    }
     return { trace_id: traceId, agent_slug: agent.slug, steps, final: finalMsg, approvals_queued: approvalsQueued, run_id: runId, halted };
   };
 
