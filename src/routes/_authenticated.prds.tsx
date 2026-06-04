@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { FileText, Sparkles, Trash2, GitBranch, ListTodo, Github, Hammer, Pencil, FileEdit } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FileText, Sparkles, Trash2, GitBranch, ListTodo, Github, Hammer, Pencil, MoreHorizontal, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
@@ -10,6 +10,13 @@ import { listProjects } from "@/lib/projects.functions";
 import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd, savePrd } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
 import { dispatchBuilderMission } from "@/lib/build.functions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import FolderInteraction from "@/components/ui/folder";
 
 export const Route = createFileRoute("/_authenticated/prds")({
@@ -80,7 +87,32 @@ function PrdsPage() {
 
   const [brief, setBrief] = useState("");
   const [lineage, setLineage] = useState<{ id: string; title: string } | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const all = prds.data?.prds ?? [];
+
+  useEffect(() => {
+    if (renamingId) renameInputRef.current?.focus();
+  }, [renamingId]);
+
+  const startRename = (id: string, current: string) => {
+    setRenameValue(current);
+    setRenamingId(id);
+  };
+  const commitRename = (id: string, original: string) => {
+    const next = renameValue.trim().slice(0, 200);
+    setRenamingId(null);
+    if (next && next !== original) rename.mutate({ id, title: next });
+  };
+
+  const fmtDateTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -112,94 +144,110 @@ function PrdsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {all.map((p) => (
-            <div key={p.id} className="bento p-4 group hover:ring-1 hover:ring-ring transition">
+            <div
+              key={p.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => { if (renamingId !== p.id) navigate({ to: "/prds/$id", params: { id: p.id } }); }}
+              onKeyDown={(e) => {
+                if (renamingId === p.id) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate({ to: "/prds/$id", params: { id: p.id } });
+                }
+              }}
+              className="bento p-4 group hover:ring-1 hover:ring-ring transition cursor-pointer text-left"
+            >
               <div className="flex items-start justify-between gap-2">
-                <Link to="/prds/$id" params={{ id: p.id }} className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <FileText className="h-4 w-4 text-violet-300 shrink-0" />
-                  <h3 className="font-display text-sm truncate">{p.title}</h3>
-                </Link>
-                <button
-                  onClick={() => del.mutate(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                  {renamingId === p.id ? (
+                    <input
+                      ref={renameInputRef}
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={() => commitRename(p.id, p.title)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Enter") { e.preventDefault(); commitRename(p.id, p.title); }
+                        if (e.key === "Escape") { e.preventDefault(); setRenamingId(null); }
+                      }}
+                      className="flex-1 min-w-0 bg-transparent font-display text-sm outline-none border-b hairline focus:border-violet-400"
+                    />
+                  ) : (
+                    <h3 className="font-display text-sm truncate">{p.title}</h3>
+                  )}
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="opacity-60 hover:opacity-100 text-muted-foreground hover:text-foreground rounded-md p-1 -mr-1"
+                        aria-label="PRD actions"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onSelect={() => startRename(p.id, p.title)}>
+                        <Pencil className="h-3.5 w-3.5 mr-2" /> Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => promote.mutate(p.id)}
+                        disabled={promote.isPending}
+                      >
+                        <ListTodo className="h-3.5 w-3.5 mr-2" />
+                        {promote.isPending && promote.variables === p.id ? "Generating tasks…" : "Generate tasks"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {p.github_issue_url ? (
+                        <>
+                          <DropdownMenuItem onSelect={() => window.open(p.github_issue_url!, "_blank", "noopener,noreferrer")}>
+                            <Github className="h-3.5 w-3.5 mr-2" /> Open GitHub issue
+                            <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => sendToBuilder.mutate({ id: p.id, title: p.title })}
+                            disabled={sendToBuilder.isPending}
+                            className="text-cyan-300 focus:text-cyan-200"
+                          >
+                            <Hammer className="h-3.5 w-3.5 mr-2" />
+                            {sendToBuilder.isPending && sendToBuilder.variables?.id === p.id ? "Dispatching…" : "Send to Builder"}
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <DropdownMenuItem
+                          onSelect={() => createIssue.mutate(p.id)}
+                          disabled={createIssue.isPending}
+                          className="text-violet-300 focus:text-violet-200"
+                        >
+                          <Github className="h-3.5 w-3.5 mr-2" />
+                          {createIssue.isPending && createIssue.variables === p.id ? "Creating issue…" : "Create GitHub issue"}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => setLineage({ id: p.id, title: p.title })}>
+                        <GitBranch className="h-3.5 w-3.5 mr-2" /> Lineage
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => del.mutate(p.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
                 <span className="rounded-full bg-secondary px-2 py-0.5">{p.status}</span>
-                <span>{new Date(p.updated_at).toLocaleDateString()}</span>
+                <span className="normal-case tracking-normal text-[11px]">Updated {fmtDateTime(p.updated_at)}</span>
                 {p.github_issue_url ? (() => {
                   const m = p.github_issue_url.match(/\/issues\/(\d+)/);
                   return m ? <span className="rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5">#{m[1]}</span> : null;
                 })() : null}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <Link
-                  to="/prds/$id"
-                  params={{ id: p.id }}
-                  className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-foreground text-background hover:opacity-90"
-                  title="Open the full PRD document (edit title, body, actions)"
-                >
-                  <FileEdit className="h-3 w-3" /> Open
-                </Link>
-                <button
-                  onClick={() => {
-                    const next = window.prompt("Rename PRD", p.title);
-                    if (next && next.trim() && next !== p.title) {
-                      rename.mutate({ id: p.id, title: next.trim().slice(0, 200) });
-                    }
-                  }}
-                  className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-                  title="Rename PRD"
-                >
-                  <Pencil className="h-3 w-3" /> Rename
-                </button>
-                <button
-                  onClick={() => promote.mutate(p.id)}
-                  disabled={promote.isPending}
-                  className="rounded-lg neural-gradient text-white px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <ListTodo className="h-3 w-3" />
-                  {promote.isPending && promote.variables === p.id ? "Generating…" : "Generate tasks"}
-                </button>
-                {p.github_issue_url ? (
-                  <>
-                    <a
-                      href={p.github_issue_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-violet-200 hover:bg-violet-500/10"
-                      title={p.github_issue_url}
-                    >
-                      <Github className="h-3 w-3" /> Open issue
-                    </a>
-                    <button
-                      onClick={() => sendToBuilder.mutate({ id: p.id, title: p.title })}
-                      disabled={sendToBuilder.isPending}
-                      className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
-                    >
-                      <Hammer className="h-3 w-3" />
-                      {sendToBuilder.isPending && sendToBuilder.variables?.id === p.id ? "Dispatching…" : "Send to Builder"}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => createIssue.mutate(p.id)}
-                    disabled={createIssue.isPending}
-                    className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 disabled:opacity-50"
-                    title="Create a GitHub issue from this PRD and unlock Send to Builder"
-                  >
-                    <Github className="h-3 w-3" />
-                    {createIssue.isPending && createIssue.variables === p.id ? "Creating…" : "Create GitHub issue"}
-                  </button>
-                )}
-                <button
-                  onClick={() => setLineage({ id: p.id, title: p.title })}
-                  className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-                >
-                  <GitBranch className="h-3 w-3" /> Lineage
-                </button>
               </div>
             </div>
           ))}
