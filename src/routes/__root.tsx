@@ -116,7 +116,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         {/* Pre-hydration theme bootstrap — avoid FOUC. Default = dark. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('cadence.theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('cadence.theme');var d=document.documentElement;if(t==='light'){/* no class */}else if(t==='aurora'){d.classList.add('dark');d.classList.add('aurora');}else{d.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`,
           }}
         />
         <HeadContent />
