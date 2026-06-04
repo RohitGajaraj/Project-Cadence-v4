@@ -103,54 +103,70 @@ function AgentsPage() {
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8">
           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-            <Bot className="h-3.5 w-3.5 text-violet-300" /> AI agents
+            <Bot className="h-3.5 w-3.5 text-violet-400" /> AI agents
           </div>
           <h1 className="mt-3 font-display text-4xl tracking-tight">Your <span className="neural-text">AI team</span></h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-xl">Specialized agents that ground in your workspace and execute work alongside you. Brief any agent — review the output, approve, and ship.</p>
         </header>
 
-        <div className="grid grid-cols-12 gap-5">
-          <aside className="col-span-12 lg:col-span-4 space-y-2">
-            {(agents.data?.agents ?? []).map((a) => (
-              <button
-                key={a.id}
-                onClick={() => setSelectedId(a.id)}
-                className={`w-full text-left bento p-4 transition ${selected?.id === a.id ? "ring-1 ring-white/15" : "hover:ring-1 hover:ring-white/10"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500/40 to-cyan-500/30 grid place-items-center">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-display text-sm flex items-center gap-2">
-                      <span className="truncate">{a.name}</span>
-                      <TrustChip trust={trustByAgent.get(a.id)} />
+        <div className="grid grid-cols-12 gap-6 items-start">
+          {/* Roster — compact list, no wrapping chips, anchored active row */}
+          <aside className="col-span-12 lg:col-span-4 bento p-2">
+            <div className="px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Active roster · {(agents.data?.agents ?? []).length}
+            </div>
+            <div className="max-h-[calc(100vh-260px)] overflow-y-auto pr-1">
+              {(agents.data?.agents ?? []).map((a) => {
+                const isActive = selected?.id === a.id;
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => setSelectedId(a.id)}
+                    className={`relative w-full text-left rounded-lg px-3 py-2.5 flex items-center gap-3 transition ${
+                      isActive
+                        ? "bg-secondary/60 ring-1 ring-border"
+                        : "hover:bg-secondary/30"
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-foreground/70" />
+                    )}
+                    <div className="h-9 w-9 shrink-0 rounded-lg bg-gradient-to-br from-violet-500/30 to-cyan-500/20 grid place-items-center">
+                      <Bot className="h-4 w-4 text-foreground/80" />
                     </div>
-                    <div className="text-[11px] text-muted-foreground truncate">{a.role}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-sm truncate flex-1">{a.name}</span>
+                        <TrustChip trust={trustByAgent.get(a.id)} compact />
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate mt-0.5">{a.role}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </aside>
 
           <section className="col-span-12 lg:col-span-8 space-y-5">
             {selected && (
               <>
-                <div className="bento p-6 relative overflow-hidden">
-                  <div className="absolute inset-0 neural-gradient opacity-20" />
-                  <div className="relative">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{selected.role}</div>
-                    <div className="mt-1 flex items-center gap-3 flex-wrap">
-                      <h2 className="font-display text-2xl">{selected.name}</h2>
-                      <TrustChip trust={trustByAgent.get(selected.id)} />
-                    </div>
-                    <p className="mt-3 text-sm text-muted-foreground max-w-2xl">{selected.system_prompt}</p>
-                    <AutonomyDial
-                      trust={trustByAgent.get(selected.id)}
-                      onChange={(arc) => arcMutation.mutate({ agentId: selected.id, arc })}
-                      pending={arcMutation.isPending}
-                    />
+                {/* Detail header — editorial, no nested card */}
+                <div className="px-1">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{selected.role}</div>
+                  <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+                    <h2 className="font-display text-3xl tracking-tight">{selected.name}</h2>
+                    <TrustChip trust={trustByAgent.get(selected.id)} />
                   </div>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">{selected.system_prompt}</p>
+                </div>
+
+                {/* Autonomy Dial — own card */}
+                <div className="bento p-5">
+                  <AutonomyDial
+                    trust={trustByAgent.get(selected.id)}
+                    onChange={(arc) => arcMutation.mutate({ agentId: selected.id, arc })}
+                    pending={arcMutation.isPending}
+                  />
                 </div>
 
                 <form
@@ -168,8 +184,10 @@ function AgentsPage() {
                   }}
                   className="bento p-4 flex flex-col gap-3"
                 >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-violet-300" /> Brief {selected.name}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <Sparkles className="h-3 w-3 text-violet-400" /> Brief <span className="text-foreground">{selected.name}</span>
+                    </span>
                     <span className="mx-1 h-3 w-px bg-border/60" />
                     <select
                       value={model}
@@ -306,13 +324,13 @@ function scoreTone(score: number): string {
   return "bg-muted text-muted-foreground border-border";
 }
 
-function TrustChip({ trust }: { trust?: AgentTrust }) {
+function TrustChip({ trust, compact = false }: { trust?: AgentTrust; compact?: boolean }) {
   if (!trust) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-help">
-            Trust —
+          <span className="shrink-0 inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-help">
+            {compact ? "—" : "Trust —"}
           </span>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs text-left">
@@ -327,9 +345,9 @@ function TrustChip({ trust }: { trust?: AgentTrust }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] cursor-help ${scoreTone(trust.score)}`}
+          className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] cursor-help whitespace-nowrap ${scoreTone(trust.score)}`}
         >
-          Trust {trust.score} · {label}
+          {compact ? `T${trust.score}` : `Trust ${trust.score} · ${label}`}
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm text-left space-y-1.5 p-3">
@@ -363,9 +381,9 @@ function AutonomyDial({
   const current: Arc = trust?.arc ?? "observing";
   const suggested: Arc | undefined = trust?.suggested_arc;
   return (
-    <div className="mt-4 rounded-xl border hairline bg-background/40 p-3">
+    <div>
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-        <Gauge className="h-3 w-3 text-violet-300" />
+        <Gauge className="h-3 w-3 text-violet-400" />
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="cursor-help">Autonomy dial</span>
