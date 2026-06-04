@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, Shield, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowLeft, Shield, AlertTriangle, CheckCircle2, Loader2, FileText } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { getTrace } from "@/lib/traces.functions";
@@ -30,6 +30,7 @@ type EventRow = {
   fallback: boolean;
   input_preview: string | null;
   output_preview: string | null;
+  system_preview: string | null;
   error_message: string | null;
 };
 type Span = EventRow & { depth: number; offset_ms: number };
@@ -106,6 +107,21 @@ function TraceDetail() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const { spans, totalMs } = buildSpans((trace.data?.events ?? []) as EventRow[]);
+
+  // Auto-select the first (root) span once events load so the detail pane
+  // isn't empty when arriving via the Open link.
+  useEffect(() => {
+    if (!selected && spans.length > 0) setSelected(spans[0].id);
+  }, [spans, selected]);
+
+  // Pull the brief block out of the first agent system prompt, if present.
+  const briefBlock = useMemo(() => {
+    const root = spans.find((s) => s.system_preview);
+    const sys = root?.system_preview ?? "";
+    const m = sys.match(/--- Workspace Strategic Brief[\s\S]*?--- End brief ---/);
+    return m ? m[0] : null;
+  }, [spans]);
+
   const hitsByEvent = new Map<string, { rule_name: string; action: string; side: string; matched: string | null }[]>();
   for (const h of trace.data?.hits ?? []) {
     const arr = hitsByEvent.get(h.event_id) ?? [];
@@ -158,6 +174,14 @@ function TraceDetail() {
           </div>
         ) : (
           <div className="grid grid-cols-12 gap-4">
+            {briefBlock && (
+              <div className="col-span-12 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-indigo-300 mb-2">
+                  <FileText className="h-3 w-3" /> Workspace Strategic Brief — injected into system prompt
+                </div>
+                <pre className="text-[11px] whitespace-pre-wrap font-mono text-muted-foreground max-h-48 overflow-auto">{briefBlock}</pre>
+              </div>
+            )}
             <div className="col-span-12 lg:col-span-8 rounded-xl border border-border bg-background/40 overflow-hidden">
               <div className="border-b border-border px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground flex justify-between">
                 <span>Waterfall</span>
@@ -277,6 +301,12 @@ function TraceDetail() {
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Input</div>
                       <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-40 overflow-auto whitespace-pre-wrap">{sel.input_preview}</pre>
+                    </div>
+                  )}
+                  {sel.system_preview && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">System prompt</div>
+                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-60 overflow-auto whitespace-pre-wrap">{sel.system_preview}</pre>
                     </div>
                   )}
                   {sel.output_preview && (
