@@ -4,6 +4,7 @@ import {
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
   Sun, Moon, Sparkles,
+  Plus, Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -160,6 +161,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     activeProductId,
     setActiveWorkspaceId,
     setActiveProductId,
+    refreshWorkspaces,
+    refreshProducts,
   } = useWorkspace();
 
   const pauseFn = useServerFn(getWorkspacePauseState);
@@ -171,6 +174,65 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
   });
 
   const { theme, setTheme } = useTheme();
+
+  // Real agent count for the Mission mode card
+  const { data: agentCount = 0 } = useQuery({
+    queryKey: ["agents", "count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("agents")
+        .select("id", { count: "exact", head: true })
+        .eq("enabled", true);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
+  async function createWorkspace() {
+    const name = window.prompt("Name your new workspace");
+    if (!name?.trim()) return;
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { toast.error("Not signed in"); return; }
+    const { data, error } = await supabase
+      .from("workspaces")
+      .insert({ name: name.trim(), owner_id: uid })
+      .select()
+      .single();
+    if (error || !data) { toast.error(error?.message ?? "Could not create workspace"); return; }
+    // Owner needs an explicit member row for is_workspace_member() RLS checks.
+    await supabase.from("workspace_members").insert({ workspace_id: data.id, user_id: uid, role: "owner" });
+    toast.success(`Workspace "${data.name}" created`);
+    await refreshWorkspaces();
+    setActiveWorkspaceId(data.id);
+  }
+
+  async function createProduct() {
+    if (!activeWorkspaceId) { toast.error("Select a workspace first"); return; }
+    const name = window.prompt("Name your new product");
+    if (!name?.trim()) return;
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { toast.error("Not signed in"); return; }
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({ name: name.trim(), workspace_id: activeWorkspaceId, user_id: uid })
+      .select()
+      .single();
+    if (error || !data) { toast.error(error?.message ?? "Could not create product"); return; }
+    toast.success(`Product "${data.name}" added`);
+    await refreshProducts();
+    setActiveProductId(data.id);
+  }
+
+  async function deleteProduct(id: string, name: string) {
+    if (!window.confirm(`Delete product "${name}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Product deleted");
+    if (activeProductId === id) setActiveProductId(null);
+    await refreshProducts();
+  }
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -218,6 +280,14 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                     )}
                   </DropdownMenuItem>
                 ))}
+                {workspaces.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-ink-faint italic">No workspaces yet</div>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>New workspace</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -272,21 +342,27 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           </nav>
 
           <div className="mt-6 px-3 flex items-center justify-between mono-label">
-            <span>Products</span>
-            <Compass className="h-3 w-3" strokeWidth={1.75} />
+            <span className="flex items-center gap-1.5">
+              <Compass className="h-3 w-3" strokeWidth={1.75} />
+              Products
+            </span>
+            <button
+              type="button"
+              onClick={createProduct}
+              title="Add product"
+              className="text-ink-faint hover:text-foreground transition"
+            >
+              <Plus className="h-3 w-3" strokeWidth={2} />
+            </button>
           </div>
           <div className="mt-2 flex flex-col gap-0.5 pr-1">
             {products.map((p) => {
               const isActive = p.id === activeProductId;
               return (
-                <button
+                <div
                   key={p.id}
-                  type="button"
-                  onClick={() => setActiveProductId(isActive ? null : p.id)}
-                  className={`w-full text-left rounded-md px-3 py-1.5 text-[13px] transition relative ${
-                    isActive
-                      ? "bg-secondary/50 text-foreground font-medium"
-                      : "text-ink-muted hover:text-foreground hover:bg-secondary/30"
+                  className={`group flex items-center rounded-md transition relative ${
+                    isActive ? "bg-secondary/50" : "hover:bg-secondary/30"
                   }`}
                 >
                   {isActive && (
@@ -295,12 +371,34 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                       className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-foreground"
                     />
                   )}
-                  <span className="truncate block">{p.name}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveProductId(isActive ? null : p.id)}
+                    className={`flex-1 text-left px-3 py-1.5 text-[13px] truncate ${
+                      isActive ? "text-foreground font-medium" : "text-ink-muted group-hover:text-foreground"
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); deleteProduct(p.id, p.name); }}
+                    title="Delete product"
+                    className="opacity-0 group-hover:opacity-100 px-2 py-1 text-ink-faint hover:text-destructive transition"
+                  >
+                    <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+                  </button>
+                </div>
               );
             })}
             {products.length === 0 && (
-              <div className="px-3 py-1.5 text-xs text-ink-faint italic">No products yet</div>
+              <button
+                type="button"
+                onClick={createProduct}
+                className="w-full text-left rounded-md px-3 py-1.5 text-xs text-ink-faint italic hover:text-foreground hover:bg-secondary/30 transition"
+              >
+                No products yet — add one
+              </button>
             )}
           </div>
         </div>
@@ -323,11 +421,21 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             </Link>
           )}
           <BudgetBar />
-          <div className="rounded-md border hairline p-3 bg-soft-stone/40">
-            <div className="mono-label">Mission mode</div>
-            <div className="font-display text-base mt-1 leading-none">AI co-pilot</div>
-            <div className="text-[11px] text-ink-muted mt-1">8 agents standing by</div>
-          </div>
+          <Link
+            to="/agents"
+            className="block rounded-md border hairline p-3 bg-soft-stone/40 hover:bg-soft-stone/70 hover:border-foreground/20 transition group"
+          >
+            <div className="flex items-center justify-between mono-label">
+              <span>Mission mode</span>
+              <Bot className="h-3 w-3 text-ink-faint group-hover:text-foreground transition" strokeWidth={1.75} />
+            </div>
+            <div className="font-display text-base mt-1 leading-none">Hire & dispatch agents</div>
+            <div className="text-[11px] text-ink-muted mt-1">
+              {agentCount > 0
+                ? `${agentCount} agent${agentCount === 1 ? "" : "s"} ready · open roster →`
+                : "No agents yet · set one up →"}
+            </div>
+          </Link>
           <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition">
             <LogOut className="h-3 w-3" /> Sign out
           </button>
