@@ -182,7 +182,8 @@ export async function runAgentLoop(
 
   return executeLoop({
     supabase, userId, agent, workspaceId, runId, traceId, model, tools,
-    modeOf, conv, steps, ctx, approvalsQueued, startStep: 0, goal: input.goal, finalize,
+    modeOf, arc: await loadAgentArc(supabase, userId, agent.id),
+    conv, steps, ctx, approvalsQueued, startStep: 0, goal: input.goal, finalize,
   });
 }
 
