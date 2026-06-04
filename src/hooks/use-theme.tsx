@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type Theme = "dark" | "light";
+export type Theme = "dark" | "light" | "aurora";
 
 const STORAGE_KEY = "cadence.theme";
 const DEFAULT_THEME: Theme = "dark";
@@ -16,18 +16,22 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 function applyThemeClass(t: Theme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  if (t === "dark") root.classList.add("dark");
-  else root.classList.remove("dark");
+  // Aurora layers on top of dark — both classes active so dark token
+  // overrides apply plus aurora intensifies them.
+  root.classList.toggle("dark", t === "dark" || t === "aurora");
+  root.classList.toggle("aurora", t === "aurora");
 }
 
 function readStoredTheme(): Theme {
   if (typeof window === "undefined") return DEFAULT_THEME;
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "dark" || v === "light") return v;
+    if (v === "dark" || v === "light" || v === "aurora") return v;
   } catch { /* noop */ }
   return DEFAULT_THEME;
 }
+
+const CYCLE: Theme[] = ["dark", "aurora", "light"];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // SSR-safe: start with default; hydrate from localStorage in an effect.
@@ -47,7 +51,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const toggleTheme = useCallback(() => {
     setThemeState((cur) => {
-      const next: Theme = cur === "dark" ? "light" : "dark";
+      const idx = CYCLE.indexOf(cur);
+      const next: Theme = CYCLE[(idx + 1) % CYCLE.length];
       applyThemeClass(next);
       try { window.localStorage.setItem(STORAGE_KEY, next); } catch { /* noop */ }
       return next;
