@@ -625,6 +625,7 @@ export async function logAiEvent(
     status?: "ok" | "error";
     error_message?: string | null;
     input_preview?: string;
+    system_preview?: string;
     output_preview?: string;
     trace_id?: string | null;
   },
@@ -647,6 +648,7 @@ export async function logAiEvent(
       status: evt.status ?? "ok",
       error_message: evt.error_message ?? null,
       input_preview: (evt.input_preview ?? "").slice(0, 500),
+      system_preview: (evt.system_preview ?? "").slice(0, 4000),
       output_preview: (evt.output_preview ?? "").slice(0, 1000),
       trace_id: evt.trace_id ?? null,
     }).select("id").single();
