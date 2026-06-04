@@ -287,67 +287,156 @@
   .hairline { border-color: var(--color-hairline); }
   .hairline-strong { border-color: var(--hairline-strong); }
   .text-ink-subtle { color: var(--ink-subtle); }
+  .text-ink-faint { color: var(--ink-faint); }
   .surface-1 { background-color: var(--surface-1); }
   .surface-2 { background-color: var(--surface-2); }
   .surface-3 { background-color: var(--surface-3); }
   .shadow-glass { box-shadow: var(--shadow-glass); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+  /* === Cohere editorial utilities === */
+
+  /* Uppercase mono technical label — for section headings, group labels,
+   * metadata, and category markers. Tracking matches Cohere mono-label. */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* Pill CTA — Cohere's signature near-black 32px-radius button. */
+  .btn-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--primary-ink);
+    color: var(--canvas);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 12px 24px;
+    border-radius: 32px;
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+  .btn-pill:hover { background-color: oklch(0 0 0); }
+  .btn-pill-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: transparent;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 30px;
+    border: 1px solid var(--ink);
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+  .btn-pill-outline:hover { background-color: var(--soft-stone); }
+
+  /* Deep-green product band — full-width Cohere feature surface. */
+  .band-deep-green {
+    background-color: var(--deep-green);
+    color: var(--canvas);
+  }
+  .band-dark-navy {
+    background-color: var(--dark-navy);
+    color: var(--canvas);
+  }
+  .band-stone {
+    background-color: var(--soft-stone);
+    color: var(--ink);
+  }
+
+  /* Editorial rule — thin hairline divider for research-table list rows. */
+  .rule-hairline { border-bottom: 1px solid var(--hairline); }
+  .rule-strong { border-bottom: 1px solid var(--hairline-strong); }
+
+  /* Editorial taxonomy chip — coral outline (inactive) / coral fill (active). */
+  .chip-taxonomy {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--coral);
+    color: var(--coral);
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  }
+  .chip-taxonomy[data-active="true"] {
+    background-color: var(--coral);
+    color: var(--canvas);
+  }
+
+  /* Action link — editorial blue with underline-on-hover. */
+  .link-action {
+    color: var(--action-blue);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  /* === Legacy decorative utilities (neutralized for light theme) ===
+   * Kept as no-op-ish soft washes so pages from the old dark theme don't
+   * visually break before Phase 2-4 restyles them per page.            */
   .bento {
-    background: var(--gradient-card);
+    background-color: var(--canvas);
     border: 1px solid var(--hairline);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-glass);
   }
   .glass {
-    background-color: color-mix(in oklab, var(--surface-2) 70%, transparent);
+    background-color: color-mix(in oklab, var(--canvas) 90%, transparent);
     border: 1px solid var(--hairline);
-    backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(120%) blur(12px);
   }
   .text-balance { text-wrap: balance; }
 
-  /* Neural gradient — the signature gradient of the system.
-   * Carbon & Ember signature: molten orange bloom over carbon, with an
-   * amber halo and a faint ice breath for tension. */
+  /* Neutralized — was a saturated dark hero gradient; now a soft
+   * pale-green / pale-blue wash for light editorial surfaces. */
   .neural-gradient {
-    background: radial-gradient(55% 75% at 18% 25%, color-mix(in oklab, var(--violet) 80%, transparent) 0%, transparent 70%),
-                radial-gradient(50% 65% at 82% 20%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 70%),
-                radial-gradient(50% 60% at 62% 95%, color-mix(in oklab, var(--amber) 60%, transparent) 0%, transparent 70%),
-                radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--violet) 35%, transparent) 0%, transparent 70%);
-    filter: blur(0.5px) saturate(1.2);
+    background: radial-gradient(60% 70% at 20% 30%, color-mix(in oklab, var(--pale-green) 100%, transparent) 0%, transparent 70%),
+                radial-gradient(50% 60% at 80% 25%, color-mix(in oklab, var(--pale-blue) 100%, transparent) 0%, transparent 70%),
+                radial-gradient(45% 55% at 60% 90%, color-mix(in oklab, var(--soft-stone) 100%, transparent) 0%, transparent 70%);
   }
   .neural-text {
-    background: linear-gradient(110deg, var(--cyan) 0%, var(--violet) 45%, var(--amber) 100%);
+    background: linear-gradient(110deg, var(--primary-ink) 0%, var(--deep-green) 60%, var(--action-blue) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .ring-glow-violet { box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent), 0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent); }
+  .ring-glow-violet { box-shadow: 0 0 0 1px var(--hairline); }
 
   .indigo-grid {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
+      linear-gradient(to right, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 80%);
   }
 
-  /* Subtle scanline / film grain for craft feel. */
   .grain::after {
-    content: "";
-    position: absolute; inset: 0; pointer-events: none;
-    background-image: radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px);
-    background-size: 3px 3px;
-    mix-blend-mode: overlay;
-    opacity: 0.5;
+    content: ""; position: absolute; inset: 0; pointer-events: none;
   }
 
   /* Aurora animation for hero */
   @keyframes aurora {
     0%   { transform: translate3d(0,0,0) scale(1); }
-    50%  { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+    50%  { transform: translate3d(-2%, 1%, 0) scale(1.03); }
     100% { transform: translate3d(0,0,0) scale(1); }
   }
-  .animate-aurora { animation: aurora 18s ease-in-out infinite; }
+  .animate-aurora { animation: aurora 24s ease-in-out infinite; }
 
   /* Stagger entrance — apply data-stagger-index to children of a list.
    * Uses @starting-style with a tiny translate + opacity for natural feel.
