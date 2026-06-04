@@ -47,6 +47,7 @@ function AgentsPage() {
     mutationFn: (data: { agentSlug: string; goal: string; model?: string }) => mRun({ data }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
+      qc.invalidateQueries({ queryKey: ["agent-trust"] });
       const tid = (res as { trace_id?: string } | undefined)?.trace_id;
       toast.success("Agent finished" + (tid ? " — trace ready" : ""));
     },
