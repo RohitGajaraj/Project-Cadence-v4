@@ -18,6 +18,7 @@
 |---|---|---|
 | [`trust-and-autonomy.md`](./trust-and-autonomy.md) | Agent Trust score (0–100), qualitative bands, the three ingredients in the tooltip, and the four autonomy arcs (Observing → Proving → Trusted → Ambient) at the approval gate. | [`a2a-handoff.md`](./a2a-handoff.md), [`../architecture/security.md`](../architecture/security.md), [`../architecture/orchestration.md`](../architecture/orchestration.md) |
 | [`a2a-handoff.md`](./a2a-handoff.md) | Agent-to-agent handoff contract (Bundle 4 / E1–E5): missions, structured payloads, receiver-arc gating, failure policy. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`../architecture/orchestration.md`](../architecture/orchestration.md) |
+| [`web-access.md`](./web-access.md) | Web I/O tools for agents (`web.search` / `fetch` / `map` / `crawl`) backed by Firecrawl — what they do, default approvals, safety model, setup. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`a2a-handoff.md`](./a2a-handoff.md), [`../architecture/runtime.md`](../architecture/runtime.md), [`../architecture/integrations.md`](../architecture/integrations.md) |
 | [`git-discipline.md`](./git-discipline.md) | Cross-tool commit/push WHY discipline; enforced by hooks. | [`../AGENTS.md`](../AGENTS.md) |
 
 ## Strategy (versioned positioning)

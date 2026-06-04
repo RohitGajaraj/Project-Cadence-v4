@@ -10,6 +10,7 @@ Cadence is **agent-first**: built to be operated by agents over open protocols, 
 - **Notion** — import to prds/opportunities/signals; export PRD → page; DB-row linking.
 - **Linear** — paginated GraphQL pull → `tasks` (`external_ref`, `external_source='linear'`); push via mutation; Sync Inbox resolves conflicts (keep-local / keep-remote / merge); PRD → Linear cycle.
 - **Google Calendar** — read + write (create/edit/delete, optimistic upsert into `calendar_events`); Scheduler agent proposes slots within working hours.
+- **Firecrawl (web access)** — powers `web.search` / `web.fetch` / `web.map` / `web.crawl` agent tools (see [`../docs/web-access.md`](../docs/web-access.md)). Single chokepoint in `src/lib/ai/tools/firecrawl.server.ts`; results re-enter the loop as untrusted input and run through pre-guardrails on the next `callModel`. `web.crawl` defaults to `confirm` (spends real credits).
 
 ## BYO keys
 `user_api_keys`: provider, encrypted key (pgsodium `crypto_secretbox`), optional base_url, label, last-test result. UI masks the key (`sk-***…last4`), supports Test (1-token completion), Rotate, Delete. Service-role client is the only decrypt path. Adding a provider = adding a chokepoint adapter (see [`runtime.md`](./runtime.md)), not touching call sites.
