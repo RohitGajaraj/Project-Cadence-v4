@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Plus, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AppShell } from "@/components/cadence/AppShell";
 
 export const Route = createFileRoute("/_authenticated/budgets")({
   component: BudgetsPage,
@@ -116,7 +117,8 @@ function BudgetsPage() {
   const openAlerts = alerts.filter((a: any) => !a.acknowledged);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <AppShell>
+    <div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Cost & Budget</h1>
         <p className="text-sm text-muted-foreground">Set spend caps per day/month, globally and per AI surface. Hits over the cap block new calls.</p>
@@ -217,5 +219,6 @@ function BudgetsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </AppShell>
   );
 }
