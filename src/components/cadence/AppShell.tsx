@@ -45,7 +45,6 @@ const groups: NavGroup[] = [
       { to: "/opportunities", label: "Opportunities", icon: Target },
       { to: "/meetings", label: "Meetings", icon: Calendar },
       { to: "/calendar", label: "Calendar", icon: Calendar },
-      { to: "/studio", label: "Prototype Sandbox", icon: Code2 },
     ],
   },
   {
