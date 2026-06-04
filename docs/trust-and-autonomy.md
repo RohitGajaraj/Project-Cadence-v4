@@ -102,3 +102,12 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
 - Not retroactive. Changing the arc affects future tool calls, not the
   current decision queue.
 - Not a substitute for evals or guardrails — it's a summary *of* them.
+
+## 7. Related
+
+- A2A handoff (how receiver-arc gating applies on handoff): [`a2a-handoff.md`](./a2a-handoff.md)
+- Orchestration contract (approval modes, sweeper, mission lifecycle): [`../architecture/orchestration.md`](../architecture/orchestration.md)
+- Governance & approval gates (kill-switch, caps, Decision Queue): [`../architecture/security.md`](../architecture/security.md)
+- AI runtime chokepoint (where the gate is enforced server-side): [`../architecture/runtime.md`](../architecture/runtime.md)
+- Feature ticket (C6 — Trust score + Autonomy dial): [`feature-backlog.md`](./feature-backlog.md)
+- Parent index: [`README.md`](./README.md)
