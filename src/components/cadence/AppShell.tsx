@@ -180,9 +180,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
 
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
-      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col justify-between border-r hairline px-3 py-5 bg-canvas">
-        <div>
-          {/* Workspace selector — restrained editorial card */}
+      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-canvas">
+        {/* Fixed top: workspace selector */}
+        <div className="px-3 pt-5 pb-3 shrink-0">
           <div className="px-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -221,8 +221,11 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
 
-          <nav className="mt-6 flex flex-col">
+        {/* Scrollable middle: nav + products */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
+          <nav className="flex flex-col">
             {/* Workspace rail — always-on daily surfaces */}
             <div className="px-3 mb-1.5 mono-label">Workspace</div>
             <div className="flex flex-col gap-0.5">
@@ -272,7 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             <span>Products</span>
             <Compass className="h-3 w-3" strokeWidth={1.75} />
           </div>
-          <div className="mt-2 flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
+          <div className="mt-2 flex flex-col gap-0.5 pr-1">
             {products.map((p) => {
               const isActive = p.id === activeProductId;
               return (
@@ -302,7 +305,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           </div>
         </div>
 
-        <div className="space-y-2">
+        {/* Fixed footer: alerts, budget, co-pilot, sign out, theme */}
+        <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
           {pauseState?.paused && (
             <Link to="/governance" className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition">
               <div className="flex items-center gap-2">
