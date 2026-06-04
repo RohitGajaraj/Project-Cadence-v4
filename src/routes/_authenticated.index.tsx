@@ -159,15 +159,18 @@ function Dashboard() {
       </header>
 
       <div className="px-6 lg:px-10 py-8 max-w-[1500px] mx-auto">
-        {/* HERO — editorial deep-green band */}
-        <section className="band-deep-green rounded-lg p-8 md:p-12 mb-6">
-          <div className="grid md:grid-cols-[1fr,auto] gap-8 items-end">
+        {/* HERO — refined editorial ink band with warm radial accent */}
+        <section className="hero-editorial relative overflow-hidden rounded-2xl p-8 md:p-12 mb-6">
+          <div className="relative z-10 grid md:grid-cols-[1fr,auto] gap-8 items-end">
             <div className="max-w-3xl">
               <div className="mono-label text-[color:var(--canvas)]/70 flex items-center gap-2">
                 <Sparkles className="h-3 w-3" /> Workspace · Today
+                {greeting.data?.country && (
+                  <span className="ml-1 opacity-70">· {greeting.data.country}</span>
+                )}
               </div>
               <h1 className="mt-5 font-display text-4xl md:text-6xl leading-[1.02] tracking-tight text-balance text-[color:var(--canvas)]">
-                Good morning, <em className="not-italic">{profileName}</em>.
+                {greetText}, <em className="italic font-normal text-[color:var(--coral-soft)]">{profileName}</em>.
               </h1>
               <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
                 Your AI team is ready. Hit <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient the day.
