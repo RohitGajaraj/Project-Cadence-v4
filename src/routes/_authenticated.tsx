@@ -10,8 +10,11 @@ export const Route = createFileRoute("/_authenticated")({
   // beforeLoad below handles the real auth gate.
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
+    // Use getSession() — reads from localStorage (instant, no network roundtrip).
+    // getUser() hits /auth/v1/user on every navigation and, combined with
+    // TanStack Router's hover-preload, makes the UI feel frozen.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
       throw redirect({ to: "/login" });
     }
   },
