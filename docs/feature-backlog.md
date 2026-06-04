@@ -792,7 +792,7 @@ Sequence from [`../plan.md`](../plan.md) §3. Status: ☐ not started · ◑ leg
 |---|---|---|---|
 | 1 | Foundation hardening + P0 non-functionals | 0.1–0.12, A1–A5, B1–B2, P1–P2, P6, P8, O2, R1 | ◑ |
 | 2 | First slice: Discover→Define→Plan | F1–F3, G1–G2, H1–H3, N1 | ◑ |
-| 3 | Orchestration layer (X1) | E1–E7, D1–D4, C1–C4, E6 graph | ☐ |
+| 3 | Orchestration layer (X1) | E1–E7, D1–D4, C1–C4, **C6**, E6 graph | ◑ |
 | 4 | Build→Test→Ship (autonomous) | I1–I3, J1–J2, K1–K2, 0.10, 0.12 | ☐ |
 | 5 | Multi-product / multi-workspace | B3–B5, B4, E5 | ◑ |
 | 6 | Launch/GTM/Price + Operate/Support | L1–L2, M1 | ☐ |
