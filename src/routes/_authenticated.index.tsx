@@ -155,7 +155,7 @@ function Dashboard() {
                 Good morning, <em className="not-italic">{profileName}</em>.
               </h1>
               <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
-                Your AI team is ready. Hit <em className="not-italic text-foreground">Refresh brief</em> to orient the day.
+                Your AI team is ready. Hit <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient the day.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <Pill icon={Brain} label={`${(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)} deep blocks`} />
