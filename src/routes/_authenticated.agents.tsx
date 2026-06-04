@@ -184,8 +184,10 @@ function AgentsPage() {
                   }}
                   className="bento p-4 flex flex-col gap-3"
                 >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-violet-300" /> Brief {selected.name}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <Sparkles className="h-3 w-3 text-violet-400" /> Brief <span className="text-foreground">{selected.name}</span>
+                    </span>
                     <span className="mx-1 h-3 w-px bg-border/60" />
                     <select
                       value={model}
