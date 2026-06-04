@@ -154,7 +154,18 @@ function AgentsPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => { e.preventDefault(); if (!input.trim()) return; dispatch.mutate({ agentSlug: selected.slug, goal: input.trim(), model }); setInput(""); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!input.trim()) return;
+                    dispatch.mutate({
+                      agentSlug: selected.slug,
+                      goal: input.trim(),
+                      model,
+                      asMission,
+                      missionTitle: asMission ? input.trim().slice(0, 80) : undefined,
+                    });
+                    setInput("");
+                  }}
                   className="bento p-4 flex flex-col gap-3"
                 >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -174,6 +185,24 @@ function AgentsPage() {
                         );
                       })}
                     </select>
+                    <label className="ml-auto inline-flex items-center gap-1.5 text-[11px] cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={asMission}
+                        onChange={(e) => setAsMission(e.target.checked)}
+                        className="h-3 w-3 accent-violet-400"
+                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted decoration-muted-foreground/60 underline-offset-2">
+                            Start as mission
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-left p-3 text-[11px] leading-snug">
+                          Wraps this run in a mission so the agent can hand off to other agents using the <code>agent.handoff</code> tool. Each hop appears in <Link to="/missions" className="underline">Missions</Link> with structured payloads.
+                        </TooltipContent>
+                      </Tooltip>
+                    </label>
                   </div>
                   <textarea
                     value={input} onChange={(e) => setInput(e.target.value)} rows={3}
