@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Sparkles, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, Code2, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle,
+  Crosshair,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -27,6 +28,7 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 // Top-level pinned items — daily, high-frequency surfaces.
 const pinned: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
+  { to: "/briefing", label: "Briefing", icon: Crosshair },
   { to: "/chat", label: "AI Chat", icon: MessageSquare },
   { to: "/agents", label: "Agents", icon: Bot },
   { to: "/inbox", label: "Approvals", icon: Inbox },
