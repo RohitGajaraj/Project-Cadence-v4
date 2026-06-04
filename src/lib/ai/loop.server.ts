@@ -14,6 +14,7 @@ import { TOOL_REGISTRY, describeToolsForPrompt, type ToolCtx } from "./tools/reg
 import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
+import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 
 const MAX_STEPS = 6;
 const MAX_RUNNING_PER_WORKSPACE = 5;
@@ -181,7 +182,8 @@ export async function runAgentLoop(
 
   return executeLoop({
     supabase, userId, agent, workspaceId, runId, traceId, model, tools,
-    modeOf, conv, steps, ctx, approvalsQueued, startStep: 0, goal: input.goal, finalize,
+    modeOf, arc: await loadAgentArc(supabase, userId, agent.id),
+    conv, steps, ctx, approvalsQueued, startStep: 0, goal: input.goal, finalize,
   });
 }
 
@@ -195,6 +197,7 @@ type LoopState = {
   model: string;
   tools: { tool_name: string; mode: string }[];
   modeOf: Map<string, string>;
+  arc: Arc;
   conv: { role: string; content: string }[];
   steps: LoopStep[];
   ctx: ToolCtx;
@@ -205,7 +208,7 @@ type LoopState = {
 };
 
 async function executeLoop(s: LoopState): Promise<LoopResult> {
-  const { supabase, userId, agent, workspaceId, runId, traceId, model, modeOf, conv, steps, ctx } = s;
+  const { supabase, userId, agent, workspaceId, runId, traceId, model, modeOf, arc, conv, steps, ctx } = s;
   let approvalsQueued = s.approvalsQueued;
   let halted: { kind: string; reason: string } | null = null;
 
@@ -284,9 +287,14 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
       continue;
     }
     
-    // Force approval gate for high-risk tools like calendar.create
+    // Force approval gate for high-risk tools like calendar.create (safety floor,
+    // not overridable by the dial).
     const isHighRisk = call.name === "calendar.create";
-    const mode = isHighRisk ? "confirm" : (modeOf.get(call.name) ?? "confirm");
+    const rawToolMode = (modeOf.get(call.name) ?? "confirm") as ToolMode;
+    // The autonomy dial composes with the tool's own mode. `review` is sticky,
+    // and high-risk tools force at least `confirm`.
+    const dialedMode = resolveApprovalMode(rawToolMode, arc);
+    const mode: ToolMode = isHighRisk && dialedMode === "auto" ? "confirm" : dialedMode;
     const isWrite = def.category === "write" || def.category === "planning";
 
     if (isWrite && (mode === "confirm" || mode === "review")) {
@@ -411,7 +419,9 @@ export async function resumeAgentLoop(
 
   return executeLoop({
     supabase, userId: run.user_id, agent, workspaceId: run.workspace_id, runId,
-    traceId, model, tools, modeOf, conv, steps, ctx, approvalsQueued,
+    traceId, model, tools, modeOf,
+    arc: await loadAgentArc(supabase, run.user_id, agent.id),
+    conv, steps, ctx, approvalsQueued,
     startStep, goal: run.input, finalize,
   });
 }
