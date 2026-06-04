@@ -28,6 +28,21 @@ function AgentsPage() {
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
 
+  const fTrust = useServerFn(getAllAgentTrust);
+  const fSetArc = useServerFn(setAgentArc);
+  const trustQ = useQuery({ queryKey: ["agent-trust"], queryFn: () => fTrust() });
+  const trustByAgent = new Map<string, AgentTrust>(
+    (trustQ.data?.trust ?? []).map((t) => [t.agent_id, t]),
+  );
+  const arcMutation = useMutation({
+    mutationFn: (v: { agentId: string; arc: Arc }) => fSetArc({ data: v }),
+    onSuccess: (_res, v) => {
+      qc.invalidateQueries({ queryKey: ["agent-trust"] });
+      toast.success(`Autonomy set to ${v.arc}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const dispatch = useMutation({
     mutationFn: (data: { agentSlug: string; goal: string; model?: string }) => mRun({ data }),
     onSuccess: (res) => {
