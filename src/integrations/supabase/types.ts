@@ -80,6 +80,47 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_autonomy: {
+        Row: {
+          agent_id: string
+          arc: string
+          created_at: string
+          id: string
+          set_at: string
+          set_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          arc?: string
+          created_at?: string
+          id?: string
+          set_at?: string
+          set_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          arc?: string
+          created_at?: string
+          id?: string
+          set_at?: string
+          set_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_autonomy_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_memory: {
         Row: {
           agent_id: string | null
