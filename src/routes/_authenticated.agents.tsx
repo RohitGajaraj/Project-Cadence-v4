@@ -322,13 +322,13 @@ function scoreTone(score: number): string {
   return "bg-muted text-muted-foreground border-border";
 }
 
-function TrustChip({ trust }: { trust?: AgentTrust }) {
+function TrustChip({ trust, compact = false }: { trust?: AgentTrust; compact?: boolean }) {
   if (!trust) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-help">
-            Trust —
+          <span className="shrink-0 inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-help">
+            {compact ? "—" : "Trust —"}
           </span>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs text-left">
@@ -343,9 +343,9 @@ function TrustChip({ trust }: { trust?: AgentTrust }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] cursor-help ${scoreTone(trust.score)}`}
+          className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] cursor-help whitespace-nowrap ${scoreTone(trust.score)}`}
         >
-          Trust {trust.score} · {label}
+          {compact ? `T${trust.score}` : `Trust ${trust.score} · ${label}`}
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm text-left space-y-1.5 p-3">
