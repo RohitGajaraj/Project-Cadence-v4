@@ -108,7 +108,9 @@ function HopProgressPanel({ steps, toolCalls, hopStatus }: { steps: HopStep[]; t
   );
 }
 
-function AgentTimeline({ hops }: { hops: ReturnType<typeof useMissionHops> }) {
+type TimelineHop = { run_id: string; agent_slug: string; agent_name: string; status: string; created_at: string; last_checkpoint_at: string | null };
+
+function AgentTimeline({ hops }: { hops: TimelineHop[] }) {
   if (hops.length === 0) return null;
   return (
     <div className="bento p-4">
@@ -139,8 +141,6 @@ function AgentTimeline({ hops }: { hops: ReturnType<typeof useMissionHops> }) {
   );
 }
 
-// Helper to satisfy TS in AgentTimeline prop typing.
-function useMissionHops() { return [] as Array<{ run_id: string; agent_slug: string; agent_name: string; status: string; created_at: string; last_checkpoint_at: string | null }>; }
 
 function MissionDetail() {
   const { missionId } = Route.useParams();
