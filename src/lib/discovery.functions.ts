@@ -260,7 +260,7 @@ export const listPrds = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prds")
-      .select("id,title,status,updated_at,opportunity_id")
+      .select("id,title,status,updated_at,opportunity_id,github_issue_url")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { prds: data ?? [] };
