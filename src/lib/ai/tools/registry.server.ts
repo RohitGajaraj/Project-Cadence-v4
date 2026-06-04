@@ -300,6 +300,117 @@ const githubIssueCreate = def({
   },
 });
 
+/**
+ * github.pr.open — Bundle 9 Slice 1.
+ * Opens a SINGLE-FILE scoped PR on the allow-listed repo (GITHUB_REPO).
+ * REST-only flow because the Worker runtime has no native git. Steps:
+ *   1) GET the default branch + its head sha (the base)
+ *   2) POST a new ref (branch) off that sha
+ *   3) GET existing file sha on the new branch (404 = new file)
+ *   4) PUT the file contents (create or update)
+ *   5) POST a pull request from the new branch → default branch
+ * Idempotent via withIdempotency(key = "github_pr:<idempotency_key>") so a
+ * worker restart or re-approval returns the cached {number, url, branch}.
+ */
+const githubPrOpen = def({
+  name: "github.pr.open",
+  description: "Builder agent: open a single-file scoped pull request on the connected product repo. Pass an idempotency_key like 'issue-42' so re-execution does not double-open. NEVER auto-merges.",
+  category: "write",
+  argsSchema: z.object({
+    issue_number: z.number().int().min(1).max(10_000_000),
+    path: z.string().min(1).max(400).regex(/^[^\s][\w\-./]+[^\s/]$/, "path must be a repo-relative file (no leading slash, no spaces)"),
+    contents: z.string().min(1).max(120_000),
+    title: z.string().min(1).max(280),
+    body: z.string().min(1).max(60_000),
+    idempotency_key: z.string().min(1).max(200),
+  }),
+  preview: (a) => `Open PR for issue #${a.issue_number}: "${a.title}" · ${a.path}`,
+  run: async (a, { supabase, userId, runId }) => {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+    // Disallow paths the Builder must never touch.
+    const forbiddenPrefixes = [".github/", "supabase/migrations/", ".env", "bun.lock", "package-lock.json"];
+    if (forbiddenPrefixes.some((p) => a.path === p || a.path.startsWith(p))) {
+      throw new Error(`Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`);
+    }
+
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "cadence-builder",
+      "Content-Type": "application/json",
+    };
+
+    const outcome = await withIdempotency(
+      supabase, "github_pr", a.idempotency_key, userId, runId ?? null,
+      async () => {
+        // 1) default branch + its head sha
+        const repoRes = await fetch(`https://api.github.com/repos/${repo}`, { headers });
+        if (!repoRes.ok) throw new Error(`GitHub repo lookup ${repoRes.status}: ${(await repoRes.text()).slice(0, 300)}`);
+        const repoJson = await repoRes.json() as { default_branch: string };
+        const baseBranch = repoJson.default_branch;
+
+        const baseRefRes = await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${baseBranch}`, { headers });
+        if (!baseRefRes.ok) throw new Error(`GitHub base-ref ${baseRefRes.status}: ${(await baseRefRes.text()).slice(0, 300)}`);
+        const baseRefJson = await baseRefRes.json() as { object: { sha: string } };
+        const baseSha = baseRefJson.object.sha;
+
+        // 2) create branch — include short uuid suffix so reopening after a deleted branch still works
+        const safeSlug = a.path.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 40);
+        const suffix = Math.random().toString(36).slice(2, 8);
+        const branch = `builder/issue-${a.issue_number}-${safeSlug}-${suffix}`.slice(0, 80);
+        const newRefRes = await fetch(`https://api.github.com/repos/${repo}/git/refs`, {
+          method: "POST", headers,
+          body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseSha }),
+        });
+        if (!newRefRes.ok) {
+          throw new Error(`GitHub create-branch ${newRefRes.status}: ${(await newRefRes.text()).slice(0, 300)}`);
+        }
+
+        // 3) optional existing sha on new branch (almost always 404)
+        const existingRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`, { headers });
+        let existingSha: string | undefined;
+        if (existingRes.ok) {
+          const j = await existingRes.json() as { sha?: string };
+          existingSha = j.sha;
+        }
+
+        // 4) PUT contents
+        // Buffer is available (nodejs_compat). Worker has no atob/btoa unicode safety, so use Buffer.
+        const contentB64 = Buffer.from(a.contents, "utf8").toString("base64");
+        const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`, {
+          method: "PUT", headers,
+          body: JSON.stringify({
+            message: `Builder agent: ${a.title}`.slice(0, 200),
+            content: contentB64,
+            branch,
+            ...(existingSha ? { sha: existingSha } : {}),
+          }),
+        });
+        if (!putRes.ok) {
+          throw new Error(`GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`);
+        }
+
+        // 5) open PR
+        const prBody = `${a.body.trim()}\n\nCloses #${a.issue_number}\n\n_Opened by the Cadence Builder agent — approval-gated, single file (\`${a.path}\`)._`;
+        const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls`, {
+          method: "POST", headers,
+          body: JSON.stringify({ title: a.title, body: prBody, head: branch, base: baseBranch, maintainer_can_modify: true }),
+        });
+        if (!prRes.ok) {
+          throw new Error(`GitHub open-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
+        }
+        const prJson = await prRes.json() as { number: number; html_url: string; id: number };
+        return { number: prJson.number, url: prJson.html_url, id: prJson.id, repo, branch, path: a.path };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
 // ── PM lifecycle tools ────────────────────────────────────────────────
 const DRAFT_MODEL = "google/gemini-2.5-flash";
 
