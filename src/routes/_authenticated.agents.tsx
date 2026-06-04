@@ -49,8 +49,10 @@ function AgentsPage() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
       qc.invalidateQueries({ queryKey: ["agent-trust"] });
+      const mid = (res as { mission_id?: string | null } | undefined)?.mission_id;
       const tid = (res as { trace_id?: string } | undefined)?.trace_id;
-      toast.success("Agent finished" + (tid ? " — trace ready" : ""));
+      if (mid) toast.success("Mission started — open Missions to follow the hops");
+      else toast.success("Agent finished" + (tid ? " — trace ready" : ""));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -60,6 +62,7 @@ function AgentsPage() {
   const [schedule, setSchedule] = useState<string>("");
   const [cronInput, setCronInput] = useState<string>("");
   const [model, setModel] = useState<string>("google/gemini-2.5-flash");
+  const [asMission, setAsMission] = useState<boolean>(false);
 
   const fKeys = useServerFn(listApiKeys);
   const keysQ = useQuery({ queryKey: ["byo-keys"], queryFn: () => fKeys(), retry: false });
