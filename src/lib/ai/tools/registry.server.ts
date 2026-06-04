@@ -10,6 +10,7 @@ import { retrieve } from "@/lib/rag/retriever.server";
 import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { callModel } from "@/lib/ai/runtime.server";
+import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -19,6 +20,8 @@ export type ToolCtx = {
   traceId?: string | null;
   runId?: string | null;
   stepIndex?: number | null;
+  missionId?: string | null;
+  workspaceId?: string | null;
 };
 
 export type ToolDef<S extends z.ZodTypeAny = z.ZodTypeAny> = {
