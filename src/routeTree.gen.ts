@@ -14,12 +14,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
-import { Route as ApiStudioChatRouteImport } from './routes/api/studio-chat'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated.sync'
-import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated.studio'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
@@ -43,7 +41,6 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
-import { Route as AuthenticatedStudioIdRouteImport } from './routes/_authenticated.studio.$id'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
@@ -80,11 +77,6 @@ const PSlugRoute = PSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiStudioChatRoute = ApiStudioChatRouteImport.update({
-  id: '/api/studio-chat',
-  path: '/api/studio-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -103,11 +95,6 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
 const AuthenticatedSyncRoute = AuthenticatedSyncRouteImport.update({
   id: '/sync',
   path: '/sync',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -229,11 +216,6 @@ const AuthenticatedTracesTraceIdRoute =
     path: '/$traceId',
     getParentRoute: () => AuthenticatedTracesRoute,
   } as any)
-const AuthenticatedStudioIdRoute = AuthenticatedStudioIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedStudioRoute,
-} as any)
 const AuthenticatedPrdsIdRoute = AuthenticatedPrdsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -321,17 +303,14 @@ export interface FileRoutesByFullPath {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/studio': typeof AuthenticatedStudioRouteWithChildren
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
-  '/api/studio-chat': typeof ApiStudioChatRoute
   '/p/$slug': typeof PSlugRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
-  '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -367,18 +346,15 @@ export interface FileRoutesByTo {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/studio': typeof AuthenticatedStudioRouteWithChildren
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
-  '/api/studio-chat': typeof ApiStudioChatRoute
   '/p/$slug': typeof PSlugRoute
   '/': typeof AuthenticatedIndexRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
-  '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -416,18 +392,15 @@ export interface FileRoutesById {
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/studio': typeof AuthenticatedStudioRouteWithChildren
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
-  '/api/studio-chat': typeof ApiStudioChatRoute
   '/p/$slug': typeof PSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
-  '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -466,17 +439,14 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
-    | '/studio'
     | '/sync'
     | '/tasks'
     | '/traces'
     | '/api/chat'
-    | '/api/studio-chat'
     | '/p/$slug'
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
-    | '/studio/$id'
     | '/traces/$traceId'
     | '/missions/'
     | '/api/public/hooks/agent-tick'
@@ -512,18 +482,15 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
-    | '/studio'
     | '/sync'
     | '/tasks'
     | '/traces'
     | '/api/chat'
-    | '/api/studio-chat'
     | '/p/$slug'
     | '/'
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
-    | '/studio/$id'
     | '/traces/$traceId'
     | '/missions'
     | '/api/public/hooks/agent-tick'
@@ -560,18 +527,15 @@ export interface FileRouteTypes {
     | '/_authenticated/prompts'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
-    | '/_authenticated/studio'
     | '/_authenticated/sync'
     | '/_authenticated/tasks'
     | '/_authenticated/traces'
     | '/api/chat'
-    | '/api/studio-chat'
     | '/p/$slug'
     | '/_authenticated/'
     | '/_authenticated/meetings/$id'
     | '/_authenticated/missions/$missionId'
     | '/_authenticated/prds/$id'
-    | '/_authenticated/studio/$id'
     | '/_authenticated/traces/$traceId'
     | '/_authenticated/missions/'
     | '/api/public/hooks/agent-tick'
@@ -589,7 +553,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
-  ApiStudioChatRoute: typeof ApiStudioChatRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
@@ -638,13 +601,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/studio-chat': {
-      id: '/api/studio-chat'
-      path: '/api/studio-chat'
-      fullPath: '/api/studio-chat'
-      preLoaderRoute: typeof ApiStudioChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -671,13 +627,6 @@ declare module '@tanstack/react-router' {
       path: '/sync'
       fullPath: '/sync'
       preLoaderRoute: typeof AuthenticatedSyncRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/studio': {
-      id: '/_authenticated/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof AuthenticatedStudioRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -841,13 +790,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTracesTraceIdRouteImport
       parentRoute: typeof AuthenticatedTracesRoute
     }
-    '/_authenticated/studio/$id': {
-      id: '/_authenticated/studio/$id'
-      path: '/$id'
-      fullPath: '/studio/$id'
-      preLoaderRoute: typeof AuthenticatedStudioIdRouteImport
-      parentRoute: typeof AuthenticatedStudioRoute
-    }
     '/_authenticated/prds/$id': {
       id: '/_authenticated/prds/$id'
       path: '/$id'
@@ -952,17 +894,6 @@ const AuthenticatedPrdsRouteChildren: AuthenticatedPrdsRouteChildren = {
 const AuthenticatedPrdsRouteWithChildren =
   AuthenticatedPrdsRoute._addFileChildren(AuthenticatedPrdsRouteChildren)
 
-interface AuthenticatedStudioRouteChildren {
-  AuthenticatedStudioIdRoute: typeof AuthenticatedStudioIdRoute
-}
-
-const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
-  AuthenticatedStudioIdRoute: AuthenticatedStudioIdRoute,
-}
-
-const AuthenticatedStudioRouteWithChildren =
-  AuthenticatedStudioRoute._addFileChildren(AuthenticatedStudioRouteChildren)
-
 interface AuthenticatedTracesRouteChildren {
   AuthenticatedTracesTraceIdRoute: typeof AuthenticatedTracesTraceIdRoute
 }
@@ -996,7 +927,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedStudioRoute: typeof AuthenticatedStudioRouteWithChildren
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
@@ -1027,7 +957,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedStudioRoute: AuthenticatedStudioRouteWithChildren,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
@@ -1045,7 +974,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
-  ApiStudioChatRoute: ApiStudioChatRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
@@ -1059,3 +987,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
