@@ -1,7 +1,9 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { getBudgetSummary } from "@/lib/budgets.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { DollarSign } from "lucide-react";
 
 /**
@@ -10,10 +12,19 @@ import { DollarSign } from "lucide-react";
  */
 export function BudgetBar() {
   const fetchFn = useServerFn(getBudgetSummary);
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setHasSession(!!session);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
   const { data } = useQuery({
     queryKey: ["budget_summary"],
     queryFn: () => fetchFn(),
     refetchInterval: 30_000,
+    enabled: hasSession,
   });
   if (!data || (!data.daily_usd_cap && !data.monthly_usd_cap)) return null;
 
