@@ -11,6 +11,7 @@ import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
+import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
