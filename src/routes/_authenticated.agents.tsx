@@ -238,3 +238,94 @@ function AgentsPage() {
     </AppShell>
   );
 }
+
+const ARC_LABELS: Record<Arc, string> = {
+  observing: "Observing",
+  proving: "Proving",
+  trusted: "Trusted",
+  ambient: "Ambient",
+};
+
+const ARC_ORDER: Arc[] = ["observing", "proving", "trusted", "ambient"];
+
+function scoreTone(score: number): string {
+  if (score >= 75) return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
+  if (score >= 55) return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
+  if (score >= 35) return "bg-amber-500/15 text-amber-300 border-amber-400/30";
+  return "bg-muted text-muted-foreground border-border";
+}
+
+function TrustChip({ trust }: { trust?: AgentTrust }) {
+  if (!trust) {
+    return (
+      <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Trust —
+      </span>
+    );
+  }
+  const b = trust.breakdown;
+  const tip = [
+    `Trust score ${trust.score}/100`,
+    `Missions: ${b.missions_completed}/${b.missions_total} completed (${Math.round(b.mission_success_rate * 100)}%)`,
+    `Approvals: ${b.approvals_approved}/${b.approvals_total} accepted (${Math.round(b.approval_acceptance_rate * 100)}%)`,
+    `Evals: ${b.evals_total} avg ${b.eval_mean_score.toFixed(2)}`,
+    `Samples: ${b.samples} (formula: 0.4·success + 0.3·approval + 0.3·eval, shrunk toward 0.5 when n<10)`,
+    `Suggested arc: ${ARC_LABELS[trust.suggested_arc]}`,
+  ].join("\n");
+  return (
+    <span
+      title={tip}
+      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${scoreTone(trust.score)}`}
+    >
+      Trust {trust.score}
+    </span>
+  );
+}
+
+function AutonomyDial({
+  trust,
+  onChange,
+  pending,
+}: {
+  trust?: AgentTrust;
+  onChange: (arc: Arc) => void;
+  pending: boolean;
+}) {
+  const current: Arc = trust?.arc ?? "observing";
+  const suggested: Arc | undefined = trust?.suggested_arc;
+  return (
+    <div className="mt-4 rounded-xl border hairline bg-background/40 p-3">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        <Gauge className="h-3 w-3 text-violet-300" /> Autonomy dial
+        {suggested && suggested !== current && (
+          <span className="ml-auto normal-case tracking-normal text-muted-foreground/80">
+            Suggested: <span className="text-foreground">{ARC_LABELS[suggested]}</span>
+          </span>
+        )}
+      </div>
+      <div className="mt-2 grid grid-cols-4 gap-1.5">
+        {ARC_ORDER.map((arc) => {
+          const active = arc === current;
+          return (
+            <button
+              key={arc}
+              type="button"
+              disabled={pending || active}
+              onClick={() => onChange(arc)}
+              className={`rounded-md border px-2 py-1.5 text-[11px] transition ${
+                active
+                  ? "border-foreground/30 bg-foreground text-background"
+                  : "border-border bg-secondary/40 hover:bg-secondary/70 disabled:opacity-60"
+              }`}
+            >
+              {ARC_LABELS[arc]}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+        Observing queues every action for review · Proving requires one-click confirm · Trusted runs confirm-mode tools inline · Ambient runs everything inline (high-risk tools like calendar still require confirm).
+      </p>
+    </div>
+  );
+}
