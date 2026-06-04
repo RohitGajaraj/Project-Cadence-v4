@@ -31,7 +31,6 @@ export type MissionDetail = {
     input: string;
     output: string | null;
     created_at: string;
-    updated_at: string | null;
     last_checkpoint_at: string | null;
     trace_id: string | null;
     step_index: number;
@@ -96,7 +95,7 @@ export const getMission = createServerFn({ method: "POST" })
     // Pull trace_id from the first ai_events row per run (cheap, no join).
     const { data: runs } = await supabase
       .from("agent_runs")
-      .select("id,agent_slug,agent_name,status,input,output,created_at,updated_at,last_checkpoint_at")
+      .select("id,agent_slug,agent_name,status,input,output,created_at,last_checkpoint_at")
       .eq("mission_id", data.missionId)
       .order("created_at", { ascending: true });
 
@@ -150,7 +149,6 @@ export const getMission = createServerFn({ method: "POST" })
           input: r.input,
           output: r.output,
           created_at: r.created_at,
-          updated_at: (r as { updated_at?: string }).updated_at ?? null,
           last_checkpoint_at: (r as { last_checkpoint_at?: string }).last_checkpoint_at ?? null,
           trace_id: traceId,
           step_index: cp?.step_index ?? 0,
