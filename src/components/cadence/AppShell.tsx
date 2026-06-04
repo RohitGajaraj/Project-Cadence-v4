@@ -3,6 +3,7 @@ import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
+  Sun, Moon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useTheme } from "@/hooks/use-theme";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspacePauseState } from "@/lib/governance.functions";
@@ -168,6 +170,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     enabled: true,
   });
 
+  const { theme, toggleTheme } = useTheme();
+
   async function signOut() {
     await supabase.auth.signOut();
     toast.success("Signed out");
@@ -322,6 +326,21 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           </div>
           <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition">
             <LogOut className="h-3 w-3" /> Sign out
+          </button>
+          <button
+            onClick={toggleTheme}
+            type="button"
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition"
+          >
+            <span className="mono-label" style={{ fontSize: "9px" }}>
+              {theme === "dark" ? "Nightshift" : "Editorial"}
+            </span>
+            {theme === "dark" ? (
+              <Sun className="h-3.5 w-3.5" strokeWidth={1.75} />
+            ) : (
+              <Moon className="h-3.5 w-3.5" strokeWidth={1.75} />
+            )}
           </button>
         </div>
       </aside>
