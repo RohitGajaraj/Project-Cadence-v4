@@ -267,12 +267,10 @@ function MissionDetail() {
                       </button>
                     </div>
 
-                    {/* Live progress panel — always visible for live hops, available on demand otherwise via Detail toggle */}
-                    {(h.status === "running" || h.status === "queued" || isExpanded) && (
-                      <div className="mt-3 rounded-md border border-border/60 bg-muted/20 p-3">
-                        <HopProgressPanel steps={h.steps} toolCalls={h.tool_calls} hopStatus={h.status} />
-                      </div>
-                    )}
+                    {/* Progress panel — always visible so steps + tool spans are inline, live or completed */}
+                    <div className="mt-3 rounded-md border border-border/60 bg-muted/20 p-3">
+                      <HopProgressPanel steps={h.steps} toolCalls={h.tool_calls} hopStatus={h.status} />
+                    </div>
 
                     {isExpanded && (
                       <div className="mt-3 space-y-2">
