@@ -1,6 +1,6 @@
 # Active task — Bundle 9 Build lane
 
-_Last updated: 2026-06-04 · Lovable. Slice 1 done + discoverability follow-ups (one-click "Create GitHub issue" on PRD detail; Prototype Sandbox removed). Slices 2 and 3 still in flight; next session, pick the lowest-numbered unchecked box and resume._
+_Last updated: 2026-06-04 · Lovable. Slice 1 done + Build Console upgraded to accept free-form input (PRD optional). PRD list & detail surfaces now expose GitHub/Builder actions prominently. Slices 2 and 3 still in flight; next session, pick the lowest-numbered unchecked box and resume._
 
 ## Slice 1 — Builder agent + scoped PR — DONE ✓
 
@@ -14,6 +14,9 @@ _Last updated: 2026-06-04 · Lovable. Slice 1 done + discoverability follow-ups 
 - [x] Docs closed loop: status board, plan §4, architecture/orchestration.md
 - [x] Discoverability: PRD detail page now shows a **Create GitHub issue → unlock Builder** button when `github_issue_url` is null (server fn `createGithubIssueForPrd` in `discovery.functions.ts`). Eliminates "I can't find a PRD with a linked issue" dead-end.
 - [x] Removed Prototype Sandbox (`/studio`, `studio.functions.ts`, `studio-chat.ts`, nav + palette entries). Kept stack lean — Build Console is the only build surface.
+- [x] PRD list cards expose **Create GitHub issue / Open issue / Send to Builder** actions inline (no need to open the doc first); status row shows `#N` chip when an issue is linked.
+- [x] PRD detail rebuilt as a real document view: metadata row + **sticky actions bar** (Edit/Preview, Save, GitHub issue, Send to Builder, AI assist all in one place).
+- [x] Build Console now has a **"Start a build" composer**: free-form goal + optional PRD reference + optional links + 3 issue-resolution modes (use PRD issue / explicit issue # / auto-create from goal). New server fn `dispatchBuilderMission` in `build.functions.ts`. Builder agent contract unchanged (single-file, gated, idempotent).
 - [ ] Operator end-to-end smoke (you, not the agent): open a PRD with a linked issue → Send to Builder → approve the `github.pr.open` gate → confirm a real PR opens on `RohitGajaraj/Test-Project-Cadence` from a `builder/issue-…` branch, one file changed, body says `Closes #N`. (Cannot be done from the sandbox — needs your approval click.)
 
 ## Slice 2 — CI read + failure loop — TODO
