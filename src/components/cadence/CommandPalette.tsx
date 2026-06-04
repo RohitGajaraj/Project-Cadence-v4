@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
 import {
-  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar, Code2,
+  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar,
 } from "lucide-react";
 
 export function CommandPalette() {
