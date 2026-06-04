@@ -44,6 +44,7 @@ import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioIdRouteImport } from './routes/_authenticated.studio.$id'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
+import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/public/hooks/indexer-tick'
@@ -231,6 +232,12 @@ const AuthenticatedPrdsIdRoute = AuthenticatedPrdsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedPrdsRoute,
 } as any)
+const AuthenticatedMissionsMissionIdRoute =
+  AuthenticatedMissionsMissionIdRouteImport.update({
+    id: '/$missionId',
+    path: '/$missionId',
+    getParentRoute: () => AuthenticatedMissionsRoute,
+  } as any)
 const AuthenticatedMeetingsIdRoute = AuthenticatedMeetingsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -301,7 +308,7 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
-  '/missions': typeof AuthenticatedMissionsRoute
+  '/missions': typeof AuthenticatedMissionsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/prompts': typeof AuthenticatedPromptsRoute
@@ -315,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/api/studio-chat': typeof ApiStudioChatRoute
   '/p/$slug': typeof PSlugRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
@@ -345,7 +353,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
-  '/missions': typeof AuthenticatedMissionsRoute
+  '/missions': typeof AuthenticatedMissionsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/prompts': typeof AuthenticatedPromptsRoute
@@ -360,6 +368,7 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof PSlugRoute
   '/': typeof AuthenticatedIndexRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
@@ -392,7 +401,7 @@ export interface FileRoutesById {
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
-  '/_authenticated/missions': typeof AuthenticatedMissionsRoute
+  '/_authenticated/missions': typeof AuthenticatedMissionsRouteWithChildren
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
@@ -407,6 +416,7 @@ export interface FileRoutesById {
   '/p/$slug': typeof PSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
+  '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/api/studio-chat'
     | '/p/$slug'
     | '/meetings/$id'
+    | '/missions/$missionId'
     | '/prds/$id'
     | '/studio/$id'
     | '/traces/$traceId'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/'
     | '/meetings/$id'
+    | '/missions/$missionId'
     | '/prds/$id'
     | '/studio/$id'
     | '/traces/$traceId'
@@ -545,6 +557,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/_authenticated/'
     | '/_authenticated/meetings/$id'
+    | '/_authenticated/missions/$missionId'
     | '/_authenticated/prds/$id'
     | '/_authenticated/studio/$id'
     | '/_authenticated/traces/$traceId'
@@ -822,6 +835,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPrdsIdRouteImport
       parentRoute: typeof AuthenticatedPrdsRoute
     }
+    '/_authenticated/missions/$missionId': {
+      id: '/_authenticated/missions/$missionId'
+      path: '/$missionId'
+      fullPath: '/missions/$missionId'
+      preLoaderRoute: typeof AuthenticatedMissionsMissionIdRouteImport
+      parentRoute: typeof AuthenticatedMissionsRoute
+    }
     '/_authenticated/meetings/$id': {
       id: '/_authenticated/meetings/$id'
       path: '/$id'
@@ -901,6 +921,19 @@ const AuthenticatedMeetingsRouteWithChildren =
     AuthenticatedMeetingsRouteChildren,
   )
 
+interface AuthenticatedMissionsRouteChildren {
+  AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
+}
+
+const AuthenticatedMissionsRouteChildren: AuthenticatedMissionsRouteChildren = {
+  AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
+}
+
+const AuthenticatedMissionsRouteWithChildren =
+  AuthenticatedMissionsRoute._addFileChildren(
+    AuthenticatedMissionsRouteChildren,
+  )
+
 interface AuthenticatedPrdsRouteChildren {
   AuthenticatedPrdsIdRoute: typeof AuthenticatedPrdsIdRoute
 }
@@ -950,7 +983,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
-  AuthenticatedMissionsRoute: typeof AuthenticatedMissionsRoute
+  AuthenticatedMissionsRoute: typeof AuthenticatedMissionsRouteWithChildren
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedPrdsRoute: typeof AuthenticatedPrdsRouteWithChildren
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
@@ -979,7 +1012,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
-  AuthenticatedMissionsRoute: AuthenticatedMissionsRoute,
+  AuthenticatedMissionsRoute: AuthenticatedMissionsRouteWithChildren,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedPrdsRoute: AuthenticatedPrdsRouteWithChildren,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
