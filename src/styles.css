@@ -762,6 +762,53 @@
     text-underline-offset: 3px;
   }
 
+  /* Editorial hero — refined ink band with warm coral radial accent.
+   * Replaces the saturated deep-green hero. Dark base (charcoal-navy)
+   * with a coral glow top-right and warm sand vignette bottom-left for
+   * editorial depth. Headings inside flip to Fraunces display opsz. */
+  .hero-editorial {
+    background-color: oklch(0.18 0.018 265);
+    background-image:
+      radial-gradient(70% 90% at 92% 8%,  color-mix(in oklab, var(--coral) 38%, transparent) 0%, transparent 55%),
+      radial-gradient(60% 75% at 4% 96%,  color-mix(in oklab, var(--soft-stone) 22%, transparent) 0%, transparent 60%),
+      linear-gradient(135deg, oklch(0.19 0.022 270) 0%, oklch(0.15 0.018 260) 60%, oklch(0.12 0.02 255) 100%);
+    color: var(--canvas);
+    border: 1px solid color-mix(in oklab, var(--coral) 14%, transparent);
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--canvas) 8%, transparent),
+      0 20px 60px -30px color-mix(in oklab, var(--coral) 35%, oklch(0 0 0));
+  }
+  .hero-editorial::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(color-mix(in oklab, var(--canvas) 7%, transparent) 1px, transparent 1px);
+    background-size: 3px 3px;
+    mix-blend-mode: overlay;
+    opacity: 0.35;
+  }
+  .hero-editorial h1 {
+    font-variation-settings: "opsz" 144, "SOFT" 50;
+    font-weight: 400;
+  }
+  .hero-editorial h1 em { font-style: italic; font-weight: 300; }
+
+  /* Dark + Aurora override hero — keep theme-native palette. */
+  .dark .hero-editorial {
+    background-color: var(--surface-2);
+    background-image:
+      radial-gradient(70% 90% at 88% 10%, color-mix(in oklab, var(--violet) 55%, transparent) 0%, transparent 55%),
+      radial-gradient(60% 75% at 8% 92%, color-mix(in oklab, var(--cyan) 28%, transparent) 0%, transparent 60%),
+      linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
+    border-color: color-mix(in oklab, var(--violet) 22%, var(--hairline));
+  }
+  .aurora .hero-editorial {
+    background-image:
+      radial-gradient(70% 90% at 88% 10%, color-mix(in oklab, var(--magenta) 60%, transparent) 0%, transparent 55%),
+      radial-gradient(60% 75% at 8% 92%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 60%),
+      linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
+    border-color: color-mix(in oklab, var(--violet) 35%, var(--hairline));
+  }
+
   /* === Legacy decorative utilities (neutralized for light theme) ===
    * Kept as no-op-ish soft washes so pages from the old dark theme don't
    * visually break before Phase 2-4 restyles them per page.            */
