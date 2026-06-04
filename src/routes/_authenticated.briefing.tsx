@@ -92,6 +92,11 @@ function BriefingPage() {
     queryFn: () => getFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
   });
 
+  // The server resolves a default workspace via RPC even when the client-side
+  // workspace context hasn't hydrated yet. Prefer that resolved id so Save
+  // isn't permanently disabled on first load.
+  const effectiveWorkspaceId = activeWorkspaceId ?? data?.workspace_id ?? null;
+
   const [form, setForm] = useState<Record<FieldKey, string>>(EMPTY);
   const [dirty, setDirty] = useState(false);
 
@@ -110,11 +115,12 @@ function BriefingPage() {
 
   const save = useMutation({
     mutationFn: () => {
-      if (!activeWorkspaceId) throw new Error("No active workspace");
-      return upsertFn({ data: { workspaceId: activeWorkspaceId, ...form } });
+      if (!effectiveWorkspaceId) throw new Error("No active workspace");
+      return upsertFn({ data: { workspaceId: effectiveWorkspaceId, ...form } });
     },
     onSuccess: (row: WorkspaceBrief) => {
       qc.setQueryData(["workspace-brief", activeWorkspaceId], row);
+      qc.setQueryData(["workspace-brief", null], row);
       setDirty(false);
       toast.success("Brief saved — next mission will use the new context");
     },
@@ -147,7 +153,7 @@ function BriefingPage() {
           </div>
           <button
             type="button"
-            disabled={!dirty || save.isPending || !activeWorkspaceId}
+            disabled={!dirty || save.isPending || !effectiveWorkspaceId}
             onClick={() => save.mutate()}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
