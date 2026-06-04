@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
@@ -96,6 +96,23 @@ function PrdEditor() {
         <Link to="/prds" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="h-3 w-3" /> All PRDs
         </Link>
+
+        {prdQ.data?.prd?.github_issue_url ? (
+          <a
+            href={prdQ.data.prd.github_issue_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-violet-300 hover:text-violet-200 mb-3 ml-3 rounded-md border hairline px-2 py-1 bg-background/40"
+            title={prdQ.data.prd.github_issue_url}
+          >
+            <Github className="h-3 w-3" />
+            GitHub issue
+            {(() => {
+              const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
+              return m ? <span className="text-muted-foreground">#{m[1]}</span> : null;
+            })()}
+          </a>
+        ) : null}
 
         <div className="flex items-center gap-3 mb-6">
           <input
