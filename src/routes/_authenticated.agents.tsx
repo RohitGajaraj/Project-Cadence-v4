@@ -117,7 +117,10 @@ function AgentsPage() {
                     <Bot className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-display text-sm">{a.name}</div>
+                    <div className="font-display text-sm flex items-center gap-2">
+                      <span className="truncate">{a.name}</span>
+                      <TrustChip trust={trustByAgent.get(a.id)} />
+                    </div>
                     <div className="text-[11px] text-muted-foreground truncate">{a.role}</div>
                   </div>
                 </div>
