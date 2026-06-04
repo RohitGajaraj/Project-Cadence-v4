@@ -299,6 +299,34 @@ const githubIssueCreate = def({
 // ── PM lifecycle tools ────────────────────────────────────────────────
 const DRAFT_MODEL = "google/gemini-2.5-flash";
 
+/**
+ * prd.link_issue — write the URL of the GitHub issue opened for a PRD back
+ * onto the PRD row. Closes the loop on the Discover→Define→Plan slice so the
+ * PRD view links straight to the engineering ticket. Idempotent (no-op if
+ * already set to the same URL).
+ */
+const prdLinkIssue = def({
+  name: "prd.link_issue",
+  description: "Attach a GitHub issue URL to a PRD. Call this immediately after github.issue.create so the PRD links back to the engineering ticket. Pass the prd_id and the html_url returned by github.issue.create.",
+  category: "write",
+  argsSchema: z.object({
+    prd_id: z.string().uuid(),
+    issue_url: z.string().url().max(500),
+  }),
+  preview: (a) => `Link PRD ${a.prd_id.slice(0, 8)} → ${a.issue_url}`,
+  run: async (a, { supabase, userId }) => {
+    const { data, error } = await supabase
+      .from("prds")
+      .update({ github_issue_url: a.issue_url })
+      .eq("id", a.prd_id)
+      .eq("user_id", userId)
+      .select("id,title,github_issue_url")
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+});
+
 function safeJson<T = unknown>(s: string): T | null {
   try { return JSON.parse(s) as T; } catch {
     const m = s.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
