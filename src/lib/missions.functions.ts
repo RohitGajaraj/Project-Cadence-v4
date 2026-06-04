@@ -9,6 +9,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export type MissionDetail = {
   mission: {
     id: string;
@@ -29,14 +31,13 @@ export type MissionDetail = {
     input: string;
     output: string | null;
     created_at: string;
-    trace_id: string | null;
   }[];
   messages: {
     id: string;
     from_agent_slug: string | null;
     to_agent_slug: string;
     kind: string;
-    payload: Record<string, unknown>;
+    payload: JsonValue;
     source_run_id: string | null;
     source_trace_id: string | null;
     consumed_by_run_id: string | null;
@@ -79,19 +80,6 @@ export const getMission = createServerFn({ method: "POST" })
       .eq("mission_id", data.missionId)
       .order("created_at", { ascending: true });
 
-    const runIds = (runs ?? []).map((r) => r.id);
-    const traceByRun = new Map<string, string>();
-    if (runIds.length) {
-      const { data: events } = await supabase
-        .from("ai_events")
-        .select("run_id,trace_id,created_at")
-        .in("run_id", runIds)
-        .order("created_at", { ascending: true });
-      for (const e of (events ?? []) as { run_id: string | null; trace_id: string | null }[]) {
-        if (e.run_id && e.trace_id && !traceByRun.has(e.run_id)) traceByRun.set(e.run_id, e.trace_id);
-      }
-    }
-
     const { data: messages } = await supabase
       .from("agent_messages")
       .select("id,from_agent_slug,to_agent_slug,kind,payload,source_run_id,source_trace_id,consumed_by_run_id,created_at")
@@ -108,7 +96,6 @@ export const getMission = createServerFn({ method: "POST" })
         input: r.input,
         output: r.output,
         created_at: r.created_at,
-        trace_id: traceByRun.get(r.id) ?? null,
       })),
       messages: (messages ?? []) as MissionDetail["messages"],
     };
