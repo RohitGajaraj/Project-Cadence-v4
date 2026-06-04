@@ -15,6 +15,7 @@ import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
+import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
 
 const MAX_STEPS = 6;
 const MAX_RUNNING_PER_WORKSPACE = 5;
@@ -69,7 +70,7 @@ function xmlEscape(str: string): string {
 export async function runAgentLoop(
   supabase: SupabaseClient,
   userId: string,
-  input: { agentSlug: string; goal: string; model?: string; workspaceId?: string | null; missionSpendCapUsd?: number | null; missionTokenCap?: number | null },
+  input: { agentSlug: string; goal: string; model?: string; workspaceId?: string | null; missionId?: string | null; missionSpendCapUsd?: number | null; missionTokenCap?: number | null },
 ): Promise<LoopResult> {
   const traceId = crypto.randomUUID();
 
@@ -117,6 +118,7 @@ export async function runAgentLoop(
     input: input.goal,
     status: "running",
     workspace_id: workspaceId,
+    mission_id: input.missionId ?? null,
     mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
     mission_token_cap: input.missionTokenCap ?? null,
   }).select("id").single();
@@ -144,9 +146,23 @@ export async function runAgentLoop(
     } catch (e) { console.error("brief load failed:", e); }
   }
 
+  // Inbound A2A handoff (Bundle 4 / E2-E3) — if this run is part of a mission,
+  // consume the latest unread message addressed to this agent and inject the
+  // structured payload as a handoff block, right after the brief.
+  let handoffBlock = "";
+  if (input.missionId && runId) {
+    try {
+      const inbound = await consumeInboundHandoff(supabase, {
+        mission_id: input.missionId, to_agent_id: agent.id, run_id: runId,
+      });
+      handoffBlock = renderHandoffBlock(inbound);
+    } catch (e) { console.error("handoff load failed:", e); }
+  }
+
   const system = [
     agent.system_prompt,
     briefBlock,
+    handoffBlock,
     memories.length ? `\nRelevant memories from past sessions:\n${memories.map((m) => `- ${m}`).join("\n")}` : "",
     `\nYou can call these tools when needed:\n${describeToolsForPrompt(tools as { tool_name: string; mode: string }[])}`,
     `\nRespond with STRICT JSON only — one step at a time — using one of these shapes:
@@ -163,7 +179,10 @@ export async function runAgentLoop(
 
   const steps: LoopStep[] = [];
   let approvalsQueued = 0;
-  const ctx: ToolCtx = { supabase, userId, agentSlug: agent.slug, agentId: agent.id, traceId };
+  const ctx: ToolCtx = {
+    supabase, userId, agentSlug: agent.slug, agentId: agent.id, traceId,
+    missionId: input.missionId ?? null, workspaceId,
+  };
   const model = input.model ?? "google/gemini-2.5-flash";
 
   let halted: { kind: string; reason: string } | null = null;
@@ -176,6 +195,11 @@ export async function runAgentLoop(
           duration_ms: 0,
         }).eq("id", runId);
       } catch (e) { console.error("agent_runs finalize failed:", e); }
+    }
+    // If the mission has no outstanding handoff messages, mark it completed
+    // when this terminal hop finishes cleanly.
+    if (input.missionId && !halted) {
+      try { await maybeCompleteMission(supabase, input.missionId); } catch (e) { console.error("mission close failed:", e); }
     }
     return { trace_id: traceId, agent_slug: agent.slug, steps, final: finalMsg, approvals_queued: approvalsQueued, run_id: runId, halted };
   };
