@@ -1929,6 +1929,7 @@ export type Database = {
         Row: {
           body_md: string
           created_at: string
+          github_issue_url: string | null
           id: string
           model: string | null
           opportunity_id: string | null
@@ -1943,6 +1944,7 @@ export type Database = {
         Insert: {
           body_md?: string
           created_at?: string
+          github_issue_url?: string | null
           id?: string
           model?: string | null
           opportunity_id?: string | null
@@ -1957,6 +1959,7 @@ export type Database = {
         Update: {
           body_md?: string
           created_at?: string
+          github_issue_url?: string | null
           id?: string
           model?: string | null
           opportunity_id?: string | null
@@ -2963,6 +2966,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workspace_briefs: {
+        Row: {
+          anti_goals: string
+          created_at: string
+          current_focus: string
+          id: string
+          mission: string
+          notes: string
+          target_user: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          anti_goals?: string
+          created_at?: string
+          current_focus?: string
+          id?: string
+          mission?: string
+          notes?: string
+          target_user?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          anti_goals?: string
+          created_at?: string
+          current_focus?: string
+          id?: string
+          mission?: string
+          notes?: string
+          target_user?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_briefs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_members: {
         Row: {
