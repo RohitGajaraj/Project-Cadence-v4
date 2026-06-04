@@ -1,0 +1,1 @@
+ALTER TABLE public.ai_events ADD COLUMN IF NOT EXISTS system_preview text;

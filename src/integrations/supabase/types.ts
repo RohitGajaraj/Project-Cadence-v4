@@ -548,6 +548,7 @@ export type Database = {
           status: string
           surface: string
           surface_ref: string | null
+          system_preview: string | null
           total_tokens: number
           trace_id: string | null
           ttft_ms: number | null
@@ -576,6 +577,7 @@ export type Database = {
           status?: string
           surface: string
           surface_ref?: string | null
+          system_preview?: string | null
           total_tokens?: number
           trace_id?: string | null
           ttft_ms?: number | null
@@ -604,6 +606,7 @@ export type Database = {
           status?: string
           surface?: string
           surface_ref?: string | null
+          system_preview?: string | null
           total_tokens?: number
           trace_id?: string | null
           ttft_ms?: number | null
