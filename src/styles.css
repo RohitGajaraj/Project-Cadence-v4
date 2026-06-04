@@ -72,10 +72,10 @@
   --color-emerald: var(--emerald);
   --color-amber: var(--amber);
   --color-rose: var(--rose);
-  /* Editorial type — Instrument Serif display (closest free analog to
-   * Cohere's carved CohereText), Inter for UI (Unica77 spec fallback),
-   * JetBrains Mono for technical labels (CohereMono fallback). */
-  --font-display: "Instrument Serif", "Times New Roman", ui-serif, Georgia, serif;
+  /* Editorial type — Fraunces variable serif (modern, opsz-aware; reads
+   * more professional than Instrument Serif at display sizes), Inter for
+   * UI, JetBrains Mono for technical labels. */
+  --font-display: "Fraunces", "Instrument Serif", ui-serif, Georgia, serif;
   --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
@@ -586,15 +586,17 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    /* Instrument Serif is regular-weight only; Cohere display type is also
-     * 400 with tight tracking. Size + serif carries the hierarchy. */
-    font-weight: 400;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    /* Fraunces is variable; 400 for body headings, 500 for h2/h1.
+     * opsz auto-applies via font-variation-settings so display sizes get
+     * the wider, more dramatic contrast. */
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.022em;
+    font-variation-settings: "opsz" 96, "SOFT" 30;
   }
-  h1 { font-size: clamp(2.25rem, 4vw, 3.75rem); letter-spacing: -0.025em; }
-  h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); letter-spacing: -0.02em; }
-  h3 { font-size: clamp(1.35rem, 1.8vw, 1.75rem); letter-spacing: -0.015em; }
+  h1 { font-size: clamp(2.25rem, 4vw, 3.75rem); letter-spacing: -0.03em; font-weight: 500; }
+  h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); letter-spacing: -0.025em; font-weight: 500; }
+  h3 { font-size: clamp(1.25rem, 1.6vw, 1.5rem); letter-spacing: -0.018em; font-weight: 500; font-variation-settings: "opsz" 36, "SOFT" 30; }
 
   /* Section rhythm — global density nudge. Pages using py-8 / space-y-8 now
    * compress by ~25% without per-route edits. Keeps generous breathing on
