@@ -31,6 +31,7 @@ const pinned: NavItem[] = [
   { to: "/briefing", label: "Briefing", icon: Crosshair },
   { to: "/chat", label: "AI Chat", icon: MessageSquare },
   { to: "/agents", label: "Agents", icon: Bot },
+  { to: "/missions", label: "Missions", icon: GitBranch },
   { to: "/inbox", label: "Approvals", icon: Inbox },
 ];
 
