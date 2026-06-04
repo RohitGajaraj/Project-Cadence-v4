@@ -64,7 +64,8 @@ The first two of those tables — `missions` and `agent_messages` (the structure
 - **Handoff block injection** — `src/lib/ai/handoff.server.ts → renderHandoffBlock` returns a labelled plain-text block that the loop prepends to the receiver's system prompt right after the workspace brief, before memory recall. Same shape as the brief block, so if you change one keep both in sync.
 - **Failure policy:** option-b (hop failures stop the mission; operator re-dispatches manually). Documented in [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md).
 - **Concurrency:** per-workspace cap from FND-RUNTIME 0.9 (5 concurrent `running` runs) applies across all missions in the workspace.
-- **Deferred to Bundle 5:** E6 Mission Graph DAG view, explicit `agent.spawn` fan-out + parent merge step (E4 polish), per-mission message-cap loop guard.
+- **Mission graph (E6, shipped 2026-06-04):** `/missions/$id` renders a live DAG via `src/components/cadence/MissionGraph.tsx` — pure read model over `missions` + `agent_runs` + `agent_messages` (no new tables, no new server fn). Nodes = `agent_runs`; edges = `agent_messages` with `source_run_id → consumed_by_run_id` (fallback: next chronological hop matching `to_agent_slug` for in-flight handoffs). Layout = BFS-depth columns × chronological rows so fan-out renders as parallel children. Re-uses the existing 2s refetch.
+- **Still deferred:** explicit `agent.spawn` fan-out tool + parent merge step (E4 polish), per-mission message-cap loop guard, pause/steer-from-graph controls.
 - **Canonical doc:** [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md). Keep in sync when the payload contract or lifecycle changes.
 
 ## Invariants
