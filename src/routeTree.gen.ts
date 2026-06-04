@@ -41,6 +41,7 @@ import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
+import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioIdRouteImport } from './routes/_authenticated.studio.$id'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
@@ -216,6 +217,12 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMissionsIndexRoute =
+  AuthenticatedMissionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMissionsRoute,
+  } as any)
 const AuthenticatedTracesTraceIdRoute =
   AuthenticatedTracesTraceIdRouteImport.update({
     id: '/$traceId',
@@ -326,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -353,7 +361,6 @@ export interface FileRoutesByTo {
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
-  '/missions': typeof AuthenticatedMissionsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/prompts': typeof AuthenticatedPromptsRoute
@@ -372,6 +379,7 @@ export interface FileRoutesByTo {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$id': typeof AuthenticatedStudioIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/missions': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -420,6 +428,7 @@ export interface FileRoutesById {
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/studio/$id': typeof AuthenticatedStudioIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$id'
     | '/traces/$traceId'
+    | '/missions/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -495,7 +505,6 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/integrations'
     | '/meetings'
-    | '/missions'
     | '/opportunities'
     | '/prds'
     | '/prompts'
@@ -514,6 +523,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$id'
     | '/traces/$traceId'
+    | '/missions'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prds/$id'
     | '/_authenticated/studio/$id'
     | '/_authenticated/traces/$traceId'
+    | '/_authenticated/missions/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -814,6 +825,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/missions/': {
+      id: '/_authenticated/missions/'
+      path: '/'
+      fullPath: '/missions/'
+      preLoaderRoute: typeof AuthenticatedMissionsIndexRouteImport
+      parentRoute: typeof AuthenticatedMissionsRoute
+    }
     '/_authenticated/traces/$traceId': {
       id: '/_authenticated/traces/$traceId'
       path: '/$traceId'
@@ -923,10 +941,12 @@ const AuthenticatedMeetingsRouteWithChildren =
 
 interface AuthenticatedMissionsRouteChildren {
   AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
+  AuthenticatedMissionsIndexRoute: typeof AuthenticatedMissionsIndexRoute
 }
 
 const AuthenticatedMissionsRouteChildren: AuthenticatedMissionsRouteChildren = {
   AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
+  AuthenticatedMissionsIndexRoute: AuthenticatedMissionsIndexRoute,
 }
 
 const AuthenticatedMissionsRouteWithChildren =
