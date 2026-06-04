@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronDown, ChevronUp, Send } from "lucide-react";
+import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listBuilderRuns, dispatchBuilderMission, type BuilderRun } from "@/lib/build.functions";
 import { listProjects } from "@/lib/projects.functions";
