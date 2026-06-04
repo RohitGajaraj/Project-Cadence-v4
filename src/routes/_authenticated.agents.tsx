@@ -45,7 +45,7 @@ function AgentsPage() {
   });
 
   const dispatch = useMutation({
-    mutationFn: (data: { agentSlug: string; goal: string; model?: string }) => mRun({ data }),
+    mutationFn: (data: { agentSlug: string; goal: string; model?: string; asMission?: boolean; missionTitle?: string }) => mRun({ data }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
       qc.invalidateQueries({ queryKey: ["agent-trust"] });
