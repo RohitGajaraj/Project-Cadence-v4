@@ -609,7 +609,7 @@ const agentHandoff = def({
 });
 
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff]
+  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff, webSearchTool, webFetchTool, webMapTool, webCrawlTool]
     .map((t) => [t.name, t]),
 );
 
