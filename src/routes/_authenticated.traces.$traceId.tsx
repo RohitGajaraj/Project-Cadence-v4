@@ -30,7 +30,7 @@ type EventRow = {
   fallback: boolean;
   input_preview: string | null;
   output_preview: string | null;
-  system_preview: string | null;
+  system_preview?: string | null;
   error_message: string | null;
 };
 type Span = EventRow & { depth: number; offset_ms: number };
