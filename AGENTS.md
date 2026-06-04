@@ -214,6 +214,7 @@ A change is not "done" until its documentation is true. An agent that ships code
 | Frontend pattern change | [`architecture/frontend.md`](./architecture/frontend.md) |
 | Integration / connector / protocol change | [`architecture/integrations.md`](./architecture/integrations.md) + [`plan.md`](./plan.md) |
 | Repo layout change | [`ENTRY.md`](./ENTRY.md) |
+| New file under `docs/` | Add a row to [`docs/README.md`](./docs/README.md) AND a "Related" cross-link block at the bottom of the new file (siblings + relevant `architecture/*.md`) |
 | Start / pause / finish / block any feature | **Live status board** in [`docs/feature-backlog.md`](./docs/feature-backlog.md) (+ rollup mark) |
 | Phase / milestone completion | [`plan.md`](./plan.md) + [`TASKS.md`](./TASKS.md) |
 | Tech-stack decision | [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md) |
