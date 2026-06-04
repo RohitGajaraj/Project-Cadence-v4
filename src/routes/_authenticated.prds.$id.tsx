@@ -126,20 +126,31 @@ function PrdEditor() {
         </Link>
 
         {prdQ.data?.prd?.github_issue_url ? (
-          <a
-            href={prdQ.data.prd.github_issue_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-violet-300 hover:text-violet-200 mb-3 ml-3 rounded-md border hairline px-2 py-1 bg-background/40"
-            title={prdQ.data.prd.github_issue_url}
-          >
-            <Github className="h-3 w-3" />
-            GitHub issue
-            {(() => {
-              const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
-              return m ? <span className="text-muted-foreground">#{m[1]}</span> : null;
-            })()}
-          </a>
+          <div className="inline-flex items-center gap-2 mb-3 ml-3">
+            <a
+              href={prdQ.data.prd.github_issue_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-violet-300 hover:text-violet-200 rounded-md border hairline px-2 py-1 bg-background/40"
+              title={prdQ.data.prd.github_issue_url}
+            >
+              <Github className="h-3 w-3" />
+              GitHub issue
+              {(() => {
+                const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
+                return m ? <span className="text-muted-foreground">#{m[1]}</span> : null;
+              })()}
+            </a>
+            <button
+              onClick={() => sendToBuilder.mutate()}
+              disabled={sendToBuilder.isPending}
+              className="inline-flex items-center gap-1.5 text-xs rounded-md border hairline px-2 py-1 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+              title="Dispatch the Builder agent to open a scoped PR for this issue"
+            >
+              <Hammer className="h-3 w-3" />
+              {sendToBuilder.isPending ? "Dispatching…" : "Send to Builder"}
+            </button>
+          </div>
         ) : null}
 
         <div className="flex items-center gap-3 mb-6">
