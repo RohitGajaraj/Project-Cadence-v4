@@ -94,7 +94,7 @@ function RoadmapPage() {
             <button
               onClick={() => plan.mutate(false)}
               disabled={plan.isPending}
-              className="rounded-xl neural-gradient text-white px-3.5 py-2 text-sm inline-flex items-center gap-1.5 shadow-lg disabled:opacity-50"
+              className="btn-agentic rounded-xl px-3.5 py-2 text-sm font-medium inline-flex items-center gap-1.5"
             >
               <Wand2 className="h-4 w-4" /> {plan.isPending ? "Planning…" : "Plan next 2 weeks"}
             </button>

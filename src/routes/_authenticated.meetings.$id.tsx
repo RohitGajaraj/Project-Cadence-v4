@@ -114,7 +114,7 @@ function MeetingDetail() {
                     <button
                       onClick={async () => { await mSave({ data: { id, transcript } }); extract.mutate(false); }}
                       disabled={extract.isPending || !transcript.trim()}
-                      className="rounded-lg neural-gradient text-white px-3 py-1.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+                      className="btn-agentic rounded-lg px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
                     >
                       <Wand2 className="h-3 w-3" /> {extract.isPending ? "Extracting…" : "Extract"}
                     </button>

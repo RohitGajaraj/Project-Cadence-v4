@@ -273,7 +273,7 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
         <button
           onClick={() => dispatch.mutate()}
           disabled={!canSubmit}
-          className="rounded-xl neural-gradient text-white px-4 py-2 text-sm inline-flex items-center gap-2 disabled:opacity-50"
+          className="btn-agentic rounded-xl px-4 py-2 text-sm font-medium inline-flex items-center gap-2"
         >
           <Send className="h-3.5 w-3.5" />
           {dispatch.isPending ? "Dispatching…" : "Dispatch Builder"}
