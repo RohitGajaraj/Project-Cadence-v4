@@ -91,7 +91,7 @@ Each bundle composes existing backlog IDs; nothing here is a parallel scope. Bun
 | 2 | **Strategic Briefing surface** | Changing the brief visibly changes the next Discovery + Strategist output (not just stored). | C5 (new) ✅ | C1, C3 | ☑ |
 | 3 | **Agent Roster + Trust Score + Autonomy Dial** | Dialing autonomy from Observing → Trusted removes a specific approval gate; Trust Score moves based on real outcomes (eval pass-rate, approval-acceptance, mission success). | C1, C2, C3, C4, **C6** (new) | C1, C4 | ☐ |
 | 4 ⭐ | **Agent-to-Agent comms + handoff + sub-agent spawning** | One mission with **≥3 hops** between agents, each reading prior agent's **structured** output via the orchestration layer (not prompt-stuffing), full trace replayable. | E1, E2, E3, E4, E5 | C2 | ☐ |
-| 5 | **Live Mission Graph** | The graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens + approval state. | E6, X1 | C1, C2 | ☐ |
+| 5 | **Live Mission Graph** | The graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens + approval state. | E6, X1 | C1, C2 | ☑ |
 | 6 | **Lifecycle slice — Discover → Define → Plan on real data** | Real signals → real PRD → real sprint plan → one approval-gated item → on approval, **real GitHub issue created via MCP**. End-to-end, no human routing. | F1, F2, F3, G1, H1 + **N1** (new, GitHub-issues sync) | C3 | ◑ (legacy parts reusable) |
 | 7 | **Decision Queue + approval gates UX** | Every gate the agents hit lands in the queue with context (what, why, cost-if-approved, who proposed); approve/reject changes downstream agent behavior. | D3, P-approvals | C1, C4 | ◑ (reusable) |
 | 8 | **Product Memory + lineage + full data export** | Every artifact (signal → theme → opportunity → PRD → decision) has lineage backward to its source; "Export everything" produces a complete, re-importable archive. | O1, O2, U6 (new) | C3 | ☐ |
@@ -423,10 +423,10 @@ ID. Feature name                         [status] · Pn · stage
 **E5 — Parallel agent sessions** `[done]` · `P1` · `X1`
 - Built: two missions in the same workspace run concurrently up to the FND-RUNTIME 0.9 backpressure cap (`MAX_RUNNING_PER_WORKSPACE = 5`). Above that, additional missions sit `queued` and are promoted by the sweeper. Per-mission isolation is enforced by `mission_id` on `agent_runs` + `agent_messages` and by RLS scoping to `workspace_members`. No cross-bleed possible — each run loads only its own inbound handoff and writes only to its own mission.
 
-**E6 — Orchestration / mission graph view** `[new]` · `P1` · `X1`
-- Build: live DAG of agents/sessions; per-node status, cost, approval state; pause/steer/approve from the graph.
-- States: huge graph (zoom/collapse); node failed; node awaiting approval.
-- Done when: the graph reflects live mission state and supports pause/steer. See `design.md`.
+**E6 — Orchestration / mission graph view** `[done]` · `P1` · `X1`
+- Built (2026-06-04): live DAG on `/missions/$id` via `src/components/cadence/MissionGraph.tsx`. Pure-SVG, no external graph lib. Nodes = `agent_runs` rows; edges = `agent_messages` (`source_run_id → consumed_by_run_id`, fallback to next hop matching `to_agent_slug` while in flight). Layout = BFS-depth columns × chronological rows; fan-out renders as parallel rows in the child column. Status color + glyph mirror the hop card; click = expand+scroll target hop; keyboard accessible. Re-uses the existing 2s refetch loop while mission `status='running'`.
+- How to use / verify: dispatch any mission from `/agents` with "Start as mission" → open `/missions/{id}` → Mission graph card sits above the Agent timeline. Single-agent mission ⇒ 1 node, 0 edges. Multi-hop ⇒ N nodes + labelled handoff edges, updating live. Click a node ⇒ matching hop card expands + scrolls into view; per-hop `/traces/$traceId` link still works.
+- Deferred to later: pause/steer-from-graph controls, zoom/collapse for very large graphs (>20 nodes), per-node cost/token rollup pill (data available once we surface it in `getMission`).
 - Depends: E1–E5, P.
 
 **E7 — Shared vs. private memory** `[extend]` · `P1` · `X1`
