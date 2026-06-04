@@ -550,7 +550,7 @@ const backlogPrioritize = def({
 });
 
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize]
+  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff]
     .map((t) => [t.name, t]),
 );
 
