@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import { listProjects } from "@/lib/projects.functions";
-import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd } from "@/lib/discovery.functions";
+import { listPrds, deletePrd, generatePrd, createGithubIssueForPrd, savePrd } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
 import { dispatchBuilderMission } from "@/lib/build.functions";
 import FolderInteraction from "@/components/ui/folder";
@@ -27,6 +27,12 @@ function PrdsPage() {
   const mTasks = useServerFn(promotePrdToTasks);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
   const mDispatch = useServerFn(dispatchBuilderMission);
+  const mSave = useServerFn(savePrd);
+  const rename = useMutation({
+    mutationFn: (v: { id: string; title: string }) => mSave({ data: { id: v.id, title: v.title } }),
+    onSuccess: () => { inv(); toast.success("Renamed"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prds = useQuery({ queryKey: ["prds"], queryFn: () => fPrds() });
@@ -141,18 +147,7 @@ function PrdsPage() {
                   onClick={() => {
                     const next = window.prompt("Rename PRD", p.title);
                     if (next && next.trim() && next !== p.title) {
-                      mDispatch; // no-op to keep import — actual rename uses savePrd
-                      void (async () => {
-                        try {
-                          const { savePrd } = await import("@/lib/discovery.functions");
-                          const fn = (savePrd as unknown as (args: { data: { id: string; title: string } }) => Promise<unknown>);
-                          await fn({ data: { id: p.id, title: next.trim().slice(0, 200) } });
-                          inv();
-                          toast.success("Renamed");
-                        } catch (e) {
-                          toast.error((e as Error).message);
-                        }
-                      })();
+                      rename.mutate({ id: p.id, title: next.trim().slice(0, 200) });
                     }
                   }}
                   className="rounded-lg border hairline px-2.5 py-1.5 text-[11px] inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
