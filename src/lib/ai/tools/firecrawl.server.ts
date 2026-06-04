@@ -66,12 +66,22 @@ export async function webSearch(opts: {
   };
   if (opts.scrape) body.scrapeOptions = { formats: ["markdown"] };
   if (opts.recency) body.tbs = `qdr:${opts.recency[0]}`;
+  type Hit = { url?: string; title?: string; description?: string; markdown?: string };
   type Resp = {
-    data?: Array<{ url?: string; title?: string; description?: string; markdown?: string }>;
-    web?: Array<{ url?: string; title?: string; description?: string; markdown?: string }>;
+    // Firecrawl v1 shape
+    data?: Hit[] | { web?: Hit[]; news?: Hit[]; images?: Hit[] };
+    // Older / alt shapes
+    web?: Hit[];
+    results?: Hit[];
   };
   const j = await fcPost<Resp>("/search", body);
-  const rows = j.data ?? j.web ?? [];
+  let rows: Hit[] = [];
+  if (Array.isArray(j.data)) rows = j.data;
+  else if (j.data && typeof j.data === "object") {
+    const d = j.data as { web?: Hit[]; news?: Hit[]; images?: Hit[] };
+    rows = [...(d.web ?? []), ...(d.news ?? [])];
+  } else if (Array.isArray(j.web)) rows = j.web;
+  else if (Array.isArray(j.results)) rows = j.results;
   const results = rows.map((r) => ({
     url: r.url ?? "",
     title: clip(r.title, 200),
