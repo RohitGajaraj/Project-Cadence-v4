@@ -80,7 +80,7 @@ Each bundle composes existing backlog IDs; nothing here is a parallel scope. Bun
 | # | Bundle | Proof bar (what makes the claim true) | Backlog IDs | Supports | Status |
 |---|---|---|---|---|---|
 | 1 | **Governed Foundation** — tenancy, AI chokepoint, trust tables, blast-radius, kill-switch + spend caps, injection defense, durable runtime | Killing an agent mid-mission halts spend within 1 tick; every action has an audit-log row queryable from the UI. | 0.1, 0.2, 0.3, 0.5, **0.6** ✅, **0.7** ✅, 0.9, A1/A2 | C1, C4 | ◑ (0.6 + 0.7 done; 0.9 next) |
-| 2 | **Strategic Briefing surface** | Changing the brief visibly changes the next Discovery + Strategist output (not just stored). | C5 (new) | C1, C3 | ☐ |
+| 2 | **Strategic Briefing surface** | Changing the brief visibly changes the next Discovery + Strategist output (not just stored). | C5 (new) ✅ | C1, C3 | ☑ |
 | 3 | **Agent Roster + Trust Score + Autonomy Dial** | Dialing autonomy from Observing → Trusted removes a specific approval gate; Trust Score moves based on real outcomes (eval pass-rate, approval-acceptance, mission success). | C1, C2, C3, C4, **C6** (new) | C1, C4 | ☐ |
 | 4 ⭐ | **Agent-to-Agent comms + handoff + sub-agent spawning** | One mission with **≥3 hops** between agents, each reading prior agent's **structured** output via the orchestration layer (not prompt-stuffing), full trace replayable. | E1, E2, E3, E4, E5 | C2 | ☐ |
 | 5 | **Live Mission Graph** | The graph updates in real time as agents act; clicking a node opens that agent's trace + cost + tokens + approval state. | E6, X1 | C1, C2 | ☐ |
