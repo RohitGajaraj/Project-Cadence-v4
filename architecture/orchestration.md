@@ -54,6 +54,19 @@ The UI ([`design.md`](../design.md), [`frontend.md`](./frontend.md)) renders the
 ## Data (new tables this layer needs)
 `missions`, `mission_sessions`, `mission_nodes` (DAG edges + state), `workflows` + `workflow_versions`, `automation_triggers`. All RLS-scoped by `user_id` + `workspace_id` + `product_id`. Schema authored via migrations ([`data.md`](./data.md)).
 
+## A2A handoff (shipped — Bundle 4)
+
+The first two of those tables — `missions` and `agent_messages` (the structured-message store) — landed with Bundle 4. The orchestration surface speaks via these primitives.
+
+- **`missions`** groups multiple `agent_runs` under one operator intent. One row per mission; `current_agent_id` + `hop_count` are kept in sync by a trigger on `agent_messages`.
+- **`agent_messages`** is the canonical A2A wire format. One row per hop, payload is **typed jsonb** (`task + context + artifacts + open_questions + constraints`). Receivers re-read referenced artifacts with their own tools — payload is NEVER a pasted summary of the prior agent's prompt.
+- **`agent.handoff` tool** (`src/lib/ai/tools/registry.server.ts`) is the only way to move a mission forward. Default mode `confirm`; arc-gated like any other write tool.
+- **Handoff block injection** — `src/lib/ai/handoff.server.ts → renderHandoffBlock` returns a labelled plain-text block that the loop prepends to the receiver's system prompt right after the workspace brief, before memory recall. Same shape as the brief block, so if you change one keep both in sync.
+- **Failure policy:** option-b (hop failures stop the mission; operator re-dispatches manually). Documented in [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md).
+- **Concurrency:** per-workspace cap from FND-RUNTIME 0.9 (5 concurrent `running` runs) applies across all missions in the workspace.
+- **Deferred to Bundle 5:** E6 Mission Graph DAG view, explicit `agent.spawn` fan-out + parent merge step (E4 polish), per-mission message-cap loop guard.
+- **Canonical doc:** [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md). Keep in sync when the payload contract or lifecycle changes.
+
 ## Invariants
 - No multi-step autonomous work outside the orchestrator.
 - Every node logs to `ai_traces`/`tool_calls` via the chokepoint.
