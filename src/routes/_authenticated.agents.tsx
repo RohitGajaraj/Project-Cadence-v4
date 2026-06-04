@@ -10,6 +10,7 @@ import { runAgent } from "@/lib/agent_loop.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listApiKeys } from "@/lib/byokeys.functions";
 import { getAllAgentTrust, setAgentArc, type AgentTrust, type Arc } from "@/lib/trust.functions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated/agents")({
   component: AgentsPage,
@@ -95,6 +96,7 @@ function AgentsPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
+      <TooltipProvider delayDuration={150}>
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8">
           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
@@ -235,6 +237,7 @@ function AgentsPage() {
           </section>
         </div>
       </div>
+      </TooltipProvider>
     </AppShell>
   );
 }
@@ -248,6 +251,22 @@ const ARC_LABELS: Record<Arc, string> = {
 
 const ARC_ORDER: Arc[] = ["observing", "proving", "trusted", "ambient"];
 
+const ARC_BLURB: Record<Arc, string> = {
+  observing: "Every tool call queues for review. Use for brand-new agents or after a regression.",
+  proving: "Auto-mode tools require one-click confirm. Use while building a track record.",
+  trusted: "Confirm-mode tools run inline. Review-mode tools still queue. Day-to-day default once an agent has earned it.",
+  ambient: "Everything runs inline except hard-locked tools (e.g. calendar.create still confirms). Reserve for top-trust agents.",
+};
+
+function qualitativeLabel(score: number, samples: number): string {
+  if (samples < 3) return "New";
+  if (score >= 90) return "Ambient";
+  if (score >= 75) return "Trusted";
+  if (score >= 55) return "Proving";
+  if (score >= 35) return "Observing";
+  return "At-risk";
+}
+
 function scoreTone(score: number): string {
   if (score >= 75) return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
   if (score >= 55) return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
@@ -258,27 +277,45 @@ function scoreTone(score: number): string {
 function TrustChip({ trust }: { trust?: AgentTrust }) {
   if (!trust) {
     return (
-      <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-        Trust —
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-help">
+            Trust —
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-left">
+          No trust data yet. Score appears after the first mission, approval, or eval is recorded for this agent.
+        </TooltipContent>
+      </Tooltip>
     );
   }
   const b = trust.breakdown;
-  const tip = [
-    `Trust score ${trust.score}/100`,
-    `Missions: ${b.missions_completed}/${b.missions_total} completed (${Math.round(b.mission_success_rate * 100)}%)`,
-    `Approvals: ${b.approvals_approved}/${b.approvals_total} accepted (${Math.round(b.approval_acceptance_rate * 100)}%)`,
-    `Evals: ${b.evals_total} avg ${b.eval_mean_score.toFixed(2)}`,
-    `Samples: ${b.samples} (formula: 0.4·success + 0.3·approval + 0.3·eval, shrunk toward 0.5 when n<10)`,
-    `Suggested arc: ${ARC_LABELS[trust.suggested_arc]}`,
-  ].join("\n");
+  const label = qualitativeLabel(trust.score, b.samples);
   return (
-    <span
-      title={tip}
-      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${scoreTone(trust.score)}`}
-    >
-      Trust {trust.score}
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] cursor-help ${scoreTone(trust.score)}`}
+        >
+          Trust {trust.score} · {label}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm text-left space-y-1.5 p-3">
+        <div className="font-semibold text-[12px]">Trust {trust.score}/100 · {label}</div>
+        <div className="text-[11px] opacity-80 leading-snug">
+          0 = no track record · 50 = neutral · 100 = exceptionally reliable. New agents are pulled toward 50 until they have ~10 missions (Bayesian shrinkage).
+        </div>
+        <div className="pt-1 space-y-0.5 text-[11px]">
+          <div>Missions <span className="opacity-70">(40%)</span>: {b.missions_completed}/{b.missions_total} · {Math.round(b.mission_success_rate * 100)}%</div>
+          <div>Approvals <span className="opacity-70">(30%)</span>: {b.approvals_approved}/{b.approvals_total} · {Math.round(b.approval_acceptance_rate * 100)}%</div>
+          <div>Evals <span className="opacity-70">(30%)</span>: {b.evals_total} runs · avg {b.eval_mean_score.toFixed(2)}</div>
+          <div className="opacity-70">Samples: {b.samples}</div>
+        </div>
+        <div className="pt-1 text-[10px] opacity-70 italic">
+          0.4·mission + 0.3·approval + 0.3·eval, shrunk toward 0.5 when n&lt;10. Suggested arc: {ARC_LABELS[trust.suggested_arc]}.
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -296,7 +333,15 @@ function AutonomyDial({
   return (
     <div className="mt-4 rounded-xl border hairline bg-background/40 p-3">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-        <Gauge className="h-3 w-3 text-violet-300" /> Autonomy dial
+        <Gauge className="h-3 w-3 text-violet-300" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help">Autonomy dial</span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-sm text-left p-3 text-[11px] leading-snug">
+            The trust arc this agent runs at. It composes with each tool's own mode to decide whether a call runs inline, queues a confirm, or queues a review. Safety floor: <em>review</em> is sticky and hard-locked tools (e.g. calendar.create) always confirm.
+          </TooltipContent>
+        </Tooltip>
         {suggested && suggested !== current && (
           <span className="ml-auto normal-case tracking-normal text-muted-foreground/80">
             Suggested: <span className="text-foreground">{ARC_LABELS[suggested]}</span>
@@ -307,24 +352,31 @@ function AutonomyDial({
         {ARC_ORDER.map((arc) => {
           const active = arc === current;
           return (
-            <button
-              key={arc}
-              type="button"
-              disabled={pending || active}
-              onClick={() => onChange(arc)}
-              className={`rounded-md border px-2 py-1.5 text-[11px] transition ${
-                active
-                  ? "border-foreground/30 bg-foreground text-background"
-                  : "border-border bg-secondary/40 hover:bg-secondary/70 disabled:opacity-60"
-              }`}
-            >
-              {ARC_LABELS[arc]}
-            </button>
+            <Tooltip key={arc}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled={pending || active}
+                  onClick={() => onChange(arc)}
+                  className={`rounded-md border px-2 py-1.5 text-[11px] transition ${
+                    active
+                      ? "border-foreground/30 bg-foreground text-background"
+                      : "border-border bg-secondary/40 hover:bg-secondary/70 disabled:opacity-60"
+                  }`}
+                >
+                  {ARC_LABELS[arc]}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-left p-2.5 text-[11px] leading-snug">
+                <div className="font-semibold mb-1">{ARC_LABELS[arc]}</div>
+                {ARC_BLURB[arc]}
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
       <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
-        Observing queues every action for review · Proving requires one-click confirm · Trusted runs confirm-mode tools inline · Ambient runs everything inline (high-risk tools like calendar still require confirm).
+        Currently <span className="text-foreground">{ARC_LABELS[current]}</span> — {ARC_BLURB[current]}
       </p>
     </div>
   );
