@@ -192,6 +192,158 @@
   --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--focus-blue) 70%, transparent);
 }
 
+/* === Cadence Nightshift — dark theme override ===
+ * The original pre-Cohere palette. Activated by toggling `.dark` on <html>.
+ * Overrides every semantic token declared on :root so every page that uses
+ * tokens (bg-canvas, text-ink, btn-pill, band-deep-green, etc.) flips
+ * cleanly to a dark surface without per-component edits. */
+.dark {
+  --radius: 0.75rem;
+
+  /* Display font for dark theme — Inter Tight (Nightshift original) */
+  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Surfaces */
+  --canvas:         oklch(0.155 0.012 260);
+  --soft-stone:     oklch(0.215 0.015 258);
+  --pale-green:     oklch(0.255 0.05 155);
+  --pale-blue:      oklch(0.255 0.05 220);
+  --paper:          oklch(0.155 0.012 260);
+  --paper-elevated: oklch(0.185 0.014 260);
+  --surface-1:      oklch(0.175 0.013 260);
+  --surface-2:      oklch(0.215 0.015 258);
+  --surface-3:      oklch(0.255 0.016 258);
+
+  /* Ink */
+  --ink:            oklch(0.985 0.003 250);
+  --ink-muted:      oklch(0.80 0.012 250);
+  --ink-subtle:     oklch(0.64 0.014 250);
+  --ink-faint:      oklch(0.56 0.014 250);
+
+  /* Rules */
+  --hairline:         oklch(0.85 0.02 260 / 12%);
+  --hairline-strong:  oklch(0.85 0.02 260 / 22%);
+  --border-light:     oklch(0.85 0.02 260 / 14%);
+  --card-border:      oklch(0.85 0.02 260 / 10%);
+
+  /* Brand / accent — Nightshift dual-accent */
+  --primary-ink:   oklch(0.72 0.22 295);          /* electric violet primary */
+  --deep-green:    oklch(0.72 0.22 295);          /* remap: product band → violet */
+  --dark-navy:     oklch(0.185 0.014 260);
+  --action-blue:   oklch(0.82 0.14 220);          /* cyan info */
+  --focus-blue:    oklch(0.72 0.22 295);
+  --coral:         oklch(0.78 0.19 52);           /* ember orange signal */
+  --coral-soft:    oklch(0.82 0.14 52);
+  --form-focus:    oklch(0.72 0.22 295);
+
+  --violet:      oklch(0.72 0.22 295);
+  --violet-soft: oklch(0.78 0.16 295);
+  --amber:       oklch(0.78 0.19 52);
+  --cyan:        oklch(0.82 0.14 220);
+  --emerald:     oklch(0.80 0.17 155);
+  --rose:        oklch(0.72 0.22 18);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface-2);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-3);
+  --popover-foreground: var(--ink);
+  --primary: var(--violet);
+  --primary-foreground: oklch(0.99 0.005 280);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-1);
+  --muted-foreground: var(--ink-muted);
+  --accent: oklch(0.275 0.018 258);
+  --accent-foreground: var(--ink);
+  --destructive: var(--rose);
+  --destructive-foreground: oklch(0.98 0.003 85);
+  --border: var(--hairline);
+  --input: oklch(1 0 0 / 6%);
+  --ring: var(--violet);
+  --chart-1: var(--violet);
+  --chart-2: var(--cyan);
+  --chart-3: var(--emerald);
+  --chart-4: var(--amber);
+  --chart-5: var(--rose);
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--violet);
+
+  --gradient-aurora: radial-gradient(55% 75% at 18% 28%, color-mix(in oklab, var(--violet) 65%, transparent) 0%, transparent 65%),
+                     radial-gradient(50% 65% at 82% 22%, color-mix(in oklab, var(--cyan) 38%, transparent) 0%, transparent 65%),
+                     radial-gradient(48% 60% at 62% 95%, color-mix(in oklab, var(--amber) 50%, transparent) 0%, transparent 65%);
+  --gradient-card: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 100%, transparent) 0%, color-mix(in oklab, var(--surface-1) 100%, transparent) 100%);
+  --gradient-trace: linear-gradient(90deg, var(--violet), var(--cyan) 55%, var(--amber));
+  --shadow-glass:    0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
+  --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 6%) inset, 0 24px 60px -20px oklch(0 0 0 / 70%);
+  --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--violet) 65%, transparent), 0 0 28px -4px color-mix(in oklab, var(--violet) 55%, transparent);
+}
+
+/* Dark-theme body sizing matches Nightshift density (15px / 1.55). */
+.dark, .dark body {
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+}
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+}
+.dark h1 { font-size: clamp(1.75rem, 2.4vw, 2.35rem); font-weight: 650; letter-spacing: -0.03em; }
+.dark h2 { font-size: clamp(1.35rem, 1.7vw, 1.625rem); }
+.dark h3 { font-size: 1.125rem; }
+
+/* Restore saturated Nightshift decorative utilities under .dark only.
+ * Light theme keeps the neutralized soft-wash versions defined below. */
+.dark .neural-gradient {
+  background: radial-gradient(55% 75% at 18% 25%, color-mix(in oklab, var(--violet) 80%, transparent) 0%, transparent 70%),
+              radial-gradient(50% 65% at 82% 20%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 70%),
+              radial-gradient(50% 60% at 62% 95%, color-mix(in oklab, var(--amber) 60%, transparent) 0%, transparent 70%),
+              radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--violet) 35%, transparent) 0%, transparent 70%);
+  filter: blur(0.5px) saturate(1.2);
+}
+.dark .neural-text {
+  background: linear-gradient(110deg, var(--cyan) 0%, var(--violet) 45%, var(--amber) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .ring-glow-violet {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent),
+              0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent);
+}
+.dark .bento {
+  background: var(--gradient-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
+}
+.dark .glass {
+  background-color: color-mix(in oklab, var(--surface-2) 70%, transparent);
+  border: 1px solid var(--hairline);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+.dark .grain::after {
+  background-image: radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+.dark .indigo-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
