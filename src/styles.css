@@ -72,20 +72,15 @@
   --color-emerald: var(--emerald);
   --color-amber: var(--amber);
   --color-rose: var(--rose);
-  /* Midnight Indigo + Mono Hybrid — JetBrains Mono headings (code-flavored,
-   * agent-native) + Work Sans body (humane, ultra-legible). */
-  --font-display: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Nightshift type — Inter Tight headings (precise, modern enterprise),
+   * Inter body (humane, ultra-legible at 15px+), JetBrains Mono metrics. */
+  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 :root {
-  /* Tighter radius — precise, mechanical; corners read crisp at small sizes. */
   --radius: 0.75rem;
-  /* Motion system — Emil-grade easing.
-   * Built-in CSS easings are too weak; these are strong custom curves
-   * tuned for UI. Never use ease-in on UI (feels sluggish at the moment
-   * the user is watching most closely). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -93,33 +88,36 @@
   --dur-base: 180ms;
   --dur-slow: 260ms;
 
-  /* Obsidian & Ember — true-black industrial dark, tuned for accessibility.
-   * Background is a deep obsidian with the faintest warm bias so it never
-   * reads blue or muddy. Three elevation tiers give real depth without
-   * cards-everywhere noise. Ember (Pantone Orange 021 C) is the signature
-   * accent. Muted ink lifted to ~4.8:1 against paper so older eyes still
-   * read body text comfortably. All values tuned in oklch. */
-  --paper: oklch(0.09 0.004 60);              /* true obsidian, faint warmth */
-  --paper-elevated: oklch(0.13 0.005 60);     /* lifted plate */
-  --surface-1: oklch(0.11 0.004 60);          /* base surface */
-  --surface-2: oklch(0.145 0.005 60);         /* +1 elevation */
-  --surface-3: oklch(0.18 0.006 60);          /* +2 elevation (popovers) */
-  --ink: oklch(0.98 0.003 75);                /* near-white, faint warmth */
-  --ink-muted: oklch(0.74 0.012 65);          /* lifted for AA on obsidian */
-  --ink-subtle: oklch(0.58 0.012 65);         /* metadata, captions */
-  --hairline: oklch(0.85 0.02 70 / 14%);
-  --hairline-strong: oklch(0.85 0.02 70 / 22%);
+  /* === Cadence Nightshift — enterprise dark, dual-accent ===
+   * Lifted off pure black (pure black + orange muddied + crushed contrast).
+   * Canvas is a deep cool charcoal with a faint indigo bias — Linear/Vercel/
+   * factory.ai energy, never washed-out.
+   * Dual accent: electric VIOLET = primary (CTA, focus, brand);
+   * ember ORANGE = signal (live agents, alerts, costs). Distinct roles.
+   * Ink at 0.985 + muted at 0.80 = AAA body copy across the canvas. */
+  --paper:          oklch(0.155 0.012 260);
+  --paper-elevated: oklch(0.185 0.014 260);
+  --surface-1:      oklch(0.175 0.013 260);
+  --surface-2:      oklch(0.215 0.015 258);
+  --surface-3:      oklch(0.255 0.016 258);
+  --ink:            oklch(0.985 0.003 250);
+  --ink-muted:      oklch(0.80 0.012 250);
+  --ink-subtle:     oklch(0.64 0.014 250);
+  --hairline:        oklch(0.85 0.02 260 / 12%);
+  --hairline-strong: oklch(0.85 0.02 260 / 22%);
 
-  /* Accent ramp — Pantone Orange 021 leads. Token names retained for
-   * backwards compatibility; --violet is now the primary ember accent.
-   * Ember slightly brighter + warmer than before so it pops on true black
-   * without losing AA when used as text. */
-  --violet: oklch(0.74 0.20 42);    /* Pantone Orange 021 C — signature ember */
-  --violet-soft: oklch(0.78 0.14 45); /* ember tint for hover/secondary */
-  --cyan:   oklch(0.84 0.10 215);   /* ice — cool counter-accent */
-  --emerald:oklch(0.80 0.16 158);   /* signal green */
-  --amber:  oklch(0.86 0.16 78);    /* warm amber halo */
-  --rose:   oklch(0.72 0.21 22);    /* alert red-orange */
+  /* Accent ramp. Token names retained for backwards compatibility:
+   *   --violet  = PRIMARY (electric violet — brand, CTA, focus)
+   *   --amber   = SIGNAL  (ember orange — live agents, alerts, cost)
+   *   --cyan    = INFO    (electric ice — links, chart secondary)
+   *   --emerald = OK      (success / healthy)
+   *   --rose    = DANGER  (destructive)                                  */
+  --violet:      oklch(0.72 0.22 295);
+  --violet-soft: oklch(0.78 0.16 295);
+  --amber:       oklch(0.78 0.19 52);
+  --cyan:        oklch(0.82 0.14 220);
+  --emerald:     oklch(0.80 0.17 155);
+  --rose:        oklch(0.72 0.22 18);
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -127,18 +125,18 @@
   --card-foreground: var(--ink);
   --popover: var(--surface-3);
   --popover-foreground: var(--ink);
-  --primary: var(--violet);                   /* ember orange is the primary action */
-  --primary-foreground: oklch(0.10 0.01 60);  /* obsidian on ember for max contrast */
+  --primary: var(--violet);
+  --primary-foreground: oklch(0.99 0.005 280);
   --secondary: var(--surface-2);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-1);
   --muted-foreground: var(--ink-muted);
-  --accent: oklch(0.22 0.03 50);              /* warm graphite hover surface */
+  --accent: oklch(0.275 0.018 258);
   --accent-foreground: var(--ink);
-  --destructive: oklch(0.65 0.21 22);
+  --destructive: var(--rose);
   --destructive-foreground: oklch(0.98 0.003 85);
   --border: var(--hairline);
-  --input: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 6%);
   --ring: var(--violet);
   --chart-1: var(--violet);
   --chart-2: var(--cyan);
@@ -155,14 +153,14 @@
   --sidebar-ring: var(--violet);
 
   /* Gradients + shadows — referenced by design.md, now defined. */
-  --gradient-aurora: radial-gradient(60% 80% at 20% 30%, color-mix(in oklab, var(--violet) 55%, transparent) 0%, transparent 65%),
-                     radial-gradient(50% 70% at 82% 18%, color-mix(in oklab, var(--amber) 35%, transparent) 0%, transparent 65%),
-                     radial-gradient(45% 60% at 60% 95%, color-mix(in oklab, var(--rose) 45%, transparent) 0%, transparent 65%);
+  --gradient-aurora: radial-gradient(55% 75% at 18% 28%, color-mix(in oklab, var(--violet) 65%, transparent) 0%, transparent 65%),
+                     radial-gradient(50% 65% at 82% 22%, color-mix(in oklab, var(--cyan) 38%, transparent) 0%, transparent 65%),
+                     radial-gradient(48% 60% at 62% 95%, color-mix(in oklab, var(--amber) 50%, transparent) 0%, transparent 65%);
   --gradient-card: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 100%, transparent) 0%, color-mix(in oklab, var(--surface-1) 100%, transparent) 100%);
-  --gradient-trace: linear-gradient(90deg, var(--violet), var(--amber));
-  --shadow-glass: 0 1px 0 0 oklch(1 0 0 / 4%) inset, 0 8px 32px -8px oklch(0 0 0 / 50%);
-  --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 20px 60px -20px oklch(0 0 0 / 70%);
-  --shadow-focus: 0 0 0 2px color-mix(in oklab, var(--violet) 60%, transparent), 0 0 24px -4px color-mix(in oklab, var(--violet) 45%, transparent);
+  --gradient-trace: linear-gradient(90deg, var(--violet), var(--cyan) 55%, var(--amber));
+  --shadow-glass:    0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
+  --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 6%) inset, 0 24px 60px -20px oklch(0 0 0 / 70%);
+  --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--violet) 65%, transparent), 0 0 28px -4px color-mix(in oklab, var(--violet) 55%, transparent);
 }
 
 @layer base {
