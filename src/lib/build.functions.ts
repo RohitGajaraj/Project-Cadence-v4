@@ -76,16 +76,22 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
       }
     }
 
-    // Count pending approvals per run (Builder PR opens are confirm-gated).
-    const { data: apps } = await supabase
-      .from("agent_approvals")
-      .select("id,run_id,status")
-      .in("run_id", runIds)
-      .eq("status", "pending");
+    // Count pending approvals per run via trace_id (agent_approvals has no run_id column).
     const pendingByRun = new Map<string, number>();
-    for (const a of (apps ?? []) as { run_id: string | null }[]) {
-      if (!a.run_id) continue;
-      pendingByRun.set(a.run_id, (pendingByRun.get(a.run_id) ?? 0) + 1);
+    if (traceIds.length) {
+      const { data: apps } = await supabase
+        .from("agent_approvals")
+        .select("id,trace_id,status")
+        .in("trace_id", traceIds)
+        .eq("status", "pending");
+      const runByTrace = new Map<string, string>();
+      for (const [runId, traceId] of traceByRun.entries()) runByTrace.set(traceId, runId);
+      for (const a of (apps ?? []) as { trace_id: string | null }[]) {
+        if (!a.trace_id) continue;
+        const runId = runByTrace.get(a.trace_id);
+        if (!runId) continue;
+        pendingByRun.set(runId, (pendingByRun.get(runId) ?? 0) + 1);
+      }
     }
 
     return {
