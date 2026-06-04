@@ -178,23 +178,22 @@
     /* Slightly tighter base line-height to fit more without crowding.
      * 1.5 is too loose for dense agent dashboards; 1.45 keeps AA legibility
      * while reclaiming vertical rhythm. */
-    line-height: 1.45;
-    font-size: 14.5px;
-    letter-spacing: -0.005em;
+    line-height: 1.55;
+    font-size: 15px;
+    letter-spacing: -0.01em;
   }
   body { min-height: 100vh; }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    /* JetBrains Mono is wider than a proportional sans — tighten subtly
-     * but keep mono character intact. */
-    letter-spacing: -0.015em;
+    letter-spacing: -0.022em;
     line-height: 1.2;
-    font-feature-settings: "ss01", "ss02", "calt", "zero";
+    font-weight: 600;
+    font-feature-settings: "ss01", "ss02", "cv11", "calt";
   }
-  h1 { font-size: clamp(1.6rem, 2.2vw, 2.1rem); font-weight: 600; }
-  h2 { font-size: clamp(1.25rem, 1.6vw, 1.5rem); font-weight: 600; }
-  h3 { font-size: 1.05rem; font-weight: 600; }
+  h1 { font-size: clamp(1.75rem, 2.4vw, 2.35rem); font-weight: 650; letter-spacing: -0.03em; }
+  h2 { font-size: clamp(1.35rem, 1.7vw, 1.625rem); }
+  h3 { font-size: 1.125rem; }
 
   /* Section rhythm — global density nudge. Pages using py-8 / space-y-8 now
    * compress by ~25% without per-route edits. Keeps generous breathing on
@@ -282,25 +281,24 @@
    * Carbon & Ember signature: molten orange bloom over carbon, with an
    * amber halo and a faint ice breath for tension. */
   .neural-gradient {
-    background: radial-gradient(60% 80% at 20% 30%, color-mix(in oklab, var(--violet) 78%, transparent) 0%, transparent 70%),
-                radial-gradient(50% 70% at 82% 18%, color-mix(in oklab, var(--amber) 50%, transparent) 0%, transparent 70%),
-                radial-gradient(45% 60% at 60% 95%, color-mix(in oklab, oklch(0.45 0.22 35) 65%, transparent) 0%, transparent 70%),
-                radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--cyan) 28%, transparent) 0%, transparent 70%);
-    filter: blur(0.5px) saturate(1.15);
+    background: radial-gradient(55% 75% at 18% 25%, color-mix(in oklab, var(--violet) 80%, transparent) 0%, transparent 70%),
+                radial-gradient(50% 65% at 82% 20%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 70%),
+                radial-gradient(50% 60% at 62% 95%, color-mix(in oklab, var(--amber) 60%, transparent) 0%, transparent 70%),
+                radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--violet) 35%, transparent) 0%, transparent 70%);
+    filter: blur(0.5px) saturate(1.2);
   }
   .neural-text {
-    background: linear-gradient(120deg, var(--amber), var(--violet) 55%, oklch(0.62 0.24 28) 95%);
+    background: linear-gradient(110deg, var(--cyan) 0%, var(--violet) 45%, var(--amber) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .ring-glow-violet { box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent), 0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent); }
 
-  /* Precision lattice for hero/empty surfaces — ember-tinted. */
   .indigo-grid {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--violet) 14%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 14%, transparent) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
   }
