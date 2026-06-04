@@ -121,3 +121,7 @@ each tool it calls re-passes through its own arc.
 - Trust score + autonomy arcs — `docs/trust-and-autonomy.md`
 - Workspace brief block — `src/lib/briefs.functions.ts → renderBriefBlock`
 - Orchestration contract — `architecture/orchestration.md`
+- Governance & approval gates — `architecture/security.md`
+- AI runtime chokepoint — `architecture/runtime.md`
+- Feature ticket (Bundle 4 / E1–E5) — `docs/feature-backlog.md`
+- Parent index — `docs/README.md`
