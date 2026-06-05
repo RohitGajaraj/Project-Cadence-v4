@@ -1,44 +1,36 @@
-## What I found
+## Goal
+Close the documentation loop for `docs/demo-credentials.md` so Claude Code, Gemini CLI, Antigravity, and future tools find it via their normal read-order — not only by grep.
 
-**Why the demo workspace is empty on login**
+## Changes (docs only, no code)
 
-Both demo users (`demo@redcadence.app`, `demo2@redcadence.app`) exist, but each only has an empty "My Workspace" — no "Demo workspace" with seeded content.
+### 1. `docs/README.md` (docs index)
+Add a row pointing to `demo-credentials.md` with a one-line description: "Pre-provisioned demo logins (email + shared password) + what each account ships with + re-seed instructions."
 
-Root cause: `public.workspaces.slug` has a global unique constraint, and the slug `'demo'` is already taken by another (older) workspace:
+### 2. Top-level `README.md`
+Add a short **Try it** / **Demo accounts** subsection near the top (after the product thesis intro) with the two emails, the shared password, and a link to `docs/demo-credentials.md` for full details. Keeps the README itself short; the doc holds the depth.
 
-```
-id: 0b9b2dc2-...  name: "Demo workspace"  slug: "demo"  owner: 45a746ff-...
-```
+### 3. `AGENTS.md`
+Add one line to the §0 / §1 quick-reference area pointing at `docs/demo-credentials.md` so any tool reading the operating manual sees it exists. Phrasing: "Demo logins for testing / screen-recording: [`docs/demo-credentials.md`](./docs/demo-credentials.md)."
 
-`seed_demo_workspace()` hardcodes `slug => 'demo'` (line 41 of the function), so its INSERT fails with a unique-constraint violation. The credential migration wrapped the `PERFORM seed_demo_workspace(...)` call in an `EXCEPTION WHEN OTHERS` block, so the failure was swallowed silently — leaving the demo users with only the empty "My workspace" the `handle_new_user` trigger created.
+### 4. `CLAUDE.md` (Read order block)
+Add a bullet under "Specific lookups" or the read-order list: "Demo accounts → `docs/demo-credentials.md`".
 
-## Fix plan
+### 5. `GEMINI.md` (Read order block)
+Same one-line addition under its read-order list.
 
-### 1. Repair seed + re-seed demo users (migration)
-- Update `public.seed_demo_workspace(_user_id)` so the slug is unique per owner: use `'demo-' || substr(_user_id::text, 1, 8)` instead of hardcoded `'demo'`. (Keeps the slug human-ish, avoids global collisions for any future demo user too.)
-- In the same migration, delete the empty `'My workspace'` rows for the two demo users (only if they have no child content) so re-seeding produces a clean state, then call `seed_demo_workspace()` for both demo user IDs.
-- Verify after migration: each demo user should own a `Demo workspace` populated with the Lumen project, themes, signals, agents, missions, etc.
+### 6. `ENTRY.md`
+Add a one-line entry for `docs/demo-credentials.md` under the `docs/` section of the file tree.
 
-### 2. Document the demo credentials
-Create `docs/demo-credentials.md` with:
-- The two emails and shared password (`Cadence!Demo2026`)
-- What each account ships with (seeded Demo workspace contents)
-- Note that they're created by migration `20260604203338_*.sql` and re-seeded by the new migration
-- A link from `docs/README.md` index so it's discoverable
+### 7. `docs/demo-credentials.md`
+No content change needed — its "Related" block already links out. Optional: add a one-liner at top saying "Indexed from: `README.md`, `docs/README.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`" so the symmetry is visible.
 
-Also add a one-line entry to `docs/feature-backlog.md` Live status board log per the closed-doc-loop rule, and a §4 line in `plan.md`.
+## Verification
+- `rg -n "demo-credentials" README.md AGENTS.md CLAUDE.md GEMINI.md ENTRY.md docs/README.md` returns a hit in every file.
+- Manual: open `docs/README.md` → row visible. Open `README.md` → Try-it block visible.
 
-### 3. Favicon for the published site
-- Generate a small Cadence mark (the violet neural-gradient square used on the login card) at 512×512 as a PNG, plus an SVG version, and store via `lovable-assets` → `src/assets/favicon.{svg,png}.asset.json`.
-- Wire it in `src/routes/__root.tsx` via the root route's `head().links`:
-  - `{ rel: "icon", type: "image/svg+xml", href: favicon.svg.url }`
-  - `{ rel: "icon", type: "image/png", sizes: "512x512", href: favicon.png.url }`
-  - `{ rel: "apple-touch-icon", href: favicon.png.url }`
-- Verify in the preview that the browser tab shows the icon.
+## Closed-loop bookkeeping (per AGENTS.md §5)
+- Append a one-liner to `plan.md` §4: "Interlinked demo-credentials doc across all index/tool-entry files so cross-tool discovery works."
+- Update the Live status board in `docs/feature-backlog.md` (Recent log + Last updated).
 
-## Technical notes
-
-- The slug change is backward-compatible: existing rows aren't touched, only future inserts get the new pattern. The migration explicitly re-seeds the two known demo users.
-- `seed_demo_workspace` is `SECURITY DEFINER` and idempotent (early-exits if a "Demo workspace" already exists for the user) — safe to call repeatedly.
-- Favicon `links` go in the root route's `head()`, not a per-page route, so it applies everywhere including `/login`.
-- No changes to RLS, auth flow, or any client code beyond the root-route `head()` favicon links.
+## Out of scope
+No code, no migrations, no schema changes, no behavior changes. Pure documentation interlink.

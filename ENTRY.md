@@ -55,6 +55,7 @@
 | Deciding the stack or the name | [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md) · [`docs/decisions/naming.md`](./docs/decisions/naming.md) |
 | Strategic positioning (current + history) | [`docs/strategy/`](./docs/strategy/) — read the latest version file before any feature, UX, or positioning work |
 | Market research, competitive analysis, idea origins | [`docs/references/`](./docs/references/) — competitive-reference.md, idea-origination-inputs.md, research-references-aakash-gupta.md |
+| Signing in for a demo / recording / customer walkthrough | [`docs/demo-credentials.md`](./docs/demo-credentials.md) — two pre-provisioned logins + shared password + seeded Demo workspace contents |
 
 ---
 
@@ -120,6 +121,7 @@ Cadence/
 │   ├── feature-backlog.md           <- granular feature list + live status board
 │   ├── foundation-audit.md          <- technical gap audit (step 1 tickets)
 │   ├── git-discipline.md            <- cross-tool git WHY mandate
+│   ├── demo-credentials.md          <- demo logins + seeded workspace + re-seed SQL
 │   └── considerations.md            <- enterprise-architect cross-cutting gaps
 ├── .gemini/              <- (optional) settings.json, commands/  for Gemini/Antigravity
 ├── .claude/              <- (optional) Claude Code settings/hooks

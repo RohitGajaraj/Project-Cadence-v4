@@ -22,6 +22,7 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 2. [`README.md`](./README.md) — product thesis, positioning, MOAT, who it is for.
 3. [`plan.md`](./plan.md) — what is built, what is planned, the milestone roadmap. Sub-feature-level scope: [`docs/feature-backlog.md`](./docs/feature-backlog.md).
 4. Then the doc you need: [`design.md`](./design.md), [`architecture/`](./architecture/) (runtime · orchestration · security · data · frontend · integrations), [`skills.md`](./skills.md), [`subagents.md`](./subagents.md), [`tools.md`](./tools.md), [`hooks.md`](./hooks.md), [`memory.md`](./memory.md), [`commits.md`](./commits.md), and cross-cutting gaps in [`docs/considerations.md`](./docs/considerations.md).
+5. **Demo accounts** (for demos / screen recordings / any flow that needs a working login): [`docs/demo-credentials.md`](./docs/demo-credentials.md) — two pre-provisioned logins + shared password + seeded workspace contents.
 
 ## Commands
 **Bun is the package manager / runner** (`bun.lock`, `bunfig.toml`). The lingering `package-lock.json` is not canonical.

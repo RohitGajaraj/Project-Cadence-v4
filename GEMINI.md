@@ -19,6 +19,7 @@ Keep this file thin. Keep any global `~/.gemini/GEMINI.md` thin too — a fat gl
 2. [`README.md`](./README.md) — product thesis, positioning, MOAT.
 3. [`plan.md`](./plan.md) — build log + milestone roadmap.
 4. Then: [`design.md`](./design.md), [`architecture/`](./architecture/), [`skills.md`](./skills.md), [`subagents.md`](./subagents.md), [`tools.md`](./tools.md).
+5. **Demo accounts** (for demos / screen recordings / any flow that needs a working login): [`docs/demo-credentials.md`](./docs/demo-credentials.md) — two pre-provisioned logins + shared password + seeded workspace contents.
 
 ## Gemini CLI configuration
 - To make Gemini CLI read the canonical file, set `context.fileName` in `.gemini/settings.json` to include `AGENTS.md`, e.g. `["GEMINI.md", "AGENTS.md"]`. The CLI loads these hierarchically (global, project root, subdirectories) and concatenates them.
