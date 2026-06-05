@@ -18,6 +18,8 @@ Three principles govern every decision in this repo:
 3. **The moat is the end-to-end governed loop, not the model or the data.** Cadence is model-agnostic; frontier models are an input we orchestrate. Defensibility is owning + reliably orchestrating the *whole* lifecycle, the trust/governance layer, the switching cost of being system-of-record-and-action, and agent-native interop. See [`README.md`](./README.md). (Earlier "moat is data" framing is retired.)
 4. **Build for agents first.** APIs, MCP, A2A, and CLIs over dashboards. The next users are agents. See [`architecture/integrations.md`](./architecture/integrations.md).
 
+**Demo logins** (for screen-recording, investor / customer demos, any flow that needs a working login): two pre-provisioned accounts (`demo@redcadence.app`, `demo2@redcadence.app`, shared password `Cadence!Demo2026`) land in a fully populated Demo workspace. Full doc + re-seed instructions: [`docs/demo-credentials.md`](./docs/demo-credentials.md).
+
 ---
 
 > ##  STANDING ORDER — keep the Live status board & active-task.md current (every tool, every session)

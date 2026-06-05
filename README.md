@@ -16,6 +16,19 @@ Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENT
 
 ---
 
+## Try it — demo accounts
+
+Two pre-provisioned demo logins ship with the database. Both land in a fully populated Demo workspace (Lumen project, themes, signals, opportunities, PRDs, missions, traces, evals, briefs) so every surface is real on first sign-in.
+
+| # | Email | Password |
+|---|---|---|
+| 1 | `demo@redcadence.app` | `Cadence!Demo2026` |
+| 2 | `demo2@redcadence.app` | `Cadence!Demo2026` |
+
+Full details (what each account contains, how it was seeded, re-seed SQL, security note): [`docs/demo-credentials.md`](./docs/demo-credentials.md).
+
+---
+
 ## The problem
 
 A product operator today doesn't just do discovery and specs. They own the whole arc: talk to users, decide what's worth building, write the spec, get it built, tested, and shipped, launch it, position and price it, drive distribution, handle support, and learn from the result. That arc is smeared across 10-15 tools — Intercom, Gong, Notion, Linear, Jira, Figma, GitHub, CI, Vercel, Slack, Mixpanel, a CRM, a help desk, and a stack of AI chat tabs — with a human manually carrying context across every seam.

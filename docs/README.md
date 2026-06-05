@@ -11,6 +11,7 @@
 | [`feature-backlog.md`](./feature-backlog.md) | **Live status board** (Now building / Next up / Blocked / Recent log) + full feature ledger with "How to use / verify" blocks. The shared cursor every tool reads at session start. |
 | [`foundation-audit.md`](./foundation-audit.md) | Foundation-phase audit tickets and acceptance criteria. |
 | [`considerations.md`](./considerations.md) | Cross-cutting concerns that don't fit a single architecture doc. |
+| [`demo-credentials.md`](./demo-credentials.md) | Pre-provisioned demo logins (two emails + shared password), what each account ships with, how they were created, and the re-seed SQL. Use for screen recordings, YC / investor demos, and anywhere a working login is needed. |
 
 ## Operator guides (what surfaces mean and how to use them)
 
