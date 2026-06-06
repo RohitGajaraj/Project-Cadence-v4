@@ -182,7 +182,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     queryKey: ["governance", "pause-state", activeWorkspaceId],
     queryFn: () => pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
     refetchInterval: 30_000,
-    enabled: true,
+    enabled: !!activeWorkspaceId,
   });
 
   const { theme, setTheme } = useTheme();
