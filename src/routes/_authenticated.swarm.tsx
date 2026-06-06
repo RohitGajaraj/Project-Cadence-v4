@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Activity, ArrowRight, Bot, CheckCircle2, Clock, GitBranch, Inbox, ShieldAlert, XCircle, Zap } from "lucide-react";
+import { Activity, ArrowRight, Bot, GitBranch, Inbox, ShieldAlert, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -437,6 +437,3 @@ function ReactorFirings({ hud }: { hud: SwarmHud }) {
     </section>
   );
 }
-
-// Lint silencers for icons declared but used conditionally.
-void Clock; void CheckCircle2; void XCircle;
