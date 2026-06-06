@@ -43,4 +43,26 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 - Every route has error + not-found boundaries.
 - App logic is a server fn; cron is a public hook — do not blur the two.
 
+## Confirmation, toasts & dialogs
+No native browser chrome. `window.alert`, `window.confirm`, `window.prompt`, `window.open`, and `window.onbeforeunload` are banned in `src/**` and fail ESLint (`no-restricted-globals` + `no-restricted-syntax` in `eslint.config.js`). The single allow-listed exception is `src/lib/error-page.ts` (pre-bootstrap fallback only).
+
+Use instead:
+- **Confirm / typed-name confirm** — `useConfirm()` from [`src/hooks/use-confirm.tsx`](../src/hooks/use-confirm.tsx). Promise-based, themed shadcn `AlertDialog`, focus-trapped. Pass `destructive: true` for delete flows, `typedConfirm: name` for irreversible ones.
+- **One-field prompt** — `usePrompt()` from the same module. For richer inputs build a proper shadcn `Dialog`.
+- **Non-blocking feedback** — `toast.success` / `toast.error` from `sonner`. Never use toasts for errors that require attention (use an inline `Alert` instead — see [`design.md`](../design.md) anti-patterns).
+- **Unsaved-changes guards** — TanStack Router `useBlocker` wired to `useConfirm`.
+
+`ConfirmProvider` is mounted once in `src/routes/__root.tsx` inside `ThemeProvider`. Voice rules for the strings these primitives render live in [`../design.md`](../design.md) and the audit at [`../docs/strategy/v3-audit-language-voice-2026-06-06.md`](../docs/strategy/v3-audit-language-voice-2026-06-06.md).
+
+## Inline workspace & product management
+Operators never leave the current surface to administer a workspace or product. The `AppShell` top-left switcher is a popover, not a route.
+
+- **Switcher actions:** Switch · Rename · Workspace settings · Leave · Delete. All inline.
+- **Product row actions:** `MoreHorizontal` dropdown next to each product row — Set active · Rename · Delete. No bare destructive icons.
+- **Destructive flows:** typed-name match (`typedConfirm`) for delete workspace + delete product.
+- **Server functions:** [`src/lib/workspaces.functions.ts`](../src/lib/workspaces.functions.ts) (`renameWorkspace`, `deleteWorkspace`, `leaveWorkspace`, `listWorkspaceMembers`, `removeWorkspaceMember`) and `updateProject` in [`src/lib/projects.functions.ts`](../src/lib/projects.functions.ts). All `requireSupabaseAuth`; owner-gated via RLS. Owner cannot leave their own workspace (server-side guard, surfaced as a toast).
+- **Invalidation:** mutate → `queryClient.invalidateQueries({ queryKey: [...] })`. Never `window.location.reload()` or hard navigations — switching workspace must not blank the screen.
+
+Rule: any "manage X" affordance lives next to X or in a sheet over the current page, never on a separate route.
+
 Frontend pattern change → update this file (see [`AGENTS.md`](../AGENTS.md), section 5).

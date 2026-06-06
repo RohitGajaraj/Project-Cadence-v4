@@ -220,3 +220,28 @@ Used in traces and analytics. Starting palette (full authority to refine for a m
 **Anti-patterns (never, no matter how tempting):** decorative gradients over data; confetti; toasts for errors needing attention; modal stacking; hex literals in components; hidden streaming state in `useEffect`; AI messages without the full contract; emoji-as-icon; auto-play sound or theatrical onboarding; "Are you sure?" on reversible actions (offer undo instead).
 
 > When in doubt: build for the working operator at 9pm on a Tuesday. Calm. Fast. Trustworthy. Every screen should reduce cognitive load, not add to it.
+
+---
+
+## Voice & language (non-negotiable)
+
+Canonical case: [`docs/strategy/v3-audit-language-voice-2026-06-06.md`](./docs/strategy/v3-audit-language-voice-2026-06-06.md). This section is the contract; the audit is the evidence.
+
+**Voice anchor.** Human, clear, lightly playful in safe places (empty states, success toasts). Dry in governance, errors, and destructive flows. Contractions on. Active voice. One idea per sentence. Linear-leaning, warmer in empty states.
+
+**Length budgets.**
+
+| Surface | Budget |
+|---|---|
+| H1 | ≤ 6 words |
+| Subhead | ≤ 14 words |
+| Button label | ≤ 3 words |
+| Tooltip | ≤ 10 words |
+| Toast | ≤ 12 words |
+| Empty-state copy | ≤ 2 sentences |
+
+**Banned (AI tells).** Em dashes (`—`) and en dashes (`–`) anywhere in UI copy. Replace with period, comma, parentheses, or a line break. Hyphens stay only inside compound words. Buzzword denylist: *seamlessly · leverage · empower · robust · powerful · next-gen · AI-native · revolutionary · unlock · unleash · delve · navigate the landscape of · at the intersection of · elevate · supercharge · game-changing · cutting-edge*. Also banned: triple-pattern listicles ("faster, smarter, better"), preamble ("In today's…"), hedging in confirms ("might", "could potentially"), filler ("Let's dive in", "Feel free to…"), decorative emoji (🚀 ✨ 🎉), Title Case Everywhere (use sentence case except product/page names), trailing `!`.
+
+**Confirm copy pattern.** Direct, name the effect: *"This deletes 3 missions. Continue?"*, not *"Are you sure you want to proceed?"*. For reversible actions, prefer an Undo toast over a confirm. Confirmation primitives live in [`architecture/frontend.md`](./architecture/frontend.md) (Confirmation, toasts & dialogs).
+
+**Author check before shipping copy.** Run `rg "—|–"` and the buzzword regex against changed files. Voice change → update this section + the audit doc in the same turn.

@@ -42,5 +42,6 @@ RLS multi-tenancy, audit logs, encrypted secrets, and approval trails are the su
 - Every scope check uses user + workspace + product, never client-trusted role.
 - Secrets never leave the DB in plaintext.
 - Every side-effecting agent action is gated, logged, and reversible.
+- Workspace + product mutation server fns are owner-gated server-side. `renameWorkspace` / `deleteWorkspace` / `leaveWorkspace` / `removeWorkspaceMember` in [`../src/lib/workspaces.functions.ts`](../src/lib/workspaces.functions.ts) and `updateProject` / `deleteProject` in [`../src/lib/projects.functions.ts`](../src/lib/projects.functions.ts) enforce via RLS on `workspaces` + `workspace_members` + `projects`. Owner cannot leave their own workspace (server-side guard). Client never trusts the role chip.
 
 Auth/tenancy/governance change → update this file + [`data.md`](./data.md) + [`plan.md`](../plan.md).
