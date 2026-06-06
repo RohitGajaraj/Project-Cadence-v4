@@ -164,6 +164,9 @@ function useOpenGroups(path: string) {
 
 export function AppShell({ children }: { children: React.ReactNode; projects?: any }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const searchTab = useRouterState({
+    select: (s) => (s.location.search as { tab?: string })?.tab ?? null,
+  });
   const [openGroupId, toggleGroup] = useOpenGroups(path);
 
   const {
@@ -356,6 +359,19 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     window.location.href = "/login";
   }
 
+  // Active = path match AND (if item declares search.tab, that tab matches AND
+  // an item without search.tab on the same path is NOT active when a tab is set).
+  const isItemActive = (n: NavItem) => {
+    if (path !== n.to) return false;
+    if (n.search?.tab) return searchTab === n.search.tab;
+    // Bare item: only active when no tab-deep-linked sibling claims this path.
+    const tabbedSiblings = [...workspace, ...groups.flatMap((g) => g.items)].filter(
+      (i) => i.to === n.to && i.search?.tab,
+    );
+    if (tabbedSiblings.length === 0) return true;
+    return !tabbedSiblings.some((s) => s.search?.tab === searchTab);
+  };
+
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
       <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-canvas">
@@ -440,13 +456,13 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             <div className="px-3 mb-1.5 mono-label">Workspace</div>
             <div className="flex flex-col gap-0.5">
               {workspace.map((n) => (
-                <NavRow key={n.to} item={n} active={path === n.to} />
+                <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
               ))}
             </div>
 
             {groups.map((g) => {
               const isOpen = openGroupId === g.id;
-              const hasActive = g.items.some((i) => i.to === path);
+              const hasActive = g.items.some((i) => isItemActive(i));
               return (
                 <div key={g.id} className="mt-4">
                   <button
@@ -468,7 +484,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   {isOpen && (
                     <div className="mt-1 flex flex-col gap-0.5">
                       {g.items.map((n) => (
-                        <NavRow key={n.to} item={n} active={path === n.to} />
+                        <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
                       ))}
                     </div>
                   )}
