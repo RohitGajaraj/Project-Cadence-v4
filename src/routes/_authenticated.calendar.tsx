@@ -618,26 +618,6 @@ function CalendarView({
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 border-b hairline bg-gradient-to-r from-violet-500/5 via-transparent to-sky-500/5">
         <div className="flex items-center gap-2">
           <div className="font-display text-sm">{headerLabel}</div>
-          {mode === "month" && (
-            <div className="hidden sm:inline-flex items-center gap-1.5">
-              <select
-                value={month}
-                onChange={(e) => setCursor(new Date(year, Number(e.target.value), 1))}
-                className="rounded-md border hairline bg-background/60 text-xs px-2 py-1"
-                aria-label="Month"
-              >
-                {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-              </select>
-              <select
-                value={year}
-                onChange={(e) => setCursor(new Date(Number(e.target.value), month, 1))}
-                className="rounded-md border hairline bg-background/60 text-xs px-2 py-1"
-                aria-label="Year"
-              >
-                {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-lg border hairline p-0.5">
@@ -886,39 +866,64 @@ function ConnectIcon({
   );
 }
 
-function ConnectHint({
-  connections, onOpen,
-}: {
-  connections: Array<{ id: string; provider: "google" | "microsoft" }>;
-  onOpen: () => void;
-}) {
-  const [dismissed, setDismissed] = useState(false);
+// Compact weather chip — geolocates the browser once, calls Open-Meteo (no
+// API key required) for current conditions, and renders a colorful icon +
+// temperature. Adds personality to the calendar header without dragging in
+// any new dependency or secret. Silently no-ops if the user denies geo.
+type WX = { tempC: number; code: number; city: string | null };
+function wxFromCode(code: number): { Icon: typeof Sun; tone: string; label: string } {
+  // WMO weather interpretation codes (Open-Meteo)
+  if (code === 0) return { Icon: Sun, tone: "text-amber-300 bg-amber-500/10 border-amber-400/20", label: "Clear" };
+  if (code <= 3) return { Icon: Cloud, tone: "text-sky-200 bg-sky-500/10 border-sky-400/20", label: "Cloudy" };
+  if (code <= 49) return { Icon: CloudFog, tone: "text-slate-300 bg-slate-500/10 border-slate-400/20", label: "Fog" };
+  if (code <= 67) return { Icon: CloudRain, tone: "text-blue-300 bg-blue-500/15 border-blue-400/20", label: "Rain" };
+  if (code <= 77) return { Icon: CloudSnow, tone: "text-cyan-200 bg-cyan-500/10 border-cyan-400/20", label: "Snow" };
+  if (code <= 82) return { Icon: CloudRain, tone: "text-blue-300 bg-blue-500/15 border-blue-400/20", label: "Showers" };
+  if (code <= 86) return { Icon: CloudSnow, tone: "text-cyan-200 bg-cyan-500/10 border-cyan-400/20", label: "Snow" };
+  return { Icon: CloudLightning, tone: "text-violet-300 bg-violet-500/10 border-violet-400/20", label: "Storm" };
+}
+function WeatherChip() {
+  const [wx, setWx] = useState<WX | null>(null);
+  const [denied, setDenied] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.localStorage.getItem(CONNECT_HINT_KEY) === "1") setDismissed(true);
+    if (typeof window === "undefined" || !("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const [wxRes, geoRes] = await Promise.all([
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`),
+            fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&count=1&language=en&format=json`).catch(() => null),
+          ]);
+          const data = await wxRes.json() as { current_weather?: { temperature: number; weathercode: number } };
+          const geo = geoRes ? await geoRes.json().catch(() => null) as { results?: { name?: string }[] } | null : null;
+          if (data.current_weather) {
+            setWx({
+              tempC: data.current_weather.temperature,
+              code: data.current_weather.weathercode,
+              city: geo?.results?.[0]?.name ?? null,
+            });
+          }
+        } catch { /* ignore */ }
+      },
+      () => setDenied(true),
+      { timeout: 8000, maximumAge: 600000 },
+    );
   }, []);
-  if (dismissed || connections.length > 0) return null;
+  if (denied || !wx) return null;
+  const { Icon, tone, label } = wxFromCode(wx.code);
   return (
-    <div className="bento p-3 mb-4 flex items-center justify-between gap-3 border-l-2 border-l-violet-400/60">
-      <div className="text-xs text-muted-foreground inline-flex items-center gap-2">
-        <Link2 className="h-3.5 w-3.5 text-violet-300" />
-        Connect your calendar once to pull events from Google or Microsoft.
-      </div>
-      <div className="inline-flex items-center gap-1">
-        <button
-          onClick={onOpen}
-          className="text-xs rounded-md bg-foreground text-background px-2.5 py-1"
-        >
-          Connect
-        </button>
-        <button
-          onClick={() => { setDismissed(true); if (typeof window !== "undefined") window.localStorage.setItem(CONNECT_HINT_KEY, "1"); }}
-          className="text-xs text-muted-foreground hover:text-foreground px-2"
-          aria-label="Dismiss"
-        >
-          ×
-        </button>
-      </div>
+    <div
+      className={`hidden md:inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs ${tone}`}
+      title={`${label}${wx.city ? ` in ${wx.city}` : ""}`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      <span className="tabular-nums font-medium">{Math.round(wx.tempC)}°</span>
+      {wx.city && (
+        <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+          <MapPin className="h-3 w-3" /> {wx.city}
+        </span>
+      )}
     </div>
   );
 }
