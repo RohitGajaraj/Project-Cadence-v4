@@ -108,6 +108,10 @@ Full skill-selection logic & anti-patterns: [`skills.md`](./skills.md). Subagent
 7. **Semantic tokens only.** Hex literals in components are banned. See [`design.md`](./design.md).
 8. **Motion via the canonical motion library; respect `prefers-reduced-motion`.**
 9. **AI message UI contract** — every AI message exposes score, model+via, latency, tokens, cost, citations, feedback, View Trace, Replay-with. See [`design.md`](./design.md).
+9b. **UI voice & language.** Length budgets, AI-tell denylist, no em/en dashes in UI copy. See [`docs/conventions/ui-voice.md`](./docs/conventions/ui-voice.md).
+9c. **No native browser chrome.** No `alert`/`confirm`/`prompt`/`open`/`onbeforeunload`/native `<dialog>` in `src/**`. Use `useConfirm()` / `usePrompt()` + `sonner` + shadcn. ESLint-enforced. See [`docs/conventions/ui-chrome.md`](./docs/conventions/ui-chrome.md).
+9d. **Destructive actions.** Typed-name match for irreversible deletes; `useConfirm` for other destructive flows; Undo over confirm for reversible. See [`docs/conventions/destructive-actions.md`](./docs/conventions/destructive-actions.md).
+9e. **Manage X inline.** Workspace/product management lives next to the thing, never on a settings route. See [`docs/conventions/inline-management.md`](./docs/conventions/inline-management.md).
 
 ### Process
 10. **No mocks, ever.** If it renders, it reads/writes real data.
@@ -221,6 +225,8 @@ A change is not "done" until its documentation is true. An agent that ships code
 | Phase / milestone completion | [`plan.md`](./plan.md) + [`TASKS.md`](./TASKS.md) |
 | Tech-stack decision | [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md) |
 | Session-friction pattern | this file, section 7 |
+| Durable rule / convention (cross-tool) | New file under [`docs/conventions/`](./docs/conventions/) + reference from §3 above + thin pointer in tool memory if useful |
+| Voice / UI-chrome / destructive / inline-mgmt change | [`docs/conventions/`](./docs/conventions/) (rule body) + the matching contract in `architecture/*.md` or `design.md` (restatement) |
 
 **If you change capability scope without updating both README and plan, you have created drift.** Drift is the most expensive failure mode here.
 
