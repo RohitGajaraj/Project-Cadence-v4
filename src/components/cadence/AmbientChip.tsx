@@ -4,17 +4,35 @@ import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, M
 type Place = { city: string; country: string; countryCode: string };
 type Weather = { tempC: number; code: number; isDay: boolean };
 
-// WMO weather code → { label, Icon, tone (semantic token class) }
-function describe(code: number, isDay: boolean) {
-  if (code === 0) return { label: isDay ? "Clear" : "Clear night", Icon: isDay ? Sun : Cloud, tone: "text-amber-400" };
-  if (code <= 2) return { label: "Partly cloudy", Icon: CloudSun, tone: "text-amber-300" };
-  if (code === 3) return { label: "Overcast", Icon: Cloud, tone: "text-muted-foreground" };
-  if (code === 45 || code === 48) return { label: "Fog", Icon: CloudFog, tone: "text-slate-300" };
-  if (code >= 51 && code <= 67) return { label: "Drizzle", Icon: CloudRain, tone: "text-sky-400" };
-  if (code >= 71 && code <= 77) return { label: "Snow", Icon: CloudSnow, tone: "text-sky-200" };
-  if (code >= 80 && code <= 82) return { label: "Showers", Icon: CloudRain, tone: "text-sky-500" };
-  if (code >= 95) return { label: "Thunderstorm", Icon: CloudLightning, tone: "text-violet-400" };
-  return { label: "Weather", Icon: Cloud, tone: "text-muted-foreground" };
+// WMO weather code → { label, Icon, icon color, pill bg gradient, ring }
+// Playful, weather-app-y tints kept subtle so the strip still reads as chrome.
+type WxStyle = {
+  label: string;
+  Icon: typeof Sun;
+  icon: string;   // icon + temp text color
+  bg: string;     // pill background (gradient + transparency)
+  ring: string;   // pill border
+};
+function describe(code: number, isDay: boolean): WxStyle {
+  if (code === 0)
+    return isDay
+      ? { label: "Clear", Icon: Sun, icon: "text-amber-300", bg: "bg-gradient-to-r from-amber-400/25 to-orange-400/15", ring: "ring-1 ring-amber-300/30" }
+      : { label: "Clear night", Icon: Cloud, icon: "text-indigo-200", bg: "bg-gradient-to-r from-indigo-500/25 to-violet-500/15", ring: "ring-1 ring-indigo-300/30" };
+  if (code <= 2) return { label: "Partly cloudy", Icon: CloudSun, icon: "text-amber-200", bg: "bg-gradient-to-r from-amber-300/20 to-sky-400/15", ring: "ring-1 ring-amber-200/25" };
+  if (code === 3) return { label: "Overcast", Icon: Cloud, icon: "text-slate-200", bg: "bg-gradient-to-r from-slate-400/20 to-slate-500/15", ring: "ring-1 ring-slate-300/25" };
+  if (code === 45 || code === 48) return { label: "Fog", Icon: CloudFog, icon: "text-slate-200", bg: "bg-gradient-to-r from-slate-300/20 to-zinc-400/15", ring: "ring-1 ring-slate-200/25" };
+  if (code >= 51 && code <= 67) return { label: "Drizzle", Icon: CloudRain, icon: "text-sky-300", bg: "bg-gradient-to-r from-sky-500/25 to-blue-500/15", ring: "ring-1 ring-sky-300/30" };
+  if (code >= 71 && code <= 77) return { label: "Snow", Icon: CloudSnow, icon: "text-cyan-100", bg: "bg-gradient-to-r from-cyan-300/25 to-sky-200/15", ring: "ring-1 ring-cyan-200/30" };
+  if (code >= 80 && code <= 82) return { label: "Showers", Icon: CloudRain, icon: "text-blue-300", bg: "bg-gradient-to-r from-blue-500/25 to-indigo-500/15", ring: "ring-1 ring-blue-300/30" };
+  if (code >= 95) return { label: "Thunderstorm", Icon: CloudLightning, icon: "text-violet-300", bg: "bg-gradient-to-r from-violet-500/30 to-fuchsia-500/15", ring: "ring-1 ring-violet-300/30" };
+  return { label: "Weather", Icon: Cloud, icon: "text-muted-foreground", bg: "bg-accent/40", ring: "" };
+}
+
+// Cold/hot temperature tint overrides icon color for extra "feel"
+function tempTone(t: number) {
+  if (t <= 0) return "text-cyan-200";
+  if (t >= 32) return "text-orange-300";
+  return null;
 }
 
 function fmtTime(d: Date) {
@@ -107,11 +125,15 @@ export function AmbientChip() {
           "Locating…"
         )}
       </span>
-      {weather ? (
-        <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-accent/40 px-2 py-0.5">
-          <Icon className={`h-3 w-3 ${w?.tone ?? ""}`} />
-          <span className={`font-medium tabular-nums ${w?.tone ?? "text-foreground/80"}`}>{weather.tempC}°</span>
-          <span className="text-foreground/70">{w?.label}</span>
+      {weather && w ? (
+        <span
+          className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${w.bg} ${w.ring}`}
+          title={w.label}
+        >
+          <Icon className={`h-3 w-3 ${tempTone(weather.tempC) ?? w.icon}`} />
+          <span className={`font-medium tabular-nums ${tempTone(weather.tempC) ?? w.icon}`}>
+            {weather.tempC}°
+          </span>
         </span>
       ) : null}
     </div>
