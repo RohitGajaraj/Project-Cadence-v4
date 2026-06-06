@@ -3327,6 +3327,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_advance_agent_arc: {
+        Args: { p_agent_id: string; p_user_id: string }
+        Returns: string
+      }
       check_mission_caps: {
         Args: {
           _projected_cost_usd: number
@@ -3430,6 +3434,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      recent_agent_reflections: {
+        Args: { for_agent_slug: string; for_user: string; match_count?: number }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          importance: number
+          metadata: Json
+        }[]
       }
       record_mission_usage: {
         Args: { _cost_usd: number; _run_id: string; _tokens: number }
