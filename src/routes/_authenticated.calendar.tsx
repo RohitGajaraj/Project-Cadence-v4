@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, Pencil, Link2, Check, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, MapPin } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, Pencil, Link2, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -326,7 +326,6 @@ function CalendarPage() {
               }}
               connecting={mConnect.isPending}
             />
-            <WeatherChip />
             <button
               onClick={() => { setShowNew(true); if (slots.length === 0) mPropose.mutate(); }}
               className="inline-flex items-center gap-2 rounded-xl border hairline px-3.5 py-2 text-sm hover:bg-secondary/60"
