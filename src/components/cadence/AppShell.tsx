@@ -448,13 +448,13 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             </div>
 
             {groups.map((g) => {
-              const isOpen = open[g.id];
+              const isOpen = openGroupId === g.id;
               const hasActive = g.items.some((i) => i.to === path);
               return (
                 <div key={g.id} className="mt-4">
                   <button
                     type="button"
-                    onClick={() => setOpen((s) => ({ ...s, [g.id]: !s[g.id] }))}
+                    onClick={() => toggleGroup(g.id)}
                     className="w-full flex items-center justify-between px-3 py-1 mono-label hover:text-foreground transition"
                   >
                     <span className="flex items-center gap-1.5">
