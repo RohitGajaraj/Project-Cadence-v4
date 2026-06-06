@@ -171,7 +171,7 @@ function CalendarPage() {
               aria-pressed={view === "grid"}
               className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
             >
-              <LayoutGrid className="h-3.5 w-3.5" /> Grid
+              <CalIcon className="h-3.5 w-3.5" /> Calendar
             </button>
           </div>
           <button
