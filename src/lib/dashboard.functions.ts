@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ensureTodayBrief } from "@/lib/copilot.functions";
 
 function startOfDay(d = new Date()) {
   const x = new Date(d);
@@ -30,7 +31,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       { data: recentMeetings },
       { data: projects },
       { data: allTasks },
-      { data: brief },
+      { data: existingBrief },
     ] = await Promise.all([
       supabase.from("profiles").select("*").maybeSingle(),
       supabase
@@ -60,6 +61,18 @@ export const getDashboard = createServerFn({ method: "GET" })
         .eq("brief_date", today.toISOString().slice(0, 10))
         .maybeSingle(),
     ]);
+
+    // F-TODAY-AUTOSEED — auto-generate the brief on first sign-in instead of
+    // asking the operator to seed it. If generation fails (no AI key, rate
+    // limit, etc.), fall back to a null brief so the dashboard still renders.
+    let brief = existingBrief;
+    if (!brief) {
+      try {
+        brief = await ensureTodayBrief(context.supabase, context.userId);
+      } catch {
+        brief = null;
+      }
+    }
 
     // Focus score: blend deep-work tasks vs meeting load today
     const deepCount = (todayTasks ?? []).filter((t) => t.is_deep_work).length;
