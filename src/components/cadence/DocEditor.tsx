@@ -6,6 +6,7 @@ import Link from "@tiptap/extension-link";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Heading1, Heading2, Quote, Code as CodeIcon, Link2, Undo2, Redo2, Figma } from "lucide-react";
 import { FigmaEmbed } from "./editor/FigmaEmbed";
+import { usePrompt } from "@/hooks/use-confirm";
 
 export function DocEditor({
   initialContent,
@@ -18,6 +19,7 @@ export function DocEditor({
 }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [slash, setSlash] = useState<{ x: number; y: number } | null>(null);
+  const prompt = usePrompt();
 
   const editor = useEditor({
     extensions: [
@@ -88,12 +90,19 @@ export function DocEditor({
       label: "Figma embed",
       icon: <Figma className="h-4 w-4" />,
       run: () => {
-        const url = window.prompt("Paste a Figma file or prototype URL");
-        if (!url) return;
-        deleteSlashChar();
-        (editor.chain().focus() as unknown as { setFigmaEmbed: (a: { src: string }) => { run: () => void } })
-          .setFigmaEmbed({ src: url })
-          .run();
+        void (async () => {
+          const url = await prompt({
+            title: "Embed Figma",
+            label: "Figma file or prototype URL",
+            placeholder: "https://www.figma.com/file/…",
+            confirmLabel: "Embed",
+          });
+          if (!url) return;
+          deleteSlashChar();
+          (editor.chain().focus() as unknown as { setFigmaEmbed: (a: { src: string }) => { run: () => void } })
+            .setFigmaEmbed({ src: url })
+            .run();
+        })();
       },
     },
   ];
@@ -113,12 +122,26 @@ export function DocEditor({
         <Btn title="Quote" on={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")}><Quote className="h-4 w-4" /></Btn>
         <Btn title="Code block" on={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")}><CodeIcon className="h-4 w-4" /></Btn>
         <Btn title="Link" on={() => {
-          const url = window.prompt("URL");
-          if (url) editor.chain().focus().setLink({ href: url }).run();
+          void (async () => {
+            const url = await prompt({
+              title: "Add link",
+              label: "URL",
+              placeholder: "https://…",
+              confirmLabel: "Add",
+            });
+            if (url) editor.chain().focus().setLink({ href: url }).run();
+          })();
         }} active={editor.isActive("link")}><Link2 className="h-4 w-4" /></Btn>
         <Btn title="Figma embed" on={() => {
-          const url = window.prompt("Paste a Figma file or prototype URL");
-          if (url) (editor.chain().focus() as unknown as { setFigmaEmbed: (a: { src: string }) => { run: () => void } }).setFigmaEmbed({ src: url }).run();
+          void (async () => {
+            const url = await prompt({
+              title: "Embed Figma",
+              label: "Figma file or prototype URL",
+              placeholder: "https://www.figma.com/file/…",
+              confirmLabel: "Embed",
+            });
+            if (url) (editor.chain().focus() as unknown as { setFigmaEmbed: (a: { src: string }) => { run: () => void } }).setFigmaEmbed({ src: url }).run();
+          })();
         }}><Figma className="h-4 w-4" /></Btn>
         <div className="flex-1" />
         <Btn title="Undo" on={() => editor.chain().focus().undo().run()}><Undo2 className="h-4 w-4" /></Btn>
