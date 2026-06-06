@@ -202,7 +202,13 @@ function SuiteDetail({ suiteId, onDeleted }: { suiteId: string; onDeleted: () =>
             <span className="ml-1.5">Run now</span>
           </Button>
           <Button variant="ghost" size="icon" onClick={async () => {
-            if (!confirm("Delete this suite and all its cases & runs?")) return;
+            const ok = await confirm({
+              title: "Delete this suite?",
+              body: "Removes the suite and every case and run inside it. Can't be undone.",
+              destructive: true,
+              confirmLabel: "Delete suite",
+            });
+            if (!ok) return;
             await deleteFn({ data: { suite_id: suiteId } });
             qc.invalidateQueries({ queryKey: ["eval_suites"] });
             onDeleted();
@@ -252,7 +258,12 @@ function CaseList({ suiteId, cases, onChange }: { suiteId: string; cases: any[];
             <div className="flex items-center gap-1">
               <Switch checked={c.enabled} onCheckedChange={async (v) => { await updateFn({ data: { case_id: c.id, enabled: v } }); onChange(); }} />
               <Button size="icon" variant="ghost" onClick={async () => {
-                if (!confirm("Delete this case?")) return;
+                const ok = await confirm({
+                  title: "Delete this case?",
+                  destructive: true,
+                  confirmLabel: "Delete",
+                });
+                if (!ok) return;
                 await deleteFn({ data: { case_id: c.id } });
                 onChange();
               }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
