@@ -42,6 +42,18 @@ One canonical page per shipped, user-facing feature. The **single place** to ope
 
 See [`strategy/README.md`](./strategy/README.md) for the version index and the cascade rule. Current positioning: [`strategy/v2-positioning-2026-06-02.md`](./strategy/v2-positioning-2026-06-02.md). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
 
+## Conventions (durable cross-tool rules)
+
+Git-tracked rules every tool follows. One file per rule. Index + how to add: [`conventions/README.md`](./conventions/README.md).
+
+| File | Rule |
+|---|---|
+| [`conventions/ui-chrome.md`](./conventions/ui-chrome.md) | No native browser chrome. Use `useConfirm`/`usePrompt`/`sonner`/shadcn. |
+| [`conventions/ui-voice.md`](./conventions/ui-voice.md) | Voice anchor, length budgets, AI-tell denylist, no em/en dashes. |
+| [`conventions/destructive-actions.md`](./conventions/destructive-actions.md) | Typed-name match for irreversible deletes; Undo over confirm for reversible. |
+| [`conventions/inline-management.md`](./conventions/inline-management.md) | Workspace + product management inline, never a settings route. |
+| [`conventions/doc-closure-checklist.md`](./conventions/doc-closure-checklist.md) | 8-step per-feature checklist that closes the documentation loop. |
+
 ## Decisions (ADRs)
 
 | File | Decision |
