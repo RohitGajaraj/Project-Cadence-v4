@@ -1,4 +1,4 @@
-import { createFileRoute, ErrorComponent } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -19,8 +19,17 @@ import {
   listEventQueue,
   decideEventDispatch,
 } from "@/lib/reactor.functions";
+import { ApprovalsPanel } from "@/components/governance/ApprovalsPanel";
+import { GuardrailsPanel } from "@/components/governance/GuardrailsPanel";
+import { BudgetsPanel } from "@/components/governance/BudgetsPanel";
+
+type Tab = "controls" | "approvals" | "guardrails" | "budgets";
 
 export const Route = createFileRoute("/_authenticated/governance")({
+  validateSearch: (search: Record<string, unknown>): { tab: Tab } => {
+    const t = search.tab;
+    return { tab: t === "approvals" || t === "guardrails" || t === "budgets" ? t : "controls" };
+  },
   component: GovernancePage,
   head: () => ({ meta: [{ title: "Governance · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
@@ -49,6 +58,55 @@ function formatRelative(iso: string | null): string {
 }
 
 function GovernancePage() {
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: "/governance" });
+
+  const tabs: { id: Tab; label: string; description: string }[] = [
+    { id: "controls",   label: "Controls",   description: "Kill switch, mission caps, stuck approvals, auto-pipelines." },
+    { id: "approvals",  label: "Approvals",  description: "Tool calls waiting on a human. Approve runs them; reject keeps them paused." },
+    { id: "guardrails", label: "Guardrails", description: "Rules that block, warn, or redact text on every AI call." },
+    { id: "budgets",    label: "Budgets",    description: "Spend caps per day, month, and AI surface. Over-cap calls are blocked." },
+  ];
+  const activeTab = tabs.find((t) => t.id === tab)!;
+  const setTab = (next: Tab) => navigate({ search: { tab: next } });
+
+  return (
+    <AppShell>
+      <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto space-y-6">
+        <header>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            <ShieldAlert className="h-3 w-3" /> Govern
+          </div>
+          <h1 className="font-display text-3xl tracking-tight mt-1">Governance</h1>
+          <p className="text-sm text-muted-foreground mt-1">One place to set the rules, pause the swarm, and clear what's stuck.</p>
+        </header>
+
+        <div className="flex gap-1 border-b hairline">
+          {tabs.map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`px-4 py-2 text-sm border-b-2 -mb-px ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-sm text-muted-foreground max-w-2xl">{activeTab.description}</p>
+
+        {tab === "controls"   && <ControlsPanel />}
+        {tab === "approvals"  && <ApprovalsPanel />}
+        {tab === "guardrails" && <GuardrailsPanel />}
+        {tab === "budgets"    && <BudgetsPanel />}
+      </div>
+    </AppShell>
+  );
+}
+
+function ControlsPanel() {
   const { activeWorkspaceId, activeWorkspace } = useWorkspace();
   const qc = useQueryClient();
   const overviewFn = useServerFn(getGovernanceOverview);
@@ -141,20 +199,12 @@ function GovernancePage() {
   const expiringApprovals = (data?.approvals ?? []);
 
   return (
-    <AppShell>
-      <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto space-y-8">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              <ShieldAlert className="h-3 w-3" /> Governance
-            </div>
-            <h1 className="font-display text-3xl tracking-tight mt-1">Kill-switch & mission controls</h1>
-            <p className="text-sm text-muted-foreground mt-1">Stop runaway agents, see what they're spending, and resolve stuck approvals.</p>
-          </div>
-          <button onClick={() => refetch()} className="inline-flex items-center gap-1.5 rounded-lg border hairline px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition">
-            <RefreshCw className="h-3 w-3" /> Refresh
-          </button>
-        </header>
+    <div className="space-y-8">
+      <div className="flex justify-end">
+        <button onClick={() => refetch()} className="inline-flex items-center gap-1.5 rounded-lg border hairline px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition">
+          <RefreshCw className="h-3 w-3" /> Refresh
+        </button>
+      </div>
 
         {/* Kill-switch panel */}
         <section className={`rounded-2xl border p-6 ${paused ? "border-rose-500/40 bg-rose-500/5" : "hairline bg-secondary/20"}`}>
@@ -492,7 +542,6 @@ function GovernancePage() {
         </section>
 
         {isLoading && <div className="text-xs text-muted-foreground">Loading governance state…</div>}
-      </div>
-    </AppShell>
+    </div>
   );
 }

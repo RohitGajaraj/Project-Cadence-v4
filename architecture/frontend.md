@@ -47,6 +47,10 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 
 `/observe` is one page with three tabs (Analytics · Traces · Drift). Tab state is a URL search param (`?tab=analytics|traces|drift`) declared by `validateSearch`; Traces and Drift labels carry live count badges. The three legacy routes — `/analytics`, `/traces` (index only), and `/drift` — are reduced to `throw redirect({ to: "/observe", search: { tab: ... } })` so bookmarks survive. `/traces/$traceId` is preserved untouched and is the deep-link target from the Traces tab. Panel JSX lives in `src/components/observe/{Analytics,Traces,Drift}Panel.tsx`; the route file is a thin AppShell + tabs shell. The sidebar group is `Run` (Observe · Evals) — Evals stays separate because authoring ≠ observation.
 
+## Governance surface (Govern group)
+
+`/governance` follows the same tabs pattern as `/observe`. One page, four tabs: Controls (kill switch · mission caps · stuck approvals · reactor) · Approvals (tool-call queue) · Guardrails (content rules) · Budgets (spend caps). Tab state is `?tab=controls|approvals|guardrails|budgets` via `validateSearch`, default `controls`. Panel JSX lives in `src/components/governance/{Approvals,Guardrails,Budgets}Panel.tsx`; the Controls panel stays inline in the route file because it depends on the same `getGovernanceOverview` + reactor server fns. Legacy routes `/inbox`, `/guardrails`, `/budgets` are `beforeLoad`-redirects to the matching tab. Sidebar workspace rail's "Approvals" deep-links to `/governance?tab=approvals` — `NavRow` forwards a per-item `search` prop to `<Link>`, and `AppShell.isItemActive` checks the current `search.tab` so a path can host multiple correctly-highlighted nav entries. Govern group ships with two items only: Governance, Integrations.
+
 ## Confirmation, toasts & dialogs
 Canonical rule: [`../docs/conventions/ui-chrome.md`](../docs/conventions/ui-chrome.md). This section is the contract restatement.
 

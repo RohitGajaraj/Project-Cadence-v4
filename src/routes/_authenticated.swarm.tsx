@@ -12,7 +12,7 @@ import { decideEventDispatch } from "@/lib/reactor.functions";
 
 export const Route = createFileRoute("/_authenticated/swarm")({
   component: SwarmPage,
-  head: () => ({ meta: [{ title: "Swarm HUD · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Swarm · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div className="p-8">
@@ -105,7 +105,7 @@ function SwarmPage() {
         <header className="flex items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              <Activity className="h-3.5 w-3.5" /> Swarm HUD
+              <Activity className="h-3.5 w-3.5" /> Swarm
             </div>
             <h1 className="mt-3 font-display text-3xl tracking-tight">Live swarm</h1>
             <p className="mt-2 text-sm text-muted-foreground max-w-2xl">

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
+  LogOut, FileCode, FlaskConical, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
   Sun, Moon, Sparkles,
   Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type NavItem = { to: string; label: string; icon: LucideIcon };
+type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 // Workspace — your daily rail. Always visible, never collapsed.
@@ -37,10 +37,10 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/briefing", label: "Briefing", icon: Crosshair },
-  { to: "/inbox", label: "Approvals", icon: Inbox },
+  { to: "/governance", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: Calendar },
   { to: "/meetings", label: "Meetings", icon: Users },
-  { to: "/chat", label: "AI Chat", icon: MessageSquare },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
@@ -61,7 +61,7 @@ const groups: NavGroup[] = [
       { to: "/docs", label: "Docs", icon: BookOpen },
       { to: "/roadmap", label: "Roadmap", icon: Map },
       { to: "/tasks", label: "Tasks", icon: ListTodo },
-      { to: "/build", label: "Build Console", icon: Hammer },
+      { to: "/build", label: "Builder", icon: Hammer },
     ],
   },
   {
@@ -70,9 +70,9 @@ const groups: NavGroup[] = [
     items: [
       { to: "/agents", label: "Agents", icon: Bot },
       { to: "/missions", label: "Missions", icon: GitBranch },
-      { to: "/swarm", label: "Swarm HUD", icon: Activity },
-      { to: "/prompts", label: "Prompt Studio", icon: FileCode },
-      { to: "/sync", label: "Sync Inbox", icon: Inbox },
+      { to: "/swarm", label: "Swarm", icon: Activity },
+      { to: "/prompts", label: "Prompts", icon: FileCode },
+      { to: "/sync", label: "Connectors", icon: Plug },
     ],
   },
   {
@@ -94,9 +94,7 @@ const groups: NavGroup[] = [
     id: "govern",
     label: "Govern",
     items: [
-      { to: "/guardrails", label: "Guardrails", icon: Shield },
       { to: "/governance", label: "Governance", icon: ShieldAlert },
-      { to: "/budgets", label: "Budgets", icon: DollarSign },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
@@ -109,6 +107,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       to={item.to}
+      search={item.search as never}
       className={`group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] ${
         active
           ? "bg-secondary text-foreground font-medium"
@@ -165,6 +164,9 @@ function useOpenGroups(path: string) {
 
 export function AppShell({ children }: { children: React.ReactNode; projects?: any }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const searchTab = useRouterState({
+    select: (s) => (s.location.search as { tab?: string })?.tab ?? null,
+  });
   const [openGroupId, toggleGroup] = useOpenGroups(path);
 
   const {
@@ -357,6 +359,19 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     window.location.href = "/login";
   }
 
+  // Active = path match AND (if item declares search.tab, that tab matches AND
+  // an item without search.tab on the same path is NOT active when a tab is set).
+  const isItemActive = (n: NavItem) => {
+    if (path !== n.to) return false;
+    if (n.search?.tab) return searchTab === n.search.tab;
+    // Bare item: only active when no tab-deep-linked sibling claims this path.
+    const tabbedSiblings = [...workspace, ...groups.flatMap((g) => g.items)].filter(
+      (i) => i.to === n.to && i.search?.tab,
+    );
+    if (tabbedSiblings.length === 0) return true;
+    return !tabbedSiblings.some((s) => s.search?.tab === searchTab);
+  };
+
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
       <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-canvas">
@@ -441,13 +456,13 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             <div className="px-3 mb-1.5 mono-label">Workspace</div>
             <div className="flex flex-col gap-0.5">
               {workspace.map((n) => (
-                <NavRow key={n.to} item={n} active={path === n.to} />
+                <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
               ))}
             </div>
 
             {groups.map((g) => {
               const isOpen = openGroupId === g.id;
-              const hasActive = g.items.some((i) => i.to === path);
+              const hasActive = g.items.some((i) => isItemActive(i));
               return (
                 <div key={g.id} className="mt-4">
                   <button
@@ -469,7 +484,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   {isOpen && (
                     <div className="mt-1 flex flex-col gap-0.5">
                       {g.items.map((n) => (
-                        <NavRow key={n.to} item={n} active={path === n.to} />
+                        <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
                       ))}
                     </div>
                   )}

@@ -53,7 +53,7 @@ export function CommandPalette() {
               </Command.Empty>
               <Command.Group heading="Navigate" className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5">
                 <Item icon={Home} label="Today · Mission Control" hint="G D" onSelect={() => go("/")} />
-                <Item icon={MessageSquare} label="AI Chat" hint="G C" onSelect={() => go("/chat")} />
+                <Item icon={MessageSquare} label="Chat" hint="G C" onSelect={() => go("/chat")} />
                 <Item icon={Bot} label="Agents" hint="G A" onSelect={() => go("/agents")} />
                 <Item icon={Telescope} label="Discovery · Signals & themes" hint="G I" onSelect={() => go("/discovery")} />
                 <Item icon={Target} label="Opportunities" hint="G O" onSelect={() => go("/opportunities")} />
