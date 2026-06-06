@@ -78,8 +78,17 @@ function GovernancePage() {
     refetchInterval: 5000,
   });
 
+  type UpsertSubInput = {
+    id?: string;
+    workspaceId?: string;
+    event_type: "signal.created" | "opportunity.scored" | "prd.approved";
+    target_agent_slug: string;
+    approval_mode: "auto" | "confirm";
+    enabled?: boolean;
+    filter?: Record<string, unknown>;
+  };
   const upsertSubMut = useMutation({
-    mutationFn: (v: Parameters<typeof upsertSubFn>[0]["data"]) => upsertSubFn({ data: v }),
+    mutationFn: (v: UpsertSubInput) => upsertSubFn({ data: v }),
     onSuccess: () => { toast.success("Subscription saved"); qc.invalidateQueries({ queryKey: ["reactor", "subs"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
