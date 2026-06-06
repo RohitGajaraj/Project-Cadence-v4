@@ -156,6 +156,9 @@ function CalendarPage() {
             <p className="mt-2 text-sm text-muted-foreground max-w-xl">
               Your calendar events and meeting transcripts in one place. Click any meeting to capture a transcript and extract decisions, tasks, and questions.
             </p>
+            <p className="mt-1.5 text-xs text-muted-foreground/80">
+              Showing the next 14 days.
+            </p>
           </div>
           <div className="flex items-center gap-2">
           <div className="inline-flex rounded-xl border hairline p-0.5">
