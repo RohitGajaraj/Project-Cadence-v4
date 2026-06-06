@@ -29,6 +29,66 @@ export type BuilderRun = {
   } | null;
 };
 
+export type BuilderClaim = {
+  id: string;
+  repo: string;
+  path: string;
+  status: "held" | "released";
+  claimed_at: string;
+  released_at: string | null;
+  released_reason: string | null;
+  run_id: string | null;
+  mission_id: string | null;
+  mission_title: string | null;
+  is_mine: boolean;
+};
+
+export const listBuilderClaims = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ claims: BuilderClaim[] }> => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("builder_file_claims")
+      .select("id,repo,path,status,claimed_at,released_at,released_reason,run_id,mission_id,mission_title,user_id")
+      .eq("status", "held")
+      .order("claimed_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Array<BuilderClaim & { user_id: string }>;
+    return {
+      claims: rows.map((r) => ({
+        id: r.id,
+        repo: r.repo,
+        path: r.path,
+        status: r.status,
+        claimed_at: r.claimed_at,
+        released_at: r.released_at,
+        released_reason: r.released_reason,
+        run_id: r.run_id,
+        mission_id: r.mission_id,
+        mission_title: r.mission_title,
+        is_mine: r.user_id === userId,
+      })),
+    };
+  });
+
+export const releaseBuilderClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ claim_id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: updated, error } = await supabase
+      .from("builder_file_claims")
+      .update({ status: "released", released_at: new Date().toISOString(), released_reason: "operator_release" })
+      .eq("id", data.claim_id)
+      .eq("status", "held")
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!updated) throw new Error("Claim not found or already released (you may only release claims you own).");
+    return { ok: true as const };
+  });
+
 export const listBuilderRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ runs: BuilderRun[] }> => {
