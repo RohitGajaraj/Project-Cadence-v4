@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, MapPin, CalendarPlus } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { listMyCalendarConnections } from "@/lib/calendar-connections.functions";
+import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, MapPin } from "lucide-react";
 
 type Place = { city: string; country: string; countryCode: string };
 type Weather = { tempC: number; code: number; isDay: boolean };
