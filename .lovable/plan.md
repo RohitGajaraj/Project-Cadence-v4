@@ -1,50 +1,85 @@
-# Documentation closure pass
+# Make project memory cross-tool durable
 
-Goal: leave the doc loop fully true for the work just shipped (language/voice sweep, popup removal, inline workspace/product management, `useConfirm` + ESLint guardrail) and bank durable learnings so the same mistakes don't recur.
+## The problem
 
-No product code changes. Docs + memory only.
+The 6 memory files I just created live at `mem://…` — Lovable's private virtual filesystem. They are:
+- Not in `git`, so Claude Code / Antigravity / Gemini never see them.
+- Not referenced from `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or the Lovable Knowledge field.
+- Only the `mem://index.md` Core lines are auto-injected, and only into Lovable sessions.
 
-## 1. Primary audit doc — expand and cross-link
-`docs/strategy/v3-audit-language-voice-2026-06-06.md`
-- Add "How to use / verify" block per the Core rule: where each new surface lives (workspace switcher in `AppShell` top-left, product row actions, `useConfirm` API, sonner toasts), server enforcement points (owner-gated server fns, `requireSupabaseAuth`), and a verification checklist (no `alert/confirm/prompt` in `src/**`, ESLint guardrail passes, em-dash count = 0 in swept files, switcher renames without reload).
-- Add a "Phased rollout" section: P0 shipped (10 high-traffic screens + primitives), P1 remaining (21 routes), P2 (tooltip + microcopy discipline).
-- Add a "Related" block at the bottom linking: `architecture/frontend.md`, `architecture/security.md`, `design.md`, `docs/feature-backlog.md`, `docs/strategy/session-decisions.md`, `plan.md` §4, the prior `v3-audit-2026-06-06.md` and `v3-audit-language-2026-06-06.md`.
+Result: the rules ("no native browser chrome", "no em dashes", voice anchor, destructive-action pattern, inline-mgmt feature, doc-loop checklist) will silently disappear the moment another tool picks up the repo. The cross-tool contract in `AGENTS.md` §10 is broken.
 
-## 2. Architecture + design contracts
-- `architecture/frontend.md`: add a short "Confirmation, toasts, and dialogs" subsection — rule: no `window.alert/confirm/prompt/open/onbeforeunload`, use `useConfirm()` + `sonner` + shadcn `<Dialog>/<AlertDialog>`; reference the ESLint guardrail and the hook path.
-- `architecture/frontend.md`: add "Inline workspace & product management" subsection — switcher location, server fns list, invalidation pattern (no reload), destructive-action typed-name-match rule.
-- `design.md`: add "Voice & language" subsection — em/en dash ban, AI-tell buzzword list, length budgets (H1 ≤6, subhead ≤14, button ≤3, tooltip ≤10, toast ≤12), voice anchor (Linear-leaning, warmer empty states), decorative-emoji ban. Link back to the audit doc as the source.
-- `architecture/security.md`: one-liner noting workspace mutation server fns are owner-gated via `has_role`/owner check; link the functions.
+## The fix: one git-tracked conventions home, referenced from every tool's entry point
 
-## 3. Status board + log (closed-loop mandate)
-- `docs/feature-backlog.md`: flip `LANG-VOICE-01..04` and `INLINE-MGMT-01..` to the right marks, update Live status board (Last updated, Now building cleared, Recent log entry), and add the "How to use / verify" block per Core rule.
-- `plan.md` §4: append a dated one-liner with WHY ("ship voice rules + popup ban + inline mgmt so the product stops sounding like a brochure and stops shoving users to native chrome").
-- `docs/strategy/session-decisions.md`: add an entry capturing the three decisions (em-dash → period default, Linear-leaning voice, advisory→shipped F-IDs, typed-name-match for destructive, switcher in top-left popover).
-- `docs/strategy/README.md`: index the new audit doc version if not already.
+### 1. Create `docs/conventions/` — the canonical, git-tracked home for durable rules
 
-## 4. Learnings → memory (so we don't repeat)
-Save as project memory files and reference from `mem://index.md`:
-- `mem://constraint/no-native-browser-chrome` — never use `window.alert/confirm/prompt/open/onbeforeunload` or native `<dialog>`; use `useConfirm()` + `sonner` + shadcn. **Why:** breaks theme, breaks keyboard nav, feels un-owned, blocks SSR.
-- `mem://constraint/no-em-en-dashes-in-ui` — zero `—` and `–` in user-facing copy; hyphens only inside compound words. **Why:** classic AI tell, reads as generated.
-- `mem://preference/voice-anchor` — Linear-leaning, warmer empty states, contractions on, one idea per sentence, length budgets. Buzzword denylist (seamlessly, leverage, empower, robust, powerful, next-gen, AI-native, revolutionary, unlock, unleash, delve, elevate, supercharge, game-changing, cutting-edge, at the intersection of). **How to apply:** run `rg` for the denylist before shipping any copy change.
-- `mem://preference/destructive-actions` — typed-name-match for delete workspace/product; `useConfirm()` for all other confirms.
-- `mem://feature/inline-workspace-product-mgmt` — switcher top-left of `AppShell`, popover, product rows with `MoreHorizontal` menu, invalidate queries (no full reload).
-- `mem://preference/doc-loop-checklist` — after any feature: audit doc "How to use / verify" block, `architecture/*` rule, `design.md` token/voice rule, backlog status + log, `plan.md` §4 one-liner, session-decisions entry, memory file if durable. **Why:** the loop has been closing only partially; this is the explicit checklist.
+```
+docs/conventions/
+├── README.md                      # index + how to add a new convention
+├── ui-voice.md                    # voice anchor, length budgets, AI-tell denylist (mirrors mem://preference/voice-anchor + mem://constraint/no-em-en-dashes-in-ui)
+├── ui-chrome.md                   # no native chrome rule + useConfirm/usePrompt/sonner contract (mirrors mem://constraint/no-native-browser-chrome)
+├── destructive-actions.md         # typed-name match pattern + copy patterns (mirrors mem://preference/destructive-actions)
+├── inline-management.md           # workspace/product inline mgmt feature (mirrors mem://feature/inline-workspace-product-mgmt)
+└── doc-closure-checklist.md       # the 8-step per-feature checklist (mirrors mem://preference/doc-loop-checklist)
+```
 
-Update `mem://index.md` Core with two new one-liners: "No native browser chrome (alert/confirm/prompt/open/onbeforeunload) — use useConfirm + sonner + shadcn" and "No em/en dashes in UI copy; kill AI-tell buzzwords per voice anchor."
+Each file is short, one rule, one "Why", one "How to apply", and a "Related" cross-link block. These become the **source of truth**; `mem://` becomes a thin per-tool cache that points to the git file.
 
-## 5. Verification before declaring done
-- `rg "—|–" src/routes src/components src/lib | rg -v node_modules` on swept files returns 0.
-- `rg "window\.(alert|confirm|prompt|open|onbeforeunload)|\\balert\\(|\\bconfirm\\(|\\bprompt\\(" src` returns 0 outside allowlist.
-- ESLint passes with the new `no-restricted-globals/syntax` rule.
-- Every doc above has a "Related" cross-link block at the bottom.
-- `mem://index.md` shows the two new Core lines and 6 new memory references.
+### 2. Wire into the four tool entry points
+
+- **`AGENTS.md` §3 Engineering rules** — add 3 new one-liners with links to `docs/conventions/ui-chrome.md`, `docs/conventions/ui-voice.md`, `docs/conventions/destructive-actions.md`. Add row to §5 update matrix ("Voice / UI-chrome / destructive change → update `docs/conventions/*`").
+- **`AGENTS.md` §1 Pre-action protocol** — add `docs/conventions/` to "scan first" list.
+- **`CLAUDE.md`** — add `docs/conventions/` to the read-order list (after `docs/strategy/`).
+- **`GEMINI.md`** — same one-line addition.
+- **Lovable Knowledge field block at the end of `AGENTS.md` (the section starting `CADENCE — LOVABLE KNOWLEDGE`)** — add `docs/conventions/` to the "SPECIFIC LOOKUPS" table and to "SOURCE OF TRUTH HIERARCHY".
+
+### 3. Update `docs/README.md` index — add the `conventions/` folder row so future agents can find it.
+
+### 4. Reduce `mem://` to thin pointers, not duplicate content
+
+Rewrite each of the 6 `mem://` files to a 2-line body that points to the git file:
+
+```
+This rule lives in docs/conventions/ui-chrome.md. Always read that file; never edit content here.
+```
+
+This way:
+- Lovable's auto-injected Core line still applies in my sessions.
+- The substance lives in git, so every tool sees it.
+- No drift risk from two copies — `mem://` explicitly defers to git.
+
+Keep `mem://index.md` Core lines as-is (they're terse one-liners, useful as a constant nudge inside Lovable).
+
+### 5. Tie the audit doc + architecture docs to `docs/conventions/`
+
+- `architecture/frontend.md` "Confirmation, toasts & dialogs" and "Inline workspace & product management" subsections — add `docs/conventions/ui-chrome.md` and `docs/conventions/inline-management.md` as the canonical rule sources; this file is the contract, conventions is the standalone rule.
+- `design.md` "Voice & language" — link `docs/conventions/ui-voice.md` as the canonical rule, with the section here as the contract restatement.
+- `docs/strategy/v3-audit-language-voice-2026-06-06.md` — add `docs/conventions/` to its Related block.
+
+### 6. Add a one-liner to `docs/conventions/README.md` and to `AGENTS.md` §5 about the loop
+
+When a memory-worthy rule is identified in any tool:
+1. Write it as a `docs/conventions/<name>.md` file (git-tracked).
+2. Reference it from `AGENTS.md` §3 if it's a hard engineering rule.
+3. Optionally mirror to `mem://` as a thin pointer for Lovable's auto-injection.
+
+That order — git first, then memory — guarantees cross-tool visibility.
 
 ## Out of scope
-- P1 sweep of the remaining 21 routes (tracked, not executed here).
-- Any product/code edits — this pass is doc + memory only.
+
+- No product code changes.
+- No new behavior — only the rules' *home* changes.
+- Existing `mem://` index Core lines stay (they're terse and useful inside Lovable).
+
+## Verification
+
+- `ls docs/conventions/` shows 6 files.
+- `rg "docs/conventions" AGENTS.md CLAUDE.md GEMINI.md docs/README.md` returns hits in every file.
+- Each `mem://` file body is ≤ 3 lines and points to its `docs/conventions/` twin.
+- A fresh Claude Code session reading only `CLAUDE.md` → `AGENTS.md` would land on the voice + UI-chrome rules without ever touching `mem://`.
 
 ## Open questions (defaults in brackets — say "go" to accept all)
-1. Memory granularity: 6 separate files as above, or collapse into 2 (`constraints` + `voice-feature`)? [6 separate — easier to retrieve individually]
-2. Should the voice rules also land in `CLAUDE.md` / `GEMINI.md` / Lovable Knowledge field, or stay solely in `design.md` + audit doc and let the tool pointers reference them? [stay in `design.md`, pointers reference — single source of truth]
-3. Add a one-line "voice check" to the PR/commit checklist in `docs/git-discipline.md`? [yes — cheap guardrail]
+
+1. Folder name: `docs/conventions/` or `docs/rules/`? [`conventions/` — softer, fits "voice anchor" and "checklist" entries that aren't strict rules]
+2. Should I also fold the conventions into `AGENTS.md` §3 directly (one-line per rule with link) rather than create a folder? [keep folder — §3 stays scannable; the folder holds the *why* and *how to apply*]
+3. After this lands, should I run a sweep for any other Lovable-only state (project knowledge field, etc.) that should also be mirrored to git? [yes, but as a follow-up — out of scope here]
