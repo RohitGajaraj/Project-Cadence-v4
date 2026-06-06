@@ -119,9 +119,39 @@ Each sweep records before/after in this doc.
 - ESLint config blocks future regressions.
 - Workspace switcher and product dropdowns render in preview; every action confirms via in-app dialog or toast.
 
+## 9. How to use / verify (per Core rule)
+
+Operator-facing surfaces shipped in this pass and how to verify each:
+
+| Surface | Where to find | What it does | Server enforcement | Verify |
+|---|---|---|---|---|
+| Workspace switcher | `AppShell` top-left popover (every authenticated route) | Switch active workspace, rename, open settings, leave, delete. Inline — no route change. | `renameWorkspace` / `deleteWorkspace` / `leaveWorkspace` in `src/lib/workspaces.functions.ts` (all `requireSupabaseAuth`; owner-only writes via RLS on `workspaces` + `workspace_members`; owner-cannot-leave guarded server-side). | Rename a workspace — title updates without page reload. Try to leave a workspace you own — toast rejects with reason. Delete requires typing the workspace name. |
+| Product row actions | Sidebar product list, `MoreHorizontal` per row | Set active, rename, delete. | `updateProject` / `deleteProject` in `src/lib/projects.functions.ts` (workspace-member writes; owner-only delete via RLS). | Rename → query invalidates, list updates in place. Delete requires typing the product name. |
+| `useConfirm()` / `usePrompt()` | `src/hooks/use-confirm.tsx`, mounted in `__root.tsx` | Promise-based themed confirm and one-field prompt. `destructive` + `typedConfirm` supported. | n/a (UI primitive). | `rg "window\.(alert\|confirm\|prompt\|onbeforeunload)" src` → 0 hits. ESLint fails on new offenders. |
+| Toasts | `sonner` via `toast.*` | Non-blocking success / error feedback. | n/a. | No browser popups in any flow under `_authenticated`. |
+
+## 10. Phased rollout
+
+- **P0 — shipped.** Primitives (`useConfirm`, `usePrompt`, `ConfirmProvider`), ESLint guardrail, popup sweep across 10 highest-traffic files, inline workspace + product management, voice rules + AI-tell list documented.
+- **P1 — open.** Em-dash + AI-tell sweep across the remaining 21 authenticated routes, public `/p/*`, and auth screens. Each route records before/after in §6.
+- **P2 — open.** Tooltip discipline pass (every tooltip ≤ 10 words, no tooltip that exists to define its own label) and microcopy patterns (empty states, error states, confirm prompts) per the voice anchor.
+
+## 11. Learnings (so we don't repeat)
+
+- **Em dashes were a symptom; AI-tells are the disease.** "Remove `—`" got picked up; the buzzword list (*seamlessly*, *leverage*, *empower*, *robust*, *unlock*, *delve*, *at the intersection of*) is what actually moves the brand needle. Always sweep both.
+- **Native browser chrome is never the right answer.** `window.alert/confirm/prompt/open/onbeforeunload` break the theme, break keyboard nav, and read as "the team didn't finish this." One reusable `useConfirm()` is cheaper than the next discussion.
+- **Doc the surface as you ship it.** The first version of this audit shipped without a "How to use / verify" block; the operator had to ask where the new switcher lived. The Core rule exists for a reason — every user-facing surface lands with the block in the same turn.
+- **Inline management beats a settings route.** Operators ranked "rename inline" above three other asks the same session. Manage-where-the-thing-lives is the default; a dedicated route is the exception.
+- **Typed-name-match is cheap insurance.** One operator-typed string is the difference between "I deleted the wrong workspace" and "I won't make that ticket again."
+- **Voice rules belong in `design.md`, not the audit only.** The audit is the *case*; `design.md` is the *contract*. Without the contract entry the next person ships an exclamation-point H1 and a triple-pattern subhead.
+
 ## Related
 
+- [`../../architecture/frontend.md`](../../architecture/frontend.md) — Confirmation, toasts & dialogs · Inline workspace & product management.
+- [`../../architecture/security.md`](../../architecture/security.md) — Owner-gating on workspace mutation server fns.
+- [`../../design.md`](../../design.md) — Voice & language contract (canonical).
+- [`../feature-backlog.md`](../feature-backlog.md) — Live status board + LANG / INLINE-MGMT entries.
+- [`./session-decisions.md`](./session-decisions.md) — 2026-06-06 decisions.
+- [`../../plan.md`](../../plan.md) §4 — Active build log.
 - `docs/strategy/v3-audit-2026-06-06.md` — main audit.
 - `docs/strategy/v3-audit-language-2026-06-06.md` — prior language pass.
-- `architecture/frontend.md` — UI contract.
-- `design.md` — tokens and AI message contract.
