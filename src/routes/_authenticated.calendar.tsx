@@ -495,6 +495,174 @@ function CalendarPage() {
           {meetingId && <MeetingDetailBody id={meetingId} />}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit event</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Title</label>
+                <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                  className="mt-1 w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Start</label>
+                  <input type="datetime-local" value={editStart} onChange={(e) => setEditStart(e.target.value)}
+                    className="mt-1 w-full rounded-lg border hairline bg-background/60 px-2 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">End</label>
+                  <input type="datetime-local" value={editEnd} onChange={(e) => setEditEnd(e.target.value)}
+                    className="mt-1 w-full rounded-lg border hairline bg-background/60 px-2 py-2 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Notes</label>
+                <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3}
+                  className="mt-1 w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm" />
+              </div>
+              {editing.html_link && (
+                <a href={editing.html_link} target="_blank" rel="noreferrer"
+                  className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" /> Open in provider
+                </a>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <button
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Delete this event?",
+                  body: "This removes it from your calendar provider too.",
+                  confirmLabel: "Delete",
+                  destructive: true,
+                });
+                if (ok) mDeleteEvt.mutate();
+              }}
+              disabled={mDeleteEvt.isPending}
+              className="inline-flex items-center gap-1.5 text-xs rounded-lg border hairline px-3 py-2 text-red-300 hover:bg-red-500/10 mr-auto"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+            <button
+              onClick={() => setEditing(null)}
+              className="text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => mUpdateEvt.mutate()}
+              disabled={mUpdateEvt.isPending || !editTitle.trim()}
+              className="inline-flex items-center gap-1.5 text-xs rounded-lg bg-foreground text-background px-3 py-2 disabled:opacity-60"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Save
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  setCursor,
+  events,
+  onPickEvent,
+}: {
+  cursor: Date;
+  setCursor: (d: Date) => void;
+  events: EventRow[];
+  onPickEvent: (e: EventRow) => void;
+}) {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: { date: Date | null; isToday: boolean }[] = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < startOffset; i++) cells.push({ date: null, isToday: false });
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    cells.push({ date, isToday: date.getTime() === today.getTime() });
+  }
+  while (cells.length % 7 !== 0) cells.push({ date: null, isToday: false });
+
+  const byDay = events.reduce((acc, e) => {
+    const k = new Date(e.start_at).toDateString();
+    (acc[k] = acc[k] ?? []).push(e);
+    return acc;
+  }, {} as Record<string, EventRow[]>);
+
+  const monthLabel = cursor.toLocaleString([], { month: "long", year: "numeric" });
+
+  return (
+    <div className="bento mt-4 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b hairline">
+        <div className="font-display text-sm">{monthLabel}</div>
+        <div className="inline-flex items-center gap-1">
+          <button onClick={() => setCursor(new Date(year - 1, month, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous year">
+            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+          </button>
+          <button onClick={() => setCursor(new Date(year, month - 1, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous month">
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); setCursor(d); }}
+            className="rounded-md border hairline px-2 py-1 text-xs hover:bg-secondary/60">Today</button>
+          <button onClick={() => setCursor(new Date(year, month + 1, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next month">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => setCursor(new Date(year + 1, month, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next year">
+            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b hairline">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+          <div key={d} className="px-2 py-1.5">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((cell, i) => {
+          const evs = cell.date ? (byDay[cell.date.toDateString()] ?? []) : [];
+          return (
+            <div key={i} className={`min-h-[96px] border-r border-b hairline/60 p-1.5 ${cell.isToday ? "bg-violet-500/5" : ""}`}>
+              {cell.date && (
+                <>
+                  <div className={`text-[11px] mb-1 ${cell.isToday ? "text-violet-300 font-medium" : "text-muted-foreground"}`}>
+                    {cell.date.getDate()}
+                  </div>
+                  <div className="space-y-0.5">
+                    {evs.slice(0, 3).map((e) => (
+                      <button
+                        key={e.id}
+                        onClick={() => onPickEvent(e)}
+                        className="w-full text-left text-[10px] truncate rounded px-1 py-0.5 bg-foreground/10 hover:bg-foreground/20"
+                        title={e.title}
+                      >
+                        {fmtTime(e.start_at, e.all_day)} {e.title}
+                      </button>
+                    ))}
+                    {evs.length > 3 && (
+                      <div className="text-[10px] text-muted-foreground px-1">+{evs.length - 3} more</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
