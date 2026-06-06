@@ -66,6 +66,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/agents", label: "Agents", icon: Bot },
       { to: "/missions", label: "Missions", icon: GitBranch },
+      { to: "/swarm", label: "Swarm HUD", icon: Activity },
       { to: "/prompts", label: "Prompt Studio", icon: FileCode },
       { to: "/sync", label: "Sync Inbox", icon: Inbox },
     ],
