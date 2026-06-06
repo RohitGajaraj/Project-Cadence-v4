@@ -140,9 +140,15 @@ function CalendarPage() {
     html_link: e.html_link,
     attendees: e.attendees ?? [],
   }));
-  const feed = [...meetingItems, ...eventItems].sort(
-    (a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime(),
-  );
+  // Clamp to today → +14d and sort ascending so the next event is at the top.
+  const _now = Date.now();
+  const _end = _now + 14 * 24 * 60 * 60 * 1000;
+  const feed = [...meetingItems, ...eventItems]
+    .filter((it) => {
+      const t = new Date(it.start_at).getTime();
+      return t >= _now - 12 * 60 * 60 * 1000 && t <= _end;
+    })
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
