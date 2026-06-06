@@ -507,6 +507,14 @@ export async function resumeAgentLoop(
         status: halted ? "halted" : "completed", output: finalMsg, duration_ms: 0,
       }).eq("id", runId);
     } catch (e) { console.error("agent_runs finalize failed:", e); }
+    if (!halted) {
+      await autoReflect(supabase, {
+        userId: run.user_id, agentId: agent.id, agentSlug: agent.slug,
+        workspaceId: run.workspace_id ?? null, runId, traceId,
+        goal: run.input, finalMsg,
+      });
+      await maybeAutoAdvanceArc(supabase, run.user_id, agent.id);
+    }
     if (run.mission_id && !halted) {
       try { await maybeCompleteMission(supabase, run.mission_id); } catch (e) { console.error("mission close failed (resume):", e); }
     }
