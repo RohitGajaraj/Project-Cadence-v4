@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
+  LogOut, FileCode, FlaskConical, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
   Sun, Moon, Sparkles,
   Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
