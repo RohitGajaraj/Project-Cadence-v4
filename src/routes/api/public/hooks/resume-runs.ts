@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resumeAgentLoop } from "@/lib/ai/loop.server";
 
@@ -15,7 +16,9 @@ const BATCH = 5;
 export const Route = createFileRoute("/api/public/hooks/resume-runs")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         try {
           const cutoff = new Date(Date.now() - STALE_MS).toISOString();
           const { data: queued } = await supabaseAdmin

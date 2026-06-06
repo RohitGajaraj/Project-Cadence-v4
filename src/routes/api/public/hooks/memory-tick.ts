@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
@@ -17,7 +18,9 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 export const Route = createFileRoute("/api/public/hooks/memory-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         try {
           const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
 

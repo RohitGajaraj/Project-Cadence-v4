@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -83,7 +84,9 @@ async function judge(evt: EventRow): Promise<{
 export const Route = createFileRoute("/api/public/hooks/eval-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         // Find recent ok events that lack an eval row
         const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
         const { data: events, error } = await supabaseAdmin
