@@ -362,3 +362,26 @@ Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the r
 - Decision log: [`session-decisions.md`](./session-decisions.md)
 - UI/AI-message contract: [`../../design.md`](../../design.md)
 - Sidebar nav source: [`../../src/components/cadence/AppShell.tsx`](../../src/components/cadence/AppShell.tsx)
+
+---
+
+## Triage status (2026-06-06)
+
+✅ **Triaged.** All language recs graduated into [`../feature-backlog.md` § v3 Audit Triage](../feature-backlog.md#v3-audit-triage-2026-06-06). Mapping:
+
+- LANG-01 → folded into `F-VOICE-LOGIN` (P0, with REC-01)
+- LANG-02 → folded into `F-VOICE-VERSIONS` (P0, with REC-18)
+- LANG-03 → folded into `F-IA-RENAMES` (P1) — sidebar rename batch
+- LANG-04 → `F-VOICE-GLOSSARY` (P1)
+- LANG-05 → `F-IA-RENAMES` (P1)
+- LANG-06 → `F-VOICE-EMPTY-TODAY` (P0)
+- LANG-07 → ☑ **shipped** as `F-VOICE-DIALOGS` (2026-06-06 `useConfirm`/`usePrompt` rollout)
+- LANG-08 → `F-VOICE-CASE` (P0)
+- LANG-09 → folded into `F-GOV-APPROVAL-COPY` (P0, with REC-08 approval-copy aspect)
+- LANG-10 → ☑ **shipped** as `F-VOICE-GUIDE` ([`../conventions/ui-voice.md`](../conventions/ui-voice.md) + cross-tool wiring)
+- TOOLTIP-DEL · TOOLTIP-REW → `F-VOICE-TOOLTIPS` (P1)
+- LANG-IA-12 → subsumed by `F-COCKPIT-MERGE` (P1) + the four `F-IA-*` merge entries
+- LANG-NEW-OUTCOME → folded into `F-OUTCOME-SURFACE` (Phase B target)
+- LANG-CHIP → `F-VOICE-CHIP` (P2)
+
+Operator answers to §10 open questions (defaults applied where not explicit): (1) LANG-05 graduated to a binding F-ID (`F-IA-RENAMES`). (2) Cadence name not reopened. (3) `/outcome` ships as named empty surface as part of Phase B. (4) Operator-grade voice anchor kept. (5) Glossary CI check captured in `F-VOICE-GLOSSARY`.
