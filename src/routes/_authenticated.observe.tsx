@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Activity } from "lucide-react";
+import { Activity, BarChart3, Route as RouteIcon, Waves } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { listTraces } from "@/lib/traces.functions";
@@ -42,23 +42,36 @@ function ObservePage() {
   const tracesToday = tracesQ.data?.traces?.length ?? 0;
   const driftOpen = driftQ.data?.openIncidents?.length ?? 0;
 
-  const tabs: { id: Tab; label: string; description: string; badge?: number }[] = [
+  const tabs: {
+    id: Tab;
+    label: string;
+    description: string;
+    badge?: number;
+    Icon: typeof Activity;
+    tone: "sky" | "violet" | "amber";
+  }[] = [
     {
       id: "analytics",
       label: "Analytics",
       description: "Spend, tokens, and latency rolled up across every agent run.",
+      Icon: BarChart3,
+      tone: "sky",
     },
     {
       id: "traces",
       label: "Traces",
       description: "Step-by-step replay of each agent run, with timing and tool calls.",
       badge: tracesToday || undefined,
+      Icon: RouteIcon,
+      tone: "violet",
     },
     {
       id: "drift",
       label: "Drift",
       description: "Quality shifts against baseline. Flags when answers start changing.",
       badge: driftOpen || undefined,
+      Icon: Waves,
+      tone: "amber",
     },
   ];
 
@@ -81,15 +94,25 @@ function ObservePage() {
           </p>
         </header>
 
-        <div className="flex gap-1 mb-6 border-b hairline">
+        <div className="flex flex-wrap gap-1 mb-6 border-b hairline">
           {tabs.map((t) => {
             const active = tab === t.id;
+            const Icon = t.Icon;
+            const toneIcon =
+              t.tone === "sky"
+                ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                : t.tone === "violet"
+                ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
+                : "bg-amber-500/10 text-amber-300 border-amber-500/30";
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`px-4 py-2 text-sm border-b-2 -mb-px flex items-center gap-2 ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
+                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${active ? "ring-1 ring-foreground/20" : "opacity-80"}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
                 <span>{t.label}</span>
                 {t.badge != null && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.id === "drift" ? "bg-amber-500/15 text-amber-300" : "bg-secondary text-muted-foreground"}`}>
