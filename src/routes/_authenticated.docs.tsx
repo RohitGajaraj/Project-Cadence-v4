@@ -273,8 +273,13 @@ function DocsPage() {
                 <button
                   className="text-3xl leading-none hover:bg-secondary/60 rounded px-1"
                   title="Change icon"
-                  onClick={() => {
-                    const next = window.prompt("Icon (emoji)", doc.icon ?? "📄");
+                  onClick={async () => {
+                    const next = await prompt({
+                      title: "Change icon",
+                      label: "Paste a single emoji",
+                      defaultValue: doc.icon ?? "📄",
+                      confirmLabel: "Save",
+                    });
                     if (next) mUpdate.mutate({ id: doc.id, icon: next });
                   }}
                 >
@@ -291,8 +296,14 @@ function DocsPage() {
                   placeholder="Untitled"
                 />
                 <button
-                  onClick={() => {
-                    if (window.confirm("Delete this doc?")) mDelete.mutate(doc.id);
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Delete this doc?",
+                      body: "It moves to the trash for 30 days, then it's gone.",
+                      destructive: true,
+                      confirmLabel: "Delete",
+                    });
+                    if (ok) mDelete.mutate(doc.id);
                   }}
                   className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary/60"
                   title="Delete"
