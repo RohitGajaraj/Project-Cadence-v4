@@ -176,7 +176,7 @@ export async function dispatchEvent(
   supabase: SupabaseClient,
   evt: EventRow,
   actorUserId: string | null,
-): Promise<{ mission_id: string | null; run_id: string | null; halted: unknown }> {
+): Promise<{ mission_id: string | null; run_id: string | null; halted: string | null }> {
   try {
     const goal = goalForEvent(evt);
     // Find target agent in the row owner's namespace (subscriptions are
@@ -206,7 +206,11 @@ export async function dispatchEvent(
       run_id: result.run_id ?? null,
     }).eq("id", evt.id);
 
-    return { mission_id: mission.id, run_id: result.run_id ?? null, halted: result.halted ?? null };
+    const halted =
+      result.halted == null ? null
+      : typeof result.halted === "string" ? result.halted
+      : (result.halted as { reason?: string }).reason ?? "halted";
+    return { mission_id: mission.id, run_id: result.run_id ?? null, halted };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await supabase.from("event_queue").update({
