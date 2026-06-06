@@ -801,6 +801,84 @@ ID. Feature name                         [status] · Pn · stage
 
 ---
 
+## v3 Audit Triage (2026-06-06)
+
+*Derived from [`./strategy/v3-audit-2026-06-06.md`](./strategy/v3-audit-2026-06-06.md) (22 product RECs) and [`./strategy/v3-audit-language-2026-06-06.md`](./strategy/v3-audit-language-2026-06-06.md) (10 LANG + tooltip + IA + outcome + chip recs). Operator-approved A→C→B sequence; this triage **is** Phase C. Each F-ID below is a thin entry pointing back to the audit doc for full body + impact/effort/horizon scoring — do not duplicate that prose here.*
+
+**Owner column:** any tool may pick a row whose own status isn't `☑`. Update Live status board's "Now building" before starting. Cross-tool rules: [`../AGENTS.md`](../AGENTS.md) §10.
+
+**Status legend:** ☑ shipped · ◑ partial · ☐ not started · ⊘ closed/superseded.
+
+### P0 — ship in the next two weeks (low-risk voice/clarity wins)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-VOICE-LOGIN` | Rewrite `/login` headline + subhead to the v3 thesis ("Your product org, run by a swarm of agents…"). | REC-01 · LANG-01 | any | ☐ |
+| `F-VOICE-AINATIVE` | Grep + replace every `AI-native` string with v3 language; update marketing meta + sidebar tagline. | REC-02 | any | ☐ |
+| `F-VOICE-VERSIONS` | Strip `Phase N` / `Bundle N` / `Slice N` internal labels from operator UI (`/build`, `/discovery`, `/opportunities`, `/prds`); keep them in docs only. | REC-18 · LANG-02 | any | ☐ |
+| `F-VOICE-EMPTY-TODAY` | Rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming"). | LANG-06 | any | ☐ |
+| `F-VOICE-CASE` | Sentence-case every page H1; remove `uppercase tracking-[0.16em]` mono-labels and serif gradients on `Upcoming meetings` / `All tasks`. | LANG-08 | any | ☐ |
+| `F-GOV-APPROVAL-COPY` | Approval-gate row copy must lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Applies to inbox + decision queue + mission detail. | REC-08 (approval prompts) · LANG-09 | any | ☐ |
+| `F-TODAY-AUTOSEED` | Auto-generate the Today brief on first sign-in instead of asking the operator to seed it. | REC-05 | any | ☐ |
+| `F-AGENTS-ROSTER-CUT` | Cut seeded agent roster from 18 → 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). Others appear only when earned or auto-spawned. | REC-04 | any | ☐ |
+
+### P1 — ship in the next 1–2 months (structural)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-IA-MERGE-OBSERVE` | Merge `/analytics` + `/traces` + `/drift` → `/observability` with internal tabs + redirects. | REC-12 | any | ☐ |
+| `F-IA-MERGE-GOVERN` | Merge `/inbox` + `/guardrails` + `/budgets` → `/governance` (already partly there) with internal tabs + redirects. | REC-13 | any | ☐ |
+| `F-IA-CULL-CALDOCS` | Delete `/calendar`, `/meetings`, `/docs`, `/sync` from operator nav (data preserved). | REC-14 | any | ☐ |
+| `F-IA-AGENTS-TABS` | Fold `/prompts` and `/agents` into one **Agents** route with internal tabs. | REC-15 | any | ☐ |
+| `F-IA-TODAY-BRIEFING` | Execute Today + Briefing merge per audit §5. | REC-11 | any | ☐ |
+| `F-IA-RENAMES` | Batch rename: `Build Console`→`Builder` · `Eval Harness`→`Evals` · `Swarm HUD`→`Swarm` · `AI Ops`→`Observe` · `AI Chat`→`Chat` · `AI Analytics`→`Analytics` · `Prompt Studio`→`Prompts` · `Sync Inbox`→`Connectors`. Old-route redirects required. | LANG-05 | any | ☐ |
+| `F-COCKPIT-MERGE` | Merge `/swarm` + `/missions` → `/cockpit` (two views: Agents · Missions). Subsumes most of LANG-IA-12. | REC-16 · LANG-IA-12 | any | ☐ |
+| `F-TODAY-LOOPPULSE` | Replace Today hero (Focus Score / deep blocks) with Loop Pulse: `Overnight: 7 signals clustered → 2 themes promoted · 1 PRD ready for review · Builder PR #142 awaiting CI (green in 3m)`. | REC-03 · REC-17 | any | ☐ |
+| `F-VOICE-EMPTY-ALL` | Empty-state copy pass across all remaining routes (post-IA merges). | REC-06 | any | ☐ |
+| `F-GOV-COST-SURFACE` | Surface unit economics on `/build` and `/governance`: `This mission cost $0.42 in tokens; budget $5.00`. | REC-20 | any | ☐ |
+| `F-VOICE-TOOLTIPS` | Apply audit §4.1 (delete restating tooltips, ~15 sites) + §4.2 (rewrite to consequence-first, ~8 sites, mostly `/agents`). | TOOLTIP-DEL · TOOLTIP-REW | any | ☐ |
+| `F-VOICE-GLOSSARY` | Publish glossary; add a CI script that flags banned synonyms (`Trajectory`, `Run` for missions, `Specialist` in UI). | LANG-04 | any | ☐ |
+
+### P2 — 3–6 months (platform / differentiator depth)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-COCKPIT-MACHINE-MODE` | Header toggle: Human Mode (current dense surface) ↔ Machine Mode (full-screen dispatch board showing running agents, queue, attention, throughput; hides everything else). Depends on `F-COCKPIT-MERGE`. | REC-22 · REC-08 (mode toggle aspect) | any | ☐ |
+| `F-MCP-V1` | Ship minimal Cadence MCP server (read signals/opportunities/PRDs · append decision · queue mission). | REC-09 | any | ☐ |
+| `F-AGENTS-MENTIONABLE` | Agents as first-class users: `@discovery, please re-cluster the last 50 signals` from any PRD comment or Today card. | REC-10 | any | ☐ |
+| `F-BUILDER-MULTIFILE` | Lift Builder from single-file to scoped multi-file: pre-declared touch list, max N files, review per file. | REC-21 | any | ☐ |
+| `F-VOICE-CHIP` | Enforce AI-message chip spec via component prop types: `<AiCallChip model via score latency tokens cost />`. | LANG-CHIP | any | ☐ |
+| `F-MKT-COCKPIT-AB` | A/B landing: "OS" vs. "cockpit" positioning. Marketing surface only. | REC-19 | any | ☐ |
+
+### Phase B — Outcome surface (the big merged bet)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-OUTCOME-SURFACE` | Ship `/outcome` (Releases · Launches · Support · Learnings) and the 5 missing right-half loop surfaces (Release · Launch · Support · Learn · Outcome) in shadow form so operators *see* the loop they're sold. Maps to Proof Platform v1.1 bundles 10–12 (Ship · Launch · Support→Learn). Empty surfaces are fine if the loop is named. | REC-07 · LANG-NEW-OUTCOME | any | ☐ (Phase B target) |
+
+### Already shipped (close-out)
+
+| F-ID | What | Source recs | Status |
+|---|---|---|:--:|
+| `F-VOICE-DIALOGS` | `window.prompt()`/`window.confirm()` flows in `AppShell` (workspace + product creation/rename/delete) replaced with `useConfirm` / `usePrompt` dialogs + sentence-case labels; ESLint guardrail blocks `alert/confirm/prompt/onbeforeunload`. | LANG-07 | ☑ shipped 2026-06-06 |
+| `F-VOICE-GUIDE` | One-page voice guide published as [`./conventions/ui-voice.md`](./conventions/ui-voice.md); linked from `design.md`, `AGENTS.md` §3, `CLAUDE.md` + `GEMINI.md` read-order step 1.6. | LANG-10 | ☑ shipped 2026-06-06 |
+
+### Security follow-up (ignored finding, tracked)
+
+| F-ID | What | Source | Status |
+|---|---|---|:--:|
+| `F-SEC-REALTIME-RLS` | `realtime.messages` has no RLS — any authenticated user can subscribe to any channel topic. Operator picked "ignore for now, track as backlog F-ID". Fix requires (a) renaming every `supabase.channel()` call site to `workspace:<id>:…` / `user:<auth.uid()>:…` topic convention, then (b) RLS on `realtime.messages` enforcing topic regex against workspace membership. Higher risk than payoff today (no PII broadcast on realtime; row reads still RLS-protected). | supabase_lov scanner `realtime_messages_no_channel_auth` | ☐ (deferred by operator) |
+
+### Triage notes (apply when picking a row)
+
+- **Most P0 rows are pure copy.** No schema change, no server-fn change, no migration. Estimate is hours-per-route, not days.
+- **`F-IA-*` merges break URLs.** Always add redirects in the same commit; never ship a rename without `<Navigate>` from old route.
+- **`F-AGENTS-ROSTER-CUT` is a data change**, not a code change — update seed data + the agent roster server fn, leave the spawn pipeline alone.
+- **`F-OUTCOME-SURFACE` is Phase B** — claim it via Live status board before another tool does; bundles 10–12 collapse into this one F-ID.
+- **Don't expand prose here.** Full bodies live in the two audit docs. This section is the addressable index.
+
+---
+
 ## Build-order rollup (status × build sequence)
 
 Sequence from [`../plan.md`](../plan.md) §3. Status: ☐ not started · ◑ legacy partial (harden) · ☑ verified into `plan.md` §4. **Per-item code-verified grades + step-1 tickets: [`foundation-audit.md`](./foundation-audit.md) (2026-05-30).**
