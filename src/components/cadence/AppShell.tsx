@@ -83,13 +83,11 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    id: "aiops",
-    label: "AI Ops",
+    id: "run",
+    label: "Run",
     items: [
-      { to: "/analytics", label: "AI Analytics", icon: Activity },
-      { to: "/traces", label: "Traces", icon: GitBranch },
-      { to: "/evals", label: "Eval Harness", icon: FlaskConical },
-      { to: "/drift", label: "Drift", icon: TrendingUp },
+      { to: "/observe", label: "Observe", icon: Activity },
+      { to: "/evals", label: "Evals", icon: FlaskConical },
     ],
   },
   {
