@@ -9,7 +9,7 @@ import { pullMapping, pushMapping } from "@/lib/sync.functions";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   component: SyncInboxPage,
-  head: () => ({ meta: [{ title: "Sync Inbox · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Connectors · Cadence" }] }),
 });
 
 type Mapping = {
@@ -77,7 +77,7 @@ function SyncInboxPage() {
       <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="flex items-center gap-3 mb-1">
           <Inbox className="h-5 w-5 text-violet-400" />
-          <h1 className="font-display text-3xl tracking-tight">Sync Inbox</h1>
+          <h1 className="font-display text-3xl tracking-tight">Connectors</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-8">
           Resolve conflicts between Cadence docs and your connected tools.
