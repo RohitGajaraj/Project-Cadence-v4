@@ -63,7 +63,7 @@ function BuildConsolePage() {
         <header className="flex items-end justify-between gap-4 mb-6">
           <div>
             <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-1">
-              <Hammer className="h-3 w-3" /> Build · Bundle 9
+              <Hammer className="h-3 w-3" /> Build
             </div>
             <h1 className="font-display text-3xl tracking-tight">Build Console</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
