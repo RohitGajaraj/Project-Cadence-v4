@@ -389,6 +389,30 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   <Plus className="h-3.5 w-3.5" />
                   <span>New workspace</span>
                 </DropdownMenuItem>
+                {activeWorkspace && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={renameActiveWorkspace} className="cursor-pointer gap-2">
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Rename</span>
+                    </DropdownMenuItem>
+                    <Link to="/settings">
+                      <DropdownMenuItem className="cursor-pointer gap-2">
+                        <Settings className="h-3.5 w-3.5" />
+                        <span>Workspace settings</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuItem onClick={leaveActiveWorkspace} className="cursor-pointer gap-2">
+                      <LeaveIcon className="h-3.5 w-3.5" />
+                      <span>Leave</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={deleteActiveWorkspace} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Delete workspace</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
