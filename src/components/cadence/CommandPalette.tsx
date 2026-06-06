@@ -59,7 +59,7 @@ export function CommandPalette() {
                 <Item icon={Target} label="Opportunities" hint="G O" onSelect={() => go("/opportunities")} />
                 <Item icon={FileText} label="PRDs" hint="G P" onSelect={() => go("/prds")} />
                 <Item icon={Map} label="Roadmap · Now/Next/Later" hint="G R" onSelect={() => go("/roadmap")} />
-                <Item icon={Calendar} label="Meetings · transcripts & decisions" hint="G M" onSelect={() => go("/meetings")} />
+                <Item icon={Calendar} label="Calendar · time & meeting capture" hint="G M" onSelect={() => go("/calendar")} />
                 <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
                 <Item icon={Activity} label="Observe · analytics, traces, drift" onSelect={() => go("/observe")} />
                 <Item icon={Settings} label="Settings & profile" hint="G S" onSelect={() => go("/settings")} />
@@ -111,7 +111,7 @@ export function GotoShortcuts() {
         if (timer) clearTimeout(timer);
         const map: Record<string, string> = {
           d: "/", c: "/chat", a: "/agents", t: "/tasks", s: "/settings",
-          i: "/discovery", o: "/opportunities", p: "/prds", r: "/roadmap", m: "/meetings",
+          i: "/discovery", o: "/opportunities", p: "/prds", r: "/roadmap", m: "/calendar",
         };
         const to = map[e.key.toLowerCase()];
         if (to) {

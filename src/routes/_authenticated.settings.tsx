@@ -1,22 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { MODELS } from "@/lib/ai/models";
 import { listIntegrations, upsertIntegration, disconnectIntegration, PROVIDERS } from "@/lib/integrations.functions";
-import { Plug, CheckCircle2, Clock, Key, Trash2 } from "lucide-react";
+import { Plug, CheckCircle2, Clock, Key, Trash2, Compass, Save } from "lucide-react";
 import { listApiKeys, saveApiKey, deleteApiKey, testApiKey, BYO_PROVIDERS } from "@/lib/byokeys.functions";
+import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: (search: Record<string, unknown>): { section?: string } => ({
+    section: typeof search.section === "string" ? search.section : undefined,
+  }),
   component: SettingsPage,
   head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
 });
 
 function SettingsPage() {
+  const { section } = Route.useSearch();
+  const briefRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (section === "brief" && briefRef.current) {
+      briefRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [section]);
   const qc = useQueryClient();
   const fProfile = useServerFn(getProfile);
   const fProjects = useServerFn(listProjects);
@@ -134,6 +146,8 @@ function SettingsPage() {
             How Cadence and your AI agents should address you and operate.
           </p>
         </header>
+
+        <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
 
         <form
           onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
@@ -333,5 +347,121 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {children}
       {hint && <div className="mt-1 text-[11px] text-muted-foreground/70">{hint}</div>}
     </label>
+  );
+}
+
+type BriefFieldKey = "mission" | "target_user" | "current_focus" | "anti_goals" | "notes";
+
+const BRIEF_FIELDS: { key: BriefFieldKey; label: string; hint: string; placeholder: string; rows: number }[] = [
+  { key: "mission",       label: "Mission",                  hint: "One paragraph. What this workspace exists to do.",                                placeholder: "We help solo PMs run the work of a 10-person product org.",                                rows: 3 },
+  { key: "target_user",   label: "Target user (ICP)",        hint: "Who you're building for. Agents anchor on this.",                                 placeholder: "Lead/solo PM at a 10 to 100 person B2B SaaS team. Ships weekly.",                          rows: 3 },
+  { key: "current_focus", label: "Current focus",            hint: "What the swarm should prioritize this quarter. Cut, don't expand.",               placeholder: "Q3 2026: close the Discover, Define, Plan, Build loop on real signals.",                   rows: 4 },
+  { key: "anti_goals",    label: "Anti-goals",               hint: "Things agents should refuse, even when they look reasonable.",                    placeholder: "No new dashboards. No mocked data. No features whose value can't be measured.",            rows: 3 },
+  { key: "notes",         label: "Notes for the swarm",      hint: "Tone, constraints, decisions, references.",                                       placeholder: "Speak in product terms. Lean concise over verbose. Always cite evidence.",                  rows: 4 },
+];
+
+const EMPTY_BRIEF: Record<BriefFieldKey, string> = {
+  mission: "", target_user: "", current_focus: "", anti_goals: "", notes: "",
+};
+
+function WorkspaceBriefSection({ scrollRef, highlight }: { scrollRef: React.RefObject<HTMLDivElement | null>; highlight: boolean }) {
+  const { activeWorkspaceId, activeWorkspace, refreshWorkspaces } = useWorkspace();
+  const qc = useQueryClient();
+  const getFn = useServerFn(getActiveBrief);
+  const upsertFn = useServerFn(upsertBrief);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["workspace-brief", activeWorkspaceId],
+    queryFn: () => getFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+  });
+
+  const effectiveWorkspaceId = activeWorkspaceId ?? data?.workspace_id ?? null;
+
+  const [form, setForm] = useState<Record<BriefFieldKey, string>>(EMPTY_BRIEF);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        mission: data.mission ?? "",
+        target_user: data.target_user ?? "",
+        current_focus: data.current_focus ?? "",
+        anti_goals: data.anti_goals ?? "",
+        notes: data.notes ?? "",
+      });
+      setDirty(false);
+    }
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: () => upsertFn({ data: { workspaceId: effectiveWorkspaceId, ...form } }),
+    onSuccess: (row: WorkspaceBrief) => {
+      qc.setQueryData(["workspace-brief", activeWorkspaceId], row);
+      qc.setQueryData(["workspace-brief", null], row);
+      void refreshWorkspaces();
+      setDirty(false);
+      toast.success("Brief saved, next mission uses the new context");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function update(key: BriefFieldKey, val: string) {
+    setForm((f) => ({ ...f, [key]: val }));
+    setDirty(true);
+  }
+
+  return (
+    <section
+      ref={scrollRef}
+      className={`bento p-6 space-y-4 mb-8 ${highlight ? "ring-1 ring-foreground/30" : ""}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-2">
+            <Compass className="h-3 w-3" /> Strategic brief
+            {activeWorkspace?.name && <span className="normal-case tracking-normal text-muted-foreground/70">· {activeWorkspace.name}</span>}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+            This brief is injected into every agent mission's system prompt. Changing it visibly
+            changes what Discovery surfaces and what the Strategist writes. Keep it tight.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={!dirty || save.isPending || isLoading}
+          onClick={() => save.mutate()}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background px-3 py-1.5 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Save className="h-3 w-3" />
+          {save.isPending ? "Saving…" : dirty ? "Save brief" : "Saved"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Loading brief…</div>
+      ) : (
+        <div className="space-y-4">
+          {BRIEF_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label htmlFor={`brief-${f.key}`} className="block">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-foreground">{f.label}</span>
+                  <span className="text-[10px] text-muted-foreground/70">{form[f.key].length} chars</span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/70">{f.hint}</p>
+              </label>
+              <textarea
+                id={`brief-${f.key}`}
+                value={form[f.key]}
+                onChange={(e) => update(f.key, e.target.value)}
+                rows={f.rows}
+                placeholder={f.placeholder}
+                className="input mt-2 resize-y"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

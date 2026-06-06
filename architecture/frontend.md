@@ -51,6 +51,18 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 
 `/governance` follows the same tabs pattern as `/observe`. One page, four tabs: Controls (kill switch · mission caps · stuck approvals · reactor) · Approvals (tool-call queue) · Guardrails (content rules) · Budgets (spend caps). Tab state is `?tab=controls|approvals|guardrails|budgets` via `validateSearch`, default `controls`. Panel JSX lives in `src/components/governance/{Approvals,Guardrails,Budgets}Panel.tsx`; the Controls panel stays inline in the route file because it depends on the same `getGovernanceOverview` + reactor server fns. Legacy routes `/inbox`, `/guardrails`, `/budgets` are `beforeLoad`-redirects to the matching tab. Sidebar workspace rail's "Approvals" deep-links to `/governance?tab=approvals` — `NavRow` forwards a per-item `search` prop to `<Link>`, and `AppShell.isItemActive` checks the current `search.tab` so a path can host multiple correctly-highlighted nav entries. Govern group ships with two items only: Governance, Integrations.
 
+## Pinned workspace rail
+
+The pinned (always-visible) rail in `AppShell` holds **four** items only: **Today · Approvals · Calendar · Chat**. The Pin test (see [`../docs/conventions/inline-management.md`](../docs/conventions/inline-management.md#pin-test-applies-to-the-sidebars-pinned-workspace-rail)) governs what earns a pin. Everything else lives inside a collapsible group, inside a parent surface (tab / sheet / inline section), or in Settings.
+
+## Calendar surface (Calendar + Meetings merged)
+
+`/calendar` is the single time-and-meetings surface. Two view modes — **List** (default — meetings + Google Calendar events in one chronological feed, table layout) and **Grid** (the prior day-grouped event cards). Preference persists per-user in `localStorage` (`cadence.calendar.view`); list is default because the meeting capture/extract flow is where the value lives, not time-blocking. Meeting rows open a right-side shadcn `Sheet` rendering the shared `src/components/cadence/MeetingDetailBody.tsx` (transcript editor + Extract + Commit to Tasks/Decisions/Signals). The opened meeting is encoded as `?meeting=<id>` via `validateSearch`, so deep-links and bookmarks rehydrate the sheet on load. Legacy routes `/meetings` and `/meetings/$id` are `beforeLoad`-redirects to `/calendar` and `/calendar?meeting=<id>` respectively. No server-fn or DB changes — reuses `listCalendarEvents`, `listMeetings`, `getMeeting`, `saveTranscript`, `extractMeeting`, `syncCalendar`, `createCalendarEvent`, `proposeSlots` as-is.
+
+## Strategic brief (inline in Settings)
+
+The workspace's strategic brief — read by every agent mission — is **not** a top-level route. It lives as an inline section in `/settings`, deep-linked via `/settings?section=brief` (validated via `validateSearch`; the section scrolls into view and ring-highlights when the param is present). Reuses `getActiveBrief` / `upsertBrief` unchanged. Legacy `/briefing` is a `beforeLoad`-redirect to `/settings?section=brief`. This follows the inline-management convention: workspace-scoped settings live next to the workspace.
+
 ## Confirmation, toasts & dialogs
 Canonical rule: [`../docs/conventions/ui-chrome.md`](../docs/conventions/ui-chrome.md). This section is the contract restatement.
 
