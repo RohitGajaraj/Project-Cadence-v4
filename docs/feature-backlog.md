@@ -823,6 +823,7 @@ ID. Feature name                         [status] · Pn · stage
 | `F-GOV-APPROVAL-COPY` | Approval-gate row copy must lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Applies to inbox + decision queue + mission detail. | REC-08 (approval prompts) · LANG-09 | Lovable | ☑ |
 | `F-TODAY-AUTOSEED` | Auto-generate the Today brief on first sign-in instead of asking the operator to seed it. Implemented via `ensureTodayBrief(supabase, userId)` helper in `src/lib/copilot.functions.ts`, called from `getDashboard`. | REC-05 | Lovable | ☑ |
 | `F-AGENTS-ROSTER-CUT` | Cut seeded agent roster to 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). `seed_default_agents` migration cut 9 → 4; Orchestrator seeded by its own fn. Extras disabled (not deleted) for existing users. | REC-04 | Lovable | ☑ |
+| `F-NAV-ACCORDION` | Sidebar groups behave as single-open accordion: clicking a group auto-collapses the others; the active route's group auto-opens; `localStorage` persists one id. Implemented in `src/components/cadence/AppShell.tsx` only. **Why:** addresses operator feedback that the left rail felt crowded; pairs with `F-IA-MERGE-OBSERVE` to clean up the AI Ops area without hiding features. **How to verify:** open `/agents` → "Agents" group is the only one expanded; click "Deliver" → "Agents" auto-collapses; refresh → last-opened group restored. | operator-fb · pairs with REC-12 | Lovable | ☑ |
 
 ### P1 — ship in the next 1–2 months (structural)
 
