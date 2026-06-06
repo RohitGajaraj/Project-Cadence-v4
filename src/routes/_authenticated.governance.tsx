@@ -2,7 +2,7 @@ import { createFileRoute, ErrorComponent } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Zap, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -12,6 +12,13 @@ import {
   extendApprovalTtl,
   resolveApproval,
 } from "@/lib/governance.functions";
+import {
+  listEventSubscriptions,
+  upsertEventSubscription,
+  deleteEventSubscription,
+  listEventQueue,
+  decideEventDispatch,
+} from "@/lib/reactor.functions";
 
 export const Route = createFileRoute("/_authenticated/governance")({
   component: GovernancePage,
@@ -53,6 +60,47 @@ function GovernancePage() {
     queryKey: ["governance", "overview", activeWorkspaceId],
     queryFn: () => overviewFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
   });
+
+  // ---- F-AGENT-3 reactor state ----
+  const listSubsFn = useServerFn(listEventSubscriptions);
+  const upsertSubFn = useServerFn(upsertEventSubscription);
+  const deleteSubFn = useServerFn(deleteEventSubscription);
+  const listQueueFn = useServerFn(listEventQueue);
+  const decideEvtFn = useServerFn(decideEventDispatch);
+
+  const subsQ = useQuery({
+    queryKey: ["reactor", "subs", activeWorkspaceId],
+    queryFn: () => listSubsFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+  });
+  const queueQ = useQuery({
+    queryKey: ["reactor", "queue", activeWorkspaceId],
+    queryFn: () => listQueueFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+    refetchInterval: 5000,
+  });
+
+  const upsertSubMut = useMutation({
+    mutationFn: (v: Parameters<typeof upsertSubFn>[0]["data"]) => upsertSubFn({ data: v }),
+    onSuccess: () => { toast.success("Subscription saved"); qc.invalidateQueries({ queryKey: ["reactor", "subs"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const deleteSubMut = useMutation({
+    mutationFn: (id: string) => deleteSubFn({ data: { id } }),
+    onSuccess: () => { toast.success("Subscription removed"); qc.invalidateQueries({ queryKey: ["reactor", "subs"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const decideEvtMut = useMutation({
+    mutationFn: (v: { eventId: string; decision: "approve" | "reject" }) => decideEvtFn({ data: v }),
+    onSuccess: (_d, v) => {
+      toast.success(v.decision === "approve" ? "Dispatching…" : "Skipped");
+      qc.invalidateQueries({ queryKey: ["reactor"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [newEvent, setNewEvent] = useState<"signal.created" | "opportunity.scored" | "prd.approved">("signal.created");
+  const [newAgent, setNewAgent] = useState("discovery");
+  const [newMode, setNewMode] = useState<"auto" | "confirm">("confirm");
+  const [newMinScore, setNewMinScore] = useState("8");
 
   const [reason, setReason] = useState("");
 
