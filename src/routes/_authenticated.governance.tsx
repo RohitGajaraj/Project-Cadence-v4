@@ -542,7 +542,6 @@ function ControlsPanel() {
         </section>
 
         {isLoading && <div className="text-xs text-muted-foreground">Loading governance state…</div>}
-      </div>
-    </AppShell>
+    </div>
   );
 }
