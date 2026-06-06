@@ -30,6 +30,8 @@ import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authen
 import { Route as AuthenticatedObserveRouteImport } from './routes/_authenticated.observe'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
+import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
 import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
@@ -38,6 +40,7 @@ import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authentica
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedBuildRouteImport } from './routes/_authenticated.build'
+import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticated.budgets'
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
@@ -163,6 +166,16 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
+  id: '/guardrails',
+  path: '/guardrails',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
   id: '/governance',
   path: '/governance',
@@ -201,6 +214,11 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
 const AuthenticatedBuildRoute = AuthenticatedBuildRouteImport.update({
   id: '/build',
   path: '/build',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBudgetsRoute = AuthenticatedBudgetsRouteImport.update({
+  id: '/budgets',
+  path: '/budgets',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBriefingRoute = AuthenticatedBriefingRouteImport.update({
@@ -313,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
+  '/budgets': typeof AuthenticatedBudgetsRoute
   '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
@@ -321,6 +340,8 @@ export interface FileRoutesByFullPath {
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
+  '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/observe': typeof AuthenticatedObserveRoute
@@ -360,6 +381,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AuthenticatedAgentsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
+  '/budgets': typeof AuthenticatedBudgetsRoute
   '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
@@ -368,6 +390,8 @@ export interface FileRoutesByTo {
   '/drift': typeof AuthenticatedDriftRoute
   '/evals': typeof AuthenticatedEvalsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
+  '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/observe': typeof AuthenticatedObserveRoute
@@ -410,6 +434,7 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
+  '/_authenticated/budgets': typeof AuthenticatedBudgetsRoute
   '/_authenticated/build': typeof AuthenticatedBuildRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
@@ -418,6 +443,8 @@ export interface FileRoutesById {
   '/_authenticated/drift': typeof AuthenticatedDriftRoute
   '/_authenticated/evals': typeof AuthenticatedEvalsRoute
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
+  '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/_authenticated/observe': typeof AuthenticatedObserveRoute
@@ -461,6 +488,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/analytics'
     | '/briefing'
+    | '/budgets'
     | '/build'
     | '/calendar'
     | '/chat'
@@ -469,6 +497,8 @@ export interface FileRouteTypes {
     | '/drift'
     | '/evals'
     | '/governance'
+    | '/guardrails'
+    | '/inbox'
     | '/integrations'
     | '/meetings'
     | '/observe'
@@ -508,6 +538,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/analytics'
     | '/briefing'
+    | '/budgets'
     | '/build'
     | '/calendar'
     | '/chat'
@@ -516,6 +547,8 @@ export interface FileRouteTypes {
     | '/drift'
     | '/evals'
     | '/governance'
+    | '/guardrails'
+    | '/inbox'
     | '/integrations'
     | '/meetings'
     | '/observe'
@@ -557,6 +590,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/analytics'
     | '/_authenticated/briefing'
+    | '/_authenticated/budgets'
     | '/_authenticated/build'
     | '/_authenticated/calendar'
     | '/_authenticated/chat'
@@ -565,6 +599,8 @@ export interface FileRouteTypes {
     | '/_authenticated/drift'
     | '/_authenticated/evals'
     | '/_authenticated/governance'
+    | '/_authenticated/guardrails'
+    | '/_authenticated/inbox'
     | '/_authenticated/integrations'
     | '/_authenticated/meetings'
     | '/_authenticated/observe'
@@ -767,6 +803,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/guardrails': {
+      id: '/_authenticated/guardrails'
+      path: '/guardrails'
+      fullPath: '/guardrails'
+      preLoaderRoute: typeof AuthenticatedGuardrailsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/governance': {
       id: '/_authenticated/governance'
       path: '/governance'
@@ -821,6 +871,13 @@ declare module '@tanstack/react-router' {
       path: '/build'
       fullPath: '/build'
       preLoaderRoute: typeof AuthenticatedBuildRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/budgets': {
+      id: '/_authenticated/budgets'
+      path: '/budgets'
+      fullPath: '/budgets'
+      preLoaderRoute: typeof AuthenticatedBudgetsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/briefing': {
@@ -991,6 +1048,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
+  AuthenticatedBudgetsRoute: typeof AuthenticatedBudgetsRoute
   AuthenticatedBuildRoute: typeof AuthenticatedBuildRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
@@ -999,6 +1057,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
   AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
+  AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
   AuthenticatedObserveRoute: typeof AuthenticatedObserveRoute
@@ -1021,6 +1081,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
+  AuthenticatedBudgetsRoute: AuthenticatedBudgetsRoute,
   AuthenticatedBuildRoute: AuthenticatedBuildRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
@@ -1029,6 +1090,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDriftRoute: AuthenticatedDriftRoute,
   AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
+  AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
   AuthenticatedObserveRoute: AuthenticatedObserveRoute,
