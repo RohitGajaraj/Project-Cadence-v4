@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, Trash2, Pencil, Link2 } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, Pencil, Link2, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -13,10 +13,14 @@ import { listMeetings } from "@/lib/meetings.functions";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MeetingDetailBody } from "@/components/cadence/MeetingDetailBody";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useConfirm } from "@/hooks/use-confirm";
 
 type View = "list" | "grid";
+type GridMode = "month" | "week" | "day";
 const VIEW_KEY = "cadence.calendar.view";
+const GRID_MODE_KEY = "cadence.calendar.gridMode";
+const CONNECT_HINT_KEY = "cadence.calendar.connectHintDismissed";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   validateSearch: (search: Record<string, unknown>): { meeting?: string } => ({
