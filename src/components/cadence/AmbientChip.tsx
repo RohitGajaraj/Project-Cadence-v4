@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, MapPin } from "lucide-react";
+import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, MapPin, CalendarPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listMyCalendarConnections } from "@/lib/calendar-connections.functions";
 
 type Place = { city: string; country: string; countryCode: string };
 type Weather = { tempC: number; code: number; isDay: boolean };
@@ -160,6 +164,18 @@ export function AmbientChip() {
   const w = weather ? describe(weather.code, weather.isDay) : null;
   const Icon = w?.Icon ?? Cloud;
 
+  const listConnections = useServerFn(listMyCalendarConnections);
+  const { data: connData } = useQuery({
+    queryKey: ["ambient", "calendar-connections"],
+    queryFn: () => listConnections(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+  });
+  const needsCalendarConnect =
+    !!connData &&
+    (connData.connections?.length ?? 0) === 0 &&
+    (connData.providersAvailable?.google || connData.providersAvailable?.microsoft);
+
   return (
     <div
       className="sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
@@ -191,6 +207,21 @@ export function AmbientChip() {
             {weather.tempC}°
           </span>
         </span>
+      ) : null}
+      {needsCalendarConnect ? (
+        <>
+          <span className="h-3 w-px bg-border/60" />
+          <Link
+            to="/calendar"
+            title="Connect your calendar"
+            aria-label="Connect your calendar"
+            className="ambient-connect group relative inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/20"
+          >
+            <span className="ambient-connect__ping absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+            <CalendarPlus className="h-3 w-3" />
+            <span>Connect</span>
+          </Link>
+        </>
       ) : null}
     </div>
   );
