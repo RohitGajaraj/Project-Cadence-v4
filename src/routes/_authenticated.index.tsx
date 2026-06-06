@@ -9,19 +9,15 @@ import {
   Sparkles, Brain, Users, MessageSquare, Target, Plus, Send, RefreshCw,
   Calendar, Bot, Zap, Activity, CheckCircle2, XCircle, Clock, ArrowRight,
 } from "lucide-react";
-import { LayoutDashboard, ListChecks, Bot as BotIcon, Waves } from "lucide-react";
-
 const DASHBOARD_TABS: Array<{
   id: "overview" | "work" | "agents" | "pulse";
   label: string;
   description: string;
-  Icon: typeof LayoutDashboard;
-  tone: "sky" | "violet" | "emerald" | "amber";
 }> = [
-  { id: "overview", label: "Overview", description: "Today at a glance: priorities, brief, and what needs your call.", Icon: LayoutDashboard, tone: "sky" },
-  { id: "work",     label: "Work",     description: "Tasks, projects, and meetings moving through the swarm.",          Icon: ListChecks,      tone: "violet" },
-  { id: "agents",   label: "Agents",   description: "Who's running, what they shipped, and recent agent runs.",         Icon: BotIcon,         tone: "emerald" },
-  { id: "pulse",    label: "Pulse",    description: "Signal flow, decisions, and momentum across the product.",          Icon: Waves,           tone: "amber" },
+  { id: "overview", label: "Overview", description: "Today at a glance: priorities, brief, and what needs your call." },
+  { id: "work",     label: "Work",     description: "Tasks, projects, and meetings moving through the swarm." },
+  { id: "agents",   label: "Agents",   description: "Who's running, what they shipped, and recent agent runs." },
+  { id: "pulse",    label: "Pulse",    description: "Signal flow, decisions, and momentum across the product." },
 ];
 import { AppShell } from "@/components/cadence/AppShell";
 import { getDashboard } from "@/lib/dashboard.functions";
