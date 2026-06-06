@@ -830,7 +830,7 @@ ID. Feature name                         [status] · Pn · stage
 
 | F-ID | What | Source recs | Owner | Status |
 |---|---|---|:--:|:--:|
-| `F-IA-MERGE-OBSERVE` | Merge `/analytics` + `/traces` + `/drift` → `/observability` with internal tabs + redirects. | REC-12 | any | ☐ |
+| `F-IA-MERGE-OBSERVE` | Sidebar `AI Ops` → `Run` (Observe · Evals). `/analytics` + `/traces` + `/drift` merged into `/observe` with tabs (Analytics · Traces · Drift); Traces & Drift labels carry live count badges; `?tab=` drives state; old URLs `throw redirect()` to the matching tab; `/traces/$traceId` preserved. Govern group untouched (Guardrails · Governance · Budgets · Integrations). **How to use / verify:** sidebar → Run → Observe; default Analytics tab; switching tabs updates `?tab=`; visiting `/analytics`, `/traces`, or `/drift` redirects to the matching tab; ⌘K resolves "Observe"; Trace detail still opens at `/traces/<id>`. **Implementation:** new `src/routes/_authenticated.observe.tsx` + `src/components/observe/{Analytics,Traces,Drift}Panel.tsx`; old route files reduced to `beforeLoad: redirect(...)`; sidebar group `aiops` → `run` with 2 items in `src/components/cadence/AppShell.tsx`. | REC-12 · operator-fb | Lovable | ☑ |
 | `F-IA-MERGE-GOVERN` | Merge `/inbox` + `/guardrails` + `/budgets` → `/governance` (already partly there) with internal tabs + redirects. | REC-13 | any | ☐ |
 | `F-IA-CULL-CALDOCS` | Delete `/calendar`, `/meetings`, `/docs`, `/sync` from operator nav (data preserved). | REC-14 | any | ☐ |
 | `F-IA-AGENTS-TABS` | Fold `/prompts` and `/agents` into one **Agents** route with internal tabs. | REC-15 | any | ☐ |
