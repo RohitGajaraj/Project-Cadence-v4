@@ -481,45 +481,12 @@ function CalendarPage() {
         )}
 
         {view === "grid" && (
-        <div className="space-y-6 mt-4">
-          {Object.entries(groups).map(([day, evs]) => (
-            <section key={day}>
-              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-2">{fmtDate(evs[0].start_at)}</div>
-              <div className="bento divide-y divide-white/5">
-                {evs.map((e) => (
-                  <div key={e.id} className="p-4 flex gap-4">
-                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
-                      <div className="font-medium text-foreground">{fmtTime(e.start_at, e.all_day)}</div>
-                      {e.end_at && !e.all_day && <div>{fmtTime(e.end_at, false)}</div>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-display text-sm flex items-center gap-2">
-                        {e.title}
-                        {e.hangout_link && (
-                          <a href={e.hangout_link} target="_blank" rel="noreferrer" className="text-emerald-400 hover:opacity-80">
-                            <Video className="h-3.5 w-3.5" />
-                          </a>
-                        )}
-                      </div>
-                      {e.location && <div className="text-xs text-muted-foreground mt-0.5">{e.location}</div>}
-                      {e.attendees?.length > 0 && (
-                        <div className="text-[11px] text-muted-foreground mt-1">
-                          {e.attendees.slice(0, 5).map((a) => a.displayName || a.email).join(", ")}
-                          {e.attendees.length > 5 && ` +${e.attendees.length - 5}`}
-                        </div>
-                      )}
-                    </div>
-                    {e.html_link && (
-                      <a href={e.html_link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <MonthGrid
+          cursor={gridCursor}
+          setCursor={setGridCursor}
+          events={list}
+          onPickEvent={openEditor}
+        />
         )}
       </div>
 
