@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ChevronRight, ChevronDown, Plus, Trash2, FileText, Search, Download, X, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { DocEditor } from "@/components/cadence/DocEditor";
+import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { listDocs, getDoc, createDoc, updateDoc, deleteDoc } from "@/lib/docs.functions";
 import { importGoogleDoc } from "@/lib/gdocs.functions";
 import { importNotionPage, searchNotionPages } from "@/lib/notion.functions";
@@ -118,8 +119,15 @@ function DocsPage() {
   });
 
   function handleImportGDoc() {
-    const v = window.prompt("Paste a Google Docs URL or document ID");
-    if (v && v.trim()) mImport.mutate(v.trim());
+    void (async () => {
+      const v = await prompt({
+        title: "Import from Google Docs",
+        label: "URL or document ID",
+        placeholder: "https://docs.google.com/document/d/…",
+        confirmLabel: "Import",
+      });
+      if (v && v.trim()) mImport.mutate(v.trim());
+    })();
   }
 
   const tree = useMemo(() => {
