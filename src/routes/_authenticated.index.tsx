@@ -213,7 +213,7 @@ function Dashboard() {
               <ReactMarkdown>{normalizeBrief(d.brief.summary)}</ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No brief yet — hit refresh and Cadence will draft one from your workspace.</p>
+            <p className="text-sm text-muted-foreground">Drafting your brief from this workspace.</p>
           )}
         </section>
 
