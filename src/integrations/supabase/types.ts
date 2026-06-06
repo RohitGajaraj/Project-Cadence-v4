@@ -1921,6 +1921,91 @@ export type Database = {
           },
         ]
       }
+      mission_steps: {
+        Row: {
+          agent_slug: string
+          completed_at: string | null
+          created_at: string
+          depends_on: number[]
+          dispatched_at: string | null
+          error: string | null
+          id: string
+          idx: number
+          message_id: string | null
+          mission_id: string
+          rationale: string | null
+          result: Json | null
+          run_id: string | null
+          status: string
+          sub_goal: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_slug: string
+          completed_at?: string | null
+          created_at?: string
+          depends_on?: number[]
+          dispatched_at?: string | null
+          error?: string | null
+          id?: string
+          idx: number
+          message_id?: string | null
+          mission_id: string
+          rationale?: string | null
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          sub_goal: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          agent_slug?: string
+          completed_at?: string | null
+          created_at?: string
+          depends_on?: number[]
+          dispatched_at?: string | null
+          error?: string | null
+          id?: string
+          idx?: number
+          message_id?: string | null
+          mission_id?: string
+          rationale?: string | null
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          sub_goal?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_steps_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "agent_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_steps_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       missions: {
         Row: {
           completed_at: string | null
@@ -3317,6 +3402,35 @@ export type Database = {
           title: string
         }[]
       }
+      next_ready_mission_steps: {
+        Args: { p_mission_id: string }
+        Returns: {
+          agent_slug: string
+          completed_at: string | null
+          created_at: string
+          depends_on: number[]
+          dispatched_at: string | null
+          error: string | null
+          id: string
+          idx: number
+          message_id: string | null
+          mission_id: string
+          rationale: string | null
+          result: Json | null
+          run_id: string | null
+          status: string
+          sub_goal: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mission_steps"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       record_mission_usage: {
         Args: { _cost_usd: number; _run_id: string; _tokens: number }
         Returns: undefined
@@ -3335,6 +3449,7 @@ export type Database = {
         Returns: undefined
       }
       seed_demo_workspace: { Args: { _user_id: string }; Returns: string }
+      seed_orchestrator_agent: { Args: { p_user_id: string }; Returns: string }
       seed_pm_lifecycle_tools: {
         Args: { _user_id: string }
         Returns: undefined

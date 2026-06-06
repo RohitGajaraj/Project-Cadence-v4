@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, AlertTriangle, ChevronDown, ChevronRight, Brain, Wrench, MessageSquare, Activity } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, AlertTriangle, ChevronDown, ChevronRight, Brain, Wrench, MessageSquare, Activity, GitMerge, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, type HopStep, type HopToolCall } from "@/lib/missions.functions";
 import { MissionGraph } from "@/components/cadence/MissionGraph";
+import { listMissionSteps, advanceMission } from "@/lib/orchestrator.functions";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetail,
@@ -111,6 +113,60 @@ function HopProgressPanel({ steps, toolCalls, hopStatus }: { steps: HopStep[]; t
 
 type TimelineHop = { run_id: string; agent_slug: string; agent_name: string; status: string; created_at: string; last_checkpoint_at: string | null };
 
+type MissionStepUI = {
+  id: string; idx: number; agent_slug: string; sub_goal: string;
+  depends_on: number[]; status: string; run_id: string | null;
+  error: string | null; rationale: string | null;
+  dispatched_at: string | null; completed_at: string | null;
+};
+
+function stepTone(s: string): string {
+  if (s === "done") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
+  if (s === "running" || s === "dispatched") return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
+  if (s === "failed") return "bg-rose-500/15 text-rose-300 border-rose-400/30";
+  if (s === "skipped") return "bg-muted text-muted-foreground border-border";
+  return "bg-amber-500/15 text-amber-300 border-amber-400/30";
+}
+
+function OrchestratorPlanPanel({ steps, canAdvance, advancing, onAdvance }: {
+  steps: MissionStepUI[]; canAdvance: boolean; advancing: boolean; onAdvance: () => void;
+}) {
+  const done = steps.filter((s) => s.status === "done").length;
+  const failed = steps.filter((s) => s.status === "failed").length;
+  return (
+    <div className="bento p-4">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
+          <GitMerge className="h-3 w-3 text-violet-300" /> Orchestrator plan · {done}/{steps.length} done{failed > 0 ? ` · ${failed} failed` : ""}
+        </div>
+        {canAdvance && (
+          <button
+            onClick={onAdvance}
+            disabled={advancing}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] hover:bg-muted disabled:opacity-50"
+          >
+            {advancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Advance
+          </button>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        {steps.map((s) => (
+          <div key={s.id} className="flex items-start gap-2 text-[11px]">
+            <span className="tabular-nums text-muted-foreground w-5 text-right">{s.idx + 1}.</span>
+            <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] shrink-0 ${stepTone(s.status)}`}>{s.status}</span>
+            <span className="font-mono text-foreground/80 shrink-0">{s.agent_slug}</span>
+            <span className="min-w-0 flex-1 text-muted-foreground break-words">{s.sub_goal}</span>
+            {s.depends_on.length > 0 && (
+              <span className="text-[10px] text-muted-foreground shrink-0">deps: {s.depends_on.map((d) => d + 1).join(",")}</span>
+            )}
+            {s.error && <span className="text-[10px] text-rose-300 truncate max-w-[200px]">{s.error}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AgentTimeline({ hops }: { hops: TimelineHop[] }) {
   if (hops.length === 0) return null;
   return (
@@ -147,6 +203,9 @@ function MissionDetail() {
   const { missionId } = Route.useParams();
   const fProjects = useServerFn(listProjects);
   const fGet = useServerFn(getMission);
+  const fSteps = useServerFn(listMissionSteps);
+  const fAdvance = useServerFn(advanceMission);
+  const qc = useQueryClient();
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const m = useQuery({
     queryKey: ["mission", missionId],
@@ -155,6 +214,24 @@ function MissionDetail() {
       const st = q.state.data?.mission.status;
       return st === "running" || st === "queued" ? 2000 : false;
     },
+  });
+  const steps = useQuery({
+    queryKey: ["mission-steps", missionId],
+    queryFn: () => fSteps({ data: { missionId } }),
+    refetchInterval: (q) => {
+      const rows = q.state.data?.steps ?? [];
+      const live = rows.some((r) => r.status === "dispatched" || r.status === "running" || r.status === "planned");
+      return live ? 2500 : false;
+    },
+  });
+  const advance = useMutation({
+    mutationFn: () => fAdvance({ data: { missionId } }),
+    onSuccess: () => {
+      toast.success("Orchestrator advanced — dispatching newly-ready steps.");
+      qc.invalidateQueries({ queryKey: ["mission", missionId] });
+      qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -180,6 +257,9 @@ function MissionDetail() {
   };
 
   const data = m.data;
+  const stepRows = steps.data?.steps ?? [];
+  const isOrchestrated = stepRows.length > 0;
+  const hasPending = stepRows.some((r) => r.status === "planned" || r.status === "dispatched" || r.status === "running");
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -218,6 +298,14 @@ function MissionDetail() {
         ) : (
           <div className="space-y-3">
             <AgentTimeline hops={data.hops} />
+            {isOrchestrated && (
+              <OrchestratorPlanPanel
+                steps={stepRows}
+                canAdvance={hasPending && data.mission.status === "running"}
+                advancing={advance.isPending}
+                onAdvance={() => advance.mutate()}
+              />
+            )}
             <MissionGraph hops={data.hops} messages={data.messages} onSelectHop={handleSelectHop} />
             <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Hops (chronological)</div>
             {data.hops.length === 0 && (

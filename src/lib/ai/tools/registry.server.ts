@@ -12,6 +12,7 @@ import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
 import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
+import { missionPlan, missionDispatch, missionObserve, missionFinalize } from "./orchestrator.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -780,7 +781,7 @@ const agentHandoff = def({
 });
 
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, githubPrOpen, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff, webSearchTool, webFetchTool, webMapTool, webCrawlTool]
+  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, proposeSlots, createCalendarEvent, githubIssueCreate, githubPrOpen, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff, webSearchTool, webFetchTool, webMapTool, webCrawlTool, missionPlan, missionDispatch, missionObserve, missionFinalize]
     .map((t) => [t.name, t]),
 );
 
