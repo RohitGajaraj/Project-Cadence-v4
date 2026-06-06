@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Play, Plus, Trash2, ChevronRight, ChevronDown, FlaskConical, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
+import { useConfirm } from "@/hooks/use-confirm";
 
 export const Route = createFileRoute("/_authenticated/evals")({
   component: EvalsPage,
@@ -161,6 +162,7 @@ function SuiteDetail({ suiteId, onDeleted }: { suiteId: string; onDeleted: () =>
   const runFn = useServerFn(runEvalSuiteNow);
   const updateFn = useServerFn(updateEvalSuite);
   const deleteFn = useServerFn(deleteEvalSuite);
+  const confirm = useConfirm();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["eval_suite", suiteId],
@@ -239,6 +241,7 @@ function CaseList({ suiteId, cases, onChange }: { suiteId: string; cases: any[];
   const createFn = useServerFn(createEvalCase);
   const updateFn = useServerFn(updateEvalCase);
   const deleteFn = useServerFn(deleteEvalCase);
+  const confirm = useConfirm();
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: "", input: "", expected: "", rubric: "" });
 
