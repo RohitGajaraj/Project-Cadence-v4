@@ -290,6 +290,12 @@ function AgentsPage() {
                     </div>
                   ))}
                 </div>
+
+                <ReflectionsPanel
+                  reflections={reflectionsQ.data?.reflections ?? []}
+                  loading={reflectionsQ.isLoading}
+                  agentName={selected.name}
+                />
               </>
             )}
           </section>
