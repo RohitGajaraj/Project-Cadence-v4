@@ -41,6 +41,11 @@ function fmtTime(iso: string, allDay: boolean) {
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
 }
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function CalendarPage() {
   const { meeting: meetingId } = Route.useSearch();
