@@ -290,6 +290,7 @@ SECTION 7: MULTI-TOOL CONSISTENCY & SOURCE OF TRUTH
 
 CANONICAL SOURCE OF TRUTH HIERARCHY:
   - AGENTS.md: operating rules (ALL tools follow this)
+  - docs/conventions/: durable cross-tool rules (UI chrome, voice, destructive, inline-mgmt, doc-closure). Apply automatically.
   - docs/strategy/: versioned positioning history (always read the latest version)
   - docs/strategy/session-decisions.md: major strategic decisions log
   - README.md: product face (derived from strategy/)
