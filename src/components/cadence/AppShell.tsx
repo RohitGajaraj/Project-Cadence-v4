@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
   LogOut, FileCode, FlaskConical, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
-  Crosshair, Users,
   Sun, Moon, Sparkles,
   Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
   Rocket,
@@ -33,13 +32,14 @@ type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<st
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 // Workspace — your daily rail. Always visible, never collapsed.
-// Calendar and Meetings live here (they're inputs to every phase, not Discover).
+// Pin test (docs/conventions/inline-management.md): used most days, entry
+// point for an active workflow, not derivable from another pinned surface.
+// Briefing → moved to Settings → Workspace (set once, agent-facing).
+// Meetings → merged into Calendar (one mental model: time + capture).
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
-  { to: "/briefing", label: "Briefing", icon: Crosshair },
   { to: "/governance", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: Calendar },
-  { to: "/meetings", label: "Meetings", icon: Users },
   { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
