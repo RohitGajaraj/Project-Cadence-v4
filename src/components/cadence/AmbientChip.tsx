@@ -192,21 +192,6 @@ export function AmbientChip() {
           </span>
         </span>
       ) : null}
-      {needsCalendarConnect ? (
-        <>
-          <span className="h-3 w-px bg-border/60" />
-          <Link
-            to="/calendar"
-            title="Connect your calendar"
-            aria-label="Connect your calendar"
-            className="ambient-connect group relative inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/20"
-          >
-            <span className="ambient-connect__ping absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-            <CalendarPlus className="h-3 w-3" />
-            <span>Connect</span>
-          </Link>
-        </>
-      ) : null}
     </div>
   );
 }
