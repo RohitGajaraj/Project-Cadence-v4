@@ -287,7 +287,7 @@ function ControlsPanel() {
                       {r.mission_token_cap ? <span> / {r.mission_token_cap}</span> : <span className="text-muted-foreground/60"> (no cap)</span>}
                       {tokPct !== null && (
                         <div className="h-1 rounded bg-secondary/60 mt-0.5 overflow-hidden">
-                          <div className={`h-full ${tokPct >= 90 ? "bg-rose-400" : tokPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${tokPct}%` }} />
+                          <div className={`h-full ${tokPct >= 90 ? "bg-rose-400" : tokPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${tokPct}%` }}></div>
                         </div>
                       )}
                     </div>
@@ -296,7 +296,7 @@ function ControlsPanel() {
                       {r.mission_spend_cap_usd ? <span> / ${Number(r.mission_spend_cap_usd).toFixed(4)}</span> : <span className="text-muted-foreground/60"> (no cap)</span>}
                       {spendPct !== null && (
                         <div className="h-1 rounded bg-secondary/60 mt-0.5 overflow-hidden">
-                          <div className={`h-full ${spendPct >= 90 ? "bg-rose-400" : spendPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${spendPct}%` }} />
+                          <div className={`h-full ${spendPct >= 90 ? "bg-rose-400" : spendPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${spendPct}%` }}></div>
                         </div>
                       )}
                     </div>
