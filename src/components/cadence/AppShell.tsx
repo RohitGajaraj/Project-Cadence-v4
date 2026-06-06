@@ -180,7 +180,13 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
   const pauseFn = useServerFn(getWorkspacePauseState);
   const { data: pauseState } = useQuery({
     queryKey: ["governance", "pause-state", activeWorkspaceId],
-    queryFn: () => pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+    queryFn: async () => {
+      try {
+        return await pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } });
+      } catch {
+        return null;
+      }
+    },
     refetchInterval: 30_000,
     enabled: !!activeWorkspaceId,
   });
