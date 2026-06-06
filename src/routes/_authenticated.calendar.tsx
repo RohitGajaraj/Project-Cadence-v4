@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, Trash2, Pencil, Link2 } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, Trash2, Pencil, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -201,11 +201,6 @@ function CalendarPage() {
   });
 
   const list = (events.data?.events ?? []) as unknown as EventRow[];
-  const groups = list.reduce((acc, e) => {
-    const k = new Date(e.start_at).toDateString();
-    (acc[k] = acc[k] ?? []).push(e);
-    return acc;
-  }, {} as Record<string, EventRow[]>);
 
   // Unified chronological feed for List view: meetings + calendar events,
   // sorted by start time. Meetings get a "Meeting" badge; events stay native.
