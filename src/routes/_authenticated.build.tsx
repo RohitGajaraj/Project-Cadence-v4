@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send } from "lucide-react";
+import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send, FlaskConical } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listBuilderRuns, dispatchBuilderMission, type BuilderRun } from "@/lib/build.functions";
 import { listProjects } from "@/lib/projects.functions";
@@ -320,6 +320,7 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
           <span className="text-muted-foreground truncate max-w-[140px]">{run.pr.path}</span>
         </a>
       ) : null}
+      {run.ci ? <CiChip ci={run.ci} prUrl={run.pr?.url ?? null} /> : null}
       <div className="mt-2 text-[10px] text-muted-foreground/70">{new Date(run.created_at).toLocaleString()}</div>
     </div>
   );
@@ -329,6 +330,43 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
       {inner}
     </Link>
   ) : inner;
+}
+
+function CiChip({ ci, prUrl }: { ci: NonNullable<BuilderRun["ci"]>; prUrl: string | null }) {
+  const tone = ci.overall === "success" ? "bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
+    : ci.overall === "failure" ? "bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+    : ci.overall === "pending" ? "bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+    : "bg-muted/40 text-muted-foreground hover:bg-muted/60";
+  const label = ci.overall === "success" ? "CI · green"
+    : ci.overall === "failure" ? (ci.failing ? `CI · red · ${ci.failing.name}` : "CI · red")
+    : ci.overall === "pending" ? "CI · pending"
+    : "CI · n/a";
+  const href = ci.failing?.html_url ?? prUrl ?? undefined;
+  const content = (
+    <>
+      <FlaskConical className="h-3 w-3" />
+      <span className="truncate max-w-[180px]">{label}</span>
+    </>
+  );
+  return href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px] rounded-md border hairline px-1.5 py-0.5 ${tone}`}
+      title={ci.failing?.summary ?? `CI updated ${new Date(ci.updated_at).toLocaleString()}`}
+    >
+      {content}
+    </a>
+  ) : (
+    <span
+      className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px] rounded-md border hairline px-1.5 py-0.5 ${tone}`}
+      title={`CI updated ${new Date(ci.updated_at).toLocaleString()}`}
+    >
+      {content}
+    </span>
+  );
 }
 
 function EmptyState() {
