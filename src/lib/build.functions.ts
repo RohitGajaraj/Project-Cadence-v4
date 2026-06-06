@@ -21,6 +21,12 @@ export type BuilderRun = {
   last_checkpoint_at: string | null;
   pr: { number: number; url: string; branch: string; path: string } | null;
   pending_approvals: number;
+  ci: {
+    overall: "pending" | "success" | "failure" | "neutral";
+    updated_at: string;
+    head_sha: string;
+    failing: { name: string; html_url: string; summary: string | null } | null;
+  } | null;
 };
 
 export const listBuilderRuns = createServerFn({ method: "GET" })
@@ -66,16 +72,32 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
     const { data: tcs } = traceIds.length
       ? await supabase
           .from("tool_calls")
-          .select("trace_id,tool_name,result,ok")
+          .select("trace_id,tool_name,result,ok,created_at")
           .in("trace_id", traceIds)
-          .eq("tool_name", "github.pr.open")
-      : { data: [] as { trace_id: string; tool_name: string; result: unknown; ok: boolean }[] };
+          .in("tool_name", ["github.pr.open", "github.ci.read"])
+          .order("created_at", { ascending: true })
+      : { data: [] as { trace_id: string; tool_name: string; result: unknown; ok: boolean; created_at: string }[] };
     const prByTrace = new Map<string, { number: number; url: string; branch: string; path: string }>();
-    for (const t of (tcs ?? []) as { trace_id: string; result: { number?: number; url?: string; branch?: string; path?: string } | null; ok: boolean }[]) {
+    type CiResult = {
+      overall: "pending" | "success" | "failure" | "neutral";
+      updated_at: string;
+      head_sha: string;
+      checks?: Array<{ name: string; conclusion: string | null; status: string; html_url: string; summary: string | null }>;
+    };
+    const ciByTrace = new Map<string, CiResult>();
+    for (const t of (tcs ?? []) as { trace_id: string; tool_name: string; result: Record<string, unknown> | null; ok: boolean; created_at: string }[]) {
       if (!t.ok || !t.result) continue;
-      const r = t.result;
-      if (typeof r.number === "number" && typeof r.url === "string" && typeof r.branch === "string" && typeof r.path === "string") {
-        prByTrace.set(t.trace_id, { number: r.number, url: r.url, branch: r.branch, path: r.path });
+      if (t.tool_name === "github.pr.open") {
+        const r = t.result as { number?: number; url?: string; branch?: string; path?: string };
+        if (typeof r.number === "number" && typeof r.url === "string" && typeof r.branch === "string" && typeof r.path === "string") {
+          prByTrace.set(t.trace_id, { number: r.number, url: r.url, branch: r.branch, path: r.path });
+        }
+      } else if (t.tool_name === "github.ci.read") {
+        const r = t.result as CiResult;
+        // Keep the latest read (loop ascends by created_at).
+        if (r && typeof r.overall === "string" && typeof r.head_sha === "string") {
+          ciByTrace.set(t.trace_id, r);
+        }
       }
     }
 
@@ -100,6 +122,13 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
     return {
       runs: rows.map((r) => {
         const trace = traceByRun.get(r.id);
+        const ciRaw = trace ? ciByTrace.get(trace) ?? null : null;
+        const failing = ciRaw?.overall === "failure"
+          ? (ciRaw.checks?.find((c) =>
+              c.conclusion === "failure" || c.conclusion === "timed_out" ||
+              c.conclusion === "action_required" || c.conclusion === "cancelled",
+            ) ?? null)
+          : null;
         return {
           run_id: r.id,
           mission_id: r.mission_id,
@@ -110,6 +139,12 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
           last_checkpoint_at: r.last_checkpoint_at,
           pr: trace ? prByTrace.get(trace) ?? null : null,
           pending_approvals: pendingByRun.get(r.id) ?? 0,
+          ci: ciRaw ? {
+            overall: ciRaw.overall,
+            updated_at: ciRaw.updated_at,
+            head_sha: ciRaw.head_sha,
+            failing: failing ? { name: failing.name, html_url: failing.html_url, summary: failing.summary } : null,
+          } : null,
         };
       }),
     };
