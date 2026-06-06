@@ -108,6 +108,17 @@ function CalendarPage() {
   const [gridCursor, setGridCursor] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
   });
+  const [gridMode, setGridMode] = useState<GridMode>("month");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(GRID_MODE_KEY);
+    if (v === "month" || v === "week" || v === "day") setGridMode(v);
+  }, []);
+  function setGridModePersist(m: GridMode) {
+    setGridMode(m);
+    if (typeof window !== "undefined") window.localStorage.setItem(GRID_MODE_KEY, m);
+  }
+  const [connectOpen, setConnectOpen] = useState(false);
 
   // Event editor
   const [editing, setEditing] = useState<EventRow | null>(null);
