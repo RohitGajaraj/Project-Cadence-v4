@@ -46,15 +46,23 @@ function CalendarPage() {
   const { meeting: meetingId } = Route.useSearch();
   const navigate = useNavigate({ from: "/calendar" });
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const fProjects = useServerFn(listProjects);
   const fEvents = useServerFn(listCalendarEvents);
   const fSync = useServerFn(syncCalendar);
   const fCreate = useServerFn(createCalendarEvent);
   const fPropose = useServerFn(proposeSlots);
   const fMeetings = useServerFn(listMeetings);
+  const fListConns = useServerFn(listMyCalendarConnections);
+  const fStartConnect = useServerFn(startCalendarConnect);
+  const fSaveConn = useServerFn(saveCalendarConnection);
+  const fDisconnect = useServerFn(disconnectCalendar);
+  const fUpdate = useServerFn(updateCalendarEvent);
+  const fDelete = useServerFn(deleteCalendarEvent);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const events = useQuery({ queryKey: ["calendar-events"], queryFn: () => fEvents() });
   const meetings = useQuery({ queryKey: ["meetings"], queryFn: () => fMeetings() });
+  const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
 
   // View preference persists per-user (list is default — capture/extract is the
   // value flow, not time-blocking).
