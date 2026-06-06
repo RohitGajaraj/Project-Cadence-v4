@@ -505,14 +505,33 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   >
                     {p.name}
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); deleteProduct(p.id, p.name); }}
-                    title="Delete product"
-                    className="opacity-0 group-hover:opacity-100 px-2 py-1 text-ink-faint hover:text-destructive transition"
-                  >
-                    <Trash2 className="h-3 w-3" strokeWidth={1.75} />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        title="More actions"
+                        className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 px-2 py-1 text-ink-faint hover:text-foreground transition"
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem onClick={() => setActiveProductId(p.id)} className="cursor-pointer gap-2">
+                        <Compass className="h-3.5 w-3.5" />
+                        <span>Set active</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => renameProduct(p.id, p.name)} className="cursor-pointer gap-2">
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span>Rename</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => deleteProduct(p.id, p.name)} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               );
             })}
@@ -522,7 +541,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                 onClick={createProduct}
                 className="w-full text-left rounded-md px-3 py-1.5 text-xs text-ink-faint italic hover:text-foreground hover:bg-secondary/30 transition"
               >
-                No products yet — add one
+                No products yet. Add one.
               </button>
             )}
           </div>
