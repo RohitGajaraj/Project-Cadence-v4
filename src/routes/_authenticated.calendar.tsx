@@ -331,6 +331,68 @@ function CalendarPage() {
 
         {events.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
 
+        {/* Calendar account connections */}
+        {(() => {
+          const conns = connections.data?.connections ?? [];
+          const avail = connections.data?.providersAvailable ?? { google: false, microsoft: false };
+          const hasGoogle = conns.some((c) => c.provider === "google");
+          const hasMicrosoft = conns.some((c) => c.provider === "microsoft");
+          return (
+            <div className="bento p-3 mb-4 flex flex-wrap items-center gap-2">
+              <div className="text-xs text-muted-foreground mr-2 inline-flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5" /> Calendar accounts:
+              </div>
+              {conns.map((c) => (
+                <span key={c.id} className="inline-flex items-center gap-2 rounded-full border hairline px-2.5 py-1 text-xs">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {c.provider === "google" ? "Google" : "Microsoft"}
+                  {c.account_email && <span className="text-muted-foreground">· {c.account_email}</span>}
+                  <button
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Disconnect this calendar?",
+                        body: "Stored events stay but no further sync will happen.",
+                        confirmLabel: "Disconnect",
+                        destructive: true,
+                      });
+                      if (ok) mDisconnect.mutate(c.id);
+                    }}
+                    className="ml-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Disconnect"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {!hasGoogle && (
+                <button
+                  onClick={() => mConnect.mutate("google")}
+                  disabled={mConnect.isPending}
+                  title={avail.google ? "" : "Provider credentials not yet configured"}
+                  className="text-xs rounded-full border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-60"
+                >
+                  + Google Calendar
+                </button>
+              )}
+              {!hasMicrosoft && (
+                <button
+                  onClick={() => mConnect.mutate("microsoft")}
+                  disabled={mConnect.isPending}
+                  title={avail.microsoft ? "" : "Provider credentials not yet configured"}
+                  className="text-xs rounded-full border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-60"
+                >
+                  + Microsoft Outlook
+                </button>
+              )}
+              {!avail.google && !avail.microsoft && conns.length === 0 && (
+                <span className="text-[11px] text-muted-foreground italic">
+                  Connect setup pending. Admin must add provider credentials.
+                </span>
+              )}
+            </div>
+          );
+        })()}
+
         {!events.isLoading && !meetings.isLoading && feed.length === 0 && (
           <div className="bento p-10 text-center">
             <CalIcon className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
