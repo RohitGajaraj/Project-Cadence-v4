@@ -12,10 +12,10 @@
 
 | # | Name | Outcome | Status |
 |---|---|---|---|
-| F-AGENT-1 | Orchestrator + multi-agent missions | A goal becomes a DAG of specialist hops, dispatched and joined automatically. | ✅ shipped 2026-06-06 |
-| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | Specialists actually learn between runs; trust arc advances on real outcomes, not operator clicks. | ☐ next |
-| F-AGENT-3 | Event reactor + auto-pipelines | Discover→Deliver→Ship loop runs without "click Advance" — signals/opportunities/PRD-status changes wake the right agent. | ☐ |
-| F-AGENT-4 | Swarm HUD | Single view of live missions, recent handoffs, pending approvals, auto-pipeline firings. | ☐ |
+| F-AGENT-1 | Orchestrator + multi-agent missions | A goal becomes a DAG of specialist hops, dispatched and joined automatically. | ✅ shipped 2026-06-06 — [`features/f-agent-1-orchestrator.md`](./features/f-agent-1-orchestrator.md) |
+| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | Specialists actually learn between runs; trust arc advances on real outcomes, not operator clicks. | ✅ shipped 2026-06-06 — [`features/f-agent-2-memory-reflection.md`](./features/f-agent-2-memory-reflection.md) |
+| F-AGENT-3 | Event reactor + auto-pipelines | Discover→Deliver→Ship loop runs without "click Advance" — signals/opportunities/PRD-status changes wake the right agent. | ✅ shipped 2026-06-06 — [`features/f-agent-3-event-reactor.md`](./features/f-agent-3-event-reactor.md) |
+| F-AGENT-4 | Swarm HUD | Single view of live missions, recent handoffs, pending approvals, auto-pipeline firings. | ✅ shipped 2026-06-06 — [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) |
 
 Each step depends on the one above it (you cannot meaningfully react to events without the orchestrator routing them; the HUD reads from all three).
 
@@ -72,17 +72,19 @@ Headline:
 
 ---
 
-## F-AGENT-4 — Swarm HUD ☐
+## F-AGENT-4 — Swarm HUD ✅ shipped 2026-06-06
+
+**Canonical page:** [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) — open this for the demo script, the full panel walkthrough, and the verification checklist. Summary kept below for historical context.
 
 **Goal:** a single page that answers "what are my agents doing right now?" — the operator's flight-deck.
 
 **Build:**
-1. New route `src/routes/_authenticated/swarm.tsx` with 4 server-fn-backed panels:
+1. New route `src/routes/_authenticated.swarm.tsx` with seven panels (header, throughput, attention queue, agents grid, missions, handoff feed, reactor firings):
    - Live missions (orchestrator + child run progress)
    - Recent handoffs (24h, by edge)
    - Pending approvals with TTL
-   - Auto-pipeline firings (from `agent_subscriptions.last_fired_at`)
-2. Add nav entry to `AppShell` under the **Workspace** pillar.
+   - Auto-pipeline firings (from `event_queue`)
+2. Add nav entry to `AppShell` under the **Agents** pillar (between Missions and Prompt Studio).
 3. Reuse existing Cohere editorial tokens — no design work, no UI revamp dependencies.
 4. Doc loop.
 
