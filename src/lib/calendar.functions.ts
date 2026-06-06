@@ -55,6 +55,42 @@ type GEvent = {
   organizer?: { email?: string };
 };
 
+type MsEvent = {
+  id: string;
+  subject?: string;
+  bodyPreview?: string;
+  location?: { displayName?: string };
+  start?: { dateTime?: string };
+  end?: { dateTime?: string };
+  isAllDay?: boolean;
+  attendees?: { emailAddress?: { address?: string; name?: string }; status?: { response?: string } }[];
+  onlineMeeting?: { joinUrl?: string };
+  webLink?: string;
+  organizer?: { emailAddress?: { address?: string } };
+};
+
+function msToG(m: MsEvent): GEvent {
+  const startIso = m.start?.dateTime ? `${m.start.dateTime}${m.start.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
+  const endIso = m.end?.dateTime ? `${m.end.dateTime}${m.end.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
+  return {
+    id: m.id,
+    summary: m.subject,
+    description: m.bodyPreview,
+    location: m.location?.displayName,
+    status: "confirmed",
+    start: m.isAllDay ? { date: startIso?.slice(0, 10) } : { dateTime: startIso },
+    end: m.isAllDay ? { date: endIso?.slice(0, 10) } : { dateTime: endIso },
+    attendees: (m.attendees ?? []).map((a) => ({
+      email: a.emailAddress?.address ?? "",
+      displayName: a.emailAddress?.name,
+      responseStatus: a.status?.response,
+    })),
+    hangoutLink: m.onlineMeeting?.joinUrl,
+    htmlLink: m.webLink,
+    organizer: { email: m.organizer?.emailAddress?.address },
+  };
+}
+
 async function gFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${GATEWAY}${path}`, { headers: headers() });
   const body = await res.text();
