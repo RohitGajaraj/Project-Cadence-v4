@@ -38,9 +38,6 @@ function fmtTime(iso: string, allDay: boolean) {
   if (allDay) return "All day";
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
-}
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
