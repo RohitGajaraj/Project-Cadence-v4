@@ -225,7 +225,7 @@ Used in traces and analytics. Starting palette (full authority to refine for a m
 
 ## Voice & language (non-negotiable)
 
-Canonical case: [`docs/strategy/v3-audit-language-voice-2026-06-06.md`](./docs/strategy/v3-audit-language-voice-2026-06-06.md). This section is the contract; the audit is the evidence.
+Canonical rule: [`docs/conventions/ui-voice.md`](./docs/conventions/ui-voice.md). Evidence + audit: [`docs/strategy/v3-audit-language-voice-2026-06-06.md`](./docs/strategy/v3-audit-language-voice-2026-06-06.md). This section is the contract restatement that authors hit while designing.
 
 **Voice anchor.** Human, clear, lightly playful in safe places (empty states, success toasts). Dry in governance, errors, and destructive flows. Contractions on. Active voice. One idea per sentence. Linear-leaning, warmer in empty states.
 

@@ -147,6 +147,7 @@ Operator-facing surfaces shipped in this pass and how to verify each:
 
 ## Related
 
+- [`../conventions/`](../conventions/) — durable cross-tool rules extracted from this audit (UI chrome, voice, destructive actions, inline management, doc-closure checklist).
 - [`../../architecture/frontend.md`](../../architecture/frontend.md) — Confirmation, toasts & dialogs · Inline workspace & product management.
 - [`../../architecture/security.md`](../../architecture/security.md) — Owner-gating on workspace mutation server fns.
 - [`../../design.md`](../../design.md) — Voice & language contract (canonical).

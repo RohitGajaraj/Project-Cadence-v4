@@ -44,6 +44,8 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 - App logic is a server fn; cron is a public hook — do not blur the two.
 
 ## Confirmation, toasts & dialogs
+Canonical rule: [`../docs/conventions/ui-chrome.md`](../docs/conventions/ui-chrome.md). This section is the contract restatement.
+
 No native browser chrome. `window.alert`, `window.confirm`, `window.prompt`, `window.open`, and `window.onbeforeunload` are banned in `src/**` and fail ESLint (`no-restricted-globals` + `no-restricted-syntax` in `eslint.config.js`). The single allow-listed exception is `src/lib/error-page.ts` (pre-bootstrap fallback only).
 
 Use instead:
@@ -55,6 +57,8 @@ Use instead:
 `ConfirmProvider` is mounted once in `src/routes/__root.tsx` inside `ThemeProvider`. Voice rules for the strings these primitives render live in [`../design.md`](../design.md) and the audit at [`../docs/strategy/v3-audit-language-voice-2026-06-06.md`](../docs/strategy/v3-audit-language-voice-2026-06-06.md).
 
 ## Inline workspace & product management
+Canonical rule: [`../docs/conventions/inline-management.md`](../docs/conventions/inline-management.md). This section is the contract restatement.
+
 Operators never leave the current surface to administer a workspace or product. The `AppShell` top-left switcher is a popover, not a route.
 
 - **Switcher actions:** Switch · Rename · Workspace settings · Leave · Delete. All inline.

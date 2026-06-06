@@ -16,6 +16,7 @@ Keep this file thin. Keep any global `~/.gemini/GEMINI.md` thin too — a fat gl
 0. **`active-task.md`** (if present in root) — the current in-progress task list and handoff status. Read this first!
 1. [`AGENTS.md`](./AGENTS.md) — pre-action protocol, engineering rules, skill-first protocol, escalation, founding principles.
 1.5. [`docs/strategy/v2-positioning-2026-06-02.md`](./docs/strategy/v2-positioning-2026-06-02.md) — strategic source of truth: positioning, three personas, USP, portability stance, feature rationale. Read before any feature, UX, or positioning work.
+1.6. [`docs/conventions/`](./docs/conventions/) — durable, cross-tool conventions (UI chrome, voice, destructive actions, inline management, doc-closure checklist). These are *rules*, applied automatically on every task.
 2. [`README.md`](./README.md) — product thesis, positioning, MOAT.
 3. [`plan.md`](./plan.md) — build log + milestone roadmap.
 4. Then: [`design.md`](./design.md), [`architecture/`](./architecture/), [`skills.md`](./skills.md), [`subagents.md`](./subagents.md), [`tools.md`](./tools.md).
