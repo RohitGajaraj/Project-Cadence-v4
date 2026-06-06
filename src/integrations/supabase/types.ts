@@ -1644,6 +1644,131 @@ export type Database = {
         }
         Relationships: []
       }
+      event_queue: {
+        Row: {
+          approval_mode: string
+          created_at: string
+          decided_at: string | null
+          dispatched_at: string | null
+          error: string | null
+          event_type: string
+          id: string
+          mission_id: string | null
+          payload: Json
+          run_id: string | null
+          source_id: string
+          source_table: string
+          status: string
+          subscription_id: string
+          target_agent_slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          approval_mode: string
+          created_at?: string
+          decided_at?: string | null
+          dispatched_at?: string | null
+          error?: string | null
+          event_type: string
+          id?: string
+          mission_id?: string | null
+          payload?: Json
+          run_id?: string | null
+          source_id: string
+          source_table: string
+          status?: string
+          subscription_id: string
+          target_agent_slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          approval_mode?: string
+          created_at?: string
+          decided_at?: string | null
+          dispatched_at?: string | null
+          error?: string | null
+          event_type?: string
+          id?: string
+          mission_id?: string | null
+          payload?: Json
+          run_id?: string | null
+          source_id?: string
+          source_table?: string
+          status?: string
+          subscription_id?: string
+          target_agent_slug?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_queue_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "event_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_queue_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_subscriptions: {
+        Row: {
+          approval_mode: string
+          created_at: string
+          enabled: boolean
+          event_type: string
+          filter: Json
+          id: string
+          is_default: boolean
+          target_agent_slug: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          approval_mode?: string
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          filter?: Json
+          id?: string
+          is_default?: boolean
+          target_agent_slug: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          approval_mode?: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          filter?: Json
+          id?: string
+          is_default?: boolean
+          target_agent_slug?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guardrail_hits: {
         Row: {
           action: string
@@ -3454,6 +3579,10 @@ export type Database = {
         Returns: undefined
       }
       seed_default_agents: { Args: { _user_id: string }; Returns: undefined }
+      seed_default_event_subscriptions: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       seed_default_guardrails: {
         Args: { _user_id: string }
         Returns: undefined
