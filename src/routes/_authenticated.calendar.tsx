@@ -564,30 +564,36 @@ function CalendarPage() {
   );
 }
 
-function MonthGrid({
-  cursor,
-  setCursor,
-  events,
-  onPickEvent,
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// Stable color palette for event chips — picks based on a hash of the event id
+// so the same event always gets the same color across renders. Adds visual
+// life to the grid without inventing new design tokens.
+const CHIP_TONES = [
+  "bg-violet-500/15 text-violet-200 hover:bg-violet-500/25 border-violet-400/20",
+  "bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 border-emerald-400/20",
+  "bg-sky-500/15 text-sky-200 hover:bg-sky-500/25 border-sky-400/20",
+  "bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 border-amber-400/20",
+  "bg-rose-500/15 text-rose-200 hover:bg-rose-500/25 border-rose-400/20",
+];
+function chipTone(id: string): string {
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return CHIP_TONES[Math.abs(h) % CHIP_TONES.length];
+}
+
+function CalendarView({
+  cursor, setCursor, mode, setMode, events, onPickEvent,
 }: {
   cursor: Date;
   setCursor: (d: Date) => void;
+  mode: GridMode;
+  setMode: (m: GridMode) => void;
   events: EventRow[];
   onPickEvent: (e: EventRow) => void;
 }) {
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const startOffset = firstDay.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: { date: Date | null; isToday: boolean }[] = [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  for (let i = 0; i < startOffset; i++) cells.push({ date: null, isToday: false });
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month, d);
-    cells.push({ date, isToday: date.getTime() === today.getTime() });
-  }
-  while (cells.length % 7 !== 0) cells.push({ date: null, isToday: false });
 
   const byDay = events.reduce((acc, e) => {
     const k = new Date(e.start_at).toDateString();
@@ -595,33 +601,112 @@ function MonthGrid({
     return acc;
   }, {} as Record<string, EventRow[]>);
 
-  const monthLabel = cursor.toLocaleString([], { month: "long", year: "numeric" });
+  const yearOptions: number[] = [];
+  for (let y = today.getFullYear() - 3; y <= today.getFullYear() + 5; y++) yearOptions.push(y);
+
+  function shift(delta: number) {
+    if (mode === "month") setCursor(new Date(year, month + delta, 1));
+    else if (mode === "week") { const d = new Date(cursor); d.setDate(d.getDate() + delta * 7); setCursor(d); }
+    else { const d = new Date(cursor); d.setDate(d.getDate() + delta); setCursor(d); }
+  }
+  function jumpToday() {
+    const d = new Date();
+    if (mode === "month") d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    setCursor(d);
+  }
+
+  const headerLabel =
+    mode === "month" ? `${MONTHS[month]} ${year}` :
+    mode === "week" ? `Week of ${(() => { const d = new Date(cursor); d.setDate(d.getDate() - d.getDay()); return d.toLocaleDateString([], { month: "short", day: "numeric" }); })()}` :
+    cursor.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
   return (
     <div className="bento mt-4 overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b hairline">
-        <div className="font-display text-sm">{monthLabel}</div>
-        <div className="inline-flex items-center gap-1">
-          <button onClick={() => setCursor(new Date(year - 1, month, 1))}
-            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous year">
-            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
-          </button>
-          <button onClick={() => setCursor(new Date(year, month - 1, 1))}
-            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous month">
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); setCursor(d); }}
-            className="rounded-md border hairline px-2 py-1 text-xs hover:bg-secondary/60">Today</button>
-          <button onClick={() => setCursor(new Date(year, month + 1, 1))}
-            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next month">
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={() => setCursor(new Date(year + 1, month, 1))}
-            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next year">
-            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
-          </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 border-b hairline bg-gradient-to-r from-violet-500/5 via-transparent to-sky-500/5">
+        <div className="flex items-center gap-2">
+          <div className="font-display text-sm">{headerLabel}</div>
+          {mode === "month" && (
+            <div className="hidden sm:inline-flex items-center gap-1.5">
+              <select
+                value={month}
+                onChange={(e) => setCursor(new Date(year, Number(e.target.value), 1))}
+                className="rounded-md border hairline bg-background/60 text-xs px-2 py-1"
+                aria-label="Month"
+              >
+                {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+              <select
+                value={year}
+                onChange={(e) => setCursor(new Date(Number(e.target.value), month, 1))}
+                className="rounded-md border hairline bg-background/60 text-xs px-2 py-1"
+                aria-label="Year"
+              >
+                {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border hairline p-0.5">
+            {(["day","week","month"] as GridMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                aria-pressed={mode === m}
+                className={`rounded-md px-2 py-1 text-[11px] capitalize ${mode === m ? "bg-foreground text-background" : "hover:bg-secondary/60 text-muted-foreground"}`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <div className="inline-flex items-center gap-1">
+            {mode === "month" && (
+              <button onClick={() => setCursor(new Date(year - 1, month, 1))}
+                className="rounded-md border hairline p-1.5 hover:bg-secondary/60" aria-label="Previous year">
+                <ChevronsLeft className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button onClick={() => shift(-1)}
+              className="rounded-md border hairline p-1.5 hover:bg-secondary/60" aria-label={`Previous ${mode}`}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={jumpToday}
+              className="rounded-md border hairline px-2.5 py-1 text-xs hover:bg-secondary/60">Today</button>
+            <button onClick={() => shift(1)}
+              className="rounded-md border hairline p-1.5 hover:bg-secondary/60" aria-label={`Next ${mode}`}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+            {mode === "month" && (
+              <button onClick={() => setCursor(new Date(year + 1, month, 1))}
+                className="rounded-md border hairline p-1.5 hover:bg-secondary/60" aria-label="Next year">
+                <ChevronsRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {mode === "month" && <MonthBody cursor={cursor} today={today} byDay={byDay} onPickEvent={onPickEvent} />}
+      {mode === "week" && <WeekBody cursor={cursor} today={today} byDay={byDay} onPickEvent={onPickEvent} />}
+      {mode === "day" && <DayBody cursor={cursor} today={today} events={byDay[cursor.toDateString()] ?? []} onPickEvent={onPickEvent} />}
+    </div>
+  );
+}
+
+function MonthBody({ cursor, today, byDay, onPickEvent }: {
+  cursor: Date; today: Date; byDay: Record<string, EventRow[]>; onPickEvent: (e: EventRow) => void;
+}) {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const startOffset = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: { date: Date | null }[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push({ date: null });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ date: new Date(year, month, d) });
+  while (cells.length % 7 !== 0) cells.push({ date: null });
+  return (
+    <>
       <div className="grid grid-cols-7 text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b hairline">
         {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
           <div key={d} className="px-2 py-1.5">{d}</div>
@@ -629,23 +714,24 @@ function MonthGrid({
       </div>
       <div className="grid grid-cols-7">
         {cells.map((cell, i) => {
+          const isToday = !!cell.date && cell.date.getTime() === today.getTime();
           const evs = cell.date ? (byDay[cell.date.toDateString()] ?? []) : [];
           return (
-            <div key={i} className={`min-h-[96px] border-r border-b hairline/60 p-1.5 ${cell.isToday ? "bg-violet-500/5" : ""}`}>
+            <div key={i} className={`min-h-[96px] border-r border-b hairline/60 p-1.5 transition-colors ${isToday ? "bg-violet-500/10" : "hover:bg-secondary/20"}`}>
               {cell.date && (
                 <>
-                  <div className={`text-[11px] mb-1 ${cell.isToday ? "text-violet-300 font-medium" : "text-muted-foreground"}`}>
-                    {cell.date.getDate()}
+                  <div className={`text-[11px] mb-1 ${isToday ? "text-violet-200 font-semibold" : "text-muted-foreground"}`}>
+                    {isToday ? <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-violet-500/25">{cell.date.getDate()}</span> : cell.date.getDate()}
                   </div>
                   <div className="space-y-0.5">
                     {evs.slice(0, 3).map((e) => (
                       <button
                         key={e.id}
                         onClick={() => onPickEvent(e)}
-                        className="w-full text-left text-[10px] truncate rounded px-1 py-0.5 bg-foreground/10 hover:bg-foreground/20"
+                        className={`w-full text-left text-[10px] truncate rounded px-1.5 py-0.5 border ${chipTone(e.id)}`}
                         title={e.title}
                       >
-                        {fmtTime(e.start_at, e.all_day)} {e.title}
+                        {fmtTime(e.start_at, e.all_day)} · {e.title}
                       </button>
                     ))}
                     {evs.length > 3 && (
@@ -657,6 +743,189 @@ function MonthGrid({
             </div>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+function WeekBody({ cursor, today, byDay, onPickEvent }: {
+  cursor: Date; today: Date; byDay: Record<string, EventRow[]>; onPickEvent: (e: EventRow) => void;
+}) {
+  const start = new Date(cursor); start.setDate(start.getDate() - start.getDay()); start.setHours(0,0,0,0);
+  const days: Date[] = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+  return (
+    <div className="grid grid-cols-7">
+      {days.map((d) => {
+        const isToday = d.getTime() === today.getTime();
+        const evs = byDay[d.toDateString()] ?? [];
+        return (
+          <div key={d.toISOString()} className={`min-h-[260px] border-r border-b hairline/60 p-2 ${isToday ? "bg-violet-500/10" : ""}`}>
+            <div className={`text-[10px] uppercase tracking-wider ${isToday ? "text-violet-200" : "text-muted-foreground"}`}>
+              {d.toLocaleDateString([], { weekday: "short" })}
+            </div>
+            <div className={`text-lg font-display mb-2 ${isToday ? "text-violet-200" : ""}`}>{d.getDate()}</div>
+            <div className="space-y-1">
+              {evs.length === 0 && <div className="text-[10px] text-muted-foreground/60">—</div>}
+              {evs.map((e) => (
+                <button key={e.id} onClick={() => onPickEvent(e)}
+                  className={`w-full text-left text-[11px] truncate rounded px-1.5 py-1 border ${chipTone(e.id)}`}
+                  title={e.title}>
+                  <div className="font-medium truncate">{e.title}</div>
+                  <div className="text-[10px] opacity-80">{fmtTime(e.start_at, e.all_day)}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayBody({ cursor, today, events, onPickEvent }: {
+  cursor: Date; today: Date; events: EventRow[]; onPickEvent: (e: EventRow) => void;
+}) {
+  const isToday = cursor.toDateString() === today.toDateString();
+  return (
+    <div className="p-4">
+      <div className={`text-xs uppercase tracking-wider mb-3 ${isToday ? "text-violet-200" : "text-muted-foreground"}`}>
+        {isToday ? "Today" : cursor.toLocaleDateString([], { weekday: "long" })}
+      </div>
+      {events.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-12 text-center">Nothing scheduled.</div>
+      ) : (
+        <div className="space-y-2">
+          {events.map((e) => (
+            <button key={e.id} onClick={() => onPickEvent(e)}
+              className={`w-full text-left rounded-lg px-3 py-2.5 border ${chipTone(e.id)}`}>
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="font-medium">{e.title}</div>
+                <div className="text-xs opacity-80 tabular-nums">{fmtTime(e.start_at, e.all_day)}</div>
+              </div>
+              {e.location && <div className="text-xs opacity-70 mt-0.5">{e.location}</div>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Compact header icon for managing calendar connections. Shows a green dot
+// when at least one provider is linked, a faint dot otherwise.
+function ConnectIcon({
+  open, setOpen, connections, available, onConnect, onDisconnect, connecting,
+}: {
+  open: boolean;
+  setOpen: (b: boolean) => void;
+  connections: Array<{ id: string; provider: "google" | "microsoft"; account_email: string | null }>;
+  available: { google: boolean; microsoft: boolean };
+  onConnect: (p: "google" | "microsoft") => void;
+  onDisconnect: (id: string) => void;
+  connecting: boolean;
+}) {
+  const hasGoogle = connections.some((c) => c.provider === "google");
+  const hasMicrosoft = connections.some((c) => c.provider === "microsoft");
+  const any = connections.length > 0;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          aria-label="Calendar connections"
+          className="relative inline-flex items-center justify-center rounded-xl border hairline h-9 w-9 hover:bg-secondary/60"
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          <span className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ${any ? "bg-emerald-400" : "bg-muted-foreground/40"}`} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Calendar accounts</div>
+        {connections.length === 0 && (
+          <p className="text-xs text-muted-foreground mb-3">
+            Connect once and your events flow into Cadence. You can change this anytime.
+          </p>
+        )}
+        <div className="space-y-1.5">
+          {connections.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-2 rounded-md border hairline px-2.5 py-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs truncate">
+                  {c.provider === "google" ? "Google" : "Microsoft"}
+                  {c.account_email && <span className="text-muted-foreground"> · {c.account_email}</span>}
+                </span>
+              </div>
+              <button onClick={() => onDisconnect(c.id)} className="text-xs text-muted-foreground hover:text-foreground" aria-label="Disconnect">×</button>
+            </div>
+          ))}
+          {!hasGoogle && (
+            <button
+              onClick={() => onConnect("google")}
+              disabled={connecting}
+              title={available.google ? "" : "Provider credentials not yet configured"}
+              className="w-full text-left text-xs rounded-md border hairline px-2.5 py-1.5 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
+            >
+              <Plus className="h-3 w-3" /> Connect Google Calendar
+            </button>
+          )}
+          {!hasMicrosoft && (
+            <button
+              onClick={() => onConnect("microsoft")}
+              disabled={connecting}
+              title={available.microsoft ? "" : "Provider credentials not yet configured"}
+              className="w-full text-left text-xs rounded-md border hairline px-2.5 py-1.5 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
+            >
+              <Plus className="h-3 w-3" /> Connect Microsoft Outlook
+            </button>
+          )}
+        </div>
+        {!available.google && !available.microsoft && connections.length === 0 && (
+          <p className="text-[11px] text-muted-foreground italic mt-3">
+            Connect setup pending. Admin must add provider credentials.
+          </p>
+        )}
+        {connections.length > 0 && (
+          <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-emerald-300">
+            <Check className="h-3 w-3" /> Connected
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ConnectHint({
+  connections, onOpen,
+}: {
+  connections: Array<{ id: string; provider: "google" | "microsoft" }>;
+  onOpen: () => void;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem(CONNECT_HINT_KEY) === "1") setDismissed(true);
+  }, []);
+  if (dismissed || connections.length > 0) return null;
+  return (
+    <div className="bento p-3 mb-4 flex items-center justify-between gap-3 border-l-2 border-l-violet-400/60">
+      <div className="text-xs text-muted-foreground inline-flex items-center gap-2">
+        <Link2 className="h-3.5 w-3.5 text-violet-300" />
+        Connect your calendar once to pull events from Google or Microsoft.
+      </div>
+      <div className="inline-flex items-center gap-1">
+        <button
+          onClick={onOpen}
+          className="text-xs rounded-md bg-foreground text-background px-2.5 py-1"
+        >
+          Connect
+        </button>
+        <button
+          onClick={() => { setDismissed(true); if (typeof window !== "undefined") window.localStorage.setItem(CONNECT_HINT_KEY, "1"); }}
+          className="text-xs text-muted-foreground hover:text-foreground px-2"
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
       </div>
     </div>
   );
