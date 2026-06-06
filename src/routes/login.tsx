@@ -66,7 +66,7 @@ function LoginPage() {
             <div className="absolute inset-0 neural-gradient" />
           </div>
           <h1 className="mt-4 font-display text-2xl tracking-tight">Welcome to Cadence</h1>
-          <p className="text-xs text-muted-foreground mt-1">The AI-native product operating system</p>
+          <p className="text-xs text-muted-foreground mt-1">Your product org, run by a swarm of agents.</p>
         </div>
 
         <Button type="button" variant="outline" className="w-full" onClick={signInGoogle} disabled={loadingGoogle}>
