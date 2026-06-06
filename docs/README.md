@@ -12,6 +12,7 @@
 | [`foundation-audit.md`](./foundation-audit.md) | Foundation-phase audit tickets and acceptance criteria. |
 | [`considerations.md`](./considerations.md) | Cross-cutting concerns that don't fit a single architecture doc. |
 | [`demo-credentials.md`](./demo-credentials.md) | Pre-provisioned demo logins (two emails + shared password), what each account ships with, how they were created, and the re-seed SQL. Use for screen recordings, YC / investor demos, and anywhere a working login is needed. |
+| [`agent-ecosystem-plan.md`](./agent-ecosystem-plan.md) | **F-AGENT-1 → F-AGENT-4 bundle plan** — orchestrator (shipped), persistent memory + self-reflection + trust auto-advance, event reactor + auto-pipelines, Swarm HUD. The canonical, session-surviving plan for the agent-native behavior layer. |
 
 ## Operator guides (what surfaces mean and how to use them)
 
