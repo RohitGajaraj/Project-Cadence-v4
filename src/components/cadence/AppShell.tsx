@@ -4,7 +4,7 @@ import {
   LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
   Sun, Moon, Sparkles,
-  Plus, Trash2,
+  Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -16,6 +16,9 @@ import { useTheme, type Theme } from "@/hooks/use-theme";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspacePauseState } from "@/lib/governance.functions";
+import { useConfirm, usePrompt } from "@/hooks/use-confirm";
+import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
+import { updateProject } from "@/lib/projects.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,6 +178,12 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
   });
 
   const { theme, setTheme } = useTheme();
+  const confirm = useConfirm();
+  const prompt = usePrompt();
+  const renameWsFn = useServerFn(renameWorkspace);
+  const deleteWsFn = useServerFn(deleteWorkspace);
+  const leaveWsFn = useServerFn(leaveWorkspace);
+  const updateProjectFn = useServerFn(updateProject);
 
   // Real agent count for the Mission mode card
   const { data: agentCount = 0 } = useQuery({
@@ -190,7 +199,12 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
   });
 
   async function createWorkspace() {
-    const name = window.prompt("Name your new workspace");
+    const name = await prompt({
+      title: "New workspace",
+      label: "Workspace name",
+      placeholder: "e.g. Acme product team",
+      confirmLabel: "Create",
+    });
     if (!name?.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
@@ -203,14 +217,76 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     if (error || !data) { toast.error(error?.message ?? "Could not create workspace"); return; }
     // Owner needs an explicit member row for is_workspace_member() RLS checks.
     await supabase.from("workspace_members").insert({ workspace_id: data.id, user_id: uid, role: "owner" });
-    toast.success(`Workspace "${data.name}" created`);
+    toast.success(`Created "${data.name}".`);
     await refreshWorkspaces();
     setActiveWorkspaceId(data.id);
   }
 
+  async function renameActiveWorkspace() {
+    if (!activeWorkspace) return;
+    const next = await prompt({
+      title: "Rename workspace",
+      label: "New name",
+      defaultValue: activeWorkspace.name,
+      confirmLabel: "Save",
+    });
+    if (!next || next === activeWorkspace.name) return;
+    try {
+      await renameWsFn({ data: { id: activeWorkspace.id, name: next } });
+      toast.success("Workspace renamed.");
+      await refreshWorkspaces();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't rename.");
+    }
+  }
+
+  async function deleteActiveWorkspace() {
+    if (!activeWorkspace) return;
+    const ok = await confirm({
+      title: `Delete "${activeWorkspace.name}"?`,
+      body: "This removes the workspace and every product, doc, mission, and run inside it. Can't be undone.",
+      destructive: true,
+      confirmLabel: "Delete workspace",
+      typedConfirm: activeWorkspace.name,
+    });
+    if (!ok) return;
+    try {
+      await deleteWsFn({ data: { id: activeWorkspace.id } });
+      toast.success("Workspace deleted.");
+      setActiveWorkspaceId(null);
+      await refreshWorkspaces();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't delete.");
+    }
+  }
+
+  async function leaveActiveWorkspace() {
+    if (!activeWorkspace) return;
+    const ok = await confirm({
+      title: `Leave "${activeWorkspace.name}"?`,
+      body: "You'll lose access until someone re-invites you.",
+      destructive: true,
+      confirmLabel: "Leave",
+    });
+    if (!ok) return;
+    try {
+      await leaveWsFn({ data: { id: activeWorkspace.id } });
+      toast.success("Left workspace.");
+      setActiveWorkspaceId(null);
+      await refreshWorkspaces();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't leave.");
+    }
+  }
+
   async function createProduct() {
     if (!activeWorkspaceId) { toast.error("Select a workspace first"); return; }
-    const name = window.prompt("Name your new product");
+    const name = await prompt({
+      title: "New product",
+      label: "Product name",
+      placeholder: "e.g. Checkout v2",
+      confirmLabel: "Create",
+    });
     if (!name?.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
@@ -221,23 +297,47 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
       .select()
       .single();
     if (error || !data) { toast.error(error?.message ?? "Could not create product"); return; }
-    toast.success(`Product "${data.name}" added`);
+    toast.success(`Added "${data.name}".`);
     await refreshProducts();
     setActiveProductId(data.id);
   }
 
+  async function renameProduct(id: string, currentName: string) {
+    const next = await prompt({
+      title: "Rename product",
+      label: "New name",
+      defaultValue: currentName,
+      confirmLabel: "Save",
+    });
+    if (!next || next === currentName) return;
+    try {
+      await updateProjectFn({ data: { id, name: next } });
+      toast.success("Product renamed.");
+      await refreshProducts();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't rename.");
+    }
+  }
+
   async function deleteProduct(id: string, name: string) {
-    if (!window.confirm(`Delete product "${name}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete "${name}"?`,
+      body: "Removes the product and everything inside it. Can't be undone.",
+      destructive: true,
+      confirmLabel: "Delete product",
+      typedConfirm: name,
+    });
+    if (!ok) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Product deleted");
+    toast.success("Product deleted.");
     if (activeProductId === id) setActiveProductId(null);
     await refreshProducts();
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    toast.success("Signed out");
+    toast.success("Signed out.");
     window.location.href = "/login";
   }
 
