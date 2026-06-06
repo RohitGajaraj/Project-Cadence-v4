@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send, FlaskConical } from "lucide-react";
+import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send, FlaskConical, Lock, Unlock } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
-import { listBuilderRuns, dispatchBuilderMission, type BuilderRun } from "@/lib/build.functions";
+import { listBuilderRuns, dispatchBuilderMission, listBuilderClaims, releaseBuilderClaim, type BuilderRun, type BuilderClaim } from "@/lib/build.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPrds } from "@/lib/discovery.functions";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,8 @@ function BuildConsolePage() {
         </header>
 
         <BuildComposer hasRuns={runs.length > 0} />
+
+        <BuilderClaimsPanel />
 
         {runsQ.isLoading ? (
           <div className="text-sm text-muted-foreground inline-flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Loading Builder missions…</div>
