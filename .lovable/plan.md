@@ -1,43 +1,66 @@
-## What's next
+## What changes from the previous plan
 
-Phase B (`F-OUTCOME-SURFACE`) shipped last turn. The Live status board points unambiguously at the **P0 voice/copy + governance batch** from the v3 audit triage. These are 8 small F-IDs — most are pure copy/UI, two touch data. They're the highest-leverage next step because they make every existing surface speak the v3 thesis before we add more surfaces.
+You're right that the IA merge alone doesn't fix the "crowded left rail" feeling — and could hide features if tabs are timid. So we split into two independent shippable steps, with the sidebar fix going **first** because it gives the biggest perceived improvement and is low-risk.
 
-### Batch: P0 voice + governance + seed (8 F-IDs)
+Also clarifying scope: **Evals is NOT in this merge.** REC-12 only touches `/analytics` + `/traces` + `/drift` (three observation surfaces). Evals stays its own route — it's authoring + regression testing, a different mental model.
 
-Bundle into one short sequence, in this order (cheapest → highest blast radius), one commit per F-ID with a WHY:
+---
 
-1. **F-VOICE-LOGIN** — rewrite `/login` headline + subhead to the v3 thesis ("Your product org, run by a swarm of agents…"). Pure copy in `src/routes/login.tsx` (or wherever the auth screen lives).
-2. **F-VOICE-AINATIVE** — repo-wide grep/replace of `AI-native` → v3 language in operator UI + marketing meta + sidebar tagline. Keep `architecture/` and `docs/` historical refs intact.
-3. **F-VOICE-VERSIONS** — strip `Phase N` / `Bundle N` / `Slice N` from `/build`, `/discovery`, `/opportunities`, `/prds`. Docs keep them.
-4. **F-VOICE-EMPTY-TODAY** — rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming"). Voice-anchor compliant, no em/en dashes, length budgets respected.
-5. **F-VOICE-CASE** — sentence-case every page H1; remove `uppercase tracking-[0.16em]` mono-labels and serif gradients on `Upcoming meetings` / `All tasks`.
-6. **F-GOV-APPROVAL-COPY** — approval-gate rows lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Touch inbox + decision queue + mission detail components.
-7. **F-TODAY-AUTOSEED** — server fn change: auto-generate the Today brief on first sign-in (no operator seed click). Lives in the existing `today.functions.ts` (or equivalent) — through `runtime.server.ts` chokepoint, RLS-scoped, no new mocks.
-8. **F-AGENTS-ROSTER-CUT** — data change: cut seeded roster 18 → 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). Update seed SQL + the agent roster server fn. Spawn pipeline untouched.
+## Step 1 (do first) — `F-NAV-ACCORDION`: single-open sidebar groups
 
-### Doc-closure (same turn, mandatory)
+**Why first:** addresses your "left rail UX pain" directly, ships in one file, no route changes, reversible.
 
-- Flip each F-ID to ☑ in `docs/feature-backlog.md` v3 triage table; update Live status board (Last updated · Recent log · Now building/Next up).
-- Append one line per F-ID to `plan.md` §4 with the WHY.
-- Add "How to verify" blocks to the F-IDs that ship user-visible surfaces (login, Today, approvals).
-- No new convention docs needed — voice rules already live in `docs/conventions/ui-voice.md`.
+**Change in `src/components/cadence/AppShell.tsx` only:**
+- Replace the multi-open `Set<string>` open-state with a single `string | null` "open group id."
+- Clicking a group header opens that group and **auto-collapses the others**.
+- The group containing the active route stays open by default (current behavior preserved).
+- Keep one-line persistence in `localStorage` (`cadence.nav.open`) but store a single id, not a set.
+- No design tokens change; no other files touched.
 
-### Guardrails
+**Verify:**
+- Click "Deliver" → "Discover" auto-collapses.
+- Navigate to `/traces` → "AI Ops" auto-opens, others close.
+- Refresh → last-opened group restored.
 
-- No em/en dashes in UI copy; no AI-tell buzzwords; length budgets (H1 ≤ 6, subhead ≤ 14, button ≤ 3).
-- Semantic tokens only — no hex literals.
-- No native browser chrome — `useConfirm`/`usePrompt` + sonner only.
-- No new agent logic; no `runtime.server.ts` bypass; no mocks.
+---
 
-### Out of scope (defer)
+## Step 2 — `F-IA-MERGE-OBSERVE`: `/observability` with loud tabs
 
-- P1 IA merges (`F-IA-MERGE-OBSERVE`, `F-COCKPIT-MERGE`, etc.) — bigger structural moves, separate phase.
-- P2 platform depth (`F-MCP-V1`, `F-BUILDER-MULTIFILE`) — later.
-- Operator-only FND-RUNTIME 0.9 forced-restart proof — only the operator can run it.
+**Goal:** three observation surfaces under one route, but features keep spotlight via prominent tab labels with live counts.
 
-### Handoff at end
+1. **Create `src/routes/_authenticated.observability.tsx`** with three tabs (shadcn `Tabs`): **Analytics · Traces · Drift**. Default tab from `?tab=` so deep links work.
+2. **Each tab label carries a live count/badge** so nothing feels buried:
+   - `Traces · 142 today` (from `getTraces` count)
+   - `Drift · 2 flagged` (from `getDrift` flagged count, red badge when > 0)
+   - `Analytics · last 7d`
+3. **Lift JSX out of the three existing route files** into `ObservabilityAnalytics`, `ObservabilityTraces`, `ObservabilityDrift` panel components. No server-function changes.
+4. **Replace old route files with redirects** to `/observability?tab=…` so old bookmarks keep working.
+5. **Sidebar nav (`AppShell.tsx`)**: collapse the three "AI Ops" nav entries into one **Observe** entry → `/observability`. Evals stays as its own entry in the same group (renamed from "AI Ops" → "Observe" group, with Evals as the second entry).
+6. **Voice pass**: sentence-case H1 (`Observability`), v3 empty states, no `Phase/Bundle` kickers.
 
-- If batch ships clean: status board "Now building" → idle, "Next up" → P1 IA merges starting with `F-IA-MERGE-OBSERVE`.
-- If paused mid-batch: `active-task.md` left true with remaining F-IDs checked/unchecked.
+**Verify:**
+- `/observability?tab=traces` lands on traces with count badge.
+- `/analytics`, `/traces`, `/drift` redirect cleanly.
+- "Observe" group in sidebar shows: Observe · Evals (two items, down from four).
+- No broken `<Link to="/analytics">` etc. (grep first).
 
-**Estimated scope:** 8 small commits, ~60–90 min of in-flight work. Stop and surface if it exceeds that.
+---
+
+## Doc-closure (same commit, for each step)
+
+- Flip the F-ID to ☑ in `docs/feature-backlog.md` (add `F-NAV-ACCORDION` row under P0 as a new audit-derived UX fix).
+- Update Live status board (`Now building` → idle; `Next up` advances).
+- One-line WHY in `plan.md` §4.
+- Note IA change in `architecture/frontend.md` (route inventory) after Step 2.
+- "How to use / verify" block on the F-ID row.
+
+---
+
+## What I'm asking you
+
+Two questions before I switch to build mode:
+
+1. **Confirm the order:** ship `F-NAV-ACCORDION` first (sidebar accordion, ~20 lines), then `F-IA-MERGE-OBSERVE` (route merge with loud tabs)?
+2. **Confirm Evals stays separate** from the `/observability` merge (it's authoring, not observation)?
+
+If both are yes, I'll execute Step 1 first and let you see/feel it before touching the route merge.
