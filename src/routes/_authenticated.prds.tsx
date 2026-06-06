@@ -118,7 +118,7 @@ function PrdsPage() {
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1300px] mx-auto">
         <header className="mb-8">
-          <div className="mono-label">Deliver · Phase 2 · Specs</div>
+          <div className="mono-label">Deliver · Specs</div>
           <h1 className="mt-3 font-display text-5xl tracking-tight leading-[1.02]">
             Product <em className="not-italic neural-text">requirement docs</em>
           </h1>

@@ -152,7 +152,7 @@ function IntegrationsPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1 text-[11px] text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-violet-400" /> Phase 7 · preview
+            <Sparkles className="h-3.5 w-3.5 text-violet-400" /> Preview
           </span>
         </header>
 

@@ -75,7 +75,7 @@ function RoadmapPage() {
       <div className="px-6 lg:px-10 py-8 max-w-[1500px] mx-auto">
         <header className="mb-8 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Phase 3 · Execution</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Plan</div>
             <h1 className="mt-3 font-display text-4xl tracking-tight">
               <span className="neural-text">Roadmap</span> &amp; Sprint
             </h1>
