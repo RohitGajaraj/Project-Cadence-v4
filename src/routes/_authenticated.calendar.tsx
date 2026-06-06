@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, LayoutGrid, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -140,9 +140,15 @@ function CalendarPage() {
     html_link: e.html_link,
     attendees: e.attendees ?? [],
   }));
-  const feed = [...meetingItems, ...eventItems].sort(
-    (a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime(),
-  );
+  // Clamp to today → +14d and sort ascending so the next event is at the top.
+  const _now = Date.now();
+  const _end = _now + 14 * 24 * 60 * 60 * 1000;
+  const feed = [...meetingItems, ...eventItems]
+    .filter((it) => {
+      const t = new Date(it.start_at).getTime();
+      return t >= _now - 12 * 60 * 60 * 1000 && t <= _end;
+    })
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -155,6 +161,9 @@ function CalendarPage() {
             <h1 className="mt-3 font-display text-4xl tracking-tight">Time and meetings</h1>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl">
               Your calendar events and meeting transcripts in one place. Click any meeting to capture a transcript and extract decisions, tasks, and questions.
+            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground/80">
+              Showing the next 14 days.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -171,7 +180,7 @@ function CalendarPage() {
               aria-pressed={view === "grid"}
               className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
             >
-              <LayoutGrid className="h-3.5 w-3.5" /> Grid
+              <CalIcon className="h-3.5 w-3.5" /> Calendar
             </button>
           </div>
           <button
