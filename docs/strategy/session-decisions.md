@@ -24,6 +24,20 @@
 
 ## Decision log
 
+### 2026-06-06 — Commission v3 language / naming / microcopy companion audit
+
+**Decision:** Extend the v3 product audit with a dedicated language workstream covering naming, sidebar/IA copy, page H1s, empty states, buttons, placeholders, tooltips, approval-gate prompts, agent/AI surface vocabulary, governance verbs, and marketing/public copy. Land it as a versioned companion strategy doc ([`v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md)), not as backlog tickets — recommendations graduate on operator sign-off.
+
+**Why:** The main v3 audit graded the *what* (product, UX, IA, competitive position, thesis). It surfaced that the surface had drifted from v2 positioning — most visibly on `/login` ("AI-native product operating system" contradicting v2's "autonomous" framing). The operator asked for the *words* graded next: naming, verbosity, tooltips, descriptions end-to-end. Doing this as a separate companion (a) keeps the main audit readable, (b) gives copy/IA fixes their own triage queue separate from feature work, and (c) most of the wins are zero-engineering-risk string edits that don't deserve to wait behind feature bundles.
+
+**Tradeoffs considered:**
+- **Inline in v3 main audit** — rejected. Would have doubled the doc length and buried naming findings under feature recommendations.
+- **Open backlog F-IDs directly** — rejected. Audit-then-triage matches the main v3 contract; some renames (e.g. `Mission` vs `Run`) need an operator call before they're binding.
+- **Implement the safest fixes (login tagline + empty states) immediately without an audit doc** — rejected. The whole point is to fix the discipline gap (closed-doc loop breaking at the most-seen surface), not to patch one symptom — a documented voice guide + naming matrix is what stops the next drift.
+- **Defer until after the IA rename actually ships** — rejected. The renames *are* an output of this audit; you can't sequence them before doing it.
+
+**Impact:** New [`./v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../feature-backlog.md`](../feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship — zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
+
 ### 2026-06-06 — Commission v3 end-to-end product & platform audit
 
 **Decision:** Run a full audit of Cadence (product, UX, AI-native posture, IA, competitive position, thesis) and land it as a versioned strategy doc rather than a list of backlog tickets. Output: [`v3-audit-2026-06-06.md`](./v3-audit-2026-06-06.md) — supersedes nothing automatically; recommendations graduate to the backlog only on operator sign-off.

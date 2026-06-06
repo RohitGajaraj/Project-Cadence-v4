@@ -11,6 +11,7 @@
 | [v1 — Initial positioning reframe](./v1-positioning-2026-05-26.md) | 2026-05-26 | First positioning reframe: discovery-first wedge, six-thread analysis, Cagan lens, demand evidence from PM voices. Uses retired framings ("wedge," "moat is data"). | Archived — superseded by v2 |
 | [v2 — Autonomous product OS](./v2-positioning-2026-06-02.md) | 2026-06-02 | Full reposition to autonomous product OS. Three equal personas. "Agents do, humans govern." Portability commitment. Market timing analysis. Trust arc as emergent behavior. | **Current** |
 | [v3 — End-to-end product & platform audit](./v3-audit-2026-06-06.md) | 2026-06-06 | Brutally honest audit: 10-second test fail, 31-route IA collapse to ~12, "cockpit" framing refinement of v2, Paxel Human/Machine Mode adoption, prioritized Top-5/10/20 roadmap, investor scorecard. **Recommends refining v2 framing, not replacing the thesis.** | **Companion to v2** |
+| [v3 — Language, naming & microcopy companion](./v3-audit-language-2026-06-06.md) | 2026-06-06 | Naming integrity matrix, sidebar 31→12 rename mapping, tooltip Keep/Delete/Rewrite/Add audit, voice guide (operator-grade · reporter · coach), agent/AI vocabulary spec, P0–P3 rewrite roadmap (LANG-01..10 + TOOLTIP-* + LANG-IA-12 + LANG-NEW-OUTCOME + LANG-CHIP). **Companion to v3 main audit.** | **Companion to v3** |
 
 ---
 
