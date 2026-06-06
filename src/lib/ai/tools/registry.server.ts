@@ -474,6 +474,197 @@ const githubPrOpen = def({
   },
 });
 
+/**
+ * github.ci.read — Bundle 9 Slice 2.
+ * Read-only inspector for a PR's CI status. Returns the overall conclusion
+ * (pending | success | failure | neutral) plus the per-check list. Cached
+ * via withIdempotency keyed on `<pr>-<head_sha>` so re-polling within the
+ * same loop step doesn't burn quota; cache invalidates naturally when the
+ * branch's head_sha changes (e.g. after github.commit.append lands).
+ */
+const githubCiRead = def({
+  name: "github.ci.read",
+  description: "Builder agent: read GitHub Actions / status-check state on a pull request. Read-only. Use AFTER github.pr.open to decide whether to ship or to append a fix commit.",
+  category: "read",
+  argsSchema: z.object({
+    pr_number: z.number().int().min(1).max(10_000_000),
+  }),
+  preview: (a) => `Read CI on PR #${a.pr_number}`,
+  run: async (a, { supabase, userId, runId }) => {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "cadence-builder",
+    };
+
+    // 1) PR → head sha + branch (uncached so we always see new commits).
+    const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, { headers });
+    if (!prRes.ok) throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
+    const prJson = await prRes.json() as { head: { sha: string; ref: string }; html_url: string; merged: boolean; state: string };
+    const headSha = prJson.head.sha;
+
+    // 2) Cache the heavy parts (check-runs + status) keyed by (pr, head_sha).
+    const idemKey = `${a.pr_number}-${headSha}`;
+    const outcome = await withIdempotency(
+      supabase, "github_ci", idemKey, userId, runId ?? null,
+      async () => {
+        const [checksRes, statusRes] = await Promise.all([
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=50`, { headers }),
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/status`, { headers }),
+        ]);
+        if (!checksRes.ok) throw new Error(`GitHub check-runs ${checksRes.status}: ${(await checksRes.text()).slice(0, 300)}`);
+        if (!statusRes.ok) throw new Error(`GitHub combined-status ${statusRes.status}: ${(await statusRes.text()).slice(0, 300)}`);
+
+        const checksJson = await checksRes.json() as {
+          check_runs?: Array<{ name: string; status: string; conclusion: string | null; html_url: string; id: number; output?: { title?: string | null; summary?: string | null } }>;
+        };
+        const statusJson = await statusRes.json() as {
+          state: "pending" | "success" | "failure" | "error";
+          statuses?: Array<{ context: string; state: string; description?: string | null; target_url?: string | null }>;
+        };
+
+        const checks = (checksJson.check_runs ?? []).map((c) => ({
+          name: c.name,
+          status: c.status,                           // queued | in_progress | completed
+          conclusion: c.conclusion ?? null,           // success | failure | neutral | cancelled | skipped | timed_out | action_required | null
+          html_url: c.html_url,
+          id: c.id,
+          summary: (c.output?.title ?? c.output?.summary ?? null)?.toString().slice(0, 240) ?? null,
+        }));
+        const statuses = (statusJson.statuses ?? []).map((s) => ({
+          name: s.context,
+          status: s.state === "pending" ? "in_progress" : "completed",
+          conclusion: s.state === "pending" ? null : (s.state === "success" ? "success" : "failure"),
+          html_url: s.target_url ?? prJson.html_url,
+          id: 0,
+          summary: s.description ? s.description.slice(0, 240) : null,
+        }));
+        const all = [...checks, ...statuses];
+
+        // Derive overall:
+        //  - empty       → neutral (no CI configured on this repo).
+        //  - any failing → failure.
+        //  - any pending → pending.
+        //  - else        → success.
+        let overall: "pending" | "success" | "failure" | "neutral";
+        if (all.length === 0) overall = "neutral";
+        else if (all.some((c) => c.conclusion === "failure" || c.conclusion === "timed_out" || c.conclusion === "action_required" || c.conclusion === "cancelled")) overall = "failure";
+        else if (all.some((c) => c.status !== "completed")) overall = "pending";
+        else overall = "success";
+
+        return {
+          pr_number: a.pr_number,
+          head_sha: headSha,
+          branch: prJson.head.ref,
+          pr_url: prJson.html_url,
+          merged: prJson.merged,
+          pr_state: prJson.state,
+          overall,
+          checks: all,
+          updated_at: new Date().toISOString(),
+        };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
+/**
+ * github.commit.append — Bundle 9 Slice 2.
+ * Append a single follow-up commit to an OPEN PR's branch — used by the
+ * Builder when CI is red. Same single-file allow-list as github.pr.open.
+ * Idempotent via withIdempotency keyed on the caller-supplied idempotency_key
+ * (e.g. "issue-42-fix-1") so a worker restart or re-approval returns the
+ * cached { sha, commit_url } without double-appending.
+ */
+const githubCommitAppend = def({
+  name: "github.commit.append",
+  description: "Builder agent: append ONE single-file follow-up commit to an open PR's branch. Use ONLY when github.ci.read returned overall='failure'. Pass idempotency_key like 'issue-42-fix-1' so re-execution does not double-commit. NEVER auto-merges.",
+  category: "write",
+  argsSchema: z.object({
+    pr_number: z.number().int().min(1).max(10_000_000),
+    path: z.string().min(1).max(400).regex(/^[^\s][\w\-./]+[^\s/]$/, "path must be a repo-relative file (no leading slash, no spaces)"),
+    contents: z.string().min(1).max(120_000),
+    message: z.string().min(1).max(280),
+    idempotency_key: z.string().min(1).max(200),
+  }),
+  preview: (a) => `Append fix to PR #${a.pr_number} (${a.path}): "${a.message.slice(0, 60)}"`,
+  run: async (a, { supabase, userId, runId }) => {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+    // Same allow-list as github.pr.open — Builder must never touch CI / migrations / lockfiles.
+    const forbiddenPrefixes = [".github/", "supabase/migrations/", ".env", "bun.lock", "package-lock.json"];
+    if (forbiddenPrefixes.some((p) => a.path === p || a.path.startsWith(p))) {
+      throw new Error(`Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`);
+    }
+
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "cadence-builder",
+      "Content-Type": "application/json",
+    };
+
+    const outcome = await withIdempotency(
+      supabase, "github_commit", a.idempotency_key, userId, runId ?? null,
+      async () => {
+        // 1) Look up the PR's head branch (refuse if PR is closed/merged).
+        const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, { headers });
+        if (!prRes.ok) throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
+        const prJson = await prRes.json() as { head: { ref: string; sha: string }; html_url: string; state: string; merged: boolean };
+        if (prJson.state !== "open" || prJson.merged) {
+          throw new Error(`Cannot append to PR #${a.pr_number}: state=${prJson.state}, merged=${prJson.merged}`);
+        }
+        const branch = prJson.head.ref;
+
+        // 2) Look up the existing file's sha on the branch (404 → new file).
+        const existingRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`, { headers });
+        let existingSha: string | undefined;
+        if (existingRes.ok) {
+          const j = await existingRes.json() as { sha?: string };
+          existingSha = j.sha;
+        } else if (existingRes.status !== 404) {
+          throw new Error(`GitHub get-contents ${existingRes.status}: ${(await existingRes.text()).slice(0, 300)}`);
+        }
+
+        // 3) PUT new contents (create or update).
+        const contentB64 = Buffer.from(a.contents, "utf8").toString("base64");
+        const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`, {
+          method: "PUT", headers,
+          body: JSON.stringify({
+            message: `Builder fix: ${a.message}`.slice(0, 200),
+            content: contentB64,
+            branch,
+            ...(existingSha ? { sha: existingSha } : {}),
+          }),
+        });
+        if (!putRes.ok) {
+          throw new Error(`GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`);
+        }
+        const putJson = await putRes.json() as { commit: { sha: string; html_url: string } };
+        return {
+          pr_number: a.pr_number,
+          branch,
+          path: a.path,
+          sha: putJson.commit.sha,
+          commit_url: putJson.commit.html_url,
+          pr_url: prJson.html_url,
+        };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
 // ── PM lifecycle tools ────────────────────────────────────────────────
 const DRAFT_MODEL = "google/gemini-2.5-flash";
 
