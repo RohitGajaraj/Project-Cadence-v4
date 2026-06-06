@@ -25,6 +25,17 @@
 | [`github-issue-approval-flow.md`](./github-issue-approval-flow.md) | The `github.issue.create` → `prd.link_issue` approval flow (Bundle 6 lifecycle close): what happens on Approve, which repo/token, idempotency, failure modes, verification checklist, secret rotation. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`a2a-handoff.md`](./a2a-handoff.md), [`../architecture/orchestration.md`](../architecture/orchestration.md), [`../architecture/integrations.md`](../architecture/integrations.md) |
 | [`git-discipline.md`](./git-discipline.md) | Cross-tool commit/push WHY discipline; enforced by hooks. | [`../AGENTS.md`](../AGENTS.md) |
 
+## Per-feature operator & demo guides
+
+One canonical page per shipped, user-facing feature. The **single place** to open during a demo or when learning a feature months later. Strategy stays in [`strategy/`](./strategy/); architecture stays in [`../architecture/`](../architecture/); the build log stays in [`../plan.md`](../plan.md) §4 — these pages consolidate, they do not invent. Folder index + template: [`features/README.md`](./features/README.md).
+
+| ID | Feature | Doc |
+|---|---|---|
+| F-AGENT-1 | Orchestrator + multi-agent missions | [`features/f-agent-1-orchestrator.md`](./features/f-agent-1-orchestrator.md) |
+| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | [`features/f-agent-2-memory-reflection.md`](./features/f-agent-2-memory-reflection.md) |
+| F-AGENT-3 | Event reactor + auto-pipelines | [`features/f-agent-3-event-reactor.md`](./features/f-agent-3-event-reactor.md) |
+| F-AGENT-4 | Swarm HUD | [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) |
+
 ## Strategy (versioned positioning)
 
 See [`strategy/README.md`](./strategy/README.md) for the version index and the cascade rule. Current positioning: [`strategy/v2-positioning-2026-06-02.md`](./strategy/v2-positioning-2026-06-02.md). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
