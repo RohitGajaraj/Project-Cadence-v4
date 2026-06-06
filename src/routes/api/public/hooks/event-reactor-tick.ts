@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dispatchEvent, type EventRow } from "@/lib/reactor.functions";
 
@@ -18,7 +19,9 @@ const BATCH = 10;
 export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         try {
           const { data: rows, error } = await supabaseAdmin
             .from("event_queue")

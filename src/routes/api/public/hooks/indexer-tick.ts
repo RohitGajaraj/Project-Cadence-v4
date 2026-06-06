@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { indexUserCorpus } from "@/lib/rag/indexer.server";
 
@@ -10,7 +11,9 @@ import { indexUserCorpus } from "@/lib/rag/indexer.server";
 export const Route = createFileRoute("/api/public/hooks/indexer-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         const started = Date.now();
         const { data: users } = await supabaseAdmin
           .from("profiles")

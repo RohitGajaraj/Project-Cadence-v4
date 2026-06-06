@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireHookCaller } from "./_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runEvalSuite } from "@/lib/ai/eval-runner.server";
 
@@ -13,7 +14,9 @@ import { runEvalSuite } from "@/lib/ai/eval-runner.server";
 export const Route = createFileRoute("/api/public/hooks/eval-suite-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireHookCaller(request);
+        if (unauth) return unauth;
         const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         const { data: suites, error } = await supabaseAdmin
           .from("eval_suites")
