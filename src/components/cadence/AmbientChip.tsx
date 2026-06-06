@@ -56,17 +56,22 @@ export function AmbientChip() {
       setDenied(true);
       return;
     }
-    const cached = localStorage.getItem("cadence.ambient.v1");
+    const CACHE_KEY = "cadence.ambient.v2";
+    const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.ts < 15 * 60_000) {
+        const fresh = Date.now() - parsed.ts < 15 * 60_000;
+        const hasWeather = parsed.weather && typeof parsed.weather.tempC === "number";
+        if (fresh && hasWeather) {
           setPlace(parsed.place);
           setWeather(parsed.weather);
           return;
         }
       } catch {}
     }
+    // Clean up any stale v1 cache that may have stored a null weather
+    try { localStorage.removeItem("cadence.ambient.v1"); } catch {}
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
@@ -89,7 +94,7 @@ export function AmbientChip() {
           };
           setWeather(w);
           setPlace(p);
-          localStorage.setItem("cadence.ambient.v1", JSON.stringify({ place: p, weather: w, ts: Date.now() }));
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ place: p, weather: w, ts: Date.now() }));
         } catch {
           setDenied(true);
         }
