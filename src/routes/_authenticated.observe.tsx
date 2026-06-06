@@ -42,11 +42,27 @@ function ObservePage() {
   const tracesToday = tracesQ.data?.traces?.length ?? 0;
   const driftOpen = driftQ.data?.openIncidents?.length ?? 0;
 
-  const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: "analytics", label: "Analytics" },
-    { id: "traces", label: "Traces", badge: tracesToday || undefined },
-    { id: "drift", label: "Drift", badge: driftOpen || undefined },
+  const tabs: { id: Tab; label: string; description: string; badge?: number }[] = [
+    {
+      id: "analytics",
+      label: "Analytics",
+      description: "Spend, tokens, and latency rolled up across every agent run.",
+    },
+    {
+      id: "traces",
+      label: "Traces",
+      description: "Step-by-step replay of each agent run, with timing and tool calls.",
+      badge: tracesToday || undefined,
+    },
+    {
+      id: "drift",
+      label: "Drift",
+      description: "Quality shifts against baseline. Flags when answers start changing.",
+      badge: driftOpen || undefined,
+    },
   ];
+
+  const activeTab = tabs.find((t) => t.id === tab)!;
 
   function setTab(next: Tab) {
     navigate({ search: { tab: next } });
@@ -84,6 +100,10 @@ function ObservePage() {
             );
           })}
         </div>
+
+        <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
+          {activeTab.description}
+        </p>
 
         {tab === "analytics" && <AnalyticsPanel />}
         {tab === "traces" && <TracesPanel />}
