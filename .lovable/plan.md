@@ -1,57 +1,95 @@
-## F-IA-MERGE-OBSERVE — Run group + Observe merge
+## Why
 
-### Final sidebar structure
+Pinned left rail today carries six items: **Today · Briefing · Approvals · Calendar · Meetings · Chat**. Two don't earn their pin:
+- **Calendar** and **Meetings** serve one mental model — "what's on my time, and what came out of it." Splitting them forces tab-dancing.
+- **Briefing** is workspace operating context: set once, edited rarely, read by agents — a settings artifact wearing a top-level coat.
 
+Goal: fewer pins, each earning its place, no functionality lost.
+
+## 1. Merge `/calendar` + `/meetings` → single `/calendar` surface
+
+One route, one mental model, two modes:
+
+```text
+/calendar
+├─ List view (DEFAULT) — chronological meetings list
+│   = today's /meetings table, with calendar events folded in by date
+└─ Grid view (one-click toggle) — time grid (day/week)
+    = today's /calendar day grouping
+Both modes: click an item → side sheet with transcript,
+summary, action items, Extract-to-tasks (existing meeting flow).
 ```
-Discover    Discovery · Opportunities
-Deliver     PRDs · Docs · Roadmap · Tasks · Build Console
-Agents      Agents · Missions · Swarm HUD · Prompt Studio · Sync Inbox
-Outcome     Outcome
-Run         Observe · Evals                       ← was "AI Ops" (4 items)
-Govern      Guardrails · Governance · Budgets · Integrations   ← unchanged
+
+- **Default = list** (per your call — capture/extract is where the value is).
+- View toggle persists per-user in `localStorage` (`cadence.calendar.view`).
+- `/meetings` and `/meetings/$id` become **redirects** to `/calendar` and `/calendar?meeting=$id` — bookmarks preserved.
+- Reuses existing server fns unchanged: `listCalendarEvents`, `syncCalendar`, `createCalendarEvent`, `proposeSlots`, `listMeetings`, `getMeeting`, `saveTranscript`, `extractMeeting`, `createMeeting`, `deleteMeeting`. **Zero data-layer changes.**
+- Meeting detail moves from a dedicated route to a `Sheet` over the calendar.
+- Pin label: **Calendar**, icon `Calendar`. Drop the **Meetings** pin.
+
+## 2. Move `/briefing` → inline in workspace settings
+
+- Briefing editor lives at **Settings → Workspace → Strategic brief** (inline section), reusing `getActiveBrief` / `upsertBrief` unchanged.
+- `/briefing` route becomes a redirect to `/settings?tab=workspace&section=brief`.
+- Removed from pinned rail.
+- Discoverability hook: small "Edit brief" link in the Today page header (where agents quote the brief), so first-time users don't hunt.
+
+Matches existing inline-management convention (`docs/conventions/inline-management.md`): workspace-scoped settings live next to the workspace.
+
+## 3. Pinned rail after cleanup
+
+```text
+Today
+Approvals     (governance shortcut — daily, stays)
+Calendar      (merged: schedule + meetings + extraction)
+Chat
 ```
 
-Run shrinks from 4 → 2. Govern is not touched. Watching ≠ governing — two groups, two mental models.
+Four pins instead of six. Grouped sections (Discover, Deliver, Agents, Outcome, Run, Govern) unchanged.
 
-### New surface: `/observe`
+## 4. Add the "Pin test" rule (so the rail doesn't bloat again)
 
-One page, three tabs with live counts in the labels:
+Append to `docs/conventions/inline-management.md`:
 
-- `Analytics` — today's spend/tokens/latency rollup (lift from `/analytics`)
-- `Traces · {n} today` — trace list + waterfall (lift from `/traces`)
-- `Drift · {n} flagged` — baselines + incidents (lift from `/drift`)
+> **Pin test.** A top-level nav item must be (a) used most days, (b) the entry point for an active workflow, and (c) not derivable from another pinned surface. If it fails any test, it lives inside a group, inside a parent surface, or in settings.
 
-Tab state in URL: `/observe?tab=analytics|traces|drift`. Default `analytics`. H1 = `Observe`. Sentence-case, no kickers.
+## Implementation steps
 
-### Steps
+1. **New `/calendar`** — rewrite `_authenticated.calendar.tsx` as a two-mode surface:
+   - Header: title + view toggle (`List` / `Grid`) + Sync / New event buttons (existing).
+   - List mode: merged feed of meetings + calendar events, grouped by day.
+   - Grid mode: lift today's calendar day grouping unchanged.
+   - Side `Sheet` for meeting detail (lift body of `_authenticated.meetings.$id.tsx`).
+   - URL param `?meeting=<id>` opens the sheet on load (deep-link).
+2. **Redirects:**
+   - `_authenticated.meetings.tsx` → `beforeLoad: redirect({ to: "/calendar" })`.
+   - `_authenticated.meetings.$id.tsx` → `beforeLoad: redirect({ to: "/calendar", search: { meeting: id } })`.
+   - `_authenticated.briefing.tsx` → `beforeLoad: redirect({ to: "/settings", search: { tab: "workspace", section: "brief" } })`.
+3. **Settings page** (`_authenticated.settings.tsx`) — add Workspace tab if missing, add "Strategic brief" section using existing `getActiveBrief`/`upsertBrief` (lift the form body from current briefing page).
+4. **AppShell** (`src/components/cadence/AppShell.tsx`) — drop `/briefing` and `/meetings` from `PINNED` array.
+5. **Today page** — add small "Edit brief" link near the brief quote.
+6. **Command palette** — drop separate "Meetings" / "Briefing" entries (or repoint Briefing → Settings, Meetings → Calendar).
+7. **Pin test rule** — append to `docs/conventions/inline-management.md`.
 
-1. **New route** `src/routes/_authenticated.observe.tsx` — Tabs shell, reads `?tab=`, default `analytics`. Lifts the existing page bodies of `_authenticated.analytics.tsx`, `_authenticated.traces.tsx`, `_authenticated.drift.tsx` into three local panel components (no logic changes, no new server fns). Trace detail stays at `/traces/$traceId` and is linked from the Traces tab.
-2. **Counts in tab labels** — reuse data already fetched by each panel (today's trace count from `getDriftOverview`/traces query; open-drift count from `drift_overview.openIncidents.length`). No new server fn.
-3. **Redirects** — replace `_authenticated.analytics.tsx`, `_authenticated.traces.tsx` (index only, keep `_authenticated.traces.$traceId.tsx`), `_authenticated.drift.tsx` with `beforeLoad: () => redirect({ to: "/observe", search: { tab: "analytics|traces|drift" } })`. Preserves old bookmarks and command-palette entries.
-4. **Sidebar** in `src/components/cadence/AppShell.tsx`:
-   - Rename group `aiops` label `"AI Ops"` → id `run`, label `"Run"`.
-   - Replace its 4 items with: `{ to: "/observe", label: "Observe", icon: Activity }`, `{ to: "/evals", label: "Evals", icon: FlaskConical }`.
-   - `Govern` group untouched.
-5. **Command palette** (`CommandPalette.tsx`) — add `Observe` entry, drop the three old ones (or point them to `/observe?tab=…`).
-6. **Voice pass** on the new page only — sentence-case H1, no em/en dashes, no "Phase/Bundle" kickers, v3 empty states.
-7. **Doc closure (same turn):**
-   - `docs/feature-backlog.md` — add `F-IA-MERGE-OBSERVE` row, flip ☑, update Live status board + Recent log + Last updated. Add "How to use / verify" block (route, tabs, redirects, sidebar nav path).
-   - `plan.md` §4 — one-liner WHY ("Run + Observe merge: shrink AI Ops 4→2, kill 'observability' jargon, keep Govern intact").
-   - `architecture/frontend.md` — note `/observe` tabs pattern + the three redirects.
+## Out of scope
 
-### Out of scope (explicit)
+- No data model or server-fn changes.
+- No changes to Discover/Deliver/Agents/Outcome/Run/Govern groups.
+- No new design tokens, no icon-chip tone changes.
 
-- Govern group, Guardrails, Governance, Budgets, Integrations — no changes.
-- Evals — stays its own route (authoring ≠ observation).
-- No server-function changes. No DB migrations. No new tokens.
-- No rename of `Agents` or any other group.
+## Verification
 
-### Verification
+- `/meetings`, `/meetings/$id`, `/briefing` redirect cleanly.
+- `/calendar` opens in list mode; toggle switches to grid; choice persists on reload.
+- List shows same meetings as old `/meetings` plus calendar events.
+- Click a meeting row → side sheet opens with transcript editor, Extract, commit-to-tasks.
+- `/calendar?meeting=<id>` deep-links open the sheet.
+- Settings → Workspace shows brief editor; save round-trips to `upsertBrief` and the next agent run quotes the new brief.
+- Left rail shows 4 pinned items: Today · Approvals · Calendar · Chat.
 
-- `/observe` loads on the Analytics tab; tab switching updates the URL.
-- Old URLs `/analytics`, `/traces`, `/drift` redirect to the matching tab.
-- `/traces/$traceId` still works (deep-link from the Traces tab).
-- Sidebar shows `Run › Observe · Evals` and `Govern › Guardrails · Governance · Budgets · Integrations`.
-- ⌘K resolves "Observe".
+## Docs closed in the same commit
 
-Awaiting approval to implement.
+- `docs/feature-backlog.md` — add `F-IA-CALENDAR-MERGE` + `F-IA-BRIEFING-SETTINGS`, flip status, update Live status board + Recent log + Last updated, add "How to use / verify" blocks.
+- `plan.md` §4 — one-liner WHY per change.
+- `architecture/frontend.md` — update pinned-rail list + redirect map + note the `Sheet`-over-calendar pattern.
+- `docs/conventions/inline-management.md` — add Pin test rule + Briefing-in-settings row to the table.
