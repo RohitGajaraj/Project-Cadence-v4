@@ -88,18 +88,18 @@ export function AmbientChip() {
 
   return (
     <div
-      className="pointer-events-auto fixed right-3 top-3 z-50 hidden items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1.5 text-xs text-foreground shadow-sm backdrop-blur-md sm:flex"
+      className="sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
       role="status"
       aria-label={`Local time ${fmtTime(now)}${place ? `, ${place.city}` : ""}${weather ? `, ${weather.tempC} degrees, ${w?.label}` : ""}`}
     >
-      <span className="font-medium tabular-nums">{fmtTime(now)}</span>
-      <span className="h-3 w-px bg-border" />
-      <MapPin className="h-3 w-3 text-muted-foreground" />
-      <span className="max-w-[10rem] truncate text-muted-foreground">
+      <span className="font-medium tabular-nums text-foreground/80">{fmtTime(now)}</span>
+      <span className="h-3 w-px bg-border/60" />
+      <MapPin className="h-3 w-3" />
+      <span className="max-w-[12rem] truncate">
         {place ? (
           <>
             {place.city}
-            {place.countryCode ? <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{place.countryCode}</span> : null}
+            {place.countryCode ? <span className="ml-1 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide">{place.countryCode}</span> : null}
           </>
         ) : denied ? (
           tz || "Local"
@@ -108,12 +108,11 @@ export function AmbientChip() {
         )}
       </span>
       {weather ? (
-        <>
-          <span className="h-3 w-px bg-border" />
-          <Icon className={`h-3.5 w-3.5 ${w?.tone ?? ""}`} />
-          <span className="font-medium tabular-nums">{weather.tempC}°</span>
-          <span className="text-muted-foreground">{w?.label}</span>
-        </>
+        <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-accent/40 px-2 py-0.5">
+          <Icon className={`h-3 w-3 ${w?.tone ?? ""}`} />
+          <span className={`font-medium tabular-nums ${w?.tone ?? "text-foreground/80"}`}>{weather.tempC}°</span>
+          <span className="text-foreground/70">{w?.label}</span>
+        </span>
       ) : null}
     </div>
   );
