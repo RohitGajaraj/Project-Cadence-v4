@@ -130,40 +130,44 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 function useOpenGroups(path: string) {
-  // Auto-open the group containing the active route; persist user toggles.
-  // SSR-safe: always start from defaults on first render so server + client
-  // markup match, then rehydrate from localStorage in an effect.
-  const def: Record<string, boolean> = { discover: false, deliver: true, agents: false, aiops: false, govern: false };
-  const [open, setOpen] = useState<Record<string, boolean>>(def);
+  // Single-open accordion: only one group expanded at a time. The active
+  // route's group auto-opens; user clicks toggle which group is open.
+  // SSR-safe: start from a stable default, rehydrate from localStorage in
+  // an effect so server + client markup match on first render.
+  const [openId, setOpenId] = useState<string | null>("deliver");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setOpen((s) => ({ ...s, ...JSON.parse(raw) }));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === "string" || parsed === null) {
+          setOpenId(parsed);
+        }
+      }
     } catch { /* noop */ }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     const active = groups.find((g) => g.items.some((i) => i.to === path));
-    if (active && !open[active.id]) {
-      setOpen((s) => ({ ...s, [active.id]: true }));
-    }
+    if (active) setOpenId(active.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
   useEffect(() => {
     if (!hydrated) return;
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(open)); } catch { /* noop */ }
-  }, [open, hydrated]);
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openId)); } catch { /* noop */ }
+  }, [openId, hydrated]);
 
-  return [open, setOpen] as const;
+  const toggle = (id: string) => setOpenId((curr) => (curr === id ? null : id));
+  return [openId, toggle] as const;
 }
 
 export function AppShell({ children }: { children: React.ReactNode; projects?: any }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const [open, setOpen] = useOpenGroups(path);
+  const [openGroupId, toggleGroup] = useOpenGroups(path);
 
   const {
     workspaces,
