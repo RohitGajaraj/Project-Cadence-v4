@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, AlertTriangle, ChevronDown, ChevronRight, Brain, Wrench, MessageSquare, Activity } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bot, CheckCircle2, Loader2, AlertTriangle, ChevronDown, ChevronRight, Brain, Wrench, MessageSquare, Activity, GitMerge, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, type HopStep, type HopToolCall } from "@/lib/missions.functions";
 import { MissionGraph } from "@/components/cadence/MissionGraph";
+import { listMissionSteps, advanceMission } from "@/lib/orchestrator.functions";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetail,
@@ -147,6 +149,9 @@ function MissionDetail() {
   const { missionId } = Route.useParams();
   const fProjects = useServerFn(listProjects);
   const fGet = useServerFn(getMission);
+  const fSteps = useServerFn(listMissionSteps);
+  const fAdvance = useServerFn(advanceMission);
+  const qc = useQueryClient();
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const m = useQuery({
     queryKey: ["mission", missionId],
@@ -155,6 +160,24 @@ function MissionDetail() {
       const st = q.state.data?.mission.status;
       return st === "running" || st === "queued" ? 2000 : false;
     },
+  });
+  const steps = useQuery({
+    queryKey: ["mission-steps", missionId],
+    queryFn: () => fSteps({ data: { missionId } }),
+    refetchInterval: (q) => {
+      const rows = q.state.data?.steps ?? [];
+      const live = rows.some((r) => r.status === "dispatched" || r.status === "running" || r.status === "planned");
+      return live ? 2500 : false;
+    },
+  });
+  const advance = useMutation({
+    mutationFn: () => fAdvance({ data: { missionId } }),
+    onSuccess: () => {
+      toast.success("Orchestrator advanced — dispatching newly-ready steps.");
+      qc.invalidateQueries({ queryKey: ["mission", missionId] });
+      qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -180,6 +203,9 @@ function MissionDetail() {
   };
 
   const data = m.data;
+  const stepRows = steps.data?.steps ?? [];
+  const isOrchestrated = stepRows.length > 0;
+  const hasPending = stepRows.some((r) => r.status === "planned" || r.status === "dispatched" || r.status === "running");
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -218,6 +244,14 @@ function MissionDetail() {
         ) : (
           <div className="space-y-3">
             <AgentTimeline hops={data.hops} />
+            {isOrchestrated && (
+              <OrchestratorPlanPanel
+                steps={stepRows}
+                canAdvance={hasPending && data.mission.status === "running"}
+                advancing={advance.isPending}
+                onAdvance={() => advance.mutate()}
+              />
+            )}
             <MissionGraph hops={data.hops} messages={data.messages} onSelectHop={handleSelectHop} />
             <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Hops (chronological)</div>
             {data.hops.length === 0 && (
