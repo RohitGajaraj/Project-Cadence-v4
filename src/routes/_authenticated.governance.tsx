@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Zap, Trash2, Plus } from "lucide-react";
+import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Zap, Trash2, Plus, SlidersHorizontal, Shield, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -61,11 +61,17 @@ function GovernancePage() {
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/governance" });
 
-  const tabs: { id: Tab; label: string; description: string }[] = [
-    { id: "controls",   label: "Controls",   description: "Kill switch, mission caps, stuck approvals, auto-pipelines." },
-    { id: "approvals",  label: "Approvals",  description: "Tool calls waiting on a human. Approve runs them; reject keeps them paused." },
-    { id: "guardrails", label: "Guardrails", description: "Rules that block, warn, or redact text on every AI call." },
-    { id: "budgets",    label: "Budgets",    description: "Spend caps per day, month, and AI surface. Over-cap calls are blocked." },
+  const tabs: {
+    id: Tab;
+    label: string;
+    description: string;
+    Icon: typeof SlidersHorizontal;
+    tone: "violet" | "emerald" | "sky" | "amber";
+  }[] = [
+    { id: "controls",   label: "Controls",   description: "Kill switch, mission caps, stuck approvals, auto-pipelines.", Icon: SlidersHorizontal, tone: "violet" },
+    { id: "approvals",  label: "Approvals",  description: "Tool calls waiting on a human. Approve runs them; reject keeps them paused.", Icon: CheckCircle2, tone: "emerald" },
+    { id: "guardrails", label: "Guardrails", description: "Rules that block, warn, or redact text on every AI call.", Icon: Shield, tone: "sky" },
+    { id: "budgets",    label: "Budgets",    description: "Spend caps per day, month, and AI surface. Over-cap calls are blocked.", Icon: Wallet, tone: "amber" },
   ];
   const activeTab = tabs.find((t) => t.id === tab)!;
   const setTab = (next: Tab) => navigate({ search: { tab: next } });
