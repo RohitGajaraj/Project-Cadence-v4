@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type NavItem = { to: string; label: string; icon: LucideIcon };
+type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 // Workspace — your daily rail. Always visible, never collapsed.
@@ -37,10 +37,10 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/briefing", label: "Briefing", icon: Crosshair },
-  { to: "/inbox", label: "Approvals", icon: Inbox },
+  { to: "/governance", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: Calendar },
   { to: "/meetings", label: "Meetings", icon: Users },
-  { to: "/chat", label: "AI Chat", icon: MessageSquare },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
@@ -61,7 +61,7 @@ const groups: NavGroup[] = [
       { to: "/docs", label: "Docs", icon: BookOpen },
       { to: "/roadmap", label: "Roadmap", icon: Map },
       { to: "/tasks", label: "Tasks", icon: ListTodo },
-      { to: "/build", label: "Build Console", icon: Hammer },
+      { to: "/build", label: "Builder", icon: Hammer },
     ],
   },
   {
@@ -70,9 +70,9 @@ const groups: NavGroup[] = [
     items: [
       { to: "/agents", label: "Agents", icon: Bot },
       { to: "/missions", label: "Missions", icon: GitBranch },
-      { to: "/swarm", label: "Swarm HUD", icon: Activity },
-      { to: "/prompts", label: "Prompt Studio", icon: FileCode },
-      { to: "/sync", label: "Sync Inbox", icon: Inbox },
+      { to: "/swarm", label: "Swarm", icon: Activity },
+      { to: "/prompts", label: "Prompts", icon: FileCode },
+      { to: "/sync", label: "Connectors", icon: Plug },
     ],
   },
   {
@@ -94,9 +94,7 @@ const groups: NavGroup[] = [
     id: "govern",
     label: "Govern",
     items: [
-      { to: "/guardrails", label: "Guardrails", icon: Shield },
       { to: "/governance", label: "Governance", icon: ShieldAlert },
-      { to: "/budgets", label: "Budgets", icon: DollarSign },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
