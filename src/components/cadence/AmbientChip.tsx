@@ -110,11 +110,16 @@ export function AmbientChip() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("geolocation" in navigator)) {
-      setDenied(true);
+    if (typeof window === "undefined") {
       return;
     }
-    const CACHE_KEY = "cadence.ambient.v2";
+    const CACHE_KEY = "cadence.ambient.v3";
+    const applyPayload = (payload: AmbientPayload) => {
+      setPlace(payload.place);
+      setWeather(payload.weather);
+      setDenied(false);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ...payload, ts: Date.now() }));
+    };
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       try {
@@ -122,43 +127,31 @@ export function AmbientChip() {
         const fresh = Date.now() - parsed.ts < 15 * 60_000;
         const hasWeather = parsed.weather && typeof parsed.weather.tempC === "number";
         if (fresh && hasWeather) {
-          setPlace(parsed.place);
-          setWeather(parsed.weather);
+          applyPayload({ place: parsed.place, weather: parsed.weather });
           return;
         }
       } catch {}
     }
-    // Clean up any stale v1 cache that may have stored a null weather
-    try { localStorage.removeItem("cadence.ambient.v1"); } catch {}
+    try {
+      localStorage.removeItem("cadence.ambient.v1");
+      localStorage.removeItem("cadence.ambient.v2");
+    } catch {}
+
+    const fallback = () =>
+      loadFromNetworkLocation()
+        .catch(loadFromTimeZone)
+        .then(applyPayload)
+        .catch(() => setDenied(true));
+
+    if (!("geolocation" in navigator)) {
+      fallback();
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const { latitude: lat, longitude: lon } = coords;
-          const [wRes, gRes] = await Promise.all([
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`),
-            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`),
-          ]);
-          const wJson = await wRes.json();
-          const gJson = await gRes.json();
-          const w: Weather = {
-            tempC: Math.round(wJson.current?.temperature_2m ?? 0),
-            code: wJson.current?.weather_code ?? 0,
-            isDay: (wJson.current?.is_day ?? 1) === 1,
-          };
-          const p: Place = {
-            city: gJson.city || gJson.locality || gJson.principalSubdivision || "Here",
-            country: gJson.countryName || "",
-            countryCode: gJson.countryCode || "",
-          };
-          setWeather(w);
-          setPlace(p);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ place: p, weather: w, ts: Date.now() }));
-        } catch {
-          setDenied(true);
-        }
-      },
-      () => setDenied(true),
-      { maximumAge: 15 * 60_000, timeout: 8000 }
+      ({ coords }) => loadFromBrowserPosition(coords).then(applyPayload).catch(fallback),
+      fallback,
+      { maximumAge: 15 * 60_000, timeout: 4500 }
     );
   }, []);
 
@@ -190,11 +183,11 @@ export function AmbientChip() {
       </span>
       {weather && w ? (
         <span
-          className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${w.bg} ${w.ring}`}
+          className={`ambient-weather ml-1 ${tempTone(weather.tempC) ?? w.tone}`}
           title={w.label}
         >
-          <Icon className={`h-3 w-3 ${tempTone(weather.tempC) ?? w.icon}`} />
-          <span className={`font-medium tabular-nums ${tempTone(weather.tempC) ?? w.icon}`}>
+          <Icon className="h-3 w-3" />
+          <span className="font-medium tabular-nums">
             {weather.tempC}°
           </span>
         </span>
