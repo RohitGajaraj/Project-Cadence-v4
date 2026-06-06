@@ -24,6 +24,21 @@
 
 ## Decision log
 
+### 2026-06-06 — Defer UI/UX revamp; commit to F-AGENT-1→4 agent-ecosystem bundle
+
+**Decision:** Pause Restructure Phases 3–4 (Cohere editorial restyle of remaining ~18 routes) and ship the four-step **agent ecosystem bundle** instead: F-AGENT-1 Orchestrator + multi-agent missions → F-AGENT-2 persistent memory + self-reflection + trust auto-advance → F-AGENT-3 event reactor + auto-pipelines → F-AGENT-4 Swarm HUD. Canonical plan: [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md).
+
+**Why:** Ground-truth survey of the running system (10 missions, 17 runs, 28 checkpoints, 9 handoffs, 35 agents, 0 rows in `agent_memory`) found the substrate ~95% complete but the behavior missing — single-agent planner loops, no event reactor, no self-reflection, no swarm-level surface, no meta-agent decomposing goals. Without this bundle the "autonomous product OS" thesis is unproven in product behavior, no matter how polished the UI. Operator explicitly asked to prioritize core agent-ecosystem depth over visual restructure.
+
+**Tradeoffs considered:**
+- *Continue Restructure Phases 3–4 first* — rejected: visual coherence helps reviewers but does not move the thesis; the published hack-under-review survives on substance.
+- *Resume Bundle 9 Slice 2 (Proof Platform v1.1)* — rejected: depends on the orchestrator being real before the Builder loop is worth deepening.
+- *Ship a one-off demo-only feature for the review* — rejected: would not compose with the rest of the loop.
+
+**Impact:** F-AGENT-1 shipped same session (orchestrator agent + `mission_steps` DAG + four planner tools + per-agent loop cap + `/missions` composer + DAG panel). F-AGENT-2/3/4 queued. `active-task.md` (root) tracks in-flight sub-steps. Status board in `docs/feature-backlog.md` updated. Plan persisted in `docs/agent-ecosystem-plan.md` so any tool can pick it up across sessions. Restructure Phases 3–4 resume after the bundle closes.
+
+---
+
 ### 2026-06-02 — Reposition from "AI-native product OS" to "autonomous product OS"
 
 **Decision:** The product is now positioned as the "autonomous product OS." The word "AI-native" is dropped. The operating model is "agents do, humans govern" — not "AI assists human."
