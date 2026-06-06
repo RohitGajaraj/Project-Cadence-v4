@@ -98,6 +98,86 @@ function CalendarPage() {
   const [slots, setSlots] = useState<{ start_at: string; end_at: string; label: string }[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
 
+  // Month grid state
+  const [gridCursor, setGridCursor] = useState(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
+  });
+
+  // Event editor
+  const [editing, setEditing] = useState<EventRow | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+
+  function openEditor(e: EventRow) {
+    setEditing(e);
+    setEditTitle(e.title);
+    setEditDesc(e.description ?? "");
+    setEditStart(toLocalInput(e.start_at));
+    setEditEnd(e.end_at ? toLocalInput(e.end_at) : toLocalInput(e.start_at));
+  }
+
+  const mConnect = useMutation({
+    mutationFn: async (provider: "google" | "microsoft") => {
+      const result = await connectAppUser({
+        connectorId: provider === "google" ? "google_calendar" : "microsoft_outlook",
+        gatewayBaseUrl: "https://connector-gateway.lovable.dev",
+        start: (targetOrigin) =>
+          fStartConnect({ data: { provider, targetOrigin } }),
+      });
+      if (!result.success || !result.connectionId) throw new Error(result.error ?? "Connect failed");
+      return fSaveConn({ data: { provider, connectionId: result.connectionId } });
+    },
+    onSuccess: () => {
+      toast.success("Calendar connected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mDisconnect = useMutation({
+    mutationFn: (id: string) => fDisconnect({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Disconnected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mUpdateEvt = useMutation({
+    mutationFn: () => {
+      if (!editing) throw new Error("No event");
+      return fUpdate({ data: {
+        calendarId: "primary",
+        externalId: editing.id,
+        summary: editTitle,
+        description: editDesc || undefined,
+        start_at: new Date(editStart).toISOString(),
+        end_at: new Date(editEnd).toISOString(),
+      } });
+    },
+    onSuccess: () => {
+      toast.success("Event updated");
+      qc.invalidateQueries({ queryKey: ["calendar-events"] });
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mDeleteEvt = useMutation({
+    mutationFn: () => {
+      if (!editing) throw new Error("No event");
+      return fDelete({ data: { calendarId: "primary", externalId: editing.id } });
+    },
+    onSuccess: () => {
+      toast.success("Event deleted");
+      qc.invalidateQueries({ queryKey: ["calendar-events"] });
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const mPropose = useMutation({
     mutationFn: () => fPropose({ data: { durationMinutes: 60, daysAhead: 7, count: 3 } }),
     onSuccess: (r) => { setSlots(r.slots); if (r.slots[0]) setPicked(r.slots[0].start_at); },
