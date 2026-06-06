@@ -9,6 +9,7 @@ import {
   Sparkles, Brain, Users, MessageSquare, Target, Plus, Send, RefreshCw,
   Calendar, Bot, Zap, Activity, CheckCircle2, XCircle, Clock, ArrowRight,
 } from "lucide-react";
+import { LayoutDashboard, ListChecks, Bot as BotIcon, Waves } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
@@ -242,12 +243,7 @@ function Dashboard() {
 
         {/* TABBED SECTIONS — keep dashboard organized */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="work">Work</TabsTrigger>
-            <TabsTrigger value="agents">Agents</TabsTrigger>
-            <TabsTrigger value="pulse">Pulse</TabsTrigger>
-          </TabsList>
+          <DashboardTabsHeader />
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-12 gap-4 md:gap-5">
