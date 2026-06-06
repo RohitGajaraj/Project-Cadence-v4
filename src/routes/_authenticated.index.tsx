@@ -243,7 +243,29 @@ function Dashboard() {
 
         {/* TABBED SECTIONS — keep dashboard organized */}
         <Tabs defaultValue="overview" className="w-full">
-          <DashboardTabsHeader />
+          <TabsList className="mb-2 flex flex-wrap gap-1 bg-transparent p-0 h-auto border-b hairline rounded-none w-full justify-start">
+            {DASHBOARD_TABS.map((t) => {
+              const Icon = t.Icon;
+              const toneIcon =
+                t.tone === "sky" ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                : t.tone === "violet" ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
+                : t.tone === "emerald" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                : "bg-amber-500/10 text-amber-300 border-amber-500/30";
+              return (
+                <TabsTrigger
+                  key={t.id}
+                  value={t.id}
+                  className="px-4 py-2 text-sm border-b-2 -mb-px flex items-center gap-2 rounded-none bg-transparent border-transparent text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                >
+                  <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} group-data-[state=active]:ring-1 group-data-[state=active]:ring-foreground/20`}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span>{t.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+          <DashboardTabDescription />
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-12 gap-4 md:gap-5">
