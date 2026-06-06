@@ -24,6 +24,19 @@
 
 ## Decision log
 
+### 2026-06-06 — Documentation closure pass for voice / popups / inline-mgmt
+
+**Decision:** Close the doc loop for the language-voice + popup-ban + inline-workspace-product-management work shipped earlier in the day. Doc + memory only, no product code edits. Extend the audit doc with a "How to use / verify" block, a phased rollout, and a Learnings section. Add the contract entries to `architecture/frontend.md` (Confirmation, toasts & dialogs · Inline workspace & product management), `design.md` (Voice & language), and `architecture/security.md` (owner-gated server fns). Bank durable learnings as project memory under `mem://`.
+
+**Why:** The work shipped, but the doc loop closed only partially — the audit had no "how to verify" block, `architecture/frontend.md` had no rule on which primitive replaces a `confirm()`, and `design.md` had no voice contract. Without those entries the next session will reintroduce `window.confirm`, an em dash, or a settings-page-for-rename. Memory captures the *learnings* (em dashes are a symptom, not the disease; native chrome is never the answer) so this is the last time we have this conversation.
+
+**Tradeoffs considered:**
+- *Roll memory into one big constraint file* — rejected. 6 narrow memories retrieve better on relevance match.
+- *Add voice rules to `CLAUDE.md` / `GEMINI.md` / Lovable Knowledge* — rejected. Tool pointers stay thin; rules live in `design.md` once. The pointers already reference `design.md`.
+- *Skip the architecture entries, leave them in the audit only* — rejected. Audits get archived; contracts are read every build.
+
+**Impact:** Edited `docs/strategy/v3-audit-language-voice-2026-06-06.md` (+ "How to use / verify", Phased rollout, Learnings, Related). Edited `architecture/frontend.md` (Confirmation/toasts/dialogs + Inline workspace & product management subsections). Edited `design.md` (Voice & language section with length budgets, AI-tell denylist, confirm-copy pattern). Edited `architecture/security.md` (workspace/product owner-gated server fns invariant). Edited `docs/feature-backlog.md` Live status board (Last updated + Recent log). Edited `plan.md` §4 (one-liner). New memory files: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`. Updated `mem://index.md` Core with two new lines.
+
 ### 2026-06-06 — Commission v3 language / naming / microcopy companion audit
 
 **Decision:** Extend the v3 product audit with a dedicated language workstream covering naming, sidebar/IA copy, page H1s, empty states, buttons, placeholders, tooltips, approval-gate prompts, agent/AI surface vocabulary, governance verbs, and marketing/public copy. Land it as a versioned companion strategy doc ([`v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md)), not as backlog tickets — recommendations graduate on operator sign-off.
