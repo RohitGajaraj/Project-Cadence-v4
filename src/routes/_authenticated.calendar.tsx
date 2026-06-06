@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, LayoutGrid, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
