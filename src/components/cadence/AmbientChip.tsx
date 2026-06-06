@@ -160,16 +160,6 @@ export function AmbientChip() {
   const w = weather ? describe(weather.code, weather.isDay) : null;
   const Icon = w?.Icon ?? Cloud;
 
-  const listConnections = useServerFn(listMyCalendarConnections);
-  const { data: connData } = useQuery({
-    queryKey: ["ambient", "calendar-connections"],
-    queryFn: () => listConnections(),
-    staleTime: 60_000,
-    refetchOnWindowFocus: true,
-  });
-  const needsCalendarConnect =
-    !!connData && (connData.connections?.length ?? 0) === 0;
-
   return (
     <div
       className="sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
