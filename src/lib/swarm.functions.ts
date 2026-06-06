@@ -19,7 +19,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type J = Record<string, unknown>;
+// jsonb blobs come back as `any` — the serializer requires a concrete type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type J = any;
 
 export type SwarmAgent = {
   agent_id: string;
@@ -29,7 +31,6 @@ export type SwarmAgent = {
   color: string;
   enabled: boolean;
   trust_arc: string | null;
-  trust_score: number | null;
   latest_run: {
     run_id: string;
     status: string;
@@ -160,7 +161,7 @@ export const getSwarmHud = createServerFn({ method: "POST" })
         .limit(80),
       supabase
         .from("agent_autonomy")
-        .select("agent_id,arc,trust_score")
+        .select("agent_id,arc")
         .eq("user_id", userId),
       workspaceId
         ? supabase
@@ -217,9 +218,9 @@ export const getSwarmHud = createServerFn({ method: "POST" })
     if (agentsRes.error) throw new Error(agentsRes.error.message);
     if (runsRes.error) throw new Error(runsRes.error.message);
 
-    const autonomyByAgent = new Map<string, { arc: string | null; trust_score: number | null }>();
-    for (const row of (autonomyRes.data ?? []) as Array<{ agent_id: string; arc: string | null; trust_score: number | null }>) {
-      autonomyByAgent.set(row.agent_id, { arc: row.arc, trust_score: row.trust_score });
+    const autonomyByAgent = new Map<string, { arc: string | null }>();
+    for (const row of (autonomyRes.data ?? []) as Array<{ agent_id: string; arc: string | null }>) {
+      autonomyByAgent.set(row.agent_id, { arc: row.arc });
     }
 
     // First run we see per agent (the list is already created_at desc).
@@ -260,7 +261,6 @@ export const getSwarmHud = createServerFn({ method: "POST" })
         agent_id: a.id, slug: a.slug, name: a.name, role: a.role,
         color: a.color, enabled: a.enabled,
         trust_arc: auto?.arc ?? null,
-        trust_score: auto?.trust_score ?? null,
         latest_run: latestByAgent.get(a.id) ?? null,
       };
     });
