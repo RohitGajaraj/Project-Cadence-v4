@@ -27,6 +27,7 @@ import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPrdsRouteImport } from './routes/_authenticated.prds'
 import { Route as AuthenticatedOutcomeRouteImport } from './routes/_authenticated.outcome'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
+import { Route as AuthenticatedObserveRouteImport } from './routes/_authenticated.observe'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
@@ -149,6 +150,11 @@ const AuthenticatedOpportunitiesRoute =
     path: '/opportunities',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedObserveRoute = AuthenticatedObserveRouteImport.update({
+  id: '/observe',
+  path: '/observe',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/observe': typeof AuthenticatedObserveRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/outcome': typeof AuthenticatedOutcomeRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/observe': typeof AuthenticatedObserveRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/outcome': typeof AuthenticatedOutcomeRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/_authenticated/observe': typeof AuthenticatedObserveRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/outcome': typeof AuthenticatedOutcomeRoute
   '/_authenticated/prds': typeof AuthenticatedPrdsRouteWithChildren
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/integrations'
     | '/meetings'
+    | '/observe'
     | '/opportunities'
     | '/outcome'
     | '/prds'
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/integrations'
     | '/meetings'
+    | '/observe'
     | '/opportunities'
     | '/outcome'
     | '/prds'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
     | '/_authenticated/meetings'
+    | '/_authenticated/observe'
     | '/_authenticated/opportunities'
     | '/_authenticated/outcome'
     | '/_authenticated/prds'
@@ -768,6 +780,13 @@ declare module '@tanstack/react-router' {
       path: '/opportunities'
       fullPath: '/opportunities'
       preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/observe': {
+      id: '/_authenticated/observe'
+      path: '/observe'
+      fullPath: '/observe'
+      preLoaderRoute: typeof AuthenticatedObserveRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/meetings': {
@@ -1042,6 +1061,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
+  AuthenticatedObserveRoute: typeof AuthenticatedObserveRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedOutcomeRoute: typeof AuthenticatedOutcomeRoute
   AuthenticatedPrdsRoute: typeof AuthenticatedPrdsRouteWithChildren
@@ -1074,6 +1094,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
+  AuthenticatedObserveRoute: AuthenticatedObserveRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedOutcomeRoute: AuthenticatedOutcomeRoute,
   AuthenticatedPrdsRoute: AuthenticatedPrdsRouteWithChildren,
