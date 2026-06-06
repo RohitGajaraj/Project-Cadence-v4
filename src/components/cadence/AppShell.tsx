@@ -107,6 +107,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       to={item.to}
+      search={item.search as never}
       className={`group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] ${
         active
           ? "bg-secondary text-foreground font-medium"
