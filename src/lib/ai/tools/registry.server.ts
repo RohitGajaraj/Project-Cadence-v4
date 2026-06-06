@@ -404,7 +404,6 @@ const githubPrOpen = def({
     // unique index and get a typed error instead of silently opening a
     // competing PR. The claim is auto-released when this run reaches a
     // terminal state (trigger on agent_runs).
-    let claimAcquired = false;
     if (runId) {
       // Did we already claim it on a prior attempt of this same run?
       const { data: existing } = await supabase
@@ -414,9 +413,7 @@ const githubPrOpen = def({
         .eq("path", a.path)
         .eq("status", "held")
         .maybeSingle();
-      if (existing && existing.run_id === runId) {
-        claimAcquired = true; // already mine, idempotency path will return cached result anyway
-      } else if (existing && existing.run_id !== runId) {
+      if (existing && existing.run_id !== runId) {
         // Look up the holder's mission title for a helpful error message.
         let holderTitle: string | null = null;
         const { data: holderRun } = await supabase
@@ -431,7 +428,7 @@ const githubPrOpen = def({
           `BuilderFileConflict: path "${a.path}" is already claimed by another Builder mission${holderTitle ? ` ("${holderTitle}")` : ""}. ` +
           `Wait for it to finish or have the operator release the claim from /build.`,
         );
-      } else {
+      } else if (!existing) {
         // Try to take the claim. If a parallel call beats us, fall back to
         // the typed conflict error.
         let missionTitle: string | null = null;
@@ -459,8 +456,6 @@ const githubPrOpen = def({
           // Non-conflict insert failure is non-fatal — log and proceed; the
           // worst case is the next slice (operator release) is unavailable.
           console.error("[github.pr.open] claim insert failed:", insErr.message);
-        } else {
-          claimAcquired = true;
         }
       }
     }
