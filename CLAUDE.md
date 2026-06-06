@@ -19,6 +19,7 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 0. **`active-task.md`** (if present in root) — active sub-steps and checklist currently building. Read first!
 1. [`AGENTS.md`](./AGENTS.md) — pre-action protocol, engineering rules, escalation, session-friction loop, founding principles.
 1.5. [`docs/strategy/v2-positioning-2026-06-02.md`](./docs/strategy/v2-positioning-2026-06-02.md) — strategic source of truth: positioning, three personas, USP, portability stance, feature rationale. Read before any feature, UX, or positioning work.
+1.6. [`docs/conventions/`](./docs/conventions/) — durable, cross-tool conventions (UI chrome, voice, destructive actions, inline management, doc-closure checklist). These are *rules*, not guidance — apply automatically.
 2. [`README.md`](./README.md) — product thesis, positioning, MOAT, who it is for.
 3. [`plan.md`](./plan.md) — what is built, what is planned, the milestone roadmap. Sub-feature-level scope: [`docs/feature-backlog.md`](./docs/feature-backlog.md).
 4. Then the doc you need: [`design.md`](./design.md), [`architecture/`](./architecture/) (runtime · orchestration · security · data · frontend · integrations), [`skills.md`](./skills.md), [`subagents.md`](./subagents.md), [`tools.md`](./tools.md), [`hooks.md`](./hooks.md), [`memory.md`](./memory.md), [`commits.md`](./commits.md), and cross-cutting gaps in [`docs/considerations.md`](./docs/considerations.md).
