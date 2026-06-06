@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callAsAppUser } from "@/integrations/lovable/appUserConnector";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
+const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
 function headers() {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
@@ -13,6 +15,30 @@ function headers() {
     Authorization: `Bearer ${LOVABLE_API_KEY}`,
     "X-Connection-Api-Key": GOOGLE_CALENDAR_API_KEY,
   };
+}
+
+type UserConn = { provider: "google" | "microsoft"; connection_id: string } | null;
+
+async function getUserConnection(
+  supabase: { from: (t: string) => { select: (s: string) => { order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }> } } } } },
+): Promise<UserConn> {
+  const { data, error } = await supabase
+    .from("user_calendar_connections")
+    .select("provider,connection_id")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) return null;
+  return (data as UserConn) ?? null;
+}
+
+function bumpLastSync(
+  supabase: { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> } } },
+  userId: string,
+) {
+  void supabase.from("user_calendar_connections")
+    .update({ last_sync_at: new Date().toISOString() })
+    .eq("user_id", userId);
 }
 
 type GEvent = {
@@ -28,6 +54,42 @@ type GEvent = {
   htmlLink?: string;
   organizer?: { email?: string };
 };
+
+type MsEvent = {
+  id: string;
+  subject?: string;
+  bodyPreview?: string;
+  location?: { displayName?: string };
+  start?: { dateTime?: string };
+  end?: { dateTime?: string };
+  isAllDay?: boolean;
+  attendees?: { emailAddress?: { address?: string; name?: string }; status?: { response?: string } }[];
+  onlineMeeting?: { joinUrl?: string };
+  webLink?: string;
+  organizer?: { emailAddress?: { address?: string } };
+};
+
+function msToG(m: MsEvent): GEvent {
+  const startIso = m.start?.dateTime ? `${m.start.dateTime}${m.start.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
+  const endIso = m.end?.dateTime ? `${m.end.dateTime}${m.end.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
+  return {
+    id: m.id,
+    summary: m.subject,
+    description: m.bodyPreview,
+    location: m.location?.displayName,
+    status: "confirmed",
+    start: m.isAllDay ? { date: startIso?.slice(0, 10) } : { dateTime: startIso },
+    end: m.isAllDay ? { date: endIso?.slice(0, 10) } : { dateTime: endIso },
+    attendees: (m.attendees ?? []).map((a) => ({
+      email: a.emailAddress?.address ?? "",
+      displayName: a.emailAddress?.name,
+      responseStatus: a.status?.response,
+    })),
+    hangoutLink: m.onlineMeeting?.joinUrl,
+    htmlLink: m.webLink,
+    organizer: { email: m.organizer?.emailAddress?.address },
+  };
+}
 
 async function gFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${GATEWAY}${path}`, { headers: headers() });
@@ -75,13 +137,37 @@ export const syncCalendar = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const timeMin = new Date().toISOString();
     const timeMax = new Date(Date.now() + data.daysAhead * 86400000).toISOString();
-    const qs = new URLSearchParams({
-      timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100",
-    }).toString();
-    const r = await gFetch<{ items: GEvent[] }>(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
-    );
-    const rows = (r.items ?? []).map((e) => {
+    const conn = await getUserConnection(supabase as never);
+    let items: GEvent[] = [];
+    if (conn?.provider === "microsoft") {
+      const qs = new URLSearchParams({ startDateTime: timeMin, endDateTime: timeMax, $top: "100" }).toString();
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/calendarView?${qs}`,
+        init: { headers: { Prefer: 'outlook.timezone="UTC"' } },
+      });
+      if (!res.ok) throw new Error(`Microsoft calendarView failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      const body = (await res.json()) as { value?: MsEvent[] };
+      items = (body.value ?? []).map(msToG);
+    } else if (conn?.provider === "google") {
+      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
+      });
+      if (!res.ok) throw new Error(`Google events failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      const body = (await res.json()) as { items?: GEvent[] };
+      items = body.items ?? [];
+    } else {
+      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
+      const r = await gFetch<{ items: GEvent[] }>(`/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`);
+      items = r.items ?? [];
+    }
+    const rows = items.map((e) => {
       const { start_at, end_at, all_day } = normalizeStart(e);
       return {
         user_id: userId,
@@ -107,6 +193,7 @@ export const syncCalendar = createServerFn({ method: "POST" })
         .upsert(rows as never, { onConflict: "user_id,external_id" });
       if (error) throw new Error(error.message);
     }
+    if (conn) bumpLastSync(supabase as never, userId);
     return { count: rows.length };
   });
 
@@ -154,19 +241,67 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const body = {
+    const startIso = new Date(data.start_at).toISOString();
+    const endIso = new Date(data.end_at).toISOString();
+    const conn = await getUserConnection(supabase as never);
+    let e: GEvent | null = null;
+    if (conn?.provider === "microsoft") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject: data.summary,
+            body: data.description ? { contentType: "text", content: data.description } : undefined,
+            location: data.location ? { displayName: data.location } : undefined,
+            start: { dateTime: startIso, timeZone: "UTC" },
+            end: { dateTime: endIso, timeZone: "UTC" },
+            attendees: data.attendees?.map((email) => ({ emailAddress: { address: email }, type: "required" })),
+          }),
+        },
+      });
+      if (!res.ok) throw new Error(`Microsoft create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      e = msToG((await res.json()) as MsEvent);
+    } else if (conn?.provider === "google") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: data.summary,
+            description: data.description,
+            location: data.location,
+            start: { dateTime: startIso },
+            end: { dateTime: endIso },
+            attendees: data.attendees?.map((email) => ({ email })),
+          }),
+        },
+      });
+      if (!res.ok) throw new Error(`Google create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      e = (await res.json()) as GEvent;
+    } else {
+      const body = {
       summary: data.summary,
       description: data.description,
       location: data.location,
-      start: { dateTime: new Date(data.start_at).toISOString() },
-      end: { dateTime: new Date(data.end_at).toISOString() },
+        start: { dateTime: startIso },
+        end: { dateTime: endIso },
       attendees: data.attendees?.map((email) => ({ email })),
-    };
-    const e = await gFetchMethod<GEvent>(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events`,
-      "POST",
-      body,
-    );
+      };
+      e = await gFetchMethod<GEvent>(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events`,
+        "POST",
+        body,
+      );
+    }
     if (!e) throw new Error("Empty response from Google Calendar");
     const { start_at, end_at, all_day } = normalizeStart(e);
     await supabase.from("calendar_events").upsert({
@@ -200,16 +335,47 @@ export const updateCalendarEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => UpdateSchema.parse(i))
   .handler(async ({ context, data }) => {
-    const patch: Record<string, unknown> = {};
-    if (data.summary !== undefined) patch.summary = data.summary;
-    if (data.description !== undefined) patch.description = data.description;
-    if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
-    if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
-    await gFetchMethod(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
-      "PATCH",
-      patch,
-    );
+    const conn = await getUserConnection(context.supabase as never);
+    if (conn?.provider === "microsoft") {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.subject = data.summary;
+      if (data.description !== undefined) patch.body = { contentType: "text", content: data.description };
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString(), timeZone: "UTC" };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString(), timeZone: "UTC" };
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+      });
+      if (!res.ok) throw new Error(`Microsoft update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    } else if (conn?.provider === "google") {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.summary = data.summary;
+      if (data.description !== undefined) patch.description = data.description;
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+      });
+      if (!res.ok) throw new Error(`Google update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    } else {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.summary = data.summary;
+      if (data.description !== undefined) patch.description = data.description;
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
+      await gFetchMethod(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        "PATCH",
+        patch,
+      );
+    }
     await context.supabase
       .from("calendar_events")
       .update({
@@ -232,10 +398,31 @@ export const deleteCalendarEvent = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ context, data }) => {
-    await gFetchMethod(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
-      "DELETE",
-    );
+    const conn = await getUserConnection(context.supabase as never);
+    if (conn?.provider === "microsoft") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "DELETE" },
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Microsoft delete failed [${res.status}]`);
+    } else if (conn?.provider === "google") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "DELETE" },
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Google delete failed [${res.status}]`);
+    } else {
+      await gFetchMethod(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        "DELETE",
+      );
+    }
     await context.supabase
       .from("calendar_events")
       .delete()

@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, Trash2, Pencil, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
-import { listCalendarEvents, syncCalendar, createCalendarEvent, proposeSlots } from "@/lib/calendar.functions";
+import { listCalendarEvents, syncCalendar, createCalendarEvent, proposeSlots, updateCalendarEvent, deleteCalendarEvent } from "@/lib/calendar.functions";
+import { listMyCalendarConnections, startCalendarConnect, saveCalendarConnection, disconnectCalendar } from "@/lib/calendar-connections.functions";
+import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { listMeetings } from "@/lib/meetings.functions";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MeetingDetailBody } from "@/components/cadence/MeetingDetailBody";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useConfirm } from "@/hooks/use-confirm";
 
 type View = "list" | "grid";
 const VIEW_KEY = "cadence.calendar.view";
@@ -34,23 +38,33 @@ function fmtTime(iso: string, allDay: boolean) {
   if (allDay) return "All day";
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function CalendarPage() {
   const { meeting: meetingId } = Route.useSearch();
   const navigate = useNavigate({ from: "/calendar" });
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const fProjects = useServerFn(listProjects);
   const fEvents = useServerFn(listCalendarEvents);
   const fSync = useServerFn(syncCalendar);
   const fCreate = useServerFn(createCalendarEvent);
   const fPropose = useServerFn(proposeSlots);
   const fMeetings = useServerFn(listMeetings);
+  const fListConns = useServerFn(listMyCalendarConnections);
+  const fStartConnect = useServerFn(startCalendarConnect);
+  const fSaveConn = useServerFn(saveCalendarConnection);
+  const fDisconnect = useServerFn(disconnectCalendar);
+  const fUpdate = useServerFn(updateCalendarEvent);
+  const fDelete = useServerFn(deleteCalendarEvent);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const events = useQuery({ queryKey: ["calendar-events"], queryFn: () => fEvents() });
   const meetings = useQuery({ queryKey: ["meetings"], queryFn: () => fMeetings() });
+  const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
 
   // View preference persists per-user (list is default — capture/extract is the
   // value flow, not time-blocking).
@@ -86,6 +100,86 @@ function CalendarPage() {
   const [slots, setSlots] = useState<{ start_at: string; end_at: string; label: string }[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
 
+  // Month grid state
+  const [gridCursor, setGridCursor] = useState(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
+  });
+
+  // Event editor
+  const [editing, setEditing] = useState<EventRow | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+
+  function openEditor(e: EventRow) {
+    setEditing(e);
+    setEditTitle(e.title);
+    setEditDesc(e.description ?? "");
+    setEditStart(toLocalInput(e.start_at));
+    setEditEnd(e.end_at ? toLocalInput(e.end_at) : toLocalInput(e.start_at));
+  }
+
+  const mConnect = useMutation({
+    mutationFn: async (provider: "google" | "microsoft") => {
+      const result = await connectAppUser({
+        connectorId: provider === "google" ? "google_calendar" : "microsoft_outlook",
+        gatewayBaseUrl: "https://connector-gateway.lovable.dev",
+        start: (targetOrigin) =>
+          fStartConnect({ data: { provider, targetOrigin } }),
+      });
+      if (!result.success || !result.connectionId) throw new Error(result.error ?? "Connect failed");
+      return fSaveConn({ data: { provider, connectionId: result.connectionId } });
+    },
+    onSuccess: () => {
+      toast.success("Calendar connected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mDisconnect = useMutation({
+    mutationFn: (id: string) => fDisconnect({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Disconnected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mUpdateEvt = useMutation({
+    mutationFn: () => {
+      if (!editing) throw new Error("No event");
+      return fUpdate({ data: {
+        calendarId: "primary",
+        externalId: editing.id,
+        summary: editTitle,
+        description: editDesc || undefined,
+        start_at: new Date(editStart).toISOString(),
+        end_at: new Date(editEnd).toISOString(),
+      } });
+    },
+    onSuccess: () => {
+      toast.success("Event updated");
+      qc.invalidateQueries({ queryKey: ["calendar-events"] });
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mDeleteEvt = useMutation({
+    mutationFn: () => {
+      if (!editing) throw new Error("No event");
+      return fDelete({ data: { calendarId: "primary", externalId: editing.id } });
+    },
+    onSuccess: () => {
+      toast.success("Event deleted");
+      qc.invalidateQueries({ queryKey: ["calendar-events"] });
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const mPropose = useMutation({
     mutationFn: () => fPropose({ data: { durationMinutes: 60, daysAhead: 7, count: 3 } }),
     onSuccess: (r) => { setSlots(r.slots); if (r.slots[0]) setPicked(r.slots[0].start_at); },
@@ -107,11 +201,6 @@ function CalendarPage() {
   });
 
   const list = (events.data?.events ?? []) as unknown as EventRow[];
-  const groups = list.reduce((acc, e) => {
-    const k = new Date(e.start_at).toDateString();
-    (acc[k] = acc[k] ?? []).push(e);
-    return acc;
-  }, {} as Record<string, EventRow[]>);
 
   // Unified chronological feed for List view: meetings + calendar events,
   // sorted by start time. Meetings get a "Meeting" badge; events stay native.
@@ -234,6 +323,68 @@ function CalendarPage() {
 
         {events.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
 
+        {/* Calendar account connections */}
+        {(() => {
+          const conns = connections.data?.connections ?? [];
+          const avail = connections.data?.providersAvailable ?? { google: false, microsoft: false };
+          const hasGoogle = conns.some((c) => c.provider === "google");
+          const hasMicrosoft = conns.some((c) => c.provider === "microsoft");
+          return (
+            <div className="bento p-3 mb-4 flex flex-wrap items-center gap-2">
+              <div className="text-xs text-muted-foreground mr-2 inline-flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5" /> Calendar accounts:
+              </div>
+              {conns.map((c) => (
+                <span key={c.id} className="inline-flex items-center gap-2 rounded-full border hairline px-2.5 py-1 text-xs">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {c.provider === "google" ? "Google" : "Microsoft"}
+                  {c.account_email && <span className="text-muted-foreground">· {c.account_email}</span>}
+                  <button
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Disconnect this calendar?",
+                        body: "Stored events stay but no further sync will happen.",
+                        confirmLabel: "Disconnect",
+                        destructive: true,
+                      });
+                      if (ok) mDisconnect.mutate(c.id);
+                    }}
+                    className="ml-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Disconnect"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {!hasGoogle && (
+                <button
+                  onClick={() => mConnect.mutate("google")}
+                  disabled={mConnect.isPending}
+                  title={avail.google ? "" : "Provider credentials not yet configured"}
+                  className="text-xs rounded-full border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-60"
+                >
+                  + Google Calendar
+                </button>
+              )}
+              {!hasMicrosoft && (
+                <button
+                  onClick={() => mConnect.mutate("microsoft")}
+                  disabled={mConnect.isPending}
+                  title={avail.microsoft ? "" : "Provider credentials not yet configured"}
+                  className="text-xs rounded-full border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-60"
+                >
+                  + Microsoft Outlook
+                </button>
+              )}
+              {!avail.google && !avail.microsoft && conns.length === 0 && (
+                <span className="text-[11px] text-muted-foreground italic">
+                  Connect setup pending. Admin must add provider credentials.
+                </span>
+              )}
+            </div>
+          );
+        })()}
+
         {!events.isLoading && !meetings.isLoading && feed.length === 0 && (
           <div className="bento p-10 text-center">
             <CalIcon className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
@@ -322,45 +473,12 @@ function CalendarPage() {
         )}
 
         {view === "grid" && (
-        <div className="space-y-6 mt-4">
-          {Object.entries(groups).map(([day, evs]) => (
-            <section key={day}>
-              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-2">{fmtDate(evs[0].start_at)}</div>
-              <div className="bento divide-y divide-white/5">
-                {evs.map((e) => (
-                  <div key={e.id} className="p-4 flex gap-4">
-                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
-                      <div className="font-medium text-foreground">{fmtTime(e.start_at, e.all_day)}</div>
-                      {e.end_at && !e.all_day && <div>{fmtTime(e.end_at, false)}</div>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-display text-sm flex items-center gap-2">
-                        {e.title}
-                        {e.hangout_link && (
-                          <a href={e.hangout_link} target="_blank" rel="noreferrer" className="text-emerald-400 hover:opacity-80">
-                            <Video className="h-3.5 w-3.5" />
-                          </a>
-                        )}
-                      </div>
-                      {e.location && <div className="text-xs text-muted-foreground mt-0.5">{e.location}</div>}
-                      {e.attendees?.length > 0 && (
-                        <div className="text-[11px] text-muted-foreground mt-1">
-                          {e.attendees.slice(0, 5).map((a) => a.displayName || a.email).join(", ")}
-                          {e.attendees.length > 5 && ` +${e.attendees.length - 5}`}
-                        </div>
-                      )}
-                    </div>
-                    {e.html_link && (
-                      <a href={e.html_link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <MonthGrid
+          cursor={gridCursor}
+          setCursor={setGridCursor}
+          events={list}
+          onPickEvent={openEditor}
+        />
         )}
       </div>
 
@@ -369,6 +487,174 @@ function CalendarPage() {
           {meetingId && <MeetingDetailBody id={meetingId} />}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit event</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Title</label>
+                <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                  className="mt-1 w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Start</label>
+                  <input type="datetime-local" value={editStart} onChange={(e) => setEditStart(e.target.value)}
+                    className="mt-1 w-full rounded-lg border hairline bg-background/60 px-2 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">End</label>
+                  <input type="datetime-local" value={editEnd} onChange={(e) => setEditEnd(e.target.value)}
+                    className="mt-1 w-full rounded-lg border hairline bg-background/60 px-2 py-2 text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Notes</label>
+                <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3}
+                  className="mt-1 w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-sm" />
+              </div>
+              {editing.html_link && (
+                <a href={editing.html_link} target="_blank" rel="noreferrer"
+                  className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" /> Open in provider
+                </a>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <button
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Delete this event?",
+                  body: "This removes it from your calendar provider too.",
+                  confirmLabel: "Delete",
+                  destructive: true,
+                });
+                if (ok) mDeleteEvt.mutate();
+              }}
+              disabled={mDeleteEvt.isPending}
+              className="inline-flex items-center gap-1.5 text-xs rounded-lg border hairline px-3 py-2 text-red-300 hover:bg-red-500/10 mr-auto"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+            <button
+              onClick={() => setEditing(null)}
+              className="text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => mUpdateEvt.mutate()}
+              disabled={mUpdateEvt.isPending || !editTitle.trim()}
+              className="inline-flex items-center gap-1.5 text-xs rounded-lg bg-foreground text-background px-3 py-2 disabled:opacity-60"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Save
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  setCursor,
+  events,
+  onPickEvent,
+}: {
+  cursor: Date;
+  setCursor: (d: Date) => void;
+  events: EventRow[];
+  onPickEvent: (e: EventRow) => void;
+}) {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: { date: Date | null; isToday: boolean }[] = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < startOffset; i++) cells.push({ date: null, isToday: false });
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    cells.push({ date, isToday: date.getTime() === today.getTime() });
+  }
+  while (cells.length % 7 !== 0) cells.push({ date: null, isToday: false });
+
+  const byDay = events.reduce((acc, e) => {
+    const k = new Date(e.start_at).toDateString();
+    (acc[k] = acc[k] ?? []).push(e);
+    return acc;
+  }, {} as Record<string, EventRow[]>);
+
+  const monthLabel = cursor.toLocaleString([], { month: "long", year: "numeric" });
+
+  return (
+    <div className="bento mt-4 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b hairline">
+        <div className="font-display text-sm">{monthLabel}</div>
+        <div className="inline-flex items-center gap-1">
+          <button onClick={() => setCursor(new Date(year - 1, month, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous year">
+            <ChevronLeft className="h-3.5 w-3.5" /><ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+          </button>
+          <button onClick={() => setCursor(new Date(year, month - 1, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Previous month">
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); setCursor(d); }}
+            className="rounded-md border hairline px-2 py-1 text-xs hover:bg-secondary/60">Today</button>
+          <button onClick={() => setCursor(new Date(year, month + 1, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next month">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => setCursor(new Date(year + 1, month, 1))}
+            className="rounded-md border hairline p-1 hover:bg-secondary/60" aria-label="Next year">
+            <ChevronRight className="h-3.5 w-3.5" /><ChevronRight className="h-3.5 w-3.5 -ml-2" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b hairline">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+          <div key={d} className="px-2 py-1.5">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((cell, i) => {
+          const evs = cell.date ? (byDay[cell.date.toDateString()] ?? []) : [];
+          return (
+            <div key={i} className={`min-h-[96px] border-r border-b hairline/60 p-1.5 ${cell.isToday ? "bg-violet-500/5" : ""}`}>
+              {cell.date && (
+                <>
+                  <div className={`text-[11px] mb-1 ${cell.isToday ? "text-violet-300 font-medium" : "text-muted-foreground"}`}>
+                    {cell.date.getDate()}
+                  </div>
+                  <div className="space-y-0.5">
+                    {evs.slice(0, 3).map((e) => (
+                      <button
+                        key={e.id}
+                        onClick={() => onPickEvent(e)}
+                        className="w-full text-left text-[10px] truncate rounded px-1 py-0.5 bg-foreground/10 hover:bg-foreground/20"
+                        title={e.title}
+                      >
+                        {fmtTime(e.start_at, e.all_day)} {e.title}
+                      </button>
+                    ))}
+                    {evs.length > 3 && (
+                      <div className="text-[10px] text-muted-foreground px-1">+{evs.length - 3} more</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

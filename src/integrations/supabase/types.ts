@@ -3368,6 +3368,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_calendar_connections: {
+        Row: {
+          account_email: string | null
+          connection_id: string
+          created_at: string
+          display_name: string | null
+          id: string
+          last_sync_at: string | null
+          provider: Database["public"]["Enums"]["calendar_provider"]
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          account_email?: string | null
+          connection_id: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider: Database["public"]["Enums"]["calendar_provider"]
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          account_email?: string | null
+          connection_id?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider?: Database["public"]["Enums"]["calendar_provider"]
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       user_integrations: {
         Row: {
           account_label: string | null
@@ -3665,7 +3704,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      calendar_provider: "google" | "microsoft"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3792,6 +3831,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      calendar_provider: ["google", "microsoft"],
+    },
   },
 } as const
