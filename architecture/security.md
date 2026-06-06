@@ -4,6 +4,7 @@
 
 ## Authentication
 - **Supabase Auth** — email/password + Google OAuth (more providers via the same path). Email verification on by default; never auto-confirm without explicit ask.
+- **Password reset** — self-service via `/forgot-password` (request link) → `/reset-password` (set new password). Documented in [`../docs/auth-flows.md`](../docs/auth-flows.md).
 - **Sessions** — bearer token carried automatically on every server-fn RPC via the global `attachSupabaseAuth` middleware. SSE streams resume with `Last-Event-ID`.
 - **Logout** — sign-out everywhere; token revocation.
 - **Future:** SSO/SAML + SCIM for enterprise; roles/teams membership. Designed for now (the tenancy keys exist) so it is an addition, not a rewrite.
