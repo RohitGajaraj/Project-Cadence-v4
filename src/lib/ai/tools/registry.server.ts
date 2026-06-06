@@ -13,6 +13,7 @@ import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
 import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
 import { missionPlan, missionDispatch, missionObserve, missionFinalize } from "./orchestrator.server";
+import { autoReflect } from "@/lib/ai/reflection.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -186,6 +187,67 @@ const remember = def({
       importance: a.importance ?? 3,
       embedding: emb as unknown as string | null,
     }).select("id").single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+});
+
+/**
+ * memory.reflect — F-AGENT-2.
+ * Distil a lesson from this run and persist it as a reflection. The loop
+ * auto-calls the same helper on every clean completion, so explicit calls
+ * from the model are optional — useful when the agent wants to record
+ * something *before* a planned handoff. Idempotency falls out of the loop's
+ * tool idempotency wrapper.
+ */
+const memoryReflect = def({
+  name: "memory.reflect",
+  description: "Record a one-paragraph lesson from this run so future runs of the same agent can recall it. Optional — the system reflects automatically on clean completion. Use this only when you want to capture a lesson mid-run (e.g. before a handoff).",
+  category: "memory",
+  argsSchema: z.object({
+    note: z.string().max(400).optional(),
+  }),
+  preview: (a) => `Reflect on this run${a.note ? ` · note: "${a.note.slice(0, 60)}"` : ""}`,
+  run: async (a, { supabase, userId, agentId, agentSlug, workspaceId, runId, traceId }) => {
+    if (!agentSlug) throw new Error("memory.reflect requires an agent context");
+    // Pull the current run input as the "goal"; fall back to the model's note.
+    let goal = a.note ?? "(mid-run reflection)";
+    let finalMsg = a.note ?? "(no final message yet — mid-run)";
+    if (runId) {
+      const { data: run } = await supabase.from("agent_runs")
+        .select("input,output").eq("id", runId).maybeSingle();
+      if (run?.input) goal = run.input as string;
+      if (run?.output) finalMsg = run.output as string;
+    }
+    const row = await autoReflect(supabase, {
+      userId, agentId: agentId ?? null, agentSlug,
+      workspaceId: workspaceId ?? null, runId: runId ?? null, traceId: traceId ?? null,
+      goal, finalMsg,
+    });
+    if (!row) return { ok: false, reason: "no lesson produced" };
+    return { ok: true, memory_id: row.id, importance: row.importance, content: row.content };
+  },
+});
+
+/**
+ * memory.promote — F-AGENT-2.
+ * Escalate a memory's scope from `agent` (only this agent recalls it) to
+ * `global` (every agent in the workspace recalls it). Use sparingly for
+ * workspace-wide truths (e.g. "Q3 priority is retention").
+ */
+const memoryPromote = def({
+  name: "memory.promote",
+  description: "Promote a memory from agent-scope to workspace-scope so every agent recalls it. Pass memory_id (returned by memory.remember or memory.reflect). Use only for cross-agent truths.",
+  category: "memory",
+  argsSchema: z.object({
+    memory_id: z.string().uuid(),
+  }),
+  preview: (a) => `Promote memory ${a.memory_id.slice(0, 8)} → workspace`,
+  run: async (a, { supabase, userId }) => {
+    const { data, error } = await supabase.from("agent_memory")
+      .update({ scope: "global" })
+      .eq("id", a.memory_id).eq("user_id", userId)
+      .select("id,scope,kind,content").single();
     if (error) throw new Error(error.message);
     return data;
   },
