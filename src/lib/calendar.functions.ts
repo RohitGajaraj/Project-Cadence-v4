@@ -241,19 +241,67 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const body = {
+    const startIso = new Date(data.start_at).toISOString();
+    const endIso = new Date(data.end_at).toISOString();
+    const conn = await getUserConnection(supabase as never);
+    let e: GEvent | null = null;
+    if (conn?.provider === "microsoft") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject: data.summary,
+            body: data.description ? { contentType: "text", content: data.description } : undefined,
+            location: data.location ? { displayName: data.location } : undefined,
+            start: { dateTime: startIso, timeZone: "UTC" },
+            end: { dateTime: endIso, timeZone: "UTC" },
+            attendees: data.attendees?.map((email) => ({ emailAddress: { address: email }, type: "required" })),
+          }),
+        },
+      });
+      if (!res.ok) throw new Error(`Microsoft create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      e = msToG((await res.json()) as MsEvent);
+    } else if (conn?.provider === "google") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: data.summary,
+            description: data.description,
+            location: data.location,
+            start: { dateTime: startIso },
+            end: { dateTime: endIso },
+            attendees: data.attendees?.map((email) => ({ email })),
+          }),
+        },
+      });
+      if (!res.ok) throw new Error(`Google create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      e = (await res.json()) as GEvent;
+    } else {
+      const body = {
       summary: data.summary,
       description: data.description,
       location: data.location,
-      start: { dateTime: new Date(data.start_at).toISOString() },
-      end: { dateTime: new Date(data.end_at).toISOString() },
+        start: { dateTime: startIso },
+        end: { dateTime: endIso },
       attendees: data.attendees?.map((email) => ({ email })),
-    };
-    const e = await gFetchMethod<GEvent>(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events`,
-      "POST",
-      body,
-    );
+      };
+      e = await gFetchMethod<GEvent>(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events`,
+        "POST",
+        body,
+      );
+    }
     if (!e) throw new Error("Empty response from Google Calendar");
     const { start_at, end_at, all_day } = normalizeStart(e);
     await supabase.from("calendar_events").upsert({
@@ -287,16 +335,47 @@ export const updateCalendarEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => UpdateSchema.parse(i))
   .handler(async ({ context, data }) => {
-    const patch: Record<string, unknown> = {};
-    if (data.summary !== undefined) patch.summary = data.summary;
-    if (data.description !== undefined) patch.description = data.description;
-    if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
-    if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
-    await gFetchMethod(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
-      "PATCH",
-      patch,
-    );
+    const conn = await getUserConnection(context.supabase as never);
+    if (conn?.provider === "microsoft") {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.subject = data.summary;
+      if (data.description !== undefined) patch.body = { contentType: "text", content: data.description };
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString(), timeZone: "UTC" };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString(), timeZone: "UTC" };
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+      });
+      if (!res.ok) throw new Error(`Microsoft update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    } else if (conn?.provider === "google") {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.summary = data.summary;
+      if (data.description !== undefined) patch.description = data.description;
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+      });
+      if (!res.ok) throw new Error(`Google update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    } else {
+      const patch: Record<string, unknown> = {};
+      if (data.summary !== undefined) patch.summary = data.summary;
+      if (data.description !== undefined) patch.description = data.description;
+      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString() };
+      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString() };
+      await gFetchMethod(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        "PATCH",
+        patch,
+      );
+    }
     await context.supabase
       .from("calendar_events")
       .update({
@@ -319,10 +398,31 @@ export const deleteCalendarEvent = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ context, data }) => {
-    await gFetchMethod(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
-      "DELETE",
-    );
+    const conn = await getUserConnection(context.supabase as never);
+    if (conn?.provider === "microsoft") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "DELETE" },
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Microsoft delete failed [${res.status}]`);
+    } else if (conn?.provider === "google") {
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        init: { method: "DELETE" },
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Google delete failed [${res.status}]`);
+    } else {
+      await gFetchMethod(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
+        "DELETE",
+      );
+    }
     await context.supabase
       .from("calendar_events")
       .delete()
