@@ -294,36 +294,53 @@ function CalendarPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border hairline p-0.5">
+            <div className="inline-flex rounded-xl border hairline p-0.5">
+              <button
+                onClick={() => setViewPersist("list")}
+                aria-pressed={view === "list"}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "list" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+              >
+                <List className="h-3.5 w-3.5" /> List
+              </button>
+              <button
+                onClick={() => setViewPersist("grid")}
+                aria-pressed={view === "grid"}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+              >
+                <CalIcon className="h-3.5 w-3.5" /> Calendar
+              </button>
+            </div>
+            <ConnectIcon
+              open={connectOpen}
+              setOpen={setConnectOpen}
+              connections={connections.data?.connections ?? []}
+              available={connections.data?.providersAvailable ?? { google: false, microsoft: false }}
+              onConnect={(p) => mConnect.mutate(p)}
+              onDisconnect={async (id) => {
+                const ok = await confirm({
+                  title: "Disconnect this calendar?",
+                  body: "Stored events stay but no further sync will happen.",
+                  confirmLabel: "Disconnect",
+                  destructive: true,
+                });
+                if (ok) mDisconnect.mutate(id);
+              }}
+              connecting={mConnect.isPending}
+            />
             <button
-              onClick={() => setViewPersist("list")}
-              aria-pressed={view === "list"}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "list" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+              onClick={() => { setShowNew(true); if (slots.length === 0) mPropose.mutate(); }}
+              className="inline-flex items-center gap-2 rounded-xl border hairline px-3.5 py-2 text-sm hover:bg-secondary/60"
             >
-              <List className="h-3.5 w-3.5" /> List
+              <Plus className="h-3.5 w-3.5" /> New event
             </button>
             <button
-              onClick={() => setViewPersist("grid")}
-              aria-pressed={view === "grid"}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+              onClick={() => mSync.mutate()}
+              disabled={mSync.isPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-3.5 py-2 text-sm disabled:opacity-60"
             >
-              <CalIcon className="h-3.5 w-3.5" /> Calendar
+              {mSync.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Sync now
             </button>
-          </div>
-          <button
-            onClick={() => { setShowNew(true); if (slots.length === 0) mPropose.mutate(); }}
-            className="inline-flex items-center gap-2 rounded-xl border hairline px-3.5 py-2 text-sm hover:bg-secondary/60"
-          >
-            <Plus className="h-3.5 w-3.5" /> New event
-          </button>
-          <button
-            onClick={() => mSync.mutate()}
-            disabled={mSync.isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-3.5 py-2 text-sm disabled:opacity-60"
-          >
-            {mSync.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Sync now
-          </button>
           </div>
         </header>
 
