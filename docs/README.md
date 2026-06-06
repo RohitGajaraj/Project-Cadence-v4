@@ -23,6 +23,7 @@
 | [`a2a-handoff.md`](./a2a-handoff.md) | Agent-to-agent handoff contract (Bundle 4 / E1–E5): missions, structured payloads, receiver-arc gating, failure policy. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`../architecture/orchestration.md`](../architecture/orchestration.md) |
 | [`web-access.md`](./web-access.md) | Web I/O tools for agents (`web.search` / `fetch` / `map` / `crawl`) backed by Firecrawl — what they do, default approvals, safety model, setup. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`a2a-handoff.md`](./a2a-handoff.md), [`../architecture/runtime.md`](../architecture/runtime.md), [`../architecture/integrations.md`](../architecture/integrations.md) |
 | [`github-issue-approval-flow.md`](./github-issue-approval-flow.md) | The `github.issue.create` → `prd.link_issue` approval flow (Bundle 6 lifecycle close): what happens on Approve, which repo/token, idempotency, failure modes, verification checklist, secret rotation. | [`trust-and-autonomy.md`](./trust-and-autonomy.md), [`a2a-handoff.md`](./a2a-handoff.md), [`../architecture/orchestration.md`](../architecture/orchestration.md), [`../architecture/integrations.md`](../architecture/integrations.md) |
+| [`fnd-runtime-restart-playbook.md`](./fnd-runtime-restart-playbook.md) | Forced-restart verification playbook for FND-RUNTIME 0.9 — operator steps to prove a long mission resumes from checkpoint with no duplicate external writes after a worker restart. | [`foundation-audit.md`](./foundation-audit.md), [`features/bundle-9-builder.md`](./features/bundle-9-builder.md), [`../architecture/runtime.md`](../architecture/runtime.md) |
 | [`git-discipline.md`](./git-discipline.md) | Cross-tool commit/push WHY discipline; enforced by hooks. | [`../AGENTS.md`](../AGENTS.md) |
 
 ## Per-feature operator & demo guides
@@ -35,6 +36,7 @@ One canonical page per shipped, user-facing feature. The **single place** to ope
 | F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | [`features/f-agent-2-memory-reflection.md`](./features/f-agent-2-memory-reflection.md) |
 | F-AGENT-3 | Event reactor + auto-pipelines | [`features/f-agent-3-event-reactor.md`](./features/f-agent-3-event-reactor.md) |
 | F-AGENT-4 | Swarm HUD | [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) |
+| Bundle 9 | Builder agent · PR · CI loop · file-claim conflict guard | [`features/bundle-9-builder.md`](./features/bundle-9-builder.md) |
 
 ## Strategy (versioned positioning)
 

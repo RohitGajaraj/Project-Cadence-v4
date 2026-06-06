@@ -38,6 +38,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | F-AGENT-2 | Persistent agent memory + self-reflection + trust auto-advance | ✅ Shipped 2026-06-06 | `/agents` | [`f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md) |
 | F-AGENT-3 | Event reactor + auto-pipelines | ✅ Shipped 2026-06-06 | `/governance` (Auto-pipelines · Reactor activity) | [`f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md) |
 | F-AGENT-4 | Swarm HUD | ✅ Shipped 2026-06-06 | `/swarm` | [`f-agent-4-swarm-hud.md`](./f-agent-4-swarm-hud.md) |
+| Bundle 9 | Builder agent · PR · CI loop · file-claim conflict guard | ✅ Slice 1 2026-06-04 · Slices 2 + 3 2026-06-06 | `/build`, `/prds/$id`, `/missions/$id` | [`bundle-9-builder.md`](./bundle-9-builder.md) |
 
 ## Rules
 

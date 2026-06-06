@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send } from "lucide-react";
+import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send, FlaskConical, Lock, Unlock } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
-import { listBuilderRuns, dispatchBuilderMission, type BuilderRun } from "@/lib/build.functions";
+import { listBuilderRuns, dispatchBuilderMission, listBuilderClaims, releaseBuilderClaim, type BuilderRun, type BuilderClaim } from "@/lib/build.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPrds } from "@/lib/discovery.functions";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,8 @@ function BuildConsolePage() {
         </header>
 
         <BuildComposer hasRuns={runs.length > 0} />
+
+        <BuilderClaimsPanel />
 
         {runsQ.isLoading ? (
           <div className="text-sm text-muted-foreground inline-flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Loading Builder missions…</div>
@@ -320,6 +322,7 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
           <span className="text-muted-foreground truncate max-w-[140px]">{run.pr.path}</span>
         </a>
       ) : null}
+      {run.ci ? <CiChip ci={run.ci} prUrl={run.pr?.url ?? null} /> : null}
       <div className="mt-2 text-[10px] text-muted-foreground/70">{new Date(run.created_at).toLocaleString()}</div>
     </div>
   );
@@ -329,6 +332,43 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
       {inner}
     </Link>
   ) : inner;
+}
+
+function CiChip({ ci, prUrl }: { ci: NonNullable<BuilderRun["ci"]>; prUrl: string | null }) {
+  const tone = ci.overall === "success" ? "bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
+    : ci.overall === "failure" ? "bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+    : ci.overall === "pending" ? "bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+    : "bg-muted/40 text-muted-foreground hover:bg-muted/60";
+  const label = ci.overall === "success" ? "CI · green"
+    : ci.overall === "failure" ? (ci.failing ? `CI · red · ${ci.failing.name}` : "CI · red")
+    : ci.overall === "pending" ? "CI · pending"
+    : "CI · n/a";
+  const href = ci.failing?.html_url ?? prUrl ?? undefined;
+  const content = (
+    <>
+      <FlaskConical className="h-3 w-3" />
+      <span className="truncate max-w-[180px]">{label}</span>
+    </>
+  );
+  return href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px] rounded-md border hairline px-1.5 py-0.5 ${tone}`}
+      title={ci.failing?.summary ?? `CI updated ${new Date(ci.updated_at).toLocaleString()}`}
+    >
+      {content}
+    </a>
+  ) : (
+    <span
+      className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px] rounded-md border hairline px-1.5 py-0.5 ${tone}`}
+      title={`CI updated ${new Date(ci.updated_at).toLocaleString()}`}
+    >
+      {content}
+    </span>
+  );
 }
 
 function EmptyState() {
@@ -342,6 +382,73 @@ function EmptyState() {
       <Link to="/prds" className="mt-4 inline-flex items-center gap-1.5 text-xs rounded-md border hairline px-3 py-1.5 hover:border-primary/40">
         Browse PRDs
       </Link>
+    </div>
+  );
+}
+
+function BuilderClaimsPanel() {
+  const qc = useQueryClient();
+  const fClaims = useServerFn(listBuilderClaims);
+  const mRelease = useServerFn(releaseBuilderClaim);
+  const claimsQ = useQuery({
+    queryKey: ["builder-claims"],
+    queryFn: () => fClaims(),
+    refetchInterval: 5_000,
+  });
+  const release = useMutation({
+    mutationFn: (claim_id: string) => mRelease({ data: { claim_id } }),
+    onSuccess: () => {
+      toast.success("Claim released");
+      qc.invalidateQueries({ queryKey: ["builder-claims"] });
+      qc.invalidateQueries({ queryKey: ["builder-runs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const claims = (claimsQ.data?.claims ?? []) as BuilderClaim[];
+  if (claims.length === 0) return null;
+  return (
+    <div className="mb-6 rounded-xl border hairline bg-card/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          <Lock className="h-3 w-3" /> Active file claims · {claims.length}
+        </div>
+        <div className="text-[10px] text-muted-foreground/70">
+          A Builder mission holds a path until terminal; a second mission on the same path gets blocked.
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {claims.map((c) => (
+          <div key={c.id} className="flex items-center justify-between gap-3 rounded-md border hairline bg-background/40 px-2.5 py-1.5">
+            <div className="min-w-0">
+              <div className="text-xs font-medium truncate">
+                <span className="text-muted-foreground">{c.repo}</span> · <span className="text-foreground">{c.path}</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {c.mission_title ? `${c.mission_title} · ` : ""}claimed {new Date(c.claimed_at).toLocaleString()}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {c.mission_id ? (
+                <Link
+                  to="/missions/$missionId"
+                  params={{ missionId: c.mission_id }}
+                  className="text-[11px] rounded-md border hairline px-2 py-1 hover:bg-secondary"
+                >
+                  Open mission
+                </Link>
+              ) : null}
+              <button
+                onClick={() => release.mutate(c.id)}
+                disabled={!c.is_mine || release.isPending}
+                title={c.is_mine ? "Force-release this claim" : "Only the owner can release this claim"}
+                className="inline-flex items-center gap-1 text-[11px] rounded-md border hairline px-2 py-1 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Unlock className="h-3 w-3" /> Release
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

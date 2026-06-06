@@ -884,6 +884,72 @@ export type Database = {
           },
         ]
       }
+      builder_file_claims: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          id: string
+          mission_id: string | null
+          mission_title: string | null
+          path: string
+          released_at: string | null
+          released_reason: string | null
+          repo: string
+          run_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          mission_id?: string | null
+          mission_title?: string | null
+          path: string
+          released_at?: string | null
+          released_reason?: string | null
+          repo: string
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          mission_id?: string | null
+          mission_title?: string | null
+          path?: string
+          released_at?: string | null
+          released_reason?: string | null
+          repo?: string
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "builder_file_claims_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "builder_file_claims_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           all_day: boolean

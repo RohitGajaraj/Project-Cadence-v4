@@ -1,137 +1,128 @@
 
-# F-AGENT-4 — Swarm HUD + per-feature demo/operator docs pattern
+# What we'll work on (and what we're explicitly skipping)
 
-Two things in one unit of work:
+**Skipping for now** (per your call): Restructure Phases 3–4 — all UI/UX theme polish. Routes will get the Cohere editorial restyle at the very end, after the feature tweaks settle.
 
-1. **Establish a per-feature documentation pattern** so any shipped F-AGENT-* feature (and future bundles) has one canonical, demo-ready doc — instead of details being scattered across `plan.md` log entries, `architecture/orchestration.md` bullets, and `docs/feature-backlog.md` rows.
-2. **Build F-AGENT-4 (Swarm HUD)** end-to-end, and ship its doc using the new pattern.
+**Picking up** (the non-theme pending queue, in build order):
 
-## Part 1 — Documentation pattern
+1. **Bundle 9 Slice 2** — Builder CI-read + auto-fix-on-red. (next)
+2. **Bundle 9 Slice 3** — Shared-file conflict detection for parallel Builder runs.
+3. **FND-RUNTIME 0.9 — forced-restart verification.** Last remaining foundation gap, naturally testable while Slice 2/3 keep Builder busy.
 
-New folder: `docs/features/` with a one-file-per-shipped-feature pattern. Each file is the **single page** to open during a demo or when learning a feature months later.
+After that, the next non-theme thread is **Proof-platform v1.1 bundles 10–12** (Ship · Launch · Support→Learn). Out of scope for this plan; flagged for the next session.
 
-**Folder index:** `docs/features/README.md` — table of every feature file (ID · name · status · route · doc link · one-line "what it does"). Hooked into `docs/README.md` operator-guides table so the parent index stays true.
+---
 
-**Per-feature file template** (every file follows this exact skeleton — drives consistency and demo prep):
+# Slice 2 — Builder reads CI and reacts to red
 
-```text
-# {F-ID} — {Feature name}
+## Goal
+After Builder opens a PR via `github.pr.open` (Slice 1), it must (a) **read GitHub Actions status** on that PR, (b) **surface failures** in the Mission Graph + `/build` Kanban, and (c) **propose a one-file follow-up commit** that targets the failure — gated behind the same `confirm` approval as Slice 1. No autonomous merge, ever.
 
-> Status · Shipped YYYY-MM-DD · Route(s) · Owner agent(s)
+## What to build
 
-## What it does (one paragraph)
-## Why it exists (one paragraph, links to plan.md §4 entry)
-## Where to find it in the app
-   - Nav path, route, panels (with screenshots/short captions if useful later)
-## Demo script (≤ 90 seconds, numbered steps an operator can read aloud)
-## How it works (architecture, server fns, tables, tools — 5–10 bullets, links to architecture/*.md)
-## Governance & guardrails (approval modes, RLS scope, kill-switches)
-## Verification checklist (concrete steps to confirm the feature is live and correct)
-## Known limits / out of scope
-## Related
-   - Links: plan.md §4 entry · architecture/*.md · docs/feature-backlog.md row · sibling feature docs
-```
+### Backend
+- **New built-in tool `github.ci.read`** in `src/lib/ai/tools/registry.server.ts` (`read/auto`, no approval needed):
+  - Input: `{ pr_number: number }` (defaults to "the PR opened by this run" via `tool_calls.result` lookup on `github.pr.open`).
+  - Calls GitHub REST: `GET /repos/{repo}/pulls/{n}` → head sha → `GET /repos/{repo}/commits/{sha}/check-runs` + `/status` → returns `{ overall: "pending"|"success"|"failure"|"neutral", checks: [{name, conclusion, html_url, log_url?}], head_sha, updated_at }`.
+  - Cached via `withIdempotency('github_ci', '<pr>-<head_sha>', …)` per `(pr, head_sha)` so re-polls within a run don't burn quota; cache invalidates when `head_sha` changes.
+- **New built-in tool `github.commit.append`** (`write/confirm`):
+  - Input: `{ pr_number, path, contents_base64, message, idempotency_key }`.
+  - Same allow-list / deny-list as `github.pr.open` (no `.github/`, no migrations, no lockfiles, single file).
+  - Reads PR's head ref, PUTs file via Contents API onto that branch (sha-aware update), returns `{ sha, commit_url, html_url }`.
+  - Wrapped in `withIdempotency('github_commit', idempotency_key, …)` keyed by `pr#-path-attempt#` so re-approval after worker restart returns the cached commit, never double-appends.
+- **Builder system prompt updates** (`seed_pm_lifecycle_tools` migration): after `github.pr.open` resolves, the loop is instructed to call `github.ci.read` on a short backoff (15s → 30s → 60s, cap 3 polls per loop step), then either finalize on green, or — on red — read the failing job's logs (via tool, see below) and propose a single `github.commit.append` patch. If CI is still `pending` after the polls, finalize with status `awaiting_ci` and let the existing `resume-runs` sweeper re-enter via Slice 3's reactor wire-up.
+- **Optional `github.ci.logs` tool** (`read/auto`): `GET /repos/{repo}/actions/jobs/{id}/logs` — returns the tail (last ~8KB) of the failing job's log. Gated by the same single-PR scope. Without this, Slice 2 still ships but Builder is blind to *why* CI failed.
+- **`build.functions.ts` extension**: `listBuilderRuns()` already joins `tool_calls.result`; extend it to surface the latest `github.ci.read` result per run → adds `ci: { overall, updated_at } | null` to each `BuilderRun`.
 
-**Backfill for the bundle** — create stubs (≤ ~80 lines each) for the three already-shipped F-AGENT features, populated from their existing `plan.md` §4 entries and `architecture/orchestration.md` bullets (no new claims — pure consolidation):
+### UI (presentational only — no theme changes)
+- **`/build` Kanban**: add a sixth column (or repurpose "PR open"): **CI status chip** on each PR card — `pending` / `green` / `red` dot + name of the failing check. Click → opens the check's `html_url` in a new tab.
+- **`/missions/$id`**: render `github.ci.read` step results inline in the existing timeline (no new layout work), with the same check chip.
 
-- `docs/features/f-agent-1-orchestrator.md`
-- `docs/features/f-agent-2-memory-reflection.md`
-- `docs/features/f-agent-3-event-reactor.md`
-- `docs/features/f-agent-4-swarm-hud.md` ← full doc, written as F-AGENT-4 ships
+### Cron
+- The existing `resume-runs` sweeper already picks up stalled `agent_runs`. **No new cron**. Builder runs that finalized in `awaiting_ci` get re-woken on the next tick if the PR's head_sha is unchanged and CI moved to terminal.
 
-**Doc-index plumbing:**
-- Add `docs/features/` row to `docs/README.md` (operator-guides table).
-- Update `docs/agent-ecosystem-plan.md` to link each F-ID to its new feature doc (the plan stays the bundle-level strategy; per-feature pages are the demo/operator deliverable).
-- Update **Core memory rule**: when a feature ships a user-facing surface, the "How to use / verify" block now lives in `docs/features/{slug}.md` and `docs/feature-backlog.md` links to it (instead of duplicating). One source of truth per feature.
+## Out of scope (defer to Slice 3)
+- Parallel Builder runs touching the same file. Slice 2 trusts the single-file allow-list; conflict detection lands in Slice 3.
 
-## Part 2 — Build F-AGENT-4 Swarm HUD
+## Verification checklist
+- Open a PRD with a linked issue → Send to Builder → approve PR → CI runs on the real repo (`RohitGajaraj/Test-Project-Cadence`).
+- On green: `/build` card shows green CI chip, mission finalizes `completed`, no follow-up commit.
+- Force-fail CI (push a broken expectation in the issue): Builder lands an approval gate `github.commit.append` with a one-file patch quoting the failing check; approve → commit appears on the PR branch, CI re-runs.
+- Re-approve the same gate after a worker restart → cached commit returns; PR branch has exactly one extra commit.
+- Cap respected: never more than 3 CI polls per loop step.
 
-(Unchanged from the previous plan — repeated here so this single plan is the full unit of work.)
+---
 
-### Goal
-A new route **`/swarm`** (nav slot between Missions and Inbox) that answers in one glance: what is every agent doing right now, which missions are advancing / stalled / failing, what is waiting on me, what did the reactor just fire, and where is the swarm spending time / tokens / cost in the last hour. Read-only HUD; the only writes are Approve / Reject / Dispatch / Skip, reusing the existing server fns from `/inbox` and `/governance`.
+# Slice 3 — Shared-file conflict detection for parallel Builder runs
 
-### Data sources (no new tables)
-One new server fn `getSwarmHud()` in **`src/lib/swarm.functions.ts`** (one round-trip, 2s refetch, RLS-scoped):
+## Goal
+Two parallel Builder missions must not silently race on the same file. Today, `github.pr.open` is happy to open two PRs writing `src/foo.ts` on different branches; the second one wins on merge and the operator finds out at review. Slice 3 makes the conflict visible **before** the PR is opened.
 
-| Panel | Source |
-|---|---|
-| Live agents | `agents` + latest `agent_runs` per agent |
-| Missions in flight | `missions` + `mission_steps` aggregate |
-| Handoff feed | `agent_messages` last 50 |
-| Pending approvals | `agent_approvals` WHERE status=`pending` |
-| Reactor firings | `event_queue` last 50 + pending `confirm` |
-| Throughput strip | `ai_events` last 60 min (count, sum cost, p50 latency, 5-min buckets) |
-| Guardrail hits | `guardrail_hits` last 1h |
+## What to build
 
-No migration unless p50 of `getSwarmHud()` > 200ms on the demo workspace — then add covering indexes on `agent_messages(created_at desc)` and `event_queue(created_at desc)` in a single small migration.
+### Backend
+- **New `builder_file_claims` table** (migration):
+  - `(id uuid pk, user_id uuid, workspace_id uuid, run_id uuid, mission_id uuid, repo text, path text, status text check in ('held','released'), claimed_at timestamptz, released_at timestamptz)`.
+  - Partial unique index `(repo, path) WHERE status='held'` — only one held claim per `(repo, path)` at a time.
+  - RLS: workspace-scoped read; `auth.uid()=user_id` for write. `GRANT SELECT,INSERT,UPDATE TO authenticated; GRANT ALL TO service_role;`.
+- **`github.pr.open` wrapper change**:
+  - Before the Contents-API PUT, attempt to INSERT a `builder_file_claims` row for `(repo, path)`. On unique-violation, **abort the tool call** with a typed error `BuilderFileConflict: path "<p>" is already claimed by run <id> (mission "<title>"). Wait or operator to release.`
+  - On PR-open success: claim stays `held` until terminal.
+  - On mission terminal (`completed` / `completed_with_failures` / `halted`): release all claims for that `run_id` (handled by `maybeCompleteMission` + a small helper, or a trigger on `agent_runs.status` transitioning to terminal).
+- **Stale-claim sweeper**: extend `resume-runs` to also release `held` claims whose `run_id` is in a terminal state (defensive — covers crashes where the trigger missed).
 
-### UI sections
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ HEADER · Swarm · N agents · M missions · last refresh 2s ago│
-├───────────────┬──────────────────────────┬──────────────────┤
-│ Throughput 1h │ Agents grid (one card    │ Attention queue  │
-│ runs · cost · │ per agent: status pill,  │ - Pending approv.│
-│ p50 latency · │ current sub-goal, trust  │ - Confirm reactor│
-│ sparkline     │ arc, step k/N → click    │   firings        │
-│               │ jumps to mission/run)    │ inline Approve / │
-│               │                          │ Reject / Dispatch│
-│               │                          │ / Skip           │
-├───────────────┴──────────────────────────┴──────────────────┤
-│ Missions in flight (table → /missions/$id)                  │
-├──────────────────────────────────────────────────────────────┤
-│ Handoff feed (live, mono timestamps, from → to · mission)   │
-├──────────────────────────────────────────────────────────────┤
-│ Reactor firings (event_type · target · mode · status · age) │
-└──────────────────────────────────────────────────────────────┘
-```
+### UI
+- `/build` Kanban: a card whose latest tool call is the conflict error shows a coral "Conflict · path X (held by mission Y)" chip with a "Release" action (operator-only, calls a new server fn `releaseBuilderClaim({ claim_id })` that flips status to `released`).
+- `/missions/$id`: conflict step renders the same chip inline.
 
-Editorial layout, semantic tokens from `design.md` only, mono-label headers, `rule-hairline` rows. Reuse `StatusPill`, `TrustArcBadge`, `AgentAvatar`, the Approve/Reject row from `/inbox`, the Dispatch/Skip row from `/governance` — import, do not duplicate.
+### Server fn
+- `releaseBuilderClaim({ claim_id })` in `src/lib/build.functions.ts` — auth-scoped, sets `status='released', released_at=now()`. No tool call; pure operator control.
 
-### Files
+## Verification checklist
+- Dispatch two Builder missions whose Goal-resolved paths collide → second mission's `github.pr.open` step lands a `BuilderFileConflict` approval/error → no second PR opens, no second branch created.
+- Finalize the first mission → claim auto-releases → re-running the second mission's loop step opens the PR cleanly.
+- Operator-release works: hit "Release" on `/build` → second mission can proceed without waiting on the first.
+- No regression: a single Builder run still opens exactly one PR and the claim is gone after terminal.
 
-**New**
-- `src/lib/swarm.functions.ts` — `getSwarmHud()`.
-- `src/routes/_authenticated.swarm.tsx` — page, 2s `refetchInterval`, suspense + error + not-found boundaries.
-- `src/components/cadence/SwarmAgentCard.tsx`, `SwarmHandoffFeed.tsx`, `SwarmThroughputStrip.tsx`, `SwarmMissionsTable.tsx`.
-- `docs/features/README.md` — index.
-- `docs/features/f-agent-1-orchestrator.md`
-- `docs/features/f-agent-2-memory-reflection.md`
-- `docs/features/f-agent-3-event-reactor.md`
-- `docs/features/f-agent-4-swarm-hud.md` (full)
+---
 
-**Edited**
-- `src/routes/_authenticated.tsx` — add **Swarm** nav item between Missions and Inbox.
-- `docs/README.md` — add `docs/features/` row to operator-guides table.
-- `docs/agent-ecosystem-plan.md` — link each F-ID to its new feature doc.
-- `docs/feature-backlog.md` — F-AGENT-4 ☐ → ✅; Live status board (Now building cleared, Last updated, Recent log one-liner); F-AGENT-1/2/3 entries get a link to their new feature doc.
-- `plan.md` §4 — append dated F-AGENT-4 + docs-pattern entry with WHY.
-- `architecture/orchestration.md` — promote F-AGENT-4 from "Still deferred" to a new shipped bullet; remove from deferred list.
+# FND-RUNTIME 0.9 — forced-restart verification (test, not new code)
 
-**Deleted**
-- `active-task.md` on completion.
+Substrate already exists (`agent_run_checkpoints`, `resumeAgentLoop()`, idempotency keys, `resume-runs` sweeper). The remaining `◑` is the **proof** — we never deliberately killed a worker mid-loop and watched it resume.
 
-### Out of scope (explicit)
-- Pause/steer-from-graph controls (deferred).
-- `agent.spawn` fan-out + parent merge (E4 polish, deferred).
-- Per-mission message-cap loop guard (deferred).
-- New mutations beyond the four buttons that already exist on `/inbox` and `/governance`.
-- Cross-workspace HUD (workspace-scoped, like every other surface).
+## What to do
+- Add a test entry in `docs/foundation-audit.md` row 0.9 + a one-page playbook in `docs/`:
+  1. Start a multi-step Builder mission (Slice 2 makes this realistic — PR open + CI poll).
+  2. Trigger a worker restart mid-loop via the existing Lovable Cloud restart path (operator action; document the click).
+  3. Observe `resume-runs` picks the run up within ≤60s; loop resumes from the last checkpoint; idempotency-wrapped tool calls (`github_pr`, `github_commit`, `github_ci`) return cached results, not duplicates.
+  4. PR has exactly one branch, one initial commit (per Slice 2), no duplicates on the issue.
+- Flip row 0.9 in `docs/foundation-audit.md` to ✅ with date + checklist outcomes.
 
-### Acceptance criteria
+No code change expected unless the test surfaces a real gap.
 
-1. **Route live.** `/swarm` renders under `_authenticated`; has error + not-found boundaries.
-2. **One query, 2s refresh.** Network tab shows a single `getSwarmHud` call every ~2s; no per-panel waterfall.
-3. **Live agents reflect reality.** Starting a mission from `/missions` flips the orchestrator card on `/swarm` to `running` within one refresh tick.
-4. **Handoff feed updates.** Triggering `agent.handoff` causes a new row to appear at the top of the feed within one tick with correct `from → to` slugs and a mission link.
-5. **Attention panel works end-to-end.** Inline Approve/Reject calls the same fn `/inbox` uses; Dispatch/Skip calls the same fn `/governance` uses.
-6. **Reactor firings panel matches `/governance`.** Same last-50 ordering, same status pills.
-7. **Throughput strip reads from `ai_events`.** Last-hour count, sum cost, p50 latency match a direct SQL spot-check.
-8. **RLS holds.** `demo2@redcadence.app` sees only their own agents/missions/queue rows.
-9. **Design integrity.** No hex literals; semantic tokens only; matches editorial pattern in `design.md`.
-10. **Performance budget.** `getSwarmHud()` p50 ≤ 200ms on the seeded demo workspace; if exceeded, ship the index migration listed above.
-11. **Docs loop closed.** `docs/features/f-agent-4-swarm-hud.md` published; three backfill files for F-AGENT-1/2/3 published; `docs/features/README.md` index live; `docs/README.md`, `plan.md` §4, `architecture/orchestration.md`, `docs/feature-backlog.md` all updated in the same commit; `active-task.md` deleted; commit message includes WHY.
-12. **Demo-readiness.** From `docs/features/f-agent-4-swarm-hud.md` alone, a new operator can sign in as the demo user, navigate to `/swarm`, and follow the demo script to show the swarm in action without opening any other doc or source file.
+---
 
-Switch me to build mode and I'll ship both the docs pattern and the HUD in one pass.
+# Doc loop (closed inside the same commit as each slice)
+
+For each of Slice 2, Slice 3, and the FND-RUNTIME verification:
+- Update **Live status board** in `docs/feature-backlog.md` (`Now building` → done; flip Bundle 9 progress mark when Slice 3 lands; flip Step 1 mark when 0.9 verifies).
+- Append a dated WHY entry to `plan.md` §4.
+- Update `architecture/orchestration.md` Bundle 9 paragraph with the new tools + conflict table.
+- Update `docs/features/` — extend the implied Builder feature doc (or add `docs/features/bundle-9-builder.md`) with the demo script + verification checklist for the operator.
+- Add a `docs/features/builder-ci-and-conflicts.md` operator doc when Slice 3 closes (per the per-feature pattern we just established).
+
+---
+
+# Order, risks, and what I need from you
+
+**Order:** Slice 2 → Slice 3 → FND-RUNTIME 0.9 verification. Each is shippable on its own; we do not bundle them.
+
+**Risks:**
+- GitHub REST rate-limits if CI polling is sloppy. Mitigation: idempotency-keyed by `head_sha`, hard cap 3 polls/step, exponential backoff.
+- `builder_file_claims` deadlock between two missions writing each other's paths in sequence. Mitigation: claims are per-(repo,path) not per-mission; first-writer-wins with operator override.
+- Conflict UX needs to be unambiguous so the operator doesn't think Builder is broken. Mitigation: coral chip on `/build` + named blocker (mission title), explicit Release button.
+
+**Approve this plan, or redirect** — e.g.:
+- Want Slice 2 only this turn and queue Slice 3 next?
+- Want `github.ci.logs` (log-tail tool) included, or kept out to minimize surface area?
+- Want FND-RUNTIME 0.9 verification done *before* Slice 2 instead of after (so Slice 2 ships on a proven-durable substrate)?
