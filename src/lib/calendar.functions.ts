@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callAsAppUser } from "@/integrations/lovable/appUserConnector";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
+const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
 function headers() {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
@@ -13,6 +15,30 @@ function headers() {
     Authorization: `Bearer ${LOVABLE_API_KEY}`,
     "X-Connection-Api-Key": GOOGLE_CALENDAR_API_KEY,
   };
+}
+
+type UserConn = { provider: "google" | "microsoft"; connection_id: string } | null;
+
+async function getUserConnection(
+  supabase: { from: (t: string) => { select: (s: string) => { order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }> } } } } },
+): Promise<UserConn> {
+  const { data, error } = await supabase
+    .from("user_calendar_connections")
+    .select("provider,connection_id")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) return null;
+  return (data as UserConn) ?? null;
+}
+
+function bumpLastSync(
+  supabase: { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> } } },
+  userId: string,
+) {
+  void supabase.from("user_calendar_connections")
+    .update({ last_sync_at: new Date().toISOString() })
+    .eq("user_id", userId);
 }
 
 type GEvent = {
