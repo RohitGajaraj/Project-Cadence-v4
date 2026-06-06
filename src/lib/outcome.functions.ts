@@ -29,7 +29,7 @@ export const getOutcomeData = createServerFn({ method: "GET" })
         .limit(25),
       supabase
         .from("agent_approvals")
-        .select("id, tool_name, agent_slug, agent_name:agent_slug, args, rationale, status, decided_at, created_at")
+        .select("id, tool_name, agent_slug, args, rationale, status, decided_at, created_at")
         .in("tool_name", LAUNCH_TOOLS)
         .order("created_at", { ascending: false })
         .limit(25),
