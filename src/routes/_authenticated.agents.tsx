@@ -50,6 +50,7 @@ function AgentsPage() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
       qc.invalidateQueries({ queryKey: ["agent-trust"] });
+      qc.invalidateQueries({ queryKey: ["agent-reflections"] });
       const mid = (res as { mission_id?: string | null } | undefined)?.mission_id;
       const tid = (res as { trace_id?: string } | undefined)?.trace_id;
       if (mid) toast.success("Mission started — open Missions to follow the hops");
