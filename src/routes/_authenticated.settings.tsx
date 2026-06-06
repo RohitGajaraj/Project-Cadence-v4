@@ -1,22 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { MODELS } from "@/lib/ai/models";
 import { listIntegrations, upsertIntegration, disconnectIntegration, PROVIDERS } from "@/lib/integrations.functions";
-import { Plug, CheckCircle2, Clock, Key, Trash2 } from "lucide-react";
+import { Plug, CheckCircle2, Clock, Key, Trash2, Compass, Save } from "lucide-react";
 import { listApiKeys, saveApiKey, deleteApiKey, testApiKey, BYO_PROVIDERS } from "@/lib/byokeys.functions";
+import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: (search: Record<string, unknown>): { section?: string } => ({
+    section: typeof search.section === "string" ? search.section : undefined,
+  }),
   component: SettingsPage,
   head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
 });
 
 function SettingsPage() {
+  const { section } = Route.useSearch();
+  const briefRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (section === "brief" && briefRef.current) {
+      briefRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [section]);
   const qc = useQueryClient();
   const fProfile = useServerFn(getProfile);
   const fProjects = useServerFn(listProjects);
@@ -134,6 +146,8 @@ function SettingsPage() {
             How Cadence and your AI agents should address you and operate.
           </p>
         </header>
+
+        <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
 
         <form
           onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
