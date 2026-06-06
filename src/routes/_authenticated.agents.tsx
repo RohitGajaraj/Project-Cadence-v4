@@ -83,6 +83,12 @@ function AgentsPage() {
   const selAny = selected as (typeof selected & { cron_schedule?: string | null; cron_input?: string | null; last_scheduled_run_at?: string | null }) | undefined;
   const selectedRuns = (runs.data?.runs ?? []).filter((r) => r.agent_id === selected?.id);
 
+  const reflectionsQ = useQuery({
+    queryKey: ["agent-reflections", selected?.slug ?? null],
+    queryFn: () => fReflections({ data: { agentSlug: selected!.slug, limit: 5 } }),
+    enabled: Boolean(selected?.slug),
+  });
+
   useEffect(() => {
     setSchedule(selAny?.cron_schedule ?? "");
     setCronInput(selAny?.cron_input ?? "");
