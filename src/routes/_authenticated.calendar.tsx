@@ -217,6 +217,29 @@ function CalendarPage() {
 
   const list = (events.data?.events ?? []) as unknown as EventRow[];
 
+  // Seeded sample events shown only when the user has no real events yet —
+  // gives the empty calendar life so the layout reads as a calendar, not a
+  // blank slate. Replaced as soon as Sync pulls real data.
+  const seedEvents: EventRow[] = (() => {
+    if (list.length > 0) return [];
+    const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const mk = (offsetDays: number, hour: number, mins: number, title: string, location: string | null): EventRow => {
+      const s = new Date(d0); s.setDate(s.getDate() + offsetDays); s.setHours(hour, mins, 0, 0);
+      const e = new Date(s); e.setMinutes(e.getMinutes() + 45);
+      return {
+        id: `seed-${offsetDays}-${hour}`,
+        title, description: null, location,
+        start_at: s.toISOString(), end_at: e.toISOString(), all_day: false,
+        hangout_link: null, html_link: null, organizer_email: null, attendees: [],
+      };
+    };
+    return [
+      mk(1, 10, 0, "Weekly product review", "Zoom"),
+      mk(3, 14, 30, "Customer discovery — Acme", null),
+    ];
+  })();
+  const displayList = list.length > 0 ? list : seedEvents;
+
   // Unified chronological feed for List view: meetings + calendar events,
   // sorted by start time. Meetings get a "Meeting" badge; events stay native.
   type FeedItem =
