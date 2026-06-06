@@ -12,10 +12,10 @@
 
 | # | Name | Outcome | Status |
 |---|---|---|---|
-| F-AGENT-1 | Orchestrator + multi-agent missions | A goal becomes a DAG of specialist hops, dispatched and joined automatically. | ✅ shipped 2026-06-06 |
-| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | Specialists actually learn between runs; trust arc advances on real outcomes, not operator clicks. | ☐ next |
-| F-AGENT-3 | Event reactor + auto-pipelines | Discover→Deliver→Ship loop runs without "click Advance" — signals/opportunities/PRD-status changes wake the right agent. | ☐ |
-| F-AGENT-4 | Swarm HUD | Single view of live missions, recent handoffs, pending approvals, auto-pipeline firings. | ☐ |
+| F-AGENT-1 | Orchestrator + multi-agent missions | A goal becomes a DAG of specialist hops, dispatched and joined automatically. | ✅ shipped 2026-06-06 — [`features/f-agent-1-orchestrator.md`](./features/f-agent-1-orchestrator.md) |
+| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | Specialists actually learn between runs; trust arc advances on real outcomes, not operator clicks. | ✅ shipped 2026-06-06 — [`features/f-agent-2-memory-reflection.md`](./features/f-agent-2-memory-reflection.md) |
+| F-AGENT-3 | Event reactor + auto-pipelines | Discover→Deliver→Ship loop runs without "click Advance" — signals/opportunities/PRD-status changes wake the right agent. | ✅ shipped 2026-06-06 — [`features/f-agent-3-event-reactor.md`](./features/f-agent-3-event-reactor.md) |
+| F-AGENT-4 | Swarm HUD | Single view of live missions, recent handoffs, pending approvals, auto-pipeline firings. | ✅ shipped 2026-06-06 — [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) |
 
 Each step depends on the one above it (you cannot meaningfully react to events without the orchestrator routing them; the HUD reads from all three).
 
