@@ -16,6 +16,7 @@ import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
+import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
 
@@ -60,6 +61,18 @@ function safeParseAction(text: string): ModelReply | null {
 }
 
 async function recallMemory(supabase: SupabaseClient, userId: string, agentSlug: string, query: string): Promise<string[]> {
+  // Two sources: semantic-match across all memory kinds (notes + reflections)
+  // and the top recent reflections for this agent (importance-ranked, useful
+  // when the embedding store is sparse or the goal is novel). Dedup by content.
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (s: unknown) => {
+    if (typeof s !== "string") return;
+    const t = s.trim();
+    if (!t || seen.has(t)) return;
+    seen.add(t);
+    out.push(t);
+  };
   try {
     const v = await embedOne(query);
     const { data } = await supabase.rpc("match_agent_memory", {
@@ -68,8 +81,17 @@ async function recallMemory(supabase: SupabaseClient, userId: string, agentSlug:
       for_agent_slug: agentSlug,
       match_count: 5,
     });
-    return (data ?? []).map((m: { content: string }) => m.content);
-  } catch { return []; }
+    (data ?? []).forEach((m: { content: string }) => push(m.content));
+  } catch { /* embed/RPC failure is non-fatal */ }
+  try {
+    const { data } = await supabase.rpc("recent_agent_reflections", {
+      for_user: userId,
+      for_agent_slug: agentSlug,
+      match_count: 3,
+    });
+    (data ?? []).forEach((m: { content: string }) => push(m.content));
+  } catch { /* non-fatal */ }
+  return out.slice(0, 8);
 }
 
 function xmlEscape(str: string): string {
@@ -204,6 +226,17 @@ export async function runAgentLoop(
           duration_ms: 0,
         }).eq("id", runId);
       } catch (e) { console.error("agent_runs finalize failed:", e); }
+    }
+    // F-AGENT-2: clean completions trigger a reflection + autonomy auto-advance.
+    // Halted runs skip both — a halt is a governance signal that should not
+    // be turned into a self-confirming "lesson" without operator review.
+    if (!halted) {
+      await autoReflect(supabase, {
+        userId, agentId: agent.id, agentSlug: agent.slug,
+        workspaceId, runId, traceId,
+        goal: input.goal, finalMsg,
+      });
+      await maybeAutoAdvanceArc(supabase, userId, agent.id);
     }
     // If the mission has no outstanding handoff messages, mark it completed
     // when this terminal hop finishes cleanly.
@@ -474,6 +507,14 @@ export async function resumeAgentLoop(
         status: halted ? "halted" : "completed", output: finalMsg, duration_ms: 0,
       }).eq("id", runId);
     } catch (e) { console.error("agent_runs finalize failed:", e); }
+    if (!halted) {
+      await autoReflect(supabase, {
+        userId: run.user_id, agentId: agent.id, agentSlug: agent.slug,
+        workspaceId: run.workspace_id ?? null, runId, traceId,
+        goal: run.input, finalMsg,
+      });
+      await maybeAutoAdvanceArc(supabase, run.user_id, agent.id);
+    }
     if (run.mission_id && !halted) {
       try { await maybeCompleteMission(supabase, run.mission_id); } catch (e) { console.error("mission close failed (resume):", e); }
     }

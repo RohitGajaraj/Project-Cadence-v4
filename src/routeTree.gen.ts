@@ -47,6 +47,7 @@ import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
+import { Route as ApiPublicHooksMemoryTickRouteImport } from './routes/api/public/hooks/memory-tick'
 import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/public/hooks/indexer-tick'
 import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/hooks/eval-tick'
 import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
@@ -250,6 +251,12 @@ const ApiPublicHooksResumeRunsRoute =
     path: '/api/public/hooks/resume-runs',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMemoryTickRoute =
+  ApiPublicHooksMemoryTickRouteImport.update({
+    id: '/api/public/hooks/memory-tick',
+    path: '/api/public/hooks/memory-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksIndexerTickRoute =
   ApiPublicHooksIndexerTickRouteImport.update({
     id: '/api/public/hooks/indexer-tick',
@@ -333,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -379,6 +387,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -427,6 +436,7 @@ export interface FileRoutesById {
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
   '/api/public/hooks/eval-tick': typeof ApiPublicHooksEvalTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
+  '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
     | '/api/public/hooks/indexer-tick'
+    | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
@@ -521,6 +532,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
     | '/api/public/hooks/indexer-tick'
+    | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   id:
@@ -568,6 +580,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eval-suite-tick'
     | '/api/public/hooks/eval-tick'
     | '/api/public/hooks/indexer-tick'
+    | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
@@ -586,6 +599,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEvalSuiteTickRoute: typeof ApiPublicHooksEvalSuiteTickRoute
   ApiPublicHooksEvalTickRoute: typeof ApiPublicHooksEvalTickRoute
   ApiPublicHooksIndexerTickRoute: typeof ApiPublicHooksIndexerTickRoute
+  ApiPublicHooksMemoryTickRoute: typeof ApiPublicHooksMemoryTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -858,6 +872,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksResumeRunsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/memory-tick': {
+      id: '/api/public/hooks/memory-tick'
+      path: '/api/public/hooks/memory-tick'
+      fullPath: '/api/public/hooks/memory-tick'
+      preLoaderRoute: typeof ApiPublicHooksMemoryTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/indexer-tick': {
       id: '/api/public/hooks/indexer-tick'
       path: '/api/public/hooks/indexer-tick'
@@ -1023,19 +1044,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEvalSuiteTickRoute: ApiPublicHooksEvalSuiteTickRoute,
   ApiPublicHooksEvalTickRoute: ApiPublicHooksEvalTickRoute,
   ApiPublicHooksIndexerTickRoute: ApiPublicHooksIndexerTickRoute,
+  ApiPublicHooksMemoryTickRoute: ApiPublicHooksMemoryTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

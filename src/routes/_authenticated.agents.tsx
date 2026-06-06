@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Bot, Sparkles, Send, Clock, Gauge } from "lucide-react";
+import { Bot, Sparkles, Send, Clock, Gauge, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
-import { listAgents, listAgentRuns, updateAgentSchedule } from "@/lib/agents.functions";
+import { listAgents, listAgentRuns, updateAgentSchedule, listAgentReflections, type AgentReflection } from "@/lib/agents.functions";
 import { runAgent } from "@/lib/agent_loop.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listApiKeys } from "@/lib/byokeys.functions";
@@ -28,6 +28,7 @@ function AgentsPage() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
+  const fReflections = useServerFn(listAgentReflections);
 
   const fTrust = useServerFn(getAllAgentTrust);
   const fSetArc = useServerFn(setAgentArc);
@@ -49,6 +50,7 @@ function AgentsPage() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["runs"] });
       qc.invalidateQueries({ queryKey: ["agent-trust"] });
+      qc.invalidateQueries({ queryKey: ["agent-reflections"] });
       const mid = (res as { mission_id?: string | null } | undefined)?.mission_id;
       const tid = (res as { trace_id?: string } | undefined)?.trace_id;
       if (mid) toast.success("Mission started — open Missions to follow the hops");
@@ -81,6 +83,12 @@ function AgentsPage() {
   const selected = (agents.data?.agents ?? []).find((a) => a.id === selectedId) ?? (agents.data?.agents ?? [])[0];
   const selAny = selected as (typeof selected & { cron_schedule?: string | null; cron_input?: string | null; last_scheduled_run_at?: string | null }) | undefined;
   const selectedRuns = (runs.data?.runs ?? []).filter((r) => r.agent_id === selected?.id);
+
+  const reflectionsQ = useQuery({
+    queryKey: ["agent-reflections", selected?.slug ?? null],
+    queryFn: () => fReflections({ data: { agentSlug: selected!.slug, limit: 5 } }),
+    enabled: Boolean(selected?.slug),
+  });
 
   useEffect(() => {
     setSchedule(selAny?.cron_schedule ?? "");
@@ -282,6 +290,12 @@ function AgentsPage() {
                     </div>
                   ))}
                 </div>
+
+                <ReflectionsPanel
+                  reflections={reflectionsQ.data?.reflections ?? []}
+                  loading={reflectionsQ.isLoading}
+                  agentName={selected.name}
+                />
               </>
             )}
           </section>
@@ -428,6 +442,68 @@ function AutonomyDial({
       <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
         Currently <span className="text-foreground">{ARC_LABELS[current]}</span> — {ARC_BLURB[current]}
       </p>
+    </div>
+  );
+}
+
+function ReflectionsPanel({
+  reflections,
+  loading,
+  agentName,
+}: {
+  reflections: AgentReflection[];
+  loading: boolean;
+  agentName: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
+        <BookOpen className="h-3 w-3 text-violet-300" />
+        Recent reflections
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help text-[10px] normal-case tracking-normal text-muted-foreground/70 underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">
+              what's this
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-sm text-left p-3 text-[11px] leading-snug">
+            After every clean run, {agentName} writes a one-paragraph lesson to its memory. Future runs of the same agent recall the top reflections, so behaviour compounds run-over-run.
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      {loading && <div className="text-xs text-muted-foreground">Loading reflections…</div>}
+      {!loading && reflections.length === 0 && (
+        <div className="text-xs text-muted-foreground">
+          No reflections yet. They appear automatically after this agent completes a run.
+        </div>
+      )}
+      {reflections.map((r) => (
+        <div key={r.id} className="bento p-4">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            <span>{new Date(r.created_at).toLocaleString()}</span>
+            <span className="ml-auto inline-flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5">
+              importance {r.importance}/5
+            </span>
+          </div>
+          <div className="mt-2 text-sm leading-relaxed">{r.content}</div>
+          {(r.metadata?.what_to_change || r.metadata?.what_worked) && (
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              {r.metadata?.what_worked && (
+                <div className="rounded-md border border-border bg-secondary/30 p-2">
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-emerald-300/80">What worked</div>
+                  <div className="mt-1 text-foreground/85">{r.metadata.what_worked}</div>
+                </div>
+              )}
+              {r.metadata?.what_to_change && (
+                <div className="rounded-md border border-border bg-secondary/30 p-2">
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-amber-300/80">What to change</div>
+                  <div className="mt-1 text-foreground/85">{r.metadata.what_to_change}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
