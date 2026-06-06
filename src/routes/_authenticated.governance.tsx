@@ -301,6 +301,7 @@ function GovernancePage() {
                       disabled={resolveMut.isPending}
                       onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "approved" })}
                       className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
+                      title="Approve — runs the tool call. Reject keeps it paused."
                     >
                       <CheckCircle2 className="h-3 w-3" /> Approve
                     </button>
@@ -309,6 +310,7 @@ function GovernancePage() {
                       disabled={resolveMut.isPending}
                       onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "rejected" })}
                       className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 transition inline-flex items-center gap-1"
+                      title="Reject — nothing runs. The mission stays paused on this step."
                     >
                       <XCircle className="h-3 w-3" /> Reject
                     </button>

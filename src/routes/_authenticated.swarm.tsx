@@ -210,7 +210,7 @@ function AttentionQueue({
     <section className="col-span-12 lg:col-span-5 rounded-xl border border-border bg-background/40 p-4 space-y-3">
       <MonoLabel>Attention queue</MonoLabel>
       {empty ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Nothing waiting on you. The swarm is humming.</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">Nothing waiting on you. Agents are at work.</p>
       ) : (
         <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
           {hud.approvals.map((a) => (

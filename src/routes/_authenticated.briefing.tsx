@@ -48,7 +48,7 @@ const FIELDS: FieldSpec[] = [
     key: "target_user",
     label: "Target user (ICP)",
     hint: "Who you're building for. Be specific — agents anchor on this.",
-    placeholder: "Lead/solo PM at a 10–100 person AI-native B2B SaaS. Ships weekly. Owns roadmap + discovery + comms.",
+    placeholder: "Lead/solo PM at a 10 to 100 person B2B SaaS team. Ships weekly. Owns roadmap, discovery, and comms.",
     rows: 3,
   },
   {

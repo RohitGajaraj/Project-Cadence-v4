@@ -5,6 +5,74 @@ import { callModel } from "@/lib/ai/runtime.server";
 
 const MODEL = "google/gemini-2.5-flash";
 
+/**
+ * F-TODAY-AUTOSEED — internal helper so the dashboard loader can auto-generate
+ * today's brief on first sign-in instead of asking the operator to seed it.
+ * Routed through the AI runtime chokepoint; RLS-scoped by the supabase client.
+ */
+export async function ensureTodayBrief(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const { data: existing } = await supabase
+    .from("daily_briefs")
+    .select("*")
+    .eq("brief_date", todayStr)
+    .maybeSingle();
+  if (existing) return existing;
+
+  const [{ data: tasks }, { data: meetings }, { data: profile }] = await Promise.all([
+    supabase.from("tasks").select("title,priority,is_deep_work,status,due_date").neq("status", "done").limit(30),
+    supabase
+      .from("meetings")
+      .select("title,start_at,end_at,stakeholder")
+      .gte("start_at", today.toISOString())
+      .lt("start_at", tomorrow.toISOString()),
+    supabase.from("profiles").select("display_name").maybeSingle(),
+  ]);
+
+  const prompt = `Write a calm, 2-3 sentence daily brief for ${profile?.display_name ?? "the user"}.
+Reference what kind of day this is (maker / collaboration / mixed) based on the meetings and deep-work tasks.
+Mention one concrete focus. Avoid emojis. Address the user by first name.
+
+TODAY'S MEETINGS: ${JSON.stringify(meetings ?? [])}
+OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
+
+  const briefRes = await callModel(supabase as never, userId, {
+    surface: "brief",
+    model: MODEL,
+    messages: [
+      { role: "system", content: "You are Cadence, an agent-native chief of staff. Tone: Apple-calm, Notion-clear." },
+      { role: "user", content: prompt },
+    ],
+  });
+  const summary = briefRes.output;
+
+  const meetingMinutes = (meetings ?? []).reduce(
+    (a, m) => a + (new Date(m.end_at).getTime() - new Date(m.start_at).getTime()) / 60000,
+    0,
+  );
+  const deepCount = (tasks ?? []).filter((t) => t.is_deep_work).length;
+  const focus = Math.max(5, Math.min(100, 60 + deepCount * 8 - Math.floor(meetingMinutes / 30) * 4));
+
+  const { data, error } = await supabase
+    .from("daily_briefs")
+    .upsert(
+      { user_id: userId, brief_date: todayStr, summary, focus_score: focus },
+      { onConflict: "user_id,brief_date" },
+    )
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export const listCopilotMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -80,55 +148,11 @@ export const generateDailyBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const todayStr = today.toISOString().slice(0, 10);
-
-    const [{ data: tasks }, { data: meetings }, { data: profile }] = await Promise.all([
-      supabase.from("tasks").select("title,priority,is_deep_work,status,due_date").neq("status", "done").limit(30),
-      supabase
-        .from("meetings")
-        .select("title,start_at,end_at,stakeholder")
-        .gte("start_at", today.toISOString())
-        .lt("start_at", tomorrow.toISOString()),
-      supabase.from("profiles").select("display_name").maybeSingle(),
-    ]);
-
-    const prompt = `Write a calm, 2–3 sentence daily brief for ${profile?.display_name ?? "the user"}.
-Reference what kind of day this is (maker / collaboration / mixed) based on the meetings and deep-work tasks.
-Mention one concrete focus. Avoid emojis. Address the user by first name.
-
-TODAY'S MEETINGS: ${JSON.stringify(meetings ?? [])}
-OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
-
-    const briefRes = await callModel(supabase as never, userId, {
-      surface: "brief",
-      model: MODEL,
-      messages: [
-        { role: "system", content: "You are Cadence, an AI chief-of-staff. Tone: Apple-calm, Notion-clear." },
-        { role: "user", content: prompt },
-      ],
-    });
-    const summary = briefRes.output;
-
-    // Compute simple focus score from inputs
-    const meetingMinutes = (meetings ?? []).reduce(
-      (a, m) => a + (new Date(m.end_at).getTime() - new Date(m.start_at).getTime()) / 60000,
-      0,
-    );
-    const deepCount = (tasks ?? []).filter((t) => t.is_deep_work).length;
-    const focus = Math.max(5, Math.min(100, 60 + deepCount * 8 - Math.floor(meetingMinutes / 30) * 4));
-
-    const { data, error } = await supabase
-      .from("daily_briefs")
-      .upsert(
-        { user_id: userId, brief_date: todayStr, summary, focus_score: focus },
-        { onConflict: "user_id,brief_date" },
-      )
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return { brief: data };
+    // Operator pressed Refresh — force a regen by deleting today's row first,
+    // then ensure it. Auto-seed on first sign-in uses the same helper from the
+    // dashboard loader (F-TODAY-AUTOSEED).
+    const todayStr = new Date().toISOString().slice(0, 10);
+    await supabase.from("daily_briefs").delete().eq("brief_date", todayStr);
+    const brief = await ensureTodayBrief(supabase, userId);
+    return { brief };
   });

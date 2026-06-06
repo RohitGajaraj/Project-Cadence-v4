@@ -147,15 +147,17 @@ function InboxPage() {
                         disabled={decide.isPending}
                         onClick={() => decide.mutate({ approvalId: a.id, decision: "reject" })}
                         className="btn-pill-outline disabled:opacity-50"
+                        title={`Reject — nothing runs. ${a.agent_slug ?? "Agent"} stays paused on this step.`}
                       >
-                        <X className="h-3.5 w-3.5" /> Reject
+                        <X className="h-3.5 w-3.5" /> Reject · nothing runs
                       </button>
                       <button
                         disabled={decide.isPending}
                         onClick={() => decide.mutate({ approvalId: a.id, decision: "approve" })}
                         className="btn-pill disabled:opacity-50"
+                        title={`Approve — runs ${a.tool_name} now. Reject stays paused.`}
                       >
-                        <Check className="h-3.5 w-3.5" /> Approve & run
+                        <Check className="h-3.5 w-3.5" /> Approve · run {a.tool_name}
                       </button>
                     </div>
                   )}

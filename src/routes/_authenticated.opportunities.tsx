@@ -54,7 +54,7 @@ function OppsPage() {
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8">
-          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Phase 2 · Reasoning engine</div>
+          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Define</div>
           <h1 className="mt-3 font-display text-4xl tracking-tight">
             <span className="neural-text">Opportunities</span> backlog
           </h1>
