@@ -119,3 +119,35 @@ export const updateAgentSchedule = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * F-AGENT-2 — Recent reflections for an agent. Reads via the
+ * `recent_agent_reflections` SECURITY DEFINER RPC so it can't leak across
+ * users (the RPC scopes by `for_user`).
+ */
+export type AgentReflection = {
+  id: string;
+  content: string;
+  importance: number;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export const listAgentReflections = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      agentSlug: z.string().min(1).max(60),
+      limit: z.number().int().min(1).max(20).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase.rpc("recent_agent_reflections", {
+      for_user: userId,
+      for_agent_slug: data.agentSlug,
+      match_count: data.limit ?? 5,
+    });
+    if (error) throw new Error(error.message);
+    return { reflections: (rows ?? []) as AgentReflection[] };
+  });
