@@ -1,130 +1,78 @@
-## Goal
+# Plan — Extend v3 Audit with Language, Naming & Microcopy Layer
 
-Deliver a brutally honest, end-to-end audit of Cadence that (a) walks the running app as a first-time governor, (b) benchmarks against the agent-OS / agent-build / product-OS landscape, (c) challenges the current thesis where it deserves challenge, and (d) lands as a versioned strategy document the swarm can read on the next session — plus a tight executive summary inline in chat.
+Add a dedicated copy/IA-language workstream on top of the in-flight v3 product audit. No code changes in this pass — audit + recommendations only, landed as a committed doc plus an in-chat summary, same delivery contract as the parent audit.
 
-No code will be written in this audit. All recommendations get **Impact × Effort × Horizon × Strategic importance × Primary benefit** tags and a Top-5 / Top-10 / Top-20 rollup so the team can act.
+## 1. Scope of the language audit
 
----
+Cover every surface where words shape the product:
 
-## What I will read and walk (evidence base)
+- **Naming** — product name (Cadence), module names (Discovery, Strategist, Builder, Growth, Analyst, Orchestrator, Swarm, Missions, Traces, Evals, Guardrails, Drift, Memory, Lineage, Governance, Build, etc.), route names in the URL bar, sidebar labels in `AppShell`, page H1s.
+- **Navigation & IA copy** — sidebar groupings, section headers, breadcrumbs, empty-state titles.
+- **Microcopy** — buttons, CTAs, form labels, placeholders, helper text, validation errors, toast messages, confirm dialogs, approval-gate prompts.
+- **Tooltips & info popovers** — every `Tooltip`, `HoverCard`, `?` icon, "What is this?" affordance across the 31 authenticated routes.
+- **Agent / AI surface language** — agent names, role descriptions, status verbs (Observing/Proving/Trusted/Ambient), trace step labels, tool-call labels, model+via chips, score labels, "Replay-with" / "View Trace" affordances.
+- **Governance language** — approval gate copy, autonomy dial labels, risk/severity wording, "block / warn / allow" guardrail verbs, drift watcher copy.
+- **Onboarding & empty states** — first-run, zero-data, loading, error, not-found, permission-denied screens.
+- **Marketing / public surfaces** — `/p/*` public pages, landing hero, meta titles + descriptions, OG copy.
+- **System voice** — does the product talk like an operator, a copilot, a dashboard, or an OS? Is it consistent?
 
-**Repo (already partly loaded):**
-- `README.md`, `docs/strategy/v2-positioning-2026-06-02.md`, `docs/strategy/session-decisions.md`
-- `plan.md` §1–6, `docs/feature-backlog.md` Live status board + Build-order rollup
-- `architecture/{runtime,orchestration,frontend,data,security,integrations}.md`
-- `design.md` + `src/styles.css` tokens
-- All 31 authenticated routes under `src/routes/_authenticated.*` — read each to map IA, surface intent, redundancy, and dead ends
-- `src/components/cadence/AppShell.tsx` (nav IA), `CommandPalette.tsx`, `MissionGraph.tsx`
-- Server-fn surface in `src/lib/*.functions.ts` (what's actually wired vs. just routed)
-- `docs/references/competitive-reference.md` + `docs/considerations.md`
+## 2. Evaluation lenses
 
-**Live preview walk** (as a brand-new operator on `demo@redcadence.app`):
-- `/login` → `/` (Today) → can I tell what this product is in 10 seconds?
-- Sidebar pillar-by-pillar: Workspace · Discover · Deliver · Agents · AI Ops · Govern · Settings
-- Critical surfaces: `/briefing`, `/discovery`, `/opportunities`, `/prds`, `/roadmap`, `/build`, `/agents`, `/missions`, `/swarm`, `/inbox`, `/governance`, `/traces`, `/evals`, `/drift`, `/budgets`, `/integrations`, `/chat`, `/analytics`
-- Capture screenshots of each surface for the audit (embedded in the doc as references; not committed images)
-- Try to actually run a mission end-to-end: signal → opportunity → PRD → build → ship → learn. Note exactly where the loop breaks.
-- Hit each empty state on a fresh workspace to test first-run UX.
+Each surface graded against:
 
-**Competitive research** (spawned in parallel as read-only background subagents — each returns a focused brief, none of it bloats my context):
-- **Engineering-autonomy lane:** Factory.ai (Droids), Cognition Devin, Replit Agent, Cursor Agents, Lovable itself, Bolt, v0, OpenAI Codex, Claude Code, Augment
-- **Product-OS / PM lane:** Linear (Agents + Skills), Productboard AI, Notion AI, Coda AI, Height Copilot, Airtable AI, Monday AI
-- **Agent-OS / orchestration lane:** LangGraph Platform, CrewAI Enterprise, AutoGen Studio, Vellum, Sema4 (formerly Reworkd), Lindy, Relevance AI, Stack AI, n8n + agents, Make
-- **Governance / trust-stack lane:** Langfuse, Braintrust, Arize Phoenix, Weights & Biases Weave, Helicone, Maxim AI, Patronus, Lakera
-- **Adjacent inspirations the user named:** Paxel (YC W25 — Human/Machine mode)
-- For each: positioning, wedge, UX model, governance posture, what they own, what they don't, what they teach us
+1. **Clarity** — would a new Solo PM / Founder / Technical Founder understand it in 3 seconds?
+2. **Verbosity** — is it the shortest version that still teaches?
+3. **Consistency** — same concept, same word, every screen (no Mission/Run/Trajectory/Trace drift).
+4. **Voice** — agent-native, operator-grade, governance-aware — not generic SaaS, not copilot-cute, not enterprise-stiff.
+5. **Naming integrity** — does the name describe what the thing *does* for the persona, or is it internal jargon leaking?
+6. **Information scent** — does the label predict what's behind the click?
+7. **Tooltip discipline** — tooltip exists only where the label can't carry the meaning; never restates the label.
+8. **Accessibility** — sentence case, no ALL CAPS shouting, screen-reader-friendly, no icon-only controls without `aria-label`.
+9. **i18n-readiness** — no concatenated strings, no English idioms baked into UI logic.
 
----
+## 3. Method (evidence walk)
 
-## Audit framework (the deliverable's structure)
+- Walk all 31 authenticated routes + `AppShell` + public `/p/*` + auth screens in the live preview as a first-time operator, capturing every label, tooltip, empty state, toast, and error.
+- Cross-read against `design.md` (voice/tone if any), `docs/strategy/` latest positioning (persona language + USP wording), `README.md` (thesis vocabulary), and `docs/feature-backlog.md` (feature names).
+- Diff in-product names against doc names — flag every place the UI says one thing and docs say another (e.g. Mission vs Run vs Trajectory, Trace vs Lineage, Agent vs Specialist, Swarm vs Roster).
+- Sample every distinct tooltip in the app; cluster as Keep / Rewrite / Delete / Add-missing.
+- Pull the existing AI message UI contract from `design.md` and grade actual implementation copy against it.
 
-The doc will follow the framework the user laid out, in this exact order:
+## 4. Deliverables
 
-```text
-0. Executive Summary (1 page, brutal)
-1. Top 10 Critical Findings (ranked by user × business impact)
-2. Core Problem & Value Proposition audit
-   - "What is this?" 10-second test
-   - Positioning vs. v2 doc — is the product the positioning?
-3. UX & Product Flow audit
-   - IA tree (current 6-pillar nav, 31 routes)
-   - Cognitive-load map per surface
-   - Empty-state inventory
-   - The closed-loop walk: where it breaks, why, and at which seam
-4. AI-Native & Agent-First experience
-   - Human-mode vs. Machine-mode (Paxel-inspired) recommendation
-   - MCP / A2A / structured-output readiness
-   - Where the product still puts a human in the middle
-5. Feature Rationalization matrix
-   - Must Have · Nice to Have · Differentiator · Commodity · Merge · Remove · Missing
-   - Special call-out: 31 authenticated routes — which collapse, which die
-6. Dashboard & Visual experience (incl. `/` Today, `/swarm`, `/missions`)
-7. User Journey maps × 7 personas (first-time, returning, power, enterprise, founder, investor, AI agent)
-8. Market & Competitive positioning (post-research synthesis)
-9. Technical & AI readiness (chokepoint, orchestration, scaling risk)
-10. Investor lens — what a YC partner asks, what concerns them, what excites
-11. Hidden Assumptions Audit (e.g. "three equal personas" — is that focus or hedge?)
-12. Missing Opportunities (network effects, growth loops, retention loops)
-13. Thesis Challenge (since user asked) — three alternative positionings stress-tested against current one
-14. Rebuild-from-scratch exercise — keep / remove / merge / redesign / introduce
-15. Prioritized Roadmap
-    - Top 5 (this week / next 2 weeks)
-    - Top 10 (1–2 months)
-    - Top 20 (3–6 months)
-    - With Impact × Effort × Horizon × Strategic-importance × Primary-benefit on every item
-16. Investor Readiness Scorecard (Problem · Market · Product · UX · AI · Differentiation · Scalability · Vision — 1–10 each, with the why)
-```
+### Committed doc
+`docs/strategy/v3-audit-language-2026-06-06.md` — companion to the main v3 audit. Sections:
 
-Every recommendation will be tagged like:
+1. Executive summary (5 sharpest copy/naming findings).
+2. Naming integrity matrix — every module/route/agent/concept × current name × what users think it means × proposed name × rationale × blast radius.
+3. Sidebar & IA rename proposal — current 31-route labels → target ~8–12 surface labels, with old→new mapping.
+4. Tooltip audit — Keep / Rewrite / Delete / Missing, per route, with proposed rewrites.
+5. Microcopy rewrites — buttons, empty states, approval gates, toasts, errors — current vs proposed, side-by-side.
+6. Voice & tone guide — one-page house style: persona, reading level, sentence case rules, banned words (e.g. "leverage", "seamless", "unlock"), preferred verbs for agent actions, governance vocabulary, AI message chip copy spec.
+7. Agent/AI surface language spec — canonical names for agent states, trace steps, tool calls, trust arc, autonomy dial.
+8. Marketing/public copy pass — landing, meta, OG.
+9. Prioritized rewrite roadmap — P0 (rename + IA), P1 (tooltips + empty states), P2 (microcopy polish), P3 (voice guide enforcement).
+10. Open questions for the founder (≤5).
 
-```text
-[REC-014] Collapse /traces + /analytics + /drift into one "Observability" surface
-  Impact: High   Effort: Medium   Horizon: 1–2 months
-  Strategic: Important   Benefit: Product Clarity, UX
-  Why: three nav items, one mental model; cost of fragmentation > cost of merge
-```
+### Updates to the main v3 audit
+Cross-link section in `docs/strategy/v3-audit-2026-06-06.md` pointing at the language companion; merge naming findings into the Top-10 critical findings if any rise to that bar.
 
----
+### In-chat executive summary
+~1 page: 5 sharpest language findings, top-10 renames with one-line rationale each, the proposed voice in 3 sentences, and the single biggest naming risk to the thesis.
 
-## Specific things I will challenge (since you said "challenge the thesis")
+### Closed doc loop
+Same turn as delivery: update `docs/feature-backlog.md` Live status board (Last updated + Recent log), append a one-liner to `plan.md` §4, and add a `session-decisions.md` entry if any rename is recommended as binding.
 
-These are flagged now so you know the audit isn't going to be polite:
+## 5. Out of scope (this pass)
 
-1. **"Three equal personas."** Three equal primaries on day one usually means none. I will test whether the Solo/Lead PM, Founder-as-PM, and Technical Founder actually share a wedge — or whether the product is hedging.
-2. **"Autonomous product OS."** Is "OS" earned by the current product, or is it aspirational language a Linear + Cursor + Langfuse stack already covers? I will pressure-test the moat against a hypothetical "Linear ships an end-to-end agent" scenario.
-3. **31 authenticated routes.** A "calm, single-purpose app" with 31 routes is a contradiction. I will propose a target IA (likely ~8–12 surfaces) and name what dies.
-4. **The "watch the agents build" promise.** Is it delivered, or is `/swarm` + `/missions` + `/build` + `/traces` four half-built versions of one idea?
-5. **Governance-first as a wedge.** Compelling for enterprise; possibly invisible to the SMB/founder personas you've named primary. There may be a positioning mismatch.
-6. **Human-mode vs. Machine-mode (Paxel).** I will recommend whether to adopt this as a real product surface, not just a label — and what it would replace.
-7. **Product Memory as moat.** Test: if a competitor exports their own graph in a week, does Cadence's lead survive?
+- Actual code/string changes — audit only; rewrites graduate into backlog F-IDs only if the user approves.
+- Localization implementation.
+- Renaming the product itself beyond flagging if "Cadence" tests poorly against personas (already partially covered in `docs/naming.md`).
 
----
+## 6. Decisions needed from you before I start
 
-## Deliverables
+1. **Binding vs advisory** — should the rename proposals be treated as binding (auto-graduated into backlog F-IDs ready to implement) or advisory (you triage)?
+2. **Voice anchor** — do you want me to pick the voice from first principles (operator-grade, agent-native, terse) or benchmark against a specific reference (Linear's terse-precise, Vercel's confident-minimal, Stripe's warm-technical, Paxel's machine-mode-explicit)?
+3. **Tooltip philosophy** — aggressive ("tooltip only when label fails, delete the rest") or generous ("every governance control gets a tooltip explaining the risk")?
 
-**1. Committed repo doc:** `docs/strategy/v3-audit-2026-06-06.md`
-- Full audit in the structure above
-- Updates `docs/strategy/README.md` index
-- Adds a one-line entry to `docs/strategy/session-decisions.md` referencing the audit
-- Updates `docs/feature-backlog.md` Live status board "Last updated" + "Recent log"
-- Does **not** add new features to the backlog automatically — recommendations live in the audit and graduate to backlog items only on your sign-off (separate session)
-
-**2. In-chat executive summary** (~1 page) covering:
-- The 5 sharpest findings
-- The Top-5 immediate actions
-- The single biggest thesis risk
-- A one-paragraph "if I had to rebuild this in 8 weeks" answer
-
-**3. No code changes.** Audit only. Implementation goes through normal backlog flow after you triage the recommendations.
-
----
-
-## Process & timing
-
-- Spawn 3 parallel background agents for competitive research (engineering-autonomy lane / product-OS lane / agent-OS + governance lane) — each returns a 1-page brief, runs while I do other work
-- Walk the live preview surface-by-surface in parallel with reading the remaining repo docs
-- Synthesize → draft audit → land both deliverables in one message
-- Expected wall-clock: a single long working turn after you approve this plan
-
-If you'd rather narrow scope (e.g. skip the rebuild exercise, drop investor scorecard, or limit competitive set), say so and I'll trim before starting.
-
+Default if you stay silent: advisory, operator-grade voice from first principles, aggressive tooltip philosophy.
