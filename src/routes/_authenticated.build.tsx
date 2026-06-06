@@ -385,3 +385,70 @@ function EmptyState() {
     </div>
   );
 }
+
+function BuilderClaimsPanel() {
+  const qc = useQueryClient();
+  const fClaims = useServerFn(listBuilderClaims);
+  const mRelease = useServerFn(releaseBuilderClaim);
+  const claimsQ = useQuery({
+    queryKey: ["builder-claims"],
+    queryFn: () => fClaims(),
+    refetchInterval: 5_000,
+  });
+  const release = useMutation({
+    mutationFn: (claim_id: string) => mRelease({ data: { claim_id } }),
+    onSuccess: () => {
+      toast.success("Claim released");
+      qc.invalidateQueries({ queryKey: ["builder-claims"] });
+      qc.invalidateQueries({ queryKey: ["builder-runs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const claims = (claimsQ.data?.claims ?? []) as BuilderClaim[];
+  if (claims.length === 0) return null;
+  return (
+    <div className="mb-6 rounded-xl border hairline bg-card/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          <Lock className="h-3 w-3" /> Active file claims · {claims.length}
+        </div>
+        <div className="text-[10px] text-muted-foreground/70">
+          A Builder mission holds a path until terminal; a second mission on the same path gets blocked.
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {claims.map((c) => (
+          <div key={c.id} className="flex items-center justify-between gap-3 rounded-md border hairline bg-background/40 px-2.5 py-1.5">
+            <div className="min-w-0">
+              <div className="text-xs font-medium truncate">
+                <span className="text-muted-foreground">{c.repo}</span> · <span className="text-foreground">{c.path}</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {c.mission_title ? `${c.mission_title} · ` : ""}claimed {new Date(c.claimed_at).toLocaleString()}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {c.mission_id ? (
+                <Link
+                  to="/missions/$missionId"
+                  params={{ missionId: c.mission_id }}
+                  className="text-[11px] rounded-md border hairline px-2 py-1 hover:bg-secondary"
+                >
+                  Open mission
+                </Link>
+              ) : null}
+              <button
+                onClick={() => release.mutate(c.id)}
+                disabled={!c.is_mine || release.isPending}
+                title={c.is_mine ? "Force-release this claim" : "Only the owner can release this claim"}
+                className="inline-flex items-center gap-1 text-[11px] rounded-md border hairline px-2 py-1 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Unlock className="h-3 w-3" /> Release
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
