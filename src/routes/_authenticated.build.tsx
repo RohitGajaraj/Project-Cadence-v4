@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/build")({
   component: BuildConsolePage,
-  head: () => ({ meta: [{ title: "Build Console · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Builder · Cadence" }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
       <div className="p-8 text-sm">
-        <p className="text-destructive">Failed to load Build Console: {error.message}</p>
+        <p className="text-destructive">Failed to load Builder: {error.message}</p>
         <Button className="mt-3" onClick={() => { reset(); router.invalidate(); }}>Retry</Button>
       </div>
     );
@@ -65,7 +65,7 @@ function BuildConsolePage() {
             <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-1">
               <Hammer className="h-3 w-3" /> Build
             </div>
-            <h1 className="font-display text-3xl tracking-tight">Build Console</h1>
+            <h1 className="font-display text-3xl tracking-tight">Builder</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Dispatch a Builder mission from free-form intent — optionally referencing a PRD or external links — then watch the agent open a scoped, single-file, approval-gated PR. Click any card to open its Mission Graph.
             </p>
