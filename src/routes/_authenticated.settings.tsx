@@ -12,6 +12,10 @@ import { Plug, CheckCircle2, Clock, Key, Trash2, Compass, Save } from "lucide-re
 import { listApiKeys, saveApiKey, deleteApiKey, testApiKey, BYO_PROVIDERS } from "@/lib/byokeys.functions";
 import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { listMyCalendarConnections, startCalendarConnect, saveCalendarConnection, disconnectCalendar } from "@/lib/calendar-connections.functions";
+import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
+import { useConfirm } from "@/hooks/use-confirm";
+import { Calendar as CalIcon, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (search: Record<string, unknown>): { section?: string } => ({
