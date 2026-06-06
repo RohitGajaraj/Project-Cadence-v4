@@ -815,14 +815,14 @@ ID. Feature name                         [status] · Pn · stage
 
 | F-ID | What | Source recs | Owner | Status |
 |---|---|---|:--:|:--:|
-| `F-VOICE-LOGIN` | Rewrite `/login` headline + subhead to the v3 thesis ("Your product org, run by a swarm of agents…"). | REC-01 · LANG-01 | any | ☐ |
-| `F-VOICE-AINATIVE` | Grep + replace every `AI-native` string with v3 language; update marketing meta + sidebar tagline. | REC-02 | any | ☐ |
-| `F-VOICE-VERSIONS` | Strip `Phase N` / `Bundle N` / `Slice N` internal labels from operator UI (`/build`, `/discovery`, `/opportunities`, `/prds`); keep them in docs only. | REC-18 · LANG-02 | any | ☐ |
-| `F-VOICE-EMPTY-TODAY` | Rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming"). | LANG-06 | any | ☐ |
-| `F-VOICE-CASE` | Sentence-case every page H1; remove `uppercase tracking-[0.16em]` mono-labels and serif gradients on `Upcoming meetings` / `All tasks`. | LANG-08 | any | ☐ |
-| `F-GOV-APPROVAL-COPY` | Approval-gate row copy must lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Applies to inbox + decision queue + mission detail. | REC-08 (approval prompts) · LANG-09 | any | ☐ |
-| `F-TODAY-AUTOSEED` | Auto-generate the Today brief on first sign-in instead of asking the operator to seed it. | REC-05 | any | ☐ |
-| `F-AGENTS-ROSTER-CUT` | Cut seeded agent roster from 18 → 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). Others appear only when earned or auto-spawned. | REC-04 | any | ☐ |
+| `F-VOICE-LOGIN` | Rewrite `/login` headline + subhead to the v3 thesis ("Your product org, run by a swarm of agents…"). | REC-01 · LANG-01 | Lovable | ☑ |
+| `F-VOICE-AINATIVE` | Grep + replace every `AI-native` string with v3 language; update marketing meta + sidebar tagline. | REC-02 | Lovable | ☑ |
+| `F-VOICE-VERSIONS` | Strip `Phase N` / `Bundle N` / `Slice N` internal labels from operator UI (`/build`, `/discovery`, `/opportunities`, `/prds`); keep them in docs only. | REC-18 · LANG-02 | Lovable | ☑ |
+| `F-VOICE-EMPTY-TODAY` | Rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming"). | LANG-06 | Lovable | ☑ |
+| `F-VOICE-CASE` | Sentence-case every page H1; remove `uppercase tracking-[0.16em]` mono-labels and serif gradients on `Upcoming meetings` / `All tasks`. | LANG-08 | Lovable | ☑ |
+| `F-GOV-APPROVAL-COPY` | Approval-gate row copy must lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Applies to inbox + decision queue + mission detail. | REC-08 (approval prompts) · LANG-09 | Lovable | ☑ |
+| `F-TODAY-AUTOSEED` | Auto-generate the Today brief on first sign-in instead of asking the operator to seed it. Implemented via `ensureTodayBrief(supabase, userId)` helper in `src/lib/copilot.functions.ts`, called from `getDashboard`. | REC-05 | Lovable | ☑ |
+| `F-AGENTS-ROSTER-CUT` | Cut seeded agent roster to 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). `seed_default_agents` migration cut 9 → 4; Orchestrator seeded by its own fn. Extras disabled (not deleted) for existing users. | REC-04 | Lovable | ☑ |
 
 ### P1 — ship in the next 1–2 months (structural)
 
