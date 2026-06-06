@@ -87,16 +87,25 @@ function GovernancePage() {
           <p className="text-sm text-muted-foreground mt-1">One place to set the rules, pause the swarm, and clear what's stuck.</p>
         </header>
 
-        <div className="flex gap-1 border-b hairline">
+        <div className="flex flex-wrap gap-1 border-b hairline">
           {tabs.map((t) => {
             const active = tab === t.id;
+            const Icon = t.Icon;
+            const toneIcon =
+              t.tone === "violet"  ? "bg-violet-500/10 text-violet-300 border-violet-500/30" :
+              t.tone === "emerald" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" :
+              t.tone === "sky"     ? "bg-sky-500/10 text-sky-300 border-sky-500/30" :
+                                     "bg-amber-500/10 text-amber-300 border-amber-500/30";
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-4 py-2 text-sm border-b-2 -mb-px ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-2 text-sm border-b-2 -mb-px inline-flex items-center gap-2 ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                {t.label}
+                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${active ? "ring-1 ring-foreground/20" : "opacity-80"}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span>{t.label}</span>
               </button>
             );
           })}
