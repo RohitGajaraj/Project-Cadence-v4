@@ -17,8 +17,17 @@ import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
 
-const MAX_STEPS = 6;
 const MAX_RUNNING_PER_WORKSPACE = 5;
+
+/**
+ * Per-agent step cap. The orchestrator needs more headroom (plan +
+ * dispatch + observe + finalize, often multiple dispatch/observe cycles
+ * as child runs settle). Specialists keep the conservative 6-step cap.
+ */
+function maxStepsFor(agentSlug: string): number {
+  if (agentSlug === "orchestrator") return 14;
+  return 6;
+}
 
 export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 
@@ -235,8 +244,9 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
   const { supabase, userId, agent, workspaceId, runId, traceId, model, modeOf, arc, conv, steps, ctx } = s;
   let approvalsQueued = s.approvalsQueued;
   let halted: { kind: string; reason: string } | null = null;
+  const maxSteps = maxStepsFor(agent.slug);
 
-  for (let i = s.startStep; i < MAX_STEPS; i++) {
+  for (let i = s.startStep; i < maxSteps; i++) {
     // Checkpoint BEFORE the provider call so a governance halt or worker
     // eviction mid-stream doesn't double-bill on resume.
     if (runId) {
