@@ -20,6 +20,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated.sync'
+import { Route as AuthenticatedSwarmRouteImport } from './routes/_authenticated.swarm'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
@@ -109,6 +110,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
 const AuthenticatedSyncRoute = AuthenticatedSyncRouteImport.update({
   id: '/sync',
   path: '/sync',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSwarmRoute = AuthenticatedSwarmRouteImport.update({
+  id: '/swarm',
+  path: '/swarm',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
@@ -428,6 +436,7 @@ export interface FileRoutesById {
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/swarm': typeof AuthenticatedSwarmRoute
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
@@ -479,6 +488,7 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
+    | '/swarm'
     | '/sync'
     | '/tasks'
     | '/traces'
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
+    | '/swarm'
     | '/sync'
     | '/tasks'
     | '/traces'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prompts'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
+    | '/_authenticated/swarm'
     | '/_authenticated/sync'
     | '/_authenticated/tasks'
     | '/_authenticated/traces'
@@ -695,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/sync'
       fullPath: '/sync'
       preLoaderRoute: typeof AuthenticatedSyncRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/swarm': {
+      id: '/_authenticated/swarm'
+      path: '/swarm'
+      fullPath: '/swarm'
+      preLoaderRoute: typeof AuthenticatedSwarmRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -1009,6 +1028,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSwarmRoute: typeof AuthenticatedSwarmRoute
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
@@ -1039,6 +1059,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSwarmRoute: AuthenticatedSwarmRoute,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
