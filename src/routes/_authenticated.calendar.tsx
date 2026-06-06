@@ -255,7 +255,7 @@ function CalendarPage() {
     processed: !!m.processed_at,
     summary: (m.summary as string | null) ?? null,
   }));
-  const eventItems: FeedItem[] = list.map((e) => ({
+  const eventItems: FeedItem[] = displayList.map((e) => ({
     kind: "event" as const,
     id: e.id,
     title: e.title,
