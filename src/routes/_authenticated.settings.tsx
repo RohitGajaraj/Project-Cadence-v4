@@ -471,3 +471,112 @@ function WorkspaceBriefSection({ scrollRef, highlight }: { scrollRef: React.RefO
     </section>
   );
 }
+
+function CalendarAccountsSection() {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const fListConns = useServerFn(listMyCalendarConnections);
+  const fStartConnect = useServerFn(startCalendarConnect);
+  const fSaveConn = useServerFn(saveCalendarConnection);
+  const fDisconnect = useServerFn(disconnectCalendar);
+  const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
+  const mConnect = useMutation({
+    mutationFn: async (provider: "google" | "microsoft") => {
+      const result = await connectAppUser({
+        connectorId: provider === "google" ? "google_calendar" : "microsoft_outlook",
+        gatewayBaseUrl: "https://connector-gateway.lovable.dev",
+        start: (targetOrigin) => fStartConnect({ data: { provider, targetOrigin } }),
+      });
+      if (!result.success || !result.connectionId) throw new Error(result.error ?? "Connect failed");
+      return fSaveConn({ data: { provider, connectionId: result.connectionId } });
+    },
+    onSuccess: () => {
+      toast.success("Calendar connected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const mDisconnect = useMutation({
+    mutationFn: (id: string) => fDisconnect({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Disconnected");
+      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const list = connections.data?.connections ?? [];
+  const available = connections.data?.providersAvailable ?? { google: false, microsoft: false };
+  const hasGoogle = list.some((c) => c.provider === "google");
+  const hasMicrosoft = list.some((c) => c.provider === "microsoft");
+
+  return (
+    <section className="bento p-6 mt-8 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-2">
+            <CalIcon className="h-3 w-3" /> Calendar accounts
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect your Google or Microsoft calendar. Disconnect or switch accounts any time.
+          </p>
+        </div>
+        <Link2 className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      <div className="space-y-2">
+        {list.map((c) => (
+          <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border hairline px-3 py-2 bg-background/40">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <div className="min-w-0">
+                <div className="text-sm">{c.provider === "google" ? "Google Calendar" : "Microsoft Outlook"}</div>
+                {c.account_email && <div className="text-[11px] text-muted-foreground truncate">{c.account_email}</div>}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Disconnect this calendar?",
+                  body: "Stored events stay but no further sync will happen.",
+                  confirmLabel: "Disconnect",
+                  destructive: true,
+                });
+                if (ok) mDisconnect.mutate(c.id);
+              }}
+              className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60"
+            >
+              Disconnect
+            </button>
+          </div>
+        ))}
+
+        {!hasGoogle && (
+          <button
+            onClick={() => mConnect.mutate("google")}
+            disabled={mConnect.isPending}
+            title={available.google ? "" : "Provider credentials not yet configured"}
+            className="w-full text-left text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
+          >
+            <Plug className="h-3.5 w-3.5" /> Connect Google Calendar
+          </button>
+        )}
+        {!hasMicrosoft && (
+          <button
+            onClick={() => mConnect.mutate("microsoft")}
+            disabled={mConnect.isPending}
+            title={available.microsoft ? "" : "Provider credentials not yet configured"}
+            className="w-full text-left text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
+          >
+            <Plug className="h-3.5 w-3.5" /> Connect Microsoft Outlook
+          </button>
+        )}
+
+        {!available.google && !available.microsoft && list.length === 0 && (
+          <p className="text-[11px] text-muted-foreground italic">
+            Connect setup pending. Admin must add provider credentials.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
