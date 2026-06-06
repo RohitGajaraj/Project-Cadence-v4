@@ -172,9 +172,7 @@ export function AmbientChip() {
     refetchOnWindowFocus: true,
   });
   const needsCalendarConnect =
-    !!connData &&
-    (connData.connections?.length ?? 0) === 0 &&
-    (connData.providersAvailable?.google || connData.providersAvailable?.microsoft);
+    !!connData && (connData.connections?.length ?? 0) === 0;
 
   return (
     <div
