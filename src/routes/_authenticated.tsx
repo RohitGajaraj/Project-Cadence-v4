@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette, GotoShortcuts } from "@/components/cadence/CommandPalette";
 import { WorkspaceProvider } from "@/hooks/use-workspace";
+import { AmbientChip } from "@/components/cadence/AmbientChip";
 
 export const Route = createFileRoute("/_authenticated")({
   // Disable SSR/prerender for the entire authenticated subtree. Without a
@@ -26,6 +27,7 @@ function AuthedLayout() {
     <WorkspaceProvider>
       <CommandPalette />
       <GotoShortcuts />
+      <AmbientChip />
       <Outlet />
     </WorkspaceProvider>
   );
