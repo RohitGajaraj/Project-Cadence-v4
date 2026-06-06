@@ -25,6 +25,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
 import { Route as AuthenticatedPrdsRouteImport } from './routes/_authenticated.prds'
+import { Route as AuthenticatedOutcomeRouteImport } from './routes/_authenticated.outcome'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
@@ -135,6 +136,11 @@ const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
 const AuthenticatedPrdsRoute = AuthenticatedPrdsRouteImport.update({
   id: '/prds',
   path: '/prds',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOutcomeRoute = AuthenticatedOutcomeRouteImport.update({
+  id: '/outcome',
+  path: '/outcome',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOpportunitiesRoute =
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/outcome': typeof AuthenticatedOutcomeRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
@@ -381,6 +388,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/outcome': typeof AuthenticatedOutcomeRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/outcome': typeof AuthenticatedOutcomeRoute
   '/_authenticated/prds': typeof AuthenticatedPrdsRouteWithChildren
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
@@ -484,6 +493,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/meetings'
     | '/opportunities'
+    | '/outcome'
     | '/prds'
     | '/prompts'
     | '/roadmap'
@@ -532,6 +542,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/meetings'
     | '/opportunities'
+    | '/outcome'
     | '/prds'
     | '/prompts'
     | '/roadmap'
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/meetings'
     | '/_authenticated/opportunities'
+    | '/_authenticated/outcome'
     | '/_authenticated/prds'
     | '/_authenticated/prompts'
     | '/_authenticated/roadmap'
@@ -742,6 +754,13 @@ declare module '@tanstack/react-router' {
       path: '/prds'
       fullPath: '/prds'
       preLoaderRoute: typeof AuthenticatedPrdsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/outcome': {
+      id: '/_authenticated/outcome'
+      path: '/outcome'
+      fullPath: '/outcome'
+      preLoaderRoute: typeof AuthenticatedOutcomeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/opportunities': {
@@ -1024,6 +1043,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedOutcomeRoute: typeof AuthenticatedOutcomeRoute
   AuthenticatedPrdsRoute: typeof AuthenticatedPrdsRouteWithChildren
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
@@ -1055,6 +1075,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedOutcomeRoute: AuthenticatedOutcomeRoute,
   AuthenticatedPrdsRoute: AuthenticatedPrdsRouteWithChildren,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,

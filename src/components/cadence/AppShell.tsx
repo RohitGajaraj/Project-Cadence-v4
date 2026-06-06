@@ -5,6 +5,7 @@ import {
   Crosshair, Users,
   Sun, Moon, Sparkles,
   Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -72,6 +73,13 @@ const groups: NavGroup[] = [
       { to: "/swarm", label: "Swarm HUD", icon: Activity },
       { to: "/prompts", label: "Prompt Studio", icon: FileCode },
       { to: "/sync", label: "Sync Inbox", icon: Inbox },
+    ],
+  },
+  {
+    id: "outcome",
+    label: "Outcome",
+    items: [
+      { to: "/outcome", label: "Outcome", icon: Rocket },
     ],
   },
   {
