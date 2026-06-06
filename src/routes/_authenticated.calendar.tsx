@@ -593,9 +593,6 @@ function CalendarView({
     return acc;
   }, {} as Record<string, EventRow[]>);
 
-  const yearOptions: number[] = [];
-  for (let y = today.getFullYear() - 3; y <= today.getFullYear() + 5; y++) yearOptions.push(y);
-
   function shift(delta: number) {
     if (mode === "month") setCursor(new Date(year, month + delta, 1));
     else if (mode === "week") { const d = new Date(cursor); d.setDate(d.getDate() + delta * 7); setCursor(d); }
