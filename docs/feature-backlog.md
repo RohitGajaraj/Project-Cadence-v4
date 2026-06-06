@@ -17,14 +17,15 @@
 
 | Field | Current |
 |---|---|
-| 🔨 **Now building** | idle. P0 popups + inline workspace/product management shipped. Audit at `docs/strategy/v3-audit-language-voice-2026-06-06.md`. **v3 audit + 2 language companions landed** ([`./strategy/v3-audit-2026-06-06.md`](./strategy/v3-audit-2026-06-06.md), [`./strategy/v3-audit-language-2026-06-06.md`](./strategy/v3-audit-language-2026-06-06.md)) — 22 product recs + a full naming/microcopy/tooltip audit with a P0–P3 rewrite roadmap and a one-page voice guide. Awaiting operator triage; no backlog items opened automatically. |
-| ⏭️ **Next up** | **Operator triage of v3 audit recs** (REC-01..22) **+ v3 language recs** (LANG-01..10, TOOLTIP-DEL/REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) — pick which graduate to backlog items. Independent parallel threads still available: **FND-RUNTIME 0.9 playbook run** (5-min operator-driven proof; flips foundation row to ✅) and **Proof Platform v1.1 bundles 10–12** (Ship · Launch · Support→Learn — also REC-07 in the audit, and LANG-NEW-OUTCOME in the language audit). Restructure Phases 3–4 (theme polish) intentionally **deferred** by the operator until feature tweaks settle. |
+| 🔨 **Now building** | idle. **A→C→B sequence approved by operator.** Phase A (FND-RUNTIME 0.9) substrate verified; playbook at [`./fnd-runtime-restart-playbook.md`](./fnd-runtime-restart-playbook.md) is operator-runnable (5 min). Phase C (v3 audit triage) **shipped this turn** — 22 RECs + 13 LANG/TOOLTIP items graduated into F-IDs (see [§ v3 Audit Triage](#v3-audit-triage-2026-06-06)). Phase B (Proof Platform bundles 10–12 / `F-OUTCOME-SURFACE`) next. |
+| ⏭️ **Next up** | **Phase B start** — `F-OUTCOME-SURFACE` (bundles 10–12: Ship · Launch · Support→Learn; satisfies REC-07 + LANG-NEW-OUTCOME). Parallel-pickable by other tools: any P0 triage F-ID below (`F-VOICE-LOGIN`, `F-VOICE-AINATIVE`, `F-VOICE-VERSIONS`, `F-VOICE-EMPTY-TODAY`, `F-VOICE-CASE`, `F-GOV-APPROVAL-COPY`). Operator may also run the FND-RUNTIME playbook to flip foundation row 0.9 to ✅. |
 | 🚧 **Blocked / stuck** | — none. |
-| 📊 **Progress** | **Agent ecosystem bundle:** F-AGENT-1 ✅ · F-AGENT-2 ✅ · F-AGENT-3 ✅ · F-AGENT-4 ✅ — **bundle closed**. **Restructure** ◑ Phases 1–2/4 shipped, 3–4 deferred by operator. **Bundle 9** ✅ Slices 1 + 2 + 3 all shipped (Builder PR + CI loop + file-claim conflict guard). **Step 1 FND-RUNTIME 0.9:** substrate ✅ · forced-restart proof ◑ (playbook ready, awaiting operator run). **Proof-platform v1.1 overlay:** bundle 1 ◑ · bundles 2–6 ✅ · bundle 9 ✅ · bundles 10–12 ☐. |
+| 📊 **Progress** | **Agent ecosystem bundle:** F-AGENT-1 ✅ · F-AGENT-2 ✅ · F-AGENT-3 ✅ · F-AGENT-4 ✅ — closed. **Restructure** ◑ Phases 1–2/4 shipped, 3–4 deferred. **Bundle 9** ✅. **Step 1 FND-RUNTIME 0.9:** substrate ✅ · playbook ✅ · forced-restart proof ◑ (operator-runnable). **v3 audit triage:** ✅ shipped — 22 F-IDs minted (8 P0 / 11 P1 / 3 P2), 2 already closed (LANG-07 popups, LANG-10 voice guide). **Proof-platform v1.1 overlay:** bundles 1–6/9 ✅, bundles 10–12 ☐ (→ `F-OUTCOME-SURFACE`). **Security:** `F-SEC-REALTIME-RLS` opened for the deferred realtime-topic finding. |
 
-**Last updated:** 2026-06-06 · Lovable (Memory cross-tool fix: rules moved to git-tracked `docs/conventions/` and wired into `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`/`.lovable-config.txt`; `mem://` reduced to thin pointers so Claude/Antigravity/Gemini see the same rules Lovable does.).
+**Last updated:** 2026-06-06 · Lovable (Phase A verified runnable + Phase C v3 audit triage shipped: 22 audit recs + 13 language recs graduated into F-IDs grouped P0/P1/P2 in new [§ v3 Audit Triage](#v3-audit-triage-2026-06-06); security finding `realtime.messages` ignored with `F-SEC-REALTIME-RLS` tracking it; Phase B next).
 
 **Recent log** (newest first; trim to ~5 — full history lives in [`../plan.md`](../plan.md) §4):
+- `2026-06-06` — **v3 audit triage shipped (Phase C of A→C→B sequence).** Operator approved the A→C→B plan; this turn closed C. Phase A confirmed substrate-complete (checkpoints + `resumeAgentLoop` + `withIdempotency` + `resume-runs` sweeper all wired; playbook at [`./fnd-runtime-restart-playbook.md`](./fnd-runtime-restart-playbook.md) is operator-runnable in 5 min — flip 0.9 to ✅ requires an operator run that can't happen from inside the dev sandbox). Phase C minted **22 F-IDs** from the two v3 audits across P0/P1/P2 (see new [§ v3 Audit Triage](#v3-audit-triage-2026-06-06)): 8 P0 voice/governance copy + 11 P1 IA/cockpit/surfaces + 3 P2 platform; 2 audit recs already shipped (LANG-07 popups → `useConfirm`, LANG-10 voice guide → `docs/conventions/ui-voice.md`). Also opened **`F-SEC-REALTIME-RLS`** to track the deferred `realtime.messages` finding (operator picked "ignore for now, track as backlog" earlier) and marked the scanner finding ignored with that F-ID. Phase B (`F-OUTCOME-SURFACE` = bundles 10–12 + REC-07 + LANG-NEW-OUTCOME) is now the unambiguous next-up. **WHY:** until the audits were graduated into addressable F-IDs they were prose Claude/Antigravity/Gemini couldn't pick up in parallel; this unblocks every tool. **Files:** edited `docs/feature-backlog.md` (status board · this log line · new triage section), `plan.md` (§4 entry), `docs/strategy/v3-audit-2026-06-06.md` + `docs/strategy/v3-audit-language-2026-06-06.md` (marked triaged with date + F-ID mapping at bottom), `docs/strategy/session-decisions.md` (one-line decision entry).
 - `2026-06-06` — **Cross-tool memory fix.** Operator caught that the 6 `mem://` memory files I created earlier in the day were Lovable-private — invisible to Claude Code, Antigravity, and Gemini, breaking the cross-tool contract in `AGENTS.md` §10. Fix: created [`docs/conventions/`](./conventions/) as the git-tracked home for durable rules. New files: `README.md` (index + how to add), `ui-chrome.md`, `ui-voice.md`, `destructive-actions.md`, `inline-management.md`, `doc-closure-checklist.md`. Wired into every tool entry point: `AGENTS.md` §3 (5 new rule one-liners) + §5 (2 new rows in the update-matrix); `CLAUDE.md` and `GEMINI.md` read-order step 1.6; `.lovable-config.txt` SOURCE OF TRUTH HIERARCHY. Reduced all 6 `mem://` files to ≤ 3-line pointers that defer to their git twin; updated `mem://index.md` accordingly. Linked the new conventions from `architecture/frontend.md`, `design.md`, and the audit doc. Updated `docs/README.md` with a Conventions section. **WHY:** tool-private memory creates silent cross-tool drift. The repo is the only shared substrate; rules belong in `git`. **Files:** new `docs/conventions/{README,ui-chrome,ui-voice,destructive-actions,inline-management,doc-closure-checklist}.md`; edited `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.lovable-config.txt`, `docs/README.md`, `architecture/frontend.md`, `design.md`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`, `docs/strategy/session-decisions.md`, `plan.md`, `docs/feature-backlog.md`; reduced 6 `mem://` files + `mem://index.md` to pointers.
 - `2026-06-06` — **Doc-closure pass.** Extended `docs/strategy/v3-audit-language-voice-2026-06-06.md` with a "How to use / verify" block (workspace switcher · product row actions · `useConfirm`/`usePrompt` · toasts), a phased rollout (P0 shipped · P1 21-route sweep open · P2 tooltip discipline open), a Learnings section, and a Related cross-link block. Added new subsections to `architecture/frontend.md` (Confirmation, toasts & dialogs · Inline workspace & product management) and `design.md` (Voice & language — length budgets, AI-tell denylist, confirm-copy pattern). Added an owner-gated server-fn invariant to `architecture/security.md`. Banked durable learnings as project memory: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`, plus two new Core lines in `mem://index.md`. **WHY:** the loop only closed partially — the next session would have reintroduced an em dash or a `confirm()` because the contracts didn't say no. **Files:** edited `docs/strategy/v3-audit-language-voice-2026-06-06.md`, `architecture/frontend.md`, `design.md`, `architecture/security.md`, `docs/strategy/session-decisions.md`, `plan.md`, `docs/feature-backlog.md`; new memory files under `mem://`.
 - `2026-06-06` — **Zero browser popups + inline workspace/product management shipped.** New `src/hooks/use-confirm.tsx` (`ConfirmProvider` + `useConfirm` + `usePrompt`, promise-based, themed shadcn `AlertDialog`/`Dialog`, focus-trapped, supports `destructive` styling and `typedConfirm` typed-name guard). Provider mounted in `__root.tsx`. ESLint guardrail in `eslint.config.js` blocks `alert`/`confirm`/`prompt`/`window.onbeforeunload`. Replaced 12 popup call sites across `AppShell` (new workspace, new product, delete product), `_authenticated.evals.tsx` (delete suite, delete case), `_authenticated.guardrails.tsx` (delete rule), `_authenticated.docs.tsx` (Google Docs import, icon picker, delete doc), `DocEditor.tsx` (link, figma toolbar + slash). New server fns `renameWorkspace`/`deleteWorkspace`/`leaveWorkspace`/`listWorkspaceMembers`/`removeWorkspaceMember` in `src/lib/workspaces.functions.ts`, plus `updateProject` in `projects.functions.ts`. `AppShell` workspace switcher exposes inline Manage menu (Rename, Workspace settings, Leave, Delete with typed-name guard); each product row gets a `MoreHorizontal` dropdown (Set active, Rename, Delete with typed-name guard). **Files:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `plan.md`, `docs/strategy/README.md`, `docs/strategy/session-decisions.md`, `docs/feature-backlog.md`.
@@ -797,6 +798,84 @@ ID. Feature name                         [status] · Pn · stage
 - States: existing user (skip or re-run track); partial onboarding (resume).
 - Done when: each track gets a user to their first completed mission in <10 min (time-to-value measured).
 - Depends: A1, W1, C5 (Strategic Briefing seeded as part of onboarding).
+
+---
+
+## v3 Audit Triage (2026-06-06)
+
+*Derived from [`./strategy/v3-audit-2026-06-06.md`](./strategy/v3-audit-2026-06-06.md) (22 product RECs) and [`./strategy/v3-audit-language-2026-06-06.md`](./strategy/v3-audit-language-2026-06-06.md) (10 LANG + tooltip + IA + outcome + chip recs). Operator-approved A→C→B sequence; this triage **is** Phase C. Each F-ID below is a thin entry pointing back to the audit doc for full body + impact/effort/horizon scoring — do not duplicate that prose here.*
+
+**Owner column:** any tool may pick a row whose own status isn't `☑`. Update Live status board's "Now building" before starting. Cross-tool rules: [`../AGENTS.md`](../AGENTS.md) §10.
+
+**Status legend:** ☑ shipped · ◑ partial · ☐ not started · ⊘ closed/superseded.
+
+### P0 — ship in the next two weeks (low-risk voice/clarity wins)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-VOICE-LOGIN` | Rewrite `/login` headline + subhead to the v3 thesis ("Your product org, run by a swarm of agents…"). | REC-01 · LANG-01 | any | ☐ |
+| `F-VOICE-AINATIVE` | Grep + replace every `AI-native` string with v3 language; update marketing meta + sidebar tagline. | REC-02 | any | ☐ |
+| `F-VOICE-VERSIONS` | Strip `Phase N` / `Bundle N` / `Slice N` internal labels from operator UI (`/build`, `/discovery`, `/opportunities`, `/prds`); keep them in docs only. | REC-18 · LANG-02 | any | ☐ |
+| `F-VOICE-EMPTY-TODAY` | Rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming"). | LANG-06 | any | ☐ |
+| `F-VOICE-CASE` | Sentence-case every page H1; remove `uppercase tracking-[0.16em]` mono-labels and serif gradients on `Upcoming meetings` / `All tasks`. | LANG-08 | any | ☐ |
+| `F-GOV-APPROVAL-COPY` | Approval-gate row copy must lead with consequence: `Approve · <what happens> · Reject · <what rolls back>`. Applies to inbox + decision queue + mission detail. | REC-08 (approval prompts) · LANG-09 | any | ☐ |
+| `F-TODAY-AUTOSEED` | Auto-generate the Today brief on first sign-in instead of asking the operator to seed it. | REC-05 | any | ☐ |
+| `F-AGENTS-ROSTER-CUT` | Cut seeded agent roster from 18 → 5 (Discovery Scout · Strategist · PRD Writer · Builder · Orchestrator). Others appear only when earned or auto-spawned. | REC-04 | any | ☐ |
+
+### P1 — ship in the next 1–2 months (structural)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-IA-MERGE-OBSERVE` | Merge `/analytics` + `/traces` + `/drift` → `/observability` with internal tabs + redirects. | REC-12 | any | ☐ |
+| `F-IA-MERGE-GOVERN` | Merge `/inbox` + `/guardrails` + `/budgets` → `/governance` (already partly there) with internal tabs + redirects. | REC-13 | any | ☐ |
+| `F-IA-CULL-CALDOCS` | Delete `/calendar`, `/meetings`, `/docs`, `/sync` from operator nav (data preserved). | REC-14 | any | ☐ |
+| `F-IA-AGENTS-TABS` | Fold `/prompts` and `/agents` into one **Agents** route with internal tabs. | REC-15 | any | ☐ |
+| `F-IA-TODAY-BRIEFING` | Execute Today + Briefing merge per audit §5. | REC-11 | any | ☐ |
+| `F-IA-RENAMES` | Batch rename: `Build Console`→`Builder` · `Eval Harness`→`Evals` · `Swarm HUD`→`Swarm` · `AI Ops`→`Observe` · `AI Chat`→`Chat` · `AI Analytics`→`Analytics` · `Prompt Studio`→`Prompts` · `Sync Inbox`→`Connectors`. Old-route redirects required. | LANG-05 | any | ☐ |
+| `F-COCKPIT-MERGE` | Merge `/swarm` + `/missions` → `/cockpit` (two views: Agents · Missions). Subsumes most of LANG-IA-12. | REC-16 · LANG-IA-12 | any | ☐ |
+| `F-TODAY-LOOPPULSE` | Replace Today hero (Focus Score / deep blocks) with Loop Pulse: `Overnight: 7 signals clustered → 2 themes promoted · 1 PRD ready for review · Builder PR #142 awaiting CI (green in 3m)`. | REC-03 · REC-17 | any | ☐ |
+| `F-VOICE-EMPTY-ALL` | Empty-state copy pass across all remaining routes (post-IA merges). | REC-06 | any | ☐ |
+| `F-GOV-COST-SURFACE` | Surface unit economics on `/build` and `/governance`: `This mission cost $0.42 in tokens; budget $5.00`. | REC-20 | any | ☐ |
+| `F-VOICE-TOOLTIPS` | Apply audit §4.1 (delete restating tooltips, ~15 sites) + §4.2 (rewrite to consequence-first, ~8 sites, mostly `/agents`). | TOOLTIP-DEL · TOOLTIP-REW | any | ☐ |
+| `F-VOICE-GLOSSARY` | Publish glossary; add a CI script that flags banned synonyms (`Trajectory`, `Run` for missions, `Specialist` in UI). | LANG-04 | any | ☐ |
+
+### P2 — 3–6 months (platform / differentiator depth)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-COCKPIT-MACHINE-MODE` | Header toggle: Human Mode (current dense surface) ↔ Machine Mode (full-screen dispatch board showing running agents, queue, attention, throughput; hides everything else). Depends on `F-COCKPIT-MERGE`. | REC-22 · REC-08 (mode toggle aspect) | any | ☐ |
+| `F-MCP-V1` | Ship minimal Cadence MCP server (read signals/opportunities/PRDs · append decision · queue mission). | REC-09 | any | ☐ |
+| `F-AGENTS-MENTIONABLE` | Agents as first-class users: `@discovery, please re-cluster the last 50 signals` from any PRD comment or Today card. | REC-10 | any | ☐ |
+| `F-BUILDER-MULTIFILE` | Lift Builder from single-file to scoped multi-file: pre-declared touch list, max N files, review per file. | REC-21 | any | ☐ |
+| `F-VOICE-CHIP` | Enforce AI-message chip spec via component prop types: `<AiCallChip model via score latency tokens cost />`. | LANG-CHIP | any | ☐ |
+| `F-MKT-COCKPIT-AB` | A/B landing: "OS" vs. "cockpit" positioning. Marketing surface only. | REC-19 | any | ☐ |
+
+### Phase B — Outcome surface (the big merged bet)
+
+| F-ID | What | Source recs | Owner | Status |
+|---|---|---|:--:|:--:|
+| `F-OUTCOME-SURFACE` | Ship `/outcome` (Releases · Launches · Support · Learnings) and the 5 missing right-half loop surfaces (Release · Launch · Support · Learn · Outcome) in shadow form so operators *see* the loop they're sold. Maps to Proof Platform v1.1 bundles 10–12 (Ship · Launch · Support→Learn). Empty surfaces are fine if the loop is named. | REC-07 · LANG-NEW-OUTCOME | any | ☐ (Phase B target) |
+
+### Already shipped (close-out)
+
+| F-ID | What | Source recs | Status |
+|---|---|---|:--:|
+| `F-VOICE-DIALOGS` | `window.prompt()`/`window.confirm()` flows in `AppShell` (workspace + product creation/rename/delete) replaced with `useConfirm` / `usePrompt` dialogs + sentence-case labels; ESLint guardrail blocks `alert/confirm/prompt/onbeforeunload`. | LANG-07 | ☑ shipped 2026-06-06 |
+| `F-VOICE-GUIDE` | One-page voice guide published as [`./conventions/ui-voice.md`](./conventions/ui-voice.md); linked from `design.md`, `AGENTS.md` §3, `CLAUDE.md` + `GEMINI.md` read-order step 1.6. | LANG-10 | ☑ shipped 2026-06-06 |
+
+### Security follow-up (ignored finding, tracked)
+
+| F-ID | What | Source | Status |
+|---|---|---|:--:|
+| `F-SEC-REALTIME-RLS` | `realtime.messages` has no RLS — any authenticated user can subscribe to any channel topic. Operator picked "ignore for now, track as backlog F-ID". Fix requires (a) renaming every `supabase.channel()` call site to `workspace:<id>:…` / `user:<auth.uid()>:…` topic convention, then (b) RLS on `realtime.messages` enforcing topic regex against workspace membership. Higher risk than payoff today (no PII broadcast on realtime; row reads still RLS-protected). | supabase_lov scanner `realtime_messages_no_channel_auth` | ☐ (deferred by operator) |
+
+### Triage notes (apply when picking a row)
+
+- **Most P0 rows are pure copy.** No schema change, no server-fn change, no migration. Estimate is hours-per-route, not days.
+- **`F-IA-*` merges break URLs.** Always add redirects in the same commit; never ship a rename without `<Navigate>` from old route.
+- **`F-AGENTS-ROSTER-CUT` is a data change**, not a code change — update seed data + the agent roster server fn, leave the spawn pipeline alone.
+- **`F-OUTCOME-SURFACE` is Phase B** — claim it via Live status board before another tool does; bundles 10–12 collapse into this one F-ID.
+- **Don't expand prose here.** Full bodies live in the two audit docs. This section is the addressable index.
 
 ---
 

@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-06 — Approve A→C→B sequence; ship Phase C v3 audit triage
+
+**Decision:** Operator approved the recommended sequence — (A) verify FND-RUNTIME 0.9 substrate + leave the forced-restart playbook operator-runnable, (C) graduate every v3 audit recommendation into addressable backlog F-IDs, then (B) build `F-OUTCOME-SURFACE` (the 5 right-half loop surfaces + `/outcome`, which collapses Proof Platform v1.1 bundles 10–12 + REC-07 + LANG-NEW-OUTCOME into one F-ID). Phase A confirmed substrate-complete (no code needed); Phase C shipped this turn — 22 F-IDs minted (8 P0 / 11 P1 / 3 P2), 2 already closed (LANG-07 popups, LANG-10 voice guide). Also opened `F-SEC-REALTIME-RLS` for the deferred realtime-topic finding (operator earlier picked "ignore for now, track as backlog") and marked the scanner finding ignored with that F-ID. Phase B is next-up.
+
+**Why:** Phase 1 (foundation) is still partial — the audit prose alone wasn't actionable, so other tools couldn't pick up parallel work. Triage was the highest-leverage unblock (~30 min of decision work); A was cheaper-than-it-looked because the substrate has been built for weeks; B carries the product narrative.
+
+**Tradeoffs considered:** D (Phase 2 finishing) was lower leverage than A because phase 1 isn't closed. Splitting C across multiple owners was rejected for this pass — the audits are coherent and a single triage avoids contradictions. Reopening Cadence the product name was held (audit §10 Q2), and the operator-grade voice anchor was kept (audit §10 Q4) rather than benchmarked against Linear/Vercel/Paxel.
+
+**Impact:** New addressable index at [`../feature-backlog.md` § v3 Audit Triage](../feature-backlog.md#v3-audit-triage-2026-06-06). Audit docs gained Triage status sections with rec→F-ID maps. `plan.md` §4 + the Live status board reflect Phase B as next-up.
+
 ### 2026-06-06 — Cross-tool memory: move rules from `mem://` into git-tracked `docs/conventions/`
 
 **Decision:** Treat tool-private memory (Lovable `mem://`, Claude Code project memory, Antigravity rules, etc.) as a *cache*, not a source of truth. Durable rules live in a new git-tracked folder, [`../conventions/`](../conventions/), and are referenced from every tool's entry point (`AGENTS.md` §3 + §5, `CLAUDE.md`, `GEMINI.md`, `.lovable-config.txt`). Tool-private memory may mirror a rule, but only as a thin pointer (≤ 2 lines) that links back to the git file.
