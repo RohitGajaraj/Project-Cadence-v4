@@ -325,6 +325,8 @@ function SettingsPage() {
             ))}
           </div>
         </section>
+
+        <CalendarAccountsSection />
       </div>
 
       <style>{`
