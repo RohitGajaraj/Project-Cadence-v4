@@ -30,6 +30,8 @@ type DocNode = {
 
 function DocsPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
+  const prompt = usePrompt();
   const fList = useServerFn(listDocs);
   const fGet = useServerFn(getDoc);
   const fCreate = useServerFn(createDoc);
