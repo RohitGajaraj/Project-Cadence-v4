@@ -1,128 +1,130 @@
-
-# What we'll work on (and what we're explicitly skipping)
-
-**Skipping for now** (per your call): Restructure Phases 3–4 — all UI/UX theme polish. Routes will get the Cohere editorial restyle at the very end, after the feature tweaks settle.
-
-**Picking up** (the non-theme pending queue, in build order):
-
-1. **Bundle 9 Slice 2** — Builder CI-read + auto-fix-on-red. (next)
-2. **Bundle 9 Slice 3** — Shared-file conflict detection for parallel Builder runs.
-3. **FND-RUNTIME 0.9 — forced-restart verification.** Last remaining foundation gap, naturally testable while Slice 2/3 keep Builder busy.
-
-After that, the next non-theme thread is **Proof-platform v1.1 bundles 10–12** (Ship · Launch · Support→Learn). Out of scope for this plan; flagged for the next session.
-
----
-
-# Slice 2 — Builder reads CI and reacts to red
-
 ## Goal
-After Builder opens a PR via `github.pr.open` (Slice 1), it must (a) **read GitHub Actions status** on that PR, (b) **surface failures** in the Mission Graph + `/build` Kanban, and (c) **propose a one-file follow-up commit** that targets the failure — gated behind the same `confirm` approval as Slice 1. No autonomous merge, ever.
 
-## What to build
+Deliver a brutally honest, end-to-end audit of Cadence that (a) walks the running app as a first-time governor, (b) benchmarks against the agent-OS / agent-build / product-OS landscape, (c) challenges the current thesis where it deserves challenge, and (d) lands as a versioned strategy document the swarm can read on the next session — plus a tight executive summary inline in chat.
 
-### Backend
-- **New built-in tool `github.ci.read`** in `src/lib/ai/tools/registry.server.ts` (`read/auto`, no approval needed):
-  - Input: `{ pr_number: number }` (defaults to "the PR opened by this run" via `tool_calls.result` lookup on `github.pr.open`).
-  - Calls GitHub REST: `GET /repos/{repo}/pulls/{n}` → head sha → `GET /repos/{repo}/commits/{sha}/check-runs` + `/status` → returns `{ overall: "pending"|"success"|"failure"|"neutral", checks: [{name, conclusion, html_url, log_url?}], head_sha, updated_at }`.
-  - Cached via `withIdempotency('github_ci', '<pr>-<head_sha>', …)` per `(pr, head_sha)` so re-polls within a run don't burn quota; cache invalidates when `head_sha` changes.
-- **New built-in tool `github.commit.append`** (`write/confirm`):
-  - Input: `{ pr_number, path, contents_base64, message, idempotency_key }`.
-  - Same allow-list / deny-list as `github.pr.open` (no `.github/`, no migrations, no lockfiles, single file).
-  - Reads PR's head ref, PUTs file via Contents API onto that branch (sha-aware update), returns `{ sha, commit_url, html_url }`.
-  - Wrapped in `withIdempotency('github_commit', idempotency_key, …)` keyed by `pr#-path-attempt#` so re-approval after worker restart returns the cached commit, never double-appends.
-- **Builder system prompt updates** (`seed_pm_lifecycle_tools` migration): after `github.pr.open` resolves, the loop is instructed to call `github.ci.read` on a short backoff (15s → 30s → 60s, cap 3 polls per loop step), then either finalize on green, or — on red — read the failing job's logs (via tool, see below) and propose a single `github.commit.append` patch. If CI is still `pending` after the polls, finalize with status `awaiting_ci` and let the existing `resume-runs` sweeper re-enter via Slice 3's reactor wire-up.
-- **Optional `github.ci.logs` tool** (`read/auto`): `GET /repos/{repo}/actions/jobs/{id}/logs` — returns the tail (last ~8KB) of the failing job's log. Gated by the same single-PR scope. Without this, Slice 2 still ships but Builder is blind to *why* CI failed.
-- **`build.functions.ts` extension**: `listBuilderRuns()` already joins `tool_calls.result`; extend it to surface the latest `github.ci.read` result per run → adds `ci: { overall, updated_at } | null` to each `BuilderRun`.
-
-### UI (presentational only — no theme changes)
-- **`/build` Kanban**: add a sixth column (or repurpose "PR open"): **CI status chip** on each PR card — `pending` / `green` / `red` dot + name of the failing check. Click → opens the check's `html_url` in a new tab.
-- **`/missions/$id`**: render `github.ci.read` step results inline in the existing timeline (no new layout work), with the same check chip.
-
-### Cron
-- The existing `resume-runs` sweeper already picks up stalled `agent_runs`. **No new cron**. Builder runs that finalized in `awaiting_ci` get re-woken on the next tick if the PR's head_sha is unchanged and CI moved to terminal.
-
-## Out of scope (defer to Slice 3)
-- Parallel Builder runs touching the same file. Slice 2 trusts the single-file allow-list; conflict detection lands in Slice 3.
-
-## Verification checklist
-- Open a PRD with a linked issue → Send to Builder → approve PR → CI runs on the real repo (`RohitGajaraj/Test-Project-Cadence`).
-- On green: `/build` card shows green CI chip, mission finalizes `completed`, no follow-up commit.
-- Force-fail CI (push a broken expectation in the issue): Builder lands an approval gate `github.commit.append` with a one-file patch quoting the failing check; approve → commit appears on the PR branch, CI re-runs.
-- Re-approve the same gate after a worker restart → cached commit returns; PR branch has exactly one extra commit.
-- Cap respected: never more than 3 CI polls per loop step.
+No code will be written in this audit. All recommendations get **Impact × Effort × Horizon × Strategic importance × Primary benefit** tags and a Top-5 / Top-10 / Top-20 rollup so the team can act.
 
 ---
 
-# Slice 3 — Shared-file conflict detection for parallel Builder runs
+## What I will read and walk (evidence base)
 
-## Goal
-Two parallel Builder missions must not silently race on the same file. Today, `github.pr.open` is happy to open two PRs writing `src/foo.ts` on different branches; the second one wins on merge and the operator finds out at review. Slice 3 makes the conflict visible **before** the PR is opened.
+**Repo (already partly loaded):**
+- `README.md`, `docs/strategy/v2-positioning-2026-06-02.md`, `docs/strategy/session-decisions.md`
+- `plan.md` §1–6, `docs/feature-backlog.md` Live status board + Build-order rollup
+- `architecture/{runtime,orchestration,frontend,data,security,integrations}.md`
+- `design.md` + `src/styles.css` tokens
+- All 31 authenticated routes under `src/routes/_authenticated.*` — read each to map IA, surface intent, redundancy, and dead ends
+- `src/components/cadence/AppShell.tsx` (nav IA), `CommandPalette.tsx`, `MissionGraph.tsx`
+- Server-fn surface in `src/lib/*.functions.ts` (what's actually wired vs. just routed)
+- `docs/references/competitive-reference.md` + `docs/considerations.md`
 
-## What to build
+**Live preview walk** (as a brand-new operator on `demo@redcadence.app`):
+- `/login` → `/` (Today) → can I tell what this product is in 10 seconds?
+- Sidebar pillar-by-pillar: Workspace · Discover · Deliver · Agents · AI Ops · Govern · Settings
+- Critical surfaces: `/briefing`, `/discovery`, `/opportunities`, `/prds`, `/roadmap`, `/build`, `/agents`, `/missions`, `/swarm`, `/inbox`, `/governance`, `/traces`, `/evals`, `/drift`, `/budgets`, `/integrations`, `/chat`, `/analytics`
+- Capture screenshots of each surface for the audit (embedded in the doc as references; not committed images)
+- Try to actually run a mission end-to-end: signal → opportunity → PRD → build → ship → learn. Note exactly where the loop breaks.
+- Hit each empty state on a fresh workspace to test first-run UX.
 
-### Backend
-- **New `builder_file_claims` table** (migration):
-  - `(id uuid pk, user_id uuid, workspace_id uuid, run_id uuid, mission_id uuid, repo text, path text, status text check in ('held','released'), claimed_at timestamptz, released_at timestamptz)`.
-  - Partial unique index `(repo, path) WHERE status='held'` — only one held claim per `(repo, path)` at a time.
-  - RLS: workspace-scoped read; `auth.uid()=user_id` for write. `GRANT SELECT,INSERT,UPDATE TO authenticated; GRANT ALL TO service_role;`.
-- **`github.pr.open` wrapper change**:
-  - Before the Contents-API PUT, attempt to INSERT a `builder_file_claims` row for `(repo, path)`. On unique-violation, **abort the tool call** with a typed error `BuilderFileConflict: path "<p>" is already claimed by run <id> (mission "<title>"). Wait or operator to release.`
-  - On PR-open success: claim stays `held` until terminal.
-  - On mission terminal (`completed` / `completed_with_failures` / `halted`): release all claims for that `run_id` (handled by `maybeCompleteMission` + a small helper, or a trigger on `agent_runs.status` transitioning to terminal).
-- **Stale-claim sweeper**: extend `resume-runs` to also release `held` claims whose `run_id` is in a terminal state (defensive — covers crashes where the trigger missed).
-
-### UI
-- `/build` Kanban: a card whose latest tool call is the conflict error shows a coral "Conflict · path X (held by mission Y)" chip with a "Release" action (operator-only, calls a new server fn `releaseBuilderClaim({ claim_id })` that flips status to `released`).
-- `/missions/$id`: conflict step renders the same chip inline.
-
-### Server fn
-- `releaseBuilderClaim({ claim_id })` in `src/lib/build.functions.ts` — auth-scoped, sets `status='released', released_at=now()`. No tool call; pure operator control.
-
-## Verification checklist
-- Dispatch two Builder missions whose Goal-resolved paths collide → second mission's `github.pr.open` step lands a `BuilderFileConflict` approval/error → no second PR opens, no second branch created.
-- Finalize the first mission → claim auto-releases → re-running the second mission's loop step opens the PR cleanly.
-- Operator-release works: hit "Release" on `/build` → second mission can proceed without waiting on the first.
-- No regression: a single Builder run still opens exactly one PR and the claim is gone after terminal.
+**Competitive research** (spawned in parallel as read-only background subagents — each returns a focused brief, none of it bloats my context):
+- **Engineering-autonomy lane:** Factory.ai (Droids), Cognition Devin, Replit Agent, Cursor Agents, Lovable itself, Bolt, v0, OpenAI Codex, Claude Code, Augment
+- **Product-OS / PM lane:** Linear (Agents + Skills), Productboard AI, Notion AI, Coda AI, Height Copilot, Airtable AI, Monday AI
+- **Agent-OS / orchestration lane:** LangGraph Platform, CrewAI Enterprise, AutoGen Studio, Vellum, Sema4 (formerly Reworkd), Lindy, Relevance AI, Stack AI, n8n + agents, Make
+- **Governance / trust-stack lane:** Langfuse, Braintrust, Arize Phoenix, Weights & Biases Weave, Helicone, Maxim AI, Patronus, Lakera
+- **Adjacent inspirations the user named:** Paxel (YC W25 — Human/Machine mode)
+- For each: positioning, wedge, UX model, governance posture, what they own, what they don't, what they teach us
 
 ---
 
-# FND-RUNTIME 0.9 — forced-restart verification (test, not new code)
+## Audit framework (the deliverable's structure)
 
-Substrate already exists (`agent_run_checkpoints`, `resumeAgentLoop()`, idempotency keys, `resume-runs` sweeper). The remaining `◑` is the **proof** — we never deliberately killed a worker mid-loop and watched it resume.
+The doc will follow the framework the user laid out, in this exact order:
 
-## What to do
-- Add a test entry in `docs/foundation-audit.md` row 0.9 + a one-page playbook in `docs/`:
-  1. Start a multi-step Builder mission (Slice 2 makes this realistic — PR open + CI poll).
-  2. Trigger a worker restart mid-loop via the existing Lovable Cloud restart path (operator action; document the click).
-  3. Observe `resume-runs` picks the run up within ≤60s; loop resumes from the last checkpoint; idempotency-wrapped tool calls (`github_pr`, `github_commit`, `github_ci`) return cached results, not duplicates.
-  4. PR has exactly one branch, one initial commit (per Slice 2), no duplicates on the issue.
-- Flip row 0.9 in `docs/foundation-audit.md` to ✅ with date + checklist outcomes.
+```text
+0. Executive Summary (1 page, brutal)
+1. Top 10 Critical Findings (ranked by user × business impact)
+2. Core Problem & Value Proposition audit
+   - "What is this?" 10-second test
+   - Positioning vs. v2 doc — is the product the positioning?
+3. UX & Product Flow audit
+   - IA tree (current 6-pillar nav, 31 routes)
+   - Cognitive-load map per surface
+   - Empty-state inventory
+   - The closed-loop walk: where it breaks, why, and at which seam
+4. AI-Native & Agent-First experience
+   - Human-mode vs. Machine-mode (Paxel-inspired) recommendation
+   - MCP / A2A / structured-output readiness
+   - Where the product still puts a human in the middle
+5. Feature Rationalization matrix
+   - Must Have · Nice to Have · Differentiator · Commodity · Merge · Remove · Missing
+   - Special call-out: 31 authenticated routes — which collapse, which die
+6. Dashboard & Visual experience (incl. `/` Today, `/swarm`, `/missions`)
+7. User Journey maps × 7 personas (first-time, returning, power, enterprise, founder, investor, AI agent)
+8. Market & Competitive positioning (post-research synthesis)
+9. Technical & AI readiness (chokepoint, orchestration, scaling risk)
+10. Investor lens — what a YC partner asks, what concerns them, what excites
+11. Hidden Assumptions Audit (e.g. "three equal personas" — is that focus or hedge?)
+12. Missing Opportunities (network effects, growth loops, retention loops)
+13. Thesis Challenge (since user asked) — three alternative positionings stress-tested against current one
+14. Rebuild-from-scratch exercise — keep / remove / merge / redesign / introduce
+15. Prioritized Roadmap
+    - Top 5 (this week / next 2 weeks)
+    - Top 10 (1–2 months)
+    - Top 20 (3–6 months)
+    - With Impact × Effort × Horizon × Strategic-importance × Primary-benefit on every item
+16. Investor Readiness Scorecard (Problem · Market · Product · UX · AI · Differentiation · Scalability · Vision — 1–10 each, with the why)
+```
 
-No code change expected unless the test surfaces a real gap.
+Every recommendation will be tagged like:
+
+```text
+[REC-014] Collapse /traces + /analytics + /drift into one "Observability" surface
+  Impact: High   Effort: Medium   Horizon: 1–2 months
+  Strategic: Important   Benefit: Product Clarity, UX
+  Why: three nav items, one mental model; cost of fragmentation > cost of merge
+```
 
 ---
 
-# Doc loop (closed inside the same commit as each slice)
+## Specific things I will challenge (since you said "challenge the thesis")
 
-For each of Slice 2, Slice 3, and the FND-RUNTIME verification:
-- Update **Live status board** in `docs/feature-backlog.md` (`Now building` → done; flip Bundle 9 progress mark when Slice 3 lands; flip Step 1 mark when 0.9 verifies).
-- Append a dated WHY entry to `plan.md` §4.
-- Update `architecture/orchestration.md` Bundle 9 paragraph with the new tools + conflict table.
-- Update `docs/features/` — extend the implied Builder feature doc (or add `docs/features/bundle-9-builder.md`) with the demo script + verification checklist for the operator.
-- Add a `docs/features/builder-ci-and-conflicts.md` operator doc when Slice 3 closes (per the per-feature pattern we just established).
+These are flagged now so you know the audit isn't going to be polite:
+
+1. **"Three equal personas."** Three equal primaries on day one usually means none. I will test whether the Solo/Lead PM, Founder-as-PM, and Technical Founder actually share a wedge — or whether the product is hedging.
+2. **"Autonomous product OS."** Is "OS" earned by the current product, or is it aspirational language a Linear + Cursor + Langfuse stack already covers? I will pressure-test the moat against a hypothetical "Linear ships an end-to-end agent" scenario.
+3. **31 authenticated routes.** A "calm, single-purpose app" with 31 routes is a contradiction. I will propose a target IA (likely ~8–12 surfaces) and name what dies.
+4. **The "watch the agents build" promise.** Is it delivered, or is `/swarm` + `/missions` + `/build` + `/traces` four half-built versions of one idea?
+5. **Governance-first as a wedge.** Compelling for enterprise; possibly invisible to the SMB/founder personas you've named primary. There may be a positioning mismatch.
+6. **Human-mode vs. Machine-mode (Paxel).** I will recommend whether to adopt this as a real product surface, not just a label — and what it would replace.
+7. **Product Memory as moat.** Test: if a competitor exports their own graph in a week, does Cadence's lead survive?
 
 ---
 
-# Order, risks, and what I need from you
+## Deliverables
 
-**Order:** Slice 2 → Slice 3 → FND-RUNTIME 0.9 verification. Each is shippable on its own; we do not bundle them.
+**1. Committed repo doc:** `docs/strategy/v3-audit-2026-06-06.md`
+- Full audit in the structure above
+- Updates `docs/strategy/README.md` index
+- Adds a one-line entry to `docs/strategy/session-decisions.md` referencing the audit
+- Updates `docs/feature-backlog.md` Live status board "Last updated" + "Recent log"
+- Does **not** add new features to the backlog automatically — recommendations live in the audit and graduate to backlog items only on your sign-off (separate session)
 
-**Risks:**
-- GitHub REST rate-limits if CI polling is sloppy. Mitigation: idempotency-keyed by `head_sha`, hard cap 3 polls/step, exponential backoff.
-- `builder_file_claims` deadlock between two missions writing each other's paths in sequence. Mitigation: claims are per-(repo,path) not per-mission; first-writer-wins with operator override.
-- Conflict UX needs to be unambiguous so the operator doesn't think Builder is broken. Mitigation: coral chip on `/build` + named blocker (mission title), explicit Release button.
+**2. In-chat executive summary** (~1 page) covering:
+- The 5 sharpest findings
+- The Top-5 immediate actions
+- The single biggest thesis risk
+- A one-paragraph "if I had to rebuild this in 8 weeks" answer
 
-**Approve this plan, or redirect** — e.g.:
-- Want Slice 2 only this turn and queue Slice 3 next?
-- Want `github.ci.logs` (log-tail tool) included, or kept out to minimize surface area?
-- Want FND-RUNTIME 0.9 verification done *before* Slice 2 instead of after (so Slice 2 ships on a proven-durable substrate)?
+**3. No code changes.** Audit only. Implementation goes through normal backlog flow after you triage the recommendations.
+
+---
+
+## Process & timing
+
+- Spawn 3 parallel background agents for competitive research (engineering-autonomy lane / product-OS lane / agent-OS + governance lane) — each returns a 1-page brief, runs while I do other work
+- Walk the live preview surface-by-surface in parallel with reading the remaining repo docs
+- Synthesize → draft audit → land both deliverables in one message
+- Expected wall-clock: a single long working turn after you approve this plan
+
+If you'd rather narrow scope (e.g. skip the rebuild exercise, drop investor scorecard, or limit competitive set), say so and I'll trim before starting.
+
