@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, Pencil, Link2, Check } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, Pencil, Link2, Check, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -20,7 +20,6 @@ type View = "list" | "grid";
 type GridMode = "month" | "week" | "day";
 const VIEW_KEY = "cadence.calendar.view";
 const GRID_MODE_KEY = "cadence.calendar.gridMode";
-const CONNECT_HINT_KEY = "cadence.calendar.connectHintDismissed";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   validateSearch: (search: Record<string, unknown>): { meeting?: string } => ({
@@ -327,6 +326,7 @@ function CalendarPage() {
               }}
               connecting={mConnect.isPending}
             />
+            <WeatherChip />
             <button
               onClick={() => { setShowNew(true); if (slots.length === 0) mPropose.mutate(); }}
               className="inline-flex items-center gap-2 rounded-xl border hairline px-3.5 py-2 text-sm hover:bg-secondary/60"
@@ -377,14 +377,6 @@ function CalendarPage() {
         )}
 
         {events.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
-
-        {/* First-time connect hint: shown once when user has no connection yet.
-            Dismissible; never returns once dismissed. Connect lives in the
-            header icon afterwards. */}
-        <ConnectHint
-          connections={connections.data?.connections ?? []}
-          onOpen={() => setConnectOpen(true)}
-        />
 
         {!events.isLoading && !meetings.isLoading && feed.length === 0 && (
           <div className="bento p-10 text-center">
