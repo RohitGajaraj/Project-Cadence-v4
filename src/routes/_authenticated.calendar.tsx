@@ -474,12 +474,14 @@ function CalendarPage() {
         )}
 
         {view === "grid" && (
-        <MonthGrid
-          cursor={gridCursor}
-          setCursor={setGridCursor}
-          events={list}
-          onPickEvent={openEditor}
-        />
+          <CalendarView
+            cursor={gridCursor}
+            setCursor={setGridCursor}
+            mode={gridMode}
+            setMode={setGridModePersist}
+            events={displayList}
+            onPickEvent={openEditor}
+          />
         )}
       </div>
 
