@@ -776,27 +776,6 @@
   .ambient-weather--hot { color: var(--coral); background: linear-gradient(90deg, color-mix(in oklab, var(--coral) 24%, transparent), color-mix(in oklab, var(--amber) 16%, transparent)); }
   .ambient-weather--neutral { color: var(--muted-foreground); background: color-mix(in oklab, var(--accent) 70%, transparent); }
 
-  /* Calendar connect nudge — subtle attention pulse until user connects. */
-  .ambient-connect {
-    animation: ambient-connect-pulse 2.4s ease-in-out infinite;
-  }
-  .ambient-connect:hover { animation: none; }
-  .ambient-connect__ping {
-    animation: ambient-connect-ping 1.8s ease-out infinite;
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent);
-  }
-  @keyframes ambient-connect-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 40%, transparent); }
-    50%      { box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 0%, transparent); }
-  }
-  @keyframes ambient-connect-ping {
-    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent); opacity: 1; }
-    80%  { box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent); opacity: 0.6; }
-    100% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent); opacity: 1; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ambient-connect, .ambient-connect__ping { animation: none; }
-  }
 
   /* Action link — editorial blue with underline-on-hover. */
   .link-action {
