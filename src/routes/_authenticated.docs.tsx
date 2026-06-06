@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ChevronRight, ChevronDown, Plus, Trash2, FileText, Search, Download, X, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { DocEditor } from "@/components/cadence/DocEditor";
+import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { listDocs, getDoc, createDoc, updateDoc, deleteDoc } from "@/lib/docs.functions";
 import { importGoogleDoc } from "@/lib/gdocs.functions";
 import { importNotionPage, searchNotionPages } from "@/lib/notion.functions";
@@ -29,6 +30,8 @@ type DocNode = {
 
 function DocsPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
+  const prompt = usePrompt();
   const fList = useServerFn(listDocs);
   const fGet = useServerFn(getDoc);
   const fCreate = useServerFn(createDoc);
@@ -118,8 +121,15 @@ function DocsPage() {
   });
 
   function handleImportGDoc() {
-    const v = window.prompt("Paste a Google Docs URL or document ID");
-    if (v && v.trim()) mImport.mutate(v.trim());
+    void (async () => {
+      const v = await prompt({
+        title: "Import from Google Docs",
+        label: "URL or document ID",
+        placeholder: "https://docs.google.com/document/d/…",
+        confirmLabel: "Import",
+      });
+      if (v && v.trim()) mImport.mutate(v.trim());
+    })();
   }
 
   const tree = useMemo(() => {
@@ -263,8 +273,13 @@ function DocsPage() {
                 <button
                   className="text-3xl leading-none hover:bg-secondary/60 rounded px-1"
                   title="Change icon"
-                  onClick={() => {
-                    const next = window.prompt("Icon (emoji)", doc.icon ?? "📄");
+                  onClick={async () => {
+                    const next = await prompt({
+                      title: "Change icon",
+                      label: "Paste a single emoji",
+                      defaultValue: doc.icon ?? "📄",
+                      confirmLabel: "Save",
+                    });
                     if (next) mUpdate.mutate({ id: doc.id, icon: next });
                   }}
                 >
@@ -281,8 +296,14 @@ function DocsPage() {
                   placeholder="Untitled"
                 />
                 <button
-                  onClick={() => {
-                    if (window.confirm("Delete this doc?")) mDelete.mutate(doc.id);
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Delete this doc?",
+                      body: "It moves to the trash for 30 days, then it's gone.",
+                      destructive: true,
+                      confirmLabel: "Delete",
+                    });
+                    if (ok) mDelete.mutate(doc.id);
                   }}
                   className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary/60"
                   title="Delete"

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Shield, Plus, Trash2, FlaskConical, Sparkles, AlertTriangle, EyeOff, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
+import { useConfirm } from "@/hooks/use-confirm";
 import { listProjects } from "@/lib/projects.functions";
 import {
   getGuardrailOverview, upsertGuardrailRule, deleteGuardrailRule,
@@ -51,6 +52,7 @@ function emptyRule(): RuleForm {
 }
 
 function GuardrailsPage() {
+  const confirm = useConfirm();
   const fProjects = useServerFn(listProjects);
   const fOverview = useServerFn(getGuardrailOverview);
   const fUpsert = useServerFn(upsertGuardrailRule);
@@ -163,7 +165,15 @@ function GuardrailsPage() {
                     Edit
                   </button>
                   <button
-                    onClick={() => { if (confirm(`Delete rule "${r.name}"?`)) del.mutate(r.id); }}
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: `Delete "${r.name}"?`,
+                        body: "The rule stops applying immediately.",
+                        destructive: true,
+                        confirmLabel: "Delete rule",
+                      });
+                      if (ok) del.mutate(r.id);
+                    }}
                     className="rounded-md border border-border p-1.5 text-muted-foreground hover:text-rose-300"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

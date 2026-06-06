@@ -300,4 +300,24 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 
 ---
 
-*This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-03.*
+### 2026-06-06 — Zero browser popups, full AI-tell sweep, inline workspace + product management
+
+**Decision:** Three coordinated course-corrections, in one pass.
+
+1. **Zero browser-native popups.** `alert`, `confirm`, `prompt`, and unload blockers are banned. Replaced by `useConfirm()` and `usePrompt()` from `src/hooks/use-confirm.tsx` (promise-based, themed shadcn `AlertDialog`/`Dialog`, focus-trapped, with `destructive` styling and `typedConfirm` typed-name guard for irreversible actions). Provider mounted once in `__root.tsx`. ESLint guardrail in `eslint.config.js` makes future regressions fail lint.
+2. **The AI-tell list extends beyond em dashes.** Operator called out em dashes as the visible symptom and asked for the full sweep. Doc enumerates: em/en dashes; "not just X, it's Y" / "not only… but also"; preamble fillers ("In today's fast-paced world…"); buzzwords (seamlessly, leverage, empower, robust, powerful, next-gen, AI-native, revolutionary, unlock, unleash, delve, elevate, supercharge, game-changing, cutting-edge); LLM tics ("Let's dive in", "I hope this helps", "As an AI…"); triple-pattern listicles; over-hedging; decorative emoji; Title Case Everywhere; trailing `!`; 🚀/✨/🎉 in toasts. Voice anchor: human, clear, lightly playful, Linear-leaning with warmer empty states. Length budgets: H1 ≤ 6 words, subhead ≤ 14, button ≤ 3, tooltip ≤ 10, toast ≤ 12.
+3. **Inline workspace + product management.** Operators never leave the surface they're on to administer. Workspace switcher popover in `AppShell` exposes a Manage section (Rename, Workspace settings, Leave, Delete with typed-name guard). Each product row has a `MoreHorizontal` dropdown (Set active, Rename, Delete with typed-name guard). New server fns `renameWorkspace`/`deleteWorkspace`/`leaveWorkspace`/`listWorkspaceMembers`/`removeWorkspaceMember`; `updateProject` added.
+
+**Why:** operator feedback after the v3 audit and the first language pass: browser popups feel "hard" and off-brand, em dashes leak the machine-written origin, and forcing operators to `/settings` for every rename breaks the cockpit thesis. All three are first-impression failures the v3 audit already graded.
+
+**Tradeoffs considered:**
+- *Auto-graduate P0 LANG-VOICE-01..04 into backlog F-IDs:* deferred to advisory; the audit doc captures them so the operator triages alongside the prior v3 recs.
+- *Ship invite-by-email this turn:* deferred to P2 — needs admin lookup of `auth.users` by email via service role and a workspace settings sheet. Marked in the audit.
+- *Sweep all 31 routes for em dashes this turn:* deferred to P1 — would inflate the diff and slow review. Audit lists every target route.
+- *Per-action confirmation modal vs typed-name guard for destructive flows:* picked typed-name guard for workspace/product delete (operators delete by accident; typing the name is a 2-second pause that catches the wrong-row case).
+
+**Impact:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `docs/strategy/README.md`, `docs/feature-backlog.md`, `plan.md` (§4). No schema changes. RLS unchanged (workspace owner-manage + member-read policies already covered the new server fns).
+
+---
+
+*This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-06.*

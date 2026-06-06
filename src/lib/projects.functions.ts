@@ -93,3 +93,21 @@ export const deleteProject = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const updateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200).optional(),
+  north_star: z.string().max(500).nullable().optional(),
+  target_date: z.string().nullable().optional(),
+  status: z.enum(["active", "paused", "shipped"]).optional(),
+});
+
+export const updateProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => updateSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const { id, ...patch } = data;
+    const { error } = await context.supabase.from("projects").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

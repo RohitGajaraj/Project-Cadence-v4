@@ -32,6 +32,19 @@ export default tseslint.config(
           ],
         },
       ],
+      "no-restricted-globals": [
+        "error",
+        { name: "alert",   message: "Use toast() from sonner or an in-app <Alert>." },
+        { name: "confirm", message: "Use useConfirm() from @/hooks/use-confirm." },
+        { name: "prompt",  message: "Use usePrompt() from @/hooks/use-confirm." },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.name='window'][property.name=/^(alert|confirm|prompt|onbeforeunload)$/]",
+          message: "No browser popups. Use useConfirm / usePrompt / toast / in-app Dialog instead.",
+        },
+      ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },
