@@ -388,7 +388,7 @@ const githubPrOpen = def({
     idempotency_key: z.string().min(1).max(200),
   }),
   preview: (a) => `Open PR for issue #${a.issue_number}: "${a.title}" · ${a.path}`,
-  run: async (a, { supabase, userId, runId }) => {
+  run: async (a, { supabase, userId, runId, missionId, workspaceId }) => {
     const token = process.env.GITHUB_TOKEN;
     const repo = process.env.GITHUB_REPO;
     if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
@@ -397,6 +397,72 @@ const githubPrOpen = def({
     const forbiddenPrefixes = [".github/", "supabase/migrations/", ".env", "bun.lock", "package-lock.json"];
     if (forbiddenPrefixes.some((p) => a.path === p || a.path.startsWith(p))) {
       throw new Error(`Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`);
+    }
+
+    // Bundle 9 Slice 3 — claim the (repo, path) before opening the PR. A
+    // second parallel mission targeting the same file will hit the partial
+    // unique index and get a typed error instead of silently opening a
+    // competing PR. The claim is auto-released when this run reaches a
+    // terminal state (trigger on agent_runs).
+    let claimAcquired = false;
+    if (runId) {
+      // Did we already claim it on a prior attempt of this same run?
+      const { data: existing } = await supabase
+        .from("builder_file_claims")
+        .select("id,run_id,status")
+        .eq("repo", repo)
+        .eq("path", a.path)
+        .eq("status", "held")
+        .maybeSingle();
+      if (existing && existing.run_id === runId) {
+        claimAcquired = true; // already mine, idempotency path will return cached result anyway
+      } else if (existing && existing.run_id !== runId) {
+        // Look up the holder's mission title for a helpful error message.
+        let holderTitle: string | null = null;
+        const { data: holderRun } = await supabase
+          .from("agent_runs").select("mission_id").eq("id", existing.run_id).maybeSingle();
+        const holderMissionId = (holderRun as { mission_id?: string | null } | null)?.mission_id ?? null;
+        if (holderMissionId) {
+          const { data: m } = await supabase
+            .from("missions").select("title").eq("id", holderMissionId).maybeSingle();
+          holderTitle = (m as { title?: string } | null)?.title ?? null;
+        }
+        throw new Error(
+          `BuilderFileConflict: path "${a.path}" is already claimed by another Builder mission${holderTitle ? ` ("${holderTitle}")` : ""}. ` +
+          `Wait for it to finish or have the operator release the claim from /build.`,
+        );
+      } else {
+        // Try to take the claim. If a parallel call beats us, fall back to
+        // the typed conflict error.
+        let missionTitle: string | null = null;
+        if (missionId) {
+          const { data: m } = await supabase.from("missions").select("title").eq("id", missionId).maybeSingle();
+          missionTitle = (m as { title?: string } | null)?.title ?? null;
+        }
+        const { error: insErr } = await supabase.from("builder_file_claims").insert({
+          user_id: userId,
+          workspace_id: workspaceId ?? null,
+          run_id: runId,
+          mission_id: missionId ?? null,
+          mission_title: missionTitle,
+          repo,
+          path: a.path,
+          status: "held",
+        });
+        if (insErr) {
+          if (/unique|duplicate/i.test(insErr.message)) {
+            throw new Error(
+              `BuilderFileConflict: path "${a.path}" was just claimed by another Builder mission. ` +
+              `Wait for it to finish or have the operator release the claim from /build.`,
+            );
+          }
+          // Non-conflict insert failure is non-fatal — log and proceed; the
+          // worst case is the next slice (operator release) is unavailable.
+          console.error("[github.pr.open] claim insert failed:", insErr.message);
+        } else {
+          claimAcquired = true;
+        }
+      }
     }
 
     const headers = {
