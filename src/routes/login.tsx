@@ -96,6 +96,11 @@ function LoginPage() {
               </button>
             </div>
           </div>
+          <div className="flex items-center justify-end">
+            <Link to="/forgot-password" className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <Button type="submit" className="w-full" disabled={loadingEmail}>
             {loadingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4 mr-1.5" /> Sign in</>}
           </Button>
