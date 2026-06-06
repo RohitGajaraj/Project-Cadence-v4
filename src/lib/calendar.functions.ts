@@ -101,13 +101,37 @@ export const syncCalendar = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const timeMin = new Date().toISOString();
     const timeMax = new Date(Date.now() + data.daysAhead * 86400000).toISOString();
-    const qs = new URLSearchParams({
-      timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100",
-    }).toString();
-    const r = await gFetch<{ items: GEvent[] }>(
-      `/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
-    );
-    const rows = (r.items ?? []).map((e) => {
+    const conn = await getUserConnection(supabase as never);
+    let items: GEvent[] = [];
+    if (conn?.provider === "microsoft") {
+      const qs = new URLSearchParams({ startDateTime: timeMin, endDateTime: timeMax, $top: "100" }).toString();
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "microsoft_outlook",
+        connectionId: conn.connection_id,
+        path: `/v1.0/me/calendarView?${qs}`,
+        init: { headers: { Prefer: 'outlook.timezone="UTC"' } },
+      });
+      if (!res.ok) throw new Error(`Microsoft calendarView failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      const body = (await res.json()) as { value?: MsEvent[] };
+      items = (body.value ?? []).map(msToG);
+    } else if (conn?.provider === "google") {
+      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
+      const res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE,
+        connectorId: "google_calendar",
+        connectionId: conn.connection_id,
+        path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
+      });
+      if (!res.ok) throw new Error(`Google events failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      const body = (await res.json()) as { items?: GEvent[] };
+      items = body.items ?? [];
+    } else {
+      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
+      const r = await gFetch<{ items: GEvent[] }>(`/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`);
+      items = r.items ?? [];
+    }
+    const rows = items.map((e) => {
       const { start_at, end_at, all_day } = normalizeStart(e);
       return {
         user_id: userId,
@@ -133,6 +157,7 @@ export const syncCalendar = createServerFn({ method: "POST" })
         .upsert(rows as never, { onConflict: "user_id,external_id" });
       if (error) throw new Error(error.message);
     }
+    if (conn) bumpLastSync(supabase as never, userId);
     return { count: rows.length };
   });
 
