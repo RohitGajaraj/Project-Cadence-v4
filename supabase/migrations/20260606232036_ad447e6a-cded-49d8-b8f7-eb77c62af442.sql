@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "prompt_runs ws write" ON public.prompt_runs;
