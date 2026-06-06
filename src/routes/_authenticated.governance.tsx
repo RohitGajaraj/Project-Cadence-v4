@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Zap, Trash2, Plus } from "lucide-react";
+import { ShieldAlert, PauseCircle, PlayCircle, Clock, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Zap, Trash2, Plus, SlidersHorizontal, Shield, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -61,11 +61,17 @@ function GovernancePage() {
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/governance" });
 
-  const tabs: { id: Tab; label: string; description: string }[] = [
-    { id: "controls",   label: "Controls",   description: "Kill switch, mission caps, stuck approvals, auto-pipelines." },
-    { id: "approvals",  label: "Approvals",  description: "Tool calls waiting on a human. Approve runs them; reject keeps them paused." },
-    { id: "guardrails", label: "Guardrails", description: "Rules that block, warn, or redact text on every AI call." },
-    { id: "budgets",    label: "Budgets",    description: "Spend caps per day, month, and AI surface. Over-cap calls are blocked." },
+  const tabs: {
+    id: Tab;
+    label: string;
+    description: string;
+    Icon: typeof SlidersHorizontal;
+    tone: "violet" | "emerald" | "sky" | "amber";
+  }[] = [
+    { id: "controls",   label: "Controls",   description: "Kill switch, mission caps, stuck approvals, auto-pipelines.", Icon: SlidersHorizontal, tone: "violet" },
+    { id: "approvals",  label: "Approvals",  description: "Tool calls waiting on a human. Approve runs them; reject keeps them paused.", Icon: CheckCircle2, tone: "emerald" },
+    { id: "guardrails", label: "Guardrails", description: "Rules that block, warn, or redact text on every AI call.", Icon: Shield, tone: "sky" },
+    { id: "budgets",    label: "Budgets",    description: "Spend caps per day, month, and AI surface. Over-cap calls are blocked.", Icon: Wallet, tone: "amber" },
   ];
   const activeTab = tabs.find((t) => t.id === tab)!;
   const setTab = (next: Tab) => navigate({ search: { tab: next } });
@@ -81,16 +87,25 @@ function GovernancePage() {
           <p className="text-sm text-muted-foreground mt-1">One place to set the rules, pause the swarm, and clear what's stuck.</p>
         </header>
 
-        <div className="flex gap-1 border-b hairline">
+        <div className="flex flex-wrap gap-1 border-b hairline">
           {tabs.map((t) => {
             const active = tab === t.id;
+            const Icon = t.Icon;
+            const toneIcon =
+              t.tone === "violet"  ? "bg-violet-500/10 text-violet-300 border-violet-500/30" :
+              t.tone === "emerald" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" :
+              t.tone === "sky"     ? "bg-sky-500/10 text-sky-300 border-sky-500/30" :
+                                     "bg-amber-500/10 text-amber-300 border-amber-500/30";
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-4 py-2 text-sm border-b-2 -mb-px ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-2 text-sm border-b-2 -mb-px inline-flex items-center gap-2 ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                {t.label}
+                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${active ? "ring-1 ring-foreground/20" : "opacity-80"}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span>{t.label}</span>
               </button>
             );
           })}
