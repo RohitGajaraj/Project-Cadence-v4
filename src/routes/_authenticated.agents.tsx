@@ -28,6 +28,7 @@ function AgentsPage() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
+  const fReflections = useServerFn(listAgentReflections);
 
   const fTrust = useServerFn(getAllAgentTrust);
   const fSetArc = useServerFn(setAgentArc);
