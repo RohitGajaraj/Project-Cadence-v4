@@ -24,6 +24,19 @@
 
 ## Decision log
 
+### 2026-06-06 — Commission v3 end-to-end product & platform audit
+
+**Decision:** Run a full audit of Cadence (product, UX, AI-native posture, IA, competitive position, thesis) and land it as a versioned strategy doc rather than a list of backlog tickets. Output: [`v3-audit-2026-06-06.md`](./v3-audit-2026-06-06.md) — supersedes nothing automatically; recommendations graduate to the backlog only on operator sign-off.
+
+**Why:** The product surface had drifted from the v2 positioning faster than the closed-doc loop was catching (login still said "AI-native"; Today still asked the operator to refresh; `/swarm` showed 18 agents on day one). The operator asked for a brutally honest audit that also challenges the thesis. Doing it as a strategy doc (not a feature spec) preserves optionality on which recommendations to action.
+
+**Tradeoffs considered:**
+- *Skip the audit, keep shipping bundles* — rejected: the gap between thesis and surface was already costing first-run trust.
+- *Audit as in-chat reply only* — rejected: the closed-doc loop requires the next tool/session to be able to read it without scrolling chat.
+- *Open new backlog items per recommendation* — rejected: the operator should triage first; landing 20 raw recs into `feature-backlog.md` without triage would pollute the build queue.
+
+**Impact:** New `docs/strategy/v3-audit-2026-06-06.md` (full audit, Top-5/10/20 roadmap, investor scorecard). `docs/strategy/README.md` index extended. `docs/feature-backlog.md` Live status board updated (Recent log + Last updated). No backlog items, no code changes. **Key thesis refinement proposed (not yet adopted):** "autonomous product OS" → "product-org cockpit," same substrate, sharper noun. Awaiting operator decision.
+
 ### 2026-06-06 — Defer UI/UX revamp; commit to F-AGENT-1→4 agent-ecosystem bundle
 
 **Decision:** Pause Restructure Phases 3–4 (Cohere editorial restyle of remaining ~18 routes) and ship the four-step **agent ecosystem bundle** instead: F-AGENT-1 Orchestrator + multi-agent missions → F-AGENT-2 persistent memory + self-reflection + trust auto-advance → F-AGENT-3 event reactor + auto-pipelines → F-AGENT-4 Swarm HUD. Canonical plan: [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md).
