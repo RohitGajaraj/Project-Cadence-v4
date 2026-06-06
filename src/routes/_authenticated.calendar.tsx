@@ -1,14 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, LayoutGrid, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { listCalendarEvents, syncCalendar, createCalendarEvent, proposeSlots } from "@/lib/calendar.functions";
+import { listMeetings } from "@/lib/meetings.functions";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { MeetingDetailBody } from "@/components/cadence/MeetingDetailBody";
+
+type View = "list" | "grid";
+const VIEW_KEY = "cadence.calendar.view";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
+  validateSearch: (search: Record<string, unknown>): { meeting?: string } => ({
+    meeting: typeof search.meeting === "string" ? search.meeting : undefined,
+  }),
   component: CalendarPage,
   head: () => ({ meta: [{ title: "Calendar · Cadence" }] }),
 });
@@ -30,14 +39,38 @@ function fmtDate(iso: string) {
 }
 
 function CalendarPage() {
+  const { meeting: meetingId } = Route.useSearch();
+  const navigate = useNavigate({ from: "/calendar" });
   const qc = useQueryClient();
   const fProjects = useServerFn(listProjects);
   const fEvents = useServerFn(listCalendarEvents);
   const fSync = useServerFn(syncCalendar);
   const fCreate = useServerFn(createCalendarEvent);
   const fPropose = useServerFn(proposeSlots);
+  const fMeetings = useServerFn(listMeetings);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const events = useQuery({ queryKey: ["calendar-events"], queryFn: () => fEvents() });
+  const meetings = useQuery({ queryKey: ["meetings"], queryFn: () => fMeetings() });
+
+  // View preference persists per-user (list is default — capture/extract is the
+  // value flow, not time-blocking).
+  const [view, setView] = useState<View>("list");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(VIEW_KEY);
+    if (v === "grid" || v === "list") setView(v);
+  }, []);
+  function setViewPersist(v: View) {
+    setView(v);
+    if (typeof window !== "undefined") window.localStorage.setItem(VIEW_KEY, v);
+  }
+
+  function openMeeting(id: string) {
+    void navigate({ search: { meeting: id } });
+  }
+  function closeMeeting() {
+    void navigate({ search: { meeting: undefined } });
+  }
 
   const mSync = useMutation({
     mutationFn: () => fSync({ data: { calendarId: "primary", daysAhead: 14 } }),
@@ -80,6 +113,37 @@ function CalendarPage() {
     return acc;
   }, {} as Record<string, EventRow[]>);
 
+  // Unified chronological feed for List view: meetings + calendar events,
+  // sorted by start time. Meetings get a "Meeting" badge; events stay native.
+  type FeedItem =
+    | { kind: "meeting"; id: string; title: string; start_at: string; stakeholder: string | null; processed: boolean; summary: string | null }
+    | { kind: "event"; id: string; title: string; start_at: string; end_at: string | null; all_day: boolean; location: string | null; hangout_link: string | null; html_link: string | null; attendees: { email: string; displayName?: string }[] };
+
+  const meetingItems: FeedItem[] = (meetings.data?.meetings ?? []).map((m) => ({
+    kind: "meeting" as const,
+    id: m.id,
+    title: m.title,
+    start_at: m.start_at,
+    stakeholder: m.stakeholder ?? null,
+    processed: !!m.processed_at,
+    summary: (m.summary as string | null) ?? null,
+  }));
+  const eventItems: FeedItem[] = list.map((e) => ({
+    kind: "event" as const,
+    id: e.id,
+    title: e.title,
+    start_at: e.start_at,
+    end_at: e.end_at,
+    all_day: e.all_day,
+    location: e.location,
+    hangout_link: e.hangout_link,
+    html_link: e.html_link,
+    attendees: e.attendees ?? [],
+  }));
+  const feed = [...meetingItems, ...eventItems].sort(
+    (a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime(),
+  );
+
   return (
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
@@ -88,12 +152,28 @@ function CalendarPage() {
             <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
               <CalIcon className="h-3.5 w-3.5 text-violet-300" /> Calendar
             </div>
-            <h1 className="mt-3 font-display text-4xl tracking-tight">Upcoming meetings</h1>
+            <h1 className="mt-3 font-display text-4xl tracking-tight">Time and meetings</h1>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-              Pulled from your connected Google Calendar. Cadence treats these as context for agents and daily briefs.
+              Your calendar events and meeting transcripts in one place. Click any meeting to capture a transcript and extract decisions, tasks, and questions.
             </p>
           </div>
           <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border hairline p-0.5">
+            <button
+              onClick={() => setViewPersist("list")}
+              aria-pressed={view === "list"}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "list" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+            >
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+            <button
+              onClick={() => setViewPersist("grid")}
+              aria-pressed={view === "grid"}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-foreground text-background" : "hover:bg-secondary/60"}`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" /> Grid
+            </button>
+          </div>
           <button
             onClick={() => { setShowNew(true); if (slots.length === 0) mPropose.mutate(); }}
             className="inline-flex items-center gap-2 rounded-xl border hairline px-3.5 py-2 text-sm hover:bg-secondary/60"
@@ -145,16 +225,94 @@ function CalendarPage() {
 
         {events.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
 
-        {!events.isLoading && list.length === 0 && (
+        {!events.isLoading && !meetings.isLoading && feed.length === 0 && (
           <div className="bento p-10 text-center">
             <CalIcon className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-            <div className="font-display text-lg">No events yet</div>
+            <div className="font-display text-lg">Nothing on the calendar yet</div>
             <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-              Click <span className="text-foreground">Sync now</span> to pull the next two weeks from your primary Google Calendar.
+              Click <span className="text-foreground">Sync now</span> to pull events from Google Calendar, or use the dashboard to log a meeting.
             </p>
           </div>
         )}
 
+        {view === "list" && feed.length > 0 && (
+          <div className="bento overflow-hidden mt-4">
+            <table className="w-full text-sm">
+              <thead className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                <tr className="border-b hairline">
+                  <th className="text-left px-4 py-3 w-28">When</th>
+                  <th className="text-left px-4 py-3">Title</th>
+                  <th className="text-left px-4 py-3 w-32">Kind</th>
+                  <th className="text-left px-4 py-3 w-40">Context</th>
+                  <th className="text-right px-4 py-3 w-24"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {feed.map((it) => (
+                  <tr
+                    key={`${it.kind}:${it.id}`}
+                    className={`border-b hairline/40 ${it.kind === "meeting" ? "hover:bg-secondary/40 cursor-pointer" : ""}`}
+                    onClick={() => it.kind === "meeting" && openMeeting(it.id)}
+                  >
+                    <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
+                      <div>{new Date(it.start_at).toLocaleDateString([], { month: "short", day: "numeric" })}</div>
+                      <div className="text-[11px]">{new Date(it.start_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{it.title}</div>
+                      {it.kind === "meeting" && it.summary && (
+                        <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{it.summary}</div>
+                      )}
+                      {it.kind === "event" && it.location && (
+                        <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{it.location}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {it.kind === "meeting" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] rounded-full border hairline px-2 py-0.5 text-foreground">
+                          <FileText className="h-3 w-3" /> Meeting
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] rounded-full border hairline px-2 py-0.5 text-muted-foreground">
+                          <CalIcon className="h-3 w-3" /> Event
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {it.kind === "meeting" ? (
+                        it.processed ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-300"><CheckCircle2 className="h-3 w-3" /> Extracted</span>
+                        ) : (
+                          it.stakeholder ?? "—"
+                        )
+                      ) : it.attendees.length > 0 ? (
+                        <span className="inline-flex items-center gap-1"><UsersIcon className="h-3 w-3" /> {it.attendees.length}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {it.kind === "meeting" ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openMeeting(it.id); }}
+                          className="inline-flex items-center gap-1 text-xs rounded-lg border hairline px-2.5 py-1.5 hover:bg-secondary"
+                        >
+                          Open
+                        </button>
+                      ) : (it.kind === "event" && it.html_link) ? (
+                        <a href={it.html_link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground inline-flex">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {view === "grid" && (
         <div className="space-y-6 mt-4">
           {Object.entries(groups).map(([day, evs]) => (
             <section key={day}>
@@ -194,7 +352,14 @@ function CalendarPage() {
             </section>
           ))}
         </div>
+        )}
       </div>
+
+      <Sheet open={!!meetingId} onOpenChange={(o) => { if (!o) closeMeeting(); }}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          {meetingId && <MeetingDetailBody id={meetingId} />}
+        </SheetContent>
+      </Sheet>
     </AppShell>
   );
 }
