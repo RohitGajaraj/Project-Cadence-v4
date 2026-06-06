@@ -72,17 +72,19 @@ Headline:
 
 ---
 
-## F-AGENT-4 — Swarm HUD ☐
+## F-AGENT-4 — Swarm HUD ✅ shipped 2026-06-06
+
+**Canonical page:** [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md) — open this for the demo script, the full panel walkthrough, and the verification checklist. Summary kept below for historical context.
 
 **Goal:** a single page that answers "what are my agents doing right now?" — the operator's flight-deck.
 
 **Build:**
-1. New route `src/routes/_authenticated/swarm.tsx` with 4 server-fn-backed panels:
+1. New route `src/routes/_authenticated.swarm.tsx` with seven panels (header, throughput, attention queue, agents grid, missions, handoff feed, reactor firings):
    - Live missions (orchestrator + child run progress)
    - Recent handoffs (24h, by edge)
    - Pending approvals with TTL
-   - Auto-pipeline firings (from `agent_subscriptions.last_fired_at`)
-2. Add nav entry to `AppShell` under the **Workspace** pillar.
+   - Auto-pipeline firings (from `event_queue`)
+2. Add nav entry to `AppShell` under the **Agents** pillar (between Missions and Prompt Studio).
 3. Reuse existing Cohere editorial tokens — no design work, no UI revamp dependencies.
 4. Doc loop.
 
