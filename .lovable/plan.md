@@ -1,66 +1,57 @@
-## What changes from the previous plan
+## F-IA-MERGE-OBSERVE — Run group + Observe merge
 
-You're right that the IA merge alone doesn't fix the "crowded left rail" feeling — and could hide features if tabs are timid. So we split into two independent shippable steps, with the sidebar fix going **first** because it gives the biggest perceived improvement and is low-risk.
+### Final sidebar structure
 
-Also clarifying scope: **Evals is NOT in this merge.** REC-12 only touches `/analytics` + `/traces` + `/drift` (three observation surfaces). Evals stays its own route — it's authoring + regression testing, a different mental model.
+```
+Discover    Discovery · Opportunities
+Deliver     PRDs · Docs · Roadmap · Tasks · Build Console
+Agents      Agents · Missions · Swarm HUD · Prompt Studio · Sync Inbox
+Outcome     Outcome
+Run         Observe · Evals                       ← was "AI Ops" (4 items)
+Govern      Guardrails · Governance · Budgets · Integrations   ← unchanged
+```
 
----
+Run shrinks from 4 → 2. Govern is not touched. Watching ≠ governing — two groups, two mental models.
 
-## Step 1 (do first) — `F-NAV-ACCORDION`: single-open sidebar groups
+### New surface: `/observe`
 
-**Why first:** addresses your "left rail UX pain" directly, ships in one file, no route changes, reversible.
+One page, three tabs with live counts in the labels:
 
-**Change in `src/components/cadence/AppShell.tsx` only:**
-- Replace the multi-open `Set<string>` open-state with a single `string | null` "open group id."
-- Clicking a group header opens that group and **auto-collapses the others**.
-- The group containing the active route stays open by default (current behavior preserved).
-- Keep one-line persistence in `localStorage` (`cadence.nav.open`) but store a single id, not a set.
-- No design tokens change; no other files touched.
+- `Analytics` — today's spend/tokens/latency rollup (lift from `/analytics`)
+- `Traces · {n} today` — trace list + waterfall (lift from `/traces`)
+- `Drift · {n} flagged` — baselines + incidents (lift from `/drift`)
 
-**Verify:**
-- Click "Deliver" → "Discover" auto-collapses.
-- Navigate to `/traces` → "AI Ops" auto-opens, others close.
-- Refresh → last-opened group restored.
+Tab state in URL: `/observe?tab=analytics|traces|drift`. Default `analytics`. H1 = `Observe`. Sentence-case, no kickers.
 
----
+### Steps
 
-## Step 2 — `F-IA-MERGE-OBSERVE`: `/observability` with loud tabs
+1. **New route** `src/routes/_authenticated.observe.tsx` — Tabs shell, reads `?tab=`, default `analytics`. Lifts the existing page bodies of `_authenticated.analytics.tsx`, `_authenticated.traces.tsx`, `_authenticated.drift.tsx` into three local panel components (no logic changes, no new server fns). Trace detail stays at `/traces/$traceId` and is linked from the Traces tab.
+2. **Counts in tab labels** — reuse data already fetched by each panel (today's trace count from `getDriftOverview`/traces query; open-drift count from `drift_overview.openIncidents.length`). No new server fn.
+3. **Redirects** — replace `_authenticated.analytics.tsx`, `_authenticated.traces.tsx` (index only, keep `_authenticated.traces.$traceId.tsx`), `_authenticated.drift.tsx` with `beforeLoad: () => redirect({ to: "/observe", search: { tab: "analytics|traces|drift" } })`. Preserves old bookmarks and command-palette entries.
+4. **Sidebar** in `src/components/cadence/AppShell.tsx`:
+   - Rename group `aiops` label `"AI Ops"` → id `run`, label `"Run"`.
+   - Replace its 4 items with: `{ to: "/observe", label: "Observe", icon: Activity }`, `{ to: "/evals", label: "Evals", icon: FlaskConical }`.
+   - `Govern` group untouched.
+5. **Command palette** (`CommandPalette.tsx`) — add `Observe` entry, drop the three old ones (or point them to `/observe?tab=…`).
+6. **Voice pass** on the new page only — sentence-case H1, no em/en dashes, no "Phase/Bundle" kickers, v3 empty states.
+7. **Doc closure (same turn):**
+   - `docs/feature-backlog.md` — add `F-IA-MERGE-OBSERVE` row, flip ☑, update Live status board + Recent log + Last updated. Add "How to use / verify" block (route, tabs, redirects, sidebar nav path).
+   - `plan.md` §4 — one-liner WHY ("Run + Observe merge: shrink AI Ops 4→2, kill 'observability' jargon, keep Govern intact").
+   - `architecture/frontend.md` — note `/observe` tabs pattern + the three redirects.
 
-**Goal:** three observation surfaces under one route, but features keep spotlight via prominent tab labels with live counts.
+### Out of scope (explicit)
 
-1. **Create `src/routes/_authenticated.observability.tsx`** with three tabs (shadcn `Tabs`): **Analytics · Traces · Drift**. Default tab from `?tab=` so deep links work.
-2. **Each tab label carries a live count/badge** so nothing feels buried:
-   - `Traces · 142 today` (from `getTraces` count)
-   - `Drift · 2 flagged` (from `getDrift` flagged count, red badge when > 0)
-   - `Analytics · last 7d`
-3. **Lift JSX out of the three existing route files** into `ObservabilityAnalytics`, `ObservabilityTraces`, `ObservabilityDrift` panel components. No server-function changes.
-4. **Replace old route files with redirects** to `/observability?tab=…` so old bookmarks keep working.
-5. **Sidebar nav (`AppShell.tsx`)**: collapse the three "AI Ops" nav entries into one **Observe** entry → `/observability`. Evals stays as its own entry in the same group (renamed from "AI Ops" → "Observe" group, with Evals as the second entry).
-6. **Voice pass**: sentence-case H1 (`Observability`), v3 empty states, no `Phase/Bundle` kickers.
+- Govern group, Guardrails, Governance, Budgets, Integrations — no changes.
+- Evals — stays its own route (authoring ≠ observation).
+- No server-function changes. No DB migrations. No new tokens.
+- No rename of `Agents` or any other group.
 
-**Verify:**
-- `/observability?tab=traces` lands on traces with count badge.
-- `/analytics`, `/traces`, `/drift` redirect cleanly.
-- "Observe" group in sidebar shows: Observe · Evals (two items, down from four).
-- No broken `<Link to="/analytics">` etc. (grep first).
+### Verification
 
----
+- `/observe` loads on the Analytics tab; tab switching updates the URL.
+- Old URLs `/analytics`, `/traces`, `/drift` redirect to the matching tab.
+- `/traces/$traceId` still works (deep-link from the Traces tab).
+- Sidebar shows `Run › Observe · Evals` and `Govern › Guardrails · Governance · Budgets · Integrations`.
+- ⌘K resolves "Observe".
 
-## Doc-closure (same commit, for each step)
-
-- Flip the F-ID to ☑ in `docs/feature-backlog.md` (add `F-NAV-ACCORDION` row under P0 as a new audit-derived UX fix).
-- Update Live status board (`Now building` → idle; `Next up` advances).
-- One-line WHY in `plan.md` §4.
-- Note IA change in `architecture/frontend.md` (route inventory) after Step 2.
-- "How to use / verify" block on the F-ID row.
-
----
-
-## What I'm asking you
-
-Two questions before I switch to build mode:
-
-1. **Confirm the order:** ship `F-NAV-ACCORDION` first (sidebar accordion, ~20 lines), then `F-IA-MERGE-OBSERVE` (route merge with loud tabs)?
-2. **Confirm Evals stays separate** from the `/observability` merge (it's authoring, not observation)?
-
-If both are yes, I'll execute Step 1 first and let you see/feel it before touching the route merge.
+Awaiting approval to implement.
