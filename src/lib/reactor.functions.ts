@@ -12,6 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
@@ -72,7 +73,7 @@ export const upsertEventSubscription = createServerFn({ method: "POST" })
       target_agent_slug: data.target_agent_slug,
       approval_mode: data.approval_mode,
       enabled: data.enabled ?? true,
-      filter: (data.filter ?? {}) as Record<string, unknown>,
+      filter: (data.filter ?? {}) as unknown as Json,
     };
     if (data.id) {
       const { error } = await supabase.from("event_subscriptions")
@@ -175,7 +176,7 @@ export async function dispatchEvent(
   supabase: SupabaseClient,
   evt: EventRow,
   actorUserId: string | null,
-): Promise<{ mission_id: string | null; run_id: string | null; halted: string | null }> {
+): Promise<{ mission_id: string | null; run_id: string | null; halted: unknown }> {
   try {
     const goal = goalForEvent(evt);
     // Find target agent in the row owner's namespace (subscriptions are
