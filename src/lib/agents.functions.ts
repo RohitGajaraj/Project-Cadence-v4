@@ -125,11 +125,19 @@ export const updateAgentSchedule = createServerFn({ method: "POST" })
  * `recent_agent_reflections` SECURITY DEFINER RPC so it can't leak across
  * users (the RPC scopes by `for_user`).
  */
+export type ReflectionMetadata = {
+  run_id?: string | null;
+  trace_id?: string | null;
+  what_worked?: string | null;
+  what_to_change?: string | null;
+  goal?: string | null;
+};
+
 export type AgentReflection = {
   id: string;
   content: string;
   importance: number;
-  metadata: Record<string, unknown> | null;
+  metadata: ReflectionMetadata | null;
   created_at: string;
 };
 
