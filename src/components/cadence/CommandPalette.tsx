@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
 import {
-  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar,
+  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar, Activity,
 } from "lucide-react";
 
 export function CommandPalette() {
@@ -61,6 +61,7 @@ export function CommandPalette() {
                 <Item icon={Map} label="Roadmap · Now/Next/Later" hint="G R" onSelect={() => go("/roadmap")} />
                 <Item icon={Calendar} label="Meetings · transcripts & decisions" hint="G M" onSelect={() => go("/meetings")} />
                 <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
+                <Item icon={Activity} label="Observe · analytics, traces, drift" onSelect={() => go("/observe")} />
                 <Item icon={Settings} label="Settings & profile" hint="G S" onSelect={() => go("/settings")} />
               </Command.Group>
               <Command.Group heading="Quick actions" className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5">

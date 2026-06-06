@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, TrendingUp, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
+  LogOut, FileCode, FlaskConical, DollarSign, Shield, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
   Crosshair, Users,
   Sun, Moon, Sparkles,
   Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
@@ -83,13 +83,11 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    id: "aiops",
-    label: "AI Ops",
+    id: "run",
+    label: "Run",
     items: [
-      { to: "/analytics", label: "AI Analytics", icon: Activity },
-      { to: "/traces", label: "Traces", icon: GitBranch },
-      { to: "/evals", label: "Eval Harness", icon: FlaskConical },
-      { to: "/drift", label: "Drift", icon: TrendingUp },
+      { to: "/observe", label: "Observe", icon: Activity },
+      { to: "/evals", label: "Evals", icon: FlaskConical },
     ],
   },
   {
