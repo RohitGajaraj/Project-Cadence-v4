@@ -17,12 +17,12 @@ import { GitBranch, GitFork, Rocket, Check, AlertTriangle, FileCode } from "luci
 
 export const Route = createFileRoute("/_authenticated/prompts")({
   component: PromptsPage,
-  head: () => ({ meta: [{ title: "Prompt Studio · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Prompts · Cadence" }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
       <div className="p-8 text-sm">
-        <p className="text-destructive">Failed to load Prompt Studio: {error.message}</p>
+        <p className="text-destructive">Failed to load Prompts: {error.message}</p>
         <Button className="mt-3" onClick={() => { reset(); router.invalidate(); }}>Retry</Button>
       </div>
     );
@@ -59,7 +59,7 @@ function PromptsPage() {
       <div className="p-6 max-w-[1400px] mx-auto">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <FileCode className="h-6 w-6 text-primary" /> Prompt Studio
+            <FileCode className="h-6 w-6 text-primary" /> Prompts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Version, A/B test, and roll back the system prompts that power every AI surface.
