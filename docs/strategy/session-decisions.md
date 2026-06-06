@@ -24,6 +24,20 @@
 
 ## Decision log
 
+### 2026-06-06 — Cross-tool memory: move rules from `mem://` into git-tracked `docs/conventions/`
+
+**Decision:** Treat tool-private memory (Lovable `mem://`, Claude Code project memory, Antigravity rules, etc.) as a *cache*, not a source of truth. Durable rules live in a new git-tracked folder, [`../conventions/`](../conventions/), and are referenced from every tool's entry point (`AGENTS.md` §3 + §5, `CLAUDE.md`, `GEMINI.md`, `.lovable-config.txt`). Tool-private memory may mirror a rule, but only as a thin pointer (≤ 2 lines) that links back to the git file.
+
+**Why:** Earlier the same day I saved 6 memory files under `mem://…` (Lovable's private virtual filesystem). Those files are not in git, so Claude Code, Antigravity, and Gemini never see them — the rules ("no native browser chrome", "no em dashes", voice anchor, etc.) would have silently disappeared the next time any other tool picked up the repo. That directly breaks the cross-tool contract in [`../../AGENTS.md`](../../AGENTS.md) §10: "the git repo is the only shared substrate". Operator caught it.
+
+**Tradeoffs considered:**
+- **Fold rules into `AGENTS.md` §3 directly** — rejected. §3 stays scannable; the conventions folder holds the *why* and *how to apply* without bloating the operating manual.
+- **Use `docs/rules/`** — rejected. Some entries (voice anchor, doc-closure checklist) are more guidance than hard rules; `conventions/` is the softer, more honest noun.
+- **Keep `mem://` as the source and add a hook to sync to git** — rejected. Two writeable copies is the drift trap we're trying to escape; one source (git) + thin caches (memory) is simpler and audit-able.
+- **Skip `mem://` entirely** — rejected. The auto-injected Core lines in `mem://index.md` are useful as a constant nudge inside Lovable sessions; they just need to point at the git rules, not duplicate them.
+
+**Impact:** New folder `docs/conventions/` with `README.md` + 5 rule files (`ui-chrome`, `ui-voice`, `destructive-actions`, `inline-management`, `doc-closure-checklist`). `AGENTS.md` §3 gained 5 rule one-liners (9b–9e) and §5 gained 2 matrix rows. `CLAUDE.md` and `GEMINI.md` got a read-order step 1.6 pointing at the folder. `.lovable-config.txt` got a row in SOURCE OF TRUTH HIERARCHY. `docs/README.md` got a Conventions section. `architecture/frontend.md`, `design.md`, and `docs/strategy/v3-audit-language-voice-2026-06-06.md` link to the conventions as the canonical rule. The 6 `mem://` files were reduced to ≤ 3-line pointers; `mem://index.md` Memories list now explicitly says "bodies live in git". Going forward: write the rule in `docs/conventions/` first, then wire entry points, then (optionally) mirror to memory as a pointer.
+
 ### 2026-06-06 — Documentation closure pass for voice / popups / inline-mgmt
 
 **Decision:** Close the doc loop for the language-voice + popup-ban + inline-workspace-product-management work shipped earlier in the day. Doc + memory only, no product code edits. Extend the audit doc with a "How to use / verify" block, a phased rollout, and a Learnings section. Add the contract entries to `architecture/frontend.md` (Confirmation, toasts & dialogs · Inline workspace & product management), `design.md` (Voice & language), and `architecture/security.md` (owner-gated server fns). Bank durable learnings as project memory under `mem://`.
