@@ -227,6 +227,17 @@ export async function runAgentLoop(
         }).eq("id", runId);
       } catch (e) { console.error("agent_runs finalize failed:", e); }
     }
+    // F-AGENT-2: clean completions trigger a reflection + autonomy auto-advance.
+    // Halted runs skip both — a halt is a governance signal that should not
+    // be turned into a self-confirming "lesson" without operator review.
+    if (!halted) {
+      await autoReflect(supabase, {
+        userId, agentId: agent.id, agentSlug: agent.slug,
+        workspaceId, runId, traceId,
+        goal: input.goal, finalMsg,
+      });
+      await maybeAutoAdvanceArc(supabase, userId, agent.id);
+    }
     // If the mission has no outstanding handoff messages, mark it completed
     // when this terminal hop finishes cleanly.
     if (input.missionId && !halted) {
