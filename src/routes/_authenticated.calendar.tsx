@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalIcon, RefreshCw, ExternalLink, Video, Loader2, Plus, Sparkles, List, FileText, CheckCircle2, Users as UsersIcon, ChevronLeft, ChevronRight, Trash2, Pencil, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
-import { listCalendarEvents, syncCalendar, createCalendarEvent, proposeSlots } from "@/lib/calendar.functions";
+import { listCalendarEvents, syncCalendar, createCalendarEvent, proposeSlots, updateCalendarEvent, deleteCalendarEvent } from "@/lib/calendar.functions";
+import { listMyCalendarConnections, startCalendarConnect, saveCalendarConnection, disconnectCalendar } from "@/lib/calendar-connections.functions";
+import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { listMeetings } from "@/lib/meetings.functions";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MeetingDetailBody } from "@/components/cadence/MeetingDetailBody";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useConfirm } from "@/hooks/use-confirm";
 
 type View = "list" | "grid";
 const VIEW_KEY = "cadence.calendar.view";
