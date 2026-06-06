@@ -88,8 +88,7 @@ function TasksPage() {
         <header className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Workstream</div>
-              <h1 className="mt-3 font-display text-3xl sm:text-4xl tracking-tight">All <span className="neural-text">tasks</span></h1>
+              <h1 className="font-display text-3xl sm:text-4xl tracking-tight">All tasks</h1>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button

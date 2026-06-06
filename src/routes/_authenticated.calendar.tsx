@@ -88,7 +88,7 @@ function CalendarPage() {
             <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
               <CalIcon className="h-3.5 w-3.5 text-violet-300" /> Calendar
             </div>
-            <h1 className="mt-3 font-display text-4xl tracking-tight">Upcoming <span className="neural-text">meetings</span></h1>
+            <h1 className="mt-3 font-display text-4xl tracking-tight">Upcoming meetings</h1>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl">
               Pulled from your connected Google Calendar. Cadence treats these as context for agents and daily briefs.
             </p>
