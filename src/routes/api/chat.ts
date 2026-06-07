@@ -210,7 +210,7 @@ You must output a JSON object EXACTLY in this format:
                 controller.close();
 
                 // Persist the assistant message in DB with mission_id link
-                await supabase.from("messages").insert({
+                await (supabase.from("messages") as any).insert({
                   conversation_id: body.conversationId,
                   user_id: userId,
                   role: "assistant",
