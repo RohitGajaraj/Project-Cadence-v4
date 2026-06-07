@@ -206,6 +206,16 @@ Every AI message — chat, copilot, PRD `/ai`, Studio chat, agent summaries, dai
 | View Trace | deep-link to `/traces/$traceId`. |
 | Replay with… | re-run from this exact input against a different model/prompt; show the diff. |
 
+## Inline Mission Cockpit UI contract
+
+When a chat message dispatches an autonomous multi-agent execution mission (`mission_id` is present on the assistant message), the standard text bubble is augmented with an inline progress card (the **Inline Mission Cockpit**). This cockpit hides the raw agent complexity and presents a clean, calm, and interactive status grid aligning with the Cohere editorial light design system:
+
+1. **Header:** Displays a small "Mission Cockpit" mono-label, the mission title, and a status badge with themed color washes (`bg-pale-green` for completed, `bg-rose` for failed, `bg-pale-blue` with pulse for running/dispatched).
+2. **Steps List:** A simplified 1-to-N list of planned specialist agent runs (`discovery`, `strategist`, `prd_writer`, `builder`, `orchestrator`). Each row has a progress indicator dot (blinks/pulses active blue when running) and displays the agent's slug and sub-goal.
+3. **Governance Gates (Inline Approvals Panel):** When a specialist hits a governance gate (e.g. requires PR creation or issue creation approval), it renders a warning box in `bg-coral/10` with a loud `ShieldAlert` icon. Consequence-first action controls (e.g., `Approve · run` in deep green, `Reject · nothing runs` in coral outline) are displayed inline to prompt immediate action.
+4. **Trace Toggle:** A collapsible section "Show/Hide raw trace" allows technical operators to inspect raw hop timelines and thought logs without leaving the conversation pane.
+5. **Open Mission Page Link:** A link pointing directly to `/missions/$missionId` with an external link icon to jump into the full detail view if needed.
+
 ## Surface color coding
 Used in traces and analytics. Starting palette (full authority to refine for a more distinctive look): chat=violet (brand), agent=teal, copilot=amber, prd=indigo, discovery=rose, studio=cyan, brief=gold, judge=slate, embedding=stone. Tokens live as `--surface-*` in `src/styles.css`. Use the tokens, not hardcoded colors.
 

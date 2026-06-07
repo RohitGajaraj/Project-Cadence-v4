@@ -2074,6 +2074,7 @@ export type Database = {
           role: string
           user_id: string
           workspace_id: string
+          mission_id: string | null
         }
         Insert: {
           content?: string
@@ -2084,6 +2085,7 @@ export type Database = {
           role: string
           user_id: string
           workspace_id?: string
+          mission_id?: string | null
         }
         Update: {
           content?: string
@@ -2094,6 +2096,7 @@ export type Database = {
           role?: string
           user_id?: string
           workspace_id?: string
+          mission_id?: string | null
         }
         Relationships: [
           {
