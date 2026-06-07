@@ -186,6 +186,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     queryKey: ["governance", "pause-state", activeWorkspaceId],
     queryFn: async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return null;
         return await pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } });
       } catch {
         return null;
