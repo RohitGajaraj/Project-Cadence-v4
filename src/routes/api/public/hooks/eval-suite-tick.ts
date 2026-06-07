@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireHookCaller } from "./_auth.server";
+import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runEvalSuite } from "@/lib/ai/eval-runner.server";
 
