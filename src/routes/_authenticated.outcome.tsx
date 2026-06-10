@@ -1,15 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { Rocket, Megaphone, LifeBuoy, Sparkles, ArrowUpRight, Clock } from "lucide-react";
-import { AppShell } from "@/components/cadence/AppShell";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { listProjects } from "@/lib/projects.functions";
-import { getOutcomeData } from "@/lib/outcome.functions";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// /outcome folded into /learn (Phase 1d, F-IA-V4). Releases moved to /product
+// in Phase 1c; Outcomes/Support/Learnings live as Learn tabs.
 export const Route = createFileRoute("/_authenticated/outcome")({
-  component: OutcomePage,
-  head: () => ({ meta: [{ title: "Outcome · Cadence" }] }),
+  beforeLoad: () => {
+    throw redirect({ to: "/learn", search: { tab: "outcomes" } });
+  },
 });
 
 function fmtTime(iso: string | null | undefined) {

@@ -1,30 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import {
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Trash2,
-  FileText,
-  Search,
-  Download,
-  X,
-  Loader2,
-} from "lucide-react";
-import { AppShell } from "@/components/cadence/AppShell";
-import { DocEditor } from "@/components/cadence/DocEditor";
-import { useConfirm, usePrompt } from "@/hooks/use-confirm";
-import { listDocs, getDoc, createDoc, updateDoc, deleteDoc } from "@/lib/docs.functions";
-import { importGoogleDoc } from "@/lib/gdocs.functions";
-import { importNotionPage, searchNotionPages } from "@/lib/notion.functions";
-import FolderInteraction from "@/components/ui/folder";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// /docs folded into /knowledge → Docs tab (Phase 1d, F-IA-V4).
 export const Route = createFileRoute("/_authenticated/docs")({
-  component: DocsPage,
-  head: () => ({ meta: [{ title: "Docs · Cadence" }] }),
+  beforeLoad: () => {
+    throw redirect({ to: "/knowledge", search: { tab: "docs" } });
+  },
 });
 
 type DocNode = {
