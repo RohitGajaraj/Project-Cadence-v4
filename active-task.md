@@ -6,7 +6,7 @@
 
 ## In-flight — F-IA-V4 (7-surface IA collapse)
 
-**Status:** Phase 1a shipped (Missions surface). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
+**Status:** Phase 1a + 1b shipped (Missions + Govern surfaces). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
 
 ### Done
 
@@ -15,13 +15,18 @@
 - [x] Repoint `/swarm` redirect → `/missions?tab=agents`.
 - [x] Update sidebar (`AppShell.tsx`) + command palette to `/missions`.
 - [x] Update component-internal links in `_authenticated.agents.tsx` + `_authenticated.missions.$missionId.tsx`.
+- [x] Extract `ControlsPanel` from `_authenticated.governance.tsx` (~580 lines) into `src/components/governance/ControlsPanel.tsx`.
+- [x] Create `_authenticated.govern.tsx` with 7 tabs: Controls · Approvals · Guardrails · Budgets · Analytics · Traces · Drift.
+- [x] Convert `/governance` + `/observe` → `beforeLoad` redirects to `/govern` (preserves tab).
+- [x] Repoint `/guardrails`, `/budgets`, `/drift`, `/traces`, `/inbox`, `/analytics` → `/govern`.
+- [x] Update `AppShell.tsx` nav + footer pause-banner + `CommandPalette.tsx` to `/govern`.
 
-### Next slice (Phase 1b) — `/govern` surface
+### Next slice (Phase 1b-2) — fold Evals + Prompts into `/govern`
 
-- [ ] Extract `ControlsPanel` from `_authenticated.governance.tsx` (currently inline ~600 lines) into `src/components/governance/ControlsPanel.tsx`.
-- [ ] Extract `EvalsPanel`, `DriftPanel` (already exists in observe), `PromptsPanel` bodies from their full-page routes.
-- [ ] Create `_authenticated.govern.tsx` with tabs: Controls · Approvals · Guardrails · Budgets · Traces · Evals · Drift · Prompts.
-- [ ] Convert `/governance`, `/observe`, `/guardrails`, `/budgets`, `/evals`, `/drift`, `/prompts`, `/traces` (index) → `beforeLoad` redirects.
+- [ ] Extract `EvalsPanel` body from `_authenticated.evals.tsx` (~617 lines).
+- [ ] Extract `PromptsPanel` body from `_authenticated.prompts.tsx` (~655 lines).
+- [ ] Add `evals` + `prompts` tabs to `/govern`.
+- [ ] Convert `/evals` + `/prompts` → redirects to `/govern?tab=...`.
 
 ### Phase 1c — Product surface
 

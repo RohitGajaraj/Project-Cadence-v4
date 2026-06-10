@@ -110,8 +110,8 @@ export function CommandPalette() {
                 />
                 <Item
                   icon={Activity}
-                  label="Observe · analytics, traces, drift"
-                  onSelect={() => go("/observe")}
+                  label="Govern · controls, approvals, traces, drift"
+                  onSelect={() => go("/govern")}
                 />
                 <Item
                   icon={Settings}
