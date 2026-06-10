@@ -1,60 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import {
-  listEvalSuites,
-  getEvalSuite,
-  createEvalSuite,
-  updateEvalSuite,
-  deleteEvalSuite,
-  createEvalCase,
-  updateEvalCase,
-  deleteEvalCase,
-  runEvalSuiteNow,
-  getEvalRun,
-} from "@/lib/evals.functions";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Play,
-  Plus,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-  FlaskConical,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
-import { AppShell } from "@/components/cadence/AppShell";
-import { useConfirm } from "@/hooks/use-confirm";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/evals")({
-  component: EvalsPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/govern", search: { tab: "evals" } });
+  },
 });
 
 const SURFACE_KEYS: Array<{ surface: string; key: string; label: string }> = [
