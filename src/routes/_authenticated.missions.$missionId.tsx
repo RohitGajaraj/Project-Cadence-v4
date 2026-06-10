@@ -364,7 +364,7 @@ function MissionDetail() {
       <div className="mx-auto max-w-4xl px-6 py-8 space-y-6">
         <div>
           <Link
-            to="/cockpit"
+            to="/missions"
             search={{ tab: "missions" }}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
