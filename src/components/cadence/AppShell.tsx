@@ -97,7 +97,6 @@ const groups: NavGroup[] = [
     items: [
       { to: "/agents", label: "Agents", icon: Bot },
       { to: "/missions", label: "Missions", icon: Activity },
-      { to: "/prompts", label: "Prompts", icon: FileCode },
       { to: "/sync", label: "Connectors", icon: Plug },
     ],
   },
@@ -111,7 +110,8 @@ const groups: NavGroup[] = [
     label: "Govern",
     items: [
       { to: "/govern", label: "Govern", icon: ShieldAlert },
-      { to: "/evals", label: "Evals", icon: FlaskConical },
+      { to: "/govern", label: "Prompts", icon: FileCode, search: { tab: "prompts" } },
+      { to: "/govern", label: "Evals", icon: FlaskConical, search: { tab: "evals" } },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },

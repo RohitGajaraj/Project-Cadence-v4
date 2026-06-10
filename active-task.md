@@ -6,7 +6,7 @@
 
 ## In-flight — F-IA-V4 (7-surface IA collapse)
 
-**Status:** Phase 1a + 1b shipped (Missions + Govern surfaces). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
+**Status:** Phase 1a + 1b + 1b-2 shipped (Missions + Govern with Prompts & Evals folded in). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
 
 ### Done
 
@@ -20,13 +20,11 @@
 - [x] Convert `/governance` + `/observe` → `beforeLoad` redirects to `/govern` (preserves tab).
 - [x] Repoint `/guardrails`, `/budgets`, `/drift`, `/traces`, `/inbox`, `/analytics` → `/govern`.
 - [x] Update `AppShell.tsx` nav + footer pause-banner + `CommandPalette.tsx` to `/govern`.
-
-### Next slice (Phase 1b-2) — fold Evals + Prompts into `/govern`
-
-- [ ] Extract `EvalsPanel` body from `_authenticated.evals.tsx` (~617 lines).
-- [ ] Extract `PromptsPanel` body from `_authenticated.prompts.tsx` (~655 lines).
-- [ ] Add `evals` + `prompts` tabs to `/govern`.
-- [ ] Convert `/evals` + `/prompts` → redirects to `/govern?tab=...`.
+- [x] Extract `EvalsPanel` from `_authenticated.evals.tsx` (~617 lines) → `src/components/governance/EvalsPanel.tsx`.
+- [x] Extract `PromptsPanel` from `_authenticated.prompts.tsx` (~655 lines) → `src/components/governance/PromptsPanel.tsx`.
+- [x] Add `prompts` + `evals` tabs to `/govern` (Govern now has 9 tabs); widen container to `max-w-[1400px]`.
+- [x] Convert `/evals` + `/prompts` → `beforeLoad` redirects to `/govern?tab=…`.
+- [x] Repoint sidebar: Prompts moved from Agents group into Govern group; both Prompts + Evals now deep-link to `/govern?tab=…`.
 
 ### Phase 1c — Product surface
 
