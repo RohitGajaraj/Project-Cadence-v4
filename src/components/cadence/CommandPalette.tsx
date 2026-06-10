@@ -10,10 +10,9 @@ import {
   Sparkles,
   Search,
   Telescope,
-  Target,
-  FileText,
-  Map,
-  Calendar,
+  BookOpen,
+  GraduationCap,
+  ShieldAlert,
   Activity,
 } from "lucide-react";
 
@@ -79,37 +78,34 @@ export function CommandPalette() {
                 <Item icon={Bot} label="Agents" hint="G A" onSelect={() => go("/agents")} />
                 <Item
                   icon={Telescope}
-                  label="Discovery · Signals & themes"
+                  label="Product · signals, opportunities, specs"
                   hint="G I"
-                  onSelect={() => go("/discovery")}
+                  onSelect={() => go("/product")}
                 />
                 <Item
-                  icon={Target}
-                  label="Opportunities"
-                  hint="G O"
-                  onSelect={() => go("/opportunities")}
-                />
-                <Item icon={FileText} label="PRDs" hint="G P" onSelect={() => go("/prds")} />
-                <Item
-                  icon={Map}
-                  label="Roadmap · Now/Next/Later"
-                  hint="G R"
-                  onSelect={() => go("/roadmap")}
-                />
-                <Item
-                  icon={Calendar}
-                  label="Calendar · time & meeting capture"
+                  icon={BookOpen}
+                  label="Knowledge · memory, decisions, docs, calendar"
                   hint="G M"
-                  onSelect={() => go("/calendar")}
+                  onSelect={() => go("/knowledge")}
                 />
-                <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
+                <Item
+                  icon={GraduationCap}
+                  label="Learn · outcomes, support, learnings"
+                  onSelect={() => go("/learn")}
+                />
+                <Item
+                  icon={ListTodo}
+                  label="Tasks"
+                  hint="G T"
+                  onSelect={() => go("/product", )}
+                />
                 <Item
                   icon={Activity}
                   label="Missions · live swarm, agents, missions"
                   onSelect={() => go("/missions")}
                 />
                 <Item
-                  icon={Activity}
+                  icon={ShieldAlert}
                   label="Govern · controls, approvals, traces, drift"
                   onSelect={() => go("/govern")}
                 />
