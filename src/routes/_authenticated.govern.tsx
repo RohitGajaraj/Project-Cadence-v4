@@ -191,7 +191,7 @@ function GovernPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto space-y-6">
+      <div className="px-6 md:px-10 py-8 max-w-[1400px] mx-auto space-y-6">
         <header>
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <ShieldAlert className="h-3 w-3" /> Govern
