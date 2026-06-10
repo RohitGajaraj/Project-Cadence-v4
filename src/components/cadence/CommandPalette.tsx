@@ -183,11 +183,11 @@ export function GotoShortcuts() {
           a: "/agents",
           t: "/tasks",
           s: "/settings",
-          i: "/discovery",
-          o: "/opportunities",
-          p: "/prds",
-          r: "/roadmap",
-          m: "/calendar",
+          p: "/product",
+          k: "/knowledge",
+          m: "/knowledge",
+          l: "/learn",
+          v: "/govern",
         };
         const to = map[e.key.toLowerCase()];
         if (to) {
