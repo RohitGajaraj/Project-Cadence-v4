@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Settings,
   Telescope,
-  Calendar,
   BookOpen,
   Inbox,
   Activity,
@@ -26,7 +25,7 @@ import {
   MoreHorizontal,
   Pencil,
   LogOut as LeaveIcon,
-  Rocket,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -56,12 +55,12 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 // Workspace — your daily rail. Always visible, never collapsed.
 // Pin test (docs/conventions/inline-management.md): used most days, entry
 // point for an active workflow, not derivable from another pinned surface.
-// Briefing → moved to Settings → Workspace (set once, agent-facing).
-// Meetings → merged into Calendar (one mental model: time + capture).
+// Calendar → folded into Knowledge (Phase 1d); Knowledge pinned in its slot
+// because consolidated knowledge access is a daily-loop job.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/calendar", label: "Calendar", icon: Calendar },
+  { to: "/knowledge", label: "Knowledge", icon: BookOpen },
   { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
@@ -79,7 +78,6 @@ const groups: NavGroup[] = [
     label: "Build",
     items: [
       { to: "/build", label: "Builder", icon: Hammer },
-      { to: "/docs", label: "Docs", icon: BookOpen },
     ],
   },
   {
@@ -92,9 +90,9 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    id: "outcome",
-    label: "Outcome",
-    items: [{ to: "/outcome", label: "Outcome", icon: Rocket }],
+    id: "learn",
+    label: "Learn",
+    items: [{ to: "/learn", label: "Learn", icon: GraduationCap }],
   },
   {
     id: "govern",
