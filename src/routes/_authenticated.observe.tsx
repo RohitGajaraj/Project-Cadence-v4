@@ -102,20 +102,24 @@ function ObservePage() {
               t.tone === "sky"
                 ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
                 : t.tone === "violet"
-                ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
-                : "bg-amber-500/10 text-amber-300 border-amber-500/30";
+                  ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
+                  : "bg-amber-500/10 text-amber-300 border-amber-500/30";
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`px-4 py-2 text-sm border-b-2 -mb-px flex items-center gap-2 ${active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${active ? "ring-1 ring-foreground/20" : "opacity-80"}`}>
+                <span
+                  className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${active ? "ring-1 ring-foreground/20" : "opacity-80"}`}
+                >
                   <Icon className="h-3.5 w-3.5" />
                 </span>
                 <span>{t.label}</span>
                 {t.badge != null && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.id === "drift" ? "bg-amber-500/15 text-amber-300" : "bg-secondary text-muted-foreground"}`}>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.id === "drift" ? "bg-amber-500/15 text-amber-300" : "bg-secondary text-muted-foreground"}`}
+                  >
                     {t.badge}
                   </span>
                 )}
@@ -124,9 +128,7 @@ function ObservePage() {
           })}
         </div>
 
-        <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
-          {activeTab.description}
-        </p>
+        <p className="text-sm text-muted-foreground mb-6 max-w-2xl">{activeTab.description}</p>
 
         {tab === "analytics" && <AnalyticsPanel />}
         {tab === "traces" && <TracesPanel />}

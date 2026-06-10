@@ -28,37 +28,127 @@ function bucketFor(hour: number): Bucket {
 // distinguishes — many languages share a single all-day greeting (Hola,
 // Namaste, Ciao) so we reuse it across buckets.
 const COUNTRY_GREETINGS: Record<string, Record<Bucket, string>> = {
-  IN: { morning: "Namaste",      afternoon: "Namaste",         evening: "Namaste",            night: "Namaste" },
-  ES: { morning: "Buenos días",  afternoon: "Buenas tardes",   evening: "Buenas noches",      night: "Buenas noches" },
-  MX: { morning: "Buenos días",  afternoon: "Buenas tardes",   evening: "Buenas noches",      night: "Buenas noches" },
-  AR: { morning: "Buenos días",  afternoon: "Buenas tardes",   evening: "Buenas noches",      night: "Buenas noches" },
-  DE: { morning: "Guten Morgen", afternoon: "Guten Tag",       evening: "Guten Abend",        night: "Gute Nacht" },
-  AT: { morning: "Guten Morgen", afternoon: "Guten Tag",       evening: "Guten Abend",        night: "Gute Nacht" },
-  CH: { morning: "Guten Morgen", afternoon: "Guten Tag",       evening: "Guten Abend",        night: "Gute Nacht" },
-  FR: { morning: "Bonjour",      afternoon: "Bonjour",         evening: "Bonsoir",            night: "Bonne nuit" },
-  IT: { morning: "Buongiorno",   afternoon: "Buon pomeriggio", evening: "Buonasera",          night: "Buonanotte" },
-  PT: { morning: "Bom dia",      afternoon: "Boa tarde",       evening: "Boa noite",          night: "Boa noite" },
-  BR: { morning: "Bom dia",      afternoon: "Boa tarde",       evening: "Boa noite",          night: "Boa noite" },
-  NL: { morning: "Goedemorgen",  afternoon: "Goedemiddag",     evening: "Goedenavond",        night: "Goedenacht" },
-  BE: { morning: "Goedemorgen",  afternoon: "Goedemiddag",     evening: "Goedenavond",        night: "Goedenacht" },
-  JP: { morning: "Ohayō",        afternoon: "Konnichiwa",      evening: "Konbanwa",           night: "Oyasumi" },
-  CN: { morning: "Zǎoshang hǎo", afternoon: "Nǐ hǎo",          evening: "Wǎnshàng hǎo",       night: "Wǎn'ān" },
-  KR: { morning: "Annyeong",     afternoon: "Annyeong",        evening: "Annyeong",           night: "Annyeong" },
-  RU: { morning: "Dobroe utro",  afternoon: "Dobryy den'",     evening: "Dobryy vecher",      night: "Spokoynoy nochi" },
-  TR: { morning: "Günaydın",     afternoon: "İyi günler",      evening: "İyi akşamlar",       night: "İyi geceler" },
-  SE: { morning: "God morgon",   afternoon: "God dag",         evening: "God kväll",          night: "God natt" },
-  NO: { morning: "God morgen",   afternoon: "God dag",         evening: "God kveld",          night: "God natt" },
-  DK: { morning: "Godmorgen",    afternoon: "Goddag",          evening: "Godaften",           night: "Godnat" },
-  FI: { morning: "Huomenta",     afternoon: "Päivää",          evening: "Iltaa",              night: "Hyvää yötä" },
-  PL: { morning: "Dzień dobry",  afternoon: "Dzień dobry",     evening: "Dobry wieczór",      night: "Dobranoc" },
-  GR: { morning: "Kaliméra",     afternoon: "Kaliméra",        evening: "Kalispéra",          night: "Kaliníchta" },
-  IL: { morning: "Boker tov",    afternoon: "Tzohorayim tovim",evening: "Erev tov",           night: "Layla tov" },
-  SA: { morning: "Sabah al-khair",afternoon:"Masa al-khair",   evening: "Masa al-khair",      night: "Tusbih ‘ala khair" },
-  AE: { morning: "Sabah al-khair",afternoon:"Masa al-khair",   evening: "Masa al-khair",      night: "Tusbih ‘ala khair" },
-  TH: { morning: "Sawasdee",     afternoon: "Sawasdee",        evening: "Sawasdee",           night: "Ratri sawat" },
-  VN: { morning: "Chào buổi sáng",afternoon:"Chào buổi chiều", evening: "Chào buổi tối",      night: "Chúc ngủ ngon" },
-  ID: { morning: "Selamat pagi", afternoon: "Selamat siang",   evening: "Selamat malam",      night: "Selamat malam" },
-  MY: { morning: "Selamat pagi", afternoon: "Selamat tengah hari", evening: "Selamat petang", night: "Selamat malam" },
+  IN: { morning: "Namaste", afternoon: "Namaste", evening: "Namaste", night: "Namaste" },
+  ES: {
+    morning: "Buenos días",
+    afternoon: "Buenas tardes",
+    evening: "Buenas noches",
+    night: "Buenas noches",
+  },
+  MX: {
+    morning: "Buenos días",
+    afternoon: "Buenas tardes",
+    evening: "Buenas noches",
+    night: "Buenas noches",
+  },
+  AR: {
+    morning: "Buenos días",
+    afternoon: "Buenas tardes",
+    evening: "Buenas noches",
+    night: "Buenas noches",
+  },
+  DE: {
+    morning: "Guten Morgen",
+    afternoon: "Guten Tag",
+    evening: "Guten Abend",
+    night: "Gute Nacht",
+  },
+  AT: {
+    morning: "Guten Morgen",
+    afternoon: "Guten Tag",
+    evening: "Guten Abend",
+    night: "Gute Nacht",
+  },
+  CH: {
+    morning: "Guten Morgen",
+    afternoon: "Guten Tag",
+    evening: "Guten Abend",
+    night: "Gute Nacht",
+  },
+  FR: { morning: "Bonjour", afternoon: "Bonjour", evening: "Bonsoir", night: "Bonne nuit" },
+  IT: {
+    morning: "Buongiorno",
+    afternoon: "Buon pomeriggio",
+    evening: "Buonasera",
+    night: "Buonanotte",
+  },
+  PT: { morning: "Bom dia", afternoon: "Boa tarde", evening: "Boa noite", night: "Boa noite" },
+  BR: { morning: "Bom dia", afternoon: "Boa tarde", evening: "Boa noite", night: "Boa noite" },
+  NL: {
+    morning: "Goedemorgen",
+    afternoon: "Goedemiddag",
+    evening: "Goedenavond",
+    night: "Goedenacht",
+  },
+  BE: {
+    morning: "Goedemorgen",
+    afternoon: "Goedemiddag",
+    evening: "Goedenavond",
+    night: "Goedenacht",
+  },
+  JP: { morning: "Ohayō", afternoon: "Konnichiwa", evening: "Konbanwa", night: "Oyasumi" },
+  CN: { morning: "Zǎoshang hǎo", afternoon: "Nǐ hǎo", evening: "Wǎnshàng hǎo", night: "Wǎn'ān" },
+  KR: { morning: "Annyeong", afternoon: "Annyeong", evening: "Annyeong", night: "Annyeong" },
+  RU: {
+    morning: "Dobroe utro",
+    afternoon: "Dobryy den'",
+    evening: "Dobryy vecher",
+    night: "Spokoynoy nochi",
+  },
+  TR: {
+    morning: "Günaydın",
+    afternoon: "İyi günler",
+    evening: "İyi akşamlar",
+    night: "İyi geceler",
+  },
+  SE: { morning: "God morgon", afternoon: "God dag", evening: "God kväll", night: "God natt" },
+  NO: { morning: "God morgen", afternoon: "God dag", evening: "God kveld", night: "God natt" },
+  DK: { morning: "Godmorgen", afternoon: "Goddag", evening: "Godaften", night: "Godnat" },
+  FI: { morning: "Huomenta", afternoon: "Päivää", evening: "Iltaa", night: "Hyvää yötä" },
+  PL: {
+    morning: "Dzień dobry",
+    afternoon: "Dzień dobry",
+    evening: "Dobry wieczór",
+    night: "Dobranoc",
+  },
+  GR: { morning: "Kaliméra", afternoon: "Kaliméra", evening: "Kalispéra", night: "Kaliníchta" },
+  IL: {
+    morning: "Boker tov",
+    afternoon: "Tzohorayim tovim",
+    evening: "Erev tov",
+    night: "Layla tov",
+  },
+  SA: {
+    morning: "Sabah al-khair",
+    afternoon: "Masa al-khair",
+    evening: "Masa al-khair",
+    night: "Tusbih ‘ala khair",
+  },
+  AE: {
+    morning: "Sabah al-khair",
+    afternoon: "Masa al-khair",
+    evening: "Masa al-khair",
+    night: "Tusbih ‘ala khair",
+  },
+  TH: { morning: "Sawasdee", afternoon: "Sawasdee", evening: "Sawasdee", night: "Ratri sawat" },
+  VN: {
+    morning: "Chào buổi sáng",
+    afternoon: "Chào buổi chiều",
+    evening: "Chào buổi tối",
+    night: "Chúc ngủ ngon",
+  },
+  ID: {
+    morning: "Selamat pagi",
+    afternoon: "Selamat siang",
+    evening: "Selamat malam",
+    night: "Selamat malam",
+  },
+  MY: {
+    morning: "Selamat pagi",
+    afternoon: "Selamat tengah hari",
+    evening: "Selamat petang",
+    night: "Selamat malam",
+  },
 };
 
 // English fallback by bucket.
@@ -93,14 +183,13 @@ export const getGreeting = createServerFn({ method: "GET" })
         : new Date().getUTCHours();
     const bucket = bucketFor(hour);
 
-    const localized = country && COUNTRY_GREETINGS[country]
-      ? COUNTRY_GREETINGS[country][bucket]
-      : EN[bucket];
+    const localized =
+      country && COUNTRY_GREETINGS[country] ? COUNTRY_GREETINGS[country][bucket] : EN[bucket];
 
     return {
-      greeting: localized,         // e.g. "Namaste" / "Buenos días" / "Good morning"
-      bucket,                      // morning | afternoon | evening | night
-      country: country || null,    // ISO-2 or null
+      greeting: localized, // e.g. "Namaste" / "Buenos días" / "Good morning"
+      bucket, // morning | afternoon | evening | night
+      country: country || null, // ISO-2 or null
       localized: country !== "" && !!COUNTRY_GREETINGS[country],
     };
   });

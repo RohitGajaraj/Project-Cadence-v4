@@ -1,6 +1,6 @@
 # Product Positioning v2 — Strategic Session Record
 
-> **What this is.** A living record of the strategic thinking that shaped Cadence's positioning, feature set, and go-to-market direction. Written as a reference point for future decisions — not a commitment document, but a map of the reasoning so future you (or any agent) can understand *why* the product is positioned as it is, and what would need to change to warrant a rethink.
+> **What this is.** A living record of the strategic thinking that shaped Cadence's positioning, feature set, and go-to-market direction. Written as a reference point for future decisions — not a commitment document, but a map of the reasoning so future you (or any agent) can understand _why_ the product is positioned as it is, and what would need to change to warrant a rethink.
 >
 > **When to revisit.** When entering a new funding stage, onboarding a new co-founder, before a major pivot, or whenever the question "why are we building this?" needs a grounded answer.
 >
@@ -21,9 +21,11 @@ The conclusion: not specific enough. The sharpest, most defensible position is *
 ### 2. The Positioning Evolution
 
 #### Where we started
+
 > "AI-native product OS where AI agents run your product lifecycle and you stay in the loop."
 
 #### Where we landed
+
 > "The autonomous product OS — your agents run the entire product lifecycle; you set strategy and govern the calls that matter."
 
 **The key linguistic shift:** "AI-native" → "autonomous." AI-native is now table stakes — every SaaS claims it. Autonomous is the claim that's still differentiated and hard to copy.
@@ -37,24 +39,28 @@ The conclusion: not specific enough. The sharpest, most defensible position is *
 We intentionally serve all three from day one. They compound each other: a PM at one company becomes a technical founder at the next. The platform's value proposition is the same across all three — the wedge language differs slightly.
 
 #### P1 — Solo / Lead PM at AI-native B2B SaaS
+
 - **Company stage:** 10-200 employees, PM owns discovery → roadmap → comms
 - **Pain:** mechanical work (spec writing, ticket triage, status updates, stakeholder reports) crowds out actual product thinking. Shallow discovery because there's no time for deep synthesis.
 - **Job:** "Give me back the hours I spend on process so I can spend them on judgment."
 - **Cadence hook:** "Your agents handle the process. You handle the judgment."
 
 #### P2 — Founder Operating as the Whole Product Org
+
 - **Company stage:** Pre-seed to Series A, 1-10 people, founder IS the PM
 - **Pain:** Discovery + specs + roadmap + build coordination + GTM + support + pricing — all on one person. Tool sprawl (10-15 tools, no integration). The glue work exceeds the judgment work.
 - **Job:** "Run the product org I can't afford to hire."
 - **Cadence hook:** "One operator. A full autonomous product org."
 
 #### P3 — Technical Founder / Indie Hacker
+
 - **Company stage:** Bootstrapped to seed, wants to stay in the build or step away completely
 - **Pain:** Everything that isn't coding falls on them. Discovery, GTM, support, pricing — non-technical work they don't have time for or expertise in.
 - **Job:** "Agents run the product lifecycle so I can stay focused on what I'm good at."
 - **Cadence hook:** "Your product org, running itself."
 
 #### P4 (Expansion — validate at scale)
+
 Engineering leads, sales, support, CEOs sharing one queryable lifecycle. Not day-one, but the natural expansion path once the core PM personas are served.
 
 ---
@@ -73,6 +79,7 @@ The best PMs today are not writing specs — they're designing agent workflows, 
 Every enterprise that wants to use autonomous agents is blocked by: "What did it do? Why? Who approved it? Can I roll back?" This is not a technical question — it's a governance question. The trust stack (traces, evals, guardrails, approval gates, audit log) is not a feature — it's the thing that makes enterprise adoption possible. No current competitor has built this as a first-class product.
 
 **What competitors are missing:**
+
 - Factory.ai / Devin: autonomous build, no governance, no lifecycle beyond code
 - Linear: excellent system of record, zero autonomous execution
 - Productboard / Notion AI: AI-assists-human framing, not agent-driven
@@ -93,6 +100,7 @@ Every enterprise that wants to use autonomous agents is blocked by: "What did it
 The continuous loop: Support tickets → signals → new opportunities → new specs → new build → new ship → more support → learning → next cycle. This loop never stops. Cadence is the substrate that runs it.
 
 **The Product Memory compounding effect:** The longer Cadence runs for a product, the more it knows:
+
 - Which user signals matter (pattern recognition)
 - Which decisions were made and why (lineage)
 - Which features drove outcomes (closed loop)
@@ -119,6 +127,7 @@ The right position is: **Compounding value with zero lock-in.**
 This is actually a stronger competitive position, especially for the PM persona that has been burned by vendor lock-in before (Jira, Confluence, proprietary data formats). Explicit portability builds trust faster than any feature.
 
 **Feature implication:** Full data portability is a first-class feature, not an afterthought. This means:
+
 - Export all signals, themes, opportunities as CSV/JSON
 - Export all decisions and lineage as structured JSON
 - Export PRDs and specs as standard Markdown
@@ -144,15 +153,14 @@ The Agent Trust Score and Autonomy Dial (feature C6 in `docs/feature-backlog.md`
 
 **The four stages (UX reference, not a development schedule — progression is driven by earned trust, not elapsed time):**
 
-| Stage | Agent behavior | Operator experience |
-|---|---|---|
-| Observing | All actions require approval; agents propose, operator reviews everything | Close contact, frequent approvals, watching closely |
-| Proving | Routine low-risk actions auto-execute; high-stakes still require approval | Governs exceptions, not routine work |
-| Trusted | Agents run autonomously across most tasks; operator sees outcomes and exceptions | Sets intent, reviews summaries — not individual actions |
-| Ambient | Agents run the product org continuously; operator provides strategic direction | Approves major decisions, reviews periodic briefs |
+| Stage     | Agent behavior                                                                   | Operator experience                                     |
+| --------- | -------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Observing | All actions require approval; agents propose, operator reviews everything        | Close contact, frequent approvals, watching closely     |
+| Proving   | Routine low-risk actions auto-execute; high-stakes still require approval        | Governs exceptions, not routine work                    |
+| Trusted   | Agents run autonomously across most tasks; operator sees outcomes and exceptions | Sets intent, reviews summaries — not individual actions |
+| Ambient   | Agents run the product org continuously; operator provides strategic direction   | Approves major decisions, reviews periodic briefs       |
 
 Full UX design requirements for surfacing this arc (Trust Score, Autonomy Dial, Loop Health Monitor): [`../../design.md`](../../design.md) — "The trust arc" section.
-
 
 **Why not Model C (Ambient OS / mobile-first)?** Model C is the eventual long-term destination for mature Cadence users (2+ years). It's worth designing for but not the day-one interaction model. Get to B first, design the B→A journey, let C emerge.
 
@@ -162,14 +170,14 @@ Full UX design requirements for surfacing this arc (Trust Score, Autonomy Dial, 
 
 New features identified in this session that were missing from the backlog:
 
-| Feature | Rationale |
-|---|---|
-| **Strategic Briefing Surface** | Set product north star, goals, and constraints once; all agents read it as their operating context. The "brief the team" mechanism. |
-| **Agent Trust Score + Autonomy Dial** | Make the trust-building journey visible. Each agent earns autonomy through demonstrated performance. Governance feels like policy, not micromanagement. |
-| **Loop Health Monitor** | Is the autonomous loop running? Where is it stuck? Single view showing whether the product org is operating or needs attention. |
-| **Mission Compounding View** | Show how each mission built on previous memory. Make the compounding visible so users feel the platform getting smarter. |
-| **Full Data Portability / Export** | Export all signals, decisions, memory, PRDs, agent configs in open formats. Anti-lock-in feature that paradoxically builds trust and retention. |
-| **Persona-specific onboarding tracks** | Three tracks: Solo PM / Founding PM / Technical Founder. Each emphasizes the pain point most relevant to that persona. |
+| Feature                                | Rationale                                                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Strategic Briefing Surface**         | Set product north star, goals, and constraints once; all agents read it as their operating context. The "brief the team" mechanism.                     |
+| **Agent Trust Score + Autonomy Dial**  | Make the trust-building journey visible. Each agent earns autonomy through demonstrated performance. Governance feels like policy, not micromanagement. |
+| **Loop Health Monitor**                | Is the autonomous loop running? Where is it stuck? Single view showing whether the product org is operating or needs attention.                         |
+| **Mission Compounding View**           | Show how each mission built on previous memory. Make the compounding visible so users feel the platform getting smarter.                                |
+| **Full Data Portability / Export**     | Export all signals, decisions, memory, PRDs, agent configs in open formats. Anti-lock-in feature that paradoxically builds trust and retention.         |
+| **Persona-specific onboarding tracks** | Three tracks: Solo PM / Founding PM / Technical Founder. Each emphasizes the pain point most relevant to that persona.                                  |
 
 All six are now in [`../feature-backlog.md`](../feature-backlog.md).
 
@@ -178,12 +186,15 @@ All six are now in [`../feature-backlog.md`](../feature-backlog.md).
 ### 9. The USP Sharpened
 
 **Previous USP:**
+
 > Every signal, decision, artifact, and shipped change lives in one place where autonomous agents cite their evidence, prove their reasoning, build and ship the work, and act on your behalf behind approval gates — never siloed, never assumption-based.
 
 **New USP (proposed):**
+
 > Cadence is the autonomous product OS where a swarm of specialist agents runs your entire product lifecycle — discover, build, ship, launch, support, learn — continuously and in parallel, governed by you at the calls that matter. Not a tool you use. An operating system that runs your product org.
 
 **Supporting statement (portability):**
+
 > Your data is always yours. Export everything — decisions, memory, signals, agent configs — in open formats, anytime. We earn your trust through value, not friction.
 
 ---
@@ -200,18 +211,18 @@ All six are now in [`../feature-backlog.md`](../feature-backlog.md).
 
 ### 11. Framing Changes Committed
 
-| Old framing | New framing | Where applied |
-|---|---|---|
-| "AI-native product OS" | "autonomous product OS" | README, all docs |
-| "stay in the loop" | "govern the calls that matter" | README, positioning |
-| "human does X%, AI does Y%" | "agents do, humans govern" | All docs |
-| "AI helps human write specs" | "agents define, human approves" | Feature descriptions |
-| "Mission Control" | "Command Center" (or keep MC, reframe as commanding) | Design, IA |
-| "development platform" | "operating system" | All docs, positioning |
-| "build tool" | "continuous operating system" | All docs |
-| Lock-in as moat | Compounding value + full portability | README, MOAT section |
+| Old framing                  | New framing                                          | Where applied         |
+| ---------------------------- | ---------------------------------------------------- | --------------------- |
+| "AI-native product OS"       | "autonomous product OS"                              | README, all docs      |
+| "stay in the loop"           | "govern the calls that matter"                       | README, positioning   |
+| "human does X%, AI does Y%"  | "agents do, humans govern"                           | All docs              |
+| "AI helps human write specs" | "agents define, human approves"                      | Feature descriptions  |
+| "Mission Control"            | "Command Center" (or keep MC, reframe as commanding) | Design, IA            |
+| "development platform"       | "operating system"                                   | All docs, positioning |
+| "build tool"                 | "continuous operating system"                        | All docs              |
+| Lock-in as moat              | Compounding value + full portability                 | README, MOAT section  |
 
 ---
 
-*Last updated: 2026-06-02 | Session: Claude Code + Rohit Gajaraj*
-*Next review trigger: entering new funding stage, major market shift, or new co-founder*
+_Last updated: 2026-06-02 | Session: Claude Code + Rohit Gajaraj_
+_Next review trigger: entering new funding stage, major market shift, or new co-founder_

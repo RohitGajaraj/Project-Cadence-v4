@@ -8,9 +8,10 @@
 
 The product must feel like a **light, calm, super modern, fast single-purpose app** sitting on top of a **heavy reasoning engine** — the "should feel like light surface, but powerful engine behind it" promise from [`README.md`](./README.md). It must read as a genuine enterprise-grade, AI-native product — not a card-grid SaaS template, and not a copy of any one site , but you can get inspired from get products out there.
 
-**This is a directive, not a suggestion:** before locking visual decisions, do real design research using the available design skills, plugins, and MCPs (e.g.   `/emil-design-eng`,  `/impeccable` , `/design-taste-frontend`,   `/frontend-design-direction` ,   `/frontend-design`, `/gstack-design-review`, `/ecc:a11y-architect` ,  `/gstack-design-consultation` , and many more avaialble in the installed library, the design-system and Figma skills). Pull from a wide menu of references and **mix to a unique result**. Reach for the full modern toolkit where it earns its place: shaders, hero compositions, AI-chat components, gradient and text effects, glassmorphism/neumorphism used sparingly, liquid effects, hover/floating interactions, motion and so on. The pillars and tokens below are the *foundation and guardrails*, not a ceiling — improve on them when you can justify it.
+**This is a directive, not a suggestion:** before locking visual decisions, do real design research using the available design skills, plugins, and MCPs (e.g. `/emil-design-eng`, `/impeccable` , `/design-taste-frontend`, `/frontend-design-direction` , `/frontend-design`, `/gstack-design-review`, `/ecc:a11y-architect` , `/gstack-design-consultation` , and many more avaialble in the installed library, the design-system and Figma skills). Pull from a wide menu of references and **mix to a unique result**. Reach for the full modern toolkit where it earns its place: shaders, hero compositions, AI-chat components, gradient and text effects, glassmorphism/neumorphism used sparingly, liquid effects, hover/floating interactions, motion and so on. The pillars and tokens below are the _foundation and guardrails_, not a ceiling — improve on them when you can justify it.
 
 ### Reference menu (inspiration, never copy)
+
 - VoltAgent awesome-design-md / getdesign.md — curated unicorn design references (the menu).
 - impeccable.style (Emil Kowalski) — subtraction, intentionality, restraint.
 - 21st.dev community components — current AI-native component patterns.
@@ -19,6 +20,7 @@ The product must feel like a **light, calm, super modern, fast single-purpose ap
 - Anything & everything you feel that would be a good fit.
 
 ### Anti-references (do not mimic)
+
 Generic five-feature-card SaaS landing pages; decorative shadow+gradient layering as a substitute for hierarchy; confetti/celebration animations; stacked-section "document" layouts where every section is the same shape; purposeless carousels.
 
 ---
@@ -42,7 +44,6 @@ The foundation craft inheritance — Apple's craftsmanship, Linear's clarity, No
 **Gradients:** `--gradient-aurora` (hero), `--gradient-card` (rare elevation), `--gradient-trace` (trace waterfall wash).
 **Shadows:** `--shadow-glass`, `--shadow-elevated`, `--shadow-focus`.
 
-
 If a value is needed and no token fits, **add a token** — never inline. The review threshold is low; drift is the enemy, not new tokens.
 
 The theme is **dark-mode first** (a Google Products-inspired "Neural Expressive" base) with warmth shifts in OKLCH for depth. Light mode is supported but secondary. Treat the palette as authoritative starting values with full authority to evolve toward a more distinctive, appealing result.
@@ -53,17 +54,17 @@ The theme is **dark-mode first** (a Google Products-inspired "Neural Expressive"
 
 Supersedes "Midnight Indigo." Factory.ai-adjacent industrial dark — carbon-black canvas, molten Pantone Orange 021 C as the signature accent, with amber warmth and a thin ice counterpoint for data viz. Conveys "heavy reasoning engine" without the generic AI-blue trope.
 
-| Role | Token | Pantone | OKLCH | Notes |
-|---|---|---|---|---|
-| Background (paper) | `--paper` | Black 6 C (~#101820) | `oklch(0.13 0.006 60)` | Warm carbon, never pure #000 |
-| Elevated surface | `--paper-elevated` | — | `oklch(0.17 0.008 60)` | Graphite plate for cards |
-| Foreground (ink) | `--ink` | Cool Gray 1 C | `oklch(0.97 0.004 75)` | Bone white, faint warmth |
-| Muted ink | `--ink-muted` | Cool Gray 7 C | `oklch(0.64 0.012 65)` | Concrete |
-| **Primary accent** | `--violet` *(retained name)* / `--primary` | **Orange 021 C (~#FE5000)** | `oklch(0.70 0.22 38)` | Signature ember — CTAs, rings, gradients |
-| Warm halo | `--amber` | 7548 C | `oklch(0.84 0.16 78)` | Gradient companion |
-| Cool counterpoint | `--cyan` | 7541 C | `oklch(0.82 0.08 220)` | Charts, info states |
-| Success | `--emerald` | 7480 C | `oklch(0.78 0.16 158)` | |
-| Alert | `--rose` / `--destructive` | Red 032 C | `oklch(0.70 0.22 22)` | Reads warm next to ember |
+| Role               | Token                                      | Pantone                     | OKLCH                  | Notes                                    |
+| ------------------ | ------------------------------------------ | --------------------------- | ---------------------- | ---------------------------------------- |
+| Background (paper) | `--paper`                                  | Black 6 C (~#101820)        | `oklch(0.13 0.006 60)` | Warm carbon, never pure #000             |
+| Elevated surface   | `--paper-elevated`                         | —                           | `oklch(0.17 0.008 60)` | Graphite plate for cards                 |
+| Foreground (ink)   | `--ink`                                    | Cool Gray 1 C               | `oklch(0.97 0.004 75)` | Bone white, faint warmth                 |
+| Muted ink          | `--ink-muted`                              | Cool Gray 7 C               | `oklch(0.64 0.012 65)` | Concrete                                 |
+| **Primary accent** | `--violet` _(retained name)_ / `--primary` | **Orange 021 C (~#FE5000)** | `oklch(0.70 0.22 38)`  | Signature ember — CTAs, rings, gradients |
+| Warm halo          | `--amber`                                  | 7548 C                      | `oklch(0.84 0.16 78)`  | Gradient companion                       |
+| Cool counterpoint  | `--cyan`                                   | 7541 C                      | `oklch(0.82 0.08 220)` | Charts, info states                      |
+| Success            | `--emerald`                                | 7480 C                      | `oklch(0.78 0.16 158)` |                                          |
+| Alert              | `--rose` / `--destructive`                 | Red 032 C                   | `oklch(0.70 0.22 22)`  | Reads warm next to ember                 |
 
 Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are retained for backwards compatibility — only their values shifted to the Carbon & Ember language. WCAG AA: ember (`0.70 .22 38`) on carbon (`0.13 .006 60`) ≈ 7.4:1 for text and large UI.
 
@@ -81,6 +82,7 @@ Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are re
    - Criteria: distinctiveness (avoid generic tech blues), appeal to enterprise operators, perceptual uniformity in dark mode
 
 3. **Palette proposal template** (for agents submitting color suggestions)
+
    ```
    Background: Pantone 19-0301 (near-black, cool tone)
    Primary accent: Pantone [####] — reason (e.g., "modern, high contrast, enterprise-familiar")
@@ -88,7 +90,7 @@ Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are re
    Alert/destructive: Pantone [####] — reason (e.g., "red with warmth, accessible on dark")
    Success: Pantone [####] — reason (e.g., "green, accessible, distinct from primary")
    Neutral (muted): Pantone [####] — reason (e.g., "slate, de-emphasizes metadata")
-   
+
    Rationale: [2–3 sentences on why this palette achieves "light surface, powerful engine" brand promise]
    WCAG AA check: [contrast ratios for all foreground/background pairs]
    Tool used: [which design skill/MCP was consulted]
@@ -113,16 +115,16 @@ Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are re
 
 System font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, …`); monospace `ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo`.
 
-| Role | Weight | Size | Line height | Use |
-|---|---|---|---|---|
-| Display | 600 | text-4xl | 1.1 | Hero, login. Rare. |
-| H1 | 600 | text-3xl | 1.2 | Route titles. |
-| H2 | 600 | text-2xl | 1.3 | Section headers. |
-| H3 | 500 | text-xl | 1.35 | Sub-sections. |
-| Body | 400 | text-base | 1.6 | Default. |
-| Body-sm | 400 | text-sm | 1.5 | Lists, table cells. |
-| Caption | 400 | text-xs | 1.4 | Metadata badges, timestamps. |
-| Code | 400 | text-sm mono | 1.6 | Inline code, blocks. |
+| Role    | Weight | Size         | Line height | Use                          |
+| ------- | ------ | ------------ | ----------- | ---------------------------- |
+| Display | 600    | text-4xl     | 1.1         | Hero, login. Rare.           |
+| H1      | 600    | text-3xl     | 1.2         | Route titles.                |
+| H2      | 600    | text-2xl     | 1.3         | Section headers.             |
+| H3      | 500    | text-xl      | 1.35        | Sub-sections.                |
+| Body    | 400    | text-base    | 1.6         | Default.                     |
+| Body-sm | 400    | text-sm      | 1.5         | Lists, table cells.          |
+| Caption | 400    | text-xs      | 1.4         | Metadata badges, timestamps. |
+| Code    | 400    | text-sm mono | 1.6         | Inline code, blocks.         |
 
 Default to `text-sm` on dense surfaces. Reserve `text-2xl`+ for true hierarchy. Numerals in tables use `tabular-nums`.
 
@@ -133,6 +135,7 @@ Default to `text-sm` on dense surfaces. Reserve `text-2xl`+ for true hierarchy. 
 Tailwind 4px base. Common rhythm: 2/4/8/12/16/24/32/48px. Radii: `rounded-sm` (badges) · `rounded-md` (buttons/inputs) · `rounded-lg` (cards/dropdowns) · `rounded-xl` (widgets/modals) · `rounded-2xl` (hero) · `rounded-full` (avatars/dots). App shell: fixed collapsible left sidebar; content flex-fluid, `max-w-7xl` on dense routes, full-bleed for analytics. Modals `max-w-2xl`; Studio and trace viewer use full-screen overlays.
 
 ## Iconography
+
 **Lucide** only. No mixed icon sets. No emoji-as-icon in functional UI (emoji are fine in user content). Default size `1em`; stroke 1.5. Status uses small colored dots, not icons.
 
 ---
@@ -141,13 +144,13 @@ Tailwind 4px base. Common rhythm: 2/4/8/12/16/24/32/48px. Radii: `rounded-sm` (b
 
 **Framer Motion** is canonical (CSS transitions ok for trivial hover).
 
-| Token | Duration | Easing | Use |
-|---|---|---|---|
-| motion-instant | 80ms | easeOut | Hover, focus ring. |
-| motion-quick | 160ms | easeOut | Dropdown, tooltip. |
-| motion-default | 240ms | easeInOut | Modal, page transition. |
-| motion-deliberate | 480ms | easeInOut | Hero entrance, onboarding. |
-| motion-glacial | 1200ms | easeInOut | Aurora pulse, skeleton. |
+| Token             | Duration | Easing    | Use                        |
+| ----------------- | -------- | --------- | -------------------------- |
+| motion-instant    | 80ms     | easeOut   | Hover, focus ring.         |
+| motion-quick      | 160ms    | easeOut   | Dropdown, tooltip.         |
+| motion-default    | 240ms    | easeInOut | Modal, page transition.    |
+| motion-deliberate | 480ms    | easeInOut | Hero entrance, onboarding. |
+| motion-glacial    | 1200ms   | easeInOut | Aurora pulse, skeleton.    |
 
 Patterns: stagger-fade (60ms) on dashboards; spring on drag (`stiffness 360, damping 28`); streaming text uses a CSS-blinking cursor (not Framer — high-frequency Framer animation janks); trace spans expand L→R with a soft pop. **Reduced motion:** any `animate` prop lives in a component that checks `useReducedMotion()` and degrades to instant. Essential fades stay; stagger and aurora pulse are removed. Skeleton pulse stays (it signals state).
 
@@ -156,6 +159,7 @@ Patterns: stagger-fade (60ms) on dashboards; spring on drag (`stiffness 360, dam
 ## Product behavior reference (trust arc)
 
 The trust arc — how the operator-agent relationship evolves from close governance to greater autonomy as agents earn trust — is a **product behavior and feature specification**, not a design system concern. It lives in:
+
 - Feature C6 (Agent Trust Score + Autonomy Dial) in [`docs/feature-backlog.md`](./docs/feature-backlog.md)
 - Strategic rationale in [`docs/strategy/v2-positioning-2026-06-02.md`](./docs/strategy/v2-positioning-2026-06-02.md) §7
 
@@ -164,6 +168,7 @@ The design system (this file) focuses on tokens, typography, motion, and compone
 ## Component patterns
 
 Built on **shadcn/ui** (Radix). Bespoke components in `src/components/cadence/`.
+
 - **AppShell** — pinned + collapsible sidebar groups, breadcrumb, ⌘K, BudgetBar, workspace switcher. Same on every authenticated route.
 - **CommandPalette (⌘K)** — resolves every destination, create action, and recent artifact via `cmdk`. Keyboard-first.
 - **BudgetBar** — thin top bar: today's burn vs daily cap, month burn vs monthly cap; color shifts muted → accent → destructive; hover popover with per-surface breakdown.
@@ -178,6 +183,7 @@ Built on **shadcn/ui** (Radix). Bespoke components in `src/components/cadence/`.
 ## Information architecture
 
 Pinned items + three collapsible buckets (state persisted in `localStorage`; the active route's group auto-opens; a small `--primary-glow` dot marks a collapsed group holding the active route; ⌘K resolves everything regardless).
+
 - **Pinned:** Today (Mission Control) · AI Chat · Agents · Approvals.
 - **Discover:** Discovery · Opportunities · Meetings · Calendar.
 - **Build (default open):** PRDs · Docs · Roadmap · Code Studio · Tasks · Sync Inbox.
@@ -185,26 +191,26 @@ Pinned items + three collapsible buckets (state persisted in `localStorage`; the
 - **Below divider:** Settings.
 
 ## Mission Control composition
+
 Five widgets, each with its own skeleton/empty/error, none blocking page render: Product Health → AI Activity (sparkline) → Decision Timeline (`supersedes` chains as soft arrows) → Today's Focus (daily brief) → Recent Insights.
 
-**Note:** This sectioning and features listed here may / may not change based on how we progress. so you have authority to see how the features needs to listed on the application. But whatever that comes through as part of develelopment process, make sure you capture and update here. 
----
+## **Note:** This sectioning and features listed here may / may not change based on how we progress. so you have authority to see how the features needs to listed on the application. But whatever that comes through as part of develelopment process, make sure you capture and update here.
 
 ## The AI message UI contract (non-negotiable)
 
 Every AI message — chat, copilot, PRD `/ai`, Studio chat, agent summaries, daily brief — exposes the same contract, rendered by one shared component. No surface invents its own. If you cannot fit the contract, redesign the surface, not the contract. Enforced by [`AGENTS.md`](./AGENTS.md), rule 9.
 
-| Element | Purpose |
-|---|---|
-| Score badge | LLM-as-judge composite; green/amber/red ramp; tooltip shows groundedness/relevance/coherence/hallucination. |
-| Model + via | e.g. `model-x · gateway` or `claude-… · byo`. |
-| Latency | e2e and ttft if streamed (`1.4s · 240ms ttft`). |
-| Tokens | in / out, tabular. |
-| Cost | `$0.0042` (4 dp under 1¢, 2 dp above); show `$0.0000` for cache hits — explicit zero beats blank. |
-| Citations | `[1][2]` via CitationList; render nothing (not an empty box) if `retrieval=false`. |
-| Feedback | 👍/👎 writes `ai_feedback`; 👎 opens a one-line comment. |
-| View Trace | deep-link to `/traces/$traceId`. |
-| Replay with… | re-run from this exact input against a different model/prompt; show the diff. |
+| Element      | Purpose                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| Score badge  | LLM-as-judge composite; green/amber/red ramp; tooltip shows groundedness/relevance/coherence/hallucination. |
+| Model + via  | e.g. `model-x · gateway` or `claude-… · byo`.                                                               |
+| Latency      | e2e and ttft if streamed (`1.4s · 240ms ttft`).                                                             |
+| Tokens       | in / out, tabular.                                                                                          |
+| Cost         | `$0.0042` (4 dp under 1¢, 2 dp above); show `$0.0000` for cache hits — explicit zero beats blank.           |
+| Citations    | `[1][2]` via CitationList; render nothing (not an empty box) if `retrieval=false`.                          |
+| Feedback     | 👍/👎 writes `ai_feedback`; 👎 opens a one-line comment.                                                    |
+| View Trace   | deep-link to `/traces/$traceId`.                                                                            |
+| Replay with… | re-run from this exact input against a different model/prompt; show the diff.                               |
 
 ## Inline Mission Cockpit UI contract
 
@@ -217,6 +223,7 @@ When a chat message dispatches an autonomous multi-agent execution mission (`mis
 5. **Open Mission Page Link:** A link pointing directly to `/missions/$missionId` with an external link icon to jump into the full detail view if needed.
 
 ## Surface color coding
+
 Used in traces and analytics. Starting palette (full authority to refine for a more distinctive look): chat=violet (brand), agent=teal, copilot=amber, prd=indigo, discovery=rose, studio=cyan, brief=gold, judge=slate, embedding=stone. Tokens live as `--surface-*` in `src/styles.css`. Use the tokens, not hardcoded colors.
 
 ---
@@ -241,17 +248,17 @@ Canonical rule: [`docs/conventions/ui-voice.md`](./docs/conventions/ui-voice.md)
 
 **Length budgets.**
 
-| Surface | Budget |
-|---|---|
-| H1 | ≤ 6 words |
-| Subhead | ≤ 14 words |
-| Button label | ≤ 3 words |
-| Tooltip | ≤ 10 words |
-| Toast | ≤ 12 words |
+| Surface          | Budget        |
+| ---------------- | ------------- |
+| H1               | ≤ 6 words     |
+| Subhead          | ≤ 14 words    |
+| Button label     | ≤ 3 words     |
+| Tooltip          | ≤ 10 words    |
+| Toast            | ≤ 12 words    |
 | Empty-state copy | ≤ 2 sentences |
 
-**Banned (AI tells).** Em dashes (`—`) and en dashes (`–`) anywhere in UI copy. Replace with period, comma, parentheses, or a line break. Hyphens stay only inside compound words. Buzzword denylist: *seamlessly · leverage · empower · robust · powerful · next-gen · AI-native · revolutionary · unlock · unleash · delve · navigate the landscape of · at the intersection of · elevate · supercharge · game-changing · cutting-edge*. Also banned: triple-pattern listicles ("faster, smarter, better"), preamble ("In today's…"), hedging in confirms ("might", "could potentially"), filler ("Let's dive in", "Feel free to…"), decorative emoji (🚀 ✨ 🎉), Title Case Everywhere (use sentence case except product/page names), trailing `!`.
+**Banned (AI tells).** Em dashes (`—`) and en dashes (`–`) anywhere in UI copy. Replace with period, comma, parentheses, or a line break. Hyphens stay only inside compound words. Buzzword denylist: _seamlessly · leverage · empower · robust · powerful · next-gen · AI-native · revolutionary · unlock · unleash · delve · navigate the landscape of · at the intersection of · elevate · supercharge · game-changing · cutting-edge_. Also banned: triple-pattern listicles ("faster, smarter, better"), preamble ("In today's…"), hedging in confirms ("might", "could potentially"), filler ("Let's dive in", "Feel free to…"), decorative emoji (🚀 ✨ 🎉), Title Case Everywhere (use sentence case except product/page names), trailing `!`.
 
-**Confirm copy pattern.** Direct, name the effect: *"This deletes 3 missions. Continue?"*, not *"Are you sure you want to proceed?"*. For reversible actions, prefer an Undo toast over a confirm. Confirmation primitives live in [`architecture/frontend.md`](./architecture/frontend.md) (Confirmation, toasts & dialogs).
+**Confirm copy pattern.** Direct, name the effect: _"This deletes 3 missions. Continue?"_, not _"Are you sure you want to proceed?"_. For reversible actions, prefer an Undo toast over a confirm. Confirmation primitives live in [`architecture/frontend.md`](./architecture/frontend.md) (Confirmation, toasts & dialogs).
 
 **Author check before shipping copy.** Run `rg "—|–"` and the buzzword regex against changed files. Voice change → update this section + the audit doc in the same turn.

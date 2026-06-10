@@ -23,7 +23,7 @@ export type GuardrailHit = {
 };
 
 export type GuardrailResult = {
-  text: string;          // possibly redacted
+  text: string; // possibly redacted
   hits: GuardrailHit[];
   blocked: boolean;
 };

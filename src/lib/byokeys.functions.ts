@@ -72,10 +72,7 @@ export const deleteApiKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("user_api_keys")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("user_api_keys").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -88,13 +85,20 @@ const TestSchema = z.object({
 
 function defaultModelFor(provider: string): string {
   switch (provider) {
-    case "anthropic": return "anthropic/claude-3-5-haiku-20241022";
-    case "openai": return "openai/gpt-4o-mini";
-    case "deepseek": return "deepseek/deepseek-chat";
-    case "xai": return "xai/grok-2-1212";
-    case "ollama": return "ollama/llama3.2";
-    case "github_pat": return "openai/gpt-4o-mini";
-    default: return "openai/gpt-4o-mini";
+    case "anthropic":
+      return "anthropic/claude-3-5-haiku-20241022";
+    case "openai":
+      return "openai/gpt-4o-mini";
+    case "deepseek":
+      return "deepseek/deepseek-chat";
+    case "xai":
+      return "xai/grok-2-1212";
+    case "ollama":
+      return "ollama/llama3.2";
+    case "github_pat":
+      return "openai/gpt-4o-mini";
+    default:
+      return "openai/gpt-4o-mini";
   }
 }
 

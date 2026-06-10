@@ -62,10 +62,12 @@ function buildSpans(events: EventRow[]): { spans: Span[]; totalMs: number; t0: n
     if (depthCache.has(id)) return depthCache.get(id)!;
     const e = byId.get(id);
     if (!e || !e.parent_event_id || !byId.has(e.parent_event_id)) {
-      depthCache.set(id, 0); return 0;
+      depthCache.set(id, 0);
+      return 0;
     }
     const d = depthOf(e.parent_event_id) + 1;
-    depthCache.set(id, d); return d;
+    depthCache.set(id, d);
+    return d;
   };
 
   const spans: Span[] = events.map((e) => ({
@@ -122,10 +124,14 @@ function TraceDetail() {
     return m ? m[0] : null;
   }, [spans]);
 
-  const hitsByEvent = new Map<string, { rule_name: string; action: string; side: string; matched: string | null }[]>();
+  const hitsByEvent = new Map<
+    string,
+    { rule_name: string; action: string; side: string; matched: string | null }[]
+  >();
   for (const h of trace.data?.hits ?? []) {
     const arr = hitsByEvent.get(h.event_id) ?? [];
-    arr.push(h); hitsByEvent.set(h.event_id, arr);
+    arr.push(h);
+    hitsByEvent.set(h.event_id, arr);
   }
   const evalsByEvent = new Map(trace.data?.evals.map((e) => [e.event_id, e]) ?? []);
 
@@ -139,7 +145,7 @@ function TraceDetail() {
   );
 
   const sel = selected ? spans.find((s) => s.id === selected) : null;
-  const selHits = sel ? hitsByEvent.get(sel.id) ?? [] : [];
+  const selHits = sel ? (hitsByEvent.get(sel.id) ?? []) : [];
   const selEval = sel ? evalsByEvent.get(sel.id) : undefined;
 
   return (
@@ -147,19 +153,37 @@ function TraceDetail() {
       <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <Link to="/traces" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <Link
+              to="/traces"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="h-3 w-3" /> All traces
             </Link>
             <h1 className="mt-1 font-display text-2xl tracking-tight">Trace</h1>
             <code className="text-[11px] text-muted-foreground font-mono">{traceId}</code>
           </div>
           <div className="flex gap-6 text-right text-xs">
-            <div><div className="text-muted-foreground">Spans</div><div className="font-display text-lg">{spans.length}</div></div>
-            <div><div className="text-muted-foreground">Wall time</div><div className="font-display text-lg">{fmtMs(totalMs)}</div></div>
-            <div><div className="text-muted-foreground">Tokens</div><div className="font-display text-lg">{totals.tokens.toLocaleString()}</div></div>
-            <div><div className="text-muted-foreground">Cost</div><div className="font-display text-lg">{fmtUsd(totals.cost)}</div></div>
+            <div>
+              <div className="text-muted-foreground">Spans</div>
+              <div className="font-display text-lg">{spans.length}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Wall time</div>
+              <div className="font-display text-lg">{fmtMs(totalMs)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Tokens</div>
+              <div className="font-display text-lg">{totals.tokens.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Cost</div>
+              <div className="font-display text-lg">{fmtUsd(totals.cost)}</div>
+            </div>
             {totals.errors > 0 && (
-              <div><div className="text-muted-foreground">Errors</div><div className="font-display text-lg text-rose-300">{totals.errors}</div></div>
+              <div>
+                <div className="text-muted-foreground">Errors</div>
+                <div className="font-display text-lg text-rose-300">{totals.errors}</div>
+              </div>
             )}
           </div>
         </div>
@@ -177,9 +201,12 @@ function TraceDetail() {
             {briefBlock && (
               <div className="col-span-12 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-indigo-300 mb-2">
-                  <FileText className="h-3 w-3" /> Workspace Strategic Brief — injected into system prompt
+                  <FileText className="h-3 w-3" /> Workspace Strategic Brief — injected into system
+                  prompt
                 </div>
-                <pre className="text-[11px] whitespace-pre-wrap font-mono text-muted-foreground max-h-48 overflow-auto">{briefBlock}</pre>
+                <pre className="text-[11px] whitespace-pre-wrap font-mono text-muted-foreground max-h-48 overflow-auto">
+                  {briefBlock}
+                </pre>
               </div>
             )}
             <div className="col-span-12 lg:col-span-8 rounded-xl border border-border bg-background/40 overflow-hidden">
@@ -201,10 +228,16 @@ function TraceDetail() {
                       className={`w-full text-left px-4 py-2 hover:bg-muted/30 transition ${isSel ? "bg-muted/40" : ""}`}
                     >
                       <div className="flex items-center gap-2 text-xs">
-                        <span style={{ paddingLeft: `${s.depth * 12}px` }} className="font-mono text-muted-foreground truncate min-w-[140px]">
-                          {s.surface}{s.surface_ref ? `·${s.surface_ref.slice(0, 8)}` : ""}
+                        <span
+                          style={{ paddingLeft: `${s.depth * 12}px` }}
+                          className="font-mono text-muted-foreground truncate min-w-[140px]"
+                        >
+                          {s.surface}
+                          {s.surface_ref ? `·${s.surface_ref.slice(0, 8)}` : ""}
                         </span>
-                        <span className="text-muted-foreground truncate flex-1 min-w-0">{s.model}</span>
+                        <span className="text-muted-foreground truncate flex-1 min-w-0">
+                          {s.model}
+                        </span>
                         {hits.length > 0 && (
                           <span className="inline-flex items-center gap-0.5 text-amber-300">
                             <Shield className="h-3 w-3" /> {hits.length}
@@ -215,9 +248,15 @@ function TraceDetail() {
                         ) : (
                           <AlertTriangle className="h-3 w-3 text-rose-400 shrink-0" />
                         )}
-                        <span className="tabular-nums text-muted-foreground w-16 text-right">{fmtMs(s.latency_ms)}</span>
-                        <span className="tabular-nums text-muted-foreground w-16 text-right">{s.total_tokens}t</span>
-                        <span className="tabular-nums text-muted-foreground w-16 text-right">{fmtUsd(Number(s.est_cost_usd))}</span>
+                        <span className="tabular-nums text-muted-foreground w-16 text-right">
+                          {fmtMs(s.latency_ms)}
+                        </span>
+                        <span className="tabular-nums text-muted-foreground w-16 text-right">
+                          {s.total_tokens}t
+                        </span>
+                        <span className="tabular-nums text-muted-foreground w-16 text-right">
+                          {fmtUsd(Number(s.est_cost_usd))}
+                        </span>
                       </div>
                       <div className="relative mt-1.5 h-2 rounded bg-muted/40 overflow-hidden">
                         <div
@@ -240,17 +279,44 @@ function TraceDetail() {
               ) : (
                 <>
                   <div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Span</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Span
+                    </div>
                     <div className="font-display text-base">{sel.surface}</div>
                     <code className="text-[10px] text-muted-foreground font-mono">{sel.id}</code>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><div className="text-muted-foreground">Model</div><div className="font-mono truncate">{sel.model}</div></div>
-                    <div><div className="text-muted-foreground">Via</div><div className="font-mono">{sel.via}{sel.fallback ? " (fallback)" : ""}</div></div>
-                    <div><div className="text-muted-foreground">Latency</div><div>{fmtMs(sel.latency_ms)}</div></div>
-                    <div><div className="text-muted-foreground">Tokens</div><div>{sel.prompt_tokens} → {sel.completion_tokens}</div></div>
-                    <div><div className="text-muted-foreground">Cost</div><div>{fmtUsd(Number(sel.est_cost_usd))}</div></div>
-                    <div><div className="text-muted-foreground">Status</div><div className={sel.status === "ok" ? "text-emerald-300" : "text-rose-300"}>{sel.status}</div></div>
+                    <div>
+                      <div className="text-muted-foreground">Model</div>
+                      <div className="font-mono truncate">{sel.model}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Via</div>
+                      <div className="font-mono">
+                        {sel.via}
+                        {sel.fallback ? " (fallback)" : ""}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Latency</div>
+                      <div>{fmtMs(sel.latency_ms)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Tokens</div>
+                      <div>
+                        {sel.prompt_tokens} → {sel.completion_tokens}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Cost</div>
+                      <div>{fmtUsd(Number(sel.est_cost_usd))}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Status</div>
+                      <div className={sel.status === "ok" ? "text-emerald-300" : "text-rose-300"}>
+                        {sel.status}
+                      </div>
+                    </div>
                   </div>
 
                   {sel.error_message && (
@@ -268,8 +334,14 @@ function TraceDetail() {
                         {selHits.map((h, i) => (
                           <li key={i} className="text-xs rounded border border-border/60 px-2 py-1">
                             <span className="font-medium">{h.rule_name}</span>
-                            <span className="ml-2 text-muted-foreground">{h.side} · {h.action}</span>
-                            {h.matched && <code className="block mt-0.5 text-[10px] font-mono truncate">{h.matched}</code>}
+                            <span className="ml-2 text-muted-foreground">
+                              {h.side} · {h.action}
+                            </span>
+                            {h.matched && (
+                              <code className="block mt-0.5 text-[10px] font-mono truncate">
+                                {h.matched}
+                              </code>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -278,41 +350,59 @@ function TraceDetail() {
 
                   {selEval && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Eval scores</div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                        Eval scores
+                      </div>
                       <div className="grid grid-cols-3 gap-1 text-[11px]">
-                        {([
-                          ["Relevance", selEval.relevance],
-                          ["Grounded", selEval.groundedness],
-                          ["Coherence", selEval.coherence],
-                          ["Halluc.", selEval.hallucination_score],
-                          ["Toxicity", selEval.toxicity],
-                          ["PII risk", selEval.pii_risk],
-                        ] as const).map(([k, v]) => v == null ? null : (
-                          <div key={k} className="rounded border border-border/60 px-1.5 py-1">
-                            <div className="text-muted-foreground">{k}</div>
-                            <div className="font-display">{Number(v).toFixed(2)}</div>
-                          </div>
-                        ))}
+                        {(
+                          [
+                            ["Relevance", selEval.relevance],
+                            ["Grounded", selEval.groundedness],
+                            ["Coherence", selEval.coherence],
+                            ["Halluc.", selEval.hallucination_score],
+                            ["Toxicity", selEval.toxicity],
+                            ["PII risk", selEval.pii_risk],
+                          ] as const
+                        ).map(([k, v]) =>
+                          v == null ? null : (
+                            <div key={k} className="rounded border border-border/60 px-1.5 py-1">
+                              <div className="text-muted-foreground">{k}</div>
+                              <div className="font-display">{Number(v).toFixed(2)}</div>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
 
                   {sel.input_preview && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Input</div>
-                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-40 overflow-auto whitespace-pre-wrap">{sel.input_preview}</pre>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                        Input
+                      </div>
+                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-40 overflow-auto whitespace-pre-wrap">
+                        {sel.input_preview}
+                      </pre>
                     </div>
                   )}
                   {sel.system_preview && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">System prompt</div>
-                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-60 overflow-auto whitespace-pre-wrap">{sel.system_preview}</pre>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                        System prompt
+                      </div>
+                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-60 overflow-auto whitespace-pre-wrap">
+                        {sel.system_preview}
+                      </pre>
                     </div>
                   )}
                   {sel.output_preview && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Output</div>
-                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-40 overflow-auto whitespace-pre-wrap">{sel.output_preview}</pre>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                        Output
+                      </div>
+                      <pre className="rounded bg-muted/40 p-2 text-[11px] max-h-40 overflow-auto whitespace-pre-wrap">
+                        {sel.output_preview}
+                      </pre>
                     </div>
                   )}
                 </>

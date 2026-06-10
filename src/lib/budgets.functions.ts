@@ -16,8 +16,12 @@ export const getBudgetOverview = createServerFn({ method: "GET" })
     const [g, s, a] = await Promise.all([
       supabase.from("ai_budgets").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("ai_surface_budgets").select("*").eq("user_id", userId).order("surface"),
-      supabase.from("ai_budget_alerts").select("*").eq("user_id", userId)
-        .order("created_at", { ascending: false }).limit(20),
+      supabase
+        .from("ai_budget_alerts")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
     return {
       global: g.data ?? null,
@@ -40,7 +44,10 @@ export const updateGlobalBudget = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: existing } = await supabase
-      .from("ai_budgets").select("id").eq("user_id", userId).maybeSingle();
+      .from("ai_budgets")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
     if (existing) {
       const { error } = await supabase.from("ai_budgets").update(data).eq("id", existing.id);
       if (error) throw new Error(error.message);
@@ -76,8 +83,10 @@ export const deleteSurfaceBudget = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
-      .from("ai_surface_budgets").delete()
-      .eq("user_id", userId).eq("surface", data.surface);
+      .from("ai_surface_budgets")
+      .delete()
+      .eq("user_id", userId)
+      .eq("surface", data.surface);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -88,8 +97,10 @@ export const acknowledgeAlert = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
-      .from("ai_budget_alerts").update({ acknowledged: true })
-      .eq("id", data.id).eq("user_id", userId);
+      .from("ai_budget_alerts")
+      .update({ acknowledged: true })
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -101,7 +112,10 @@ export const getBudgetSummary = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data } = await supabase
       .from("ai_budgets")
-      .select("daily_usd_cap,monthly_usd_cap,daily_usd_used,monthly_usd_used,day_window,month_window,alert_at_pct")
-      .eq("user_id", userId).maybeSingle();
+      .select(
+        "daily_usd_cap,monthly_usd_cap,daily_usd_used,monthly_usd_used,day_window,month_window,alert_at_pct",
+      )
+      .eq("user_id", userId)
+      .maybeSingle();
     return data ?? null;
   });

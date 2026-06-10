@@ -4,22 +4,22 @@
 
 **Length budgets.**
 
-| Surface | Budget |
-|---|---|
-| H1 | ≤ 6 words |
-| Subhead | ≤ 14 words |
-| Button label | ≤ 3 words |
-| Tooltip | ≤ 10 words |
-| Toast | ≤ 12 words |
+| Surface          | Budget        |
+| ---------------- | ------------- |
+| H1               | ≤ 6 words     |
+| Subhead          | ≤ 14 words    |
+| Button label     | ≤ 3 words     |
+| Tooltip          | ≤ 10 words    |
+| Toast            | ≤ 12 words    |
 | Empty-state copy | ≤ 2 sentences |
 
 **Banned (AI tells).**
 
 - **Dashes.** No em (`—`) or en (`–`) dashes in any user-facing string. Replace with period, comma, parentheses, colon, or line break. Hyphens stay only inside compound words (`role-based`, `auto-confirm`).
 - **Buzzwords.** `seamlessly`, `leverage`, `empower`, `robust`, `powerful`, `next-gen`, `AI-native`, `revolutionary`, `unlock`, `unleash`, `delve`, `navigate the landscape of`, `at the intersection of`, `elevate`, `supercharge`, `game-changing`, `cutting-edge`.
-- **Patterns.** Triple-pattern listicles (*"faster, smarter, better"*). Preamble (*"In today's…"*). Hedging in confirms (*"might"*, *"could potentially"*). Filler (*"Let's dive in"*, *"Feel free to…"*). Decorative emoji (🚀 ✨ 🎉) in body copy. Title Case Everywhere (sentence case except product/page names). Trailing `!`.
+- **Patterns.** Triple-pattern listicles (_"faster, smarter, better"_). Preamble (_"In today's…"_). Hedging in confirms (_"might"_, _"could potentially"_). Filler (_"Let's dive in"_, _"Feel free to…"_). Decorative emoji (🚀 ✨ 🎉) in body copy. Title Case Everywhere (sentence case except product/page names). Trailing `!`.
 
-**Confirm copy pattern.** Direct, name the effect: *"This deletes 3 missions. Continue?"* — not *"Are you sure you want to proceed?"*. For reversible actions, prefer an Undo toast over a confirm.
+**Confirm copy pattern.** Direct, name the effect: _"This deletes 3 missions. Continue?"_ — not _"Are you sure you want to proceed?"_. For reversible actions, prefer an Undo toast over a confirm.
 
 **How to apply.** Before shipping any copy change:
 

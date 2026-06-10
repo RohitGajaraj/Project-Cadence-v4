@@ -11,7 +11,7 @@ Branch: main
 Repo: RohitGajaraj/Project-Cadence
 Status: DRAFT
 Mode: Startup (pure entrepreneurship — independent AI-native product company)
-Supersedes: *(first design doc on this branch)*
+Supersedes: _(first design doc on this branch)_
 
 ---
 
@@ -22,10 +22,10 @@ Cadence today is documented and code-shipped as **"the AI-native Product Operati
 **The founder is calling for a positioning reframe**, motivated by three problems:
 
 1. **The current docs read as "PM tool replacement," which is small and contested.** The actual ambition is much larger: an **agent-driven build system covering the entire product lifecycle** — discovery, planning, execution, deployment, GTM, customer pages, support, sales, pricing, analytics — with stakeholder-specific views serving not just PMs but business leaders, sales leads, engineering leads, support owners, and CEOs.
-2. **The USP — "you don't need to switch tabs" — is weak.** The real USP should be: *"every signal, decision, and artifact lives in one place where AI agents cite, prove, and act on your behalf with approval gates — not siloed, never assumption-based."*
+2. **The USP — "you don't need to switch tabs" — is weak.** The real USP should be: _"every signal, decision, and artifact lives in one place where AI agents cite, prove, and act on your behalf with approval gates — not siloed, never assumption-based."_
 3. **The six idea threads (Cursor for PM, Company Brain, AI-Native Discovery, SaaS Challengers, Software for Agents, AI OS for Companies) are not mapped to concrete features or stakeholder views.** They're investor-legible but buyer-opaque.
 
-Plus: **zero customer validation has happened.** The founder explicitly said *"I am not going to be the customer for this."* The current positioning is founder-vision-only.
+Plus: **zero customer validation has happened.** The founder explicitly said _"I am not going to be the customer for this."_ The current positioning is founder-vision-only.
 
 ---
 
@@ -35,9 +35,9 @@ Plus: **zero customer validation has happened.** The founder explicitly said *"I
 
 ### Pain points that real PM voices actually describe
 
-1. **Context collapse between tools.** PMs lose thread switching between Jira, Notion, Slack, Figma, analytics, AI chats. The Korey HN thread surfaced this: *"Users query [Korey] for daily context ('what was I working on yesterday?')"* — kschrader, [HN](https://news.ycombinator.com/item?id=45430326) `[live]`
+1. **Context collapse between tools.** PMs lose thread switching between Jira, Notion, Slack, Figma, analytics, AI chats. The Korey HN thread surfaced this: _"Users query [Korey] for daily context ('what was I working on yesterday?')"_ — kschrader, [HN](https://news.ycombinator.com/item?id=45430326) `[live]`
 2. **Spec writing is high-effort, low-value mechanical translation.** PMs spend 30–50% of time on PRDs and tickets that are downstream of decisions already made. The traction of ChatPRD, Korey, and similar tools is entirely this pain. `[training-data]`
-3. **"I have to be the glue" — coordination overhead.** Lenny explicitly named *"status updates, standup summaries, stakeholder pings"* as the first low-risk high-impact automation tasks PMs should hand to agents. — [lennysnewsletter.com, April 2025](https://www.lennysnewsletter.com/p/make-product-management-fun-again-9f6) `[live]`
+3. **"I have to be the glue" — coordination overhead.** Lenny explicitly named _"status updates, standup summaries, stakeholder pings"_ as the first low-risk high-impact automation tasks PMs should hand to agents. — [lennysnewsletter.com, April 2025](https://www.lennysnewsletter.com/p/make-product-management-fun-again-9f6) `[live]`
 4. **Discovery is shallow and anecdotal.** Most PMs do 4–8 customer calls per quarter; support/churn/usage/competitor signals are rarely synthesized. Dovetail's ~$50M ARR proves the JTBD demand for synthesis. `[training-data]`
 5. **Roadmap justification eats senior PM time.** "Why is this on the roadmap and not that?" recurs every review cycle; PMs maintain parallel decks as justification. `[training-data]`
 6. **AI tools create new context overhead.** Every new tool requires re-explaining project history. Lenny's December 2025 "second brain with ChatGPT" piece is a direct response. `[live]`
@@ -50,7 +50,7 @@ Plus: **zero customer validation has happened.** The founder explicitly said *"I
 - **Founder operating as PM at pre-Series A** — owns everything: discovery, PRDs, GTM, support triage, pricing. Pain centroid: tool sprawl + cognitive load.
 - **Head of Product at AI-native startup (5–25 PMs total)** — owns AI-native workflow definition for their team; evaluating which AI tools to standardize on. Pain centroid: making good AI tool choices and integrating them safely.
 
-⚠ **Not voiced in evidence:** "business leader," "sales leader," "engineering leader," or "CEO" specifically asking for a unified product OS surface. The expanded-audience framing is founder hypothesis; the demand evidence is concentrated on PMs and PM-adjacent roles. *This is the most important gap to validate.*
+⚠ **Not voiced in evidence:** "business leader," "sales leader," "engineering leader," or "CEO" specifically asking for a unified product OS surface. The expanded-audience framing is founder hypothesis; the demand evidence is concentrated on PMs and PM-adjacent roles. _This is the most important gap to validate._
 
 ---
 
@@ -58,19 +58,19 @@ Plus: **zero customer validation has happened.** The founder explicitly said *"I
 
 ### Incumbents (what's being replaced or extended)
 
-| Tool | What users say |
-|---|---|
-| **Jira** | Dominant in eng-heavy orgs. PMs don't choose it; eng does. Atlassian Intelligence is bolt-on. `[training-data]` |
-| **Linear** | Loved by eng teams; PMs at AI-native startups use it because eng chose it. No native AI strategy layer. `[training-data]` |
-| **Notion AI** | Default "second brain" for PMs. AI Q&A answers questions about *your docs*, not your customers or market. `[training-data]` |
+| Tool             | What users say                                                                                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Jira**         | Dominant in eng-heavy orgs. PMs don't choose it; eng does. Atlassian Intelligence is bolt-on. `[training-data]`                                           |
+| **Linear**       | Loved by eng teams; PMs at AI-native startups use it because eng chose it. No native AI strategy layer. `[training-data]`                                 |
+| **Notion AI**    | Default "second brain" for PMs. AI Q&A answers questions about _your docs_, not your customers or market. `[training-data]`                               |
 | **Productboard** | Purpose-built roadmap + discovery. ⚠ **Direct overlap with Cadence's discovery thread.** Will be raised in every enterprise sales call. `[training-data]` |
-| **Asana** | PM in non-eng-dominant orgs. AI features are workflow automation, not strategic intelligence. `[training-data]` |
+| **Asana**        | PM in non-eng-dominant orgs. AI features are workflow automation, not strategic intelligence. `[training-data]`                                           |
 
 ### AI-native challengers (12 named)
 
-Korey (HN-fresh: multi-agent AI PM, "fleet of subagents for specs/status/subtasks"), ChatPRD, Craft.io, Airtable AI, Height, Kitemaker, Sprig, Dovetail, Ignition, Coda AI, Cycle.app, Miro AI. **Pattern:** all are narrow-focus tools. None spans the full product lifecycle. That gap is real but it is also a *sales education problem* — buyers buy point solutions, not platforms.
+Korey (HN-fresh: multi-agent AI PM, "fleet of subagents for specs/status/subtasks"), ChatPRD, Craft.io, Airtable AI, Height, Kitemaker, Sprig, Dovetail, Ignition, Coda AI, Cycle.app, Miro AI. **Pattern:** all are narrow-focus tools. None spans the full product lifecycle. That gap is real but it is also a _sales education problem_ — buyers buy point solutions, not platforms.
 
-YC S25 batch signal `[live]`: *"doubling down on domain-specific AI copilots — AI assistants tuned for one industry or function."* — [catalaize.substack.com](https://catalaize.substack.com/p/y-combinator-s25-batch-profile-and). The current YC bet is verticalization, not horizontal product OS.
+YC S25 batch signal `[live]`: _"doubling down on domain-specific AI copilots — AI assistants tuned for one industry or function."_ — [catalaize.substack.com](https://catalaize.substack.com/p/y-combinator-s25-batch-profile-and). The current YC bet is verticalization, not horizontal product OS.
 
 ### Company Brain category
 
@@ -87,7 +87,7 @@ LangChain/LangGraph (most-used), AutoGen (Microsoft, enterprise), CrewAI (multi-
 ## Premises (must agree before proceeding)
 
 1. **P1 — Positioning shift.** Cadence is not a PM tool replacement. It's an **agent-driven end-to-end product operating system** covering the full product lifecycle (discovery → planning → execution → deployment → GTM → customer pages → support → sales → pricing → analytics).
-2. **P2 — USP refined.** Not "stop switching tabs" (weak). The real USP: *"every signal, decision, artifact lives in one place where AI agents cite, prove, and act on your behalf with approval gates — never siloed, never assumption-based."*
+2. **P2 — USP refined.** Not "stop switching tabs" (weak). The real USP: _"every signal, decision, artifact lives in one place where AI agents cite, prove, and act on your behalf with approval gates — never siloed, never assumption-based."_
 3. **P3 — Audience expansion.** Not just PMs/founders. The "native product team" set: business leaders, sales leads, engineering leads, support owners, CEOs. ⚠ **Hypothesis only — demand evidence is currently concentrated on PMs and PM-adjacent roles.**
 4. **P4 — Six threads must map to concrete features + stakeholder views.** Each thread needs a real surface delivering its promise, not vague capability language.
 5. **P5 — Agent-first architecture is non-negotiable.** A2A communication, sub-agent invocation, MCP-native exposure, LLM/model-agnostic from day one.
@@ -101,16 +101,16 @@ LangChain/LangGraph (most-used), AutoGen (Microsoft, enterprise), CrewAI (multi-
 
 ## Verdict on the Six Threads (evidence-graded)
 
-| # | Thread | Verdict | Why |
-|---|---|---|---|
-| 1 | **Cursor for PM** | **Strong** | Lenny + Korey HN + ChatPRD evidence confirms demand. ⚠ "Cursor for X" is a pitch cliché now. Differentiate on *what the agent does after the PM specs*, not on the IDE metaphor. |
-| 2 | **Company Brain** | **Moderate** | Pain real. **No live source uses "company brain" — founder vocabulary.** Glean owns enterprise-search budget. Differentiate as *product-domain memory* (decisions, customer evidence, supersedes-chains), not general search. |
-| 3 | **AI-Native Discovery Engines** | **Strong** | One of the most-voiced PM frustrations. Dovetail/Sprig confirm demand. Gap: *continuous synthesis across multiple signal sources* without manual effort. |
-| 4 | **SaaS Challengers** | **Weak** | Macro investor narrative, not buyer narrative. Live sources don't say "I want a Jira challenger" — they say "I wish Jira understood why I prioritized this." **Recommend drop as a sales-facing thread.** |
-| 5 | **Software for Agents** | **Moderate** | MCP/A2A real. Developer story, not PM buyer story. **Right platform play, wrong primary wedge.** |
-| 6 | **AI OS for Companies** | **Weak / ⚠ Contradicted** | **No live source uses "AI OS" framing.** Enterprise buyers buy solutions to budgeted problems, not "operating systems." Reserve for analyst/investor narrative post-traction. |
+| #   | Thread                          | Verdict                   | Why                                                                                                                                                                                                                           |
+| --- | ------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Cursor for PM**               | **Strong**                | Lenny + Korey HN + ChatPRD evidence confirms demand. ⚠ "Cursor for X" is a pitch cliché now. Differentiate on _what the agent does after the PM specs_, not on the IDE metaphor.                                              |
+| 2   | **Company Brain**               | **Moderate**              | Pain real. **No live source uses "company brain" — founder vocabulary.** Glean owns enterprise-search budget. Differentiate as _product-domain memory_ (decisions, customer evidence, supersedes-chains), not general search. |
+| 3   | **AI-Native Discovery Engines** | **Strong**                | One of the most-voiced PM frustrations. Dovetail/Sprig confirm demand. Gap: _continuous synthesis across multiple signal sources_ without manual effort.                                                                      |
+| 4   | **SaaS Challengers**            | **Weak**                  | Macro investor narrative, not buyer narrative. Live sources don't say "I want a Jira challenger" — they say "I wish Jira understood why I prioritized this." **Recommend drop as a sales-facing thread.**                     |
+| 5   | **Software for Agents**         | **Moderate**              | MCP/A2A real. Developer story, not PM buyer story. **Right platform play, wrong primary wedge.**                                                                                                                              |
+| 6   | **AI OS for Companies**         | **Weak / ⚠ Contradicted** | **No live source uses "AI OS" framing.** Enterprise buyers buy solutions to budgeted problems, not "operating systems." Reserve for analyst/investor narrative post-traction.                                                 |
 
-**Headline finding:** *"The six-thread framing is investor-legible but buyer-opaque. No live source used the vocabulary Cadence uses to describe itself."*
+**Headline finding:** _"The six-thread framing is investor-legible but buyer-opaque. No live source used the vocabulary Cadence uses to describe itself."_
 
 That is not disqualifying — category-creating products always have this gap. It means **the first 12 months require translation: lead with the pain, let the category name emerge from customers.**
 
@@ -121,61 +121,75 @@ That is not disqualifying — category-creating products always have this gap. I
 Per P4. Each thread now has concrete features and named stakeholder views.
 
 ### Thread 1 — Cursor for PM
+
 **Features:** Discovery → opportunity → PRD → spec → ticket decomposition pipeline with per-step agent + approval gate. Inline `/ai` slash menu in editor. Replay-with-different-model. Citations on every output.
 **Stakeholder views:** PM (writes specs, approves agent outputs), Engineer (consumes scoped tickets, raises clarifications back into PRD).
 
 ### Thread 2 — Company Brain (rename suggestion: **"Product Memory"**)
+
 **Features:** Typed knowledge graph (signals, decisions, PRDs, meetings, tasks, releases, customer segments, competitors, metrics, policies, persons). Decision lineage with `supersedes` links. Knowledge currency drift detector. Executable skill packs (versioned bundles of `{trigger, retrieval, system_prompt, tools, judge}` exposed over MCP).
 **Stakeholder views:** PM (queries product history), Business Leader (sees "why this strategic decision"), Engineer (sees architectural decision context), Sales Lead (sees customer-segment positioning history), CEO (sees pivots + their rationale).
 
 ### Thread 3 — AI-Native Discovery Engines
+
 **Features:** Continuous ingest (Intercom/Zendesk/App Store/sales notes/usage). Live cluster → theme → opportunity with ICE scoring. Hypothesis lifecycle (`proposed → testing → confirmed | refuted | stale`). Auto-designed experiments. Insight propagation: concluded experiments fan out to opportunities + roadmap re-scoring.
 **Stakeholder views:** PM (drives lifecycle), Customer Insights agent (synthesis), Data Analyst (instrumentation), Strategist (framing), Engineer (experiment build via Sprint Planner).
 
-### Thread 4 — *Reframe: "Cadence-on-top, not Cadence-instead"*
+### Thread 4 — _Reframe: "Cadence-on-top, not Cadence-instead"_
+
 **Features:** Linear / Notion / Docs / Calendar sync (built); planned: Jira via custom OAuth, Slack inbound, GitHub via MCP, HubSpot/Salesforce sync.
 **Stakeholder views:** Sales Lead (CRM context surfaces in product decisions), Support Owner (ticket themes flow into discovery), Engineer (Linear → PR → release notes pipeline). **No replacement framing.**
 
 ### Thread 5 — Software for Agents
+
 **Features:** MCP server (Cadence as tool surface). MCP client (consume Linear/Notion/GitHub/custom). A2A server + client + Agent Cards at `/.well-known/agent.json`. Per-token capability scopes, per-tool rate limits, prompt-injection guard on external results, PII egress check, `protocol_audit` log.
 **Stakeholder views:** External Agents (consume Cadence via MCP/A2A), Engineering Lead (configures peer registry + scopes), Compliance Owner (audits protocol log).
 
-### Thread 6 — *Reframe: "the connective intelligence layer"*
+### Thread 6 — _Reframe: "the connective intelligence layer"_
+
 **Features:** Phase 8 (Company Brain substrate) + Phase 9 (Closed-Loop Discovery Engine) compose into the **closed-loop reasoning layer**: signals → themes → hypotheses → experiments → decisions → roadmap re-scoring → insight memos → policy updates.
 **Stakeholder views:** CEO (sees company queryable, decisions auditable), Business Leader (sees strategy + execution in one frame), VP Product (sees outcome-driven roadmap with evidence chains).
 
-**Do not lead with "AI OS for companies."** Lead with the capability the closed loop delivers: *"the only PM tool that can show you why each item is on the roadmap, with citation-grounded evidence and an audit trail."*
+**Do not lead with "AI OS for companies."** Lead with the capability the closed loop delivers: _"the only PM tool that can show you why each item is on the roadmap, with citation-grounded evidence and an audit trail."_
 
 ---
 
 ## Marty Cagan Framework Lens
 
-> `[training-data]` — Cagan's published canon (*Inspired*, *Empowered*, *Transformed*, SVPG essays). Direct quotes pending the YouTube/SVPG watch-through assignment below.
+> `[training-data]` — Cagan's published canon (_Inspired_, _Empowered_, _Transformed_, SVPG essays). Direct quotes pending the YouTube/SVPG watch-through assignment below.
 
 Cagan's framework has four load-bearing concepts. Cadence's positioning needs to be tested against each:
 
 ### Product trios (PM + Design + Engineering)
+
 Cagan is emphatic that great product work is done by an **empowered trio** — not a PM dictating to engineering and design.
+
 - The single-PM-commanding-16-agents framing risks reinforcing the anti-pattern Cagan rails against — PM-as-CEO-of-the-product.
-- **Better framing:** *"Cadence is the substrate where the product trio (PM + design + eng) does its work together, with agents handling the mechanical translation between them."*
+- **Better framing:** _"Cadence is the substrate where the product trio (PM + design + eng) does its work together, with agents handling the mechanical translation between them."_
 
 ### Discovery vs Delivery (the most important Cagan distinction)
+
 Cagan's foundational claim: **discovery and delivery are different disciplines.** Discovery is reducing risk; delivery is shipping reliably.
+
 - Cadence's six phases collapse both. Fine in architecture, dangerous in positioning.
-- **Recommendation:** Cadence's *primary positioning surface* should be **discovery-first** (Thread 3, Wedge A). Delivery features are the second-buy.
+- **Recommendation:** Cadence's _primary positioning surface_ should be **discovery-first** (Thread 3, Wedge A). Delivery features are the second-buy.
 
 ### Outcome-driven roadmaps (not feature roadmaps)
+
 Cagan's frequent attack: feature roadmaps are vanity; outcome roadmaps with measurable business impact are real product work.
+
 - Cadence's Now/Next/Later roadmap is currently feature-shaped. **Recommend reframe** to outcome-driven: each roadmap item declares the outcome it's pursuing and how it'll be measured.
 
 ### Empowered teams (not feature factories)
+
 Cagan: the worst product orgs are feature factories.
-- Cadence's risk: an agent-driven system that *executes more efficiently on whatever is in the backlog* makes the feature-factory problem **worse**, not better.
+
+- Cadence's risk: an agent-driven system that _executes more efficiently on whatever is in the backlog_ makes the feature-factory problem **worse**, not better.
 - **Required guardrail:** the Strategist + Discovery Scout agents must continuously interrogate whether work in flight matches stated outcomes. Approval gates must be configurable to require outcome-citation.
 
 ### Imagined Cagan feedback to this founder (200 words)
 
-> "You've built a lot. I'll be direct: your six-thread framing is your weakness. 'AI OS for Companies' is the kind of sentence that gets you funded by people who don't have to use the product. The PMs you eventually need to sell to will ask: *what does it do this Wednesday afternoon when my support inbox has 40 tickets and my CEO wants a roadmap update by 5pm?* Your answer needs to be a sentence, not an architecture.
+> "You've built a lot. I'll be direct: your six-thread framing is your weakness. 'AI OS for Companies' is the kind of sentence that gets you funded by people who don't have to use the product. The PMs you eventually need to sell to will ask: _what does it do this Wednesday afternoon when my support inbox has 40 tickets and my CEO wants a roadmap update by 5pm?_ Your answer needs to be a sentence, not an architecture.
 >
 > Your strongest evidence is in the discovery loop. PMs don't synthesize support, churn, and usage signals continuously — that work is real. Lead with that. Make it a tool that ships a weekly discovery digest that's actually grounded in evidence, and earn the right to expand from there.
 >
@@ -194,56 +208,62 @@ This is **imagined feedback based on Cagan's published canon**, not a real Cagan
 **Cadence is the agent-native substrate for the product trio** — the place where PM, design, and engineering do product work together, with AI agents handling mechanical translation between them (signals → opportunities → PRDs → tickets → updates → decisions → memos). Every artifact is cited, every decision is auditable, every agent run requires approval before touching shared state.
 
 **Primary wedge (first 6 months): Continuous Discovery Feed** for B2B SaaS PMs (Wedge A from the research report).
+
 - Ingests support tickets, churn data, usage telemetry, sales call notes, NPS verbatims weekly.
 - Synthesizes into themes → scored opportunities → first-draft opportunity briefs.
 - PM edits and approves; no agent writes externally without sign-off.
 - **Why first:** Strong demand evidence (Dovetail $50M ARR proves the JTBD). Cadence's chokepoint + RAG + judge stack delivers this directly. Multi-source synthesis (not just research) is the defensible angle.
 
 **Secondary wedge (months 6–12): Spec → Ticket Pipeline with Approval Gates** (Wedge B).
+
 - PM writes spec; Cadence's Sprint Planner agent decomposes into scoped Linear/Jira tickets with acceptance criteria, dependencies, risk flags.
 - PM approves the decomposition before tickets land in Linear.
 - **Why second:** Korey/ChatPRD confirm the pain. Pairs naturally with discovery wedge.
 
 **Tertiary wedge (months 9–15): Stakeholder Update Automation** (Wedge C).
+
 - Draft three parallel update formats from the same underlying state (eng-level, GTM-level, exec-level).
 - PM approves before send.
 - **Why third:** Trust-building moment. Lenny's content explicitly names this as the safest first agent task.
 
-**Year 2+: Compose into the Product Memory + Closed-Loop Discovery Engine.** Phases 7–9 deliver the long-term moat. *The first year is wedges, not platform.*
+**Year 2+: Compose into the Product Memory + Closed-Loop Discovery Engine.** Phases 7–9 deliver the long-term moat. _The first year is wedges, not platform._
 
 ### Six-thread reframe to drop the buyer-opaque language
 
-| Old framing | New framing (buyer-legible) |
-|---|---|
-| Cursor for Product Management | "AI that drafts the spec, you approve the ticket" |
-| Company Brain | **"Product Memory"** — *why* this decision, *what* changed since |
-| AI-Native Discovery Engines | "Your weekly discovery digest, grounded in evidence" |
-| SaaS Challengers | *(drop — reframe as "Cadence-on-top, not Cadence-instead")* |
-| Software for Agents | *(platform play, not lead positioning)* |
-| AI OS for Companies | *(reserve for analyst/investor narrative post-traction)* |
+| Old framing                   | New framing (buyer-legible)                                      |
+| ----------------------------- | ---------------------------------------------------------------- |
+| Cursor for Product Management | "AI that drafts the spec, you approve the ticket"                |
+| Company Brain                 | **"Product Memory"** — _why_ this decision, _what_ changed since |
+| AI-Native Discovery Engines   | "Your weekly discovery digest, grounded in evidence"             |
+| SaaS Challengers              | _(drop — reframe as "Cadence-on-top, not Cadence-instead")_      |
+| Software for Agents           | _(platform play, not lead positioning)_                          |
+| AI OS for Companies           | _(reserve for analyst/investor narrative post-traction)_         |
 
 ### Design system direction (replaces the 5-pillar limit in design.md)
 
 Widen design references to: getdesign.md (VoltAgent awesome-design-md as the menu), impeccable.style (Emil Kowalski's craft principles), 21st.dev community components, Framer 2026 design predictions, motion.dev animation library. **Mix to a unique direction; don't copy any single one.**
 
 Three design pillars derived from the references:
+
 1. **Composition-first, brand-first, poster-not-document** — interfaces feel curated, not generated.
 2. **Motion as hierarchy, not decoration** — animation tells the eye what's primary.
 3. **Cardless and confident** — strip the SaaS-card-grid default; let layout breathe.
 
-The current Neural Expressive OKLCH token system stays — it's good craft. The pillars above govern *how* we use those tokens.
+The current Neural Expressive OKLCH token system stays — it's good craft. The pillars above govern _how_ we use those tokens.
 
 ### Tech stack — what to keep, what to question
 
 **Keep (no strong reason to change yet):**
+
 - Supabase Postgres + RLS + pgvector (battle-tested, multi-tenant from day one)
 - TypeScript end-to-end (type-safety chokepoint pays dividends)
 - shadcn/ui + Framer Motion + Tiptap (good craft baseline)
 - Lovable AI Gateway + BYO keys (the model-agnostic substrate)
 
 **Question (real evaluation needed before Phase 7+):**
+
 - **Runtime: TanStack Start on Cloudflare Workers vs alternatives.** Workers has cold-start + global edge advantages, but agent-to-agent workflows often want **long-running stateful processes**. Workers' execution-time limits may bite. Evaluate: Bun + Node on Fly.io / Railway for stateful agent workloads; OR add a complementary worker tier (Modal / Inngest / Restate) for long-running steps.
-- **Agent runtime language for high-concurrency A2A workloads.** Current chokepoint is TS; fine for app layer. The A2A / MCP gateway for *Phase 7* may benefit from Go (concurrency primitives) or Elixir (actor model fits agent topology). **Defer to Phase 7 actual build.**
+- **Agent runtime language for high-concurrency A2A workloads.** Current chokepoint is TS; fine for app layer. The A2A / MCP gateway for _Phase 7_ may benefit from Go (concurrency primitives) or Elixir (actor model fits agent topology). **Defer to Phase 7 actual build.**
 - **Storage for Phase 8 Product Memory knowledge graph.** pgvector handles embeddings; for typed graph traversal (paths, supersedes chains), evaluate Neo4j / Memgraph as a complementary store, OR stay on Postgres with recursive CTEs if graph queries stay shallow.
 
 **Do not rewrite anything until Wedge A has paying users.** Premature platform rebuild before product-market fit is the #1 way founders kill themselves.
@@ -258,7 +278,7 @@ Add to `CLAUDE.md` (Session-friction patterns section is the natural home):
 
 ## Open Questions (must validate before scope expansion)
 
-1. **The expanded audience claim is unvalidated.** Are business leaders / sales leads / engineering leads / CEOs actually frustrated enough to *buy* a unified surface? Or is this founder hypothesis?
+1. **The expanded audience claim is unvalidated.** Are business leaders / sales leads / engineering leads / CEOs actually frustrated enough to _buy_ a unified surface? Or is this founder hypothesis?
 2. **Does Cagan's "product trio" framing match how AI-native startups actually operate?** Many AI-native startups are 5–15 people total — the trio collapses to one or two humans.
 3. **What's the right go-to-market path?** Pure SaaS, open-core, vertical specialization, or platform-via-marketplace. Each implies different demand evidence and pricing.
 4. **Is "Product Memory" the right rename of Company Brain?** The research subagent suggested it; needs customer language validation.
@@ -283,6 +303,7 @@ Cadence is currently a web SaaS deployed on Cloudflare Workers via Lovable Cloud
 - **Stakeholder Update wedge:** requires Slack/email integration. Same web app.
 
 Long-term distribution channels worth evaluating:
+
 - **MCP marketplace** (when Anthropic ships one) — Cadence exposed as agent-callable tool.
 - **Linear / Notion / Slack app marketplaces** for inbound traffic.
 - **Lenny Rachitsky / Aakash Gupta / Pawel Huryn newsletter sponsorships** — directly reach the buyer.
@@ -304,26 +325,33 @@ Long-term distribution channels worth evaluating:
 This is the explicit Phase 6 assignment, in priority order:
 
 ### 1. The YouTube watch (this week, 6–10 hours total)
+
 Watch and take notes on:
+
 - **Aakash Gupta** — `youtube.com/@growproduct` — last 5–8 videos that match AI-PM / agent / product strategy topics. Note guests + 3 quotes per video.
-- **Marty Cagan** — search YouTube for talks from last 12 months. *His SVPG essays at `svpg.com/articles/` are FREE and shorter — read 3–5 of the most recent.*
+- **Marty Cagan** — search YouTube for talks from last 12 months. _His SVPG essays at `svpg.com/articles/` are FREE and shorter — read 3–5 of the most recent._
 - **Pawel Huryn** — `youtube.com/@pawelhuryn` — last 3–5 videos on AI-native PM.
 - **Lenny's Podcast** — `youtube.com/@LennysPodcast` — 2–3 recent episodes that touch AI-PM or product OS.
 
 **Output:** send me 5 verbatim quotes from each (20 total) plus your reactions to which voices most resonate.
 
 ### 2. Five real PM conversations (next 2–3 weeks)
-Cagan's hard-truth feedback: *"Stop building. Talk to ten."* Even five is enough to start.
+
+Cagan's hard-truth feedback: _"Stop building. Talk to ten."_ Even five is enough to start.
+
 - Find 5 PMs at B2B SaaS companies (30–300 employees, AI-native or AI-aspiring).
-- Don't pitch. Ask: *"Walk me through your last Monday morning. What did you actually do?"* Then: *"What did you waste time on that you wish was automatic?"*
+- Don't pitch. Ask: _"Walk me through your last Monday morning. What did you actually do?"_ Then: _"What did you waste time on that you wish was automatic?"_
 - Show them Wedge A (Discovery Feed). Watch them react — silence is data.
 - Notes back to me: who they are, where they get stuck, what they said about the wedge.
 
 ### 3. Decide the go-to-market path
+
 Cadence is positioned as an independent AI-native product company. Pick the GTM lane: **pure SaaS** (per-seat or per-team pricing), **open-core** (free OSS engine + paid hosted/enterprise tier), **vertical specialization** (Cadence for a named PM segment first — e.g., AI-native B2B SaaS), or **platform-via-marketplace** (Cadence-as-MCP-surface, distributed through agent marketplaces as they emerge). Each implies different demand evidence and pricing. **Decide before Wedge A launches.**
 
 ### 4. The doc updates (this weekend, ~3 hours)
+
 After this session ends, update:
+
 - **README.md** — drop "PM tool replacement" framing; lead with "agent-native substrate for the product trio" + "Continuous Discovery Feed" as the visible wedge.
 - **CLAUDE.md** — add the Skill-first protocol rule (P9). Add P10 persistence requirement.
 - **design.md** — widen the references list; capture the three new design pillars.
@@ -332,22 +360,23 @@ After this session ends, update:
 - **auto-memory** — `project` entry for the framing pivot; `feedback` entry for the skill-first protocol.
 
 ### 5. Schedule the v2 office-hours
+
 Two weeks from now, run `/gstack-office-hours` again with: (a) your 20 verbatim quotes from the YouTube watch, (b) your 5 PM conversation notes, (c) your external-vs-intrapreneurship decision. Then we write v2 of this design doc grounded in real customer voice.
 
 ---
 
 ## What I noticed about how you think
 
-- You said: *"I am not going to be the customer for this right, I want the actual customers, want you to actually think from their lens."* That sentence is the most important thing you said in this session. Most founders never get there. You're already past the trap.
-- You said: *"It's not just one single feature we are adding and moving ahead, sort of thing."* You're resisting the YC narrowest-wedge advice for a real reason — you've built something architecturally bigger than a wedge. That's also the dangerous moment. The architecture is sound, but it only matters if a wedge succeeds first. Hold both truths.
-- You pushed back when I tried to skip the YouTube research. *"It's an explicit ask and approval from my end."* Most users defer to AI cost prompts. You didn't. That's founder agency.
-- You said: *"GStack skills get +1% higher priority."* You're already designing your own protocol for working with AI tools. That meta-thinking is rare. Reads as someone who's been burned by AI hallucination before and wants discipline.
+- You said: _"I am not going to be the customer for this right, I want the actual customers, want you to actually think from their lens."_ That sentence is the most important thing you said in this session. Most founders never get there. You're already past the trap.
+- You said: _"It's not just one single feature we are adding and moving ahead, sort of thing."_ You're resisting the YC narrowest-wedge advice for a real reason — you've built something architecturally bigger than a wedge. That's also the dangerous moment. The architecture is sound, but it only matters if a wedge succeeds first. Hold both truths.
+- You pushed back when I tried to skip the YouTube research. _"It's an explicit ask and approval from my end."_ Most users defer to AI cost prompts. You didn't. That's founder agency.
+- You said: _"GStack skills get +1% higher priority."_ You're already designing your own protocol for working with AI tools. That meta-thinking is rare. Reads as someone who's been burned by AI hallucination before and wants discipline.
 
 ---
 
 ## Reviewer Concerns
 
-Per the office-hours Spec Review Loop — *not run this session due to cost cap*. Known weaknesses to flag:
+Per the office-hours Spec Review Loop — _not run this session due to cost cap_. Known weaknesses to flag:
 
 - **Section 3 (Status Quo) is heavy on training-data; only 3–4 incumbent claims have live source backing.** Treat the rest as directional.
 - **Section "Marty Cagan Framework Lens" is imagined Cagan, not real quotes.** The Assignment fixes this.

@@ -6,12 +6,12 @@
 
 ## What's missing
 
-Two backend secrets, one per provider. Until both are set, the **Connect Google Calendar** and **Connect Microsoft Outlook** buttons on `/calendar` are visible but disabled (hover tooltip: *"Provider credentials not yet configured"*).
+Two backend secrets, one per provider. Until both are set, the **Connect Google Calendar** and **Connect Microsoft Outlook** buttons on `/calendar` are visible but disabled (hover tooltip: _"Provider credentials not yet configured"_).
 
-| Secret name | Provider | Where to create |
-|---|---|---|
-| `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID` | Google | [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials) |
-| `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID` | Microsoft | [Entra admin center → App registrations](https://entra.microsoft.com/) |
+| Secret name                              | Provider  | Where to create                                                                                           |
+| ---------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID`    | Google    | [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials) |
+| `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID` | Microsoft | [Entra admin center → App registrations](https://entra.microsoft.com/)                                    |
 
 Add both via Lovable Cloud → Project → Secrets.
 
@@ -37,13 +37,13 @@ Code, schema, sync dispatcher, month-grid view, inline create/edit/delete, conne
 ### Microsoft
 
 1. In Microsoft Entra admin center → **App registrations → New registration**.
-2. Supported account types: *Accounts in any organizational directory and personal Microsoft accounts*.
+2. Supported account types: _Accounts in any organizational directory and personal Microsoft accounts_.
 3. Redirect URI (Web):
    ```
    https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback
    ```
 4. After creation: **API permissions → Add a permission → Microsoft Graph → Delegated**, add `Calendars.ReadWrite`, `User.Read`, `offline_access`. Grant admin consent if your tenant requires it.
-5. **Overview** → copy *Application (client) ID*. Add as backend secret `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID`.
+5. **Overview** → copy _Application (client) ID_. Add as backend secret `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID`.
 
 ## What unlocks once both secrets are set
 

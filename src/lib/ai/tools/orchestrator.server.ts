@@ -23,7 +23,9 @@ import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent } from "@/lib/ai/handoff.server";
 
 // Re-export the same helper signature the registry uses.
-function def<S extends z.ZodTypeAny>(d: ToolDef<S>) { return d as unknown as ToolDef; }
+function def<S extends z.ZodTypeAny>(d: ToolDef<S>) {
+  return d as unknown as ToolDef;
+}
 
 type MissionStepRow = {
   id: string;
@@ -51,17 +53,28 @@ async function loadMission(supabase: SupabaseClient, missionId: string, userId: 
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error(`Mission not found: ${missionId}`);
-  return data as { id: string; user_id: string; workspace_id: string; title: string; goal: string; status: string };
+  return data as {
+    id: string;
+    user_id: string;
+    workspace_id: string;
+    title: string;
+    goal: string;
+    status: string;
+  };
 }
 
-async function listSpecialistSlugs(supabase: SupabaseClient, userId: string): Promise<{ slug: string; role: string }[]> {
+async function listSpecialistSlugs(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ slug: string; role: string }[]> {
   const { data } = await supabase
     .from("agents")
     .select("slug,role,enabled")
     .eq("user_id", userId)
     .eq("enabled", true);
-  return ((data ?? []) as { slug: string; role: string }[])
-    .filter((a) => a.slug !== "orchestrator");
+  return ((data ?? []) as { slug: string; role: string }[]).filter(
+    (a) => a.slug !== "orchestrator",
+  );
 }
 
 // ── mission.plan ──────────────────────────────────────────────────────
@@ -70,18 +83,29 @@ const PlanArgs = z.object({
   model: z.string().max(120).optional(),
 });
 
-type PlannedStep = { agent_slug: string; sub_goal: string; depends_on?: number[]; rationale?: string };
+type PlannedStep = {
+  agent_slug: string;
+  sub_goal: string;
+  depends_on?: number[];
+  rationale?: string;
+};
 
 function parsePlan(text: string): { steps: PlannedStep[]; summary?: string } | null {
   const tryParse = (s: string) => {
-    try { return JSON.parse(s); } catch { return null; }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
   };
   const direct = tryParse(text);
-  if (direct && Array.isArray((direct as { steps?: unknown }).steps)) return direct as { steps: PlannedStep[]; summary?: string };
+  if (direct && Array.isArray((direct as { steps?: unknown }).steps))
+    return direct as { steps: PlannedStep[]; summary?: string };
   const m = text.match(/\{[\s\S]*\}/);
   if (m) {
     const sliced = tryParse(m[0]);
-    if (sliced && Array.isArray((sliced as { steps?: unknown }).steps)) return sliced as { steps: PlannedStep[]; summary?: string };
+    if (sliced && Array.isArray((sliced as { steps?: unknown }).steps))
+      return sliced as { steps: PlannedStep[]; summary?: string };
   }
   return null;
 }
@@ -106,12 +130,16 @@ export const missionPlan = def({
       .select("id", { count: "exact", head: true })
       .eq("mission_id", missionId);
     if ((existing ?? 0) > 0) {
-      throw new Error("mission.plan: mission already has steps. Call mission.dispatch or mission.observe instead.");
+      throw new Error(
+        "mission.plan: mission already has steps. Call mission.dispatch or mission.observe instead.",
+      );
     }
 
     const roster = await listSpecialistSlugs(supabase, userId);
     if (roster.length === 0) {
-      throw new Error("mission.plan: no specialist agents enabled in workspace. Create at least one agent (e.g. discovery, strategist, builder).");
+      throw new Error(
+        "mission.plan: no specialist agents enabled in workspace. Create at least one agent (e.g. discovery, strategist, builder).",
+      );
     }
 
     const planSystem = [
@@ -148,14 +176,19 @@ export const missionPlan = def({
 
     const plan = parsePlan(r.output);
     if (!plan || !Array.isArray(plan.steps) || plan.steps.length === 0) {
-      throw new Error(`mission.plan: planner returned no usable steps. Raw: ${r.output.slice(0, 240)}`);
+      throw new Error(
+        `mission.plan: planner returned no usable steps. Raw: ${r.output.slice(0, 240)}`,
+      );
     }
-    if (plan.steps.length > 8) throw new Error("mission.plan: too many steps (>8). Re-plan smaller.");
+    if (plan.steps.length > 8)
+      throw new Error("mission.plan: too many steps (>8). Re-plan smaller.");
 
     const validSlugs = new Set(roster.map((r) => r.slug));
     const rows = plan.steps.map((s, i) => {
       if (!validSlugs.has(s.agent_slug)) {
-        throw new Error(`mission.plan: step ${i} references unknown slug "${s.agent_slug}". Valid: ${[...validSlugs].join(", ")}`);
+        throw new Error(
+          `mission.plan: step ${i} references unknown slug "${s.agent_slug}". Valid: ${[...validSlugs].join(", ")}`,
+        );
       }
       const deps = (s.depends_on ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d < i);
       return {
@@ -179,7 +212,10 @@ export const missionPlan = def({
       summary: plan.summary?.slice(0, 400) ?? null,
       step_count: rows.length,
       steps: rows.map((r) => ({
-        idx: r.idx, agent_slug: r.agent_slug, sub_goal: r.sub_goal, depends_on: r.depends_on,
+        idx: r.idx,
+        agent_slug: r.agent_slug,
+        sub_goal: r.sub_goal,
+        depends_on: r.depends_on,
       })),
     };
   },
@@ -205,16 +241,21 @@ export const missionDispatch = def({
     // 'done' to evaluate depends_on).
     await reflectStepStatusFromRuns(supabase, missionId);
 
-    const { data: ready, error: rErr } = await supabase
-      .rpc("next_ready_mission_steps", { p_mission_id: missionId });
+    const { data: ready, error: rErr } = await supabase.rpc("next_ready_mission_steps", {
+      p_mission_id: missionId,
+    });
     if (rErr) throw new Error(rErr.message);
     const readyRows = (ready ?? []) as MissionStepRow[];
 
     if (readyRows.length === 0) {
-      return { dispatched: 0, message: "Nothing ready to dispatch (waiting on deps, or all steps already dispatched)." };
+      return {
+        dispatched: 0,
+        message: "Nothing ready to dispatch (waiting on deps, or all steps already dispatched).",
+      };
     }
 
-    const dispatched: { idx: number; agent_slug: string; run_id: string; message_id: string }[] = [];
+    const dispatched: { idx: number; agent_slug: string; run_id: string; message_id: string }[] =
+      [];
     const failed: { idx: number; agent_slug: string; error: string }[] = [];
 
     for (const step of readyRows) {
@@ -248,12 +289,15 @@ export const missionDispatch = def({
           })
           .eq("id", step.id);
         dispatched.push({
-          idx: step.idx, agent_slug: step.agent_slug,
-          run_id: handoffRes.queued_run_id, message_id: handoffRes.message_id,
+          idx: step.idx,
+          agent_slug: step.agent_slug,
+          run_id: handoffRes.queued_run_id,
+          message_id: handoffRes.message_id,
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        await supabase.from("mission_steps")
+        await supabase
+          .from("mission_steps")
           .update({ status: "failed", error: msg, completed_at: new Date().toISOString() })
           .eq("id", step.id);
         failed.push({ idx: step.idx, agent_slug: step.agent_slug, error: msg });
@@ -286,28 +330,36 @@ export const missionObserve = def({
 
     const { data, error } = await supabase
       .from("mission_steps")
-      .select("idx,agent_slug,sub_goal,depends_on,status,run_id,error,result,dispatched_at,completed_at")
+      .select(
+        "idx,agent_slug,sub_goal,depends_on,status,run_id,error,result,dispatched_at,completed_at",
+      )
       .eq("mission_id", missionId)
       .order("idx");
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as {
-      idx: number; agent_slug: string; sub_goal: string; depends_on: number[];
-      status: string; run_id: string | null; error: string | null;
+      idx: number;
+      agent_slug: string;
+      sub_goal: string;
+      depends_on: number[];
+      status: string;
+      run_id: string | null;
+      error: string | null;
       result: Record<string, unknown> | null;
-      dispatched_at: string | null; completed_at: string | null;
+      dispatched_at: string | null;
+      completed_at: string | null;
     }[];
     const summary = {
       total: rows.length,
-      planned:    rows.filter((r) => r.status === "planned").length,
+      planned: rows.filter((r) => r.status === "planned").length,
       dispatched: rows.filter((r) => r.status === "dispatched").length,
-      running:    rows.filter((r) => r.status === "running").length,
-      done:       rows.filter((r) => r.status === "done").length,
-      failed:     rows.filter((r) => r.status === "failed").length,
-      skipped:    rows.filter((r) => r.status === "skipped").length,
+      running: rows.filter((r) => r.status === "running").length,
+      done: rows.filter((r) => r.status === "done").length,
+      failed: rows.filter((r) => r.status === "failed").length,
+      skipped: rows.filter((r) => r.status === "skipped").length,
     };
-    const all_terminal = rows.length > 0 && rows.every((r) =>
-      r.status === "done" || r.status === "failed" || r.status === "skipped",
-    );
+    const all_terminal =
+      rows.length > 0 &&
+      rows.every((r) => r.status === "done" || r.status === "failed" || r.status === "skipped");
     return { summary, all_terminal, steps: rows };
   },
 });
@@ -334,9 +386,9 @@ export const missionFinalize = def({
       .select("status")
       .eq("mission_id", missionId);
     const steps = (stepsData ?? []) as { status: string }[];
-    const all_terminal = steps.length > 0 && steps.every((s) =>
-      s.status === "done" || s.status === "failed" || s.status === "skipped",
-    );
+    const all_terminal =
+      steps.length > 0 &&
+      steps.every((s) => s.status === "done" || s.status === "failed" || s.status === "skipped");
     if (!all_terminal && steps.length > 0) {
       return {
         ok: false,
@@ -379,7 +431,10 @@ export const missionFinalize = def({
  * dispatch, observe, and finalize so the orchestrator always sees fresh
  * progress without a separate reactor.
  */
-async function reflectStepStatusFromRuns(supabase: SupabaseClient, missionId: string): Promise<void> {
+async function reflectStepStatusFromRuns(
+  supabase: SupabaseClient,
+  missionId: string,
+): Promise<void> {
   const { data: pending } = await supabase
     .from("mission_steps")
     .select("id,run_id,status")
@@ -395,7 +450,10 @@ async function reflectStepStatusFromRuns(supabase: SupabaseClient, missionId: st
     .from("agent_runs")
     .select("id,status,output,halted_reason")
     .in("id", runIds);
-  const byRun = new Map<string, { status: string; output: string | null; halted_reason: string | null }>(
+  const byRun = new Map<
+    string,
+    { status: string; output: string | null; halted_reason: string | null }
+  >(
     (runs ?? []).map((r) => [
       (r as { id: string }).id,
       r as { id: string; status: string; output: string | null; halted_reason: string | null },
@@ -406,7 +464,12 @@ async function reflectStepStatusFromRuns(supabase: SupabaseClient, missionId: st
     if (!row.run_id) continue;
     const run = byRun.get(row.run_id);
     if (!run) continue;
-    let next: { status: string; error?: string | null; result?: Record<string, unknown> | null; completed_at?: string } | null = null;
+    let next: {
+      status: string;
+      error?: string | null;
+      result?: Record<string, unknown> | null;
+      completed_at?: string;
+    } | null = null;
     if (run.status === "running" && row.status !== "running") {
       next = { status: "running" };
     } else if (run.status === "completed") {

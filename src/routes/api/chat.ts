@@ -22,7 +22,8 @@ export const Route = createFileRoute("/api/chat")({
       POST: async ({ request }) => {
         const SUPABASE_URL = process.env.SUPABASE_URL;
         const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return json({ error: "Backend not configured" }, 500);
+        if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)
+          return json({ error: "Backend not configured" }, 500);
         const authHeader = request.headers.get("authorization");
         if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
         const token = authHeader.slice(7);
@@ -62,12 +63,16 @@ export const Route = createFileRoute("/api/chat")({
           supabase.from("tasks").select("title,status,priority,is_deep_work").limit(30),
           supabase.from("projects").select("name,north_star,status").limit(10),
           supabase
-             .from("messages")
-             .select("role,content")
-             .eq("conversation_id", body.conversationId)
-             .order("created_at")
-             .limit(40),
-          supabase.from("profiles").select("display_name,full_name,role").eq("id", userId).maybeSingle(),
+            .from("messages")
+            .select("role,content")
+            .eq("conversation_id", body.conversationId)
+            .order("created_at")
+            .limit(40),
+          supabase
+            .from("profiles")
+            .select("display_name,full_name,role")
+            .eq("id", userId)
+            .maybeSingle(),
         ]);
 
         const grounding = JSON.stringify({
@@ -102,8 +107,8 @@ You must output a JSON object EXACTLY in this format:
             guardrails: false,
             messages: [
               { role: "system", content: classificationSystem },
-              { role: "user", content: body.content }
-            ]
+              { role: "user", content: body.content },
+            ],
           });
 
           if (classResult.status === "ok" && classResult.output) {
@@ -128,14 +133,20 @@ You must output a JSON object EXACTLY in this format:
         if (isMission) {
           try {
             // Seed orchestrator (idempotent)
-            const { error: seedErr } = await supabase.rpc("seed_orchestrator_agent", { p_user_id: userId });
+            const { error: seedErr } = await supabase.rpc("seed_orchestrator_agent", {
+              p_user_id: userId,
+            });
             if (seedErr) {
               preflightError = `seed orchestrator failed: ${seedErr.message}`;
             } else if (!workspaceId) {
               preflightError = "No default workspace found for user";
             } else {
-              const { data: agent } = await supabase.from("agents")
-                .select("id").eq("user_id", userId).eq("slug", "orchestrator").maybeSingle();
+              const { data: agent } = await supabase
+                .from("agents")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("slug", "orchestrator")
+                .maybeSingle();
               if (!agent) {
                 preflightError = "Orchestrator agent not found after seeding";
               } else {
@@ -148,7 +159,8 @@ You must output a JSON object EXACTLY in this format:
                   .eq("enabled", true)
                   .neq("slug", "orchestrator");
                 if ((specialists ?? 0) === 0) {
-                  preflightError = "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Builder) in the Agents roster before starting a mission.";
+                  preflightError =
+                    "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Builder) in the Agents roster before starting a mission.";
                 }
               }
             }
@@ -157,7 +169,10 @@ You must output a JSON object EXACTLY in this format:
           }
 
           if (preflightError) {
-            console.warn("[chat] mission pre-flight failed (falling back to regular chat):", preflightError);
+            console.warn(
+              "[chat] mission pre-flight failed (falling back to regular chat):",
+              preflightError,
+            );
             isMission = false;
           }
         }
@@ -198,12 +213,14 @@ You must output a JSON object EXACTLY in this format:
             const stream = new ReadableStream({
               async start(controller) {
                 const payload = JSON.stringify({
-                  choices: [{
-                    delta: {
-                      content: text,
-                      mission_id: mission.id
-                    }
-                  }]
+                  choices: [
+                    {
+                      delta: {
+                        content: text,
+                        mission_id: mission.id,
+                      },
+                    },
+                  ],
                 });
                 controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
                 controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
@@ -227,16 +244,20 @@ You must output a JSON object EXACTLY in this format:
                       eq: (c: string, v: string) => Promise<{ error: unknown }>;
                     };
                   };
-                  await builder.update({ title, updated_at: new Date().toISOString() }).eq("id", body.conversationId);
+                  await builder
+                    .update({ title, updated_at: new Date().toISOString() })
+                    .eq("id", body.conversationId);
                 } else {
                   const builder = supabase.from("conversations") as unknown as {
                     update: (p: Record<string, unknown>) => {
                       eq: (c: string, v: string) => Promise<{ error: unknown }>;
                     };
                   };
-                  await builder.update({ updated_at: new Date().toISOString() }).eq("id", body.conversationId);
+                  await builder
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq("id", body.conversationId);
                 }
-              }
+              },
             });
 
             return new Response(stream, {
@@ -247,7 +268,6 @@ You must output a JSON object EXACTLY in this format:
                 "Access-Control-Allow-Origin": "*",
               },
             });
-
           } catch (e: any) {
             console.error("[chat] failed to start orchestrated mission:", e);
             preflightError = `Failed to initialize mission: ${e.message || String(e)}`;
@@ -262,13 +282,20 @@ You know the user by name and ground every answer in their workspace.
 WORKSPACE CONTEXT (JSON):
 ${grounding}`;
 
-        const history: ChatMsg[] = (historyRes.data ?? []).map((m: { role: string; content: string }) => ({
-          role: m.role as ChatMsg["role"],
-          content: m.content,
-        }));
+        const history: ChatMsg[] = (historyRes.data ?? []).map(
+          (m: { role: string; content: string }) => ({
+            role: m.role as ChatMsg["role"],
+            content: m.content,
+          }),
+        );
 
         const preflightWarning = preflightError
-          ? [{ role: "system" as const, content: `CRITICAL: The user tried to dispatch a mission but checks failed: "${preflightError}". Explain this problem to the user (e.g. if they need to enable agents in the Agents page) and proceed with a regular conversation.` }]
+          ? [
+              {
+                role: "system" as const,
+                content: `CRITICAL: The user tried to dispatch a mission but checks failed: "${preflightError}". Explain this problem to the user (e.g. if they need to enable agents in the Agents page) and proceed with a regular conversation.`,
+              },
+            ]
           : [];
 
         // Persist user message first for regular chat path
@@ -359,14 +386,18 @@ ${grounding}`;
                       eq: (c: string, v: string) => Promise<{ error: unknown }>;
                     };
                   };
-                  await builder.update({ title, updated_at: new Date().toISOString() }).eq("id", body.conversationId);
+                  await builder
+                    .update({ title, updated_at: new Date().toISOString() })
+                    .eq("id", body.conversationId);
                 } else {
                   const builder = supabase.from("conversations") as unknown as {
                     update: (p: Record<string, unknown>) => {
                       eq: (c: string, v: string) => Promise<{ error: unknown }>;
                     };
                   };
-                  await builder.update({ updated_at: new Date().toISOString() }).eq("id", body.conversationId);
+                  await builder
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq("id", body.conversationId);
                 }
               }
             }

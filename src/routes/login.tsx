@@ -40,7 +40,9 @@ function LoginPage() {
 
   async function signInGoogle() {
     setLoadingGoogle(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
     if (result.error) {
       setLoadingGoogle(false);
       return toast.error(result.error.message ?? "Google sign-in failed");
@@ -66,26 +68,60 @@ function LoginPage() {
             <div className="absolute inset-0 neural-gradient" />
           </div>
           <h1 className="mt-4 font-display text-2xl tracking-tight">Welcome to Cadence</h1>
-          <p className="text-xs text-muted-foreground mt-1">Your product org, run by a swarm of agents.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Your product org, run by a swarm of agents.
+          </p>
         </div>
 
-        <Button type="button" variant="outline" className="w-full" onClick={signInGoogle} disabled={loadingGoogle}>
-          {loadingGoogle ? <Loader2 className="h-4 w-4 animate-spin" /> : <><GoogleIcon /> Continue with Google</>}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={signInGoogle}
+          disabled={loadingGoogle}
+        >
+          {loadingGoogle ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <GoogleIcon /> Continue with Google
+            </>
+          )}
         </Button>
 
         <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          <div className="flex-1 h-px bg-border" /> or email <div className="flex-1 h-px bg-border" />
+          <div className="flex-1 h-px bg-border" /> or email{" "}
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         <form onSubmit={signInEmail} className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
+            <Label htmlFor="email" className="text-xs">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+            />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs">Password</Label>
+            <Label htmlFor="password" className="text-xs">
+              Password
+            </Label>
             <div className="relative">
-              <Input id="password" type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pr-10" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="pr-10"
+              />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
@@ -97,17 +133,29 @@ function LoginPage() {
             </div>
           </div>
           <div className="flex items-center justify-end">
-            <Link to="/forgot-password" className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
           <Button type="submit" className="w-full" disabled={loadingEmail}>
-            {loadingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4 mr-1.5" /> Sign in</>}
+            {loadingEmail ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-1.5" /> Sign in
+              </>
+            )}
           </Button>
         </form>
 
         <div className="text-xs text-center text-muted-foreground">
-          New here? <Link to="/signup" className="text-foreground underline-offset-4 hover:underline">Create an account</Link>
+          New here?{" "}
+          <Link to="/signup" className="text-foreground underline-offset-4 hover:underline">
+            Create an account
+          </Link>
         </div>
       </div>
     </div>
@@ -117,7 +165,10 @@ function LoginPage() {
 function GoogleIcon() {
   return (
     <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4.2-5.5 4.2-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.3 14.7 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.5 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"/>
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4.2-5.5 4.2-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.3 14.7 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.5 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"
+      />
     </svg>
   );
 }

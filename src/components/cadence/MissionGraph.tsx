@@ -38,7 +38,8 @@ function StatusGlyph({ s, x, y }: { s: string; x: number; y: number }) {
   if (s === "completed") return <CheckCircle2 {...props} className="text-emerald-300" />;
   if (s === "running") return <Loader2 {...props} className="text-cyan-300 animate-spin" />;
   if (s === "queued") return <Loader2 {...props} className="text-amber-300" />;
-  if (s === "failed" || s === "halted") return <AlertTriangle {...props} className="text-rose-300" />;
+  if (s === "failed" || s === "halted")
+    return <AlertTriangle {...props} className="text-rose-300" />;
   return <Bot {...props} className="text-muted-foreground" />;
 }
 
@@ -116,10 +117,19 @@ export function MissionGraph({ hops, messages, onSelectHop }: Props) {
     <div className="bento p-4">
       <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-3 flex items-center gap-2">
         <GitBranch className="h-3 w-3 text-violet-300" /> Mission graph
-        <span className="text-muted-foreground/70 normal-case tracking-normal">· {hops.length} node{hops.length === 1 ? "" : "s"} · {resolvedEdges.length} edge{resolvedEdges.length === 1 ? "" : "s"}</span>
+        <span className="text-muted-foreground/70 normal-case tracking-normal">
+          · {hops.length} node{hops.length === 1 ? "" : "s"} · {resolvedEdges.length} edge
+          {resolvedEdges.length === 1 ? "" : "s"}
+        </span>
       </div>
       <div className="overflow-x-auto">
-        <svg width={width} height={height} className="block" role="img" aria-label="Mission agent graph">
+        <svg
+          width={width}
+          height={height}
+          className="block"
+          role="img"
+          aria-label="Mission agent graph"
+        >
           {/* Edges */}
           {resolvedEdges.map((e) => {
             const a = pos.get(e.from);
@@ -133,15 +143,33 @@ export function MissionGraph({ hops, messages, onSelectHop }: Props) {
             const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
             return (
               <g key={e.id} aria-label={`handoff ${e.kind}`}>
-                <path d={d} className="fill-none stroke-violet-400/50" strokeWidth={1.5} markerEnd="url(#arrow)" />
-                <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 4} textAnchor="middle" className="fill-muted-foreground text-[9px] font-mono">
+                <path
+                  d={d}
+                  className="fill-none stroke-violet-400/50"
+                  strokeWidth={1.5}
+                  markerEnd="url(#arrow)"
+                />
+                <text
+                  x={(x1 + x2) / 2}
+                  y={(y1 + y2) / 2 - 4}
+                  textAnchor="middle"
+                  className="fill-muted-foreground text-[9px] font-mono"
+                >
                   {e.kind}
                 </text>
               </g>
             );
           })}
           <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
               <path d="M 0 0 L 10 5 L 0 10 z" className="fill-violet-400/60" />
             </marker>
           </defs>
@@ -176,13 +204,26 @@ export function MissionGraph({ hops, messages, onSelectHop }: Props) {
                   strokeWidth={1}
                 />
                 <StatusGlyph s={h.status} x={p.x - NODE_W / 2 + 14} y={p.y - NODE_H / 2 + 14} />
-                <text x={p.x - NODE_W / 2 + 28} y={p.y - NODE_H / 2 + 18} className="fill-foreground text-[11px] font-semibold">
+                <text
+                  x={p.x - NODE_W / 2 + 28}
+                  y={p.y - NODE_H / 2 + 18}
+                  className="fill-foreground text-[11px] font-semibold"
+                >
                   {h.agent_name.length > 18 ? h.agent_name.slice(0, 17) + "…" : h.agent_name}
                 </text>
-                <text x={p.x - NODE_W / 2 + 12} y={p.y + NODE_H / 2 - 10} className="fill-muted-foreground text-[9px] font-mono">
+                <text
+                  x={p.x - NODE_W / 2 + 12}
+                  y={p.y + NODE_H / 2 - 10}
+                  className="fill-muted-foreground text-[9px] font-mono"
+                >
                   {h.agent_slug}
                 </text>
-                <text x={p.x + NODE_W / 2 - 12} y={p.y + NODE_H / 2 - 10} textAnchor="end" className="fill-muted-foreground text-[9px] tabular-nums">
+                <text
+                  x={p.x + NODE_W / 2 - 12}
+                  y={p.y + NODE_H / 2 - 10}
+                  textAnchor="end"
+                  className="fill-muted-foreground text-[9px] tabular-nums"
+                >
                   {h.status}
                 </text>
               </g>

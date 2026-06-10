@@ -34,24 +34,49 @@ export const getAnalyticsOverview = createServerFn({ method: "POST" })
       .limit(2000);
     if (error) throw new Error(error.message);
 
-    const events = (rows ?? []) as Pick<EventRow, "id"|"created_at"|"surface"|"model"|"via"|"status"|"total_tokens"|"est_cost_usd"|"latency_ms">[];
+    const events = (rows ?? []) as Pick<
+      EventRow,
+      | "id"
+      | "created_at"
+      | "surface"
+      | "model"
+      | "via"
+      | "status"
+      | "total_tokens"
+      | "est_cost_usd"
+      | "latency_ms"
+    >[];
     const totalRuns = events.length;
     const errors = events.filter((e) => e.status !== "ok").length;
     const totalTokens = events.reduce((s, e) => s + (e.total_tokens || 0), 0);
     const totalCost = events.reduce((s, e) => s + Number(e.est_cost_usd || 0), 0);
-    const latencies = events.filter((e) => e.latency_ms > 0).map((e) => e.latency_ms).sort((a, b) => a - b);
-    const avgLatency = latencies.length ? Math.round(latencies.reduce((s, n) => s + n, 0) / latencies.length) : 0;
-    const p95Latency = latencies.length ? latencies[Math.floor(latencies.length * 0.95)] ?? latencies[latencies.length - 1] : 0;
+    const latencies = events
+      .filter((e) => e.latency_ms > 0)
+      .map((e) => e.latency_ms)
+      .sort((a, b) => a - b);
+    const avgLatency = latencies.length
+      ? Math.round(latencies.reduce((s, n) => s + n, 0) / latencies.length)
+      : 0;
+    const p95Latency = latencies.length
+      ? (latencies[Math.floor(latencies.length * 0.95)] ?? latencies[latencies.length - 1])
+      : 0;
 
-    const bySurface = new Map<string, { runs: number; tokens: number; cost: number; errors: number }>();
+    const bySurface = new Map<
+      string,
+      { runs: number; tokens: number; cost: number; errors: number }
+    >();
     const byModel = new Map<string, { runs: number; tokens: number; cost: number }>();
     for (const e of events) {
       const s = bySurface.get(e.surface) ?? { runs: 0, tokens: 0, cost: 0, errors: 0 };
-      s.runs += 1; s.tokens += e.total_tokens || 0; s.cost += Number(e.est_cost_usd || 0);
+      s.runs += 1;
+      s.tokens += e.total_tokens || 0;
+      s.cost += Number(e.est_cost_usd || 0);
       if (e.status !== "ok") s.errors += 1;
       bySurface.set(e.surface, s);
       const m = byModel.get(e.model) ?? { runs: 0, tokens: 0, cost: 0 };
-      m.runs += 1; m.tokens += e.total_tokens || 0; m.cost += Number(e.est_cost_usd || 0);
+      m.runs += 1;
+      m.tokens += e.total_tokens || 0;
+      m.cost += Number(e.est_cost_usd || 0);
       byModel.set(e.model, m);
     }
 
@@ -60,7 +85,8 @@ export const getAnalyticsOverview = createServerFn({ method: "POST" })
     for (const e of events) {
       const k = e.created_at.slice(0, 10);
       const v = dayBuckets.get(k) ?? { runs: 0, cost: 0 };
-      v.runs += 1; v.cost += Number(e.est_cost_usd || 0);
+      v.runs += 1;
+      v.cost += Number(e.est_cost_usd || 0);
       dayBuckets.set(k, v);
     }
     const daily = Array.from(dayBuckets.entries())
@@ -69,8 +95,12 @@ export const getAnalyticsOverview = createServerFn({ method: "POST" })
 
     return {
       summary: { totalRuns, errors, totalTokens, totalCost, avgLatency, p95Latency },
-      bySurface: Array.from(bySurface.entries()).map(([k, v]) => ({ surface: k, ...v })).sort((a, b) => b.runs - a.runs),
-      byModel: Array.from(byModel.entries()).map(([k, v]) => ({ model: k, ...v })).sort((a, b) => b.runs - a.runs),
+      bySurface: Array.from(bySurface.entries())
+        .map(([k, v]) => ({ surface: k, ...v }))
+        .sort((a, b) => b.runs - a.runs),
+      byModel: Array.from(byModel.entries())
+        .map(([k, v]) => ({ model: k, ...v }))
+        .sort((a, b) => b.runs - a.runs),
       daily,
     };
   });
@@ -78,16 +108,20 @@ export const getAnalyticsOverview = createServerFn({ method: "POST" })
 export const listAiEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      surface: z.string().max(40).optional(),
-      status: z.string().max(20).optional(),
-      limit: z.number().int().min(1).max(200).default(50),
-    }).parse(i ?? {}),
+    z
+      .object({
+        surface: z.string().max(40).optional(),
+        status: z.string().max(20).optional(),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ context, data }) => {
     let q = context.supabase
       .from("ai_events")
-      .select("id,created_at,surface,surface_ref,model,via,provider,status,prompt_tokens,completion_tokens,total_tokens,est_cost_usd,latency_ms,input_preview,output_preview,error_message")
+      .select(
+        "id,created_at,surface,surface_ref,model,via,provider,status,prompt_tokens,completion_tokens,total_tokens,est_cost_usd,latency_ms,input_preview,output_preview,error_message",
+      )
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.surface) q = q.eq("surface", data.surface);
@@ -104,7 +138,10 @@ export const getEventDetail = createServerFn({ method: "POST" })
     const [evt, evals, hits, fb] = await Promise.all([
       context.supabase.from("ai_events").select("*").eq("id", data.eventId).maybeSingle(),
       context.supabase.from("ai_evals").select("*").eq("event_id", data.eventId).maybeSingle(),
-      context.supabase.from("guardrail_hits").select("rule_name,side,action,kind,matched").eq("event_id", data.eventId),
+      context.supabase
+        .from("guardrail_hits")
+        .select("rule_name,side,action,kind,matched")
+        .eq("event_id", data.eventId),
       context.supabase.from("ai_feedback").select("rating,comment").eq("event_id", data.eventId),
     ]);
     return {
@@ -126,9 +163,13 @@ export const getGuardrailStats = createServerFn({ method: "GET" })
       .limit(2000);
     if (error) throw new Error(error.message);
     const byRule = new Map<string, { name: string; action: string; count: number }>();
-    for (const h of (data ?? [])) {
+    for (const h of data ?? []) {
       const k = `${h.rule_name}|${h.action}`;
-      const cur = byRule.get(k) ?? { name: h.rule_name as string, action: h.action as string, count: 0 };
+      const cur = byRule.get(k) ?? {
+        name: h.rule_name as string,
+        action: h.action as string,
+        count: 0,
+      };
       cur.count += 1;
       byRule.set(k, cur);
     }

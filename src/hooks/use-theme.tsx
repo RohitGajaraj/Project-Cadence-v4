@@ -27,7 +27,9 @@ function readStoredTheme(): Theme {
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
     if (v === "dark" || v === "light" || v === "aurora") return v;
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
   return DEFAULT_THEME;
 }
 
@@ -46,7 +48,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     applyThemeClass(t);
-    try { window.localStorage.setItem(STORAGE_KEY, t); } catch { /* noop */ }
+    try {
+      window.localStorage.setItem(STORAGE_KEY, t);
+    } catch {
+      /* noop */
+    }
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -54,7 +60,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const idx = CYCLE.indexOf(cur);
       const next: Theme = CYCLE[(idx + 1) % CYCLE.length];
       applyThemeClass(next);
-      try { window.localStorage.setItem(STORAGE_KEY, next); } catch { /* noop */ }
+      try {
+        window.localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        /* noop */
+      }
       return next;
     });
   }, []);

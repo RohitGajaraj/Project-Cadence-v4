@@ -15,10 +15,10 @@ export function requireHookCaller(request: Request): Response | null {
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!expected) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "Hook auth not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ ok: false, error: "Hook auth not configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
   const provided =
     request.headers.get("apikey") ||

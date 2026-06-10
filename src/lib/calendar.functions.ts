@@ -19,9 +19,20 @@ function headers() {
 
 type UserConn = { provider: "google" | "microsoft"; connection_id: string } | null;
 
-async function getUserConnection(
-  supabase: { from: (t: string) => { select: (s: string) => { order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }> } } } } },
-): Promise<UserConn> {
+async function getUserConnection(supabase: {
+  from: (t: string) => {
+    select: (s: string) => {
+      order: (
+        c: string,
+        o: { ascending: boolean },
+      ) => {
+        limit: (n: number) => {
+          maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }>;
+        };
+      };
+    };
+  };
+}): Promise<UserConn> {
   const { data, error } = await supabase
     .from("user_calendar_connections")
     .select("provider,connection_id")
@@ -33,10 +44,15 @@ async function getUserConnection(
 }
 
 function bumpLastSync(
-  supabase: { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> } } },
+  supabase: {
+    from: (t: string) => {
+      update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> };
+    };
+  },
   userId: string,
 ) {
-  void supabase.from("user_calendar_connections")
+  void supabase
+    .from("user_calendar_connections")
     .update({ last_sync_at: new Date().toISOString() })
     .eq("user_id", userId);
 }
@@ -63,15 +79,22 @@ type MsEvent = {
   start?: { dateTime?: string };
   end?: { dateTime?: string };
   isAllDay?: boolean;
-  attendees?: { emailAddress?: { address?: string; name?: string }; status?: { response?: string } }[];
+  attendees?: {
+    emailAddress?: { address?: string; name?: string };
+    status?: { response?: string };
+  }[];
   onlineMeeting?: { joinUrl?: string };
   webLink?: string;
   organizer?: { emailAddress?: { address?: string } };
 };
 
 function msToG(m: MsEvent): GEvent {
-  const startIso = m.start?.dateTime ? `${m.start.dateTime}${m.start.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
-  const endIso = m.end?.dateTime ? `${m.end.dateTime}${m.end.dateTime.endsWith("Z") ? "" : "Z"}` : undefined;
+  const startIso = m.start?.dateTime
+    ? `${m.start.dateTime}${m.start.dateTime.endsWith("Z") ? "" : "Z"}`
+    : undefined;
+  const endIso = m.end?.dateTime
+    ? `${m.end.dateTime}${m.end.dateTime.endsWith("Z") ? "" : "Z"}`
+    : undefined;
   return {
     id: m.id,
     summary: m.subject,
@@ -94,24 +117,33 @@ function msToG(m: MsEvent): GEvent {
 async function gFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${GATEWAY}${path}`, { headers: headers() });
   const body = await res.text();
-  if (!res.ok) throw new Error(`Google Calendar ${path} failed [${res.status}]: ${body.slice(0, 400)}`);
+  if (!res.ok)
+    throw new Error(`Google Calendar ${path} failed [${res.status}]: ${body.slice(0, 400)}`);
   return JSON.parse(body) as T;
 }
 
-async function gFetchMethod<T>(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown): Promise<T | null> {
+async function gFetchMethod<T>(
+  path: string,
+  method: "POST" | "PATCH" | "DELETE",
+  body?: unknown,
+): Promise<T | null> {
   const res = await fetch(`${GATEWAY}${path}`, {
     method,
     headers: { ...headers(), "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Google Calendar ${method} ${path} failed [${res.status}]: ${text.slice(0, 400)}`);
+  if (!res.ok)
+    throw new Error(
+      `Google Calendar ${method} ${path} failed [${res.status}]: ${text.slice(0, 400)}`,
+    );
   return text ? (JSON.parse(text) as T) : null;
 }
 
 function normalizeStart(e: GEvent): { start_at: string; end_at: string | null; all_day: boolean } {
   const allDay = !!(e.start?.date && !e.start?.dateTime);
-  const startStr = e.start?.dateTime ?? (e.start?.date ? `${e.start.date}T00:00:00Z` : new Date().toISOString());
+  const startStr =
+    e.start?.dateTime ?? (e.start?.date ? `${e.start.date}T00:00:00Z` : new Date().toISOString());
   const endStr = e.end?.dateTime ?? (e.end?.date ? `${e.end.date}T00:00:00Z` : null);
   return { start_at: startStr, end_at: endStr, all_day: allDay };
 }
@@ -128,10 +160,12 @@ export const listCalendars = createServerFn({ method: "GET" })
 export const syncCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      calendarId: z.string().min(1).max(200).default("primary"),
-      daysAhead: z.number().int().min(1).max(60).default(14),
-    }).parse(i),
+    z
+      .object({
+        calendarId: z.string().min(1).max(200).default("primary"),
+        daysAhead: z.number().int().min(1).max(60).default(14),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -140,7 +174,11 @@ export const syncCalendar = createServerFn({ method: "POST" })
     const conn = await getUserConnection(supabase as never);
     let items: GEvent[] = [];
     if (conn?.provider === "microsoft") {
-      const qs = new URLSearchParams({ startDateTime: timeMin, endDateTime: timeMax, $top: "100" }).toString();
+      const qs = new URLSearchParams({
+        startDateTime: timeMin,
+        endDateTime: timeMax,
+        $top: "100",
+      }).toString();
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE,
         connectorId: "microsoft_outlook",
@@ -148,23 +186,43 @@ export const syncCalendar = createServerFn({ method: "POST" })
         path: `/v1.0/me/calendarView?${qs}`,
         init: { headers: { Prefer: 'outlook.timezone="UTC"' } },
       });
-      if (!res.ok) throw new Error(`Microsoft calendarView failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Microsoft calendarView failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
       const body = (await res.json()) as { value?: MsEvent[] };
       items = (body.value ?? []).map(msToG);
     } else if (conn?.provider === "google") {
-      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
+      const qs = new URLSearchParams({
+        timeMin,
+        timeMax,
+        singleEvents: "true",
+        orderBy: "startTime",
+        maxResults: "100",
+      }).toString();
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE,
         connectorId: "google_calendar",
         connectionId: conn.connection_id,
         path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
       });
-      if (!res.ok) throw new Error(`Google events failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Google events failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
       const body = (await res.json()) as { items?: GEvent[] };
       items = body.items ?? [];
     } else {
-      const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100" }).toString();
-      const r = await gFetch<{ items: GEvent[] }>(`/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`);
+      const qs = new URLSearchParams({
+        timeMin,
+        timeMax,
+        singleEvents: "true",
+        orderBy: "startTime",
+        maxResults: "100",
+      }).toString();
+      const r = await gFetch<{ items: GEvent[] }>(
+        `/calendars/${encodeURIComponent(data.calendarId)}/events?${qs}`,
+      );
       items = r.items ?? [];
     }
     const rows = items.map((e) => {
@@ -214,8 +272,10 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
 export const getTodayEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
     const { data, error } = await context.supabase
       .from("calendar_events")
       .select("*")
@@ -260,11 +320,17 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
             location: data.location ? { displayName: data.location } : undefined,
             start: { dateTime: startIso, timeZone: "UTC" },
             end: { dateTime: endIso, timeZone: "UTC" },
-            attendees: data.attendees?.map((email) => ({ emailAddress: { address: email }, type: "required" })),
+            attendees: data.attendees?.map((email) => ({
+              emailAddress: { address: email },
+              type: "required",
+            })),
           }),
         },
       });
-      if (!res.ok) throw new Error(`Microsoft create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Microsoft create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
       e = msToG((await res.json()) as MsEvent);
     } else if (conn?.provider === "google") {
       const res = await callAsAppUser({
@@ -285,16 +351,19 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
           }),
         },
       });
-      if (!res.ok) throw new Error(`Google create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Google create failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
       e = (await res.json()) as GEvent;
     } else {
       const body = {
-      summary: data.summary,
-      description: data.description,
-      location: data.location,
+        summary: data.summary,
+        description: data.description,
+        location: data.location,
         start: { dateTime: startIso },
         end: { dateTime: endIso },
-      attendees: data.attendees?.map((email) => ({ email })),
+        attendees: data.attendees?.map((email) => ({ email })),
       };
       e = await gFetchMethod<GEvent>(
         `/calendars/${encodeURIComponent(data.calendarId)}/events`,
@@ -304,21 +373,26 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
     }
     if (!e) throw new Error("Empty response from Google Calendar");
     const { start_at, end_at, all_day } = normalizeStart(e);
-    await supabase.from("calendar_events").upsert({
-      user_id: userId,
-      external_id: e.id,
-      calendar_id: data.calendarId,
-      title: e.summary ?? data.summary,
-      description: e.description ?? null,
-      location: e.location ?? null,
-      start_at, end_at, all_day,
-      status: e.status ?? "confirmed",
-      attendees: (e.attendees ?? []) as never,
-      hangout_link: e.hangoutLink ?? null,
-      html_link: e.htmlLink ?? null,
-      organizer_email: e.organizer?.email ?? null,
-      last_synced_at: new Date().toISOString(),
-    } as never, { onConflict: "user_id,external_id" });
+    await supabase.from("calendar_events").upsert(
+      {
+        user_id: userId,
+        external_id: e.id,
+        calendar_id: data.calendarId,
+        title: e.summary ?? data.summary,
+        description: e.description ?? null,
+        location: e.location ?? null,
+        start_at,
+        end_at,
+        all_day,
+        status: e.status ?? "confirmed",
+        attendees: (e.attendees ?? []) as never,
+        hangout_link: e.hangoutLink ?? null,
+        html_link: e.htmlLink ?? null,
+        organizer_email: e.organizer?.email ?? null,
+        last_synced_at: new Date().toISOString(),
+      } as never,
+      { onConflict: "user_id,external_id" },
+    );
     return { id: e.id, html_link: e.htmlLink };
   });
 
@@ -339,17 +413,27 @@ export const updateCalendarEvent = createServerFn({ method: "POST" })
     if (conn?.provider === "microsoft") {
       const patch: Record<string, unknown> = {};
       if (data.summary !== undefined) patch.subject = data.summary;
-      if (data.description !== undefined) patch.body = { contentType: "text", content: data.description };
-      if (data.start_at) patch.start = { dateTime: new Date(data.start_at).toISOString(), timeZone: "UTC" };
-      if (data.end_at) patch.end = { dateTime: new Date(data.end_at).toISOString(), timeZone: "UTC" };
+      if (data.description !== undefined)
+        patch.body = { contentType: "text", content: data.description };
+      if (data.start_at)
+        patch.start = { dateTime: new Date(data.start_at).toISOString(), timeZone: "UTC" };
+      if (data.end_at)
+        patch.end = { dateTime: new Date(data.end_at).toISOString(), timeZone: "UTC" };
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE,
         connectorId: "microsoft_outlook",
         connectionId: conn.connection_id,
         path: `/v1.0/me/events/${encodeURIComponent(data.externalId)}`,
-        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+        init: {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        },
       });
-      if (!res.ok) throw new Error(`Microsoft update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Microsoft update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
     } else if (conn?.provider === "google") {
       const patch: Record<string, unknown> = {};
       if (data.summary !== undefined) patch.summary = data.summary;
@@ -361,9 +445,16 @@ export const updateCalendarEvent = createServerFn({ method: "POST" })
         connectorId: "google_calendar",
         connectionId: conn.connection_id,
         path: `/calendar/v3/calendars/${encodeURIComponent(data.calendarId)}/events/${encodeURIComponent(data.externalId)}`,
-        init: { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) },
+        init: {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        },
       });
-      if (!res.ok) throw new Error(`Google update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok)
+        throw new Error(
+          `Google update failed [${res.status}]: ${(await res.text()).slice(0, 300)}`,
+        );
     } else {
       const patch: Record<string, unknown> = {};
       if (data.summary !== undefined) patch.summary = data.summary;
@@ -392,10 +483,12 @@ export const updateCalendarEvent = createServerFn({ method: "POST" })
 export const deleteCalendarEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      calendarId: z.string().min(1).max(200).default("primary"),
-      externalId: z.string().min(1).max(300),
-    }).parse(i),
+    z
+      .object({
+        calendarId: z.string().min(1).max(200).default("primary"),
+        externalId: z.string().min(1).max(300),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const conn = await getUserConnection(context.supabase as never);
@@ -438,11 +531,13 @@ export const deleteCalendarEvent = createServerFn({ method: "POST" })
 export const proposeSlots = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      durationMinutes: z.number().int().min(15).max(480).default(60),
-      daysAhead: z.number().int().min(1).max(14).default(7),
-      count: z.number().int().min(1).max(5).default(3),
-    }).parse(i),
+    z
+      .object({
+        durationMinutes: z.number().int().min(15).max(480).default(60),
+        daysAhead: z.number().int().min(1).max(14).default(7),
+        count: z.number().int().min(1).max(5).default(3),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -465,7 +560,7 @@ export const proposeSlots = createServerFn({ method: "POST" })
     const busy: Range[] = (events ?? [])
       .map((e) => ({
         s: new Date(e.start_at as string).getTime(),
-        e: new Date((e.end_at as string) ?? e.start_at as string).getTime() + 30 * 60_000,
+        e: new Date((e.end_at as string) ?? (e.start_at as string)).getTime() + 30 * 60_000,
       }))
       .sort((a, b) => a.s - b.s);
 
@@ -490,7 +585,13 @@ export const proposeSlots = createServerFn({ method: "POST" })
         slots.push({
           start_at: new Date(s).toISOString(),
           end_at: new Date(e).toISOString(),
-          label: new Date(s).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+          label: new Date(s).toLocaleString([], {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          }),
         });
         cursor.setTime(e + 2 * 60 * 60_000); // skip ahead 2h between proposals
       } else {

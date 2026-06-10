@@ -25,8 +25,14 @@ export type RetrieveOpts = {
 };
 
 function cosine(a: number[], b: number[]): number {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  let dot = 0,
+    na = 0,
+    nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
   return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
 }
 
@@ -55,7 +61,11 @@ export async function retrieve(
   }
 
   // Keyword fallback: ILIKE on content & title (cheap, bounded).
-  const kw = query.split(/\s+/).filter((w) => w.length > 3).slice(0, 6).join(" ");
+  const kw = query
+    .split(/\s+/)
+    .filter((w) => w.length > 3)
+    .slice(0, 6)
+    .join(" ");
   if (kw) {
     let q = supabase
       .from("rag_chunks")
@@ -81,7 +91,8 @@ export async function retrieve(
   const pool = [...ann];
   // Embed candidate contents lazily — re-use stored similarity as proxy.
   while (picked.length < k && pool.length > 0) {
-    let bestIdx = 0, bestScore = -Infinity;
+    let bestIdx = 0,
+      bestScore = -Infinity;
     for (let i = 0; i < pool.length; i++) {
       const c = pool[i];
       let diversity = 0;
@@ -90,7 +101,10 @@ export async function retrieve(
         diversity = picked.some((p) => p.source_id === c.source_id) ? 0.3 : 0;
       }
       const score = lambda * c.similarity - (1 - lambda) * diversity;
-      if (score > bestScore) { bestScore = score; bestIdx = i; }
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = i;
+      }
     }
     picked.push(pool.splice(bestIdx, 1)[0]);
   }

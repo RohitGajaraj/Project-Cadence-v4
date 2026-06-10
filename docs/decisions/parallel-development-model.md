@@ -22,6 +22,7 @@ Before touching any file, check the Live status board (`docs/feature-backlog.md`
 
 **Rule 3: Leave the codebase in a known state.**
 When you end a session, the next tool must be able to continue without asking you questions. That means:
+
 - active-task.md tells them exactly where you stopped
 - The Live status board tells them the current state
 - Your commits tell them what changed and why
@@ -30,21 +31,22 @@ When you end a session, the next tool must be able to continue without asking yo
 
 ## The handoff mechanism (replaces code ownership)
 
-| Artifact | Purpose | Updated when |
-|---|---|---|
-| `active-task.md` (root) | Exact checklist of in-flight sub-steps | Start of task, each sub-step, end of session |
-| Live status board (`docs/feature-backlog.md` top) | "Now building," "Next up," "Blocked," recent log | Start and end of every session |
-| Git commits | What changed, why it changed (one-line WHY) | Every logical chunk of work |
-| `docs/strategy/session-decisions.md` | Major strategic decisions from sessions | When a strategic decision is made |
-| `docs/feature-backlog.md` | Feature state (◑/☑) | When feature is started or completed |
-| Architecture docs (`architecture/`) | How the system works | When architecture changes |
-| `design.md` | Design tokens, component contracts | When UI patterns change |
+| Artifact                                          | Purpose                                          | Updated when                                 |
+| ------------------------------------------------- | ------------------------------------------------ | -------------------------------------------- |
+| `active-task.md` (root)                           | Exact checklist of in-flight sub-steps           | Start of task, each sub-step, end of session |
+| Live status board (`docs/feature-backlog.md` top) | "Now building," "Next up," "Blocked," recent log | Start and end of every session               |
+| Git commits                                       | What changed, why it changed (one-line WHY)      | Every logical chunk of work                  |
+| `docs/strategy/session-decisions.md`              | Major strategic decisions from sessions          | When a strategic decision is made            |
+| `docs/feature-backlog.md`                         | Feature state (◑/☑)                              | When feature is started or completed         |
+| Architecture docs (`architecture/`)               | How the system works                             | When architecture changes                    |
+| `design.md`                                       | Design tokens, component contracts               | When UI patterns change                      |
 
 ---
 
 ## Session workflow for every tool
 
 ### Session start
+
 1. `git pull origin main` — get latest from all other tools
 2. Read `active-task.md` if it exists — this is your exact handoff
 3. Read Live status board (`docs/feature-backlog.md` top) — check "Now building"
@@ -52,6 +54,7 @@ When you end a session, the next tool must be able to continue without asking yo
 5. Set "Now building" in status board with your task ID
 
 ### During work
+
 - Commit every 5–15 minutes with a clear WHY message
 - Push immediately after every commit (so other tools see your work)
 - Update `active-task.md` checkboxes as you complete sub-steps
@@ -59,6 +62,7 @@ When you end a session, the next tool must be able to continue without asking yo
 - If you change routing/architecture: update the relevant `architecture/*.md`
 
 ### Session end
+
 - Push all uncommitted work
 - Update Live status board: feature done (☑) or paused (with "Now building" set)
 - Update `active-task.md`: exact state for the next tool
@@ -70,6 +74,7 @@ When you end a session, the next tool must be able to continue without asking yo
 ## What each tool owns (and doesn't exclusively own)
 
 ### Every tool owns:
+
 - `active-task.md` — keep it true
 - Live status board — update it
 - Code quality — write clean, tested, documented code
@@ -77,6 +82,7 @@ When you end a session, the next tool must be able to continue without asking yo
 - Handoff documentation — leave full context for the next tool
 
 ### No tool exclusively owns:
+
 - Any file in `src/`
 - Any file in `supabase/`
 - Any doc in `architecture/`
@@ -89,11 +95,13 @@ The only "ownership" that exists is the temporary ownership of the current task 
 ## Conflict avoidance
 
 Most conflicts are prevented by:
+
 1. Checking the status board before starting
 2. Pushing frequently (so others see your work quickly)
 3. Small, focused commits (reduces merge surface)
 
 When conflicts do happen:
+
 1. The first tool to commit and push wins
 2. The second tool pulls, gets a merge conflict, resolves it, pushes again
 3. Both tools note this in the status board if it was tricky
@@ -104,6 +112,7 @@ When conflicts do happen:
 ## Cross-references
 
 This model is summarized in:
+
 - [`../../AGENTS.md`](../../AGENTS.md) §10 (summary pointer)
 - [`../../CLAUDE.md`](../../CLAUDE.md) (Claude Code behavioral guidelines)
 - [`../../GEMINI.md`](../../GEMINI.md) (Antigravity/Gemini guidelines)

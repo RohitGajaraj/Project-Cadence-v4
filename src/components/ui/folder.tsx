@@ -6,19 +6,37 @@ const PAGES = [
   {
     closed: { rotate: -3.5, x: -38, y: 4 },
     open: { rotate: -14, x: -84, y: -78 },
-    transition: { type: "spring" as const, duration: 0.58, bounce: 0.15, stiffness: 155, damping: 20 },
+    transition: {
+      type: "spring" as const,
+      duration: 0.58,
+      bounce: 0.15,
+      stiffness: 155,
+      damping: 20,
+    },
     zIndex: 4,
   },
   {
     closed: { rotate: 0, x: 0, y: 0 },
     open: { rotate: 2, x: 2, y: -90 },
-    transition: { type: "spring" as const, duration: 0.53, bounce: 0.12, stiffness: 185, damping: 23 },
+    transition: {
+      type: "spring" as const,
+      duration: 0.53,
+      bounce: 0.12,
+      stiffness: 185,
+      damping: 23,
+    },
     zIndex: 5,
   },
   {
     closed: { rotate: 4, x: 42, y: 3 },
     open: { rotate: 14, x: 84, y: -78 },
-    transition: { type: "spring" as const, duration: 0.56, bounce: 0.17, stiffness: 165, damping: 20 },
+    transition: {
+      type: "spring" as const,
+      duration: 0.56,
+      bounce: 0.17,
+      stiffness: 165,
+      damping: 20,
+    },
     zIndex: 4,
   },
 ];
@@ -65,10 +83,7 @@ function FolderInteractionInner({ label = "Delete with Autopilot" }: { label?: s
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-foreground" />
       </motion.div>
 
-      <div
-        onClick={() => setIsOpen((v) => !v)}
-        className="w-[280px] h-60 relative cursor-pointer"
-      >
+      <div onClick={() => setIsOpen((v) => !v)} className="w-[280px] h-60 relative cursor-pointer">
         {/* Aura */}
         <div className="absolute -inset-6 rounded-full bg-black/20 blur-2xl" />
 

@@ -31,11 +31,13 @@ export const listAgentRuns = createServerFn({ method: "GET" })
 export const runAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      agentId: z.string().uuid(),
-      input: z.string().min(1).max(4000),
-      model: z.string().min(1).max(80).optional(),
-    }).parse(input),
+    z
+      .object({
+        agentId: z.string().uuid(),
+        input: z.string().min(1).max(4000),
+        model: z.string().min(1).max(80).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -74,7 +76,10 @@ export const runAgent = createServerFn({ method: "POST" })
         surface_ref: agent.id,
         model,
         messages: [
-          { role: "system", content: `${agent.system_prompt}\n\nUSER WORKSPACE CONTEXT (JSON):\n${ctx}` },
+          {
+            role: "system",
+            content: `${agent.system_prompt}\n\nUSER WORKSPACE CONTEXT (JSON):\n${ctx}`,
+          },
           { role: "user", content: data.input },
         ],
       });
@@ -91,7 +96,11 @@ export const runAgent = createServerFn({ method: "POST" })
     } catch (e) {
       await supabase
         .from("agent_runs")
-        .update({ status: "failed", output: e instanceof Error ? e.message : "Failed", duration_ms: Date.now() - t0 })
+        .update({
+          status: "failed",
+          output: e instanceof Error ? e.message : "Failed",
+          duration_ms: Date.now() - t0,
+        })
         .eq("id", runRow!.id);
       throw e;
     }
@@ -144,10 +153,12 @@ export type AgentReflection = {
 export const listAgentReflections = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      agentSlug: z.string().min(1).max(60),
-      limit: z.number().int().min(1).max(20).optional(),
-    }).parse(input),
+    z
+      .object({
+        agentSlug: z.string().min(1).max(60),
+        limit: z.number().int().min(1).max(20).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

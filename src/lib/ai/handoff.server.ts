@@ -126,9 +126,15 @@ export async function enqueueHandoff(
   // (no inbound-handoff load) still gives them something to work on.
   const composedGoal = [
     args.payload.task,
-    args.payload.constraints?.length ? `Constraints:\n- ${args.payload.constraints.join("\n- ")}` : "",
-    args.payload.open_questions?.length ? `Open questions:\n- ${args.payload.open_questions.join("\n- ")}` : "",
-  ].filter(Boolean).join("\n\n");
+    args.payload.constraints?.length
+      ? `Constraints:\n- ${args.payload.constraints.join("\n- ")}`
+      : "",
+    args.payload.open_questions?.length
+      ? `Open questions:\n- ${args.payload.open_questions.join("\n- ")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const { data: run, error: rErr } = await supabase
     .from("agent_runs")

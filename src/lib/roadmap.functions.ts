@@ -20,10 +20,12 @@ export const getRoadmap = createServerFn({ method: "GET" })
 export const moveOpportunity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      lane: z.enum(["backlog", "now", "next", "later", "shipped", "dropped"]),
-    }).parse(i),
+    z
+      .object({
+        id: z.string().uuid(),
+        lane: z.enum(["backlog", "now", "next", "later", "shipped", "dropped"]),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
@@ -48,23 +50,34 @@ type PlannedTask = {
 export const planSprint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      horizon_days: z.number().int().min(3).max(28).default(14),
-      commit: z.boolean().default(false),
-    }).parse(i),
+    z
+      .object({
+        horizon_days: z.number().int().min(3).max(28).default(14),
+        commit: z.boolean().default(false),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    const [{ data: opps }, { data: prds }, { data: openTasks }, { data: profile }] = await Promise.all([
-      supabase.from("opportunities").select("id,title,problem,impact,confidence,ease,status").in("status", ["now", "next"]),
-      supabase.from("prds").select("id,title,body_md,opportunity_id,status").in("status", ["draft", "review", "approved"]),
-      supabase.from("tasks").select("title,status").neq("status", "done").limit(50),
-      supabase.from("profiles").select("working_hours_start,working_hours_end").maybeSingle(),
-    ]);
+    const [{ data: opps }, { data: prds }, { data: openTasks }, { data: profile }] =
+      await Promise.all([
+        supabase
+          .from("opportunities")
+          .select("id,title,problem,impact,confidence,ease,status")
+          .in("status", ["now", "next"]),
+        supabase
+          .from("prds")
+          .select("id,title,body_md,opportunity_id,status")
+          .in("status", ["draft", "review", "approved"]),
+        supabase.from("tasks").select("title,status").neq("status", "done").limit(50),
+        supabase.from("profiles").select("working_hours_start,working_hours_end").maybeSingle(),
+      ]);
 
     if (!opps?.length && !prds?.length) {
-      throw new Error("No active opportunities or PRDs to plan from. Move items to 'now' / 'next' first.");
+      throw new Error(
+        "No active opportunities or PRDs to plan from. Move items to 'now' / 'next' first.",
+      );
     }
 
     const dailyHours = Math.max(
@@ -80,7 +93,13 @@ Return STRICT JSON: { "tasks": [...] }. No prose, no fences.`;
 
     const user = JSON.stringify({
       opportunities: opps,
-      prds: (prds ?? []).map((p) => ({ id: p.id, title: p.title, status: p.status, opportunity_id: p.opportunity_id, body_md: (p.body_md ?? "").slice(0, 2000) })),
+      prds: (prds ?? []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        status: p.status,
+        opportunity_id: p.opportunity_id,
+        body_md: (p.body_md ?? "").slice(0, 2000),
+      })),
       open_tasks: (openTasks ?? []).map((t) => t.title),
       capacity_hours: capacityHours,
     }).slice(0, 30_000);
@@ -107,7 +126,10 @@ Return STRICT JSON: { "tasks": [...] }. No prose, no fences.`;
         title: t.title.slice(0, 280),
         estimate_hours: Math.min(40, Math.max(0.25, Number(t.estimate_hours) || 1)),
         is_deep_work: !!t.is_deep_work,
-        priority: (["low", "medium", "high"].includes(t.priority) ? t.priority : "medium") as "low" | "medium" | "high",
+        priority: (["low", "medium", "high"].includes(t.priority) ? t.priority : "medium") as
+          | "low"
+          | "medium"
+          | "high",
         prd_id: t.prd_id && prdIds.has(t.prd_id) ? t.prd_id : null,
       }));
 
@@ -152,8 +174,15 @@ export const rebalanceRoadmap = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
     const [{ data: opps }, { data: recentSignals }] = await Promise.all([
-      supabase.from("opportunities").select("id,title,problem,impact,confidence,ease,ice_score,status").neq("status", "dropped"),
-      supabase.from("signals").select("content,theme_id,created_at").gte("created_at", since).limit(200),
+      supabase
+        .from("opportunities")
+        .select("id,title,problem,impact,confidence,ease,ice_score,status")
+        .neq("status", "dropped"),
+      supabase
+        .from("signals")
+        .select("content,theme_id,created_at")
+        .gte("created_at", since)
+        .limit(200),
     ]);
     if (!opps?.length) return { moved: 0, message: "No opportunities to rebalance." };
 
@@ -182,7 +211,10 @@ Cap "now" at 3, "next" at 5. Be decisive. Return STRICT JSON: { "assignments": [
     let moved = 0;
     for (const a of parsed.assignments ?? []) {
       if (!ids.has(a.id) || !valid.includes(a.lane)) continue;
-      const { error } = await supabase.from("opportunities").update({ status: a.lane, updated_at: new Date().toISOString() }).eq("id", a.id);
+      const { error } = await supabase
+        .from("opportunities")
+        .update({ status: a.lane, updated_at: new Date().toISOString() })
+        .eq("id", a.id);
       if (!error) moved++;
     }
     return { moved, message: `Rebalanced ${moved} opportunities.` };

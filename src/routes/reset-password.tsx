@@ -69,9 +69,7 @@ function ResetPasswordPage() {
             <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <CheckCircle className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Your password has been updated.
-            </p>
+            <p className="text-sm text-muted-foreground">Your password has been updated.</p>
             <Link
               to="/login"
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -94,7 +92,9 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={updatePassword} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs">New password</Label>
+              <Label htmlFor="password" className="text-xs">
+                New password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -117,7 +117,9 @@ function ResetPasswordPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="confirm" className="text-xs">Confirm password</Label>
+              <Label htmlFor="confirm" className="text-xs">
+                Confirm password
+              </Label>
               <Input
                 id="confirm"
                 type="password"

@@ -3,7 +3,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Eye, Pencil, Save, Sparkles, Send, Github, Hammer, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  Pencil,
+  Save,
+  Sparkles,
+  Send,
+  Github,
+  Hammer,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
@@ -99,39 +109,56 @@ function PrdEditor() {
 
   const save = useMutation({
     mutationFn: () => mSave({ data: { id, title, body_md: body } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["prds"] }); toast.success("Saved"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["prds"] });
+      toast.success("Saved");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const assist = useMutation({
     mutationFn: (action: "rewrite" | "expand" | "critique" | "shorten") => {
       const ta = taRef.current;
-      const sel = ta && ta.selectionStart !== ta.selectionEnd
-        ? body.slice(ta.selectionStart, ta.selectionEnd)
-        : body;
+      const sel =
+        ta && ta.selectionStart !== ta.selectionEnd
+          ? body.slice(ta.selectionStart, ta.selectionEnd)
+          : body;
       if (!sel.trim()) throw new Error("Select some text first (or have content to work on)");
       return mAssist({ data: { action, selection: sel, context: body.slice(0, 4000) } });
     },
     onSuccess: (r) => {
       const ta = taRef.current;
       if (!ta) return;
-      const start = ta.selectionStart, end = ta.selectionEnd;
-      const next = start !== end
-        ? body.slice(0, start) + r.text + body.slice(end)
-        : body + "\n\n" + r.text;
+      const start = ta.selectionStart,
+        end = ta.selectionEnd;
+      const next =
+        start !== end ? body.slice(0, start) + r.text + body.slice(end) : body + "\n\n" + r.text;
       setBody(next);
       toast.success("AI applied");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (prdQ.isLoading) return <AppShell><div className="p-10 text-sm text-muted-foreground">Loading…</div></AppShell>;
-  if (!prdQ.data?.prd) return <AppShell><div className="p-10 text-sm text-muted-foreground">PRD not found.</div></AppShell>;
+  if (prdQ.isLoading)
+    return (
+      <AppShell>
+        <div className="p-10 text-sm text-muted-foreground">Loading…</div>
+      </AppShell>
+    );
+  if (!prdQ.data?.prd)
+    return (
+      <AppShell>
+        <div className="p-10 text-sm text-muted-foreground">PRD not found.</div>
+      </AppShell>
+    );
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
-        <Link to="/prds" className="inline-flex items-center gap-1.5 mono-label hover:text-foreground mb-6">
+        <Link
+          to="/prds"
+          className="inline-flex items-center gap-1.5 mono-label hover:text-foreground mb-6"
+        >
           <ArrowLeft className="h-3 w-3" /> All PRDs
         </Link>
 
@@ -141,23 +168,28 @@ function PrdEditor() {
           <span aria-hidden>/</span>
           <span>Updated {new Date(prdQ.data.prd.updated_at).toLocaleDateString()}</span>
           <span aria-hidden>/</span>
-          <span>{prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"}</span>
-          {prdQ.data.prd.github_issue_url ? (() => {
-            const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
-            return m ? (
-              <>
-                <span aria-hidden>/</span>
-                <a
-                  href={prdQ.data.prd.github_issue_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 link-action"
-                >
-                  <Github className="h-3 w-3" /> Issue #{m[1]} <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              </>
-            ) : null;
-          })() : null}
+          <span>
+            {prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"}
+          </span>
+          {prdQ.data.prd.github_issue_url
+            ? (() => {
+                const m = prdQ.data.prd.github_issue_url.match(/\/issues\/(\d+)/);
+                return m ? (
+                  <>
+                    <span aria-hidden>/</span>
+                    <a
+                      href={prdQ.data.prd.github_issue_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 link-action"
+                    >
+                      <Github className="h-3 w-3" /> Issue #{m[1]}{" "}
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </>
+                ) : null;
+              })()
+            : null}
         </div>
 
         <div className="flex items-center gap-3 mb-6">
@@ -171,10 +203,16 @@ function PrdEditor() {
         {/* Sticky actions bar */}
         <div className="sticky top-2 z-20 mb-8 rounded-lg border hairline bg-card/95 backdrop-blur px-3 py-2 flex flex-wrap items-center gap-2">
           <div className="flex items-center rounded-md border hairline overflow-hidden">
-            <button onClick={() => setMode("edit")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>
+            <button
+              onClick={() => setMode("edit")}
+              className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+            >
               <Pencil className="h-3 w-3" /> Edit
             </button>
-            <button onClick={() => setMode("preview")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>
+            <button
+              onClick={() => setMode("preview")}
+              className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${mode === "preview" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+            >
               <Eye className="h-3 w-3" /> Preview
             </button>
           </div>
@@ -230,7 +268,9 @@ function PrdEditor() {
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border hairline bg-card px-3 py-2.5 text-xs">
             <Send className="h-3 w-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Push {prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"} to Linear:</span>
+            <span className="text-muted-foreground">
+              Push {prdTasks.length} linked task{prdTasks.length === 1 ? "" : "s"} to Linear:
+            </span>
             <select
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
@@ -238,7 +278,9 @@ function PrdEditor() {
             >
               <option value="">Select team…</option>
               {teamsQ.data.teams.map((t: { id: string; key: string; name: string }) => (
-                <option key={t.id} value={t.id}>{t.key} · {t.name}</option>
+                <option key={t.id} value={t.id}>
+                  {t.key} · {t.name}
+                </option>
               ))}
             </select>
             <button

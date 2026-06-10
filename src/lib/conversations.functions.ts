@@ -29,11 +29,13 @@ export const getConversation = createServerFn({ method: "GET" })
 export const createConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      title: z.string().min(1).max(120).optional(),
-      model: z.string().min(1).max(80).optional(),
-      project_id: z.string().uuid().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        title: z.string().min(1).max(120).optional(),
+        model: z.string().min(1).max(80).optional(),
+        project_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -71,7 +73,9 @@ export const renameConversation = createServerFn({ method: "POST" })
         eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
       };
     };
-    const { error } = await builder.update({ title: data.title, updated_at: new Date().toISOString() }).eq("id", data.id);
+    const { error } = await builder
+      .update({ title: data.title, updated_at: new Date().toISOString() })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

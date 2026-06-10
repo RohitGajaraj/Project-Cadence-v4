@@ -57,10 +57,14 @@ async function judge(evt: EventRow): Promise<{
     }),
   });
   if (!res.ok) throw new Error(`Judge ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = await res.json() as { choices?: { message?: { content?: string } }[] };
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = json.choices?.[0]?.message?.content ?? "{}";
   let parsed: Record<string, unknown> = {};
-  try { parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, "")); } catch { /* ignore */ }
+  try {
+    parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
+  } catch {
+    /* ignore */
+  }
 
   const num = (k: string) => {
     const v = Number(parsed[k]);
@@ -131,7 +135,11 @@ export const Route = createFileRoute("/api/public/hooks/eval-tick")({
               status: "error",
               judge_rationale: e instanceof Error ? e.message.slice(0, 500) : "judge failed",
             } as never);
-            results.push({ id: evt.id, ok: false, error: e instanceof Error ? e.message : "failed" });
+            results.push({
+              id: evt.id,
+              ok: false,
+              error: e instanceof Error ? e.message : "failed",
+            });
           }
         }
         return Response.json({ judged: results.length, pending: pending.length, results });

@@ -16,13 +16,25 @@ export const getDriftOverview = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const [baselineRes, snapsRes, openRes, recentRes] = await Promise.all([
       supabase.from("drift_baselines").select("*").eq("user_id", userId).maybeSingle(),
-      supabase.from("drift_snapshots").select("*").eq("user_id", userId)
+      supabase
+        .from("drift_snapshots")
+        .select("*")
+        .eq("user_id", userId)
         .gte("bucket_date", new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10))
         .order("bucket_date", { ascending: true }),
-      supabase.from("drift_incidents").select("*").eq("user_id", userId).eq("status", "open")
+      supabase
+        .from("drift_incidents")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "open")
         .order("detected_at", { ascending: false }),
-      supabase.from("drift_incidents").select("*").eq("user_id", userId).neq("status", "open")
-        .order("detected_at", { ascending: false }).limit(50),
+      supabase
+        .from("drift_incidents")
+        .select("*")
+        .eq("user_id", userId)
+        .neq("status", "open")
+        .order("detected_at", { ascending: false })
+        .limit(50),
     ]);
     return {
       baseline: baselineRes.data ?? null,
@@ -70,7 +82,8 @@ export const resolveDriftIncident = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("drift_incidents")
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
-      .eq("id", data.id).eq("user_id", userId);
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -83,7 +96,8 @@ export const reopenDriftIncident = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("drift_incidents")
       .update({ status: "open", resolved_at: null })
-      .eq("id", data.id).eq("user_id", userId);
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -1,7 +1,7 @@
 ================================================================================
 LOVABLE KNOWLEDGE FIELD — Complete Co-Development Instructions
 Copy/Paste ENTIRE CONTENT into Lovable.dev Settings -> Knowledge field -> Save
-Last updated: 2026-06-03
+Last updated: 2026-06-10
 ================================================================================
 
 HOW TO START EVERY SESSION:
@@ -21,31 +21,26 @@ is where the actual work, decisions, and context live. Always start from git.
 SECTION 1: WHAT YOU ARE BUILDING & WHY (READ FIRST)
 ================================================================================
 
-PROJECT: Cadence — Autonomous Product OS
+PROJECT: Circuit — B2B Enterprise Product Cockpit
+
+> [!IMPORTANT]
+> **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
+> *This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches.*
 
 POSITIONING (one paragraph):
-Cadence is the autonomous product OS — a swarm of specialist agents runs the
-entire product lifecycle (discover, define, plan, build, test, ship, launch,
-support, learn) continuously and in parallel, while a human governs the calls
-that matter. AGENTS DO. HUMANS GOVERN. It is not a PM tool with AI bolted on,
-and it is not a copilot. Agents are the operators. The human sets strategy and
-approves at governance gates. The platform runs continuously — it is never
-"done." Full thesis: README.md. Strategic positioning: docs/strategy/
+Circuit is the B2B Enterprise Product Cockpit — an agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle (discover, define, plan, build, test, ship, GTM launch, support, cohort analytics, learning loop) continuously and in parallel, while a human governs the calls that matter. AGENTS EXECUTE. HUMANS GOVERN. It is not a PM tool with AI bolted on, and it is not a copilot. Agents are the operators. The human sets strategy and approves at governance gates. The platform runs continuously — it is never "done." Full thesis: README.md. Strategic positioning: docs/strategy/
 
-THREE EQUAL TARGET PERSONAS:
-- Solo / Lead PM at AI-native B2B SaaS: "Your agents handle the process. You
-  handle the judgment." Pain: mechanical work crowds out real product thinking.
-- Founder operating as the whole product org: "Run the product org you can't
-  afford to hire." Pain: tool sprawl + being the glue across the lifecycle.
-- Technical Founder / Indie Hacker: "Your product org, running itself." Pain:
-  everything that isn't coding falls on them.
+TARGET PERSONAS:
+- P1 — Enterprise VP of Product / Product Director (The Portfolio Governor)
+- P2 — Lead / Senior PM (The Daily Cockpit Operator / Evangelist)
+- P3 — Engineering Lead / Tech Architect (The Code Gatekeeper)
+- P4 — UX/UI Designer (The Visual Validator)
+- P5 — GTM Lead / Product Marketer
+- P6 — Customer Support Lead
+- P7 — Grassroots Evangelist (Solo PM / Indie Hacker)
 
-YOUR ROLE IN CADENCE:
-You (Lovable) build the UI/frontend layer — the interface through which humans
-govern agents and observe the autonomous product lifecycle. Every page, component,
-and surface you build is a governance interface: operators set intent, review
-outcomes, approve gates, and watch agents work. Design for the governor, not
-the operator.
+YOUR ROLE IN CIRCUIT:
+You (Lovable) build the UI/frontend layer — the interface through which humans govern agents and observe the autonomous product lifecycle. Every page, component, and surface you build is a governance interface: operators set intent, review outcomes, approve gates, and watch agents work. Design for the governor, not the operator.
 
 ================================================================================
 SECTION 2: CONTEXT READING ORDER (READ BEFORE CODING)
@@ -53,18 +48,18 @@ SECTION 2: CONTEXT READING ORDER (READ BEFORE CODING)
 
 FIRST SESSION OR WHEN CONTEXT IS STALE:
 1. README.md (5 min read)
-   — Autonomous product OS thesis, three personas, MOAT, operating model
+   — B2B Enterprise Product Cockpit thesis, personas, MOAT, 8 pillars
    — Go here when: you need to understand the product direction
 
 2. AGENTS.md sections 0-4 (10 min read)
-   — What we are building ("agents do, humans govern")
+   — What we are building ("agents execute, humans govern")
    — Pre-action protocol, skill/agent/plugin/MCP scan mandate
    — Engineering rules, behavioral guidelines
    — Go here when: you need to understand how to work here
 
 3. docs/strategy/ (2 min — find latest version)
    — Open docs/strategy/README.md to find the current version
-   — Read the latest positioning file (e.g., v2-positioning-2026-06-02.md)
+   — Read the latest positioning file (e.g., v3-positioning-circuit-2026-06-10.md)
    — Go here when: you need the strategic USP, feature rationale, or personas
 
 4. plan.md section 1-3 (5 min read)
@@ -72,16 +67,16 @@ FIRST SESSION OR WHEN CONTEXT IS STALE:
    — 6-agent durable roster + ephemeral model (section 6)
    — Go here when: you need the big picture build sequence
 
-5. skills.md (scan, don't memorize)
+5. docs/operations/skills.md (scan, don't memorize)
    — Available skills/agents/plugins for this project
    — Go here when: you need to know what tools to invoke
 
 EVERY SESSION START:
-0. docs/strategy/README.md — find the latest positioning version, read it
+0. docs/strategy/README.md — find and read the latest positioning version
    — Strategic source of truth: personas, USP, what to build and why
    — Always read the LATEST version (check the index for current file)
 
-1. docs/feature-backlog.md -> Live status board (2 min read)
+1. docs/planning/feature-backlog.md -> Live status board (2 min read)
    — Now building, Next up, Blocked / stuck, Progress, Recent log
    — Check "Now building" — is another tool already on your task?
 
@@ -93,7 +88,7 @@ EVERY SESSION START:
    — Major strategic decisions from recent sessions
    — Why things are the way they are — context without re-reading full history
 
-4. docs/git-discipline.md (cross-tool git standard)
+4. docs/operations/git-discipline.md (cross-tool git standard)
    — Every commit/push/pull must include a one-line WHY explaining impact
    — Review before your first commit of the session
 
@@ -103,10 +98,10 @@ FOR SPECIFIC DECISIONS:
 — "What's the AI message UI contract?" -> design.md section "AI message UI"
 — "How do server functions work?" -> architecture/frontend.md or CLAUDE.md
 — "What's the auth/tenancy model?" -> architecture/security.md
-— "How should I commit?" -> docs/git-discipline.md
+— "How should I commit?" -> docs/operations/git-discipline.md
 — "What's the product strategy/USP?" -> docs/strategy/ (latest version)
 — "What strategic decision was made?" -> docs/strategy/session-decisions.md
-— "What features are planned?" -> docs/feature-backlog.md
+— "What features are planned?" -> docs/planning/feature-backlog.md
 — "What's the agent architecture?" -> plan.md section 6
 
 ================================================================================
@@ -187,7 +182,7 @@ Whoever touches a file or task becomes its temporary owner. Your job is to:
 
 THE HANDOFF MECHANISM (replaces code ownership):
   - active-task.md — exact checklist of what is in-flight, what is done
-  - Live status board (docs/feature-backlog.md top) — current task ID, blocks
+  - Live status board (docs/planning/feature-backlog.md top) — current task ID, blocks
   - docs/strategy/session-decisions.md — major strategic decisions made
   - Git commits — clear messages explaining WHY changes were made
   - Docs — architecture/frontend.md, design.md, AGENTS.md kept true with code
@@ -202,7 +197,7 @@ FILES ARE SHARED. DOCUMENTATION IS THE BOUNDARY.
 
 EVERY TOOL (Lovable, Claude Code, Antigravity, Gemini) OWNS:
   - active-task.md — keep it true
-  - status board (docs/feature-backlog.md) — update it
+  - status board (docs/planning/feature-backlog.md) — update it
   - code quality — write clean, documented code
   - code documentation — keep design.md, architecture/*, ENTRY.md in sync
   - handoff documentation — leave the next tool with full context
@@ -231,7 +226,7 @@ EVERY SESSION: START HERE
    -> This is your exact handoff. Sub-steps, checklist, gotchas.
    -> If it exists, follow it precisely. Do NOT skip it.
 
-4. OPEN docs/feature-backlog.md, find "Live status board" at the top
+4. OPEN docs/planning/feature-backlog.md, find "Live status board" at the top
    -> Check "Now building" — is another tool already on your task?
       If YES: STOP. Wait or pick a different task.
    -> Check "Next up" — this is your next task ID
@@ -259,7 +254,7 @@ BEFORE YOU END YOUR SESSION (non-negotiable)
 ─────────────────────────────────────────────
 1. PUSH all uncommitted work
 
-2. UPDATE the Live status board in docs/feature-backlog.md:
+2. UPDATE the Live status board in docs/planning/feature-backlog.md:
    IF FEATURE IS DONE:
    - Mark the feature as checked (checkbox filled)
    - Add one line to "Recent log": "2026-MM-DD · Lovable · brief description"
@@ -294,7 +289,7 @@ CANONICAL SOURCE OF TRUTH HIERARCHY:
   - docs/strategy/: versioned positioning history (always read the latest version)
   - docs/strategy/session-decisions.md: major strategic decisions log
   - README.md: product face (derived from strategy/)
-  - docs/feature-backlog.md: feature list and live status
+  - docs/planning/feature-backlog.md: feature list and live status
   - architecture/: technical contracts
 
 TOOL-SPECIFIC POINTERS:
@@ -310,7 +305,7 @@ update positioning, update the latest docs/strategy/vN file and cascade to READM
 
 FINDING THE LATEST POSITIONING:
 Always open docs/strategy/README.md first — it indexes all versions and marks
-which is current. As of writing: v2-positioning-2026-06-02.md is current.
+which is current. As of writing: v3-positioning-circuit-2026-06-10.md is current.
 A newer version may exist by the time you read this. Always read the latest.
 
 ================================================================================
@@ -328,7 +323,7 @@ generates new files or folders, do NOT leave them in arbitrary new locations.
      - Positioning/strategy -> docs/strategy/vN-positioning-YYYY-MM-DD.md
      - Technical decisions -> docs/decisions/
      - Research/reference -> docs/references/
-     - Feature specs -> docs/feature-backlog.md
+     - Feature specs -> docs/planning/feature-backlog.md
   3. Update the relevant README/index in that folder
   4. Delete the skill-generated file from the wrong location
   Example: gstack-office-hours creates docs/office-hours/ -> merge into
@@ -392,7 +387,7 @@ SECTION 10: IF YOU HIT A BLOCKER
 
 WHEN YOU ARE STUCK:
 1. Identify what is blocking you
-2. Update docs/feature-backlog.md "Blocked / stuck" field:
+2. Update docs/planning/feature-backlog.md "Blocked / stuck" field:
    Example: "F1.2 · Missing /api/signals endpoint · unblocks when Claude Code delivers it"
 3. Leave "Now building" set (so next tool knows where you stopped)
 4. STOP working (do not hack around it)
@@ -419,7 +414,7 @@ SYNC CADENCE:
   - Gemini: pulls at session start
 
 LIVE CURSOR (the shared state):
-  - docs/feature-backlog.md Live status board: what is being built right now
+  - docs/planning/feature-backlog.md Live status board: what is being built right now
   - active-task.md: exact sub-steps in flight
   - docs/strategy/session-decisions.md: strategic context from sessions
   - git log: recent 5 commits show what changed and why
@@ -438,14 +433,14 @@ HOW CONTEXT PERSISTS ACROSS SESSIONS:
   - .remember/now.md — live buffer for the active session (Claude Code only)
   - .remember/today-YYYY-MM-DD.md — daily log
   - docs/strategy/session-decisions.md — major strategic decisions (ALL tools)
-  - docs/feature-backlog.md Live status board — current build state (ALL tools)
+  - docs/planning/feature-backlog.md Live status board — current build state (ALL tools)
   - active-task.md — in-flight task sub-steps (ALL tools)
   - git log --oneline -5 — last 5 commits (what changed and why)
 
 WHAT THIS MEANS FOR YOU (LOVABLE):
 When you start a session, you have full context from:
 1. docs/strategy/ (what we are building and why)
-2. docs/feature-backlog.md (what task is next)
+2. docs/planning/feature-backlog.md (what task is next)
 3. active-task.md (exactly where the last tool stopped)
 4. docs/strategy/session-decisions.md (major decisions from prior sessions)
 5. git log (recent changes and their reasons)
@@ -454,10 +449,10 @@ You do NOT need to re-derive context from scratch. Read these files, pick up
 where the last tool left off, and contribute your work with the same standards.
 
 ================================================================================
-SECTION 13: PRODUCT AGENT ROSTER (what agents are running in Cadence)
+SECTION 13: PRODUCT AGENT ROSTER (what agents are running in Circuit)
 ================================================================================
 
-Cadence runs 6 durable specialist agents (one per lifecycle band) plus ephemeral
+Circuit runs 6 durable specialist agents (one per lifecycle band) plus ephemeral
 specialists spawned by the Orchestrator for sub-tasks. Full roster: plan.md section 6.
 
 DURABLE AGENTS:
@@ -474,8 +469,8 @@ critique, stakeholder brief, data analysis, etc.). No permanent seats.
 TRUST ARC (product behavior, not a design spec):
 Agents start with closer governance (operator approves frequently) and earn
 autonomy through demonstrated performance. Four stages: Observing -> Proving ->
-Trusted -> Ambient. The Agent Trust Score (C6) and Autonomy Dial (C6) make this
-visible. Full feature spec: docs/feature-backlog.md feature C6, E8.
+Trusted -> Ambient. The Agent Trust Score and Autonomy Dial make this visible.
+Full feature spec: docs/planning/feature-backlog.md.
 
 ================================================================================
 QUICK REFERENCE: WHERE TO FIND THINGS
@@ -483,26 +478,26 @@ QUICK REFERENCE: WHERE TO FIND THINGS
 
 Question                                         Go to
 ──────────────────────────────────────────────  ─────────────────────────────
-"What is Cadence and why?"                       README.md
+"What is Circuit and why?"                       README.md
 "What is the current product strategy/USP?"      docs/strategy/ (latest version)
 "Why was this strategic decision made?"           docs/strategy/session-decisions.md
 "What are the rules and principles?"             AGENTS.md sections 0-4
 "What is the multi-tool co-dev model?"           docs/decisions/parallel-development-model.md
 "What is the build sequence and roadmap?"        plan.md sections 1-3
-"What agent roster does Cadence use?"            plan.md section 6
-"What is my next task?"                          docs/feature-backlog.md (status board)
+"What agent roster does Circuit use?"            plan.md section 6
+"What is my next task?"                          docs/planning/feature-backlog.md (status board)
 "How do I build a React component?"              architecture/frontend.md
 "What design tokens exist?"                      design.md + src/styles.css
 "How does auth work?"                            architecture/security.md
 "What is the database schema?"                   architecture/data.md (read-only)
 "How do server functions work?"                  architecture/frontend.md or CLAUDE.md
 "Am I duplicating existing code?"                src/components/ (read patterns)
-"What skills/agents are available?"              skills.md
+"What skills/agents are available?"              docs/operations/skills.md
 "How do I write a test?"                         AGENTS.md section 3
-"Is another tool already on this task?"          docs/feature-backlog.md (Live status board)
+"Is another tool already on this task?"          docs/planning/feature-backlog.md (Live status board)
 "Where is the tech stack decision?"              docs/decisions/tech-stack.md
 "What is the naming shortlist?"                  docs/decisions/naming.md
-"How should I commit?"                           docs/git-discipline.md
+"How should I commit?"                           docs/operations/git-discipline.md
 
 ================================================================================
 END OF LOVABLE KNOWLEDGE FIELD

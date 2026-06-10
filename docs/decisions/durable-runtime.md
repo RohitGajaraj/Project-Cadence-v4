@@ -18,6 +18,7 @@ Two approaches were considered:
 **Adopt approach (2): DB-backed durable job table in Postgres.**
 
 Rationale:
+
 - Matches existing patterns already in production (`/api/public/hooks/*` ticked by `pg_cron`, tenancy keys on every row, RLS as the backstop).
 - Zero new infra, zero new runtime, zero new auth model — purely additive schema.
 - Portable: the same checkpoint + idempotency design works on any Postgres host if we ever leave Cloudflare. No platform lock-in.
@@ -45,9 +46,9 @@ Rationale:
 3. Tool execution writes the idempotency key in the same transaction as the `tool_calls` insert; a repeated `(run_id, step_index, tool_name)` short-circuits to the cached result instead of re-calling the tool.
 4. Backpressure: cap concurrent `running` runs per workspace (default 5). New mission requests over the cap are inserted with `status='queued'`; the sweeper promotes them.
 
-### Why checkpoint *before* the provider call (not after)
+### Why checkpoint _before_ the provider call (not after)
 
-`runtime.server.ts` can throw `GovernanceHaltError` mid-stream (budget cap, kill switch). Checkpointing *after* the call means a halt mid-stream loses the bill we already paid for; checkpointing *before* lets us resume cleanly without double-charging. The chokepoint already tracks tokens/spend on the `agent_runs` row, so re-attempt cost accounting stays correct.
+`runtime.server.ts` can throw `GovernanceHaltError` mid-stream (budget cap, kill switch). Checkpointing _after_ the call means a halt mid-stream loses the bill we already paid for; checkpointing _before_ lets us resume cleanly without double-charging. The chokepoint already tracks tokens/spend on the `agent_runs` row, so re-attempt cost accounting stays correct.
 
 ## Out of scope (deferred)
 

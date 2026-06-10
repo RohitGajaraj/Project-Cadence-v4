@@ -26,13 +26,15 @@ export const Route = createFileRoute("/api/public/hooks/memory-tick")({
 
           // Two passes — delete by last_used_at when present, else by created_at.
           // Splitting the predicate avoids a COALESCE that can't use the index.
-          const usedRes = await supabaseAdmin.from("agent_memory")
+          const usedRes = await supabaseAdmin
+            .from("agent_memory")
             .delete({ count: "exact" })
             .lte("importance", 2)
             .not("last_used_at", "is", null)
             .lt("last_used_at", cutoff);
 
-          const unusedRes = await supabaseAdmin.from("agent_memory")
+          const unusedRes = await supabaseAdmin
+            .from("agent_memory")
             .delete({ count: "exact" })
             .lte("importance", 2)
             .is("last_used_at", null)

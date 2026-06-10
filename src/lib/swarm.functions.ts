@@ -155,28 +155,26 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       // active swarm comfortably without paging.
       supabase
         .from("agent_runs")
-        .select("id,agent_id,agent_slug,status,step_index,mission_id,input,created_at,last_checkpoint_at")
+        .select(
+          "id,agent_id,agent_slug,status,step_index,mission_id,input,created_at,last_checkpoint_at",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(80),
-      supabase
-        .from("agent_autonomy")
-        .select("agent_id,arc")
-        .eq("user_id", userId),
+      supabase.from("agent_autonomy").select("agent_id,arc").eq("user_id", userId),
       workspaceId
         ? supabase
             .from("missions")
             .select("id,title,goal,status,hop_count,created_at,updated_at,completed_at")
             .eq("workspace_id", workspaceId)
-            .or(`status.in.(planning,running,completed_with_failures),completed_at.gte.${oneHourAgoIso}`)
+            .or(
+              `status.in.(planning,running,completed_with_failures),completed_at.gte.${oneHourAgoIso}`,
+            )
             .order("updated_at", { ascending: false })
             .limit(20)
         : Promise.resolve({ data: [], error: null }),
       workspaceId
-        ? supabase
-            .from("mission_steps")
-            .select("mission_id,status")
-            .eq("workspace_id", workspaceId)
+        ? supabase.from("mission_steps").select("mission_id,status").eq("workspace_id", workspaceId)
         : Promise.resolve({ data: [], error: null }),
       workspaceId
         ? supabase
@@ -196,7 +194,9 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       workspaceId
         ? supabase
             .from("event_queue")
-            .select("id,event_type,target_agent_slug,approval_mode,status,mission_id,run_id,error,created_at,payload")
+            .select(
+              "id,event_type,target_agent_slug,approval_mode,status,mission_id,run_id,error,created_at,payload",
+            )
             .eq("workspace_id", workspaceId)
             .order("created_at", { ascending: false })
             .limit(50)
@@ -227,16 +227,26 @@ export const getSwarmHud = createServerFn({ method: "POST" })
     const latestByAgent = new Map<string, NonNullable<SwarmAgent["latest_run"]>>();
     const RUN_PRIO: Record<string, number> = { running: 0, paused: 1, queued: 2 };
     type RunRow = {
-      id: string; agent_id: string | null; status: string; step_index: number | null;
-      mission_id: string | null; input: string; created_at: string; last_checkpoint_at: string | null;
+      id: string;
+      agent_id: string | null;
+      status: string;
+      step_index: number | null;
+      mission_id: string | null;
+      input: string;
+      created_at: string;
+      last_checkpoint_at: string | null;
     };
     for (const r of (runsRes.data ?? []) as RunRow[]) {
       if (!r.agent_id) continue;
       const existing = latestByAgent.get(r.agent_id);
       if (!existing) {
         latestByAgent.set(r.agent_id, {
-          run_id: r.id, status: r.status, step_index: r.step_index ?? 0,
-          mission_id: r.mission_id, input: r.input, created_at: r.created_at,
+          run_id: r.id,
+          status: r.status,
+          step_index: r.step_index ?? 0,
+          mission_id: r.mission_id,
+          input: r.input,
+          created_at: r.created_at,
           last_checkpoint_at: r.last_checkpoint_at,
         });
         continue;
@@ -246,20 +256,35 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       const rP = RUN_PRIO[r.status] ?? 9;
       if (rP < eP) {
         latestByAgent.set(r.agent_id, {
-          run_id: r.id, status: r.status, step_index: r.step_index ?? 0,
-          mission_id: r.mission_id, input: r.input, created_at: r.created_at,
+          run_id: r.id,
+          status: r.status,
+          step_index: r.step_index ?? 0,
+          mission_id: r.mission_id,
+          input: r.input,
+          created_at: r.created_at,
           last_checkpoint_at: r.last_checkpoint_at,
         });
       }
     }
 
-    const agents: SwarmAgent[] = ((agentsRes.data ?? []) as Array<{
-      id: string; slug: string; name: string; role: string; color: string; enabled: boolean;
-    }>).map((a) => {
+    const agents: SwarmAgent[] = (
+      (agentsRes.data ?? []) as Array<{
+        id: string;
+        slug: string;
+        name: string;
+        role: string;
+        color: string;
+        enabled: boolean;
+      }>
+    ).map((a) => {
       const auto = autonomyByAgent.get(a.id);
       return {
-        agent_id: a.id, slug: a.slug, name: a.name, role: a.role,
-        color: a.color, enabled: a.enabled,
+        agent_id: a.id,
+        slug: a.slug,
+        name: a.name,
+        role: a.role,
+        color: a.color,
+        enabled: a.enabled,
         trust_arc: auto?.arc ?? null,
         latest_run: latestByAgent.get(a.id) ?? null,
       };
@@ -274,47 +299,85 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       else if (s.status === "failed") cur.failed++;
       stepAgg.set(s.mission_id, cur);
     }
-    const missions: SwarmMission[] = ((missionsRes.data ?? []) as Array<{
-      id: string; title: string; goal: string; status: string; hop_count: number;
-      created_at: string; updated_at: string;
-    }>).map((m) => {
+    const missions: SwarmMission[] = (
+      (missionsRes.data ?? []) as Array<{
+        id: string;
+        title: string;
+        goal: string;
+        status: string;
+        hop_count: number;
+        created_at: string;
+        updated_at: string;
+      }>
+    ).map((m) => {
       const a = stepAgg.get(m.id) ?? { total: 0, done: 0, failed: 0 };
       return {
-        id: m.id, title: m.title, goal: m.goal, status: m.status, hop_count: m.hop_count,
-        created_at: m.created_at, updated_at: m.updated_at,
-        steps_total: a.total, steps_done: a.done, steps_failed: a.failed,
+        id: m.id,
+        title: m.title,
+        goal: m.goal,
+        status: m.status,
+        hop_count: m.hop_count,
+        created_at: m.created_at,
+        updated_at: m.updated_at,
+        steps_total: a.total,
+        steps_done: a.done,
+        steps_failed: a.failed,
       };
     });
 
-    const handoffs: SwarmHandoff[] = ((handoffsRes.data ?? []) as Array<{
-      id: string; from_agent_slug: string | null; to_agent_slug: string; kind: string;
-      mission_id: string; payload: J; created_at: string;
-    }>).map((h) => ({
-      id: h.id, from_agent_slug: h.from_agent_slug, to_agent_slug: h.to_agent_slug,
-      kind: h.kind, mission_id: h.mission_id, created_at: h.created_at,
+    const handoffs: SwarmHandoff[] = (
+      (handoffsRes.data ?? []) as Array<{
+        id: string;
+        from_agent_slug: string | null;
+        to_agent_slug: string;
+        kind: string;
+        mission_id: string;
+        payload: J;
+        created_at: string;
+      }>
+    ).map((h) => ({
+      id: h.id,
+      from_agent_slug: h.from_agent_slug,
+      to_agent_slug: h.to_agent_slug,
+      kind: h.kind,
+      mission_id: h.mission_id,
+      created_at: h.created_at,
       task: typeof h.payload?.task === "string" ? (h.payload.task as string) : "",
     }));
 
-    const approvals: SwarmApproval[] = ((approvalsRes.data ?? []) as Array<{
-      id: string; agent_slug: string | null; tool_name: string; rationale: string | null;
-      args: J; expires_at: string | null; created_at: string;
-    }>);
+    const approvals: SwarmApproval[] = (approvalsRes.data ?? []) as Array<{
+      id: string;
+      agent_slug: string | null;
+      tool_name: string;
+      rationale: string | null;
+      args: J;
+      expires_at: string | null;
+      created_at: string;
+    }>;
 
-    const reactor: SwarmReactorEvent[] = ((reactorRes.data ?? []) as Array<{
-      id: string; event_type: string; target_agent_slug: string; approval_mode: string;
-      status: string; mission_id: string | null; run_id: string | null; error: string | null;
-      created_at: string; payload: J;
-    }>);
+    const reactor: SwarmReactorEvent[] = (reactorRes.data ?? []) as Array<{
+      id: string;
+      event_type: string;
+      target_agent_slug: string;
+      approval_mode: string;
+      status: string;
+      mission_id: string | null;
+      run_id: string | null;
+      error: string | null;
+      created_at: string;
+      payload: J;
+    }>;
 
     // Throughput: bucket events into 5-minute windows aligned to the start of
     // the hour-ago window so the strip is stable across refetches.
     type Evt = { est_cost_usd: number | string; latency_ms: number; created_at: string };
-    const evts = ((eventsRes.data ?? []) as Evt[]);
+    const evts = (eventsRes.data ?? []) as Evt[];
     const BUCKET_MS = 5 * 60 * 1000;
     const windowStart = Math.floor((now - 60 * 60 * 1000) / BUCKET_MS) * BUCKET_MS;
     const bucketCount = Math.ceil((now - windowStart) / BUCKET_MS);
     const bucketAgg: { count: number; cost: number; lats: number[] }[] = Array.from(
-      { length: bucketCount }, () => ({ count: 0, cost: 0, lats: [] }),
+      { length: bucketCount },
+      () => ({ count: 0, cost: 0, lats: [] }),
     );
     let totalCost = 0;
     const allLats: number[] = [];
@@ -322,7 +385,8 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       const t = new Date(e.created_at).getTime();
       const idx = Math.floor((t - windowStart) / BUCKET_MS);
       if (idx < 0 || idx >= bucketCount) continue;
-      const cost = typeof e.est_cost_usd === "string" ? Number(e.est_cost_usd) : (e.est_cost_usd ?? 0);
+      const cost =
+        typeof e.est_cost_usd === "string" ? Number(e.est_cost_usd) : (e.est_cost_usd ?? 0);
       bucketAgg[idx].count++;
       bucketAgg[idx].cost += cost;
       bucketAgg[idx].lats.push(e.latency_ms ?? 0);

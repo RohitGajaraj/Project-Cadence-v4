@@ -96,7 +96,11 @@ export async function computeAllAgentTrust(
     supabase.from("agents").select("id").eq("user_id", userId),
     supabase.from("agent_runs").select("agent_id,status").eq("user_id", userId),
     supabase.from("agent_approvals").select("agent_id,status").eq("user_id", userId),
-    supabase.from("ai_events").select("id,agent_id").eq("user_id", userId).not("agent_id", "is", null),
+    supabase
+      .from("ai_events")
+      .select("id,agent_id")
+      .eq("user_id", userId)
+      .not("agent_id", "is", null),
     supabase.from("agent_autonomy").select("agent_id,arc").eq("user_id", userId),
   ]);
 
@@ -118,9 +122,7 @@ export async function computeAllAgentTrust(
       .in("ai_event_id", eventIds);
     evals = (evalRows ?? []) as EvalRow[];
   }
-  const eventToAgent = new Map<string, string>(
-    events.map((e) => [e.id, e.agent_id as string]),
-  );
+  const eventToAgent = new Map<string, string>(events.map((e) => [e.id, e.agent_id as string]));
 
   const out: AgentTrust[] = [];
   for (const a of agents) {
@@ -129,7 +131,9 @@ export async function computeAllAgentTrust(
     const missions_completed = aRuns.filter((r) => r.status === "completed").length;
     const mission_success_rate = missions_total > 0 ? missions_completed / missions_total : 0;
 
-    const aApprs = apprs.filter((r) => r.agent_id === a.id && (r.status === "approved" || r.status === "rejected"));
+    const aApprs = apprs.filter(
+      (r) => r.agent_id === a.id && (r.status === "approved" || r.status === "rejected"),
+    );
     const approvals_total = aApprs.length;
     const approvals_approved = aApprs.filter((r) => r.status === "approved").length;
     const approval_acceptance_rate = approvals_total > 0 ? approvals_approved / approvals_total : 0;
@@ -139,9 +143,8 @@ export async function computeAllAgentTrust(
       return ag === a.id && typeof e.score === "number";
     });
     const evals_total = aEvals.length;
-    const eval_mean_score = evals_total > 0
-      ? aEvals.reduce((s, e) => s + (e.score as number), 0) / evals_total
-      : 0;
+    const eval_mean_score =
+      evals_total > 0 ? aEvals.reduce((s, e) => s + (e.score as number), 0) / evals_total : 0;
 
     const samples = missions_total + approvals_total + evals_total;
 
@@ -188,5 +191,5 @@ export async function loadAgentArc(
     .eq("user_id", userId)
     .eq("agent_id", agentId)
     .maybeSingle();
-  return ((data as { arc?: Arc } | null)?.arc ?? "observing");
+  return (data as { arc?: Arc } | null)?.arc ?? "observing";
 }

@@ -13,28 +13,44 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type EventRow = {
-  surface: string; model: string;
-  latency_ms: number; total_tokens: number; est_cost_usd: number | string;
-  status: string; created_at: string;
+  surface: string;
+  model: string;
+  latency_ms: number;
+  total_tokens: number;
+  est_cost_usd: number | string;
+  status: string;
+  created_at: string;
 };
 type PromptRun = { event_id: string | null; version_id: string | null };
 type EvalResult = { ai_event_id: string | null; score: number | string | null };
 
 type Bucket = {
-  user_id: string; bucket_date: string;
-  surface: string; model: string; prompt_version_id: string | null;
-  latencies: number[]; tokens: number[]; costs: number[];
-  errors: number; total: number; scores: number[];
+  user_id: string;
+  bucket_date: string;
+  surface: string;
+  model: string;
+  prompt_version_id: string | null;
+  latencies: number[];
+  tokens: number[];
+  costs: number[];
+  errors: number;
+  total: number;
+  scores: number[];
 };
 
 const DEFAULTS = {
-  window_days: 7, baseline_days: 14,
-  latency_pct_threshold: 25, tokens_pct_threshold: 30,
-  cost_pct_threshold: 30, score_pct_threshold: 10,
+  window_days: 7,
+  baseline_days: 14,
+  latency_pct_threshold: 25,
+  tokens_pct_threshold: 30,
+  cost_pct_threshold: 30,
+  score_pct_threshold: 10,
   error_rate_pct_threshold: 5,
 };
 
-function dayKey(iso: string): string { return iso.slice(0, 10); }
+function dayKey(iso: string): string {
+  return iso.slice(0, 10);
+}
 function p95(arr: number[]): number {
   if (!arr.length) return 0;
   const s = [...arr].sort((a, b) => a - b);
@@ -98,9 +114,17 @@ export async function rollupSnapshots(
     let b = buckets.get(key);
     if (!b) {
       b = {
-        user_id: userId, bucket_date: day,
-        surface: e.surface, model: e.model, prompt_version_id: version,
-        latencies: [], tokens: [], costs: [], errors: 0, total: 0, scores: [],
+        user_id: userId,
+        bucket_date: day,
+        surface: e.surface,
+        model: e.model,
+        prompt_version_id: version,
+        latencies: [],
+        tokens: [],
+        costs: [],
+        errors: 0,
+        total: 0,
+        scores: [],
       };
       buckets.set(key, b);
     }
@@ -173,17 +197,24 @@ export async function detectIncidents(
 
   type Open = { surface: string; model: string; prompt_version_id: string | null; metric: string };
   const breaches: Array<{
-    surface: string; model: string; prompt_version_id: string | null;
-    metric: string; baseline_value: number; current_value: number; delta_pct: number;
+    surface: string;
+    model: string;
+    prompt_version_id: string | null;
+    metric: string;
+    baseline_value: number;
+    current_value: number;
+    delta_pct: number;
     severity: string;
   }> = [];
 
   const weighted = (rows: any[], field: string) => {
-    let num = 0, den = 0;
+    let num = 0,
+      den = 0;
     for (const r of rows) {
       const v = Number(r[field]) || 0;
       const w = Number(r.request_count) || 0;
-      num += v * w; den += w;
+      num += v * w;
+      den += w;
     }
     return den ? num / den : 0;
   };
@@ -200,12 +231,54 @@ export async function detectIncidents(
     const [surface, model, vid] = k.split("|");
     const prompt_version_id = vid || null;
 
-    const checks: Array<{ metric: string; cur: number; base: number; thr: number; higherIsBad: boolean }> = [
-      { metric: "avg_latency_ms", cur: weighted(recent, "avg_latency_ms"), base: weighted(base, "avg_latency_ms"), thr: cfg.latency_pct_threshold, higherIsBad: true },
-      { metric: "avg_total_tokens", cur: weighted(recent, "avg_total_tokens"), base: weighted(base, "avg_total_tokens"), thr: cfg.tokens_pct_threshold, higherIsBad: true },
-      { metric: "avg_cost_usd", cur: weighted(recent, "avg_cost_usd"), base: weighted(base, "avg_cost_usd"), thr: cfg.cost_pct_threshold, higherIsBad: true },
-      { metric: "error_rate", cur: errorRate(recent), base: errorRate(base), thr: cfg.error_rate_pct_threshold, higherIsBad: true },
-      { metric: "avg_eval_score", cur: weighted(recent.filter((r) => r.avg_eval_score != null), "avg_eval_score"), base: weighted(base.filter((r) => r.avg_eval_score != null), "avg_eval_score"), thr: cfg.score_pct_threshold, higherIsBad: false },
+    const checks: Array<{
+      metric: string;
+      cur: number;
+      base: number;
+      thr: number;
+      higherIsBad: boolean;
+    }> = [
+      {
+        metric: "avg_latency_ms",
+        cur: weighted(recent, "avg_latency_ms"),
+        base: weighted(base, "avg_latency_ms"),
+        thr: cfg.latency_pct_threshold,
+        higherIsBad: true,
+      },
+      {
+        metric: "avg_total_tokens",
+        cur: weighted(recent, "avg_total_tokens"),
+        base: weighted(base, "avg_total_tokens"),
+        thr: cfg.tokens_pct_threshold,
+        higherIsBad: true,
+      },
+      {
+        metric: "avg_cost_usd",
+        cur: weighted(recent, "avg_cost_usd"),
+        base: weighted(base, "avg_cost_usd"),
+        thr: cfg.cost_pct_threshold,
+        higherIsBad: true,
+      },
+      {
+        metric: "error_rate",
+        cur: errorRate(recent),
+        base: errorRate(base),
+        thr: cfg.error_rate_pct_threshold,
+        higherIsBad: true,
+      },
+      {
+        metric: "avg_eval_score",
+        cur: weighted(
+          recent.filter((r) => r.avg_eval_score != null),
+          "avg_eval_score",
+        ),
+        base: weighted(
+          base.filter((r) => r.avg_eval_score != null),
+          "avg_eval_score",
+        ),
+        thr: cfg.score_pct_threshold,
+        higherIsBad: false,
+      },
     ];
 
     for (const c of checks) {
@@ -215,7 +288,16 @@ export async function detectIncidents(
       if (!bad) continue;
       const mag = Math.abs(d);
       const severity = mag > c.thr * 2 ? "critical" : "warn";
-      breaches.push({ surface, model, prompt_version_id, metric: c.metric, baseline_value: c.base, current_value: c.cur, delta_pct: d, severity });
+      breaches.push({
+        surface,
+        model,
+        prompt_version_id,
+        metric: c.metric,
+        baseline_value: c.base,
+        current_value: c.cur,
+        delta_pct: d,
+        severity,
+      });
     }
   }
 
@@ -226,7 +308,9 @@ export async function detectIncidents(
     .eq("user_id", userId)
     .eq("status", "open");
   const existingKeys = new Set(
-    (existing ?? []).map((e: any) => `${e.surface}|${e.model}|${e.prompt_version_id ?? ""}|${e.metric}`)
+    (existing ?? []).map(
+      (e: any) => `${e.surface}|${e.model}|${e.prompt_version_id ?? ""}|${e.metric}`,
+    ),
   );
 
   let opened = 0;
@@ -235,16 +319,16 @@ export async function detectIncidents(
     return !existingKeys.has(k);
   });
   if (toInsert.length) {
-    const { error: insErr } = await supabase.from("drift_incidents").insert(
-      toInsert.map((b) => ({ user_id: userId, ...b, detail: {} }))
-    );
+    const { error: insErr } = await supabase
+      .from("drift_incidents")
+      .insert(toInsert.map((b) => ({ user_id: userId, ...b, detail: {} })));
     if (insErr) throw new Error(insErr.message);
     opened = toInsert.length;
   }
 
   // Auto-resolve: open incidents whose metric no longer breaches
   const breachKeys = new Set(
-    breaches.map((b) => `${b.surface}|${b.model}|${b.prompt_version_id ?? ""}|${b.metric}`)
+    breaches.map((b) => `${b.surface}|${b.model}|${b.prompt_version_id ?? ""}|${b.metric}`),
   );
   const toResolve = (existing ?? []).filter((e: any) => {
     const k = `${e.surface}|${e.model}|${e.prompt_version_id ?? ""}|${e.metric}`;

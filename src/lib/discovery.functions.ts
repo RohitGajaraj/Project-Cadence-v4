@@ -21,14 +21,16 @@ export const listSignals = createServerFn({ method: "GET" })
 export const createSignal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      content: z.string().min(2).max(8000),
-      source: z.string().min(1).max(40).default("manual"),
-      title: z.string().max(200).optional(),
-      url: z.string().url().max(500).optional().or(z.literal("")),
-      sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
-      project_id: z.string().uuid().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        content: z.string().min(2).max(8000),
+        source: z.string().min(1).max(40).default("manual"),
+        title: z.string().max(200).optional(),
+        url: z.string().url().max(500).optional().or(z.literal("")),
+        sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+        project_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { data: row, error } = await context.supabase
@@ -51,11 +53,13 @@ export const createSignal = createServerFn({ method: "POST" })
 export const bulkImportSignals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      source: z.string().min(1).max(40).default("paste"),
-      // newline-separated, one signal per line
-      text: z.string().min(2).max(50_000),
-    }).parse(i),
+    z
+      .object({
+        source: z.string().min(1).max(40).default("paste"),
+        // newline-separated, one signal per line
+        text: z.string().min(2).max(50_000),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const lines = data.text
@@ -111,7 +115,9 @@ export const clusterSignals = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!sigs?.length) return { themes: 0, message: "No unclustered signals." };
 
-    const indexed = sigs.map((s, i) => `[${i}] (${s.source}) ${s.content.slice(0, 400)}`).join("\n");
+    const indexed = sigs
+      .map((s, i) => `[${i}] (${s.source}) ${s.content.slice(0, 400)}`)
+      .join("\n");
 
     const system = `You are a senior product researcher. Cluster raw user signals into 3-7 distinct themes.
 For each theme provide: title (max 60 chars), summary (max 200 chars), severity (1-5), confidence (0-1), and the indexes of member signals.
@@ -130,13 +136,23 @@ Return STRICT JSON only — no prose, no markdown fences.`;
         { role: "user", content: user },
       ],
     });
-    const parsed = (result.json ?? {}) as { themes?: Array<{ title: string; summary?: string; severity?: number; confidence?: number; members?: number[] }> };
+    const parsed = (result.json ?? {}) as {
+      themes?: Array<{
+        title: string;
+        summary?: string;
+        severity?: number;
+        confidence?: number;
+        members?: number[];
+      }>;
+    };
     if (!parsed.themes) throw new Error("AI returned invalid JSON");
     const themes = (parsed.themes ?? []).slice(0, 10);
 
     let created = 0;
     for (const t of themes) {
-      const members = (t.members ?? []).filter((n) => Number.isInteger(n) && n >= 0 && n < sigs.length);
+      const members = (t.members ?? []).filter(
+        (n) => Number.isInteger(n) && n >= 0 && n < sigs.length,
+      );
       if (!members.length || !t.title) continue;
       const { data: theme, error: tErr } = await supabase
         .from("themes")
@@ -186,7 +202,11 @@ export const promoteThemeToOpportunity = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ theme_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { data: theme, error } = await supabase.from("themes").select("*").eq("id", data.theme_id).single();
+    const { data: theme, error } = await supabase
+      .from("themes")
+      .select("*")
+      .eq("id", data.theme_id)
+      .single();
     if (error || !theme) throw new Error("Theme not found");
     const { data: opp, error: oErr } = await supabase
       .from("opportunities")
@@ -219,17 +239,19 @@ export const promoteThemeToOpportunity = createServerFn({ method: "POST" })
 export const updateOpportunity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).max(200).optional(),
-      problem: z.string().max(2000).optional(),
-      target_user: z.string().max(200).nullable().optional(),
-      hypothesis: z.string().max(1000).nullable().optional(),
-      impact: z.number().int().min(1).max(10).optional(),
-      confidence: z.number().int().min(1).max(10).optional(),
-      ease: z.number().int().min(1).max(10).optional(),
-      status: z.enum(["backlog", "now", "next", "later", "shipped", "dropped"]).optional(),
-    }).parse(i),
+    z
+      .object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(200).optional(),
+        problem: z.string().max(2000).optional(),
+        target_user: z.string().max(200).nullable().optional(),
+        hypothesis: z.string().max(1000).nullable().optional(),
+        impact: z.number().int().min(1).max(10).optional(),
+        confidence: z.number().int().min(1).max(10).optional(),
+        ease: z.number().int().min(1).max(10).optional(),
+        status: z.enum(["backlog", "now", "next", "later", "shipped", "dropped"]).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { id, ...rest } = data;
@@ -270,7 +292,11 @@ export const getPrd = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
-    const { data: row, error } = await context.supabase.from("prds").select("*").eq("id", data.id).single();
+    const { data: row, error } = await context.supabase
+      .from("prds")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error) throw new Error(error.message);
     return { prd: row };
   });
@@ -278,12 +304,14 @@ export const getPrd = createServerFn({ method: "GET" })
 export const savePrd = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).max(200).optional(),
-      body_md: z.string().max(50_000).optional(),
-      status: z.enum(["draft", "review", "approved", "shipped"]).optional(),
-    }).parse(i),
+    z
+      .object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(200).optional(),
+        body_md: z.string().max(50_000).optional(),
+        status: z.enum(["draft", "review", "approved", "shipped"]).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { id, ...rest } = data;
@@ -329,21 +357,23 @@ export const createGithubIssueForPrd = createServerFn({ method: "POST" })
 
     const token = process.env.GITHUB_TOKEN;
     const rawRepo = process.env.GITHUB_REPO;
-    if (!token || !rawRepo) throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
+    if (!token || !rawRepo)
+      throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
     const repo = rawRepo
       .trim()
       .replace(/^https?:\/\/github\.com\//i, "")
       .replace(/^git@github\.com:/i, "")
       .replace(/\.git$/i, "")
       .replace(/\/+$/, "");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${rawRepo} (expected owner/name)`);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo))
+      throw new Error(`Invalid GITHUB_REPO format: ${rawRepo} (expected owner/name)`);
 
     const body = `${(prd.body_md ?? "").slice(0, 55_000)}\n\n---\n_Opened from Cadence PRD ${prd.id}_`;
     const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "cadence-agent",
         "Content-Type": "application/json",
@@ -369,11 +399,13 @@ export const createGithubIssueForPrd = createServerFn({ method: "POST" })
 export const generatePrd = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      opportunity_id: z.string().uuid().optional(),
-      brief: z.string().max(4000).optional(),
-      model: z.string().max(80).default("google/gemini-2.5-pro"),
-    }).parse(i),
+    z
+      .object({
+        opportunity_id: z.string().uuid().optional(),
+        brief: z.string().max(4000).optional(),
+        model: z.string().max(80).default("google/gemini-2.5-pro"),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -383,7 +415,11 @@ export const generatePrd = createServerFn({ method: "POST" })
     let title = "";
 
     if (data.opportunity_id) {
-      const { data: opp, error } = await supabase.from("opportunities").select("*").eq("id", data.opportunity_id).single();
+      const { data: opp, error } = await supabase
+        .from("opportunities")
+        .select("*")
+        .eq("id", data.opportunity_id)
+        .single();
       if (error || !opp) throw new Error("Opportunity not found");
       title = opp.title;
       oppId = opp.id;
@@ -403,11 +439,19 @@ ICE — Impact:${opp.impact} Confidence:${opp.confidence} Ease:${opp.ease}`;
           surface_ref: "title",
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: "Return a single concise PRD title (max 70 chars, Title Case, no quotes, no trailing punctuation). Only the title, nothing else." },
+            {
+              role: "system",
+              content:
+                "Return a single concise PRD title (max 70 chars, Title Case, no quotes, no trailing punctuation). Only the title, nothing else.",
+            },
             { role: "user", content: source.slice(0, 2000) },
           ],
         });
-        title = (titleResult.output || "").trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0].slice(0, 120);
+        title = (titleResult.output || "")
+          .trim()
+          .replace(/^["'`]+|["'`]+$/g, "")
+          .split("\n")[0]
+          .slice(0, 120);
       } catch {
         // fall through to heuristic
       }
@@ -472,18 +516,22 @@ Be concrete, terse, and useful. Use tight bullets. No filler.`;
 export const prdAssist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      action: z.enum(["rewrite", "expand", "critique", "shorten"]),
-      selection: z.string().min(2).max(8000),
-      context: z.string().max(8000).optional(),
-    }).parse(i),
+    z
+      .object({
+        action: z.enum(["rewrite", "expand", "critique", "shorten"]),
+        selection: z.string().min(2).max(8000),
+        context: z.string().max(8000).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const verb: Record<typeof data.action, string> = {
-      rewrite: "Rewrite the selection to be sharper, more concrete, and easier to scan. Keep meaning.",
+      rewrite:
+        "Rewrite the selection to be sharper, more concrete, and easier to scan. Keep meaning.",
       expand: "Expand the selection with helpful detail, examples, and edge cases. Stay terse.",
-      critique: "Critique the selection: assumptions, missing risks, weak metrics. Return as bullets.",
+      critique:
+        "Critique the selection: assumptions, missing risks, weak metrics. Return as bullets.",
       shorten: "Shorten the selection by ~50% without losing meaning.",
     };
     const result = await callModel(supabase, userId, {
@@ -492,7 +540,10 @@ export const prdAssist = createServerFn({ method: "POST" })
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: "You are a senior PM editor. Return Markdown only." },
-        { role: "user", content: `${verb[data.action]}\n\n---\n${data.selection}\n---\n\nSurrounding context (optional):\n${data.context ?? ""}` },
+        {
+          role: "user",
+          content: `${verb[data.action]}\n\n---\n${data.selection}\n---\n\nSurrounding context (optional):\n${data.context ?? ""}`,
+        },
       ],
     });
     return { text: result.output };
@@ -527,8 +578,13 @@ Return STRICT JSON only:
       ],
     });
     const parsed = (result.json ?? {}) as {
-      title?: string; problem?: string; target_user?: string; hypothesis?: string;
-      impact?: number; confidence?: number; ease?: number;
+      title?: string;
+      problem?: string;
+      target_user?: string;
+      hypothesis?: string;
+      impact?: number;
+      confidence?: number;
+      ease?: number;
     };
     if (!parsed.title) throw new Error("AI returned no opportunity");
     const clamp = (n: unknown, fb: number) => {

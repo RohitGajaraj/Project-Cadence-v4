@@ -23,12 +23,12 @@ built together. Inventing a new data-flow shape is a smell — mirror an existin
 6. **Verify visually.** `bun run dev` and check the surface in the browser —
    type-checking is not feature-checking (AGENTS.md §3, architecture/frontend.md).
 7. **Close the documentation loop.** Update the relevant doc + append to the build log in
-   `plan.md` §4 in the *same* unit of work (AGENTS.md §5). A change isn't done until its
+   `plan.md` §4 in the _same_ unit of work (AGENTS.md §5). A change isn't done until its
    docs are true.
 
 ## Gotchas
 
 - Ignore the `*" 2"`-suffixed dirs (`src/components 2`, `src/integrations 2`) — empty
   case-insensitive-FS artifacts. Real code is in `src/components` / `src/integrations`.
-- nango is an external integrations *service* (Nango Cloud / self-hosted), not in this repo — consume it via `@nangohq/*` SDK + `NANGO_*` env when wiring integrations.
+- nango is an external integrations _service_ (Nango Cloud / self-hosted), not in this repo — consume it via `@nangohq/*` SDK + `NANGO_*` env when wiring integrations.
 - Bun is the runner (`bun install`, `bun run dev`), not npm. `package-lock.json` is not canonical.

@@ -6,25 +6,59 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Sparkles, Brain, Users, MessageSquare, Target, Plus, Send, RefreshCw,
-  Calendar, Bot, Zap, Activity, CheckCircle2, XCircle, Clock, ArrowRight,
+  Sparkles,
+  Brain,
+  Users,
+  MessageSquare,
+  Target,
+  Plus,
+  Send,
+  RefreshCw,
+  Calendar,
+  Bot,
+  Zap,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
 const DASHBOARD_TABS: Array<{
   id: "overview" | "work" | "agents" | "pulse";
   label: string;
   description: string;
 }> = [
-  { id: "overview", label: "Overview", description: "Today at a glance: priorities, brief, and what needs your call." },
-  { id: "work",     label: "Work",     description: "Tasks, projects, and meetings moving through the swarm." },
-  { id: "agents",   label: "Agents",   description: "Who's running, what they shipped, and recent agent runs." },
-  { id: "pulse",    label: "Pulse",    description: "Signal flow, decisions, and momentum across the product." },
+  {
+    id: "overview",
+    label: "Overview",
+    description: "Today at a glance: priorities, brief, and what needs your call.",
+  },
+  {
+    id: "work",
+    label: "Work",
+    description: "Tasks, projects, and meetings moving through the swarm.",
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    description: "Who's running, what they shipped, and recent agent runs.",
+  },
+  {
+    id: "pulse",
+    label: "Pulse",
+    description: "Signal flow, decisions, and momentum across the product.",
+  },
 ];
 import { AppShell } from "@/components/cadence/AppShell";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
 import { listProjects, createProject } from "@/lib/projects.functions";
 import { createMeeting } from "@/lib/meetings.functions";
-import { listCopilotMessages, sendCopilotMessage, generateDailyBrief } from "@/lib/copilot.functions";
+import {
+  listCopilotMessages,
+  sendCopilotMessage,
+  generateDailyBrief,
+} from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { listDecisions, createDecision, updateDecision } from "@/lib/decisions.functions";
 import { getGreeting } from "@/lib/greeting.functions";
@@ -75,7 +109,9 @@ function Dashboard() {
   // bucket matches their wall clock, not the server's UTC. Country comes
   // from the request headers (Cloudflare edge).
   const [localHour, setLocalHour] = useState<number | null>(null);
-  useEffect(() => { setLocalHour(new Date().getHours()); }, []);
+  useEffect(() => {
+    setLocalHour(new Date().getHours());
+  }, []);
   const greeting = useQuery({
     queryKey: ["greeting", localHour],
     queryFn: () => fetchGreeting({ data: { localHour: localHour ?? new Date().getHours() } }),
@@ -87,12 +123,19 @@ function Dashboard() {
 
   const addTask = useMutation({
     mutationFn: (data: { title: string; is_deep_work: boolean }) => mCreateTask({ data }),
-    onSuccess: () => { invalidate("tasks"); invalidate("dashboard"); toast.success("Task added"); },
+    onSuccess: () => {
+      invalidate("tasks");
+      invalidate("dashboard");
+      toast.success("Task added");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const toggleTask = useMutation({
     mutationFn: (data: { id: string; status: "todo" | "done" }) => mUpdateTask({ data }),
-    onSuccess: () => { invalidate("tasks"); invalidate("dashboard"); },
+    onSuccess: () => {
+      invalidate("tasks");
+      invalidate("dashboard");
+    },
   });
   const removeTask = useMutation({
     mutationFn: (id: string) => mDeleteTask({ data: { id } }),
@@ -100,13 +143,20 @@ function Dashboard() {
   });
   const addProject = useMutation({
     mutationFn: (data: { name: string }) => mCreateProject({ data }),
-    onSuccess: () => { invalidate("projects"); invalidate("dashboard"); toast.success("Product added"); },
+    onSuccess: () => {
+      invalidate("projects");
+      invalidate("dashboard");
+      toast.success("Product added");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const addMeeting = useMutation({
     mutationFn: (data: { title: string; start_at: string; end_at: string; stakeholder?: string }) =>
       mCreateMeeting({ data }),
-    onSuccess: () => { invalidate("dashboard"); toast.success("Meeting added"); },
+    onSuccess: () => {
+      invalidate("dashboard");
+      toast.success("Meeting added");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const sendMsg = useMutation({
@@ -116,28 +166,40 @@ function Dashboard() {
   });
   const regenBrief = useMutation({
     mutationFn: () => mBrief(),
-    onSuccess: () => { invalidate("dashboard"); toast.success("Brief refreshed"); },
+    onSuccess: () => {
+      invalidate("dashboard");
+      toast.success("Brief refreshed");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const dispatchAgent = useMutation({
     mutationFn: (data: { agentId: string; input: string }) => mRunAgent({ data }),
-    onSuccess: () => { invalidate("runs"); toast.success("Agent finished"); },
+    onSuccess: () => {
+      invalidate("runs");
+      toast.success("Agent finished");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const addDecision = useMutation({
     mutationFn: (data: { title: string; rationale?: string }) => mCreateDecision({ data }),
-    onSuccess: () => { invalidate("decisions"); toast.success("Decision queued"); },
+    onSuccess: () => {
+      invalidate("decisions");
+      toast.success("Decision queued");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const setDecisionStatus = useMutation({
-    mutationFn: (data: { id: string; status: "approved" | "rejected" | "pending" }) => mUpdateDecision({ data }),
+    mutationFn: (data: { id: string; status: "approved" | "rejected" | "pending" }) =>
+      mUpdateDecision({ data }),
     onSuccess: () => invalidate("decisions"),
   });
 
   const d = dash.data;
   const [today, setToday] = useState("");
   useEffect(() => {
-    setToday(new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
+    setToday(
+      new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
+    );
   }, []);
   const focusScore = d?.focusScore ?? 0;
   const profileName = d?.profile?.display_name?.split(" ")[0] ?? "there";
@@ -154,7 +216,8 @@ function Dashboard() {
             <span>{today}</span>
             {activeAgents > 0 && (
               <span className="ml-3 inline-flex items-center gap-1.5 mono-label">
-                <Activity className="h-3 w-3" /> {activeAgents} agent{activeAgents > 1 ? "s" : ""} running
+                <Activity className="h-3 w-3" /> {activeAgents} agent{activeAgents > 1 ? "s" : ""}{" "}
+                running
               </span>
             )}
           </div>
@@ -182,25 +245,40 @@ function Dashboard() {
                 )}
               </div>
               <h1 className="mt-5 font-display text-4xl md:text-6xl leading-[1.02] tracking-tight text-balance text-[color:var(--canvas)]">
-                {greetText}, <em className="italic font-normal text-[color:var(--coral-soft)]">{profileName}</em>.
+                {greetText},{" "}
+                <em className="italic font-normal text-[color:var(--coral-soft)]">{profileName}</em>
+                .
               </h1>
               <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
-                Your AI team is ready. Hit <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient the day.
+                Your AI team is ready. Hit{" "}
+                <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient
+                the day.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
-                <Pill icon={Brain} label={`${(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)} deep blocks`} />
-                <Pill icon={Calendar} label={`${Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}h meetings`} />
+                <Pill
+                  icon={Brain}
+                  label={`${(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)} deep blocks`}
+                />
+                <Pill
+                  icon={Calendar}
+                  label={`${Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}h meetings`}
+                />
                 <Pill icon={Target} label={`${(d?.projects ?? []).length} products`} />
                 <Pill icon={Bot} label={`${(agents.data?.agents ?? []).length} agents online`} />
               </div>
             </div>
             <div className="flex flex-col items-end gap-3 shrink-0">
               <div className="text-right">
-                <div className="font-display text-7xl tracking-tight tabular-nums text-[color:var(--canvas)]">{focusScore}</div>
+                <div className="font-display text-7xl tracking-tight tabular-nums text-[color:var(--canvas)]">
+                  {focusScore}
+                </div>
                 <div className="mono-label text-[color:var(--canvas)]/70 mt-1">Focus score</div>
               </div>
               <div className="h-1 w-40 rounded-full bg-[color:var(--canvas)]/20 overflow-hidden">
-                <div className="h-full rounded-full bg-[color:var(--canvas)]" style={{ width: `${focusScore}%` }} />
+                <div
+                  className="h-full rounded-full bg-[color:var(--canvas)]"
+                  style={{ width: `${focusScore}%` }}
+                />
               </div>
             </div>
           </div>
@@ -217,7 +295,8 @@ function Dashboard() {
               disabled={regenBrief.isPending}
               className="link-action text-xs inline-flex items-center gap-1 disabled:opacity-60"
             >
-              <RefreshCw className={`h-3 w-3 ${regenBrief.isPending ? "animate-spin" : ""}`} /> refresh
+              <RefreshCw className={`h-3 w-3 ${regenBrief.isPending ? "animate-spin" : ""}`} />{" "}
+              refresh
             </button>
           </div>
           {d?.brief?.summary ? (
@@ -225,7 +304,9 @@ function Dashboard() {
               <ReactMarkdown>{normalizeBrief(d.brief.summary)}</ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Drafting your brief from this workspace.</p>
+            <p className="text-sm text-muted-foreground">
+              Drafting your brief from this workspace.
+            </p>
           )}
         </section>
 
@@ -233,8 +314,12 @@ function Dashboard() {
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-baseline gap-3">
-              <div className="mono-label flex items-center gap-1.5"><Bot className="h-3 w-3" /> AI agents</div>
-              <span className="text-xs text-muted-foreground">Tap to dispatch · grounded in your workspace</span>
+              <div className="mono-label flex items-center gap-1.5">
+                <Bot className="h-3 w-3" /> AI agents
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Tap to dispatch · grounded in your workspace
+              </span>
             </div>
             <Link to="/agents" className="link-action text-xs inline-flex items-center gap-1">
               Manage <ArrowRight className="h-3 w-3" />
@@ -253,13 +338,21 @@ function Dashboard() {
         </section>
 
         {/* TABBED SECTIONS — keep dashboard organized */}
-        <Tabs value={dashTab} onValueChange={(v) => setDashTab(v as typeof dashTab)} className="w-full">
+        <Tabs
+          value={dashTab}
+          onValueChange={(v) => setDashTab(v as typeof dashTab)}
+          className="w-full"
+        >
           <TabsList className="mb-2">
             {DASHBOARD_TABS.map((t) => (
-              <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>
+              <TabsTrigger key={t.id} value={t.id}>
+                {t.label}
+              </TabsTrigger>
             ))}
           </TabsList>
-          <p className="text-sm text-muted-foreground mb-4 mt-2 max-w-2xl">{activeDashTab.description}</p>
+          <p className="text-sm text-muted-foreground mb-4 mt-2 max-w-2xl">
+            {activeDashTab.description}
+          </p>
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-12 gap-4 md:gap-5">
@@ -272,10 +365,15 @@ function Dashboard() {
                     <div key={p.id}>
                       <div className="flex justify-between text-xs">
                         <span className="truncate pr-2">{p.name}</span>
-                        <span className="tabular-nums text-muted-foreground">{p.done}/{p.total}</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {p.done}/{p.total}
+                        </span>
                       </div>
                       <div className="mt-1.5 h-1 rounded-full bg-[var(--soft-stone)] overflow-hidden">
-                        <div className="h-full rounded-full bg-[var(--deep-green)]" style={{ width: `${p.pct}%` }} />
+                        <div
+                          className="h-full rounded-full bg-[var(--deep-green)]"
+                          style={{ width: `${p.pct}%` }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -287,7 +385,9 @@ function Dashboard() {
               </section>
 
               <section className="bento p-5 col-span-6 lg:col-span-3">
-                <div className="mono-label flex items-center gap-1.5"><Brain className="h-3 w-3" /> Deep work</div>
+                <div className="mono-label flex items-center gap-1.5">
+                  <Brain className="h-3 w-3" /> Deep work
+                </div>
                 <div className="mt-4 font-display text-5xl tabular-nums">
                   {(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)}
                   <span className="text-sm text-muted-foreground"> /wk</span>
@@ -296,17 +396,25 @@ function Dashboard() {
                   {(d?.deepWorkSeries ?? []).map((b, i) => {
                     const max = Math.max(1, ...(d?.deepWorkSeries ?? []).map((s) => s.count));
                     return (
-                      <div key={i} className="flex-1 rounded-sm bg-foreground" style={{ height: `${(b.count / max) * 100}%`, minHeight: 4 }} />
+                      <div
+                        key={i}
+                        className="flex-1 rounded-sm bg-foreground"
+                        style={{ height: `${(b.count / max) * 100}%`, minHeight: 4 }}
+                      />
                     );
                   })}
                 </div>
                 <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-                  {(d?.deepWorkSeries ?? []).map((b, i) => <span key={i}>{b.day}</span>)}
+                  {(d?.deepWorkSeries ?? []).map((b, i) => (
+                    <span key={i}>{b.day}</span>
+                  ))}
                 </div>
               </section>
 
               <section className="bento p-5 col-span-6 lg:col-span-3">
-                <div className="mono-label flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Today's meetings</div>
+                <div className="mono-label flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3" /> Today's meetings
+                </div>
                 <div className="mt-4 font-display text-5xl tabular-nums">
                   {Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}
                   <span className="text-lg text-muted-foreground">h</span>
@@ -316,11 +424,16 @@ function Dashboard() {
                     <li key={m.id} className="flex justify-between gap-2">
                       <span className="truncate">{m.title}</span>
                       <span className="text-muted-foreground tabular-nums">
-                        {new Date(m.start_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        {new Date(m.start_at).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </li>
                   ))}
-                  {(d?.todayMeetings ?? []).length === 0 && <li className="text-muted-foreground">No meetings today.</li>}
+                  {(d?.todayMeetings ?? []).length === 0 && (
+                    <li className="text-muted-foreground">No meetings today.</li>
+                  )}
                 </ul>
                 <QuickMeetingForm onAdd={(data) => addMeeting.mutate(data)} />
               </section>
@@ -340,7 +453,10 @@ function Dashboard() {
                   <div className="mono-label flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3" /> Copilot
                   </div>
-                  <button onClick={() => invalidate("copilot")} className="link-action text-xs inline-flex items-center gap-1">
+                  <button
+                    onClick={() => invalidate("copilot")}
+                    className="link-action text-xs inline-flex items-center gap-1"
+                  >
                     <RefreshCw className="h-3 w-3" /> refresh
                   </button>
                 </div>
@@ -377,8 +493,14 @@ function Dashboard() {
                           {r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"}
                         </span>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground italic line-clamp-1">{r.input}</div>
-                      {r.output && (<div className="mt-2 text-sm whitespace-pre-wrap line-clamp-3">{r.output}</div>)}
+                      <div className="mt-2 text-xs text-muted-foreground italic line-clamp-1">
+                        {r.input}
+                      </div>
+                      {r.output && (
+                        <div className="mt-2 text-sm whitespace-pre-wrap line-clamp-3">
+                          {r.output}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -398,22 +520,34 @@ function Dashboard() {
                   <Users className="h-3 w-3" /> Stakeholder pulse
                 </div>
                 {(d?.stakeholders ?? []).length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Add meetings with a stakeholder to populate this.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Add meetings with a stakeholder to populate this.
+                  </p>
                 ) : (
                   <div className="divide-y divide-[var(--hairline)]">
                     {d!.stakeholders.map((p) => (
                       <div key={p.name} className="flex items-center justify-between py-2.5">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-[var(--soft-stone)] border hairline grid place-items-center text-[11px] font-medium text-foreground">
-                            {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            {p.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </div>
                           <div>
                             <div className="text-sm">{p.name}</div>
-                            <div className="text-[11px] text-muted-foreground">{p.count} meeting{p.count > 1 ? "s" : ""} · last {new Date(p.last).toLocaleDateString()}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {p.count} meeting{p.count > 1 ? "s" : ""} · last{" "}
+                              {new Date(p.last).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
                         <div className="h-1 w-16 rounded-full bg-[var(--soft-stone)] overflow-hidden">
-                          <div className="h-full bg-[var(--coral)]" style={{ width: `${Math.min(100, p.count * 20)}%` }} />
+                          <div
+                            className="h-full bg-[var(--coral)]"
+                            style={{ width: `${Math.min(100, p.count * 20)}%` }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -421,11 +555,25 @@ function Dashboard() {
                 )}
               </section>
               <section className="band-stone rounded-lg p-6 col-span-12 lg:col-span-6">
-                <div className="mono-label flex items-center gap-1.5 mb-4"><Zap className="h-3 w-3" /> Product health</div>
+                <div className="mono-label flex items-center gap-1.5 mb-4">
+                  <Zap className="h-3 w-3" /> Product health
+                </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <Metric label="Velocity" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status === "done").length}`} sub="tasks shipped" />
-                  <Metric label="In flight" value={`${(tasks.data?.tasks ?? []).filter((t) => t.status !== "done").length}`} sub="open" />
-                  <Metric label="Agent runs" value={`${runs.data?.runs?.length ?? 0}`} sub="last 24h" />
+                  <Metric
+                    label="Velocity"
+                    value={`${(tasks.data?.tasks ?? []).filter((t) => t.status === "done").length}`}
+                    sub="tasks shipped"
+                  />
+                  <Metric
+                    label="In flight"
+                    value={`${(tasks.data?.tasks ?? []).filter((t) => t.status !== "done").length}`}
+                    sub="open"
+                  />
+                  <Metric
+                    label="Agent runs"
+                    value={`${runs.data?.runs?.length ?? 0}`}
+                    sub="last 24h"
+                  />
                 </div>
               </section>
             </div>
@@ -455,7 +603,13 @@ function normalizeBrief(text: string): string {
   return parts.map((s) => `- ${s}`).join("\n");
 }
 
-function Pill({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
+function Pill({
+  icon: Icon,
+  label,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--canvas)]/30 bg-[color:var(--canvas)]/10 px-3 py-1 text-[11px] text-[color:var(--canvas)]/85">
       <Icon className="h-3 w-3" /> {label}
@@ -474,7 +628,10 @@ function Metric({ label, value, sub }: { label: string; value: string; sub: stri
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { icon: React.ComponentType<{ className?: string }>; cls: string; label: string }> = {
+  const map: Record<
+    string,
+    { icon: React.ComponentType<{ className?: string }>; cls: string; label: string }
+  > = {
     running: { icon: Clock, cls: "text-foreground", label: "running" },
     complete: { icon: CheckCircle2, cls: "text-[var(--deep-green)]", label: "complete" },
     failed: { icon: XCircle, cls: "text-[var(--coral)]", label: "failed" },
@@ -505,7 +662,9 @@ function AgentChip({
         onClick={() => setOpen((s) => !s)}
         className="w-full text-left rounded-md border hairline bg-card p-3 hover:border-foreground transition-colors relative overflow-hidden"
       >
-        <div className={`absolute -right-3 -top-3 h-12 w-12 rounded-full ${AGENT_ACCENT} opacity-70`} />
+        <div
+          className={`absolute -right-3 -top-3 h-12 w-12 rounded-full ${AGENT_ACCENT} opacity-70`}
+        />
         <div className="relative">
           <div className="mono-label">{agent.role.replace("AI ", "")}</div>
           <div className="font-display text-base mt-1 truncate text-foreground">{agent.name}</div>
@@ -516,17 +675,35 @@ function AgentChip({
       </button>
       {open && (
         <form
-          onSubmit={(e) => { e.preventDefault(); if (!text.trim()) return; onRun(text.trim()); setText(""); setOpen(false); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!text.trim()) return;
+            onRun(text.trim());
+            setText("");
+            setOpen(false);
+          }}
           className="absolute z-20 top-full mt-2 left-0 right-0 rounded-md border hairline bg-card p-3 shadow-elevated"
         >
           <textarea
-            autoFocus value={text} onChange={(e) => setText(e.target.value)} rows={3}
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
             placeholder={`Brief ${agent.name}…`}
             className="w-full rounded-md border hairline bg-background px-2.5 py-2 text-xs outline-none focus:border-foreground resize-none"
           />
           <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-muted-foreground">Cancel</button>
-            <button disabled={pending} className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-[11px] text-muted-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={pending}
+              className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
+            >
               {pending ? "Running…" : "Dispatch"}
             </button>
           </div>
@@ -537,7 +714,10 @@ function AgentChip({
 }
 
 function TaskPanel({
-  tasks, onAdd, onToggle, onDelete,
+  tasks,
+  onAdd,
+  onToggle,
+  onDelete,
 }: {
   tasks: { id: string; title: string; status: string; is_deep_work: boolean }[];
   onAdd: (title: string, deep: boolean) => void;
@@ -553,24 +733,56 @@ function TaskPanel({
         <span className="mono-label">{tasks.filter((t) => t.status !== "done").length} open</span>
       </div>
       <form
-        onSubmit={(e) => { e.preventDefault(); if (!title.trim()) return; onAdd(title.trim(), deep); setTitle(""); setDeep(false); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!title.trim()) return;
+          onAdd(title.trim(), deep);
+          setTitle("");
+          setDeep(false);
+        }}
         className="flex items-center gap-2 mb-4"
       >
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to happen today?"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="What needs to happen today?"
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+        />
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep
         </label>
-        <button className="btn-pill px-3 py-2 text-sm"><Plus className="h-3.5 w-3.5" /></button>
+        <button className="btn-pill px-3 py-2 text-sm">
+          <Plus className="h-3.5 w-3.5" />
+        </button>
       </form>
       <ul className="divide-y divide-[var(--hairline)] max-h-72 overflow-y-auto scrollbar-thin">
-        {tasks.length === 0 && <li className="py-3 text-xs text-muted-foreground">Nothing planned yet.</li>}
+        {tasks.length === 0 && (
+          <li className="py-3 text-xs text-muted-foreground">Nothing planned yet.</li>
+        )}
         {tasks.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-2.5">
-            <input type="checkbox" checked={t.status === "done"} onChange={(e) => onToggle(t.id, e.target.checked)} className="h-4 w-4" />
-            <span className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}>{t.title}</span>
-            {t.is_deep_work && <span className="mono-label rounded-full border border-[var(--coral)] text-[var(--coral)] px-2 py-0.5">deep</span>}
-            <button onClick={() => onDelete(t.id)} className="text-xs text-muted-foreground hover:text-destructive">×</button>
+            <input
+              type="checkbox"
+              checked={t.status === "done"}
+              onChange={(e) => onToggle(t.id, e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span
+              className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}
+            >
+              {t.title}
+            </span>
+            {t.is_deep_work && (
+              <span className="mono-label rounded-full border border-[var(--coral)] text-[var(--coral)] px-2 py-0.5">
+                deep
+              </span>
+            )}
+            <button
+              onClick={() => onDelete(t.id)}
+              className="text-xs text-muted-foreground hover:text-destructive"
+            >
+              ×
+            </button>
           </li>
         ))}
       </ul>
@@ -581,14 +793,31 @@ function TaskPanel({
 function QuickProjectForm({ onAdd }: { onAdd: (name: string) => void }) {
   const [name, setName] = useState("");
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; onAdd(name.trim()); setName(""); }} className="pt-3 flex items-center gap-2">
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New product" className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        onAdd(name.trim());
+        setName("");
+      }}
+      className="pt-3 flex items-center gap-2"
+    >
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="New product"
+        className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
+      />
       <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
     </form>
   );
 }
 
-function QuickMeetingForm({ onAdd }: { onAdd: (data: { title: string; start_at: string; end_at: string; stakeholder?: string }) => void }) {
+function QuickMeetingForm({
+  onAdd,
+}: {
+  onAdd: (data: { title: string; start_at: string; end_at: string; stakeholder?: string }) => void;
+}) {
   const [title, setTitle] = useState("");
   const [stakeholder, setStakeholder] = useState("");
   return (
@@ -596,16 +825,35 @@ function QuickMeetingForm({ onAdd }: { onAdd: (data: { title: string; start_at: 
       onSubmit={(e) => {
         e.preventDefault();
         if (!title.trim()) return;
-        const start = new Date(); start.setMinutes(0, 0, 0); start.setHours(start.getHours() + 1);
-        const end = new Date(start); end.setMinutes(end.getMinutes() + 30);
-        onAdd({ title: title.trim(), start_at: start.toISOString(), end_at: end.toISOString(), stakeholder: stakeholder.trim() || undefined });
-        setTitle(""); setStakeholder("");
+        const start = new Date();
+        start.setMinutes(0, 0, 0);
+        start.setHours(start.getHours() + 1);
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + 30);
+        onAdd({
+          title: title.trim(),
+          start_at: start.toISOString(),
+          end_at: end.toISOString(),
+          stakeholder: stakeholder.trim() || undefined,
+        });
+        setTitle("");
+        setStakeholder("");
       }}
       className="mt-4 flex flex-col gap-2"
     >
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New meeting" className="rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="New meeting"
+        className="rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
+      />
       <div className="flex gap-2">
-        <input value={stakeholder} onChange={(e) => setStakeholder(e.target.value)} placeholder="With…" className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground" />
+        <input
+          value={stakeholder}
+          onChange={(e) => setStakeholder(e.target.value)}
+          placeholder="With…"
+          className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
+        />
         <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
       </div>
     </form>
@@ -613,9 +861,17 @@ function QuickMeetingForm({ onAdd }: { onAdd: (data: { title: string; start_at: 
 }
 
 function DecisionPanel({
-  decisions, onAdd, onSet,
+  decisions,
+  onAdd,
+  onSet,
 }: {
-  decisions: { id: string; title: string; status: string; rationale: string | null; created_at: string }[];
+  decisions: {
+    id: string;
+    title: string;
+    status: string;
+    rationale: string | null;
+    created_at: string;
+  }[];
   onAdd: (title: string) => void;
   onSet: (id: string, status: "approved" | "rejected" | "pending") => void;
 }) {
@@ -623,24 +879,59 @@ function DecisionPanel({
   return (
     <section className="bento p-5 col-span-12 lg:col-span-8">
       <div className="flex items-center justify-between mb-3">
-        <div className="mono-label flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> Decisions awaiting you</div>
-        <span className="mono-label">{decisions.filter((d) => d.status === "pending").length} pending</span>
+        <div className="mono-label flex items-center gap-1.5">
+          <MessageSquare className="h-3 w-3" /> Decisions awaiting you
+        </div>
+        <span className="mono-label">
+          {decisions.filter((d) => d.status === "pending").length} pending
+        </span>
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); if (!title.trim()) return; onAdd(title.trim()); setTitle(""); }} className="flex items-center gap-2 mb-3">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Log a decision the AI surfaced…"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!title.trim()) return;
+          onAdd(title.trim());
+          setTitle("");
+        }}
+        className="flex items-center gap-2 mb-3"
+      >
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Log a decision the AI surfaced…"
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+        />
         <button className="btn-pill px-3 py-2 text-xs">Log</button>
       </form>
       <ul className="space-y-2">
-        {decisions.length === 0 && <li className="text-xs text-muted-foreground py-4">No decisions logged yet.</li>}
+        {decisions.length === 0 && (
+          <li className="text-xs text-muted-foreground py-4">No decisions logged yet.</li>
+        )}
         {decisions.map((d) => (
-          <li key={d.id} className="flex items-center gap-3 rounded-md border hairline px-3 py-2.5 bg-card">
+          <li
+            key={d.id}
+            className="flex items-center gap-3 rounded-md border hairline px-3 py-2.5 bg-card"
+          >
             <span className="flex-1 text-sm">{d.title}</span>
-            <span className={`mono-label ${d.status === "approved" ? "text-[var(--deep-green)]" : d.status === "rejected" ? "text-[var(--coral)]" : "text-foreground"}`}>{d.status}</span>
+            <span
+              className={`mono-label ${d.status === "approved" ? "text-[var(--deep-green)]" : d.status === "rejected" ? "text-[var(--coral)]" : "text-foreground"}`}
+            >
+              {d.status}
+            </span>
             {d.status === "pending" && (
               <div className="flex gap-1">
-                <button onClick={() => onSet(d.id, "approved")} className="btn-pill px-3 py-1 text-[11px]">Approve</button>
-                <button onClick={() => onSet(d.id, "rejected")} className="btn-pill-outline px-3 py-1 text-[11px]">Reject</button>
+                <button
+                  onClick={() => onSet(d.id, "approved")}
+                  className="btn-pill px-3 py-1 text-[11px]"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => onSet(d.id, "rejected")}
+                  className="btn-pill-outline px-3 py-1 text-[11px]"
+                >
+                  Reject
+                </button>
               </div>
             )}
           </li>
@@ -651,7 +942,9 @@ function DecisionPanel({
 }
 
 function CopilotChat({
-  messages, onSend, pending,
+  messages,
+  onSend,
+  pending,
 }: {
   messages: { id: string; role: string; content: string }[];
   onSend: (prompt: string) => void;
@@ -667,20 +960,36 @@ function CopilotChat({
           </p>
         )}
         {messages.map((m) => (
-          <div key={m.id} className={`rounded-md px-3 py-2 text-sm ${m.role === "user" ? "bg-[var(--soft-stone)] ml-6" : "bg-card border hairline mr-6"}`}>
+          <div
+            key={m.id}
+            className={`rounded-md px-3 py-2 text-sm ${m.role === "user" ? "bg-[var(--soft-stone)] ml-6" : "bg-card border hairline mr-6"}`}
+          >
             <div className="mono-label mb-1">{m.role === "user" ? "you" : "cadence"}</div>
             <div className="whitespace-pre-wrap">{m.content}</div>
           </div>
         ))}
-        {pending && <div className="text-xs text-muted-foreground italic">Cadence is thinking…</div>}
+        {pending && (
+          <div className="text-xs text-muted-foreground italic">Cadence is thinking…</div>
+        )}
       </div>
       <form
-        onSubmit={(e) => { e.preventDefault(); if (!text.trim() || pending) return; onSend(text.trim()); setText(""); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!text.trim() || pending) return;
+          onSend(text.trim());
+          setText("");
+        }}
         className="flex items-center gap-2"
       >
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask anything…"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground" />
-        <button disabled={pending} className="btn-pill px-3 py-2.5 text-sm disabled:opacity-60"><Send className="h-3.5 w-3.5" /></button>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Ask anything…"
+          className="flex-1 rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
+        />
+        <button disabled={pending} className="btn-pill px-3 py-2.5 text-sm disabled:opacity-60">
+          <Send className="h-3.5 w-3.5" />
+        </button>
       </form>
     </div>
   );

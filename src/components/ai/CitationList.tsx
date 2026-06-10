@@ -41,7 +41,9 @@ export function CitationList({ citations }: { citations: Citation[] }) {
           </span>
         );
         return href ? (
-          <a key={c.id} href={href} className="no-underline">{inner}</a>
+          <a key={c.id} href={href} className="no-underline">
+            {inner}
+          </a>
         ) : (
           <span key={c.id}>{inner}</span>
         );

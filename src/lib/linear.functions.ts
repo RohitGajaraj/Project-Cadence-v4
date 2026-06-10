@@ -25,7 +25,8 @@ async function gql<T>(query: string, variables?: Record<string, unknown>): Promi
   const body = await res.text();
   if (!res.ok) throw new Error(`Linear GraphQL failed [${res.status}]: ${body.slice(0, 400)}`);
   const json = JSON.parse(body) as { data?: T; errors?: { message: string }[] };
-  if (json.errors?.length) throw new Error(`Linear: ${json.errors.map((e) => e.message).join("; ")}`);
+  if (json.errors?.length)
+    throw new Error(`Linear: ${json.errors.map((e) => e.message).join("; ")}`);
   if (!json.data) throw new Error("Linear: empty response");
   return json.data;
 }
@@ -68,11 +69,13 @@ export const listLinearTeams = createServerFn({ method: "GET" })
 export const searchLinearIssues = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      query: z.string().max(200).optional(),
-      teamId: z.string().optional(),
-      onlyMine: z.boolean().optional(),
-    }).parse(i),
+    z
+      .object({
+        query: z.string().max(200).optional(),
+        teamId: z.string().optional(),
+        onlyMine: z.boolean().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
     const filters: string[] = [];
@@ -98,10 +101,12 @@ export const searchLinearIssues = createServerFn({ method: "POST" })
 export const importLinearIssue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      issueId: z.string().min(4).max(64),
-      project_id: z.string().uuid().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        issueId: z.string().min(4).max(64),
+        project_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -143,7 +148,10 @@ export const importLinearIssue = createServerFn({ method: "POST" })
   });
 
 export async function pullLinearIssue(issueId: string): Promise<{
-  title: string; status: "todo" | "doing" | "done"; priority: "low" | "medium" | "high"; url: string;
+  title: string;
+  status: "todo" | "doing" | "done";
+  priority: "low" | "medium" | "high";
+  url: string;
 }> {
   const r = await gql<{ issue: LinearIssue }>(
     `query($id: String!) { issue(id: $id) { id identifier title priority url state { type } } }`,
@@ -158,9 +166,14 @@ export async function pullLinearIssue(issueId: string): Promise<{
   };
 }
 
-export async function pushLinearIssue(issueId: string, patch: {
-  title?: string; status?: "todo" | "doing" | "done"; priority?: "low" | "medium" | "high";
-}): Promise<void> {
+export async function pushLinearIssue(
+  issueId: string,
+  patch: {
+    title?: string;
+    status?: "todo" | "doing" | "done";
+    priority?: "low" | "medium" | "high";
+  },
+): Promise<void> {
   // Map status → Linear workflow state id by name
   let stateId: string | undefined;
   if (patch.status) {
@@ -168,7 +181,8 @@ export async function pushLinearIssue(issueId: string, patch: {
       `query($id: String!) { issue(id: $id) { team { states { nodes { id type } } } } }`,
       { id: issueId },
     );
-    const wantType = patch.status === "done" ? "completed" : patch.status === "doing" ? "started" : "unstarted";
+    const wantType =
+      patch.status === "done" ? "completed" : patch.status === "doing" ? "started" : "unstarted";
     stateId = r.issue.team.states.nodes.find((s) => s.type === wantType)?.id;
   }
   const input: Record<string, unknown> = {};
@@ -188,26 +202,43 @@ export async function pushLinearIssue(issueId: string, patch: {
 export const createLinearIssuesFromTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      teamId: z.string().min(1),
-      taskIds: z.array(z.string().uuid()).min(1).max(50),
-    }).parse(i),
+    z
+      .object({
+        teamId: z.string().min(1),
+        taskIds: z.array(z.string().uuid()).min(1).max(50),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: tasks, error } = await supabase
-      .from("tasks").select("*").in("id", data.taskIds).eq("user_id", userId);
+      .from("tasks")
+      .select("*")
+      .in("id", data.taskIds)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     const created: { taskId: string; issueId: string; url: string }[] = [];
     for (const t of tasks ?? []) {
-      const r = await gql<{ issueCreate: { success: boolean; issue: { id: string; url: string } } }>(
+      const r = await gql<{
+        issueCreate: { success: boolean; issue: { id: string; url: string } };
+      }>(
         `mutation($input: IssueCreateInput!) {
           issueCreate(input: $input) { success issue { id url } }
         }`,
-        { input: { teamId: data.teamId, title: t.title, priority: LOCAL_TO_PRIORITY[t.priority ?? "medium"] } },
+        {
+          input: {
+            teamId: data.teamId,
+            title: t.title,
+            priority: LOCAL_TO_PRIORITY[t.priority ?? "medium"],
+          },
+        },
       );
       if (r.issueCreate.success) {
-        created.push({ taskId: t.id, issueId: r.issueCreate.issue.id, url: r.issueCreate.issue.url });
+        created.push({
+          taskId: t.id,
+          issueId: r.issueCreate.issue.id,
+          url: r.issueCreate.issue.url,
+        });
         await supabase.from("sync_mappings").insert({
           user_id: userId,
           provider: "linear",

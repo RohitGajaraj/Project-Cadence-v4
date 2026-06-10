@@ -5,11 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const submitFeedback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      eventId: z.string().uuid(),
-      rating: z.number().int().min(-1).max(1),
-      comment: z.string().max(2000).optional(),
-    }).parse(i),
+    z
+      .object({
+        eventId: z.string().uuid(),
+        rating: z.number().int().min(-1).max(1),
+        comment: z.string().max(2000).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.from("ai_feedback").insert({

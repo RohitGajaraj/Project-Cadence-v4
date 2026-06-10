@@ -4,10 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}))
+  .inputValidator((input: unknown) =>
+    z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
   .handler(async ({ context, data }) => {
     let workspaceId = data.workspaceId;
-    
+
     // Fallback to default workspace if not provided
     if (!workspaceId) {
       const { data: memberRows } = await context.supabase
@@ -32,14 +34,17 @@ export const listProjects = createServerFn({ method: "GET" })
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const { data: tasks } = await context.supabase
-      .from("tasks")
-      .select("id,status,project_id");
+    const { data: tasks } = await context.supabase.from("tasks").select("id,status,project_id");
     const stats = (projects ?? []).map((p) => {
       const projectTasks = (tasks ?? []).filter((t) => t.project_id === p.id);
       const done = projectTasks.filter((t) => t.status === "done").length;
       const total = projectTasks.length;
-      return { ...p, task_total: total, task_done: done, progress: total ? Math.round((done / total) * 100) : 0 };
+      return {
+        ...p,
+        task_total: total,
+        task_done: done,
+        progress: total ? Math.round((done / total) * 100) : 0,
+      };
     });
     return { projects: stats };
   });
@@ -58,7 +63,7 @@ export const createProject = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { workspaceId: inputWorkspaceId, ...rest } = data;
     let workspaceId = inputWorkspaceId;
-    
+
     if (!workspaceId) {
       const { data: memberRows } = await context.supabase
         .from("workspace_members")

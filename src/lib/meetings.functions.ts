@@ -9,7 +9,9 @@ export const listMeetings = createServerFn({ method: "GET" })
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await context.supabase
       .from("meetings")
-      .select("id,title,start_at,end_at,stakeholder,summary,processed_at,action_items,decisions_made")
+      .select(
+        "id,title,start_at,end_at,stakeholder,summary,processed_at,action_items,decisions_made",
+      )
       .gte("start_at", since)
       .order("start_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -21,7 +23,10 @@ export const getMeeting = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { data: row, error } = await context.supabase
-      .from("meetings").select("*").eq("id", data.id).single();
+      .from("meetings")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error) throw new Error(error.message);
     return { meeting: row };
   });
@@ -33,7 +38,9 @@ export const saveTranscript = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
-      .from("meetings").update({ transcript: data.transcript }).eq("id", data.id);
+      .from("meetings")
+      .update({ transcript: data.transcript })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -72,7 +79,12 @@ export const deleteMeeting = createServerFn({ method: "POST" })
 
 type ExtractResult = {
   summary: string;
-  action_items: { title: string; owner?: string; estimate_hours?: number; is_deep_work?: boolean }[];
+  action_items: {
+    title: string;
+    owner?: string;
+    estimate_hours?: number;
+    is_deep_work?: boolean;
+  }[];
   decisions: { title: string; rationale?: string }[];
   open_questions: string[];
 };
@@ -86,9 +98,13 @@ export const extractMeeting = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const { data: m, error } = await supabase
-      .from("meetings").select("*").eq("id", data.id).single();
+      .from("meetings")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error || !m) throw new Error("Meeting not found");
-    if (!m.transcript || m.transcript.trim().length < 20) throw new Error("Add a transcript first.");
+    if (!m.transcript || m.transcript.trim().length < 20)
+      throw new Error("Add a transcript first.");
 
     const system = `You are a meticulous chief of staff. Read the meeting transcript and return STRICT JSON only.
 Schema:
@@ -108,7 +124,10 @@ Rules: be terse, no markdown fences, no prose outside JSON.`;
       responseFormat: "json_object",
       messages: [
         { role: "system", content: system },
-        { role: "user", content: `Meeting: ${m.title}\nStakeholder: ${m.stakeholder ?? "n/a"}\n\nTranscript:\n${m.transcript.slice(0, 60_000)}` },
+        {
+          role: "user",
+          content: `Meeting: ${m.title}\nStakeholder: ${m.stakeholder ?? "n/a"}\n\nTranscript:\n${m.transcript.slice(0, 60_000)}`,
+        },
       ],
     });
     const parsed = (result.json ?? null) as ExtractResult | null;

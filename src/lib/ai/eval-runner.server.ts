@@ -12,16 +12,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { callModel } from "./runtime.server";
 
 type Suite = {
-  id: string; user_id: string; name: string;
-  surface: string; prompt_key: string | null;
-  model: string | null; judge_model: string;
+  id: string;
+  user_id: string;
+  name: string;
+  surface: string;
+  prompt_key: string | null;
+  model: string | null;
+  judge_model: string;
   pass_threshold: number;
 };
 
 type Case = {
-  id: string; name: string; input: string;
-  expected: string | null; rubric: string | null;
-  weight: number; enabled: boolean;
+  id: string;
+  name: string;
+  input: string;
+  expected: string | null;
+  rubric: string | null;
+  weight: number;
+  enabled: boolean;
 };
 
 const JUDGE_SYSTEM = `You are a strict AI output evaluator. Score the candidate output on a 0-100 scale where 100 is perfect and 0 is unusable. Consider correctness, completeness, format adherence, and the rubric (if provided). When an expected output is given, weight similarity heavily but allow semantically equivalent phrasings. Respond ONLY with strict JSON: {"score": number, "passed": boolean, "reasoning": string}.`;
@@ -41,7 +49,10 @@ Pass threshold: ${passThreshold}. Return {"score": 0-100, "passed": boolean, "re
 
 function parseJudge(text: string): { score: number; passed: boolean; reasoning: string } {
   try {
-    const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+    const cleaned = text
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/, "");
     const j = JSON.parse(cleaned);
     const score = Math.max(0, Math.min(100, Math.round(Number(j.score) || 0)));
     return {
@@ -62,12 +73,21 @@ export async function runEvalSuite(
   userId: string,
   suiteId: string,
   trigger: "manual" | "scheduled" = "manual",
-): Promise<{ run_id: string; total: number; passed: number; failed: number; errored: number; avg_score: number | null }> {
+): Promise<{
+  run_id: string;
+  total: number;
+  passed: number;
+  failed: number;
+  errored: number;
+  avg_score: number | null;
+}> {
   // Load suite
   const { data: suiteRow, error: sErr } = await supabase
     .from("eval_suites")
     .select("id,user_id,name,surface,prompt_key,model,judge_model,pass_threshold")
-    .eq("id", suiteId).eq("user_id", userId).single();
+    .eq("id", suiteId)
+    .eq("user_id", userId)
+    .single();
   if (sErr || !suiteRow) throw new Error(sErr?.message ?? "Suite not found");
   const suite = suiteRow as Suite;
 
@@ -75,38 +95,51 @@ export async function runEvalSuite(
   let promptVersionId: string | null = null;
   if (suite.prompt_key) {
     const { data: tpl } = await supabase
-      .from("prompt_templates").select("active_version_id")
-      .eq("user_id", userId).eq("surface", suite.surface).eq("key", suite.prompt_key).maybeSingle();
-    promptVersionId = (tpl as { active_version_id: string | null } | null)?.active_version_id ?? null;
+      .from("prompt_templates")
+      .select("active_version_id")
+      .eq("user_id", userId)
+      .eq("surface", suite.surface)
+      .eq("key", suite.prompt_key)
+      .maybeSingle();
+    promptVersionId =
+      (tpl as { active_version_id: string | null } | null)?.active_version_id ?? null;
   }
 
   // Load enabled cases
   const { data: caseRows } = await supabase
     .from("eval_cases")
     .select("id,name,input,expected,rubric,weight,enabled")
-    .eq("suite_id", suite.id).eq("user_id", userId);
+    .eq("suite_id", suite.id)
+    .eq("user_id", userId);
   const cases = ((caseRows ?? []) as Case[]).filter((c) => c.enabled !== false);
 
   const model = suite.model || "google/gemini-2.5-flash";
   const judgeModel = suite.judge_model || "google/gemini-2.5-flash";
 
   // Create run
-  const { data: runRow, error: rErr } = await supabase.from("eval_runs").insert({
-    user_id: userId,
-    suite_id: suite.id,
-    prompt_version_id: promptVersionId,
-    model,
-    judge_model: judgeModel,
-    status: "running",
-    trigger,
-    total_cases: cases.length,
-  }).select("id").single();
+  const { data: runRow, error: rErr } = await supabase
+    .from("eval_runs")
+    .insert({
+      user_id: userId,
+      suite_id: suite.id,
+      prompt_version_id: promptVersionId,
+      model,
+      judge_model: judgeModel,
+      status: "running",
+      trigger,
+      total_cases: cases.length,
+    })
+    .select("id")
+    .single();
   if (rErr || !runRow) throw new Error(rErr?.message ?? "Failed to create run");
   const runId = (runRow as { id: string }).id;
 
-  let passed = 0, failed = 0, errored = 0;
+  let passed = 0,
+    failed = 0,
+    errored = 0;
   const scores: number[] = [];
-  let totalCost = 0, totalLatency = 0;
+  let totalCost = 0,
+    totalLatency = 0;
 
   for (const c of cases) {
     try {
@@ -123,12 +156,17 @@ export async function runEvalSuite(
 
       if (subject.status !== "ok") {
         await supabase.from("eval_case_results").insert({
-          run_id: runId, case_id: c.id, user_id: userId,
-          status: "error", actual: subject.output ?? null,
+          run_id: runId,
+          case_id: c.id,
+          user_id: userId,
+          status: "error",
+          actual: subject.output ?? null,
           ai_event_id: subject.eventId,
           error: subject.error ?? "Subject call failed",
-          prompt_tokens: subject.prompt_tokens, completion_tokens: subject.completion_tokens,
-          cost_usd: subject.est_cost_usd, latency_ms: subject.latency_ms,
+          prompt_tokens: subject.prompt_tokens,
+          completion_tokens: subject.completion_tokens,
+          cost_usd: subject.est_cost_usd,
+          latency_ms: subject.latency_ms,
         });
         errored++;
         totalCost += subject.est_cost_usd || 0;
@@ -152,7 +190,8 @@ export async function runEvalSuite(
 
       const verdict = parseJudge(judge.output);
       const isPassed = verdict.score >= suite.pass_threshold;
-      if (isPassed) passed++; else failed++;
+      if (isPassed) passed++;
+      else failed++;
       scores.push(verdict.score);
 
       const caseCost = (subject.est_cost_usd || 0) + (judge.est_cost_usd || 0);
@@ -161,7 +200,9 @@ export async function runEvalSuite(
       totalLatency += caseLatency;
 
       await supabase.from("eval_case_results").insert({
-        run_id: runId, case_id: c.id, user_id: userId,
+        run_id: runId,
+        case_id: c.id,
+        user_id: userId,
         status: isPassed ? "passed" : "failed",
         actual: subject.output,
         score: verdict.score,
@@ -177,7 +218,9 @@ export async function runEvalSuite(
     } catch (e: unknown) {
       errored++;
       await supabase.from("eval_case_results").insert({
-        run_id: runId, case_id: c.id, user_id: userId,
+        run_id: runId,
+        case_id: c.id,
+        user_id: userId,
         status: "error",
         error: e instanceof Error ? e.message : String(e),
       });
@@ -186,20 +229,26 @@ export async function runEvalSuite(
 
   const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
 
-  await supabase.from("eval_runs").update({
-    status: errored === cases.length && cases.length > 0 ? "error" : "completed",
-    pass_count: passed,
-    fail_count: failed,
-    errored,
-    avg_score: avgScore,
-    total_cost_usd: totalCost,
-    total_latency_ms: totalLatency,
-    completed_at: new Date().toISOString(),
-  }).eq("id", runId);
+  await supabase
+    .from("eval_runs")
+    .update({
+      status: errored === cases.length && cases.length > 0 ? "error" : "completed",
+      pass_count: passed,
+      fail_count: failed,
+      errored,
+      avg_score: avgScore,
+      total_cost_usd: totalCost,
+      total_latency_ms: totalLatency,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", runId);
 
-  await supabase.from("eval_suites").update({
-    last_run_at: new Date().toISOString(),
-  }).eq("id", suite.id);
+  await supabase
+    .from("eval_suites")
+    .update({
+      last_run_at: new Date().toISOString(),
+    })
+    .eq("id", suite.id);
 
   return { run_id: runId, total: cases.length, passed, failed, errored, avg_score: avgScore };
 }

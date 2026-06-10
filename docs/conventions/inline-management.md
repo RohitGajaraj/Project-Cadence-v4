@@ -4,11 +4,11 @@
 
 **Current implementation.**
 
-| Surface | Where | Actions |
-|---|---|---|
-| Workspace switcher | `AppShell` top-left popover | Switch · Rename · Workspace settings · Leave · Delete (typed-name) · Create workspace |
-| Product rows | Sidebar, `MoreHorizontal` dropdown per row | Set active · Rename · Delete (typed-name) |
-| Workspace Strategic brief | `Settings` → inline section (deep-linked via `/settings?section=brief`) | Edit + Save; reused by every agent mission (no separate page) |
+| Surface                   | Where                                                                   | Actions                                                                               |
+| ------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Workspace switcher        | `AppShell` top-left popover                                             | Switch · Rename · Workspace settings · Leave · Delete (typed-name) · Create workspace |
+| Product rows              | Sidebar, `MoreHorizontal` dropdown per row                              | Set active · Rename · Delete (typed-name)                                             |
+| Workspace Strategic brief | `Settings` → inline section (deep-linked via `/settings?section=brief`) | Edit + Save; reused by every agent mission (no separate page)                         |
 
 **Server functions.**
 
@@ -28,7 +28,7 @@ All `requireSupabaseAuth`; owner-gated via RLS on `workspaces` / `workspace_memb
 A top-level (pinned) nav item must pass **all three** tests:
 
 1. **Daily use.** The operator opens it most days.
-2. **Active workflow entry.** It's where you go to *do* work, not to set context.
+2. **Active workflow entry.** It's where you go to _do_ work, not to set context.
 3. **Not derivable from another pinned surface.** It can't be reached one click from something already pinned.
 
 If it fails any test, it lives **inside a group**, **inside a parent surface** (tab / sheet / inline section), or in **Settings**. The pinned rail is for verbs, not for context.

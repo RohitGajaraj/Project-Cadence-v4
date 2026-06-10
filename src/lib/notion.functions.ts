@@ -17,12 +17,24 @@ function headers() {
 }
 
 type TTMark = { type: string; attrs?: Record<string, unknown> };
-type TTNode = { type: string; attrs?: Record<string, unknown>; content?: TTNode[]; marks?: TTMark[]; text?: string };
+type TTNode = {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: TTNode[];
+  marks?: TTMark[];
+  text?: string;
+};
 
 type NRich = {
   plain_text?: string;
   text?: { content?: string; link?: { url: string } | null };
-  annotations?: { bold?: boolean; italic?: boolean; underline?: boolean; strikethrough?: boolean; code?: boolean };
+  annotations?: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    code?: boolean;
+  };
   href?: string | null;
 };
 type NBlock = {
@@ -99,20 +111,56 @@ function rtToTiptap(rt: NRich[] | undefined): TTNode[] {
 
 function blockToTiptap(b: NBlock): TTNode | null {
   switch (b.type) {
-    case "paragraph": return { type: "paragraph", content: rtToTiptap(b.paragraph?.rich_text) };
-    case "heading_1": return { type: "heading", attrs: { level: 1 }, content: rtToTiptap(b.heading_1?.rich_text) };
-    case "heading_2": return { type: "heading", attrs: { level: 2 }, content: rtToTiptap(b.heading_2?.rich_text) };
-    case "heading_3": return { type: "heading", attrs: { level: 3 }, content: rtToTiptap(b.heading_3?.rich_text) };
+    case "paragraph":
+      return { type: "paragraph", content: rtToTiptap(b.paragraph?.rich_text) };
+    case "heading_1":
+      return { type: "heading", attrs: { level: 1 }, content: rtToTiptap(b.heading_1?.rich_text) };
+    case "heading_2":
+      return { type: "heading", attrs: { level: 2 }, content: rtToTiptap(b.heading_2?.rich_text) };
+    case "heading_3":
+      return { type: "heading", attrs: { level: 3 }, content: rtToTiptap(b.heading_3?.rich_text) };
     case "bulleted_list_item":
-      return { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: rtToTiptap(b.bulleted_list_item?.rich_text) }] }] };
+      return {
+        type: "bulletList",
+        content: [
+          {
+            type: "listItem",
+            content: [{ type: "paragraph", content: rtToTiptap(b.bulleted_list_item?.rich_text) }],
+          },
+        ],
+      };
     case "numbered_list_item":
-      return { type: "orderedList", content: [{ type: "listItem", content: [{ type: "paragraph", content: rtToTiptap(b.numbered_list_item?.rich_text) }] }] };
+      return {
+        type: "orderedList",
+        content: [
+          {
+            type: "listItem",
+            content: [{ type: "paragraph", content: rtToTiptap(b.numbered_list_item?.rich_text) }],
+          },
+        ],
+      };
     case "to_do":
-      return { type: "taskList", content: [{ type: "taskItem", attrs: { checked: !!b.to_do?.checked }, content: [{ type: "paragraph", content: rtToTiptap(b.to_do?.rich_text) }] }] };
+      return {
+        type: "taskList",
+        content: [
+          {
+            type: "taskItem",
+            attrs: { checked: !!b.to_do?.checked },
+            content: [{ type: "paragraph", content: rtToTiptap(b.to_do?.rich_text) }],
+          },
+        ],
+      };
     case "quote":
-      return { type: "blockquote", content: [{ type: "paragraph", content: rtToTiptap(b.quote?.rich_text) }] };
+      return {
+        type: "blockquote",
+        content: [{ type: "paragraph", content: rtToTiptap(b.quote?.rich_text) }],
+      };
     case "code":
-      return { type: "codeBlock", attrs: { language: b.code?.language ?? null }, content: rtToTiptap(b.code?.rich_text) };
+      return {
+        type: "codeBlock",
+        attrs: { language: b.code?.language ?? null },
+        content: rtToTiptap(b.code?.rich_text),
+      };
     case "divider":
       return { type: "horizontalRule" };
     default:
@@ -125,7 +173,10 @@ function pageTitle(p: NPage): string {
   for (const k of Object.keys(props)) {
     const v = props[k];
     if (v?.type === "title" && Array.isArray(v.title)) {
-      return v.title.map((t) => t.plain_text ?? t.text?.content ?? "").join("").trim();
+      return v.title
+        .map((t) => t.plain_text ?? t.text?.content ?? "")
+        .join("")
+        .trim();
     }
   }
   return "Untitled";
@@ -133,7 +184,10 @@ function pageTitle(p: NPage): string {
 
 function extractText(n: TTNode): string {
   if (n.text) return n.text;
-  if (n.content) return n.content.map(extractText).join(n.type === "paragraph" || n.type === "heading" ? "\n" : "");
+  if (n.content)
+    return n.content
+      .map(extractText)
+      .join(n.type === "paragraph" || n.type === "heading" ? "\n" : "");
   return "";
 }
 
@@ -141,12 +195,14 @@ async function fetchAllChildren(blockId: string): Promise<NBlock[]> {
   const all: NBlock[] = [];
   let cursor: string | undefined;
   do {
-    const qs = cursor ? `?start_cursor=${encodeURIComponent(cursor)}&page_size=100` : `?page_size=100`;
+    const qs = cursor
+      ? `?start_cursor=${encodeURIComponent(cursor)}&page_size=100`
+      : `?page_size=100`;
     const data = await nGet<{ results: NBlock[]; has_more?: boolean; next_cursor?: string | null }>(
       `/blocks/${encodeURIComponent(blockId)}/children${qs}`,
     );
     all.push(...(data.results ?? []));
-    cursor = data.has_more ? data.next_cursor ?? undefined : undefined;
+    cursor = data.has_more ? (data.next_cursor ?? undefined) : undefined;
   } while (cursor);
   return all;
 }
@@ -174,10 +230,12 @@ export const searchNotionPages = createServerFn({ method: "POST" })
 export const importNotionPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      urlOrId: z.string().min(8).max(500),
-      parent_id: z.string().uuid().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        urlOrId: z.string().min(8).max(500),
+        parent_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

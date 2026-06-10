@@ -30,13 +30,21 @@ export function TracesPanel() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2 text-xs">
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))}
-          className="rounded-md border border-border bg-background px-2 py-1.5">
-          <option value={1}>24h</option><option value={7}>7d</option>
-          <option value={14}>14d</option><option value={30}>30d</option>
+        <select
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className="rounded-md border border-border bg-background px-2 py-1.5"
+        >
+          <option value={1}>24h</option>
+          <option value={7}>7d</option>
+          <option value={14}>14d</option>
+          <option value={30}>30d</option>
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value as "all" | "ok" | "error")}
-          className="rounded-md border border-border bg-background px-2 py-1.5">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as "all" | "ok" | "error")}
+          className="rounded-md border border-border bg-background px-2 py-1.5"
+        >
           <option value="all">All</option>
           <option value="ok">Successful</option>
           <option value="error">Errors</option>
@@ -74,7 +82,9 @@ export function TracesPanel() {
                     {new Date(t.last_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-2">
-                    <span className="rounded-md border border-border px-1.5 py-0.5 text-[11px] font-mono">{t.root_surface}</span>
+                    <span className="rounded-md border border-border px-1.5 py-0.5 text-[11px] font-mono">
+                      {t.root_surface}
+                    </span>
                     {t.errors > 0 && (
                       <span className="ml-2 inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[10px] text-rose-300">
                         <AlertTriangle className="h-3 w-3" /> {t.errors}
@@ -82,8 +92,12 @@ export function TracesPanel() {
                     )}
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">{t.spans}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{fmtMs(t.wall_ms || t.latency_ms)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{fmtMs(t.latency_ms)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                    {fmtMs(t.wall_ms || t.latency_ms)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                    {fmtMs(t.latency_ms)}
+                  </td>
                   <td className="px-4 py-2 text-right tabular-nums">{t.tokens.toLocaleString()}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{fmtUsd(t.cost)}</td>
                   <td className="px-4 py-2 text-[11px] text-muted-foreground truncate max-w-[200px]">

@@ -39,8 +39,12 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
           const resumed: string[] = [];
           const failed: { id: string; error: string }[] = [];
           for (const id of ids) {
-            try { await resumeAgentLoop(supabaseAdmin, id); resumed.push(id); }
-            catch (e) { failed.push({ id, error: e instanceof Error ? e.message : String(e) }); }
+            try {
+              await resumeAgentLoop(supabaseAdmin, id);
+              resumed.push(id);
+            } catch (e) {
+              failed.push({ id, error: e instanceof Error ? e.message : String(e) });
+            }
           }
           return new Response(JSON.stringify({ ok: true, resumed, failed }), {
             headers: { "Content-Type": "application/json" },

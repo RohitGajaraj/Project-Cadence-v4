@@ -52,7 +52,17 @@ export type MissionDetail = {
 
 export type HopStep =
   | { kind: "thought"; text: string }
-  | { kind: "tool_call"; name: string; args: JsonValue; reason?: string; ok: boolean; result?: JsonValue; error?: string; approval_id?: string; status: "executed" | "queued" | "error" | "denied" }
+  | {
+      kind: "tool_call";
+      name: string;
+      args: JsonValue;
+      reason?: string;
+      ok: boolean;
+      result?: JsonValue;
+      error?: string;
+      approval_id?: string;
+      status: "executed" | "queued" | "error" | "denied";
+    }
   | { kind: "final"; message: string };
 
 export type HopToolCall = {
@@ -79,9 +89,7 @@ export const listMissions = createServerFn({ method: "GET" })
 
 export const getMission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { missionId: string }) =>
-    z.object({ missionId: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: { missionId: string }) => z.object({ missionId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<MissionDetail> => {
     const { supabase } = context;
     const { data: mission, error } = await supabase
@@ -101,7 +109,9 @@ export const getMission = createServerFn({ method: "POST" })
 
     const { data: messages } = await supabase
       .from("agent_messages")
-      .select("id,from_agent_slug,to_agent_slug,kind,payload,source_run_id,source_trace_id,consumed_by_run_id,created_at")
+      .select(
+        "id,from_agent_slug,to_agent_slug,kind,payload,source_run_id,source_trace_id,consumed_by_run_id,created_at",
+      )
       .eq("mission_id", data.missionId)
       .order("created_at", { ascending: true });
 
@@ -113,10 +123,22 @@ export const getMission = createServerFn({ method: "POST" })
           .select("run_id,step_index,state,created_at")
           .in("run_id", runIds)
           .order("step_index", { ascending: false })
-      : { data: [] as { run_id: string; step_index: number; state: Record<string, unknown>; created_at: string }[] };
+      : {
+          data: [] as {
+            run_id: string;
+            step_index: number;
+            state: Record<string, unknown>;
+            created_at: string;
+          }[],
+        };
     const latestByRun = new Map<string, { step_index: number; state: Record<string, unknown> }>();
-    for (const row of (cps ?? []) as { run_id: string; step_index: number; state: Record<string, unknown> }[]) {
-      if (!latestByRun.has(row.run_id)) latestByRun.set(row.run_id, { step_index: row.step_index, state: row.state });
+    for (const row of (cps ?? []) as {
+      run_id: string;
+      step_index: number;
+      state: Record<string, unknown>;
+    }[]) {
+      if (!latestByRun.has(row.run_id))
+        latestByRun.set(row.run_id, { step_index: row.step_index, state: row.state });
     }
     const traceIds = [...latestByRun.values()]
       .map((cp) => (cp.state as { traceId?: string }).traceId)
@@ -127,11 +149,36 @@ export const getMission = createServerFn({ method: "POST" })
           .select("id,trace_id,tool_name,ok,error,latency_ms,created_at")
           .in("trace_id", traceIds)
           .order("created_at", { ascending: true })
-      : { data: [] as { id: string; trace_id: string; tool_name: string; ok: boolean; error: string | null; latency_ms: number; created_at: string }[] };
+      : {
+          data: [] as {
+            id: string;
+            trace_id: string;
+            tool_name: string;
+            ok: boolean;
+            error: string | null;
+            latency_ms: number;
+            created_at: string;
+          }[],
+        };
     const tcByTrace = new Map<string, HopToolCall[]>();
-    for (const t of (tcs ?? []) as { id: string; trace_id: string; tool_name: string; ok: boolean; error: string | null; latency_ms: number; created_at: string }[]) {
+    for (const t of (tcs ?? []) as {
+      id: string;
+      trace_id: string;
+      tool_name: string;
+      ok: boolean;
+      error: string | null;
+      latency_ms: number;
+      created_at: string;
+    }[]) {
       const arr = tcByTrace.get(t.trace_id) ?? [];
-      arr.push({ id: t.id, tool_name: t.tool_name, ok: t.ok, error: t.error, latency_ms: t.latency_ms, created_at: t.created_at });
+      arr.push({
+        id: t.id,
+        tool_name: t.tool_name,
+        ok: t.ok,
+        error: t.error,
+        latency_ms: t.latency_ms,
+        created_at: t.created_at,
+      });
       tcByTrace.set(t.trace_id, arr);
     }
 
@@ -153,7 +200,7 @@ export const getMission = createServerFn({ method: "POST" })
           trace_id: traceId,
           step_index: cp?.step_index ?? 0,
           steps: Array.isArray(state.steps) ? state.steps : [],
-          tool_calls: traceId ? tcByTrace.get(traceId) ?? [] : [],
+          tool_calls: traceId ? (tcByTrace.get(traceId) ?? []) : [],
         };
       }),
       messages: (messages ?? []) as MissionDetail["messages"],

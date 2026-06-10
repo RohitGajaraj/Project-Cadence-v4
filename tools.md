@@ -1,44 +1,9 @@
-# tools.md — Tool conventions
+# tools.md
 
-> When to use which tool. Keeps tool calls cheap, correct, and reviewable. Operating rules: [`AGENTS.md`](./AGENTS.md). This file was referenced across the docs but missing — it now exists.
-
-## File and search tools (use the dedicated tool, not Bash)
-
-| Need | Tool | Not |
-|---|---|---|
-| Find files by name/pattern | `Glob` | `find`, `ls` |
-| Search file contents | `Grep` | `grep`, `rg` in Bash |
-| Read a known file | `Read` | `cat`, `head`, `tail` |
-| Edit an existing file | `Edit` | `sed`, `awk` |
-| Create / fully rewrite a file | `Write` | `echo >`, heredoc |
-| Open-ended multi-round search | `Agent` (Explore) | repeated manual greps |
-
-Reserve `Bash` for actually running things (installs, builds, tests, migrations, git). Quote paths with spaces.
-
-## Read/Edit/Write discipline
-- **Read before Edit/Write on existing files.** The tools track read-state by absolute path. After any `mv`/`git mv`, re-Read at the new path (see [`AGENTS.md`](./AGENTS.md), section 7).
-- **Prefer `Edit` over `Write` for changes** — it sends only the diff. Use `Write` for new files or full rewrites.
-- **Surgical edits only.** Every changed line traces to the task ([`AGENTS.md`](./AGENTS.md), section 3).
-
-## Bash discipline
-- Batch independent commands into one message with parallel calls; chain dependent ones with `&&`.
-- Use `run_in_background` for long-running processes; do not poll with `sleep`.
-- Package managers: `npm`/`bun` as the repo uses; for Python use the repo's environment convention.
-- Never run destructive git (`reset --hard`, `push --force`, branch delete) without explicit approval. See [`commits.md`](./commits.md).
-
-## Tasks
-- Create tasks for any multi-step work; set `in_progress` when starting, `completed` when done.
-- Do not batch-complete at the end — update as you go ([`AGENTS.md`](./AGENTS.md), section 1).
-- Include a verification step for non-trivial work (tests, screenshots, diff review).
-
-## Subagents (Agent/Task tool)
-- Selection and briefing guidance: [`subagents.md`](./subagents.md).
-- Launch independent subagents in a single message to run them concurrently.
-- Verify a code-writing subagent's diff before reporting done.
-
-## Web and docs
-- For library docs, prefer the `context7-plugin` over raw web fetch.
-- For current facts, search before answering — do not rely on training for present-day state.
-
-## Product / runtime tools (inside the app)
-Tool calls *the product's agents* make (e.g. `search_workspace`, `create_task`, `create_linear_issue`, `write_doc`, `run_eval`, `delegate_to_agent`) are a product capability with their own allow-list and audit log. Their contract lives in [`architecture/runtime.md`](./architecture/runtime.md) and [`architecture/integrations.md`](./architecture/integrations.md) — not here.
+> [!IMPORTANT]
+> **DOCUMENT REDIRECT & RE-ROUTING (CADENCE ➔ CIRCUIT)**
+> As part of the documentation restructuring and strategic pivot to **Circuit** (B2B Enterprise Product Cockpit), this file has been relocated to keep the repository layout clean.
+>
+> **New Path:** [tools.md](file:///Users/rohitgajaraj/Documents/My%20Projects/My%20Builds/project-Cadence-v3/docs/operations/tools.md)
+>
+> _Note for co-developing tools (Claude Code, Antigravity, Gemini, Lovable): This file is a redirection pointer to prevent broken references during concurrent development. Please use the link above to view/edit the active document._

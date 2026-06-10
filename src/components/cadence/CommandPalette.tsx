@@ -2,7 +2,19 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
 import {
-  Home, Bot, ListTodo, MessageSquare, Settings, Sparkles, Search, Telescope, Target, FileText, Map, Calendar, Activity,
+  Home,
+  Bot,
+  ListTodo,
+  MessageSquare,
+  Settings,
+  Sparkles,
+  Search,
+  Telescope,
+  Target,
+  FileText,
+  Map,
+  Calendar,
+  Activity,
 } from "lucide-react";
 
 export function CommandPalette() {
@@ -45,26 +57,68 @@ export function CommandPalette() {
                 placeholder="Search Cadence — navigate, ask AI, run agents…"
                 className="flex-1 bg-transparent py-3.5 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="text-[10px] text-muted-foreground border hairline rounded px-1.5 py-0.5">ESC</kbd>
+              <kbd className="text-[10px] text-muted-foreground border hairline rounded px-1.5 py-0.5">
+                ESC
+              </kbd>
             </div>
             <Command.List className="max-h-[360px] overflow-y-auto p-2 scrollbar-thin">
               <Command.Empty className="px-3 py-6 text-center text-xs text-muted-foreground">
                 No matches. Try "today", "tasks", "chat"…
               </Command.Empty>
-              <Command.Group heading="Navigate" className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5">
-                <Item icon={Home} label="Today · Mission Control" hint="G D" onSelect={() => go("/")} />
+              <Command.Group
+                heading="Navigate"
+                className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5"
+              >
+                <Item
+                  icon={Home}
+                  label="Today · Mission Control"
+                  hint="G D"
+                  onSelect={() => go("/")}
+                />
                 <Item icon={MessageSquare} label="Chat" hint="G C" onSelect={() => go("/chat")} />
                 <Item icon={Bot} label="Agents" hint="G A" onSelect={() => go("/agents")} />
-                <Item icon={Telescope} label="Discovery · Signals & themes" hint="G I" onSelect={() => go("/discovery")} />
-                <Item icon={Target} label="Opportunities" hint="G O" onSelect={() => go("/opportunities")} />
+                <Item
+                  icon={Telescope}
+                  label="Discovery · Signals & themes"
+                  hint="G I"
+                  onSelect={() => go("/discovery")}
+                />
+                <Item
+                  icon={Target}
+                  label="Opportunities"
+                  hint="G O"
+                  onSelect={() => go("/opportunities")}
+                />
                 <Item icon={FileText} label="PRDs" hint="G P" onSelect={() => go("/prds")} />
-                <Item icon={Map} label="Roadmap · Now/Next/Later" hint="G R" onSelect={() => go("/roadmap")} />
-                <Item icon={Calendar} label="Calendar · time & meeting capture" hint="G M" onSelect={() => go("/calendar")} />
+                <Item
+                  icon={Map}
+                  label="Roadmap · Now/Next/Later"
+                  hint="G R"
+                  onSelect={() => go("/roadmap")}
+                />
+                <Item
+                  icon={Calendar}
+                  label="Calendar · time & meeting capture"
+                  hint="G M"
+                  onSelect={() => go("/calendar")}
+                />
                 <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
-                <Item icon={Activity} label="Observe · analytics, traces, drift" onSelect={() => go("/observe")} />
-                <Item icon={Settings} label="Settings & profile" hint="G S" onSelect={() => go("/settings")} />
+                <Item
+                  icon={Activity}
+                  label="Observe · analytics, traces, drift"
+                  onSelect={() => go("/observe")}
+                />
+                <Item
+                  icon={Settings}
+                  label="Settings & profile"
+                  hint="G S"
+                  onSelect={() => go("/settings")}
+                />
               </Command.Group>
-              <Command.Group heading="Quick actions" className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5">
+              <Command.Group
+                heading="Quick actions"
+                className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground px-2 py-1.5"
+              >
                 <Item icon={Sparkles} label="Ask AI anything…" onSelect={() => go("/chat")} />
               </Command.Group>
             </Command.List>
@@ -76,8 +130,16 @@ export function CommandPalette() {
 }
 
 function Item({
-  icon: Icon, label, hint, onSelect,
-}: { icon: React.ComponentType<{ className?: string }>; label: string; hint?: string; onSelect: () => void }) {
+  icon: Icon,
+  label,
+  hint,
+  onSelect,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  hint?: string;
+  onSelect: () => void;
+}) {
   return (
     <Command.Item
       onSelect={onSelect}
@@ -85,7 +147,11 @@ function Item({
     >
       <Icon className="h-4 w-4" />
       <span className="flex-1">{label}</span>
-      {hint && <kbd className="text-[10px] text-muted-foreground border hairline rounded px-1.5 py-0.5">{hint}</kbd>}
+      {hint && (
+        <kbd className="text-[10px] text-muted-foreground border hairline rounded px-1.5 py-0.5">
+          {hint}
+        </kbd>
+      )}
     </Command.Item>
   );
 }
@@ -98,7 +164,8 @@ export function GotoShortcuts() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable)
+        return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (!waiting && e.key.toLowerCase() === "g") {
         waiting = true;
@@ -110,8 +177,16 @@ export function GotoShortcuts() {
         waiting = false;
         if (timer) clearTimeout(timer);
         const map: Record<string, string> = {
-          d: "/", c: "/chat", a: "/agents", t: "/tasks", s: "/settings",
-          i: "/discovery", o: "/opportunities", p: "/prds", r: "/roadmap", m: "/calendar",
+          d: "/",
+          c: "/chat",
+          a: "/agents",
+          t: "/tasks",
+          s: "/settings",
+          i: "/discovery",
+          o: "/opportunities",
+          p: "/prds",
+          r: "/roadmap",
+          m: "/calendar",
         };
         const to = map[e.key.toLowerCase()];
         if (to) {

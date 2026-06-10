@@ -20,11 +20,18 @@ export const Route = createFileRoute("/api/public/hooks/drift-tick")({
           .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString());
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
-            status: 500, headers: { "Content-Type": "application/json" },
+            status: 500,
+            headers: { "Content-Type": "application/json" },
           });
         }
         const uniqueUsers = Array.from(new Set((users ?? []).map((u: any) => u.user_id)));
-        const results: Array<{ user_id: string; snapshots?: number; opened?: number; resolved?: number; error?: string }> = [];
+        const results: Array<{
+          user_id: string;
+          snapshots?: number;
+          opened?: number;
+          resolved?: number;
+          error?: string;
+        }> = [];
         for (const userId of uniqueUsers) {
           try {
             const r = await runDriftForUser(supabaseAdmin, userId);

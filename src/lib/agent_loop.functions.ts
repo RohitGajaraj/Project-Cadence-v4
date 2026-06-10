@@ -21,8 +21,12 @@ export const runAgent = createServerFn({ method: "POST" })
       // Resolve workspace + starting agent, create mission, then run.
       const { data: ws } = await supabase.rpc("current_user_default_workspace");
       const workspaceId = (ws as string | null) ?? null;
-      const { data: agent } = await supabase.from("agents")
-        .select("id").eq("user_id", userId).eq("slug", data.agentSlug).maybeSingle();
+      const { data: agent } = await supabase
+        .from("agents")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("slug", data.agentSlug)
+        .maybeSingle();
       if (workspaceId && agent) {
         const { createMission } = await import("@/lib/ai/handoff.server");
         const m = await createMission(supabase, userId, workspaceId, {
@@ -39,11 +43,17 @@ export const runAgent = createServerFn({ method: "POST" })
 
 export const listApprovals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { status?: "pending" | "approved" | "rejected" | "executed" | "failed" | "all" } | undefined) =>
-    input ?? { status: "pending" as const })
+  .inputValidator(
+    (
+      input:
+        | { status?: "pending" | "approved" | "rejected" | "executed" | "failed" | "all" }
+        | undefined,
+    ) => input ?? { status: "pending" as const },
+  )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    let q = supabase.from("agent_approvals")
+    let q = supabase
+      .from("agent_approvals")
       .select("id,agent_slug,tool_name,args,rationale,status,created_at,decided_at,result,error")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -66,9 +76,15 @@ export const decideApproval = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const status = data.decision === "approve" ? "approved" : "rejected";
-    const { error } = await supabase.from("agent_approvals").update({
-      status, decided_at: new Date().toISOString(), decided_by: userId,
-    }).eq("id", data.approvalId).eq("user_id", userId);
+    const { error } = await supabase
+      .from("agent_approvals")
+      .update({
+        status,
+        decided_at: new Date().toISOString(),
+        decided_by: userId,
+      })
+      .eq("id", data.approvalId)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     if (status === "approved" && data.execute !== false) {
       const result = await executeApproval(supabase, userId, data.approvalId);
@@ -82,7 +98,8 @@ export const listAgentMemory = createServerFn({ method: "POST" })
   .inputValidator((input: { agentSlug?: string } | undefined) => input ?? {})
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    let q = supabase.from("agent_memory")
+    let q = supabase
+      .from("agent_memory")
       .select("id,agent_slug,scope,kind,content,importance,created_at,last_used_at")
       .eq("user_id", userId)
       .order("importance", { ascending: false })
@@ -100,8 +117,11 @@ export const forgetMemory = createServerFn({ method: "POST" })
   .inputValidator((input) => ForgetSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("agent_memory").delete()
-      .eq("id", data.memoryId).eq("user_id", userId);
+    const { error } = await supabase
+      .from("agent_memory")
+      .delete()
+      .eq("id", data.memoryId)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -110,9 +130,12 @@ export const listTools = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data, error } = await supabase.from("agent_tools")
+    const { data, error } = await supabase
+      .from("agent_tools")
       .select("id,tool_name,display_name,description,category,mode,enabled,built_in")
-      .eq("user_id", userId).order("category").order("display_name");
+      .eq("user_id", userId)
+      .order("category")
+      .order("display_name");
     if (error) throw new Error(error.message);
     return { tools: data ?? [] };
   });
@@ -131,8 +154,11 @@ export const updateToolMode = createServerFn({ method: "POST" })
     if (data.mode) patch.mode = data.mode;
     if (typeof data.enabled === "boolean") patch.enabled = data.enabled;
     if (!Object.keys(patch).length) return { ok: true };
-    const { error } = await supabase.from("agent_tools").update(patch)
-      .eq("id", data.toolId).eq("user_id", userId);
+    const { error } = await supabase
+      .from("agent_tools")
+      .update(patch)
+      .eq("id", data.toolId)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

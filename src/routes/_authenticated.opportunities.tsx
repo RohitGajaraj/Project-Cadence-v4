@@ -6,7 +6,12 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import { listProjects } from "@/lib/projects.functions";
-import { listOpportunities, updateOpportunity, deleteOpportunity, generatePrd } from "@/lib/discovery.functions";
+import {
+  listOpportunities,
+  updateOpportunity,
+  deleteOpportunity,
+  generatePrd,
+} from "@/lib/discovery.functions";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/opportunities")({
@@ -78,19 +83,36 @@ function OppsPage() {
                 <tr key={o.id} className="border-b hairline/40 hover:bg-secondary/40">
                   <td className="px-4 py-3">
                     <div className="font-medium">{o.title}</div>
-                    {o.problem && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{o.problem}</div>}
+                    {o.problem && (
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                        {o.problem}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 tabular-nums">
-                    <span className="neural-text font-display text-base">{Number(o.ice_score).toFixed(1)}</span>
-                    <span className="text-[10px] text-muted-foreground ml-2">I{o.impact} C{o.confidence} E{o.ease}</span>
+                    <span className="neural-text font-display text-base">
+                      {Number(o.ice_score).toFixed(1)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground ml-2">
+                      I{o.impact} C{o.confidence} E{o.ease}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <select
                       value={o.status}
-                      onChange={(e) => upd.mutate({ id: o.id, status: e.target.value as (typeof STATUSES)[number] })}
+                      onChange={(e) =>
+                        upd.mutate({
+                          id: o.id,
+                          status: e.target.value as (typeof STATUSES)[number],
+                        })
+                      }
                       className="rounded-lg border hairline bg-background/60 px-2 py-1 text-xs capitalize"
                     >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     </select>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -99,7 +121,8 @@ function OppsPage() {
                       disabled={prd.isPending}
                       className="btn-agentic rounded-lg px-2.5 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
                     >
-                      <FileText className="h-3 w-3" /> {prd.isPending ? "Generating…" : "Generate PRD"}
+                      <FileText className="h-3 w-3" />{" "}
+                      {prd.isPending ? "Generating…" : "Generate PRD"}
                     </button>
                     <button
                       onClick={() => setLineage({ id: o.id, title: o.title })}
@@ -118,9 +141,15 @@ function OppsPage() {
                 </tr>
               ))}
               {all.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-10 text-center text-xs text-muted-foreground">
-                  No opportunities yet. Promote a theme from <a href="/discovery" className="underline">Discovery</a>.
-                </td></tr>
+                <tr>
+                  <td colSpan={4} className="px-4 py-10 text-center text-xs text-muted-foreground">
+                    No opportunities yet. Promote a theme from{" "}
+                    <a href="/discovery" className="underline">
+                      Discovery
+                    </a>
+                    .
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -128,7 +157,9 @@ function OppsPage() {
       </div>
       <LineageDrawer
         open={lineage !== null}
-        onOpenChange={(o) => { if (!o) setLineage(null); }}
+        onOpenChange={(o) => {
+          if (!o) setLineage(null);
+        }}
         kind="opportunity"
         id={lineage?.id ?? null}
         title={lineage?.title}

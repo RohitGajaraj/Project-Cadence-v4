@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getGovernanceOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { workspaceId?: string | null } | undefined) =>
-    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(d ?? {})
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -26,11 +26,18 @@ export const getGovernanceOverview = createServerFn({ method: "POST" })
       supabase.rpc("current_kill_state", { ws: workspaceId as unknown as string }),
       supabase.from("kill_switches").select("*").eq("scope", "system").maybeSingle(),
       workspaceId
-        ? supabase.from("kill_switches").select("*").eq("scope", "workspace").eq("workspace_id", workspaceId).maybeSingle()
+        ? supabase
+            .from("kill_switches")
+            .select("*")
+            .eq("scope", "workspace")
+            .eq("workspace_id", workspaceId)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
       supabase
         .from("agent_runs")
-        .select("id,agent_slug,agent_name,status,tokens_used,spend_used_usd,mission_token_cap,mission_spend_cap_usd,halted_reason,created_at")
+        .select(
+          "id,agent_slug,agent_name,status,tokens_used,spend_used_usd,mission_token_cap,mission_spend_cap_usd,halted_reason,created_at",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(25),
@@ -46,7 +53,12 @@ export const getGovernanceOverview = createServerFn({ method: "POST" })
     const ks = Array.isArray(killState.data) ? killState.data[0] : killState.data;
     return {
       workspaceId,
-      killState: (ks as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null) ?? null,
+      killState:
+        (ks as {
+          system_paused?: boolean;
+          workspace_paused?: boolean;
+          reason?: string | null;
+        } | null) ?? null,
       systemRow: systemRow.data ?? null,
       workspaceRow: wsRow.data ?? null,
       runs: runs.data ?? [],
@@ -76,7 +88,12 @@ export const setWorkspacePause = createServerFn({ method: "POST" })
     if (existing) {
       const { error } = await supabase
         .from("kill_switches")
-        .update({ paused: data.paused, reason: data.reason ?? null, set_by: userId, set_at: new Date().toISOString() })
+        .update({
+          paused: data.paused,
+          reason: data.reason ?? null,
+          set_by: userId,
+          set_at: new Date().toISOString(),
+        })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
     } else {
@@ -96,7 +113,7 @@ export const setWorkspacePause = createServerFn({ method: "POST" })
 export const getWorkspacePauseState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { workspaceId?: string | null } | undefined) =>
-    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(d ?? {})
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
@@ -105,9 +122,16 @@ export const getWorkspacePauseState = createServerFn({ method: "POST" })
       const { data: ws } = await supabase.rpc("current_user_default_workspace");
       workspaceId = (ws as string | null) ?? null;
     }
-    const { data: state } = await supabase.rpc("current_kill_state", { ws: workspaceId as unknown as string });
+    const { data: state } = await supabase.rpc("current_kill_state", {
+      ws: workspaceId as unknown as string,
+    });
     const row = Array.isArray(state) ? state[0] : state;
-    const r = (row as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null) ?? null;
+    const r =
+      (row as {
+        system_paused?: boolean;
+        workspace_paused?: boolean;
+        reason?: string | null;
+      } | null) ?? null;
     return {
       workspaceId,
       paused: !!(r?.system_paused || r?.workspace_paused),

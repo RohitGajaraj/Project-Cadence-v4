@@ -5,8 +5,22 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
 // so operators can see the lifecycle they were sold. See docs/feature-backlog.md F-OUTCOME-SURFACE.
 
-const SUPPORT_SOURCES = ["support", "ticket", "helpdesk", "email", "zendesk", "intercom", "freshdesk"];
-const LAUNCH_TOOLS = ["send_slack", "send_email", "publish_changelog", "post_announcement", "notify_channel"];
+const SUPPORT_SOURCES = [
+  "support",
+  "ticket",
+  "helpdesk",
+  "email",
+  "zendesk",
+  "intercom",
+  "freshdesk",
+];
+const LAUNCH_TOOLS = [
+  "send_slack",
+  "send_email",
+  "publish_changelog",
+  "post_announcement",
+  "notify_channel",
+];
 
 export const getOutcomeData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -23,7 +37,9 @@ export const getOutcomeData = createServerFn({ method: "GET" })
         .limit(25),
       supabase
         .from("agent_runs")
-        .select("id, agent_name, agent_slug, input, status, duration_ms, tokens_used, spend_used_usd, created_at, mission_id")
+        .select(
+          "id, agent_name, agent_slug, input, status, duration_ms, tokens_used, spend_used_usd, created_at, mission_id",
+        )
         .eq("status", "completed")
         .order("created_at", { ascending: false })
         .limit(25),
@@ -41,7 +57,9 @@ export const getOutcomeData = createServerFn({ method: "GET" })
         .limit(25),
       supabase
         .from("opportunities")
-        .select("id, title, problem, status, impact, confidence, ease, ice_score, created_at, updated_at")
+        .select(
+          "id, title, problem, status, impact, confidence, ease, ice_score, created_at, updated_at",
+        )
         .order("updated_at", { ascending: false })
         .limit(25),
     ]);

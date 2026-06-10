@@ -3,18 +3,22 @@
 > Every AI call in Cadence goes through one function. This file is its contract. Rules: [`AGENTS.md`](../AGENTS.md). Build history: [`plan.md`](../plan.md).
 
 ## The one rule
+
 **Every model call goes through `src/lib/ai/runtime.server.ts`. There is no second path.** Agents, chat, copilot, PRD `/ai`, discovery, studio, daily brief, the judge itself, embeddings — all of it. This is what makes telemetry, safety, cost control, RAG, guardrails, and replay uniform across every surface for free.
 
 ## The entry point
+
 ```
 callModel({ surface, traceId, parentEventId, model, messages, tools?, retrieval?, userId, workspaceId?, runId? })
   -> { text, tool_calls, usage, latency_ms, ttft_ms }
 ```
+
 `surface` is one of the known surfaces (chat, agent, copilot, prd, discovery, studio, brief, eval, judge, embed, mcp_server, a2a). It drives per-surface defaults, color coding ([`design.md`](../design.md)), and analytics filters. `workspaceId` scopes the kill-switch check; `runId` ties the call to an `agent_runs` row for per-mission token/spend caps and atomic usage accounting.
 
 ## The pipeline (in order)
-0. **Governance halt check** — `current_kill_state(workspaceId)` is read first. If `system_paused` or `workspace_paused`, throw a typed `GovernanceHaltError('kill_switch')` *before any spend*. If `runId` is set, read `agent_runs` and throw `GovernanceHaltError('mission_token_cap' | 'mission_spend_cap')` when the running totals already meet/exceed the cap, or `'kill_switch'` if the run was previously halted. On halt: log an `ai_events` row with `status='blocked'` and `error_message='governance_halt:<kind> — <msg>'`, and call `halt_agent_run()` so the mission is marked halted. **Caps and pause are sacred — see [`security.md`](./security.md).**
-1. **Budget check** — if the user is over their daily/monthly cap, throw a friendly error *before any spend*. Caps are sacred.
+
+0. **Governance halt check** — `current_kill_state(workspaceId)` is read first. If `system_paused` or `workspace_paused`, throw a typed `GovernanceHaltError('kill_switch')` _before any spend_. If `runId` is set, read `agent_runs` and throw `GovernanceHaltError('mission_token_cap' | 'mission_spend_cap')` when the running totals already meet/exceed the cap, or `'kill_switch'` if the run was previously halted. On halt: log an `ai_events` row with `status='blocked'` and `error_message='governance_halt:<kind> — <msg>'`, and call `halt_agent_run()` so the mission is marked halted. **Caps and pause are sacred — see [`security.md`](./security.md).**
+1. **Budget check** — if the user is over their daily/monthly cap, throw a friendly error _before any spend_. Caps are sacred.
 2. **Cache lookup** — exact (`request_hash`) + near-dupe (embedding similarity). Cache key is salted with `user_id` + `workspace_id` + `surface` to prevent cross-user leakage. Cache hits are still logged (`cache_hit=true`).
 3. **Pre-guardrails** — PII / prompt-injection / secret / keyword on input. `block` aborts, `redact` rewrites before the provider sees it, `warn` logs. Writes `guardrail_hits`.
 4. **Retrieval (optional)** — if `retrieval=true`, embed the prompt, fetch top-k `rag_chunks` for the user, inject as a `CONTEXT:` block. See [`data.md`](./data.md).
@@ -25,15 +29,19 @@ callModel({ surface, traceId, parentEventId, model, messages, tools?, retrieval?
 9. **Retry / fallback** — on 429/5xx, backoff retry; if still failing, fall back to a configured backup model and record `fallback=true`.
 
 ## Provider adapters
+
 Lovable/AI gateway (default, no user key) and BYO adapters (Anthropic, DeepSeek, Grok, Ollama, OpenAI-compatible). Each normalizes request/response and surfaces `{ text, tool_calls, usage, latency_ms, ttft_ms }`. Cadence is **model-agnostic by contract** — adding a provider means adding an adapter, not touching call sites. This is also the moat lever: the model is an input, never the product ([`README.md`](../README.md)).
 
 ## The agent loop
+
 `src/lib/ai/loop.server.ts`: `plan → tool calls → observe → reflect → answer`, with max-step and max-cost caps. Tools are server-validated against the agent's allow-list and every call logs to `tool_calls`. Side-effect tools honor the agent's `approval_mode` (`auto | confirm | review`). Any trace can be replayed against a different model/prompt version.
 
 ## Cost & pricing
+
 `model_pricing` (in/out per Mtok) drives cost math (`src/lib/ai/pricing.ts`); hand-maintained, update when providers change pricing. Budgets enforced server-side; per-surface and per-agent cost surface in `/analytics`.
 
 ## Invariants (do not break)
+
 - No direct provider calls outside the chokepoint.
 - Judge/eval/embedding calls also flow through it (`surface='judge'|'eval'|'embed'`) so they are measured too.
 - Cron-poked endpoints live under `/api/public/hooks/*` (`eval-tick`, `eval-suite-tick`, `indexer-tick`, `agent-tick`, `drift-tick`, `approvals-tick`).

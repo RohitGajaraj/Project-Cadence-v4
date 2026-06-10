@@ -3,7 +3,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ChevronRight, ChevronDown, Plus, Trash2, FileText, Search, Download, X, Loader2 } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  Trash2,
+  FileText,
+  Search,
+  Download,
+  X,
+  Loader2,
+} from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { DocEditor } from "@/components/cadence/DocEditor";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
@@ -135,9 +145,7 @@ function DocsPage() {
   const tree = useMemo(() => {
     const byParent = new Map<string | null, DocNode[]>();
     const filter = search.trim().toLowerCase();
-    const list = filter
-      ? allDocs.filter((d) => d.title.toLowerCase().includes(filter))
-      : allDocs;
+    const list = filter ? allDocs.filter((d) => d.title.toLowerCase().includes(filter)) : allDocs;
     for (const d of list) {
       const k = filter ? null : d.parent_id;
       const arr = byParent.get(k) ?? [];
@@ -171,7 +179,15 @@ function DocsPage() {
             }}
             className="h-4 w-4 inline-flex items-center justify-center opacity-60 hover:opacity-100"
           >
-            {hasChildren ? (open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />) : <span className="h-3 w-3" />}
+            {hasChildren ? (
+              open ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )
+            ) : (
+              <span className="h-3 w-3" />
+            )}
           </button>
           <span className="text-xs w-4 text-center">{node.icon ?? "📄"}</span>
           <span className="flex-1 truncate">{node.title || "Untitled"}</span>
@@ -238,7 +254,9 @@ function DocsPage() {
             </div>
           </div>
           <div className="flex-1 overflow-auto p-2">
-            {docs.isLoading && <div className="text-xs text-muted-foreground px-2 py-1">Loading…</div>}
+            {docs.isLoading && (
+              <div className="text-xs text-muted-foreground px-2 py-1">Loading…</div>
+            )}
             {!docs.isLoading && roots.length === 0 && (
               <div className="text-xs text-muted-foreground px-2 py-6 text-center">
                 <FileText className="h-5 w-5 mx-auto opacity-50 mb-2" />
@@ -255,7 +273,9 @@ function DocsPage() {
             <div className="h-full flex flex-col items-center justify-center text-center px-8">
               <FolderInteraction label="Tap to peek inside" />
               <div className="font-display text-lg">Select a page or create a new one</div>
-              <div className="text-sm text-muted-foreground mt-1">Native Notion-style workspace. Two-way sync coming next.</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Native Notion-style workspace. Two-way sync coming next.
+              </div>
               <button
                 onClick={() => mCreate.mutate({})}
                 className="mt-5 inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm"
@@ -353,9 +373,7 @@ function DocsPage() {
                   className="w-full bg-secondary/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:bg-secondary/60"
                 />
               </div>
-              <div className="text-[11px] text-muted-foreground">
-                Or paste a Notion page URL:
-              </div>
+              <div className="text-[11px] text-muted-foreground">Or paste a Notion page URL:</div>
               <div className="flex gap-2">
                 <input
                   placeholder="https://www.notion.so/…"

@@ -12,7 +12,12 @@ import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
 import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
-import { missionPlan, missionDispatch, missionObserve, missionFinalize } from "./orchestrator.server";
+import {
+  missionPlan,
+  missionDispatch,
+  missionObserve,
+  missionFinalize,
+} from "./orchestrator.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
 
 export type ToolCtx = {
@@ -37,20 +42,29 @@ export type ToolDef<S extends z.ZodTypeAny = z.ZodTypeAny> = {
   run: (args: z.infer<S>, ctx: ToolCtx) => Promise<unknown>;
 };
 
-function def<S extends z.ZodTypeAny>(d: ToolDef<S>) { return d as unknown as ToolDef; }
+function def<S extends z.ZodTypeAny>(d: ToolDef<S>) {
+  return d as unknown as ToolDef;
+}
 
 // ── read tools ────────────────────────────────────────────────────────
 const workspaceSearch = def({
   name: "workspace.search",
-  description: "Semantic search across the workspace (docs, PRDs, notes, signals, meetings). Returns top chunks.",
+  description:
+    "Semantic search across the workspace (docs, PRDs, notes, signals, meetings). Returns top chunks.",
   category: "read",
-  argsSchema: z.object({ query: z.string().min(1).max(500), k: z.number().int().min(1).max(10).optional() }),
+  argsSchema: z.object({
+    query: z.string().min(1).max(500),
+    k: z.number().int().min(1).max(10).optional(),
+  }),
   preview: (a) => `Search workspace: "${a.query}"`,
   run: async ({ query, k }, { supabase, userId }) => {
     const chunks = await retrieve(supabase, userId, { query, k: k ?? 5, mmr: true });
     return chunks.map((c) => ({
-      kind: c.source_kind, id: c.source_id, title: c.title,
-      snippet: c.content.slice(0, 280), score: Number(c.similarity?.toFixed(3)),
+      kind: c.source_kind,
+      id: c.source_id,
+      title: c.title,
+      snippet: c.content.slice(0, 280),
+      score: Number(c.similarity?.toFixed(3)),
     }));
   },
 });
@@ -64,11 +78,15 @@ const listTasks = def({
     priority: z.enum(["low", "medium", "high"]).optional(),
     limit: z.number().int().min(1).max(50).optional(),
   }),
-  preview: (a) => `List tasks${a.status ? ` · ${a.status}` : ""}${a.priority ? ` · ${a.priority}` : ""}`,
+  preview: (a) =>
+    `List tasks${a.status ? ` · ${a.status}` : ""}${a.priority ? ` · ${a.priority}` : ""}`,
   run: async ({ status, priority, limit }, { supabase, userId }) => {
-    let q = supabase.from("tasks")
+    let q = supabase
+      .from("tasks")
       .select("id,title,status,priority,due_date,is_deep_work,estimate_hours")
-      .eq("user_id", userId).order("updated_at", { ascending: false }).limit(limit ?? 20);
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(limit ?? 20);
     if (status) q = q.eq("status", status);
     if (priority) q = q.eq("priority", priority);
     const { data, error } = await q;
@@ -91,13 +109,18 @@ const createTask = def({
   }),
   preview: (a) => `Create task: "${a.title}"${a.priority ? ` (${a.priority})` : ""}`,
   run: async (a, { supabase, userId }) => {
-    const { data, error } = await supabase.from("tasks").insert({
-      user_id: userId, title: a.title,
-      priority: a.priority ?? "medium",
-      estimate_hours: a.estimate_hours ?? null,
-      is_deep_work: a.is_deep_work ?? false,
-      due_date: a.due_date ?? null,
-    }).select("id,title").single();
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: userId,
+        title: a.title,
+        priority: a.priority ?? "medium",
+        estimate_hours: a.estimate_hours ?? null,
+        is_deep_work: a.is_deep_work ?? false,
+        due_date: a.due_date ?? null,
+      })
+      .select("id,title")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -115,8 +138,13 @@ const updateTaskStatus = def({
   run: async (a, { supabase, userId }) => {
     const patch: Record<string, unknown> = { status: a.status };
     if (a.status === "done") patch.completed_at = new Date().toISOString();
-    const { data, error } = await supabase.from("tasks").update(patch)
-      .eq("id", a.task_id).eq("user_id", userId).select("id,status").single();
+    const { data, error } = await supabase
+      .from("tasks")
+      .update(patch)
+      .eq("id", a.task_id)
+      .eq("user_id", userId)
+      .select("id,status")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -135,11 +163,18 @@ const logSignal = def({
   }),
   preview: (a) => `Log signal: "${(a.title ?? a.content).slice(0, 80)}"`,
   run: async (a, { supabase, userId }) => {
-    const { data, error } = await supabase.from("signals").insert({
-      user_id: userId, content: a.content,
-      title: a.title ?? null, source: a.source ?? "agent",
-      sentiment: a.sentiment ?? null, tags: a.tags ?? [],
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("signals")
+      .insert({
+        user_id: userId,
+        content: a.content,
+        title: a.title ?? null,
+        source: a.source ?? "agent",
+        sentiment: a.sentiment ?? null,
+        tags: a.tags ?? [],
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -155,9 +190,15 @@ const createNote = def({
   }),
   preview: (a) => `Note: "${a.body.slice(0, 80)}"`,
   run: async (a, { supabase, userId }) => {
-    const { data, error } = await supabase.from("notes").insert({
-      user_id: userId, body: a.body, tags: a.tags ?? [],
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("notes")
+      .insert({
+        user_id: userId,
+        body: a.body,
+        tags: a.tags ?? [],
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -166,7 +207,8 @@ const createNote = def({
 // ── memory tools ──────────────────────────────────────────────────────
 const remember = def({
   name: "memory.remember",
-  description: "Save a long-term memory the agent should recall later. Use sparingly for durable facts.",
+  description:
+    "Save a long-term memory the agent should recall later. Use sparingly for durable facts.",
   category: "memory",
   argsSchema: z.object({
     content: z.string().min(1).max(1000),
@@ -176,17 +218,25 @@ const remember = def({
   preview: (a) => `Remember: "${a.content.slice(0, 80)}"`,
   run: async (a, { supabase, userId, agentSlug, agentId }) => {
     let emb: number[] | null = null;
-    try { emb = await embedOne(a.content); } catch { /* ignore embed failure */ }
-    const { data, error } = await supabase.from("agent_memory").insert({
-      user_id: userId,
-      agent_id: agentId ?? null,
-      agent_slug: agentSlug ?? null,
-      scope: a.scope ?? "agent",
-      kind: "note",
-      content: a.content,
-      importance: a.importance ?? 3,
-      embedding: emb as unknown as string | null,
-    }).select("id").single();
+    try {
+      emb = await embedOne(a.content);
+    } catch {
+      /* ignore embed failure */
+    }
+    const { data, error } = await supabase
+      .from("agent_memory")
+      .insert({
+        user_id: userId,
+        agent_id: agentId ?? null,
+        agent_slug: agentSlug ?? null,
+        scope: a.scope ?? "agent",
+        kind: "note",
+        content: a.content,
+        importance: a.importance ?? 3,
+        embedding: emb as unknown as string | null,
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -202,7 +252,8 @@ const remember = def({
  */
 const memoryReflect = def({
   name: "memory.reflect",
-  description: "Record a one-paragraph lesson from this run so future runs of the same agent can recall it. Optional — the system reflects automatically on clean completion. Use this only when you want to capture a lesson mid-run (e.g. before a handoff).",
+  description:
+    "Record a one-paragraph lesson from this run so future runs of the same agent can recall it. Optional — the system reflects automatically on clean completion. Use this only when you want to capture a lesson mid-run (e.g. before a handoff).",
   category: "memory",
   argsSchema: z.object({
     note: z.string().max(400).optional(),
@@ -214,15 +265,23 @@ const memoryReflect = def({
     let goal = a.note ?? "(mid-run reflection)";
     let finalMsg = a.note ?? "(no final message yet — mid-run)";
     if (runId) {
-      const { data: run } = await supabase.from("agent_runs")
-        .select("input,output").eq("id", runId).maybeSingle();
+      const { data: run } = await supabase
+        .from("agent_runs")
+        .select("input,output")
+        .eq("id", runId)
+        .maybeSingle();
       if (run?.input) goal = run.input as string;
       if (run?.output) finalMsg = run.output as string;
     }
     const row = await autoReflect(supabase, {
-      userId, agentId: agentId ?? null, agentSlug,
-      workspaceId: workspaceId ?? null, runId: runId ?? null, traceId: traceId ?? null,
-      goal, finalMsg,
+      userId,
+      agentId: agentId ?? null,
+      agentSlug,
+      workspaceId: workspaceId ?? null,
+      runId: runId ?? null,
+      traceId: traceId ?? null,
+      goal,
+      finalMsg,
     });
     if (!row) return { ok: false, reason: "no lesson produced" };
     return { ok: true, memory_id: row.id, importance: row.importance, content: row.content };
@@ -237,17 +296,21 @@ const memoryReflect = def({
  */
 const memoryPromote = def({
   name: "memory.promote",
-  description: "Promote a memory from agent-scope to workspace-scope so every agent recalls it. Pass memory_id (returned by memory.remember or memory.reflect). Use only for cross-agent truths.",
+  description:
+    "Promote a memory from agent-scope to workspace-scope so every agent recalls it. Pass memory_id (returned by memory.remember or memory.reflect). Use only for cross-agent truths.",
   category: "memory",
   argsSchema: z.object({
     memory_id: z.string().uuid(),
   }),
   preview: (a) => `Promote memory ${a.memory_id.slice(0, 8)} → workspace`,
   run: async (a, { supabase, userId }) => {
-    const { data, error } = await supabase.from("agent_memory")
+    const { data, error } = await supabase
+      .from("agent_memory")
       .update({ scope: "global" })
-      .eq("id", a.memory_id).eq("user_id", userId)
-      .select("id,scope,kind,content").single();
+      .eq("id", a.memory_id)
+      .eq("user_id", userId)
+      .select("id,scope,kind,content")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -266,25 +329,39 @@ const proposeSlots = def({
   preview: (a) => `Propose ${a.duration_minutes ?? 30}m slots for "${a.title}"`,
   run: async (a, { supabase, userId }) => {
     const dur = a.duration_minutes ?? 30;
-    const { data: profile } = await supabase.from("profiles")
-      .select("working_hours_start,working_hours_end").eq("id", userId).maybeSingle();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("working_hours_start,working_hours_end")
+      .eq("id", userId)
+      .maybeSingle();
     const start = profile?.working_hours_start ?? 9;
     const end = profile?.working_hours_end ?? 18;
     const slots: { start: string; end: string }[] = [];
-    const now = new Date(); now.setMinutes(0, 0, 0);
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
     for (let d = 1; d <= 5 && slots.length < 5; d++) {
-      const day = new Date(now); day.setDate(day.getDate() + d);
+      const day = new Date(now);
+      day.setDate(day.getDate() + d);
       for (const h of [start + 1, Math.floor((start + end) / 2), end - 2]) {
         if (slots.length >= 5) break;
-        const s = new Date(day); s.setHours(h, 0, 0, 0);
-        const e = new Date(s); e.setMinutes(s.getMinutes() + dur);
+        const s = new Date(day);
+        s.setHours(h, 0, 0, 0);
+        const e = new Date(s);
+        e.setMinutes(s.getMinutes() + dur);
         slots.push({ start: s.toISOString(), end: e.toISOString() });
       }
     }
-    const { data, error } = await supabase.from("scheduler_proposals").insert({
-      user_id: userId, title: a.title, description: a.description ?? null,
-      duration_minutes: dur, slots,
-    }).select("id,slots").single();
+    const { data, error } = await supabase
+      .from("scheduler_proposals")
+      .insert({
+        user_id: userId,
+        title: a.title,
+        description: a.description ?? null,
+        duration_minutes: dur,
+        slots,
+      })
+      .select("id,slots")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -292,7 +369,8 @@ const proposeSlots = def({
 
 const createCalendarEvent = def({
   name: "calendar.create",
-  description: "Create a calendar event after the user picked a slot. Requires start_at + end_at + title.",
+  description:
+    "Create a calendar event after the user picked a slot. Requires start_at + end_at + title.",
   category: "write",
   argsSchema: z.object({
     title: z.string().min(1).max(200),
@@ -303,12 +381,20 @@ const createCalendarEvent = def({
   }),
   preview: (a) => `Calendar event "${a.title}" at ${new Date(a.start_at).toLocaleString()}`,
   run: async (a, { supabase, userId }) => {
-    const { data, error } = await supabase.from("calendar_events").insert({
-      user_id: userId, title: a.title,
-      start_at: a.start_at, end_at: a.end_at,
-      description: a.description ?? null, location: a.location ?? null,
-      external_id: `local-${crypto.randomUUID()}`, calendar_id: "primary",
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .insert({
+        user_id: userId,
+        title: a.title,
+        start_at: a.start_at,
+        end_at: a.end_at,
+        description: a.description ?? null,
+        location: a.location ?? null,
+        external_id: `local-${crypto.randomUUID()}`,
+        calendar_id: "primary",
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
@@ -323,7 +409,8 @@ const createCalendarEvent = def({
  */
 const githubIssueCreate = def({
   name: "github.issue.create",
-  description: "Open a GitHub issue on the connected product repo. Pass an idempotency_key (e.g. the PRD id) so re-execution does not double-create. Use to hand work from PRD → engineering backlog.",
+  description:
+    "Open a GitHub issue on the connected product repo. Pass an idempotency_key (e.g. the PRD id) so re-execution does not double-create. Use to hand work from PRD → engineering backlog.",
   category: "write",
   argsSchema: z.object({
     title: z.string().min(1).max(280),
@@ -338,13 +425,17 @@ const githubIssueCreate = def({
     if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
     const outcome = await withIdempotency(
-      supabase, "github_issue", a.idempotency_key, userId, runId ?? null,
+      supabase,
+      "github_issue",
+      a.idempotency_key,
+      userId,
+      runId ?? null,
       async () => {
         const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github+json",
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
             "User-Agent": "cadence-agent",
             "Content-Type": "application/json",
@@ -355,7 +446,7 @@ const githubIssueCreate = def({
           const txt = await res.text();
           throw new Error(`GitHub ${res.status}: ${txt.slice(0, 400)}`);
         }
-        const json = await res.json() as { number: number; html_url: string; id: number };
+        const json = (await res.json()) as { number: number; html_url: string; id: number };
         return { number: json.number, url: json.html_url, id: json.id, repo };
       },
     );
@@ -377,11 +468,19 @@ const githubIssueCreate = def({
  */
 const githubPrOpen = def({
   name: "github.pr.open",
-  description: "Builder agent: open a single-file scoped pull request on the connected product repo. Pass an idempotency_key like 'issue-42' so re-execution does not double-open. NEVER auto-merges.",
+  description:
+    "Builder agent: open a single-file scoped pull request on the connected product repo. Pass an idempotency_key like 'issue-42' so re-execution does not double-open. NEVER auto-merges.",
   category: "write",
   argsSchema: z.object({
     issue_number: z.number().int().min(1).max(10_000_000),
-    path: z.string().min(1).max(400).regex(/^[^\s][\w\-./]+[^\s/]$/, "path must be a repo-relative file (no leading slash, no spaces)"),
+    path: z
+      .string()
+      .min(1)
+      .max(400)
+      .regex(
+        /^[^\s][\w\-./]+[^\s/]$/,
+        "path must be a repo-relative file (no leading slash, no spaces)",
+      ),
     contents: z.string().min(1).max(120_000),
     title: z.string().min(1).max(280),
     body: z.string().min(1).max(60_000),
@@ -394,9 +493,17 @@ const githubPrOpen = def({
     if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
     // Disallow paths the Builder must never touch.
-    const forbiddenPrefixes = [".github/", "supabase/migrations/", ".env", "bun.lock", "package-lock.json"];
+    const forbiddenPrefixes = [
+      ".github/",
+      "supabase/migrations/",
+      ".env",
+      "bun.lock",
+      "package-lock.json",
+    ];
     if (forbiddenPrefixes.some((p) => a.path === p || a.path.startsWith(p))) {
-      throw new Error(`Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`);
+      throw new Error(
+        `Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`,
+      );
     }
 
     // Bundle 9 Slice 3 — claim the (repo, path) before opening the PR. A
@@ -417,23 +524,34 @@ const githubPrOpen = def({
         // Look up the holder's mission title for a helpful error message.
         let holderTitle: string | null = null;
         const { data: holderRun } = await supabase
-          .from("agent_runs").select("mission_id").eq("id", existing.run_id).maybeSingle();
-        const holderMissionId = (holderRun as { mission_id?: string | null } | null)?.mission_id ?? null;
+          .from("agent_runs")
+          .select("mission_id")
+          .eq("id", existing.run_id)
+          .maybeSingle();
+        const holderMissionId =
+          (holderRun as { mission_id?: string | null } | null)?.mission_id ?? null;
         if (holderMissionId) {
           const { data: m } = await supabase
-            .from("missions").select("title").eq("id", holderMissionId).maybeSingle();
+            .from("missions")
+            .select("title")
+            .eq("id", holderMissionId)
+            .maybeSingle();
           holderTitle = (m as { title?: string } | null)?.title ?? null;
         }
         throw new Error(
           `BuilderFileConflict: path "${a.path}" is already claimed by another Builder mission${holderTitle ? ` ("${holderTitle}")` : ""}. ` +
-          `Wait for it to finish or have the operator release the claim from /build.`,
+            `Wait for it to finish or have the operator release the claim from /build.`,
         );
       } else if (!existing) {
         // Try to take the claim. If a parallel call beats us, fall back to
         // the typed conflict error.
         let missionTitle: string | null = null;
         if (missionId) {
-          const { data: m } = await supabase.from("missions").select("title").eq("id", missionId).maybeSingle();
+          const { data: m } = await supabase
+            .from("missions")
+            .select("title")
+            .eq("id", missionId)
+            .maybeSingle();
           missionTitle = (m as { title?: string } | null)?.title ?? null;
         }
         const { error: insErr } = await supabase.from("builder_file_claims").insert({
@@ -450,7 +568,7 @@ const githubPrOpen = def({
           if (/unique|duplicate/i.test(insErr.message)) {
             throw new Error(
               `BuilderFileConflict: path "${a.path}" was just claimed by another Builder mission. ` +
-              `Wait for it to finish or have the operator release the claim from /build.`,
+                `Wait for it to finish or have the operator release the claim from /build.`,
             );
           }
           // Non-conflict insert failure is non-fatal — log and proceed; the
@@ -461,74 +579,117 @@ const githubPrOpen = def({
     }
 
     const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "cadence-builder",
       "Content-Type": "application/json",
     };
 
     const outcome = await withIdempotency(
-      supabase, "github_pr", a.idempotency_key, userId, runId ?? null,
+      supabase,
+      "github_pr",
+      a.idempotency_key,
+      userId,
+      runId ?? null,
       async () => {
         // 1) default branch + its head sha
         const repoRes = await fetch(`https://api.github.com/repos/${repo}`, { headers });
-        if (!repoRes.ok) throw new Error(`GitHub repo lookup ${repoRes.status}: ${(await repoRes.text()).slice(0, 300)}`);
-        const repoJson = await repoRes.json() as { default_branch: string };
+        if (!repoRes.ok)
+          throw new Error(
+            `GitHub repo lookup ${repoRes.status}: ${(await repoRes.text()).slice(0, 300)}`,
+          );
+        const repoJson = (await repoRes.json()) as { default_branch: string };
         const baseBranch = repoJson.default_branch;
 
-        const baseRefRes = await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${baseBranch}`, { headers });
-        if (!baseRefRes.ok) throw new Error(`GitHub base-ref ${baseRefRes.status}: ${(await baseRefRes.text()).slice(0, 300)}`);
-        const baseRefJson = await baseRefRes.json() as { object: { sha: string } };
+        const baseRefRes = await fetch(
+          `https://api.github.com/repos/${repo}/git/ref/heads/${baseBranch}`,
+          { headers },
+        );
+        if (!baseRefRes.ok)
+          throw new Error(
+            `GitHub base-ref ${baseRefRes.status}: ${(await baseRefRes.text()).slice(0, 300)}`,
+          );
+        const baseRefJson = (await baseRefRes.json()) as { object: { sha: string } };
         const baseSha = baseRefJson.object.sha;
 
         // 2) create branch — include short uuid suffix so reopening after a deleted branch still works
-        const safeSlug = a.path.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 40);
+        const safeSlug = a.path
+          .replace(/[^a-z0-9]+/gi, "-")
+          .toLowerCase()
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 40);
         const suffix = Math.random().toString(36).slice(2, 8);
         const branch = `builder/issue-${a.issue_number}-${safeSlug}-${suffix}`.slice(0, 80);
         const newRefRes = await fetch(`https://api.github.com/repos/${repo}/git/refs`, {
-          method: "POST", headers,
+          method: "POST",
+          headers,
           body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseSha }),
         });
         if (!newRefRes.ok) {
-          throw new Error(`GitHub create-branch ${newRefRes.status}: ${(await newRefRes.text()).slice(0, 300)}`);
+          throw new Error(
+            `GitHub create-branch ${newRefRes.status}: ${(await newRefRes.text()).slice(0, 300)}`,
+          );
         }
 
         // 3) optional existing sha on new branch (almost always 404)
-        const existingRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`, { headers });
+        const existingRes = await fetch(
+          `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`,
+          { headers },
+        );
         let existingSha: string | undefined;
         if (existingRes.ok) {
-          const j = await existingRes.json() as { sha?: string };
+          const j = (await existingRes.json()) as { sha?: string };
           existingSha = j.sha;
         }
 
         // 4) PUT contents
         // Buffer is available (nodejs_compat). Worker has no atob/btoa unicode safety, so use Buffer.
         const contentB64 = Buffer.from(a.contents, "utf8").toString("base64");
-        const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`, {
-          method: "PUT", headers,
-          body: JSON.stringify({
-            message: `Builder agent: ${a.title}`.slice(0, 200),
-            content: contentB64,
-            branch,
-            ...(existingSha ? { sha: existingSha } : {}),
-          }),
-        });
+        const putRes = await fetch(
+          `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`,
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({
+              message: `Builder agent: ${a.title}`.slice(0, 200),
+              content: contentB64,
+              branch,
+              ...(existingSha ? { sha: existingSha } : {}),
+            }),
+          },
+        );
         if (!putRes.ok) {
-          throw new Error(`GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`);
+          throw new Error(
+            `GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`,
+          );
         }
 
         // 5) open PR
         const prBody = `${a.body.trim()}\n\nCloses #${a.issue_number}\n\n_Opened by the Cadence Builder agent — approval-gated, single file (\`${a.path}\`)._`;
         const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls`, {
-          method: "POST", headers,
-          body: JSON.stringify({ title: a.title, body: prBody, head: branch, base: baseBranch, maintainer_can_modify: true }),
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            title: a.title,
+            body: prBody,
+            head: branch,
+            base: baseBranch,
+            maintainer_can_modify: true,
+          }),
         });
         if (!prRes.ok) {
           throw new Error(`GitHub open-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
         }
-        const prJson = await prRes.json() as { number: number; html_url: string; id: number };
-        return { number: prJson.number, url: prJson.html_url, id: prJson.id, repo, branch, path: a.path };
+        const prJson = (await prRes.json()) as { number: number; html_url: string; id: number };
+        return {
+          number: prJson.number,
+          url: prJson.html_url,
+          id: prJson.id,
+          repo,
+          branch,
+          path: a.path,
+        };
       },
     );
     return { ...outcome.result, cached: outcome.cached };
@@ -545,7 +706,8 @@ const githubPrOpen = def({
  */
 const githubCiRead = def({
   name: "github.ci.read",
-  description: "Builder agent: read GitHub Actions / status-check state on a pull request. Read-only. Use AFTER github.pr.open to decide whether to ship or to append a fix commit.",
+  description:
+    "Builder agent: read GitHub Actions / status-check state on a pull request. Read-only. Use AFTER github.pr.open to decide whether to ship or to append a fix commit.",
   category: "read",
   argsSchema: z.object({
     pr_number: z.number().int().min(1).max(10_000_000),
@@ -558,42 +720,74 @@ const githubCiRead = def({
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
 
     const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "cadence-builder",
     };
 
     // 1) PR → head sha + branch (uncached so we always see new commits).
-    const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, { headers });
-    if (!prRes.ok) throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
-    const prJson = await prRes.json() as { head: { sha: string; ref: string }; html_url: string; merged: boolean; state: string };
+    const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, {
+      headers,
+    });
+    if (!prRes.ok)
+      throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
+    const prJson = (await prRes.json()) as {
+      head: { sha: string; ref: string };
+      html_url: string;
+      merged: boolean;
+      state: string;
+    };
     const headSha = prJson.head.sha;
 
     // 2) Cache the heavy parts (check-runs + status) keyed by (pr, head_sha).
     const idemKey = `${a.pr_number}-${headSha}`;
     const outcome = await withIdempotency(
-      supabase, "github_ci", idemKey, userId, runId ?? null,
+      supabase,
+      "github_ci",
+      idemKey,
+      userId,
+      runId ?? null,
       async () => {
         const [checksRes, statusRes] = await Promise.all([
-          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=50`, { headers }),
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=50`, {
+            headers,
+          }),
           fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/status`, { headers }),
         ]);
-        if (!checksRes.ok) throw new Error(`GitHub check-runs ${checksRes.status}: ${(await checksRes.text()).slice(0, 300)}`);
-        if (!statusRes.ok) throw new Error(`GitHub combined-status ${statusRes.status}: ${(await statusRes.text()).slice(0, 300)}`);
+        if (!checksRes.ok)
+          throw new Error(
+            `GitHub check-runs ${checksRes.status}: ${(await checksRes.text()).slice(0, 300)}`,
+          );
+        if (!statusRes.ok)
+          throw new Error(
+            `GitHub combined-status ${statusRes.status}: ${(await statusRes.text()).slice(0, 300)}`,
+          );
 
-        const checksJson = await checksRes.json() as {
-          check_runs?: Array<{ name: string; status: string; conclusion: string | null; html_url: string; id: number; output?: { title?: string | null; summary?: string | null } }>;
+        const checksJson = (await checksRes.json()) as {
+          check_runs?: Array<{
+            name: string;
+            status: string;
+            conclusion: string | null;
+            html_url: string;
+            id: number;
+            output?: { title?: string | null; summary?: string | null };
+          }>;
         };
-        const statusJson = await statusRes.json() as {
+        const statusJson = (await statusRes.json()) as {
           state: "pending" | "success" | "failure" | "error";
-          statuses?: Array<{ context: string; state: string; description?: string | null; target_url?: string | null }>;
+          statuses?: Array<{
+            context: string;
+            state: string;
+            description?: string | null;
+            target_url?: string | null;
+          }>;
         };
 
         const checks = (checksJson.check_runs ?? []).map((c) => ({
           name: c.name,
-          status: c.status,                           // queued | in_progress | completed
-          conclusion: c.conclusion ?? null,           // success | failure | neutral | cancelled | skipped | timed_out | action_required | null
+          status: c.status, // queued | in_progress | completed
+          conclusion: c.conclusion ?? null, // success | failure | neutral | cancelled | skipped | timed_out | action_required | null
           html_url: c.html_url,
           id: c.id,
           summary: (c.output?.title ?? c.output?.summary ?? null)?.toString().slice(0, 240) ?? null,
@@ -601,7 +795,7 @@ const githubCiRead = def({
         const statuses = (statusJson.statuses ?? []).map((s) => ({
           name: s.context,
           status: s.state === "pending" ? "in_progress" : "completed",
-          conclusion: s.state === "pending" ? null : (s.state === "success" ? "success" : "failure"),
+          conclusion: s.state === "pending" ? null : s.state === "success" ? "success" : "failure",
           html_url: s.target_url ?? prJson.html_url,
           id: 0,
           summary: s.description ? s.description.slice(0, 240) : null,
@@ -615,7 +809,16 @@ const githubCiRead = def({
         //  - else        → success.
         let overall: "pending" | "success" | "failure" | "neutral";
         if (all.length === 0) overall = "neutral";
-        else if (all.some((c) => c.conclusion === "failure" || c.conclusion === "timed_out" || c.conclusion === "action_required" || c.conclusion === "cancelled")) overall = "failure";
+        else if (
+          all.some(
+            (c) =>
+              c.conclusion === "failure" ||
+              c.conclusion === "timed_out" ||
+              c.conclusion === "action_required" ||
+              c.conclusion === "cancelled",
+          )
+        )
+          overall = "failure";
         else if (all.some((c) => c.status !== "completed")) overall = "pending";
         else overall = "success";
 
@@ -646,11 +849,19 @@ const githubCiRead = def({
  */
 const githubCommitAppend = def({
   name: "github.commit.append",
-  description: "Builder agent: append ONE single-file follow-up commit to an open PR's branch. Use ONLY when github.ci.read returned overall='failure'. Pass idempotency_key like 'issue-42-fix-1' so re-execution does not double-commit. NEVER auto-merges.",
+  description:
+    "Builder agent: append ONE single-file follow-up commit to an open PR's branch. Use ONLY when github.ci.read returned overall='failure'. Pass idempotency_key like 'issue-42-fix-1' so re-execution does not double-commit. NEVER auto-merges.",
   category: "write",
   argsSchema: z.object({
     pr_number: z.number().int().min(1).max(10_000_000),
-    path: z.string().min(1).max(400).regex(/^[^\s][\w\-./]+[^\s/]$/, "path must be a repo-relative file (no leading slash, no spaces)"),
+    path: z
+      .string()
+      .min(1)
+      .max(400)
+      .regex(
+        /^[^\s][\w\-./]+[^\s/]$/,
+        "path must be a repo-relative file (no leading slash, no spaces)",
+      ),
     contents: z.string().min(1).max(120_000),
     message: z.string().min(1).max(280),
     idempotency_key: z.string().min(1).max(200),
@@ -662,56 +873,89 @@ const githubCommitAppend = def({
     if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
     // Same allow-list as github.pr.open — Builder must never touch CI / migrations / lockfiles.
-    const forbiddenPrefixes = [".github/", "supabase/migrations/", ".env", "bun.lock", "package-lock.json"];
+    const forbiddenPrefixes = [
+      ".github/",
+      "supabase/migrations/",
+      ".env",
+      "bun.lock",
+      "package-lock.json",
+    ];
     if (forbiddenPrefixes.some((p) => a.path === p || a.path.startsWith(p))) {
-      throw new Error(`Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`);
+      throw new Error(
+        `Builder is not allowed to modify ${a.path} (CI / migrations / lockfiles are out of scope).`,
+      );
     }
 
     const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "cadence-builder",
       "Content-Type": "application/json",
     };
 
     const outcome = await withIdempotency(
-      supabase, "github_commit", a.idempotency_key, userId, runId ?? null,
+      supabase,
+      "github_commit",
+      a.idempotency_key,
+      userId,
+      runId ?? null,
       async () => {
         // 1) Look up the PR's head branch (refuse if PR is closed/merged).
-        const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, { headers });
-        if (!prRes.ok) throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
-        const prJson = await prRes.json() as { head: { ref: string; sha: string }; html_url: string; state: string; merged: boolean };
+        const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${a.pr_number}`, {
+          headers,
+        });
+        if (!prRes.ok)
+          throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 300)}`);
+        const prJson = (await prRes.json()) as {
+          head: { ref: string; sha: string };
+          html_url: string;
+          state: string;
+          merged: boolean;
+        };
         if (prJson.state !== "open" || prJson.merged) {
-          throw new Error(`Cannot append to PR #${a.pr_number}: state=${prJson.state}, merged=${prJson.merged}`);
+          throw new Error(
+            `Cannot append to PR #${a.pr_number}: state=${prJson.state}, merged=${prJson.merged}`,
+          );
         }
         const branch = prJson.head.ref;
 
         // 2) Look up the existing file's sha on the branch (404 → new file).
-        const existingRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`, { headers });
+        const existingRes = await fetch(
+          `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}?ref=${branch}`,
+          { headers },
+        );
         let existingSha: string | undefined;
         if (existingRes.ok) {
-          const j = await existingRes.json() as { sha?: string };
+          const j = (await existingRes.json()) as { sha?: string };
           existingSha = j.sha;
         } else if (existingRes.status !== 404) {
-          throw new Error(`GitHub get-contents ${existingRes.status}: ${(await existingRes.text()).slice(0, 300)}`);
+          throw new Error(
+            `GitHub get-contents ${existingRes.status}: ${(await existingRes.text()).slice(0, 300)}`,
+          );
         }
 
         // 3) PUT new contents (create or update).
         const contentB64 = Buffer.from(a.contents, "utf8").toString("base64");
-        const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`, {
-          method: "PUT", headers,
-          body: JSON.stringify({
-            message: `Builder fix: ${a.message}`.slice(0, 200),
-            content: contentB64,
-            branch,
-            ...(existingSha ? { sha: existingSha } : {}),
-          }),
-        });
+        const putRes = await fetch(
+          `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(a.path)}`,
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({
+              message: `Builder fix: ${a.message}`.slice(0, 200),
+              content: contentB64,
+              branch,
+              ...(existingSha ? { sha: existingSha } : {}),
+            }),
+          },
+        );
         if (!putRes.ok) {
-          throw new Error(`GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`);
+          throw new Error(
+            `GitHub put-contents ${putRes.status}: ${(await putRes.text()).slice(0, 300)}`,
+          );
         }
-        const putJson = await putRes.json() as { commit: { sha: string; html_url: string } };
+        const putJson = (await putRes.json()) as { commit: { sha: string; html_url: string } };
         return {
           pr_number: a.pr_number,
           branch,
@@ -737,7 +981,8 @@ const DRAFT_MODEL = "google/gemini-2.5-flash";
  */
 const prdLinkIssue = def({
   name: "prd.link_issue",
-  description: "Attach a GitHub issue URL to a PRD. Call this immediately after github.issue.create so the PRD links back to the engineering ticket. Pass the prd_id and the html_url returned by github.issue.create.",
+  description:
+    "Attach a GitHub issue URL to a PRD. Call this immediately after github.issue.create so the PRD links back to the engineering ticket. Pass the prd_id and the html_url returned by github.issue.create.",
   category: "write",
   argsSchema: z.object({
     prd_id: z.string().uuid(),
@@ -758,10 +1003,16 @@ const prdLinkIssue = def({
 });
 
 function safeJson<T = unknown>(s: string): T | null {
-  try { return JSON.parse(s) as T; } catch {
+  try {
+    return JSON.parse(s) as T;
+  } catch {
     const m = s.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     if (!m) return null;
-    try { return JSON.parse(m[0]) as T; } catch { return null; }
+    try {
+      return JSON.parse(m[0]) as T;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -772,7 +1023,8 @@ function safeJson<T = unknown>(s: string): T | null {
  */
 const researchSynthesize = def({
   name: "research.synthesize",
-  description: "Cluster recent user-research signals into themes. Reads signals (optionally filtered by tag/sentiment), uses AI to group them, writes themes and links signals. Use at the start of Discover→Define to turn raw feedback into themes.",
+  description:
+    "Cluster recent user-research signals into themes. Reads signals (optionally filtered by tag/sentiment), uses AI to group them, writes themes and links signals. Use at the start of Discover→Define to turn raw feedback into themes.",
   category: "write",
   argsSchema: z.object({
     lookback_days: z.number().int().min(1).max(180).optional(),
@@ -781,53 +1033,90 @@ const researchSynthesize = def({
     sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
     only_unclustered: z.boolean().optional(),
   }),
-  preview: (a) => `Synthesize themes from last ${a.lookback_days ?? 30}d of signals${a.tag ? ` · #${a.tag}` : ""}`,
+  preview: (a) =>
+    `Synthesize themes from last ${a.lookback_days ?? 30}d of signals${a.tag ? ` · #${a.tag}` : ""}`,
   run: async (a, { supabase, userId, traceId, runId }) => {
     const days = a.lookback_days ?? 30;
     const since = new Date(Date.now() - days * 86400_000).toISOString();
-    let q = supabase.from("signals")
+    let q = supabase
+      .from("signals")
       .select("id,title,content,source,sentiment,tags,theme_id,workspace_id")
-      .eq("user_id", userId).gte("created_at", since)
-      .order("created_at", { ascending: false }).limit(a.max_signals ?? 60);
+      .eq("user_id", userId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(a.max_signals ?? 60);
     if (a.sentiment) q = q.eq("sentiment", a.sentiment);
     if (a.tag) q = q.contains("tags", [a.tag]);
     if (a.only_unclustered !== false) q = q.is("theme_id", null);
     const { data: signals, error } = await q;
     if (error) throw new Error(error.message);
-    if (!signals || signals.length < 2) return { themes_created: 0, signals_linked: 0, reason: "not enough signals to cluster" };
+    if (!signals || signals.length < 2)
+      return { themes_created: 0, signals_linked: 0, reason: "not enough signals to cluster" };
 
-    const corpus = signals.map((s, i) => `[${i}] (${s.sentiment ?? "n/a"}) ${s.title ? s.title + " — " : ""}${(s.content ?? "").slice(0, 400)}`).join("\n");
+    const corpus = signals
+      .map(
+        (s, i) =>
+          `[${i}] (${s.sentiment ?? "n/a"}) ${s.title ? s.title + " — " : ""}${(s.content ?? "").slice(0, 400)}`,
+      )
+      .join("\n");
     const res = await callModel(supabase, userId, {
-      surface: "discovery", surface_ref: "research.synthesize",
-      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      surface: "discovery",
+      surface_ref: "research.synthesize",
+      model: DRAFT_MODEL,
+      traceId: traceId ?? null,
+      runId: runId ?? null,
       responseFormat: "json_object",
       messages: [
-        { role: "system", content: "You cluster product-research signals into THEMES. Return strict JSON: {\"themes\":[{\"title\":string,\"summary\":string,\"severity\":1-5,\"confidence\":0..1,\"signal_indices\":number[]}]}. Aim for 2-6 cohesive themes. Each signal_indices references the [n] tag in the input. Never invent indices." },
+        {
+          role: "system",
+          content:
+            'You cluster product-research signals into THEMES. Return strict JSON: {"themes":[{"title":string,"summary":string,"severity":1-5,"confidence":0..1,"signal_indices":number[]}]}. Aim for 2-6 cohesive themes. Each signal_indices references the [n] tag in the input. Never invent indices.',
+        },
         { role: "user", content: corpus },
       ],
     });
-    const parsed = (res.json ?? safeJson(res.output)) as { themes?: Array<{ title: string; summary: string; severity?: number; confidence?: number; signal_indices?: number[] }> } | null;
+    const parsed = (res.json ?? safeJson(res.output)) as {
+      themes?: Array<{
+        title: string;
+        summary: string;
+        severity?: number;
+        confidence?: number;
+        signal_indices?: number[];
+      }>;
+    } | null;
     const themes = parsed?.themes ?? [];
-    if (!themes.length) return { themes_created: 0, signals_linked: 0, reason: "model returned no themes" };
+    if (!themes.length)
+      return { themes_created: 0, signals_linked: 0, reason: "model returned no themes" };
 
-    let created = 0, linked = 0;
+    let created = 0,
+      linked = 0;
     for (const t of themes) {
-      const idxs = (t.signal_indices ?? []).filter((i) => Number.isInteger(i) && i >= 0 && i < signals.length);
+      const idxs = (t.signal_indices ?? []).filter(
+        (i) => Number.isInteger(i) && i >= 0 && i < signals.length,
+      );
       if (!idxs.length) continue;
       const ws = signals[idxs[0]].workspace_id;
-      const { data: themeRow, error: tErr } = await supabase.from("themes").insert({
-        user_id: userId, workspace_id: ws,
-        title: t.title.slice(0, 200), summary: (t.summary ?? "").slice(0, 4000),
-        severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),
-        confidence: Math.min(1, Math.max(0, Number(t.confidence ?? 0.6))),
-        frequency: idxs.length,
-      }).select("id").single();
+      const { data: themeRow, error: tErr } = await supabase
+        .from("themes")
+        .insert({
+          user_id: userId,
+          workspace_id: ws,
+          title: t.title.slice(0, 200),
+          summary: (t.summary ?? "").slice(0, 4000),
+          severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),
+          confidence: Math.min(1, Math.max(0, Number(t.confidence ?? 0.6))),
+          frequency: idxs.length,
+        })
+        .select("id")
+        .single();
       if (tErr || !themeRow) continue;
       created++;
       const sigIds = idxs.map((i) => signals[i].id);
-      const { error: uErr, count } = await supabase.from("signals")
+      const { error: uErr, count } = await supabase
+        .from("signals")
         .update({ theme_id: themeRow.id }, { count: "exact" })
-        .in("id", sigIds).eq("user_id", userId);
+        .in("id", sigIds)
+        .eq("user_id", userId);
       if (!uErr) linked += count ?? sigIds.length;
     }
     return { themes_created: created, signals_linked: linked, model: DRAFT_MODEL };
@@ -841,60 +1130,102 @@ const researchSynthesize = def({
  */
 const prdDraft = def({
   name: "prd.draft",
-  description: "Draft a PRD from an opportunity. Reads the opportunity, its theme, and supporting signals, then writes a draft PRD with problem, goals, non-goals, user stories, success metrics, and risks. Use after research.synthesize + an opportunity exists.",
+  description:
+    "Draft a PRD from an opportunity. Reads the opportunity, its theme, and supporting signals, then writes a draft PRD with problem, goals, non-goals, user stories, success metrics, and risks. Use after research.synthesize + an opportunity exists.",
   category: "write",
   argsSchema: z.object({
     opportunity_id: z.string().uuid(),
     title: z.string().max(280).optional(),
     audience: z.string().max(200).optional(),
   }),
-  preview: (a) => `Draft PRD for opportunity ${a.opportunity_id.slice(0, 8)}${a.title ? ` — "${a.title}"` : ""}`,
+  preview: (a) =>
+    `Draft PRD for opportunity ${a.opportunity_id.slice(0, 8)}${a.title ? ` — "${a.title}"` : ""}`,
   run: async (a, { supabase, userId, traceId, runId }) => {
-    const { data: opp, error: oErr } = await supabase.from("opportunities")
-      .select("id,title,problem,target_user,hypothesis,impact,confidence,ease,theme_id,workspace_id,product_id")
-      .eq("id", a.opportunity_id).eq("user_id", userId).maybeSingle();
+    const { data: opp, error: oErr } = await supabase
+      .from("opportunities")
+      .select(
+        "id,title,problem,target_user,hypothesis,impact,confidence,ease,theme_id,workspace_id,product_id",
+      )
+      .eq("id", a.opportunity_id)
+      .eq("user_id", userId)
+      .maybeSingle();
     if (oErr) throw new Error(oErr.message);
     if (!opp) throw new Error("opportunity not found");
 
     let themeCtx = "";
     if (opp.theme_id) {
-      const { data: th } = await supabase.from("themes")
-        .select("title,summary,severity,frequency").eq("id", opp.theme_id).maybeSingle();
-      if (th) themeCtx = `Theme: ${th.title}\n${th.summary}\n(severity ${th.severity}, frequency ${th.frequency})`;
+      const { data: th } = await supabase
+        .from("themes")
+        .select("title,summary,severity,frequency")
+        .eq("id", opp.theme_id)
+        .maybeSingle();
+      if (th)
+        themeCtx = `Theme: ${th.title}\n${th.summary}\n(severity ${th.severity}, frequency ${th.frequency})`;
     }
     let signalCtx = "";
     if (opp.theme_id) {
-      const { data: sigs } = await supabase.from("signals")
-        .select("title,content,sentiment").eq("theme_id", opp.theme_id).limit(8);
+      const { data: sigs } = await supabase
+        .from("signals")
+        .select("title,content,sentiment")
+        .eq("theme_id", opp.theme_id)
+        .limit(8);
       if (sigs?.length) {
-        signalCtx = "Supporting signals:\n" + sigs.map((s) => `- (${s.sentiment ?? "n/a"}) ${s.title ? s.title + ": " : ""}${(s.content ?? "").slice(0, 240)}`).join("\n");
+        signalCtx =
+          "Supporting signals:\n" +
+          sigs
+            .map(
+              (s) =>
+                `- (${s.sentiment ?? "n/a"}) ${s.title ? s.title + ": " : ""}${(s.content ?? "").slice(0, 240)}`,
+            )
+            .join("\n");
       }
     }
 
     const res = await callModel(supabase, userId, {
-      surface: "prd", surface_ref: opp.id,
-      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      surface: "prd",
+      surface_ref: opp.id,
+      model: DRAFT_MODEL,
+      traceId: traceId ?? null,
+      runId: runId ?? null,
       messages: [
-        { role: "system", content: "You are a senior product manager. Write a concise, decision-ready PRD in Markdown with these sections: ## Problem, ## Target user, ## Goals, ## Non-goals, ## User stories, ## Solution sketch, ## Success metrics, ## Risks & open questions. Be specific and grounded in the provided context. Do not invent metrics." },
-        { role: "user", content: [
-          `Opportunity: ${opp.title}`,
-          `Problem: ${opp.problem || "(not specified)"}`,
-          opp.target_user ? `Target user: ${opp.target_user}` : "",
-          opp.hypothesis ? `Hypothesis: ${opp.hypothesis}` : "",
-          a.audience ? `Audience override: ${a.audience}` : "",
-          themeCtx, signalCtx,
-        ].filter(Boolean).join("\n\n") },
+        {
+          role: "system",
+          content:
+            "You are a senior product manager. Write a concise, decision-ready PRD in Markdown with these sections: ## Problem, ## Target user, ## Goals, ## Non-goals, ## User stories, ## Solution sketch, ## Success metrics, ## Risks & open questions. Be specific and grounded in the provided context. Do not invent metrics.",
+        },
+        {
+          role: "user",
+          content: [
+            `Opportunity: ${opp.title}`,
+            `Problem: ${opp.problem || "(not specified)"}`,
+            opp.target_user ? `Target user: ${opp.target_user}` : "",
+            opp.hypothesis ? `Hypothesis: ${opp.hypothesis}` : "",
+            a.audience ? `Audience override: ${a.audience}` : "",
+            themeCtx,
+            signalCtx,
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
+        },
       ],
     });
     const body = res.output?.trim();
     if (!body) throw new Error("model returned empty PRD body");
 
-    const { data: prd, error: pErr } = await supabase.from("prds").insert({
-      user_id: userId, workspace_id: opp.workspace_id, product_id: opp.product_id ?? null,
-      opportunity_id: opp.id,
-      title: (a.title ?? `PRD — ${opp.title}`).slice(0, 280),
-      body_md: body, status: "draft", model: DRAFT_MODEL,
-    }).select("id,title,status").single();
+    const { data: prd, error: pErr } = await supabase
+      .from("prds")
+      .insert({
+        user_id: userId,
+        workspace_id: opp.workspace_id,
+        product_id: opp.product_id ?? null,
+        opportunity_id: opp.id,
+        title: (a.title ?? `PRD — ${opp.title}`).slice(0, 280),
+        body_md: body,
+        status: "draft",
+        model: DRAFT_MODEL,
+      })
+      .select("id,title,status")
+      .single();
     if (pErr) throw new Error(pErr.message);
     return { prd_id: prd.id, title: prd.title, status: prd.status, opportunity_id: opp.id };
   },
@@ -907,7 +1238,8 @@ const prdDraft = def({
  */
 const backlogPrioritize = def({
   name: "backlog.prioritize",
-  description: "Re-score and rank backlog opportunities. For each backlog opportunity, gathers supporting-signal counts and recency, asks the model to update impact/confidence/ease (1-10), writes the new scores, and returns the ranked list. Use weekly or when new themes land.",
+  description:
+    "Re-score and rank backlog opportunities. For each backlog opportunity, gathers supporting-signal counts and recency, asks the model to update impact/confidence/ease (1-10), writes the new scores, and returns the ranked list. Use weekly or when new themes land.",
   category: "write",
   argsSchema: z.object({
     limit: z.number().int().min(1).max(30).optional(),
@@ -916,10 +1248,13 @@ const backlogPrioritize = def({
   preview: (a) => `Re-prioritize ${a.limit ?? 15} opportunities (${a.status ?? "backlog"})`,
   run: async (a, { supabase, userId, traceId, runId }) => {
     const status = a.status ?? "backlog";
-    const { data: opps, error } = await supabase.from("opportunities")
+    const { data: opps, error } = await supabase
+      .from("opportunities")
       .select("id,title,problem,target_user,impact,confidence,ease,theme_id,workspace_id")
-      .eq("user_id", userId).eq("status", status)
-      .order("updated_at", { ascending: false }).limit(a.limit ?? 15);
+      .eq("user_id", userId)
+      .eq("status", status)
+      .order("updated_at", { ascending: false })
+      .limit(a.limit ?? 15);
     if (error) throw new Error(error.message);
     if (!opps?.length) return { rescored: 0, ranked: [], reason: "no opportunities in scope" };
 
@@ -927,8 +1262,11 @@ const backlogPrioritize = def({
     const counts: Record<string, { n: number; recent: number }> = {};
     if (themeIds.length) {
       const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
-      const { data: sigs } = await supabase.from("signals")
-        .select("theme_id,created_at").in("theme_id", themeIds).eq("user_id", userId);
+      const { data: sigs } = await supabase
+        .from("signals")
+        .select("theme_id,created_at")
+        .in("theme_id", themeIds)
+        .eq("user_id", userId);
       for (const s of sigs ?? []) {
         const k = s.theme_id as string;
         counts[k] = counts[k] ?? { n: 0, recent: 0 };
@@ -938,21 +1276,38 @@ const backlogPrioritize = def({
     }
 
     const payload = opps.map((o) => ({
-      id: o.id, title: o.title, problem: (o.problem ?? "").slice(0, 400),
+      id: o.id,
+      title: o.title,
+      problem: (o.problem ?? "").slice(0, 400),
       target_user: o.target_user ?? null,
       current: { impact: o.impact, confidence: o.confidence, ease: o.ease },
-      evidence: o.theme_id ? counts[o.theme_id] ?? { n: 0, recent: 0 } : { n: 0, recent: 0 },
+      evidence: o.theme_id ? (counts[o.theme_id] ?? { n: 0, recent: 0 }) : { n: 0, recent: 0 },
     }));
     const res = await callModel(supabase, userId, {
-      surface: "discovery", surface_ref: "backlog.prioritize",
-      model: DRAFT_MODEL, traceId: traceId ?? null, runId: runId ?? null,
+      surface: "discovery",
+      surface_ref: "backlog.prioritize",
+      model: DRAFT_MODEL,
+      traceId: traceId ?? null,
+      runId: runId ?? null,
       responseFormat: "json_object",
       messages: [
-        { role: "system", content: "You re-score product opportunities on ICE (impact, confidence, ease), each 1-10 integers. Higher evidence.n and evidence.recent → higher confidence. Vague problem statements → lower confidence. Wide-scope problems → lower ease. Return strict JSON: {\"scores\":[{\"id\":string,\"impact\":int,\"confidence\":int,\"ease\":int,\"rationale\":string}]}. Include every input id once." },
+        {
+          role: "system",
+          content:
+            'You re-score product opportunities on ICE (impact, confidence, ease), each 1-10 integers. Higher evidence.n and evidence.recent → higher confidence. Vague problem statements → lower confidence. Wide-scope problems → lower ease. Return strict JSON: {"scores":[{"id":string,"impact":int,"confidence":int,"ease":int,"rationale":string}]}. Include every input id once.',
+        },
         { role: "user", content: JSON.stringify(payload) },
       ],
     });
-    const parsed = (res.json ?? safeJson(res.output)) as { scores?: Array<{ id: string; impact: number; confidence: number; ease: number; rationale?: string }> } | null;
+    const parsed = (res.json ?? safeJson(res.output)) as {
+      scores?: Array<{
+        id: string;
+        impact: number;
+        confidence: number;
+        ease: number;
+        rationale?: string;
+      }>;
+    } | null;
     const scores = parsed?.scores ?? [];
     if (!scores.length) return { rescored: 0, ranked: [], reason: "model returned no scores" };
 
@@ -960,17 +1315,27 @@ const backlogPrioritize = def({
     const rationales: Record<string, string> = {};
     for (const s of scores) {
       const clamp = (n: number) => Math.min(10, Math.max(1, Math.round(n)));
-      const { error: uErr } = await supabase.from("opportunities")
+      const { error: uErr } = await supabase
+        .from("opportunities")
         .update({ impact: clamp(s.impact), confidence: clamp(s.confidence), ease: clamp(s.ease) })
-        .eq("id", s.id).eq("user_id", userId);
-      if (!uErr) { rescored++; if (s.rationale) rationales[s.id] = s.rationale.slice(0, 400); }
+        .eq("id", s.id)
+        .eq("user_id", userId);
+      if (!uErr) {
+        rescored++;
+        if (s.rationale) rationales[s.id] = s.rationale.slice(0, 400);
+      }
     }
-    const { data: ranked } = await supabase.from("opportunities")
+    const { data: ranked } = await supabase
+      .from("opportunities")
       .select("id,title,impact,confidence,ease,ice_score")
-      .in("id", scores.map((s) => s.id))
+      .in(
+        "id",
+        scores.map((s) => s.id),
+      )
       .order("ice_score", { ascending: false });
     return {
-      rescored, model: DRAFT_MODEL,
+      rescored,
+      model: DRAFT_MODEL,
       ranked: (ranked ?? []).map((r) => ({ ...r, rationale: rationales[r.id] ?? null })),
     };
   },
@@ -984,7 +1349,8 @@ const backlogPrioritize = def({
 // the next callModel runs pre-guardrails (PII / prompt-injection / secret).
 const webSearchTool = def({
   name: "web.search",
-  description: "Search the public web. Returns ranked results (url, title, snippet). Set scrape=true to also fetch markdown of each result (cheap recon). Use this BEFORE making claims about products, companies, news, or competitors you don't already have workspace context on.",
+  description:
+    "Search the public web. Returns ranked results (url, title, snippet). Set scrape=true to also fetch markdown of each result (cheap recon). Use this BEFORE making claims about products, companies, news, or competitors you don't already have workspace context on.",
   category: "read",
   argsSchema: z.object({
     query: z.string().min(1).max(300),
@@ -998,7 +1364,8 @@ const webSearchTool = def({
 
 const webFetchTool = def({
   name: "web.fetch",
-  description: "Fetch a single URL and return its main content as markdown. Use after web.search to read a specific page in full. Always cite the returned URL when you use facts from it.",
+  description:
+    "Fetch a single URL and return its main content as markdown. Use after web.search to read a specific page in full. Always cite the returned URL when you use facts from it.",
   category: "read",
   argsSchema: z.object({
     url: z.string().url().max(2000),
@@ -1010,7 +1377,8 @@ const webFetchTool = def({
 
 const webMapTool = def({
   name: "web.map",
-  description: "Discover URLs on a domain (cheap sitemap). Optionally filter by keyword. Use BEFORE web.crawl to pick a small set of pages instead of crawling blindly.",
+  description:
+    "Discover URLs on a domain (cheap sitemap). Optionally filter by keyword. Use BEFORE web.crawl to pick a small set of pages instead of crawling blindly.",
   category: "read",
   argsSchema: z.object({
     url: z.string().url().max(500),
@@ -1024,7 +1392,8 @@ const webMapTool = def({
 
 const webCrawlTool = def({
   name: "web.crawl",
-  description: "Crawl a bounded set of pages on a domain (max 25 pages, depth 2). Costs real credits — prefer web.search + web.fetch unless you genuinely need many pages. Defaults to a confirm approval gate.",
+  description:
+    "Crawl a bounded set of pages on a domain (max 25 pages, depth 2). Costs real credits — prefer web.search + web.fetch unless you genuinely need many pages. Defaults to a confirm approval gate.",
   category: "read",
   argsSchema: z.object({
     url: z.string().url().max(500),
@@ -1048,23 +1417,33 @@ const webCrawlTool = def({
  */
 const agentHandoff = def({
   name: "agent.handoff",
-  description: "Hand the current mission off to another agent with a structured payload (task + context + artifacts + open questions + constraints). Use when your stage is done and a different specialist should pick up. Requires you to be inside a mission (the operator started it that way).",
+  description:
+    "Hand the current mission off to another agent with a structured payload (task + context + artifacts + open questions + constraints). Use when your stage is done and a different specialist should pick up. Requires you to be inside a mission (the operator started it that way).",
   category: "write",
   argsSchema: z.object({
     to_agent_slug: z.string().min(1).max(60),
     task: z.string().min(1).max(1000),
     context: z.record(z.string(), z.unknown()).optional(),
-    artifacts: z.array(z.object({
-      kind: z.string().min(1).max(40),
-      id: z.string().min(1).max(200),
-      title: z.string().max(280).optional(),
-    })).max(20).optional(),
+    artifacts: z
+      .array(
+        z.object({
+          kind: z.string().min(1).max(40),
+          id: z.string().min(1).max(200),
+          title: z.string().max(280).optional(),
+        }),
+      )
+      .max(20)
+      .optional(),
     open_questions: z.array(z.string().min(1).max(400)).max(10).optional(),
     constraints: z.array(z.string().min(1).max(400)).max(10).optional(),
   }),
   preview: (a) => `Handoff to ${a.to_agent_slug}: "${a.task.slice(0, 80)}"`,
-  run: async (a, { supabase, userId, agentId, agentSlug, traceId, runId, missionId, workspaceId }) => {
-    if (!missionId) throw new Error("agent.handoff requires a mission_id (start the run with a mission)");
+  run: async (
+    a,
+    { supabase, userId, agentId, agentSlug, traceId, runId, missionId, workspaceId },
+  ) => {
+    if (!missionId)
+      throw new Error("agent.handoff requires a mission_id (start the run with a mission)");
     if (!workspaceId) throw new Error("agent.handoff requires a workspace_id");
     const to = await resolveAgent(supabase, userId, { agent_slug: a.to_agent_slug });
     if (to.id === agentId) throw new Error("agent.handoff: cannot hand off to yourself");
@@ -1095,10 +1474,37 @@ const agentHandoff = def({
 });
 
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
-  [workspaceSearch, listTasks, createTask, updateTaskStatus, logSignal, createNote, remember, memoryReflect, memoryPromote, proposeSlots, createCalendarEvent, githubIssueCreate, githubPrOpen, githubCiRead, githubCommitAppend, prdLinkIssue, researchSynthesize, prdDraft, backlogPrioritize, agentHandoff, webSearchTool, webFetchTool, webMapTool, webCrawlTool, missionPlan, missionDispatch, missionObserve, missionFinalize]
-    .map((t) => [t.name, t]),
+  [
+    workspaceSearch,
+    listTasks,
+    createTask,
+    updateTaskStatus,
+    logSignal,
+    createNote,
+    remember,
+    memoryReflect,
+    memoryPromote,
+    proposeSlots,
+    createCalendarEvent,
+    githubIssueCreate,
+    githubPrOpen,
+    githubCiRead,
+    githubCommitAppend,
+    prdLinkIssue,
+    researchSynthesize,
+    prdDraft,
+    backlogPrioritize,
+    agentHandoff,
+    webSearchTool,
+    webFetchTool,
+    webMapTool,
+    webCrawlTool,
+    missionPlan,
+    missionDispatch,
+    missionObserve,
+    missionFinalize,
+  ].map((t) => [t.name, t]),
 );
-
 
 /** Tool descriptors safe for inclusion in a system prompt (no schemas). */
 export function describeToolsForPrompt(enabled: { tool_name: string; mode: string }[]): string {
@@ -1108,5 +1514,7 @@ export function describeToolsForPrompt(enabled: { tool_name: string; mode: strin
       const def = TOOL_REGISTRY[t.tool_name];
       if (!def) return null;
       return `- ${def.name} (${def.category}, ${t.mode}): ${def.description}`;
-    }).filter(Boolean).join("\n");
+    })
+    .filter(Boolean)
+    .join("\n");
 }

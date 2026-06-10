@@ -93,7 +93,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     <ConfirmContext.Provider value={{ confirm, prompt }}>
       {children}
 
-      <AlertDialog open={!!confirmState} onOpenChange={(o) => { if (!o) resolveConfirm(false); }}>
+      <AlertDialog
+        open={!!confirmState}
+        onOpenChange={(o) => {
+          if (!o) resolveConfirm(false);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{confirmState?.title}</AlertDialogTitle>
@@ -104,7 +109,8 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           {confirmState?.typedConfirm && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
-                Type <span className="font-mono text-foreground">{confirmState.typedConfirm}</span> to confirm
+                Type <span className="font-mono text-foreground">{confirmState.typedConfirm}</span>{" "}
+                to confirm
               </Label>
               <Input
                 autoFocus
@@ -121,7 +127,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <AlertDialogAction
               disabled={!typedOk}
               onClick={() => resolveConfirm(true)}
-              className={confirmState?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+              className={
+                confirmState?.destructive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
             >
               {confirmState?.confirmLabel ?? "Confirm"}
             </AlertDialogAction>
@@ -129,13 +139,16 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!promptState} onOpenChange={(o) => { if (!o) resolvePrompt(null); }}>
+      <Dialog
+        open={!!promptState}
+        onOpenChange={(o) => {
+          if (!o) resolvePrompt(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{promptState?.title}</DialogTitle>
-            {promptState?.body && (
-              <DialogDescription>{promptState.body}</DialogDescription>
-            )}
+            {promptState?.body && <DialogDescription>{promptState.body}</DialogDescription>}
           </DialogHeader>
           <form
             onSubmit={(e) => {

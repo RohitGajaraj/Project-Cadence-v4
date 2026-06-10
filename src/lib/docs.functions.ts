@@ -118,11 +118,7 @@ export const deleteDoc = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("docs")
-      .delete()
-      .eq("id", data.id)
-      .eq("user_id", userId);
+    const { error } = await supabase.from("docs").delete().eq("id", data.id).eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

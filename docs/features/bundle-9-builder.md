@@ -84,7 +84,7 @@ The same CI chip and PR chip render inline in `/missions/$id` for each step in t
 
 - **Builder writes one file per PR.** Multi-file diffs are intentionally out of scope; a real multi-file change ships as a sequence of single-file PRs.
 - **No `github.ci.logs` tool yet.** Builder sees the failing check's `name` + `summary` but not the raw job log; we keep the GitHub-API surface tight on purpose. Add it only if a real demo proves the summary is too thin.
-- **Conflict scope is `(repo, path)`.** Two missions that *will* edit the same path eventually but don't claim it at the same moment can still race; the conflict guard fires when the second `github.pr.open` runs, not at planning time. Adequate for the single-file contract.
+- **Conflict scope is `(repo, path)`.** Two missions that _will_ edit the same path eventually but don't claim it at the same moment can still race; the conflict guard fires when the second `github.pr.open` runs, not at planning time. Adequate for the single-file contract.
 - **No PR-merge, no PR-close, no PR-update.** Operator owns merge.
 - **Custom-repo per workspace is not yet supported** — `GITHUB_REPO` is a single global secret. Per-workspace connectors land with the integrations rework.
 

@@ -7,7 +7,12 @@ import { getMeeting, saveTranscript, extractMeeting } from "@/lib/meetings.funct
 
 type Preview = {
   summary: string;
-  action_items: { title: string; owner?: string; estimate_hours?: number; is_deep_work?: boolean }[];
+  action_items: {
+    title: string;
+    owner?: string;
+    estimate_hours?: number;
+    is_deep_work?: boolean;
+  }[];
   decisions: { title: string; rationale?: string }[];
   open_questions: string[];
 };
@@ -33,7 +38,11 @@ export function MeetingDetailBody({ id }: { id: string }) {
     if (meeting.data?.meeting) {
       setTranscript(meeting.data.meeting.transcript ?? "");
       const m = meeting.data.meeting;
-      if (m.summary || (m.action_items as unknown[])?.length || (m.decisions_made as unknown[])?.length) {
+      if (
+        m.summary ||
+        (m.action_items as unknown[])?.length ||
+        (m.decisions_made as unknown[])?.length
+      ) {
         setPreview({
           summary: m.summary ?? "",
           action_items: (m.action_items as Preview["action_items"]) ?? [],
@@ -56,7 +65,9 @@ export function MeetingDetailBody({ id }: { id: string }) {
         setPreview(r.preview as Preview);
         toast.success("Extracted, review then commit");
       } else if ("committed" in r && r.committed) {
-        toast.success(`Committed: ${r.committed.tasks} tasks, ${r.committed.decisions} decisions, ${r.committed.signals} signals`);
+        toast.success(
+          `Committed: ${r.committed.tasks} tasks, ${r.committed.decisions} decisions, ${r.committed.signals} signals`,
+        );
         qc.invalidateQueries({ queryKey: ["tasks"] });
         qc.invalidateQueries({ queryKey: ["decisions"] });
         qc.invalidateQueries({ queryKey: ["signals"] });
@@ -81,7 +92,8 @@ export function MeetingDetailBody({ id }: { id: string }) {
         </p>
         {m.processed_at && (
           <span className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-300 rounded-full border border-emerald-500/40 px-2.5 py-1">
-            <CheckCircle2 className="h-3 w-3" /> Committed {new Date(m.processed_at).toLocaleDateString()}
+            <CheckCircle2 className="h-3 w-3" /> Committed{" "}
+            {new Date(m.processed_at).toLocaleDateString()}
           </span>
         )}
       </header>
@@ -98,7 +110,10 @@ export function MeetingDetailBody({ id }: { id: string }) {
               <Save className="h-3 w-3" /> Save
             </button>
             <button
-              onClick={async () => { await mSave({ data: { id, transcript } }); extract.mutate(false); }}
+              onClick={async () => {
+                await mSave({ data: { id, transcript } });
+                extract.mutate(false);
+              }}
               disabled={extract.isPending || !transcript.trim()}
               className="btn-agentic rounded-lg px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
             >
@@ -117,48 +132,75 @@ export function MeetingDetailBody({ id }: { id: string }) {
 
       {!preview ? (
         <div className="bento p-6 text-center text-xs text-muted-foreground">
-          Paste a transcript and hit <strong>Extract</strong> to see summary, decisions, tasks, and open questions.
+          Paste a transcript and hit <strong>Extract</strong> to see summary, decisions, tasks, and
+          open questions.
         </div>
       ) : (
         <div className="space-y-4">
           <div className="bento p-4">
             <h3 className="font-display text-sm mb-2">Summary</h3>
-            <p className="text-sm leading-relaxed">{preview.summary || <span className="text-muted-foreground italic">No summary yet</span>}</p>
+            <p className="text-sm leading-relaxed">
+              {preview.summary || (
+                <span className="text-muted-foreground italic">No summary yet</span>
+              )}
+            </p>
           </div>
 
           <div className="bento p-4">
-            <h3 className="font-display text-sm mb-3 flex items-center gap-1.5"><ListTodo className="h-3.5 w-3.5 text-cyan-300" /> Action items <span className="text-[11px] text-muted-foreground">{preview.action_items.length}</span></h3>
+            <h3 className="font-display text-sm mb-3 flex items-center gap-1.5">
+              <ListTodo className="h-3.5 w-3.5 text-cyan-300" /> Action items{" "}
+              <span className="text-[11px] text-muted-foreground">
+                {preview.action_items.length}
+              </span>
+            </h3>
             <ul className="space-y-1.5">
               {preview.action_items.map((a, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
                   <span className="text-muted-foreground">·</span>
                   <span className="flex-1">{a.title}</span>
-                  {a.estimate_hours != null && <span className="text-[10px] text-muted-foreground tabular-nums">{a.estimate_hours}h</span>}
+                  {a.estimate_hours != null && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums">
+                      {a.estimate_hours}h
+                    </span>
+                  )}
                 </li>
               ))}
-              {preview.action_items.length === 0 && <li className="text-xs text-muted-foreground">None.</li>}
+              {preview.action_items.length === 0 && (
+                <li className="text-xs text-muted-foreground">None.</li>
+              )}
             </ul>
           </div>
 
           <div className="bento p-4">
-            <h3 className="font-display text-sm mb-3 flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5 text-violet-300" /> Decisions <span className="text-[11px] text-muted-foreground">{preview.decisions.length}</span></h3>
+            <h3 className="font-display text-sm mb-3 flex items-center gap-1.5">
+              <GitBranch className="h-3.5 w-3.5 text-violet-300" /> Decisions{" "}
+              <span className="text-[11px] text-muted-foreground">{preview.decisions.length}</span>
+            </h3>
             <ul className="space-y-2">
               {preview.decisions.map((d, i) => (
                 <li key={i} className="text-sm">
                   <div className="font-medium">{d.title}</div>
-                  {d.rationale && <div className="text-xs text-muted-foreground mt-0.5">{d.rationale}</div>}
+                  {d.rationale && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{d.rationale}</div>
+                  )}
                 </li>
               ))}
-              {preview.decisions.length === 0 && <li className="text-xs text-muted-foreground">None.</li>}
+              {preview.decisions.length === 0 && (
+                <li className="text-xs text-muted-foreground">None.</li>
+              )}
             </ul>
           </div>
 
           {preview.open_questions.length > 0 && (
             <div className="bento p-4">
-              <h3 className="font-display text-sm mb-3 flex items-center gap-1.5"><HelpCircle className="h-3.5 w-3.5 text-amber-300" /> Open questions</h3>
+              <h3 className="font-display text-sm mb-3 flex items-center gap-1.5">
+                <HelpCircle className="h-3.5 w-3.5 text-amber-300" /> Open questions
+              </h3>
               <ul className="space-y-1.5">
                 {preview.open_questions.map((q, i) => (
-                  <li key={i} className="text-sm">· {q}</li>
+                  <li key={i} className="text-sm">
+                    · {q}
+                  </li>
                 ))}
               </ul>
             </div>

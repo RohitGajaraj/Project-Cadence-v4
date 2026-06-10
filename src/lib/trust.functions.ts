@@ -23,27 +23,36 @@ const ArcEnum = z.enum(["observing", "proving", "trusted", "ambient"]);
 export const setAgentArc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      agentId: z.string().uuid(),
-      arc: ArcEnum,
-    }).parse(input),
+    z
+      .object({
+        agentId: z.string().uuid(),
+        arc: ArcEnum,
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // Verify the agent belongs to the user (RLS would also block, but this
     // returns a cleaner error to the UI).
     const { data: agent, error: agentErr } = await supabase
-      .from("agents").select("id").eq("id", data.agentId).eq("user_id", userId).maybeSingle();
+      .from("agents")
+      .select("id")
+      .eq("id", data.agentId)
+      .eq("user_id", userId)
+      .maybeSingle();
     if (agentErr) throw new Error(agentErr.message);
     if (!agent) throw new Error("Agent not found");
 
-    const { error } = await supabase.from("agent_autonomy").upsert({
-      user_id: userId,
-      agent_id: data.agentId,
-      arc: data.arc,
-      set_by: userId,
-      set_at: new Date().toISOString(),
-    }, { onConflict: "user_id,agent_id" });
+    const { error } = await supabase.from("agent_autonomy").upsert(
+      {
+        user_id: userId,
+        agent_id: data.agentId,
+        arc: data.arc,
+        set_by: userId,
+        set_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,agent_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, arc: data.arc };
   });

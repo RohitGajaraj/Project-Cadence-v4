@@ -16,22 +16,28 @@ const STATUS_TABS: { value: Status; label: string }[] = [
 ];
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; Icon: typeof Clock; tone: "pending" | "ok" | "bad" | "muted" }> = {
-    pending:  { label: "Pending",   Icon: Clock,         tone: "pending" },
-    approved: { label: "Approved",  Icon: Check,         tone: "ok" },
-    executed: { label: "Done",      Icon: CheckCheck,    tone: "ok" },
-    rejected: { label: "Rejected",  Icon: X,             tone: "bad" },
-    failed:   { label: "Failed",    Icon: AlertTriangle, tone: "bad" },
-    cancelled:{ label: "Cancelled", Icon: XCircle,       tone: "muted" },
-    expired:  { label: "Expired",   Icon: XCircle,       tone: "muted" },
+  const map: Record<
+    string,
+    { label: string; Icon: typeof Clock; tone: "pending" | "ok" | "bad" | "muted" }
+  > = {
+    pending: { label: "Pending", Icon: Clock, tone: "pending" },
+    approved: { label: "Approved", Icon: Check, tone: "ok" },
+    executed: { label: "Done", Icon: CheckCheck, tone: "ok" },
+    rejected: { label: "Rejected", Icon: X, tone: "bad" },
+    failed: { label: "Failed", Icon: AlertTriangle, tone: "bad" },
+    cancelled: { label: "Cancelled", Icon: XCircle, tone: "muted" },
+    expired: { label: "Expired", Icon: XCircle, tone: "muted" },
   };
   const s = map[status] ?? map.pending;
   const { Icon } = s;
   const dot =
-    s.tone === "ok" ? "bg-[var(--deep-green)]" :
-    s.tone === "bad" ? "bg-[var(--coral)]" :
-    s.tone === "pending" ? "bg-foreground" :
-    "bg-muted-foreground";
+    s.tone === "ok"
+      ? "bg-[var(--deep-green)]"
+      : s.tone === "bad"
+        ? "bg-[var(--coral)]"
+        : s.tone === "pending"
+          ? "bg-foreground"
+          : "bg-muted-foreground";
   return (
     <span className="mono-label inline-flex items-center gap-1.5">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
@@ -57,7 +63,9 @@ export function ApprovalsPanel() {
     onSuccess: (r, vars) => {
       toast.success(
         vars.decision === "approve"
-          ? (r.executed ? "Approved & executed" : "Approved")
+          ? r.executed
+            ? "Approved & executed"
+            : "Approved"
           : "Rejected",
       );
       qc.invalidateQueries({ queryKey: ["approvals"] });
@@ -106,7 +114,9 @@ export function ApprovalsPanel() {
                     <StatusBadge status={a.status} />
                   </div>
                   {a.rationale && (
-                    <p className="mt-3 font-display text-lg leading-snug text-foreground">{a.rationale}</p>
+                    <p className="mt-3 font-display text-lg leading-snug text-foreground">
+                      {a.rationale}
+                    </p>
                   )}
                   <details className="mt-3">
                     <summary className="cursor-pointer link-action text-xs">View args</summary>
@@ -119,9 +129,7 @@ export function ApprovalsPanel() {
                       {a.error}
                     </div>
                   )}
-                  <div className="mt-3 mono-label">
-                    {new Date(a.created_at).toLocaleString()}
-                  </div>
+                  <div className="mt-3 mono-label">{new Date(a.created_at).toLocaleString()}</div>
                 </div>
                 {a.status === "pending" && (
                   <div className="flex shrink-0 gap-2">

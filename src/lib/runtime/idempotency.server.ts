@@ -27,14 +27,17 @@ export async function withIdempotency<T>(
     .eq("key", key)
     .maybeSingle();
   if (existing) {
-    return { result: (existing.result as T), cached: true };
+    return { result: existing.result as T, cached: true };
   }
 
   // Execute the work first, then store. If insert collides (parallel runner
- // beat us to it), prefer the stored result so callers see a single outcome.
+  // beat us to it), prefer the stored result so callers see a single outcome.
   const result = await fn();
   const { error } = await supabase.from("idempotency_keys").insert({
-    scope, key, user_id: userId, run_id: runId,
+    scope,
+    key,
+    user_id: userId,
+    run_id: runId,
     result: (result ?? null) as unknown as Record<string, unknown> | null,
   });
   if (error && !/duplicate key|unique/i.test(error.message)) {
@@ -44,8 +47,11 @@ export async function withIdempotency<T>(
   }
   if (error) {
     const { data: raced } = await supabase
-      .from("idempotency_keys").select("result")
-      .eq("scope", scope).eq("key", key).maybeSingle();
+      .from("idempotency_keys")
+      .select("result")
+      .eq("scope", scope)
+      .eq("key", key)
+      .maybeSingle();
     if (raced) return { result: raced.result as T, cached: true };
   }
   return { result, cached: false };

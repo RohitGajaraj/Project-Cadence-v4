@@ -7,8 +7,14 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import {
-  listSignals, createSignal, deleteSignal, bulkImportSignals,
-  listThemes, clusterSignals, promoteThemeToOpportunity, promoteSignalToOpportunity,
+  listSignals,
+  createSignal,
+  deleteSignal,
+  bulkImportSignals,
+  listThemes,
+  clusterSignals,
+  promoteThemeToOpportunity,
+  promoteSignalToOpportunity,
 } from "@/lib/discovery.functions";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import type { ArtifactKind } from "@/lib/lineage.functions";
@@ -41,12 +47,18 @@ function DiscoveryPage() {
 
   const add = useMutation({
     mutationFn: (d: { content: string; source: string }) => mCreate({ data: d }),
-    onSuccess: () => { inv(); toast.success("Signal captured"); },
+    onSuccess: () => {
+      inv();
+      toast.success("Signal captured");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const bulk = useMutation({
     mutationFn: (d: { text: string; source: string }) => mBulk({ data: d }),
-    onSuccess: (r) => { inv(); toast.success(`${r.inserted} signals imported`); },
+    onSuccess: (r) => {
+      inv();
+      toast.success(`${r.inserted} signals imported`);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const remove = useMutation({
@@ -55,24 +67,35 @@ function DiscoveryPage() {
   });
   const cluster = useMutation({
     mutationFn: () => mCluster({}),
-    onSuccess: (r) => { inv(); toast.success(r.message ?? "Clustering done"); },
+    onSuccess: (r) => {
+      inv();
+      toast.success(r.message ?? "Clustering done");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const promote = useMutation({
     mutationFn: (theme_id: string) => mPromote({ data: { theme_id } }),
-    onSuccess: () => { toast.success("Promoted to opportunity"); qc.invalidateQueries({ queryKey: ["opportunities"] }); },
+    onSuccess: () => {
+      toast.success("Promoted to opportunity");
+      qc.invalidateQueries({ queryKey: ["opportunities"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const promoteSignal = useMutation({
     mutationFn: (signal_id: string) => mPromoteSignal({ data: { signal_id } }),
-    onSuccess: () => { toast.success("Promoted to opportunity"); qc.invalidateQueries({ queryKey: ["opportunities"] }); },
+    onSuccess: () => {
+      toast.success("Promoted to opportunity");
+      qc.invalidateQueries({ queryKey: ["opportunities"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const [content, setContent] = useState("");
   const [source, setSource] = useState("manual");
   const [paste, setPaste] = useState("");
-  const [lineage, setLineage] = useState<{ kind: ArtifactKind; id: string; title: string } | null>(null);
+  const [lineage, setLineage] = useState<{ kind: ArtifactKind; id: string; title: string } | null>(
+    null,
+  );
 
   const all = signals.data?.signals ?? [];
   const themeList = themes.data?.themes ?? [];
@@ -83,7 +106,9 @@ function DiscoveryPage() {
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Discover</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              Discover
+            </div>
             <h1 className="mt-3 font-display text-4xl tracking-tight">
               Customer <span className="neural-text">discovery</span>
             </h1>
@@ -97,7 +122,9 @@ function DiscoveryPage() {
             className="btn-agentic rounded-xl px-4 py-2.5 text-sm font-medium inline-flex items-center gap-2"
           >
             <Wand2 className="h-4 w-4" />
-            {cluster.isPending ? "Clustering…" : `Cluster ${unclustered.length} signal${unclustered.length === 1 ? "" : "s"}`}
+            {cluster.isPending
+              ? "Clustering…"
+              : `Cluster ${unclustered.length} signal${unclustered.length === 1 ? "" : "s"}`}
           </button>
         </header>
 
@@ -128,9 +155,13 @@ function DiscoveryPage() {
                     onChange={(e) => setSource(e.target.value)}
                     className="rounded-lg border hairline bg-background/60 px-2 py-1.5 text-xs"
                   >
-                    {["manual", "interview", "ticket", "review", "sales", "slack", "twitter"].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                    {["manual", "interview", "ticket", "review", "sales", "slack", "twitter"].map(
+                      (s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ),
+                    )}
                   </select>
                   <button
                     type="submit"
@@ -148,7 +179,9 @@ function DiscoveryPage() {
               <textarea
                 value={paste}
                 onChange={(e) => setPaste(e.target.value)}
-                placeholder={"One signal per line.\nE.g. \"Onboarding is confusing\"\n\"Dashboard is too slow\""}
+                placeholder={
+                  'One signal per line.\nE.g. "Onboarding is confusing"\n"Dashboard is too slow"'
+                }
                 rows={4}
                 className="w-full rounded-lg border hairline bg-background/60 px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-ring resize-none"
               />
@@ -168,13 +201,17 @@ function DiscoveryPage() {
             <div className="bento p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display text-sm">Signals</h3>
-                <span className="text-[11px] text-muted-foreground">{all.length} total · {unclustered.length} unclustered</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {all.length} total · {unclustered.length} unclustered
+                </span>
               </div>
               <ul className="space-y-2 max-h-[520px] overflow-y-auto scrollbar-thin pr-1">
                 {all.map((s) => (
                   <li key={s.id} className="rounded-xl border hairline px-3 py-2 group">
                     <div className="flex items-start gap-2">
-                      <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5 mt-0.5">{s.source}</span>
+                      <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5 mt-0.5">
+                        {s.source}
+                      </span>
                       <p className="flex-1 text-sm">{s.content}</p>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                         <button
@@ -186,7 +223,9 @@ function DiscoveryPage() {
                           <ArrowUpRight className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => setLineage({ kind: "signal", id: s.id, title: s.content.slice(0, 80) })}
+                          onClick={() =>
+                            setLineage({ kind: "signal", id: s.id, title: s.content.slice(0, 80) })
+                          }
                           title="Lineage"
                           className="text-muted-foreground hover:text-foreground"
                         >
@@ -207,7 +246,9 @@ function DiscoveryPage() {
                   </li>
                 ))}
                 {all.length === 0 && (
-                  <li className="text-xs text-muted-foreground py-6 text-center">No signals yet. Capture your first one above.</li>
+                  <li className="text-xs text-muted-foreground py-6 text-center">
+                    No signals yet. Capture your first one above.
+                  </li>
                 )}
               </ul>
             </div>
@@ -216,7 +257,9 @@ function DiscoveryPage() {
           {/* Right: themes */}
           <section className="bento p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display text-sm flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-violet-300" /> AI themes</h3>
+              <h3 className="font-display text-sm flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-violet-300" /> AI themes
+              </h3>
               <span className="text-[11px] text-muted-foreground">{themeList.length}</span>
             </div>
             <ul className="space-y-3">
@@ -232,7 +275,9 @@ function DiscoveryPage() {
                         <span>conf {(Number(t.confidence) * 100).toFixed(0)}%</span>
                       </div>
                     </div>
-                    {t.summary && <p className="text-xs text-muted-foreground mt-1.5">{t.summary}</p>}
+                    {t.summary && (
+                      <p className="text-xs text-muted-foreground mt-1.5">{t.summary}</p>
+                    )}
                     <div className="mt-3 flex items-center gap-1.5">
                       <button
                         onClick={() => promote.mutate(t.id)}
@@ -262,7 +307,9 @@ function DiscoveryPage() {
       </div>
       <LineageDrawer
         open={Boolean(lineage)}
-        onOpenChange={(o) => { if (!o) setLineage(null); }}
+        onOpenChange={(o) => {
+          if (!o) setLineage(null);
+        }}
         kind={lineage?.kind ?? "signal"}
         id={lineage?.id ?? null}
         title={lineage?.title}

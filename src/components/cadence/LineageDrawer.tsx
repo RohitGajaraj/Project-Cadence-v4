@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/sheet";
 import { getLineage, type ArtifactKind } from "@/lib/lineage.functions";
 
-const ROUTES: Partial<Record<ArtifactKind, (id: string) => { to: string; params?: Record<string, string> }>> = {
+const ROUTES: Partial<
+  Record<ArtifactKind, (id: string) => { to: string; params?: Record<string, string> }>
+> = {
   opportunity: () => ({ to: "/opportunities" }),
   prd: (id) => ({ to: "/prds/$id", params: { id } }),
   task: () => ({ to: "/tasks" }),
@@ -88,7 +90,9 @@ export function LineageDrawer({
         <div className="mt-4 space-y-6">
           {title && (
             <div className="rounded-xl border hairline p-3 bg-secondary/30">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{KIND_LABEL[kind]}</div>
+              <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                {KIND_LABEL[kind]}
+              </div>
               <div className="text-sm font-medium mt-1">{title}</div>
             </div>
           )}
@@ -107,7 +111,11 @@ export function LineageDrawer({
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider shrink-0">
                     {KIND_LABEL[e.parent_kind as ArtifactKind]}
                   </span>
-                  <PeerLink kind={e.parent_kind as ArtifactKind} id={e.parent_id} title={e.peer_title ?? null} />
+                  <PeerLink
+                    kind={e.parent_kind as ArtifactKind}
+                    id={e.parent_id}
+                    title={e.peer_title ?? null}
+                  />
                 </li>
               ))}
             </ul>
@@ -119,7 +127,9 @@ export function LineageDrawer({
             </h4>
             {q.isLoading && <div className="text-xs text-muted-foreground">Loading…</div>}
             {!q.isLoading && descendants.length === 0 && (
-              <div className="text-xs text-muted-foreground italic">Nothing promoted from this yet.</div>
+              <div className="text-xs text-muted-foreground italic">
+                Nothing promoted from this yet.
+              </div>
             )}
             <ul className="space-y-2">
               {descendants.map((e) => (
@@ -127,7 +137,11 @@ export function LineageDrawer({
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider shrink-0">
                     {KIND_LABEL[e.child_kind as ArtifactKind]}
                   </span>
-                  <PeerLink kind={e.child_kind as ArtifactKind} id={e.child_id} title={e.peer_title ?? null} />
+                  <PeerLink
+                    kind={e.child_kind as ArtifactKind}
+                    id={e.child_id}
+                    title={e.peer_title ?? null}
+                  />
                 </li>
               ))}
             </ul>

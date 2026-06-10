@@ -44,8 +44,12 @@ export const startOrchestratedMission = createServerFn({ method: "POST" })
     const { data: ws } = await supabase.rpc("current_user_default_workspace");
     const workspaceId = (ws as string | null) ?? null;
     if (!workspaceId) throw new Error("No default workspace found for user");
-    const { data: agent } = await supabase.from("agents")
-      .select("id").eq("user_id", userId).eq("slug", "orchestrator").maybeSingle();
+    const { data: agent } = await supabase
+      .from("agents")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("slug", "orchestrator")
+      .maybeSingle();
     if (!agent) throw new Error("Orchestrator agent not found after seeding");
 
     // 3. Pre-flight roster check: confirm at least one specialist exists.
@@ -129,7 +133,9 @@ export const listMissionSteps = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("mission_steps")
-      .select("id,idx,agent_slug,sub_goal,depends_on,status,run_id,error,result,rationale,dispatched_at,completed_at,created_at")
+      .select(
+        "id,idx,agent_slug,sub_goal,depends_on,status,run_id,error,result,rationale,dispatched_at,completed_at,created_at",
+      )
       .eq("mission_id", data.missionId)
       .order("idx");
     if (error) throw new Error(error.message);

@@ -46,7 +46,9 @@ export async function authorizeAppUserOAuth(
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`OAuth start failed (${res.status}): ${text || res.statusText}`);
-  const body = text ? (JSON.parse(text) as { authorization_url?: string; session_id?: string }) : {};
+  const body = text
+    ? (JSON.parse(text) as { authorization_url?: string; session_id?: string })
+    : {};
   if (!body.authorization_url) throw new Error("OAuth start response missing authorization_url");
   return { authorizationUrl: body.authorization_url, sessionId: body.session_id ?? "" };
 }

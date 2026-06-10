@@ -37,7 +37,9 @@ export const getDashboard = createServerFn({ method: "GET" })
       supabase
         .from("tasks")
         .select("*")
-        .or(`due_date.eq.${today.toISOString().slice(0, 10)},and(due_date.is.null,status.neq.done)`),
+        .or(
+          `due_date.eq.${today.toISOString().slice(0, 10)},and(due_date.is.null,status.neq.done)`,
+        ),
       supabase
         .from("meetings")
         .select("*")

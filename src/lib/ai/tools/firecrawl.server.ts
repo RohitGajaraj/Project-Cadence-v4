@@ -82,12 +82,14 @@ export async function webSearch(opts: {
     rows = [...(d.web ?? []), ...(d.news ?? [])];
   } else if (Array.isArray(j.web)) rows = j.web;
   else if (Array.isArray(j.results)) rows = j.results;
-  const results = rows.map((r) => ({
-    url: r.url ?? "",
-    title: clip(r.title, 200),
-    description: clip(r.description, 400),
-    ...(opts.scrape ? { markdown: clip(r.markdown, 2000) } : {}),
-  })).filter((r) => r.url);
+  const results = rows
+    .map((r) => ({
+      url: r.url ?? "",
+      title: clip(r.title, 200),
+      description: clip(r.description, 400),
+      ...(opts.scrape ? { markdown: clip(r.markdown, 2000) } : {}),
+    }))
+    .filter((r) => r.url);
   return { query: opts.query, results };
 }
 
@@ -173,11 +175,13 @@ export async function webCrawl(opts: {
     excludePaths: opts.excludePaths,
     scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
   });
-  const pages = (j.data ?? []).map((p) => ({
-    url: p.metadata?.sourceURL ?? "",
-    title: clip(p.metadata?.title, 200),
-    markdown: clip(p.markdown, 4_000),
-  })).filter((p) => p.url);
+  const pages = (j.data ?? [])
+    .map((p) => ({
+      url: p.metadata?.sourceURL ?? "",
+      title: clip(p.metadata?.title, 200),
+      markdown: clip(p.markdown, 4_000),
+    }))
+    .filter((p) => p.url);
   return {
     url: opts.url,
     pages,

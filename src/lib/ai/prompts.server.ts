@@ -25,14 +25,17 @@ export async function resolvePrompt(
   const { data: tpl } = await supabase
     .from("prompt_templates")
     .select("id,active_version_id")
-    .eq("user_id", userId).eq("surface", surface).eq("key", key)
+    .eq("user_id", userId)
+    .eq("surface", surface)
+    .eq("key", key)
     .maybeSingle();
   if (!tpl) return null;
 
   const { data: asn } = await supabase
     .from("prompt_assignments")
     .select("variant_a_version_id,variant_b_version_id,split_pct,enabled")
-    .eq("user_id", userId).eq("template_id", tpl.id)
+    .eq("user_id", userId)
+    .eq("template_id", tpl.id)
     .maybeSingle();
 
   let versionId: string | null = null;
@@ -41,9 +44,11 @@ export async function resolvePrompt(
     const split = Math.max(0, Math.min(100, asn.split_pct ?? 100));
     const roll = Math.random() * 100;
     if (roll < split || !asn.variant_b_version_id) {
-      versionId = asn.variant_a_version_id; variant = "a";
+      versionId = asn.variant_a_version_id;
+      variant = "a";
     } else {
-      versionId = asn.variant_b_version_id; variant = "b";
+      versionId = asn.variant_b_version_id;
+      variant = "b";
     }
   } else {
     versionId = tpl.active_version_id;
@@ -53,7 +58,8 @@ export async function resolvePrompt(
   const { data: ver } = await supabase
     .from("prompt_versions")
     .select("id,system_prompt,model,temperature")
-    .eq("id", versionId).maybeSingle();
+    .eq("id", versionId)
+    .maybeSingle();
   if (!ver) return null;
 
   return {
@@ -86,5 +92,7 @@ export async function logPromptRun(
       event_id: args.event_id ?? null,
       rendered_input: (args.rendered_input ?? "").slice(0, 4000),
     });
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 }

@@ -3,9 +3,31 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Hammer, GitPullRequest, Github, Loader2, AlertCircle, CheckCircle2, Clock, ShieldQuestion, Plus, ChevronUp, Send, FlaskConical, Lock, Unlock } from "lucide-react";
+import {
+  Hammer,
+  GitPullRequest,
+  Github,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ShieldQuestion,
+  Plus,
+  ChevronUp,
+  Send,
+  FlaskConical,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
-import { listBuilderRuns, dispatchBuilderMission, listBuilderClaims, releaseBuilderClaim, type BuilderRun, type BuilderClaim } from "@/lib/build.functions";
+import {
+  listBuilderRuns,
+  dispatchBuilderMission,
+  listBuilderClaims,
+  releaseBuilderClaim,
+  type BuilderRun,
+  type BuilderClaim,
+} from "@/lib/build.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPrds } from "@/lib/discovery.functions";
 import { Button } from "@/components/ui/button";
@@ -18,20 +40,32 @@ export const Route = createFileRoute("/_authenticated/build")({
     return (
       <div className="p-8 text-sm">
         <p className="text-destructive">Failed to load Builder: {error.message}</p>
-        <Button className="mt-3" onClick={() => { reset(); router.invalidate(); }}>Retry</Button>
+        <Button
+          className="mt-3"
+          onClick={() => {
+            reset();
+            router.invalidate();
+          }}
+        >
+          Retry
+        </Button>
       </div>
     );
   },
   notFoundComponent: () => <div className="p-8 text-sm">Not found.</div>,
 });
 
-type Column = { id: "in_flight" | "needs_approval" | "pr_open" | "done" | "failed"; label: string; tone: string };
+type Column = {
+  id: "in_flight" | "needs_approval" | "pr_open" | "done" | "failed";
+  label: string;
+  tone: string;
+};
 const COLUMNS: Column[] = [
-  { id: "in_flight",      label: "In flight",     tone: "text-cyan-300" },
-  { id: "needs_approval", label: "Awaiting you",  tone: "text-amber-300" },
-  { id: "pr_open",        label: "PR open",       tone: "text-violet-300" },
-  { id: "done",           label: "Done",          tone: "text-emerald-300" },
-  { id: "failed",         label: "Failed",        tone: "text-rose-300" },
+  { id: "in_flight", label: "In flight", tone: "text-cyan-300" },
+  { id: "needs_approval", label: "Awaiting you", tone: "text-amber-300" },
+  { id: "pr_open", label: "PR open", tone: "text-violet-300" },
+  { id: "done", label: "Done", tone: "text-emerald-300" },
+  { id: "failed", label: "Failed", tone: "text-rose-300" },
 ];
 
 function columnFor(r: BuilderRun): Column["id"] {
@@ -67,11 +101,14 @@ function BuildConsolePage() {
             </div>
             <h1 className="font-display text-3xl tracking-tight">Builder</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Dispatch a Builder mission from free-form intent — optionally referencing a PRD or external links — then watch the agent open a scoped, single-file, approval-gated PR. Click any card to open its Mission Graph.
+              Dispatch a Builder mission from free-form intent — optionally referencing a PRD or
+              external links — then watch the agent open a scoped, single-file, approval-gated PR.
+              Click any card to open its Mission Graph.
             </p>
           </div>
           <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" /> Live · 2s refresh
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />{" "}
+            Live · 2s refresh
           </div>
         </header>
 
@@ -80,19 +117,25 @@ function BuildConsolePage() {
         <BuilderClaimsPanel />
 
         {runsQ.isLoading ? (
-          <div className="text-sm text-muted-foreground inline-flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Loading Builder missions…</div>
+          <div className="text-sm text-muted-foreground inline-flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading Builder missions…
+          </div>
         ) : runs.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             {COLUMNS.map((col) => (
               <div key={col.id} className="rounded-xl border hairline bg-card/40 p-3 min-h-[200px]">
-                <div className={`text-[10px] uppercase tracking-[0.16em] mb-3 flex items-center justify-between ${col.tone}`}>
+                <div
+                  className={`text-[10px] uppercase tracking-[0.16em] mb-3 flex items-center justify-between ${col.tone}`}
+                >
                   <span>{col.label}</span>
                   <span className="text-muted-foreground">{grouped.get(col.id)!.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {grouped.get(col.id)!.map((r) => <BuilderCard key={r.run_id} run={r} columnId={col.id} />)}
+                  {grouped.get(col.id)!.map((r) => (
+                    <BuilderCard key={r.run_id} run={r} columnId={col.id} />
+                  ))}
                   {grouped.get(col.id)!.length === 0 ? (
                     <div className="text-xs text-muted-foreground/60 italic px-1 py-2">—</div>
                   ) : null}
@@ -141,7 +184,8 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
       } = { goal: goal.trim() };
       if (prdId) payload.prdId = prdId;
       if (referenceLinks.length) payload.referenceLinks = referenceLinks;
-      if (issueMode === "number" && issueNumber.trim()) payload.issueNumber = Number(issueNumber.trim());
+      if (issueMode === "number" && issueNumber.trim())
+        payload.issueNumber = Number(issueNumber.trim());
       else if (issueMode === "auto" && !prdHasIssue) payload.autoCreateIssue = true;
       return fDispatch({ data: payload });
     },
@@ -170,10 +214,11 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
     );
   }
 
-  const canSubmit = goal.trim().length >= 4
-    && !dispatch.isPending
-    && (issueMode !== "number" || /^\d+$/.test(issueNumber.trim()))
-    && (issueMode !== "prd" || prdHasIssue);
+  const canSubmit =
+    goal.trim().length >= 4 &&
+    !dispatch.isPending &&
+    (issueMode !== "number" || /^\d+$/.test(issueNumber.trim())) &&
+    (issueMode !== "prd" || prdHasIssue);
 
   return (
     <div className="bento p-5 mb-6">
@@ -182,15 +227,22 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
           <Hammer className="h-3.5 w-3.5 text-cyan-300" /> Start a build
         </h3>
         {hasRuns ? (
-          <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px]">
+          <button
+            onClick={() => setOpen(false)}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px]"
+          >
             <ChevronUp className="h-3 w-3" /> Collapse
           </button>
         ) : (
-          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Single-file · approval-gated · idempotent</span>
+          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Single-file · approval-gated · idempotent
+          </span>
         )}
       </div>
 
-      <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">Goal</label>
+      <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">
+        Goal
+      </label>
       <textarea
         value={goal}
         onChange={(e) => setGoal(e.target.value)}
@@ -201,7 +253,9 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
 
       <div className="grid md:grid-cols-2 gap-3 mt-3">
         <div>
-          <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">Reference PRD (optional)</label>
+          <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">
+            Reference PRD (optional)
+          </label>
           <select
             value={prdId}
             onChange={(e) => {
@@ -212,15 +266,20 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
             className="w-full rounded-lg bg-secondary border hairline px-2.5 py-1.5 text-sm outline-none"
           >
             <option value="">— None —</option>
-            {(prdsQ.data?.prds ?? []).map((p: { id: string; title: string; github_issue_url: string | null }) => (
-              <option key={p.id} value={p.id}>
-                {p.title}{p.github_issue_url ? " · #linked" : ""}
-              </option>
-            ))}
+            {(prdsQ.data?.prds ?? []).map(
+              (p: { id: string; title: string; github_issue_url: string | null }) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                  {p.github_issue_url ? " · #linked" : ""}
+                </option>
+              ),
+            )}
           </select>
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">Reference links (optional)</label>
+          <label className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">
+            Reference links (optional)
+          </label>
           <textarea
             value={links}
             onChange={(e) => setLinks(e.target.value)}
@@ -232,7 +291,9 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
       </div>
 
       <div className="mt-3">
-        <div className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1.5">GitHub issue</div>
+        <div className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
+          GitHub issue
+        </div>
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <label className={`inline-flex items-center gap-1.5 ${!prdHasIssue ? "opacity-40" : ""}`}>
             <input
@@ -243,26 +304,41 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
               onChange={() => setIssueMode("prd")}
             />
             Use linked PRD issue
-            {prdHasIssue ? (() => {
-              const m = selectedPrd!.github_issue_url!.match(/\/issues\/(\d+)/);
-              return m ? <span className="text-violet-300">#{m[1]}</span> : null;
-            })() : null}
+            {prdHasIssue
+              ? (() => {
+                  const m = selectedPrd!.github_issue_url!.match(/\/issues\/(\d+)/);
+                  return m ? <span className="text-violet-300">#{m[1]}</span> : null;
+                })()
+              : null}
           </label>
           <label className="inline-flex items-center gap-1.5">
-            <input type="radio" name="issueMode" checked={issueMode === "number"} onChange={() => setIssueMode("number")} />
+            <input
+              type="radio"
+              name="issueMode"
+              checked={issueMode === "number"}
+              onChange={() => setIssueMode("number")}
+            />
             Issue #
             <input
               type="text"
               inputMode="numeric"
               pattern="\d*"
               value={issueNumber}
-              onChange={(e) => { setIssueNumber(e.target.value.replace(/\D/g, "")); setIssueMode("number"); }}
+              onChange={(e) => {
+                setIssueNumber(e.target.value.replace(/\D/g, ""));
+                setIssueMode("number");
+              }}
               className="w-20 rounded-md bg-secondary border hairline px-2 py-0.5 text-xs outline-none"
               placeholder="123"
             />
           </label>
           <label className="inline-flex items-center gap-1.5">
-            <input type="radio" name="issueMode" checked={issueMode === "auto"} onChange={() => setIssueMode("auto")} />
+            <input
+              type="radio"
+              name="issueMode"
+              checked={issueMode === "auto"}
+              onChange={() => setIssueMode("auto")}
+            />
             Auto-create from goal
           </label>
         </div>
@@ -286,23 +362,35 @@ function BuildComposer({ hasRuns }: { hasRuns: boolean }) {
 }
 
 function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"] }) {
-  const Icon = columnId === "needs_approval" ? ShieldQuestion
-    : columnId === "failed" ? AlertCircle
-    : columnId === "done" ? CheckCircle2
-    : columnId === "pr_open" ? GitPullRequest
-    : Clock;
-  const tone = columnId === "needs_approval" ? "text-amber-300"
-    : columnId === "failed" ? "text-rose-300"
-    : columnId === "done" ? "text-emerald-300"
-    : columnId === "pr_open" ? "text-violet-300"
-    : "text-cyan-300";
+  const Icon =
+    columnId === "needs_approval"
+      ? ShieldQuestion
+      : columnId === "failed"
+        ? AlertCircle
+        : columnId === "done"
+          ? CheckCircle2
+          : columnId === "pr_open"
+            ? GitPullRequest
+            : Clock;
+  const tone =
+    columnId === "needs_approval"
+      ? "text-amber-300"
+      : columnId === "failed"
+        ? "text-rose-300"
+        : columnId === "done"
+          ? "text-emerald-300"
+          : columnId === "pr_open"
+            ? "text-violet-300"
+            : "text-cyan-300";
 
   const inner = (
     <div className="rounded-lg border hairline bg-background/40 p-3 hover:border-primary/30 transition group">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
         <Icon className={`h-3 w-3 ${tone}`} />
         <span>{run.status}</span>
-        {run.pending_approvals > 0 ? <span className="text-amber-300">· {run.pending_approvals} pending</span> : null}
+        {run.pending_approvals > 0 ? (
+          <span className="text-amber-300">· {run.pending_approvals} pending</span>
+        ) : null}
       </div>
       <div className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-foreground">
         {run.mission_title ?? run.goal.slice(0, 80)}
@@ -323,7 +411,9 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
         </a>
       ) : null}
       {run.ci ? <CiChip ci={run.ci} prUrl={run.pr?.url ?? null} /> : null}
-      <div className="mt-2 text-[10px] text-muted-foreground/70">{new Date(run.created_at).toLocaleString()}</div>
+      <div className="mt-2 text-[10px] text-muted-foreground/70">
+        {new Date(run.created_at).toLocaleString()}
+      </div>
     </div>
   );
 
@@ -331,18 +421,30 @@ function BuilderCard({ run, columnId }: { run: BuilderRun; columnId: Column["id"
     <Link to="/missions/$missionId" params={{ missionId: run.mission_id }} className="block">
       {inner}
     </Link>
-  ) : inner;
+  ) : (
+    inner
+  );
 }
 
 function CiChip({ ci, prUrl }: { ci: NonNullable<BuilderRun["ci"]>; prUrl: string | null }) {
-  const tone = ci.overall === "success" ? "bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
-    : ci.overall === "failure" ? "bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
-    : ci.overall === "pending" ? "bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
-    : "bg-muted/40 text-muted-foreground hover:bg-muted/60";
-  const label = ci.overall === "success" ? "CI · green"
-    : ci.overall === "failure" ? (ci.failing ? `CI · red · ${ci.failing.name}` : "CI · red")
-    : ci.overall === "pending" ? "CI · pending"
-    : "CI · n/a";
+  const tone =
+    ci.overall === "success"
+      ? "bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
+      : ci.overall === "failure"
+        ? "bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+        : ci.overall === "pending"
+          ? "bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+          : "bg-muted/40 text-muted-foreground hover:bg-muted/60";
+  const label =
+    ci.overall === "success"
+      ? "CI · green"
+      : ci.overall === "failure"
+        ? ci.failing
+          ? `CI · red · ${ci.failing.name}`
+          : "CI · red"
+        : ci.overall === "pending"
+          ? "CI · pending"
+          : "CI · n/a";
   const href = ci.failing?.html_url ?? prUrl ?? undefined;
   const content = (
     <>
@@ -377,9 +479,14 @@ function EmptyState() {
       <Hammer className="h-6 w-6 mx-auto text-muted-foreground mb-3" />
       <div className="font-display text-lg mb-1">No Builder missions yet</div>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Use <span className="text-cyan-300">Start a build</span> above to dispatch a mission from free-form intent (optionally referencing a PRD or links). Builder will draft a scoped, single-file PR for you to approve — and it will appear here, live.
+        Use <span className="text-cyan-300">Start a build</span> above to dispatch a mission from
+        free-form intent (optionally referencing a PRD or links). Builder will draft a scoped,
+        single-file PR for you to approve — and it will appear here, live.
       </p>
-      <Link to="/prds" className="mt-4 inline-flex items-center gap-1.5 text-xs rounded-md border hairline px-3 py-1.5 hover:border-primary/40">
+      <Link
+        to="/prds"
+        className="mt-4 inline-flex items-center gap-1.5 text-xs rounded-md border hairline px-3 py-1.5 hover:border-primary/40"
+      >
         Browse PRDs
       </Link>
     </div>
@@ -413,18 +520,24 @@ function BuilderClaimsPanel() {
           <Lock className="h-3 w-3" /> Active file claims · {claims.length}
         </div>
         <div className="text-[10px] text-muted-foreground/70">
-          A Builder mission holds a path until terminal; a second mission on the same path gets blocked.
+          A Builder mission holds a path until terminal; a second mission on the same path gets
+          blocked.
         </div>
       </div>
       <div className="space-y-1.5">
         {claims.map((c) => (
-          <div key={c.id} className="flex items-center justify-between gap-3 rounded-md border hairline bg-background/40 px-2.5 py-1.5">
+          <div
+            key={c.id}
+            className="flex items-center justify-between gap-3 rounded-md border hairline bg-background/40 px-2.5 py-1.5"
+          >
             <div className="min-w-0">
               <div className="text-xs font-medium truncate">
-                <span className="text-muted-foreground">{c.repo}</span> · <span className="text-foreground">{c.path}</span>
+                <span className="text-muted-foreground">{c.repo}</span> ·{" "}
+                <span className="text-foreground">{c.path}</span>
               </div>
               <div className="text-[11px] text-muted-foreground truncate">
-                {c.mission_title ? `${c.mission_title} · ` : ""}claimed {new Date(c.claimed_at).toLocaleString()}
+                {c.mission_title ? `${c.mission_title} · ` : ""}claimed{" "}
+                {new Date(c.claimed_at).toLocaleString()}
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -440,7 +553,9 @@ function BuilderClaimsPanel() {
               <button
                 onClick={() => release.mutate(c.id)}
                 disabled={!c.is_mine || release.isPending}
-                title={c.is_mine ? "Force-release this claim" : "Only the owner can release this claim"}
+                title={
+                  c.is_mine ? "Force-release this claim" : "Only the owner can release this claim"
+                }
                 className="inline-flex items-center gap-1 text-[11px] rounded-md border hairline px-2 py-1 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Unlock className="h-3 w-3" /> Release

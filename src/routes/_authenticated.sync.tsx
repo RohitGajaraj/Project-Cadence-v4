@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Inbox, RefreshCcw, ExternalLink, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Inbox,
+  RefreshCcw,
+  ExternalLink,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functions";
@@ -67,10 +76,8 @@ function SyncInboxPage() {
   });
 
   const isBusy = (id: string) =>
-    (mPull.isPending && mPull.variables === id) ||
-    (mPush.isPending && mPush.variables === id);
-  const supported = (p: string) =>
-    p === "google_docs" || p === "notion" || p === "linear";
+    (mPull.isPending && mPull.variables === id) || (mPush.isPending && mPush.variables === id);
+  const supported = (p: string) => p === "google_docs" || p === "notion" || p === "linear";
 
   return (
     <AppShell>
@@ -140,7 +147,11 @@ function SyncInboxPage() {
                     onClick={() => mPush.mutate(m.id)}
                     className="inline-flex items-center gap-1 rounded-md border hairline px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {mPush.isPending && mPush.variables === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowUpFromLine className="h-3 w-3" />}
+                    {mPush.isPending && mPush.variables === m.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <ArrowUpFromLine className="h-3 w-3" />
+                    )}
                     Push & resolve
                   </button>
                   <button
@@ -148,7 +159,11 @@ function SyncInboxPage() {
                     onClick={() => mPull.mutate(m.id)}
                     className="inline-flex items-center gap-1 rounded-md border hairline px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {mPull.isPending && mPull.variables === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowDownToLine className="h-3 w-3" />}
+                    {mPull.isPending && mPull.variables === m.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <ArrowDownToLine className="h-3 w-3" />
+                    )}
                     Pull & resolve
                   </button>
                 </div>
@@ -167,16 +182,29 @@ function SyncInboxPage() {
           {!q.isLoading && synced.length === 0 && (
             <div className="text-sm text-muted-foreground">
               No synced items yet. Connect Notion or Google Docs in{" "}
-              <a href="/settings" className="text-primary underline">Settings</a> to start syncing.
+              <a href="/settings" className="text-primary underline">
+                Settings
+              </a>{" "}
+              to start syncing.
             </div>
           )}
           <div className="space-y-1">
             {synced.slice(0, 20).map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-secondary/40 gap-3">
+              <div
+                key={m.id}
+                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-secondary/40 gap-3"
+              >
                 <div className="min-w-0 flex items-center gap-2 flex-1">
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground w-20 shrink-0">{m.provider}</span>
+                  <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground w-20 shrink-0">
+                    {m.provider}
+                  </span>
                   {m.external_url ? (
-                    <a href={m.external_url} target="_blank" rel="noreferrer" className="truncate hover:text-foreground inline-flex items-center gap-1">
+                    <a
+                      href={m.external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate hover:text-foreground inline-flex items-center gap-1"
+                    >
                       {m.external_id}
                       <ExternalLink className="h-3 w-3 opacity-60" />
                     </a>

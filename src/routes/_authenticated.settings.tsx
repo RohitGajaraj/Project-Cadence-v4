@@ -7,12 +7,28 @@ import { AppShell } from "@/components/cadence/AppShell";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { MODELS } from "@/lib/ai/models";
-import { listIntegrations, upsertIntegration, disconnectIntegration, PROVIDERS } from "@/lib/integrations.functions";
+import {
+  listIntegrations,
+  upsertIntegration,
+  disconnectIntegration,
+  PROVIDERS,
+} from "@/lib/integrations.functions";
 import { Plug, CheckCircle2, Clock, Key, Trash2, Compass, Save } from "lucide-react";
-import { listApiKeys, saveApiKey, deleteApiKey, testApiKey, BYO_PROVIDERS } from "@/lib/byokeys.functions";
+import {
+  listApiKeys,
+  saveApiKey,
+  deleteApiKey,
+  testApiKey,
+  BYO_PROVIDERS,
+} from "@/lib/byokeys.functions";
 import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { listMyCalendarConnections, startCalendarConnect, saveCalendarConnection, disconnectCalendar } from "@/lib/calendar-connections.functions";
+import {
+  listMyCalendarConnections,
+  startCalendarConnect,
+  saveCalendarConnection,
+  disconnectCalendar,
+} from "@/lib/calendar-connections.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Calendar as CalIcon, Link2 } from "lucide-react";
@@ -53,47 +69,75 @@ function SettingsPage() {
   const [keyLabel, setKeyLabel] = useState<string>("");
   const [keyValue, setKeyValue] = useState<string>("");
   const [keyBase, setKeyBase] = useState<string>("");
-  const [testResult, setTestResult] = useState<{ ok: boolean; latency_ms: number; error?: string; sample?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    latency_ms: number;
+    error?: string;
+    sample?: string;
+  } | null>(null);
   const mTestKey = useMutation({
-    mutationFn: () => fTestKey({ data: { provider: keyProv, api_key: keyValue, base_url: keyBase || null } }),
+    mutationFn: () =>
+      fTestKey({ data: { provider: keyProv, api_key: keyValue, base_url: keyBase || null } }),
     onSuccess: (r) => {
       setTestResult(r);
       if (r.ok) toast.success(`Key works (${r.latency_ms}ms)`);
       else toast.error(r.error ?? "Test failed");
     },
-    onError: (e: Error) => { setTestResult({ ok: false, latency_ms: 0, error: e.message }); toast.error(e.message); },
+    onError: (e: Error) => {
+      setTestResult({ ok: false, latency_ms: 0, error: e.message });
+      toast.error(e.message);
+    },
   });
   const mSaveKey = useMutation({
-    mutationFn: () => fSaveKey({ data: {
-      provider: keyProv,
-      label: keyLabel || null,
-      api_key: keyValue,
-      base_url: keyBase || null,
-    } }),
+    mutationFn: () =>
+      fSaveKey({
+        data: {
+          provider: keyProv,
+          label: keyLabel || null,
+          api_key: keyValue,
+          base_url: keyBase || null,
+        },
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["api-keys"] });
-      setKeyValue(""); setKeyLabel(""); setKeyBase(""); setTestResult(null);
+      setKeyValue("");
+      setKeyLabel("");
+      setKeyBase("");
+      setTestResult(null);
       toast.success("Key saved");
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const mDelKey = useMutation({
     mutationFn: (id: string) => fDelKey({ data: { id } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["api-keys"] }); toast.success("Removed"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("Removed");
+    },
   });
   const intMap = new Map(
-    (integrations.data?.integrations ?? []).map((i: { provider: string; status: string; account_label: string | null }) => [i.provider, i]),
+    (integrations.data?.integrations ?? []).map(
+      (i: { provider: string; status: string; account_label: string | null }) => [i.provider, i],
+    ),
   );
 
   const mConnect = useMutation({
     mutationFn: (provider: string) =>
-      fUpsertInt({ data: { provider, status: "connected", account_label: "Connected via Lovable" } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["integrations"] }); toast.success("Connected"); },
+      fUpsertInt({
+        data: { provider, status: "connected", account_label: "Connected via Lovable" },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Connected");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const mDisconnect = useMutation({
     mutationFn: (provider: string) => fDisconnect({ data: { provider } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["integrations"] }); toast.success("Disconnected"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Disconnected");
+    },
   });
 
   const [fullName, setFullName] = useState("");
@@ -106,8 +150,13 @@ function SettingsPage() {
 
   useEffect(() => {
     const p = profile.data?.profile as {
-      full_name?: string; display_name?: string; role?: string; timezone?: string;
-      default_model?: string; working_hours_start?: number; working_hours_end?: number;
+      full_name?: string;
+      display_name?: string;
+      role?: string;
+      timezone?: string;
+      default_model?: string;
+      working_hours_start?: number;
+      working_hours_end?: number;
     } | null;
     if (!p) return;
     setFullName(p.full_name ?? "");
@@ -120,18 +169,19 @@ function SettingsPage() {
   }, [profile.data]);
 
   const save = useMutation({
-    mutationFn: () => mUpdate({
-      data: {
-        full_name: fullName || undefined,
-        display_name: displayName || undefined,
-        role: role || undefined,
-        timezone: timezone || undefined,
-        default_model: defaultModel,
-        working_hours_start: whStart,
-        working_hours_end: whEnd,
-        onboarded: true,
-      },
-    }),
+    mutationFn: () =>
+      mUpdate({
+        data: {
+          full_name: fullName || undefined,
+          display_name: displayName || undefined,
+          role: role || undefined,
+          timezone: timezone || undefined,
+          default_model: defaultModel,
+          working_hours_start: whStart,
+          working_hours_end: whEnd,
+          onboarded: true,
+        },
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profile"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -145,7 +195,9 @@ function SettingsPage() {
       <div className="px-6 lg:px-10 py-10 max-w-3xl mx-auto">
         <header className="mb-8">
           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Personal</div>
-          <h1 className="mt-3 font-display text-4xl tracking-tight">Settings &amp; <span className="neural-text">profile</span></h1>
+          <h1 className="mt-3 font-display text-4xl tracking-tight">
+            Settings &amp; <span className="neural-text">profile</span>
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             How Cadence and your AI agents should address you and operate.
           </p>
@@ -154,40 +206,88 @@ function SettingsPage() {
         <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
 
         <form
-          onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate();
+          }}
           className="space-y-5"
         >
           <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">Identity</h2>
+            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+              Identity
+            </h2>
             <Field label="Full name" hint="Used on documents, briefs, and stakeholder updates.">
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Q. Doe" className="input" />
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jane Q. Doe"
+                className="input"
+              />
             </Field>
-            <Field label="Preferred display name" hint="How Cadence and your agents will greet you.">
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Jane" className="input" />
+            <Field
+              label="Preferred display name"
+              hint="How Cadence and your agents will greet you."
+            >
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Jane"
+                className="input"
+              />
             </Field>
             <Field label="Role">
-              <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="AI Product Manager" className="input" />
+              <input
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="AI Product Manager"
+                className="input"
+              />
             </Field>
             <Field label="Timezone">
-              <input value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="America/New_York" className="input" />
+              <input
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="America/New_York"
+                className="input"
+              />
             </Field>
           </section>
 
           <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">Working hours</h2>
+            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+              Working hours
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Start (24h)">
-                <input type="number" min={0} max={23} value={whStart} onChange={(e) => setWhStart(Number(e.target.value))} className="input" />
+                <input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={whStart}
+                  onChange={(e) => setWhStart(Number(e.target.value))}
+                  className="input"
+                />
               </Field>
               <Field label="End (24h)">
-                <input type="number" min={1} max={24} value={whEnd} onChange={(e) => setWhEnd(Number(e.target.value))} className="input" />
+                <input
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={whEnd}
+                  onChange={(e) => setWhEnd(Number(e.target.value))}
+                  className="input"
+                />
               </Field>
             </div>
           </section>
 
           <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">Default AI model</h2>
-            <p className="text-xs text-muted-foreground">Used for chat and agent runs unless you override.</p>
+            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+              Default AI model
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Used for chat and agent runs unless you override.
+            </p>
             <select
               value={defaultModel}
               onChange={(e) => setDefaultModel(e.target.value)}
@@ -195,12 +295,16 @@ function SettingsPage() {
             >
               <optgroup label="Live (Lovable AI Gateway)">
                 {MODELS.filter((m) => m.live).map((m) => (
-                  <option key={m.id} value={m.id}>{m.label} — {m.desc}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.label} — {m.desc}
+                  </option>
                 ))}
               </optgroup>
               <optgroup label="Bring your own key (coming soon)">
                 {MODELS.filter((m) => !m.live).map((m) => (
-                  <option key={m.id} value={m.id} disabled>{m.label} — {m.desc}</option>
+                  <option key={m.id} value={m.id} disabled>
+                    {m.label} — {m.desc}
+                  </option>
                 ))}
               </optgroup>
             </select>
@@ -220,18 +324,27 @@ function SettingsPage() {
         <section className="bento p-6 mt-8 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">Integrations</h2>
-              <p className="text-xs text-muted-foreground mt-1">Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.</p>
+              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+                Integrations
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.
+              </p>
             </div>
             <Plug className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             {PROVIDERS.map((p) => {
-              const conn = intMap.get(p.id) as { status: string; account_label: string | null } | undefined;
+              const conn = intMap.get(p.id) as
+                | { status: string; account_label: string | null }
+                | undefined;
               const connected = conn?.status === "connected";
               const comingSoon = p.desc.startsWith("Coming");
               return (
-                <div key={p.id} className="rounded-xl border hairline p-4 flex flex-col gap-2 bg-background/40">
+                <div
+                  key={p.id}
+                  className="rounded-xl border hairline p-4 flex flex-col gap-2 bg-background/40"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="font-display text-sm flex items-center gap-1.5">
@@ -241,7 +354,9 @@ function SettingsPage() {
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">{p.desc}</div>
                       {connected && conn?.account_label && (
-                        <div className="text-[10px] text-muted-foreground/70 mt-1">{conn.account_label}</div>
+                        <div className="text-[10px] text-muted-foreground/70 mt-1">
+                          {conn.account_label}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -272,34 +387,75 @@ function SettingsPage() {
         <section className="bento p-6 mt-8 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">Bring your own AI keys</h2>
-              <p className="text-xs text-muted-foreground mt-1">Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT. Stored encrypted per user.</p>
+              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+                Bring your own AI keys
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT. Stored
+                encrypted per user.
+              </p>
             </div>
             <Key className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); if (keyValue.trim()) mSaveKey.mutate(); }}
-                className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <select value={keyProv} onChange={(e) => setKeyProv(e.target.value)} className="input sm:col-span-3">
-              {BYO_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (keyValue.trim()) mSaveKey.mutate();
+            }}
+            className="grid grid-cols-1 sm:grid-cols-12 gap-2"
+          >
+            <select
+              value={keyProv}
+              onChange={(e) => setKeyProv(e.target.value)}
+              className="input sm:col-span-3"
+            >
+              {BYO_PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
             </select>
-            <input value={keyLabel} onChange={(e) => setKeyLabel(e.target.value)} placeholder="Label (optional)" className="input sm:col-span-3" />
-            <input value={keyValue} onChange={(e) => setKeyValue(e.target.value)} type="password"
-                   placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder} className="input sm:col-span-4" />
-            <input value={keyBase} onChange={(e) => setKeyBase(e.target.value)} placeholder="Base URL (Ollama only)" className="input sm:col-span-2" />
+            <input
+              value={keyLabel}
+              onChange={(e) => setKeyLabel(e.target.value)}
+              placeholder="Label (optional)"
+              className="input sm:col-span-3"
+            />
+            <input
+              value={keyValue}
+              onChange={(e) => setKeyValue(e.target.value)}
+              type="password"
+              placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder}
+              className="input sm:col-span-4"
+            />
+            <input
+              value={keyBase}
+              onChange={(e) => setKeyBase(e.target.value)}
+              placeholder="Base URL (Ollama only)"
+              className="input sm:col-span-2"
+            />
             <div className="sm:col-span-12 flex items-center justify-end gap-2">
               {testResult && (
                 <span className={`text-xs ${testResult.ok ? "text-emerald-400" : "text-rose-400"}`}>
-                  {testResult.ok ? `✓ ${testResult.latency_ms}ms` : `✗ ${testResult.error?.slice(0, 80)}`}
+                  {testResult.ok
+                    ? `✓ ${testResult.latency_ms}ms`
+                    : `✗ ${testResult.error?.slice(0, 80)}`}
                 </span>
               )}
-              <button type="button" disabled={mTestKey.isPending || !keyValue.trim()}
-                      onClick={() => mTestKey.mutate()}
-                      className="text-xs rounded-md border hairline px-3 py-1.5 hover:bg-secondary/60 disabled:opacity-50">
+              <button
+                type="button"
+                disabled={mTestKey.isPending || !keyValue.trim()}
+                onClick={() => mTestKey.mutate()}
+                className="text-xs rounded-md border hairline px-3 py-1.5 hover:bg-secondary/60 disabled:opacity-50"
+              >
                 {mTestKey.isPending ? "Testing…" : "Test key"}
               </button>
-              <button type="submit" disabled={mSaveKey.isPending || !keyValue.trim()}
-                      className="text-xs rounded-md bg-foreground text-background px-3 py-1.5 disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={mSaveKey.isPending || !keyValue.trim()}
+                className="text-xs rounded-md bg-foreground text-background px-3 py-1.5 disabled:opacity-50"
+              >
                 {mSaveKey.isPending ? "Saving…" : "Add key"}
               </button>
             </div>
@@ -310,15 +466,24 @@ function SettingsPage() {
               <div className="text-xs text-muted-foreground">No BYO keys saved yet.</div>
             )}
             {(keys.data?.keys ?? []).map((k) => (
-              <div key={k.id} className="flex items-center gap-3 rounded-lg border hairline px-3 py-2 bg-background/40">
+              <div
+                key={k.id}
+                className="flex items-center gap-3 rounded-lg border hairline px-3 py-2 bg-background/40"
+              >
                 <div className="flex-1 min-w-0">
                   <div className="text-sm">
                     {BYO_PROVIDERS.find((p) => p.id === k.provider)?.label ?? k.provider}
                     {k.label && <span className="text-muted-foreground"> · {k.label}</span>}
                   </div>
-                  <div className="text-[11px] text-muted-foreground font-mono">{k.preview}{k.base_url ? ` · ${k.base_url}` : ""}</div>
+                  <div className="text-[11px] text-muted-foreground font-mono">
+                    {k.preview}
+                    {k.base_url ? ` · ${k.base_url}` : ""}
+                  </div>
                 </div>
-                <button onClick={() => mDelKey.mutate(k.id)} className="text-muted-foreground hover:text-destructive">
+                <button
+                  onClick={() => mDelKey.mutate(k.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -346,7 +511,15 @@ function SettingsPage() {
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <div className="text-xs text-muted-foreground mb-1.5">{label}</div>
@@ -358,19 +531,65 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 type BriefFieldKey = "mission" | "target_user" | "current_focus" | "anti_goals" | "notes";
 
-const BRIEF_FIELDS: { key: BriefFieldKey; label: string; hint: string; placeholder: string; rows: number }[] = [
-  { key: "mission",       label: "Mission",                  hint: "One paragraph. What this workspace exists to do.",                                placeholder: "We help solo PMs run the work of a 10-person product org.",                                rows: 3 },
-  { key: "target_user",   label: "Target user (ICP)",        hint: "Who you're building for. Agents anchor on this.",                                 placeholder: "Lead/solo PM at a 10 to 100 person B2B SaaS team. Ships weekly.",                          rows: 3 },
-  { key: "current_focus", label: "Current focus",            hint: "What the swarm should prioritize this quarter. Cut, don't expand.",               placeholder: "Q3 2026: close the Discover, Define, Plan, Build loop on real signals.",                   rows: 4 },
-  { key: "anti_goals",    label: "Anti-goals",               hint: "Things agents should refuse, even when they look reasonable.",                    placeholder: "No new dashboards. No mocked data. No features whose value can't be measured.",            rows: 3 },
-  { key: "notes",         label: "Notes for the swarm",      hint: "Tone, constraints, decisions, references.",                                       placeholder: "Speak in product terms. Lean concise over verbose. Always cite evidence.",                  rows: 4 },
+const BRIEF_FIELDS: {
+  key: BriefFieldKey;
+  label: string;
+  hint: string;
+  placeholder: string;
+  rows: number;
+}[] = [
+  {
+    key: "mission",
+    label: "Mission",
+    hint: "One paragraph. What this workspace exists to do.",
+    placeholder: "We help solo PMs run the work of a 10-person product org.",
+    rows: 3,
+  },
+  {
+    key: "target_user",
+    label: "Target user (ICP)",
+    hint: "Who you're building for. Agents anchor on this.",
+    placeholder: "Lead/solo PM at a 10 to 100 person B2B SaaS team. Ships weekly.",
+    rows: 3,
+  },
+  {
+    key: "current_focus",
+    label: "Current focus",
+    hint: "What the swarm should prioritize this quarter. Cut, don't expand.",
+    placeholder: "Q3 2026: close the Discover, Define, Plan, Build loop on real signals.",
+    rows: 4,
+  },
+  {
+    key: "anti_goals",
+    label: "Anti-goals",
+    hint: "Things agents should refuse, even when they look reasonable.",
+    placeholder: "No new dashboards. No mocked data. No features whose value can't be measured.",
+    rows: 3,
+  },
+  {
+    key: "notes",
+    label: "Notes for the swarm",
+    hint: "Tone, constraints, decisions, references.",
+    placeholder: "Speak in product terms. Lean concise over verbose. Always cite evidence.",
+    rows: 4,
+  },
 ];
 
 const EMPTY_BRIEF: Record<BriefFieldKey, string> = {
-  mission: "", target_user: "", current_focus: "", anti_goals: "", notes: "",
+  mission: "",
+  target_user: "",
+  current_focus: "",
+  anti_goals: "",
+  notes: "",
 };
 
-function WorkspaceBriefSection({ scrollRef, highlight }: { scrollRef: React.RefObject<HTMLDivElement | null>; highlight: boolean }) {
+function WorkspaceBriefSection({
+  scrollRef,
+  highlight,
+}: {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  highlight: boolean;
+}) {
   const { activeWorkspaceId, activeWorkspace, refreshWorkspaces } = useWorkspace();
   const qc = useQueryClient();
   const getFn = useServerFn(getActiveBrief);
@@ -425,7 +644,11 @@ function WorkspaceBriefSection({ scrollRef, highlight }: { scrollRef: React.RefO
         <div>
           <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-2">
             <Compass className="h-3 w-3" /> Strategic brief
-            {activeWorkspace?.name && <span className="normal-case tracking-normal text-muted-foreground/70">· {activeWorkspace.name}</span>}
+            {activeWorkspace?.name && (
+              <span className="normal-case tracking-normal text-muted-foreground/70">
+                · {activeWorkspace.name}
+              </span>
+            )}
           </h2>
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
             This brief is injected into every agent mission's system prompt. Changing it visibly
@@ -452,7 +675,9 @@ function WorkspaceBriefSection({ scrollRef, highlight }: { scrollRef: React.RefO
               <label htmlFor={`brief-${f.key}`} className="block">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs text-foreground">{f.label}</span>
-                  <span className="text-[10px] text-muted-foreground/70">{form[f.key].length} chars</span>
+                  <span className="text-[10px] text-muted-foreground/70">
+                    {form[f.key].length} chars
+                  </span>
                 </div>
                 <p className="mt-0.5 text-[11px] text-muted-foreground/70">{f.hint}</p>
               </label>
@@ -487,7 +712,8 @@ function CalendarAccountsSection() {
         gatewayBaseUrl: "https://connector-gateway.lovable.dev",
         start: (targetOrigin) => fStartConnect({ data: { provider, targetOrigin } }),
       });
-      if (!result.success || !result.connectionId) throw new Error(result.error ?? "Connect failed");
+      if (!result.success || !result.connectionId)
+        throw new Error(result.error ?? "Connect failed");
       return fSaveConn({ data: { provider, connectionId: result.connectionId } });
     },
     onSuccess: () => {
@@ -525,12 +751,21 @@ function CalendarAccountsSection() {
 
       <div className="space-y-2">
         {list.map((c) => (
-          <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border hairline px-3 py-2 bg-background/40">
+          <div
+            key={c.id}
+            className="flex items-center justify-between gap-3 rounded-lg border hairline px-3 py-2 bg-background/40"
+          >
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <div className="min-w-0">
-                <div className="text-sm">{c.provider === "google" ? "Google Calendar" : "Microsoft Outlook"}</div>
-                {c.account_email && <div className="text-[11px] text-muted-foreground truncate">{c.account_email}</div>}
+                <div className="text-sm">
+                  {c.provider === "google" ? "Google Calendar" : "Microsoft Outlook"}
+                </div>
+                {c.account_email && (
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {c.account_email}
+                  </div>
+                )}
               </div>
             </div>
             <button

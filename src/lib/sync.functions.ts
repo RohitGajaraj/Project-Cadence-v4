@@ -112,7 +112,10 @@ function gdocsToTiptap(doc: GDocument): TTNode {
 
 function extractText(n: TTNode): string {
   if (n.text) return n.text;
-  if (n.content) return n.content.map(extractText).join(n.type === "paragraph" || n.type === "heading" ? "\n" : "");
+  if (n.content)
+    return n.content
+      .map(extractText)
+      .join(n.type === "paragraph" || n.type === "heading" ? "\n" : "");
   return "";
 }
 
@@ -156,11 +159,19 @@ function tiptapToBatchUpdate(doc: TTNode): unknown[] {
       const ts: Record<string, unknown> = {};
       const fields: string[] = [];
       for (const mk of r.marks) {
-        if (mk.type === "bold") { ts.bold = true; fields.push("bold"); }
-        else if (mk.type === "italic") { ts.italic = true; fields.push("italic"); }
-        else if (mk.type === "underline") { ts.underline = true; fields.push("underline"); }
-        else if (mk.type === "strike") { ts.strikethrough = true; fields.push("strikethrough"); }
-        else if (mk.type === "link" && (mk.attrs as { href?: string })?.href) {
+        if (mk.type === "bold") {
+          ts.bold = true;
+          fields.push("bold");
+        } else if (mk.type === "italic") {
+          ts.italic = true;
+          fields.push("italic");
+        } else if (mk.type === "underline") {
+          ts.underline = true;
+          fields.push("underline");
+        } else if (mk.type === "strike") {
+          ts.strikethrough = true;
+          fields.push("strikethrough");
+        } else if (mk.type === "link" && (mk.attrs as { href?: string })?.href) {
           ts.link = { url: (mk.attrs as { href: string }).href };
           fields.push("link");
         }
@@ -277,34 +288,77 @@ function notionBlockToTiptap(b: NotionBlock): TTNode | null {
     case "paragraph":
       return { type: "paragraph", content: notionRichTextToTiptap(b.paragraph?.rich_text ?? []) };
     case "heading_1":
-      return { type: "heading", attrs: { level: 1 }, content: notionRichTextToTiptap(b.heading_1?.rich_text ?? []) };
+      return {
+        type: "heading",
+        attrs: { level: 1 },
+        content: notionRichTextToTiptap(b.heading_1?.rich_text ?? []),
+      };
     case "heading_2":
-      return { type: "heading", attrs: { level: 2 }, content: notionRichTextToTiptap(b.heading_2?.rich_text ?? []) };
+      return {
+        type: "heading",
+        attrs: { level: 2 },
+        content: notionRichTextToTiptap(b.heading_2?.rich_text ?? []),
+      };
     case "heading_3":
-      return { type: "heading", attrs: { level: 3 }, content: notionRichTextToTiptap(b.heading_3?.rich_text ?? []) };
+      return {
+        type: "heading",
+        attrs: { level: 3 },
+        content: notionRichTextToTiptap(b.heading_3?.rich_text ?? []),
+      };
     case "bulleted_list_item":
       return {
         type: "bulletList",
-        content: [{ type: "listItem", content: [{ type: "paragraph", content: notionRichTextToTiptap(b.bulleted_list_item?.rich_text ?? []) }] }],
+        content: [
+          {
+            type: "listItem",
+            content: [
+              {
+                type: "paragraph",
+                content: notionRichTextToTiptap(b.bulleted_list_item?.rich_text ?? []),
+              },
+            ],
+          },
+        ],
       };
     case "numbered_list_item":
       return {
         type: "orderedList",
-        content: [{ type: "listItem", content: [{ type: "paragraph", content: notionRichTextToTiptap(b.numbered_list_item?.rich_text ?? []) }] }],
+        content: [
+          {
+            type: "listItem",
+            content: [
+              {
+                type: "paragraph",
+                content: notionRichTextToTiptap(b.numbered_list_item?.rich_text ?? []),
+              },
+            ],
+          },
+        ],
       };
     case "to_do":
       return {
         type: "taskList",
-        content: [{
-          type: "taskItem",
-          attrs: { checked: !!b.to_do?.checked },
-          content: [{ type: "paragraph", content: notionRichTextToTiptap(b.to_do?.rich_text ?? []) }],
-        }],
+        content: [
+          {
+            type: "taskItem",
+            attrs: { checked: !!b.to_do?.checked },
+            content: [
+              { type: "paragraph", content: notionRichTextToTiptap(b.to_do?.rich_text ?? []) },
+            ],
+          },
+        ],
       };
     case "quote":
-      return { type: "blockquote", content: [{ type: "paragraph", content: notionRichTextToTiptap(b.quote?.rich_text ?? []) }] };
+      return {
+        type: "blockquote",
+        content: [{ type: "paragraph", content: notionRichTextToTiptap(b.quote?.rich_text ?? []) }],
+      };
     case "code":
-      return { type: "codeBlock", attrs: { language: b.code?.language ?? null }, content: notionRichTextToTiptap(b.code?.rich_text ?? []) };
+      return {
+        type: "codeBlock",
+        attrs: { language: b.code?.language ?? null },
+        content: notionRichTextToTiptap(b.code?.rich_text ?? []),
+      };
     case "divider":
       return { type: "horizontalRule" };
     default:
@@ -317,7 +371,10 @@ function notionPageTitle(page: NotionPage): string {
   for (const k of Object.keys(props)) {
     const p = props[k];
     if (p?.type === "title" && Array.isArray(p.title)) {
-      return p.title.map((t) => t.plain_text ?? t.text?.content ?? "").join("").trim();
+      return p.title
+        .map((t) => t.plain_text ?? t.text?.content ?? "")
+        .join("")
+        .trim();
     }
   }
   return "Untitled";
@@ -327,12 +384,16 @@ async function fetchAllChildren(blockId: string): Promise<NotionBlock[]> {
   const all: NotionBlock[] = [];
   let cursor: string | undefined;
   do {
-    const qs = cursor ? `?start_cursor=${encodeURIComponent(cursor)}&page_size=100` : `?page_size=100`;
-    const data = await notionGet<{ results: NotionBlock[]; has_more?: boolean; next_cursor?: string | null }>(
-      `/blocks/${encodeURIComponent(blockId)}/children${qs}`,
-    );
+    const qs = cursor
+      ? `?start_cursor=${encodeURIComponent(cursor)}&page_size=100`
+      : `?page_size=100`;
+    const data = await notionGet<{
+      results: NotionBlock[];
+      has_more?: boolean;
+      next_cursor?: string | null;
+    }>(`/blocks/${encodeURIComponent(blockId)}/children${qs}`);
     all.push(...(data.results ?? []));
-    cursor = data.has_more ? data.next_cursor ?? undefined : undefined;
+    cursor = data.has_more ? (data.next_cursor ?? undefined) : undefined;
   } while (cursor);
   return all;
 }
@@ -369,22 +430,38 @@ function tiptapToNotionBlocks(doc: TTNode): unknown[] {
     switch (node.type) {
       case "heading": {
         const lvl = Math.min(3, Math.max(1, Number(node.attrs?.level ?? 1)));
-        push({ object: "block", type: `heading_${lvl}`, [`heading_${lvl}`]: { rich_text: tiptapTextToRichText(node.content) } });
+        push({
+          object: "block",
+          type: `heading_${lvl}`,
+          [`heading_${lvl}`]: { rich_text: tiptapTextToRichText(node.content) },
+        });
         break;
       }
       case "paragraph":
-        push({ object: "block", type: "paragraph", paragraph: { rich_text: tiptapTextToRichText(node.content) } });
+        push({
+          object: "block",
+          type: "paragraph",
+          paragraph: { rich_text: tiptapTextToRichText(node.content) },
+        });
         break;
       case "bulletList":
         for (const li of node.content ?? []) {
           const inner = li.content?.[0]?.content;
-          push({ object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: tiptapTextToRichText(inner) } });
+          push({
+            object: "block",
+            type: "bulleted_list_item",
+            bulleted_list_item: { rich_text: tiptapTextToRichText(inner) },
+          });
         }
         break;
       case "orderedList":
         for (const li of node.content ?? []) {
           const inner = li.content?.[0]?.content;
-          push({ object: "block", type: "numbered_list_item", numbered_list_item: { rich_text: tiptapTextToRichText(inner) } });
+          push({
+            object: "block",
+            type: "numbered_list_item",
+            numbered_list_item: { rich_text: tiptapTextToRichText(inner) },
+          });
         }
         break;
       case "taskList":
@@ -398,10 +475,21 @@ function tiptapToNotionBlocks(doc: TTNode): unknown[] {
         }
         break;
       case "blockquote":
-        push({ object: "block", type: "quote", quote: { rich_text: tiptapTextToRichText(node.content?.[0]?.content) } });
+        push({
+          object: "block",
+          type: "quote",
+          quote: { rich_text: tiptapTextToRichText(node.content?.[0]?.content) },
+        });
         break;
       case "codeBlock":
-        push({ object: "block", type: "code", code: { rich_text: tiptapTextToRichText(node.content), language: (node.attrs?.language as string) ?? "plain text" } });
+        push({
+          object: "block",
+          type: "code",
+          code: {
+            rich_text: tiptapTextToRichText(node.content),
+            language: (node.attrs?.language as string) ?? "plain text",
+          },
+        });
         break;
       case "horizontalRule":
         push({ object: "block", type: "divider", divider: {} });
@@ -449,7 +537,9 @@ async function pushNotionPage(pageId: string, doc: TTNode, title: string): Promi
   const newBlocks = tiptapToNotionBlocks(doc);
   for (let i = 0; i < newBlocks.length; i += 100) {
     const chunk = newBlocks.slice(i, i + 100);
-    await notionFetch(`/blocks/${encodeURIComponent(pageId)}/children`, "PATCH", { children: chunk });
+    await notionFetch(`/blocks/${encodeURIComponent(pageId)}/children`, "PATCH", {
+      children: chunk,
+    });
   }
   const titleProp = await findTitlePropertyName(pageId);
   await notionFetch(`/pages/${encodeURIComponent(pageId)}`, "PATCH", {
@@ -491,13 +581,17 @@ export const pullMapping = createServerFn({ method: "POST" })
         .eq("user_id", userId);
       if (uErr) throw new Error(uErr.message);
       const nowIso = new Date().toISOString();
-      await supabase.from("sync_mappings").update({
-        last_pulled_at: nowIso,
-        version_remote: m.version_remote + 1,
-        version_local: m.version_remote + 1,
-        conflict: false,
-        external_url: r.url,
-      }).eq("id", m.id).eq("user_id", userId);
+      await supabase
+        .from("sync_mappings")
+        .update({
+          last_pulled_at: nowIso,
+          version_remote: m.version_remote + 1,
+          version_local: m.version_remote + 1,
+          conflict: false,
+          external_url: r.url,
+        })
+        .eq("id", m.id)
+        .eq("user_id", userId);
       return { ok: true, direction: "pull" as const };
     }
 
@@ -574,12 +668,16 @@ export const pushMapping = createServerFn({ method: "POST" })
         priority: (task.priority as "low" | "medium" | "high") ?? undefined,
       });
       const nowIso = new Date().toISOString();
-      await supabase.from("sync_mappings").update({
-        last_pushed_at: nowIso,
-        version_local: m.version_local + 1,
-        version_remote: m.version_local + 1,
-        conflict: false,
-      }).eq("id", m.id).eq("user_id", userId);
+      await supabase
+        .from("sync_mappings")
+        .update({
+          last_pushed_at: nowIso,
+          version_local: m.version_local + 1,
+          version_remote: m.version_local + 1,
+          conflict: false,
+        })
+        .eq("id", m.id)
+        .eq("user_id", userId);
       return { ok: true, direction: "push" as const };
     }
 

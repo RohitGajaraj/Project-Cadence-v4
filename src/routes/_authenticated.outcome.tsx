@@ -15,11 +15,16 @@ export const Route = createFileRoute("/_authenticated/outcome")({
 function fmtTime(iso: string | null | undefined) {
   if (!iso) return "";
   const d = new Date(iso);
-  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function fmtUsd(n: number | string | null | undefined) {
-  const v = typeof n === "string" ? Number(n) : n ?? 0;
+  const v = typeof n === "string" ? Number(n) : (n ?? 0);
   if (!v) return "$0";
   return v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`;
 }
@@ -49,22 +54,32 @@ function OutcomePage() {
     <AppShell projects={projects.data?.projects ?? []}>
       <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto">
         <header className="mb-8">
-          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">The loop closes here</div>
+          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            The loop closes here
+          </div>
           <h1 className="mt-3 font-display text-4xl tracking-tight">
             <span className="neural-text">Outcome</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-            Releases ship, launches go out, support comes back, and learnings re-score what to build next. Each tab reads
-            from the same governed runtime as the rest of Cadence.
+            Releases ship, launches go out, support comes back, and learnings re-score what to build
+            next. Each tab reads from the same governed runtime as the rest of Cadence.
           </p>
         </header>
 
         <Tabs defaultValue="releases" className="space-y-5">
           <TabsList className="bg-secondary/40">
-            <TabsTrigger value="releases" className="gap-1.5"><Rocket className="h-3.5 w-3.5" /> Releases</TabsTrigger>
-            <TabsTrigger value="launches" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" /> Launches</TabsTrigger>
-            <TabsTrigger value="support" className="gap-1.5"><LifeBuoy className="h-3.5 w-3.5" /> Support</TabsTrigger>
-            <TabsTrigger value="learnings" className="gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Learnings</TabsTrigger>
+            <TabsTrigger value="releases" className="gap-1.5">
+              <Rocket className="h-3.5 w-3.5" /> Releases
+            </TabsTrigger>
+            <TabsTrigger value="launches" className="gap-1.5">
+              <Megaphone className="h-3.5 w-3.5" /> Launches
+            </TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5">
+              <LifeBuoy className="h-3.5 w-3.5" /> Support
+            </TabsTrigger>
+            <TabsTrigger value="learnings" className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" /> Learnings
+            </TabsTrigger>
           </TabsList>
 
           {/* RELEASES */}
@@ -81,7 +96,11 @@ function OutcomePage() {
                   <div key={m.id} className="bento p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <Link to="/missions/$missionId" params={{ missionId: m.id }} className="font-display text-base hover:underline">
+                        <Link
+                          to="/missions/$missionId"
+                          params={{ missionId: m.id }}
+                          className="font-display text-base hover:underline"
+                        >
                           {m.title}
                         </Link>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.goal}</p>
@@ -103,7 +122,9 @@ function OutcomePage() {
                         <div className="text-[11px] text-muted-foreground truncate">{r.input}</div>
                       </div>
                       <div className="text-[10px] text-muted-foreground inline-flex items-center gap-3 shrink-0">
-                        <span>{r.duration_ms ? `${Math.round(r.duration_ms / 100) / 10}s` : "—"}</span>
+                        <span>
+                          {r.duration_ms ? `${Math.round(r.duration_ms / 100) / 10}s` : "—"}
+                        </span>
                         <span>{r.tokens_used.toLocaleString()} tok</span>
                         <span>{fmtUsd(r.spend_used_usd)}</span>
                         <span>{fmtTime(r.created_at)}</span>
@@ -129,16 +150,27 @@ function OutcomePage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5">{a.tool_name}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{a.status}</span>
+                        <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5">
+                          {a.tool_name}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {a.status}
+                        </span>
                       </div>
                       {a.rationale && <p className="text-sm mt-2">{a.rationale}</p>}
-                      <p className="text-[11px] text-muted-foreground mt-1">by {a.agent_slug ?? "agent"}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        by {a.agent_slug ?? "agent"}
+                      </p>
                     </div>
-                    <div className="text-[10px] text-muted-foreground shrink-0">{fmtTime(a.decided_at ?? a.created_at)}</div>
+                    <div className="text-[10px] text-muted-foreground shrink-0">
+                      {fmtTime(a.decided_at ?? a.created_at)}
+                    </div>
                   </div>
                   {a.status === "pending" && (
-                    <Link to="/inbox" className="mt-3 inline-flex items-center gap-1 text-[11px] text-violet-300 hover:underline">
+                    <Link
+                      to="/inbox"
+                      className="mt-3 inline-flex items-center gap-1 text-[11px] text-violet-300 hover:underline"
+                    >
                       Review in Approvals <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   )}
@@ -161,14 +193,24 @@ function OutcomePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5">{s.source}</span>
-                        {s.sentiment && <span className="text-[10px] text-muted-foreground">{s.sentiment}</span>}
+                        <span className="text-[10px] uppercase tracking-wider rounded-full bg-secondary px-2 py-0.5">
+                          {s.source}
+                        </span>
+                        {s.sentiment && (
+                          <span className="text-[10px] text-muted-foreground">{s.sentiment}</span>
+                        )}
                       </div>
                       <p className="text-sm">{s.title ?? s.content.slice(0, 140)}</p>
                     </div>
-                    <div className="text-[10px] text-muted-foreground shrink-0">{fmtTime(s.created_at)}</div>
+                    <div className="text-[10px] text-muted-foreground shrink-0">
+                      {fmtTime(s.created_at)}
+                    </div>
                   </div>
-                  {s.theme_id && <div className="mt-1 text-[10px] text-violet-300/80">linked to a theme in Discovery</div>}
+                  {s.theme_id && (
+                    <div className="mt-1 text-[10px] text-violet-300/80">
+                      linked to a theme in Discovery
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -187,7 +229,9 @@ function OutcomePage() {
                 <div key={o.id} className="bento p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <Link to="/opportunities" className="font-display text-sm hover:underline">{o.title}</Link>
+                      <Link to="/opportunities" className="font-display text-sm hover:underline">
+                        {o.title}
+                      </Link>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{o.problem}</p>
                     </div>
                     <div className="text-[10px] text-muted-foreground shrink-0 inline-flex items-center gap-3">
@@ -203,7 +247,9 @@ function OutcomePage() {
         </Tabs>
 
         {outcome.isLoading && <div className="text-xs text-muted-foreground mt-6">Loading…</div>}
-        {outcome.error && <div className="text-xs text-destructive mt-6">{(outcome.error as Error).message}</div>}
+        {outcome.error && (
+          <div className="text-xs text-destructive mt-6">{(outcome.error as Error).message}</div>
+        )}
       </div>
     </AppShell>
   );

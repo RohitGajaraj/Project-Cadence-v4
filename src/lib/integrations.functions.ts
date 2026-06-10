@@ -37,13 +37,16 @@ export const upsertIntegration = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: row, error } = await supabase
       .from("user_integrations")
-      .upsert({
-        user_id: userId,
-        provider: data.provider,
-        status: data.status,
-        account_label: data.account_label ?? null,
-        metadata: (data.metadata ?? {}) as never,
-      }, { onConflict: "user_id,provider" })
+      .upsert(
+        {
+          user_id: userId,
+          provider: data.provider,
+          status: data.status,
+          account_label: data.account_label ?? null,
+          metadata: (data.metadata ?? {}) as never,
+        },
+        { onConflict: "user_id,provider" },
+      )
       .select()
       .single();
     if (error) throw new Error(error.message);

@@ -1,12 +1,25 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Shield, Plus, Trash2, FlaskConical, Sparkles, AlertTriangle, EyeOff, Ban } from "lucide-react";
+import {
+  Shield,
+  Plus,
+  Trash2,
+  FlaskConical,
+  Sparkles,
+  AlertTriangle,
+  EyeOff,
+  Ban,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
 import {
-  getGuardrailOverview, upsertGuardrailRule, deleteGuardrailRule,
-  toggleGuardrailRule, seedBuiltInGuardrails, testGuardrailRule,
+  getGuardrailOverview,
+  upsertGuardrailRule,
+  deleteGuardrailRule,
+  toggleGuardrailRule,
+  seedBuiltInGuardrails,
+  testGuardrailRule,
 } from "@/lib/guardrails.functions";
 
 type Kind = "regex" | "keyword" | "pii" | "injection" | "secret";
@@ -24,23 +37,36 @@ type RuleForm = {
 };
 
 const ACTION_META: Record<Action, { Icon: typeof Ban; cls: string; label: string }> = {
-  block:  { Icon: Ban,            cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",       label: "Block" },
-  warn:   { Icon: AlertTriangle,  cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",    label: "Warn" },
-  redact: { Icon: EyeOff,         cls: "bg-sky-500/10 text-sky-300 border-sky-500/30",          label: "Redact" },
+  block: { Icon: Ban, cls: "bg-rose-500/10 text-rose-300 border-rose-500/30", label: "Block" },
+  warn: {
+    Icon: AlertTriangle,
+    cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+    label: "Warn",
+  },
+  redact: { Icon: EyeOff, cls: "bg-sky-500/10 text-sky-300 border-sky-500/30", label: "Redact" },
 };
 
 function ActionBadge({ action }: { action: string }) {
   const m = ACTION_META[action as Action] ?? ACTION_META.warn;
   const { Icon } = m;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] ${m.cls}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] ${m.cls}`}
+    >
       <Icon className="h-3 w-3" /> {m.label}
     </span>
   );
 }
 
 function emptyRule(): RuleForm {
-  return { name: "", kind: "keyword", pattern: "", action: "warn", applies_to: "both", enabled: true };
+  return {
+    name: "",
+    kind: "keyword",
+    pattern: "",
+    action: "warn",
+    applies_to: "both",
+    enabled: true,
+  };
 }
 
 export function GuardrailsPanel() {
@@ -57,16 +83,27 @@ export function GuardrailsPanel() {
 
   const [editing, setEditing] = useState<RuleForm | null>(null);
   const [testText, setTestText] = useState("");
-  const [testResult, setTestResult] = useState<{ text: string; blocked: boolean; hits: { matched: string }[] } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    text: string;
+    blocked: boolean;
+    hits: { matched: string }[];
+  } | null>(null);
 
   const upsert = useMutation({
     mutationFn: (r: RuleForm) => fUpsert({ data: r }),
-    onSuccess: () => { toast.success("Rule saved"); setEditing(null); qc.invalidateQueries({ queryKey: ["guardrails"] }); },
+    onSuccess: () => {
+      toast.success("Rule saved");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["guardrails"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: (id: string) => fDelete({ data: { id } }),
-    onSuccess: () => { toast.success("Rule deleted"); qc.invalidateQueries({ queryKey: ["guardrails"] }); },
+    onSuccess: () => {
+      toast.success("Rule deleted");
+      qc.invalidateQueries({ queryKey: ["guardrails"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const tog = useMutation({
@@ -75,11 +112,17 @@ export function GuardrailsPanel() {
   });
   const seed = useMutation({
     mutationFn: () => fSeed(),
-    onSuccess: (r) => { toast.success(`Seeded ${r.inserted} rule(s)`); qc.invalidateQueries({ queryKey: ["guardrails"] }); },
+    onSuccess: (r) => {
+      toast.success(`Seeded ${r.inserted} rule(s)`);
+      qc.invalidateQueries({ queryKey: ["guardrails"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const test = useMutation({
-    mutationFn: (r: RuleForm) => fTest({ data: { text: testText, side: r.applies_to === "output" ? "output" : "input", rule: r } }),
+    mutationFn: (r: RuleForm) =>
+      fTest({
+        data: { text: testText, side: r.applies_to === "output" ? "output" : "input", rule: r },
+      }),
     onSuccess: (r) => setTestResult(r),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -91,7 +134,8 @@ export function GuardrailsPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Shield className="h-4 w-4 text-violet-400" /> Filter sensitive data, secrets, and prompt-injection on every AI call.
+          <Shield className="h-4 w-4 text-violet-400" /> Filter sensitive data, secrets, and
+          prompt-injection on every AI call.
         </div>
         <div className="flex gap-2">
           <button
@@ -116,7 +160,8 @@ export function GuardrailsPanel() {
         </div>
         {rules.length === 0 ? (
           <div className="py-12 text-center text-sm text-muted-foreground">
-            No rules yet. Click <strong>Seed built-ins</strong> to start with PII / secret / injection coverage.
+            No rules yet. Click <strong>Seed built-ins</strong> to start with PII / secret /
+            injection coverage.
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -131,18 +176,33 @@ export function GuardrailsPanel() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm truncate">{r.name}</span>
-                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 uppercase tracking-wider text-muted-foreground">{r.kind}</span>
-                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{r.applies_to}</span>
+                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 uppercase tracking-wider text-muted-foreground">
+                      {r.kind}
+                    </span>
+                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                      {r.applies_to}
+                    </span>
                     <ActionBadge action={r.action} />
-                    {r.built_in && <span className="text-[10px] text-muted-foreground">built-in</span>}
+                    {r.built_in && (
+                      <span className="text-[10px] text-muted-foreground">built-in</span>
+                    )}
                   </div>
-                  <code className="mt-1 block text-[11px] text-muted-foreground truncate font-mono">{r.pattern}</code>
+                  <code className="mt-1 block text-[11px] text-muted-foreground truncate font-mono">
+                    {r.pattern}
+                  </code>
                 </div>
                 <button
-                  onClick={() => setEditing({
-                    id: r.id, name: r.name, kind: r.kind as Kind, pattern: r.pattern,
-                    action: r.action as Action, applies_to: r.applies_to as Applies, enabled: r.enabled,
-                  })}
+                  onClick={() =>
+                    setEditing({
+                      id: r.id,
+                      name: r.name,
+                      kind: r.kind as Kind,
+                      pattern: r.pattern,
+                      action: r.action as Action,
+                      applies_to: r.applies_to as Applies,
+                      enabled: r.enabled,
+                    })
+                  }
                   className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
                 >
                   Edit
@@ -172,7 +232,9 @@ export function GuardrailsPanel() {
           Recent hits ({hits.length})
         </div>
         {hits.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">No guardrail activity yet.</div>
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            No guardrail activity yet.
+          </div>
         ) : (
           <div className="max-h-96 overflow-auto">
             <table className="w-full text-sm">
@@ -188,11 +250,17 @@ export function GuardrailsPanel() {
               <tbody>
                 {hits.map((h) => (
                   <tr key={h.id} className="border-b border-border/50">
-                    <td className="px-4 py-2 text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                      {new Date(h.created_at).toLocaleString()}
+                    </td>
                     <td className="px-4 py-2">{h.rule_name}</td>
                     <td className="px-4 py-2 text-xs">{h.side}</td>
-                    <td className="px-4 py-2"><ActionBadge action={h.action} /></td>
-                    <td className="px-4 py-2 font-mono text-[11px] truncate max-w-xs">{h.matched}</td>
+                    <td className="px-4 py-2">
+                      <ActionBadge action={h.action} />
+                    </td>
+                    <td className="px-4 py-2 font-mono text-[11px] truncate max-w-xs">
+                      {h.matched}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -202,22 +270,39 @@ export function GuardrailsPanel() {
       </section>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-2xl rounded-xl border border-border bg-background p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setEditing(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-xl border border-border bg-background p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl">{editing.id ? "Edit rule" : "New rule"}</h2>
-              <button onClick={() => setEditing(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+              <button
+                onClick={() => setEditing(null)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Close
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="col-span-2 text-xs">
                 Name
-                <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" />
+                <input
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                />
               </label>
               <label className="text-xs">
                 Kind
-                <select value={editing.kind} onChange={(e) => setEditing({ ...editing, kind: e.target.value as Kind })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+                <select
+                  value={editing.kind}
+                  onChange={(e) => setEditing({ ...editing, kind: e.target.value as Kind })}
+                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                >
                   <option value="keyword">Keyword (literal substring)</option>
                   <option value="regex">Regex</option>
                   <option value="pii">PII (regex)</option>
@@ -227,8 +312,13 @@ export function GuardrailsPanel() {
               </label>
               <label className="text-xs">
                 Applies to
-                <select value={editing.applies_to} onChange={(e) => setEditing({ ...editing, applies_to: e.target.value as Applies })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+                <select
+                  value={editing.applies_to}
+                  onChange={(e) =>
+                    setEditing({ ...editing, applies_to: e.target.value as Applies })
+                  }
+                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                >
                   <option value="both">Both</option>
                   <option value="input">Input only</option>
                   <option value="output">Output only</option>
@@ -236,21 +326,31 @@ export function GuardrailsPanel() {
               </label>
               <label className="col-span-2 text-xs">
                 Pattern
-                <textarea value={editing.pattern} onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
+                <textarea
+                  value={editing.pattern}
+                  onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
                   rows={2}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono" />
+                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono"
+                />
               </label>
               <label className="text-xs">
                 Action
-                <select value={editing.action} onChange={(e) => setEditing({ ...editing, action: e.target.value as Action })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+                <select
+                  value={editing.action}
+                  onChange={(e) => setEditing({ ...editing, action: e.target.value as Action })}
+                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                >
                   <option value="warn">Warn (log only)</option>
                   <option value="redact">Redact</option>
                   <option value="block">Block</option>
                 </select>
               </label>
               <label className="text-xs flex items-center gap-2 pt-5">
-                <input type="checkbox" checked={editing.enabled} onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })} />
+                <input
+                  type="checkbox"
+                  checked={editing.enabled}
+                  onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
+                />
                 Enabled
               </label>
             </div>
@@ -260,7 +360,8 @@ export function GuardrailsPanel() {
                 <FlaskConical className="h-3 w-3" /> Test
               </div>
               <textarea
-                value={testText} onChange={(e) => setTestText(e.target.value)}
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
                 placeholder="Paste sample text to test this rule against…"
                 rows={2}
                 className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono"
@@ -280,12 +381,19 @@ export function GuardrailsPanel() {
                 )}
               </div>
               {testResult && testResult.hits.length > 0 && (
-                <pre className="rounded bg-muted/40 p-2 text-[11px] overflow-auto max-h-32">{testResult.text}</pre>
+                <pre className="rounded bg-muted/40 p-2 text-[11px] overflow-auto max-h-32">
+                  {testResult.text}
+                </pre>
               )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setEditing(null)} className="rounded-md border border-border px-3 py-1.5 text-xs">Cancel</button>
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-md border border-border px-3 py-1.5 text-xs"
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => upsert.mutate(editing)}
                 disabled={!editing.name.trim() || !editing.pattern.trim() || upsert.isPending}

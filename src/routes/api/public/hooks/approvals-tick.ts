@@ -35,7 +35,10 @@ export const Route = createFileRoute("/api/public/hooks/approvals-tick")({
                 error: `Auto-expired after TTL (no decision before ${a.expires_at}).`,
               })
               .eq("id", a.id);
-            if (upErr) { console.error("approval expire failed:", upErr); continue; }
+            if (upErr) {
+              console.error("approval expire failed:", upErr);
+              continue;
+            }
             expired++;
           }
 

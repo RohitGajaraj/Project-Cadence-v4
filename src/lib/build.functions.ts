@@ -49,7 +49,9 @@ export const listBuilderClaims = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("builder_file_claims")
-      .select("id,repo,path,status,claimed_at,released_at,released_reason,run_id,mission_id,mission_title,user_id")
+      .select(
+        "id,repo,path,status,claimed_at,released_at,released_reason,run_id,mission_id,mission_title,user_id",
+      )
       .eq("status", "held")
       .order("claimed_at", { ascending: false })
       .limit(50);
@@ -79,13 +81,18 @@ export const releaseBuilderClaim = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: updated, error } = await supabase
       .from("builder_file_claims")
-      .update({ status: "released", released_at: new Date().toISOString(), released_reason: "operator_release" })
+      .update({
+        status: "released",
+        released_at: new Date().toISOString(),
+        released_reason: "operator_release",
+      })
       .eq("id", data.claim_id)
       .eq("status", "held")
       .select("id")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!updated) throw new Error("Claim not found or already released (you may only release claims you own).");
+    if (!updated)
+      throw new Error("Claim not found or already released (you may only release claims you own).");
     return { ok: true as const };
   });
 
@@ -104,8 +111,12 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const rows = (runs ?? []) as {
-      id: string; mission_id: string | null; input: string; status: string;
-      created_at: string; last_checkpoint_at: string | null;
+      id: string;
+      mission_id: string | null;
+      input: string;
+      status: string;
+      created_at: string;
+      last_checkpoint_at: string | null;
     }[];
     if (rows.length === 0) return { runs: [] };
 
@@ -123,7 +134,11 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
       .in("run_id", runIds)
       .order("step_index", { ascending: false });
     const traceByRun = new Map<string, string>();
-    for (const cp of (cps ?? []) as { run_id: string; state: Record<string, unknown>; step_index: number }[]) {
+    for (const cp of (cps ?? []) as {
+      run_id: string;
+      state: Record<string, unknown>;
+      step_index: number;
+    }[]) {
       if (traceByRun.has(cp.run_id)) continue;
       const t = (cp.state as { traceId?: string }).traceId;
       if (typeof t === "string" && t.length > 0) traceByRun.set(cp.run_id, t);
@@ -136,21 +151,54 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
           .in("trace_id", traceIds)
           .in("tool_name", ["github.pr.open", "github.ci.read"])
           .order("created_at", { ascending: true })
-      : { data: [] as { trace_id: string; tool_name: string; result: unknown; ok: boolean; created_at: string }[] };
-    const prByTrace = new Map<string, { number: number; url: string; branch: string; path: string }>();
+      : {
+          data: [] as {
+            trace_id: string;
+            tool_name: string;
+            result: unknown;
+            ok: boolean;
+            created_at: string;
+          }[],
+        };
+    const prByTrace = new Map<
+      string,
+      { number: number; url: string; branch: string; path: string }
+    >();
     type CiResult = {
       overall: "pending" | "success" | "failure" | "neutral";
       updated_at: string;
       head_sha: string;
-      checks?: Array<{ name: string; conclusion: string | null; status: string; html_url: string; summary: string | null }>;
+      checks?: Array<{
+        name: string;
+        conclusion: string | null;
+        status: string;
+        html_url: string;
+        summary: string | null;
+      }>;
     };
     const ciByTrace = new Map<string, CiResult>();
-    for (const t of (tcs ?? []) as { trace_id: string; tool_name: string; result: Record<string, unknown> | null; ok: boolean; created_at: string }[]) {
+    for (const t of (tcs ?? []) as {
+      trace_id: string;
+      tool_name: string;
+      result: Record<string, unknown> | null;
+      ok: boolean;
+      created_at: string;
+    }[]) {
       if (!t.ok || !t.result) continue;
       if (t.tool_name === "github.pr.open") {
         const r = t.result as { number?: number; url?: string; branch?: string; path?: string };
-        if (typeof r.number === "number" && typeof r.url === "string" && typeof r.branch === "string" && typeof r.path === "string") {
-          prByTrace.set(t.trace_id, { number: r.number, url: r.url, branch: r.branch, path: r.path });
+        if (
+          typeof r.number === "number" &&
+          typeof r.url === "string" &&
+          typeof r.branch === "string" &&
+          typeof r.path === "string"
+        ) {
+          prByTrace.set(t.trace_id, {
+            number: r.number,
+            url: r.url,
+            branch: r.branch,
+            path: r.path,
+          });
         }
       } else if (t.tool_name === "github.ci.read") {
         const r = t.result as CiResult;
@@ -182,29 +230,37 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
     return {
       runs: rows.map((r) => {
         const trace = traceByRun.get(r.id);
-        const ciRaw = trace ? ciByTrace.get(trace) ?? null : null;
-        const failing = ciRaw?.overall === "failure"
-          ? (ciRaw.checks?.find((c) =>
-              c.conclusion === "failure" || c.conclusion === "timed_out" ||
-              c.conclusion === "action_required" || c.conclusion === "cancelled",
-            ) ?? null)
-          : null;
+        const ciRaw = trace ? (ciByTrace.get(trace) ?? null) : null;
+        const failing =
+          ciRaw?.overall === "failure"
+            ? (ciRaw.checks?.find(
+                (c) =>
+                  c.conclusion === "failure" ||
+                  c.conclusion === "timed_out" ||
+                  c.conclusion === "action_required" ||
+                  c.conclusion === "cancelled",
+              ) ?? null)
+            : null;
         return {
           run_id: r.id,
           mission_id: r.mission_id,
-          mission_title: r.mission_id ? titleByMission.get(r.mission_id) ?? null : null,
+          mission_title: r.mission_id ? (titleByMission.get(r.mission_id) ?? null) : null,
           goal: r.input,
           status: r.status,
           created_at: r.created_at,
           last_checkpoint_at: r.last_checkpoint_at,
-          pr: trace ? prByTrace.get(trace) ?? null : null,
+          pr: trace ? (prByTrace.get(trace) ?? null) : null,
           pending_approvals: pendingByRun.get(r.id) ?? 0,
-          ci: ciRaw ? {
-            overall: ciRaw.overall,
-            updated_at: ciRaw.updated_at,
-            head_sha: ciRaw.head_sha,
-            failing: failing ? { name: failing.name, html_url: failing.html_url, summary: failing.summary } : null,
-          } : null,
+          ci: ciRaw
+            ? {
+                overall: ciRaw.overall,
+                updated_at: ciRaw.updated_at,
+                head_sha: ciRaw.head_sha,
+                failing: failing
+                  ? { name: failing.name, html_url: failing.html_url, summary: failing.summary }
+                  : null,
+              }
+            : null,
         };
       }),
     };
@@ -225,20 +281,27 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
 export const dispatchBuilderMission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      goal: z.string().min(4).max(4000),
-      prdId: z.string().uuid().optional(),
-      issueNumber: z.number().int().positive().optional(),
-      autoCreateIssue: z.boolean().optional(),
-      referenceLinks: z.array(z.string().url().max(500)).max(10).optional(),
-      missionTitle: z.string().min(1).max(200).optional(),
-    }).parse(i),
+    z
+      .object({
+        goal: z.string().min(4).max(4000),
+        prdId: z.string().uuid().optional(),
+        issueNumber: z.number().int().positive().optional(),
+        autoCreateIssue: z.boolean().optional(),
+        referenceLinks: z.array(z.string().url().max(500)).max(10).optional(),
+        missionTitle: z.string().min(1).max(200).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
     // Resolve PRD context if provided.
-    type PrdCtx = { id: string; title: string; body_md: string | null; github_issue_url: string | null };
+    type PrdCtx = {
+      id: string;
+      title: string;
+      body_md: string | null;
+      github_issue_url: string | null;
+    };
     let prd: PrdCtx | null = null;
     if (data.prdId) {
       const { data: row, error } = await supabase
@@ -265,22 +328,30 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     if (!issueNumber && data.autoCreateIssue) {
       const token = process.env.GITHUB_TOKEN;
       const repo = process.env.GITHUB_REPO;
-      if (!token || !repo) throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
+      if (!token || !repo)
+        throw new Error(
+          "GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)",
+        );
       if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
 
       const titleSrc = data.missionTitle?.trim() || data.goal.split(/\r?\n/)[0].slice(0, 120);
       const bodyParts: string[] = [data.goal.slice(0, 40_000)];
-      if (prd) bodyParts.push(`\n---\n**From PRD:** ${prd.title}\n\n${(prd.body_md ?? "").slice(0, 20_000)}`);
+      if (prd)
+        bodyParts.push(
+          `\n---\n**From PRD:** ${prd.title}\n\n${(prd.body_md ?? "").slice(0, 20_000)}`,
+        );
       if (data.referenceLinks?.length) {
-        bodyParts.push(`\n---\n**References:**\n${data.referenceLinks.map((u) => `- ${u}`).join("\n")}`);
+        bodyParts.push(
+          `\n---\n**References:**\n${data.referenceLinks.map((u) => `- ${u}`).join("\n")}`,
+        );
       }
       bodyParts.push(`\n---\n_Opened from Cadence Build Console_`);
 
       const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
           "User-Agent": "cadence-agent",
           "Content-Type": "application/json",
@@ -308,7 +379,9 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     }
 
     if (!issueNumber) {
-      throw new Error("Need a GitHub issue: link a PRD with one, enter an issue number, or enable Auto-create.");
+      throw new Error(
+        "Need a GitHub issue: link a PRD with one, enter an issue number, or enable Auto-create.",
+      );
     }
 
     // Build a context-rich goal for the Builder agent.
@@ -316,7 +389,10 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
       `Pick up GitHub issue #${issueNumber} on the connected repo. Read the issue body, then ship a single-file scoped PR via github.pr.open with idempotency_key="issue-${issueNumber}". Closes #${issueNumber}.`,
       `\nUser intent:\n${data.goal}`,
     ];
-    if (prd) goalSections.push(`\nLinked PRD: "${prd.title}" (id ${prd.id}). Use it as the source of truth for scope.`);
+    if (prd)
+      goalSections.push(
+        `\nLinked PRD: "${prd.title}" (id ${prd.id}). Use it as the source of truth for scope.`,
+      );
     if (data.referenceLinks?.length) {
       goalSections.push(`\nReferences:\n${data.referenceLinks.map((u) => `- ${u}`).join("\n")}`);
     }
@@ -335,7 +411,9 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     let missionId: string | null = null;
     if (workspaceId && agent) {
       const m = await createMission(supabase, userId, workspaceId, {
-        title: (data.missionTitle?.trim() || `Build · #${issueNumber} ${data.goal.slice(0, 60)}`).slice(0, 200),
+        title: (
+          data.missionTitle?.trim() || `Build · #${issueNumber} ${data.goal.slice(0, 60)}`
+        ).slice(0, 200),
         goal: fullGoal,
         starting_agent_id: (agent as { id: string }).id,
       });

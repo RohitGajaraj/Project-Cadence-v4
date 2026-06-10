@@ -2,11 +2,11 @@
 
 > **What this is.** A running record of major strategic decisions, tradeoffs evaluated, and facts presented during development sessions. Not a transcript — only decisions that shaped the product direction, architecture, or operating model.
 >
-> **Who reads this.** Any agent or human starting a new session who needs to understand *why* things are the way they are without re-reading the full conversation history. This file is a shortcut to institutional reasoning.
+> **Who reads this.** Any agent or human starting a new session who needs to understand _why_ things are the way they are without re-reading the full conversation history. This file is a shortcut to institutional reasoning.
 >
 > **Update rule.** When a session produces a strategic decision, a major tradeoff resolution, or a significant positioning or architecture change — add an entry here in the same session. This is not a one-time activity; it is a constant update obligation. Reference: `docs/strategy/README.md` (cascade rule).
 >
-> **Cross-references.** Versioned positioning: [`v2-positioning-2026-06-02.md`](./v2-positioning-2026-06-02.md). Feature backlog: [`../feature-backlog.md`](../feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
+> **Cross-references.** Versioned positioning: [`v2-positioning-2026-06-02.md`](./v2-positioning-2026-06-02.md). Feature backlog: [`../planning/feature-backlog.md`](../planning/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
 
 ---
 
@@ -32,16 +32,17 @@
 
 **Tradeoffs considered:** D (Phase 2 finishing) was lower leverage than A because phase 1 isn't closed. Splitting C across multiple owners was rejected for this pass — the audits are coherent and a single triage avoids contradictions. Reopening Cadence the product name was held (audit §10 Q2), and the operator-grade voice anchor was kept (audit §10 Q4) rather than benchmarked against Linear/Vercel/Paxel.
 
-**Impact:** New addressable index at [`../feature-backlog.md` § v3 Audit Triage](../feature-backlog.md#v3-audit-triage-2026-06-06). Audit docs gained Triage status sections with rec→F-ID maps. `plan.md` §4 + the Live status board reflect Phase B as next-up.
+**Impact:** New addressable index at [`../planning/feature-backlog.md` § v3 Audit Triage](../planning/feature-backlog.md#v3-audit-triage-2026-06-06). Audit docs gained Triage status sections with rec→F-ID maps. `plan.md` §4 + the Live status board reflect Phase B as next-up.
 
 ### 2026-06-06 — Cross-tool memory: move rules from `mem://` into git-tracked `docs/conventions/`
 
-**Decision:** Treat tool-private memory (Lovable `mem://`, Claude Code project memory, Antigravity rules, etc.) as a *cache*, not a source of truth. Durable rules live in a new git-tracked folder, [`../conventions/`](../conventions/), and are referenced from every tool's entry point (`AGENTS.md` §3 + §5, `CLAUDE.md`, `GEMINI.md`, `.lovable-config.txt`). Tool-private memory may mirror a rule, but only as a thin pointer (≤ 2 lines) that links back to the git file.
+**Decision:** Treat tool-private memory (Lovable `mem://`, Claude Code project memory, Antigravity rules, etc.) as a _cache_, not a source of truth. Durable rules live in a new git-tracked folder, [`../conventions/`](../conventions/), and are referenced from every tool's entry point (`AGENTS.md` §3 + §5, `CLAUDE.md`, `GEMINI.md`, `.lovable-config.txt`). Tool-private memory may mirror a rule, but only as a thin pointer (≤ 2 lines) that links back to the git file.
 
 **Why:** Earlier the same day I saved 6 memory files under `mem://…` (Lovable's private virtual filesystem). Those files are not in git, so Claude Code, Antigravity, and Gemini never see them — the rules ("no native browser chrome", "no em dashes", voice anchor, etc.) would have silently disappeared the next time any other tool picked up the repo. That directly breaks the cross-tool contract in [`../../AGENTS.md`](../../AGENTS.md) §10: "the git repo is the only shared substrate". Operator caught it.
 
 **Tradeoffs considered:**
-- **Fold rules into `AGENTS.md` §3 directly** — rejected. §3 stays scannable; the conventions folder holds the *why* and *how to apply* without bloating the operating manual.
+
+- **Fold rules into `AGENTS.md` §3 directly** — rejected. §3 stays scannable; the conventions folder holds the _why_ and _how to apply_ without bloating the operating manual.
 - **Use `docs/rules/`** — rejected. Some entries (voice anchor, doc-closure checklist) are more guidance than hard rules; `conventions/` is the softer, more honest noun.
 - **Keep `mem://` as the source and add a hook to sync to git** — rejected. Two writeable copies is the drift trap we're trying to escape; one source (git) + thin caches (memory) is simpler and audit-able.
 - **Skip `mem://` entirely** — rejected. The auto-injected Core lines in `mem://index.md` are useful as a constant nudge inside Lovable sessions; they just need to point at the git rules, not duplicate them.
@@ -52,28 +53,30 @@
 
 **Decision:** Close the doc loop for the language-voice + popup-ban + inline-workspace-product-management work shipped earlier in the day. Doc + memory only, no product code edits. Extend the audit doc with a "How to use / verify" block, a phased rollout, and a Learnings section. Add the contract entries to `architecture/frontend.md` (Confirmation, toasts & dialogs · Inline workspace & product management), `design.md` (Voice & language), and `architecture/security.md` (owner-gated server fns). Bank durable learnings as project memory under `mem://`.
 
-**Why:** The work shipped, but the doc loop closed only partially — the audit had no "how to verify" block, `architecture/frontend.md` had no rule on which primitive replaces a `confirm()`, and `design.md` had no voice contract. Without those entries the next session will reintroduce `window.confirm`, an em dash, or a settings-page-for-rename. Memory captures the *learnings* (em dashes are a symptom, not the disease; native chrome is never the answer) so this is the last time we have this conversation.
+**Why:** The work shipped, but the doc loop closed only partially — the audit had no "how to verify" block, `architecture/frontend.md` had no rule on which primitive replaces a `confirm()`, and `design.md` had no voice contract. Without those entries the next session will reintroduce `window.confirm`, an em dash, or a settings-page-for-rename. Memory captures the _learnings_ (em dashes are a symptom, not the disease; native chrome is never the answer) so this is the last time we have this conversation.
 
 **Tradeoffs considered:**
-- *Roll memory into one big constraint file* — rejected. 6 narrow memories retrieve better on relevance match.
-- *Add voice rules to `CLAUDE.md` / `GEMINI.md` / Lovable Knowledge* — rejected. Tool pointers stay thin; rules live in `design.md` once. The pointers already reference `design.md`.
-- *Skip the architecture entries, leave them in the audit only* — rejected. Audits get archived; contracts are read every build.
 
-**Impact:** Edited `docs/strategy/v3-audit-language-voice-2026-06-06.md` (+ "How to use / verify", Phased rollout, Learnings, Related). Edited `architecture/frontend.md` (Confirmation/toasts/dialogs + Inline workspace & product management subsections). Edited `design.md` (Voice & language section with length budgets, AI-tell denylist, confirm-copy pattern). Edited `architecture/security.md` (workspace/product owner-gated server fns invariant). Edited `docs/feature-backlog.md` Live status board (Last updated + Recent log). Edited `plan.md` §4 (one-liner). New memory files: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`. Updated `mem://index.md` Core with two new lines.
+- _Roll memory into one big constraint file_ — rejected. 6 narrow memories retrieve better on relevance match.
+- _Add voice rules to `CLAUDE.md` / `GEMINI.md` / Lovable Knowledge_ — rejected. Tool pointers stay thin; rules live in `design.md` once. The pointers already reference `design.md`.
+- _Skip the architecture entries, leave them in the audit only_ — rejected. Audits get archived; contracts are read every build.
+
+**Impact:** Edited `docs/strategy/v3-audit-language-voice-2026-06-06.md` (+ "How to use / verify", Phased rollout, Learnings, Related). Edited `architecture/frontend.md` (Confirmation/toasts/dialogs + Inline workspace & product management subsections). Edited `design.md` (Voice & language section with length budgets, AI-tell denylist, confirm-copy pattern). Edited `architecture/security.md` (workspace/product owner-gated server fns invariant). Edited `docs/planning/feature-backlog.md` Live status board (Last updated + Recent log). Edited `plan.md` §4 (one-liner). New memory files: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`. Updated `mem://index.md` Core with two new lines.
 
 ### 2026-06-06 — Commission v3 language / naming / microcopy companion audit
 
 **Decision:** Extend the v3 product audit with a dedicated language workstream covering naming, sidebar/IA copy, page H1s, empty states, buttons, placeholders, tooltips, approval-gate prompts, agent/AI surface vocabulary, governance verbs, and marketing/public copy. Land it as a versioned companion strategy doc ([`v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md)), not as backlog tickets — recommendations graduate on operator sign-off.
 
-**Why:** The main v3 audit graded the *what* (product, UX, IA, competitive position, thesis). It surfaced that the surface had drifted from v2 positioning — most visibly on `/login` ("AI-native product operating system" contradicting v2's "autonomous" framing). The operator asked for the *words* graded next: naming, verbosity, tooltips, descriptions end-to-end. Doing this as a separate companion (a) keeps the main audit readable, (b) gives copy/IA fixes their own triage queue separate from feature work, and (c) most of the wins are zero-engineering-risk string edits that don't deserve to wait behind feature bundles.
+**Why:** The main v3 audit graded the _what_ (product, UX, IA, competitive position, thesis). It surfaced that the surface had drifted from v2 positioning — most visibly on `/login` ("AI-native product operating system" contradicting v2's "autonomous" framing). The operator asked for the _words_ graded next: naming, verbosity, tooltips, descriptions end-to-end. Doing this as a separate companion (a) keeps the main audit readable, (b) gives copy/IA fixes their own triage queue separate from feature work, and (c) most of the wins are zero-engineering-risk string edits that don't deserve to wait behind feature bundles.
 
 **Tradeoffs considered:**
+
 - **Inline in v3 main audit** — rejected. Would have doubled the doc length and buried naming findings under feature recommendations.
 - **Open backlog F-IDs directly** — rejected. Audit-then-triage matches the main v3 contract; some renames (e.g. `Mission` vs `Run`) need an operator call before they're binding.
 - **Implement the safest fixes (login tagline + empty states) immediately without an audit doc** — rejected. The whole point is to fix the discipline gap (closed-doc loop breaking at the most-seen surface), not to patch one symptom — a documented voice guide + naming matrix is what stops the next drift.
-- **Defer until after the IA rename actually ships** — rejected. The renames *are* an output of this audit; you can't sequence them before doing it.
+- **Defer until after the IA rename actually ships** — rejected. The renames _are_ an output of this audit; you can't sequence them before doing it.
 
-**Impact:** New [`./v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../feature-backlog.md`](../feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship — zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
+**Impact:** New [`./v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship — zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
 
 ### 2026-06-06 — Commission v3 end-to-end product & platform audit
 
@@ -82,24 +85,26 @@
 **Why:** The product surface had drifted from the v2 positioning faster than the closed-doc loop was catching (login still said "AI-native"; Today still asked the operator to refresh; `/swarm` showed 18 agents on day one). The operator asked for a brutally honest audit that also challenges the thesis. Doing it as a strategy doc (not a feature spec) preserves optionality on which recommendations to action.
 
 **Tradeoffs considered:**
-- *Skip the audit, keep shipping bundles* — rejected: the gap between thesis and surface was already costing first-run trust.
-- *Audit as in-chat reply only* — rejected: the closed-doc loop requires the next tool/session to be able to read it without scrolling chat.
-- *Open new backlog items per recommendation* — rejected: the operator should triage first; landing 20 raw recs into `feature-backlog.md` without triage would pollute the build queue.
 
-**Impact:** New `docs/strategy/v3-audit-2026-06-06.md` (full audit, Top-5/10/20 roadmap, investor scorecard). `docs/strategy/README.md` index extended. `docs/feature-backlog.md` Live status board updated (Recent log + Last updated). No backlog items, no code changes. **Key thesis refinement proposed (not yet adopted):** "autonomous product OS" → "product-org cockpit," same substrate, sharper noun. Awaiting operator decision.
+- _Skip the audit, keep shipping bundles_ — rejected: the gap between thesis and surface was already costing first-run trust.
+- _Audit as in-chat reply only_ — rejected: the closed-doc loop requires the next tool/session to be able to read it without scrolling chat.
+- _Open new backlog items per recommendation_ — rejected: the operator should triage first; landing 20 raw recs into `feature-backlog.md` without triage would pollute the build queue.
+
+**Impact:** New `docs/strategy/v3-audit-2026-06-06.md` (full audit, Top-5/10/20 roadmap, investor scorecard). `docs/strategy/README.md` index extended. `docs/planning/feature-backlog.md` Live status board updated (Recent log + Last updated). No backlog items, no code changes. **Key thesis refinement proposed (not yet adopted):** "autonomous product OS" → "product-org cockpit," same substrate, sharper noun. Awaiting operator decision.
 
 ### 2026-06-06 — Defer UI/UX revamp; commit to F-AGENT-1→4 agent-ecosystem bundle
 
-**Decision:** Pause Restructure Phases 3–4 (Cohere editorial restyle of remaining ~18 routes) and ship the four-step **agent ecosystem bundle** instead: F-AGENT-1 Orchestrator + multi-agent missions → F-AGENT-2 persistent memory + self-reflection + trust auto-advance → F-AGENT-3 event reactor + auto-pipelines → F-AGENT-4 Swarm HUD. Canonical plan: [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md).
+**Decision:** Pause Restructure Phases 3–4 (Cohere editorial restyle of remaining ~18 routes) and ship the four-step **agent ecosystem bundle** instead: F-AGENT-1 Orchestrator + multi-agent missions → F-AGENT-2 persistent memory + self-reflection + trust auto-advance → F-AGENT-3 event reactor + auto-pipelines → F-AGENT-4 Swarm HUD. Canonical plan: [`../features/agent-ecosystem-plan.md`](../features/agent-ecosystem-plan.md).
 
 **Why:** Ground-truth survey of the running system (10 missions, 17 runs, 28 checkpoints, 9 handoffs, 35 agents, 0 rows in `agent_memory`) found the substrate ~95% complete but the behavior missing — single-agent planner loops, no event reactor, no self-reflection, no swarm-level surface, no meta-agent decomposing goals. Without this bundle the "autonomous product OS" thesis is unproven in product behavior, no matter how polished the UI. Operator explicitly asked to prioritize core agent-ecosystem depth over visual restructure.
 
 **Tradeoffs considered:**
-- *Continue Restructure Phases 3–4 first* — rejected: visual coherence helps reviewers but does not move the thesis; the published hack-under-review survives on substance.
-- *Resume Bundle 9 Slice 2 (Proof Platform v1.1)* — rejected: depends on the orchestrator being real before the Builder loop is worth deepening.
-- *Ship a one-off demo-only feature for the review* — rejected: would not compose with the rest of the loop.
 
-**Impact:** F-AGENT-1 shipped same session (orchestrator agent + `mission_steps` DAG + four planner tools + per-agent loop cap + `/missions` composer + DAG panel). F-AGENT-2/3/4 queued. `active-task.md` (root) tracks in-flight sub-steps. Status board in `docs/feature-backlog.md` updated. Plan persisted in `docs/agent-ecosystem-plan.md` so any tool can pick it up across sessions. Restructure Phases 3–4 resume after the bundle closes.
+- _Continue Restructure Phases 3–4 first_ — rejected: visual coherence helps reviewers but does not move the thesis; the published hack-under-review survives on substance.
+- _Resume Bundle 9 Slice 2 (Proof Platform v1.1)_ — rejected: depends on the orchestrator being real before the Builder loop is worth deepening.
+- _Ship a one-off demo-only feature for the review_ — rejected: would not compose with the rest of the loop.
+
+**Impact:** F-AGENT-1 shipped same session (orchestrator agent + `mission_steps` DAG + four planner tools + per-agent loop cap + `/missions` composer + DAG panel). F-AGENT-2/3/4 queued. `active-task.md` (root) tracks in-flight sub-steps. Status board in `docs/planning/feature-backlog.md` updated. Plan persisted in `docs/features/agent-ecosystem-plan.md` so any tool can pick it up across sessions. Restructure Phases 3–4 resume after the bundle closes.
 
 ---
 
@@ -119,17 +124,17 @@
 
 **Decision:** Three personas are all primary targets with equal priority. No P1 > P2 > P3 ranking. Each has its own pain point and hook.
 
-| Persona | Pain | Hook |
-|---|---|---|
-| Solo / Lead PM at AI-native B2B SaaS | Mechanical work crowds out judgment | "Your agents handle the process. You handle the judgment." |
-| Founder operating as the whole product org | Tool sprawl + being the glue | "Run the product org you can't afford to hire." |
-| Technical Founder / Indie Hacker | Everything not coding falls on them | "Your product org, running itself." |
+| Persona                                    | Pain                                | Hook                                                       |
+| ------------------------------------------ | ----------------------------------- | ---------------------------------------------------------- |
+| Solo / Lead PM at AI-native B2B SaaS       | Mechanical work crowds out judgment | "Your agents handle the process. You handle the judgment." |
+| Founder operating as the whole product org | Tool sprawl + being the glue        | "Run the product org you can't afford to hire."            |
+| Technical Founder / Indie Hacker           | Everything not coding falls on them | "Your product org, running itself."                        |
 
 **Why:** All three face the same root problem (they are the glue across a fragmented lifecycle) but with different framing needs. Serving all three from day one allows faster validation and prevents premature narrowing.
 
 **Tradeoffs considered:** Narrowing to one persona for a tighter wedge was discussed. Rejected because the product value proposition is identical across all three — only the sales language differs.
 
-**Impact:** README.md "Who Cadence is for" section updated with three equal sections. Persona-specific onboarding tracks added as feature W6 in `docs/feature-backlog.md`.
+**Impact:** README.md "Who Cadence is for" section updated with three equal sections. Persona-specific onboarding tracks added as feature W6 in `docs/planning/feature-backlog.md`.
 
 ---
 
@@ -153,7 +158,7 @@
 
 **Tradeoffs considered:** Positioning lock-in as a moat (like Salesforce) was discussed. Rejected at this stage — the trust required to accept lock-in comes after demonstrated value, not before it. The real switching cost is the accumulated intelligence, not a contract.
 
-**Impact:** README.md "Portability commitment" section added. Feature U6 (Full data portability / export) added to `docs/feature-backlog.md`. docs/strategy/v2-positioning-2026-06-02.md §6 documents the full reasoning.
+**Impact:** README.md "Portability commitment" section added. Feature U6 (Full data portability / export) added to `docs/planning/feature-backlog.md`. docs/strategy/v2-positioning-2026-06-02.md §6 documents the full reasoning.
 
 ---
 
@@ -212,6 +217,7 @@
 **Decision:** All product positioning documents live in `docs/strategy/` as versioned files (v1, v2, v3, ...). The latest version is always the source of truth. New strategic positioning decisions create a new version file.
 
 **Rules:**
+
 1. Always read the LATEST version in `docs/strategy/` — check `docs/strategy/README.md` to find it
 2. When a positioning or USP change is significant enough to warrant it, create a new version: `vN-positioning-YYYY-MM-DD.md`
 3. Update `docs/strategy/README.md` index
@@ -243,46 +249,49 @@
 
 ### 2026-06-02 — Six new features added from autonomous product OS positioning
 
-**Decision:** Six features were added to `docs/feature-backlog.md` derived from the autonomous product OS repositioning.
+**Decision:** Six features were added to `docs/planning/feature-backlog.md` derived from the autonomous product OS repositioning.
 
-| ID | Feature | Why added |
-|---|---|---|
-| C5 | Strategic Briefing surface | Agents need context once, not per-mission. The "brief the team" mechanism. |
-| C6 | Agent Trust Score + Autonomy Dial | Makes trust arc tangible. Governance as policy, not micromanagement. |
-| E8 | Loop Health Monitor | "Is my product org running?" — single view. |
-| N3 | Mission Compounding View | Makes Product Memory accumulation visible and rewarding. |
-| U6 | Full data portability / export | Anti-lock-in commitment made concrete. Export everything in open formats. |
-| W6 | Persona-specific onboarding tracks | Three tracks for three equal personas. Time-to-value measured per track. |
+| ID  | Feature                            | Why added                                                                  |
+| --- | ---------------------------------- | -------------------------------------------------------------------------- |
+| C5  | Strategic Briefing surface         | Agents need context once, not per-mission. The "brief the team" mechanism. |
+| C6  | Agent Trust Score + Autonomy Dial  | Makes trust arc tangible. Governance as policy, not micromanagement.       |
+| E8  | Loop Health Monitor                | "Is my product org running?" — single view.                                |
+| N3  | Mission Compounding View           | Makes Product Memory accumulation visible and rewarding.                   |
+| U6  | Full data portability / export     | Anti-lock-in commitment made concrete. Export everything in open formats.  |
+| W6  | Persona-specific onboarding tracks | Three tracks for three equal personas. Time-to-value measured per track.   |
 
-**Impact:** docs/feature-backlog.md "New features" section added. All six are linked to the autonomy/trust/portability positioning decisions above.
+**Impact:** docs/planning/feature-backlog.md "New features" section added. All six are linked to the autonomy/trust/portability positioning decisions above.
 
 ---
 
 ### 2026-06-03 — Lock a YC demo cut: 8 capability bundles, A2A as the centerpiece
 
-**Decision:** For the Y Combinator application, ship a focused demo cut composed of 8 capability bundles built from existing backlog IDs. The product scope is unchanged; this is a scope *overlay* that defines what must be demo-ready first. The centerpiece is bundle #4 — agent-to-agent communication, structured messaging, mission handoff across stages, sub-agent spawning, and parallel sessions (E1–E5) — surfaced through a Live Mission Graph (E6).
+**Decision:** For the Y Combinator application, ship a focused demo cut composed of 8 capability bundles built from existing backlog IDs. The product scope is unchanged; this is a scope _overlay_ that defines what must be demo-ready first. The centerpiece is bundle #4 — agent-to-agent communication, structured messaging, mission handoff across stages, sub-agent spawning, and parallel sessions (E1–E5) — surfaced through a Live Mission Graph (E6).
 
 **Sub-decisions:**
+
 1. **Demo persona = Founder-as-PM** ("run the product org you can't afford to hire"). Strongest YC narrative; justifies the full-lifecycle ambition; the other two personas (Solo PM, Technical Founder) remain equal in the product but are not the demo script.
 2. **Defer autonomous Build/Test/Ship (S4–S6, epics I/J/K) from the demo cut.** Position as "foundation built (chokepoint, trust stack, orchestration); next milestone." A polished partial demo beats an unpolished full one — and reviewers reward focus.
 3. **Demo data = real product** (mine or a design partner's), not synthetic. Real signals beat seeded signals every time for YC.
 4. **Three new backlog IDs reserved:** C5 Strategic Briefing surface, C6 Agent Trust Score + Autonomy Dial, U6 Full data portability / export.
 
-**Why:** The product backlog already contains everything needed to make the YC pitch — but if every feature is "in progress," nothing is demo-ready. The YC reviewer needs to see *one* clean 90-second demo that proves the thesis (agents do, humans govern; agents talk to agents and finish missions end-to-end). Bundling existing IDs by demo-readiness rather than by epic forces sequencing discipline without scope creep.
+**Why:** The product backlog already contains everything needed to make the YC pitch — but if every feature is "in progress," nothing is demo-ready. The YC reviewer needs to see _one_ clean 90-second demo that proves the thesis (agents do, humans govern; agents talk to agents and finish missions end-to-end). Bundling existing IDs by demo-readiness rather than by epic forces sequencing discipline without scope creep.
 
 **Tradeoffs considered:**
-- *Keep S4–S6 in the demo cut:* rejected — too much surface to polish in time; any visible seam in autonomous coding hurts more than it helps.
-- *Pick the Solo PM persona for safety:* rejected — Founder-as-PM is the larger market and the stronger YC story.
-- *Ship synthetic demo data for control:* rejected — reviewers can smell synthetic data, and the Founder-as-PM frame demands a real product behind it.
-- *Build a brand-new "YC demo" track separate from the backlog:* rejected — would create exactly the kind of doc drift §5 of `AGENTS.md` forbids. Overlay instead.
 
-**Impact:** `docs/feature-backlog.md` gained a new top section "▶ YC demo cut" with the 8-bundle table, sequence, deferrals, and three new feature stubs (C5/C6/U6). Live status board "Next up" now points at the YC-cut sequence (still starting with FND-RUNTIME 0.9). `plan.md` §4 logged. `active-task.md` seeded at repo root for the immediate next sub-task (FND-RUNTIME 0.9 scoping). No code, schema, or RLS changes in this session.
+- _Keep S4–S6 in the demo cut:_ rejected — too much surface to polish in time; any visible seam in autonomous coding hurts more than it helps.
+- _Pick the Solo PM persona for safety:_ rejected — Founder-as-PM is the larger market and the stronger YC story.
+- _Ship synthetic demo data for control:_ rejected — reviewers can smell synthetic data, and the Founder-as-PM frame demands a real product behind it.
+- _Build a brand-new "YC demo" track separate from the backlog:_ rejected — would create exactly the kind of doc drift §5 of `AGENTS.md` forbids. Overlay instead.
+
+**Impact:** `docs/planning/feature-backlog.md` gained a new top section "▶ YC demo cut" with the 8-bundle table, sequence, deferrals, and three new feature stubs (C5/C6/U6). Live status board "Next up" now points at the YC-cut sequence (still starting with FND-RUNTIME 0.9). `plan.md` §4 logged. `active-task.md` seeded at repo root for the immediate next sub-task (FND-RUNTIME 0.9 scoping). No code, schema, or RLS changes in this session.
 
 ---
 
 ### 2026-06-03 — Reframe "YC demo cut" → "Agentic Proof Platform (v1)"; default seed = Cadence-on-Cadence
 
 **Decision:** Replace the framing "YC demo cut" with **Agentic Proof Platform (v1)**. The 8 capability bundles, the build sequence, the deferrals, and the reserved IDs (C5, C6, U6) are unchanged. What changes: every bundle now ships against an explicit **proof bar** — the minimum end-to-end behavior on real data that makes a claim true — mapped to **four claims** that legacy PM tools (Jira, Linear, Productboard, ProductPlan, Aha) structurally cannot make:
+
 - **C1** Agents operate, humans govern.
 - **C2** Agent-to-agent handoff is first-class (no human in the routing path).
 - **C3** The whole lifecycle is one governed loop.
@@ -291,6 +300,7 @@
 The YC application becomes a by-product of shipping the proof platform, not its primary driver.
 
 **Sub-decisions:**
+
 1. **Default real-data seed = Cadence-on-Cadence** (we run our own roadmap on Cadence). Most credible YC narrative; no dependency on a design partner; if one is signed before bundle 6, their product becomes an additional seed, not a replacement.
 2. **Proof bars are the new "done" criterion** for each bundle. "Renders" or "looks demo-able" is not enough; behavior must hold end-to-end on real data.
 3. **Public README still does not claim A2A** until bundle 4 hits its proof bar (≥3 hops via the orchestration layer with replayable trace).
@@ -298,11 +308,12 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 **Why:** A 90-second demo can be polished into untruth; a proof bar cannot. Framing the work as a proof platform forces every bundle to deliver something legacy tools cannot do — which is the only honest YC narrative, and the only narrative that survives first contact with a design-partner CTO.
 
 **Tradeoffs considered:**
-- *Keep the "YC demo cut" framing:* rejected — invites demo-driven development (Potemkin screens), which collapses on real-data evaluation.
-- *Pull S4–S6 (Build/Test/Ship) forward to widen the proof surface:* rejected — same reason the prior decision deferred them; widening surface without depth hurts more than it helps.
-- *Wait for a design partner before committing to bundle 6's seed:* rejected — Cadence-on-Cadence removes the dependency and is the better story regardless.
 
-**Impact:** `docs/feature-backlog.md` reframed: section title `▶ YC demo cut` → `▶ Agentic Proof Platform (v1)`, added four-claims table and per-bundle proof bars, added "Real-data seeding" subsection. Live status board "Next up" + "Progress" updated to reference the proof platform. `plan.md` §4 logged. `active-task.md` unchanged (FND-RUNTIME 0.9 still next; no work in flight is invalidated). No code, schema, or RLS changes in this session.
+- _Keep the "YC demo cut" framing:_ rejected — invites demo-driven development (Potemkin screens), which collapses on real-data evaluation.
+- _Pull S4–S6 (Build/Test/Ship) forward to widen the proof surface:_ rejected — same reason the prior decision deferred them; widening surface without depth hurts more than it helps.
+- _Wait for a design partner before committing to bundle 6's seed:_ rejected — Cadence-on-Cadence removes the dependency and is the better story regardless.
+
+**Impact:** `docs/planning/feature-backlog.md` reframed: section title `▶ YC demo cut` → `▶ Agentic Proof Platform (v1)`, added four-claims table and per-bundle proof bars, added "Real-data seeding" subsection. Live status board "Next up" + "Progress" updated to reference the proof platform. `plan.md` §4 logged. `active-task.md` unchanged (FND-RUNTIME 0.9 still next; no work in flight is invalidated). No code, schema, or RLS changes in this session.
 
 ---
 
@@ -311,6 +322,7 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 **Decision:** Extend the Agentic Proof Platform from a front-half slice (Discover → Define → Plan) to the **entire product-management lifecycle**: Discover → Define → Plan → Build → Test → Ship → Launch → Support → Learn → re-feeds Discover. The previously deferred backlog (S4 Build, S5 Test, S6 Ship, L Launch, M Support) is **un-deferred** for the proof platform — but ships as **thin agentic orchestration over existing tools**, not as new autonomous IDEs / CI / helpdesks.
 
 **Realism rule (the constraint that keeps scope sane):** Agents orchestrate existing tools where the tool already exists; they don't replace them. Concretely:
+
 - Build = Builder opens a **real scoped PR** on the Cadence repo via GitHub MCP (not a new IDE; not Cursor/Devin).
 - Test = Builder reads **existing GitHub Actions** results (not a new test runner).
 - Ship = approval-gated merge + ingest the **existing deploy webhook** (not a new pipeline).
@@ -319,21 +331,23 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 - Learn = Analyst attaches outcome → re-scores opportunity → next Discovery cycle reflects it.
 
 **Sub-decisions:**
-1. **Full-lifecycle by orchestration, not replacement.** The thesis is "agent-native operating *system*" — agents drive the existing PM stack. Building our own IDE/CI/helpdesk would dilute the thesis and is out of scope at any depth beyond what's listed above.
+
+1. **Full-lifecycle by orchestration, not replacement.** The thesis is "agent-native operating _system_" — agents drive the existing PM stack. Building our own IDE/CI/helpdesk would dilute the thesis and is out of scope at any depth beyond what's listed above.
 2. **Builder agent writes to the Cadence repo itself** (option (a) in the plan). Requires a `GITHUB_TOKEN` runtime secret with `repo` scope, added when Bundle 9 starts (not now). Branch protection on `main` ensures no agent can bypass review; every merge is approval-gated through Cadence's own Decision Queue.
 3. **One channel per stage in v1.1.** One outbound channel (Slack OR email) for Launch; one inbound channel for Support. Depth comes after the loop closes, not before.
 4. **Proof bars are per-bundle and end-to-end.** Bundle 9 is not "done" until a real PR exists on the Cadence repo for a real planned task. Bundle 10 not "done" until a real merge fires a real deploy that lands in the Mission Graph. Etc.
 5. **Seven new reserved IDs:** N1 (GitHub-issues sync), I-thin (Builder scoped PR), J-thin (CI read), K-thin (merge gate + deploy webhook), L-thin (changelog + one channel), M-thin (one inbound channel), Z1 (Analyst learn loop).
 
-**Why:** A half-lifecycle demo (Discover → Plan) does not prove the product to a PM audience — a real PM walks the *whole* loop every week. v1's demo was credible to a YC reviewer but not yet credible to a design-partner CTO. v1.1 makes the loop close on real systems, so the same artifact (signal → opportunity → PRD → PR → deploy → ticket → re-scored opportunity) is the demo *and* the daily working surface.
+**Why:** A half-lifecycle demo (Discover → Plan) does not prove the product to a PM audience — a real PM walks the _whole_ loop every week. v1's demo was credible to a YC reviewer but not yet credible to a design-partner CTO. v1.1 makes the loop close on real systems, so the same artifact (signal → opportunity → PRD → PR → deploy → ticket → re-scored opportunity) is the demo _and_ the daily working surface.
 
 **Tradeoffs considered:**
-- *Build a full autonomous coding agent (compete with Cursor/Devin):* rejected — multi-quarter scope, off-thesis (we're the OS, not the IDE), and the operator-as-judge story is stronger with scoped PRs on a real repo.
-- *Keep S4–S6 deferred and ship v1 as-is:* rejected — user feedback explicitly: "the complete lifecycle should be covered, not half-baked." Half-lifecycle reads as half-product to a PM audience.
-- *Stage launch + support across multiple channels:* rejected — depth before the loop closes inverts the priority. One channel per stage now; multi-channel after Bundle 12 ships.
-- *Use a throwaway demo repo for Builder writes:* rejected — weakens the Cadence-on-Cadence story; branch protection makes the real-repo choice safe.
 
-**Impact:** `docs/feature-backlog.md` updated: section title `(v1)` → `(v1.1) — full product lifecycle, end-to-end on real systems`, added Realism Rule table (9 lifecycle stages), expanded bundles 8→12 (added 9 Build+Test, 10 Ship, 11 Launch, 12 Support→Learn), expanded build sequence 8→12 steps, added Demo narrative paragraph, expanded Real-data seeding to include repo-write decision, rewrote Explicitly-deferred list to reflect orchestration-not-replacement scope, added 7 new reserved-ID stubs (N1, I-thin, J-thin, K-thin, L-thin, M-thin, Z1), refreshed live status board (Next up + Progress + Recent log). `plan.md` §4 logged. `active-task.md` unchanged — FND-RUNTIME 0.9 is still next; no in-flight work invalidated. No code, schema, RLS, or secret changes in this session.
+- _Build a full autonomous coding agent (compete with Cursor/Devin):_ rejected — multi-quarter scope, off-thesis (we're the OS, not the IDE), and the operator-as-judge story is stronger with scoped PRs on a real repo.
+- _Keep S4–S6 deferred and ship v1 as-is:_ rejected — user feedback explicitly: "the complete lifecycle should be covered, not half-baked." Half-lifecycle reads as half-product to a PM audience.
+- _Stage launch + support across multiple channels:_ rejected — depth before the loop closes inverts the priority. One channel per stage now; multi-channel after Bundle 12 ships.
+- _Use a throwaway demo repo for Builder writes:_ rejected — weakens the Cadence-on-Cadence story; branch protection makes the real-repo choice safe.
+
+**Impact:** `docs/planning/feature-backlog.md` updated: section title `(v1)` → `(v1.1) — full product lifecycle, end-to-end on real systems`, added Realism Rule table (9 lifecycle stages), expanded bundles 8→12 (added 9 Build+Test, 10 Ship, 11 Launch, 12 Support→Learn), expanded build sequence 8→12 steps, added Demo narrative paragraph, expanded Real-data seeding to include repo-write decision, rewrote Explicitly-deferred list to reflect orchestration-not-replacement scope, added 7 new reserved-ID stubs (N1, I-thin, J-thin, K-thin, L-thin, M-thin, Z1), refreshed live status board (Next up + Progress + Recent log). `plan.md` §4 logged. `active-task.md` unchanged — FND-RUNTIME 0.9 is still next; no in-flight work invalidated. No code, schema, RLS, or secret changes in this session.
 
 ---
 
@@ -348,13 +362,38 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 **Why:** operator feedback after the v3 audit and the first language pass: browser popups feel "hard" and off-brand, em dashes leak the machine-written origin, and forcing operators to `/settings` for every rename breaks the cockpit thesis. All three are first-impression failures the v3 audit already graded.
 
 **Tradeoffs considered:**
-- *Auto-graduate P0 LANG-VOICE-01..04 into backlog F-IDs:* deferred to advisory; the audit doc captures them so the operator triages alongside the prior v3 recs.
-- *Ship invite-by-email this turn:* deferred to P2 — needs admin lookup of `auth.users` by email via service role and a workspace settings sheet. Marked in the audit.
-- *Sweep all 31 routes for em dashes this turn:* deferred to P1 — would inflate the diff and slow review. Audit lists every target route.
-- *Per-action confirmation modal vs typed-name guard for destructive flows:* picked typed-name guard for workspace/product delete (operators delete by accident; typing the name is a 2-second pause that catches the wrong-row case).
 
-**Impact:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `docs/strategy/README.md`, `docs/feature-backlog.md`, `plan.md` (§4). No schema changes. RLS unchanged (workspace owner-manage + member-read policies already covered the new server fns).
+- _Auto-graduate P0 LANG-VOICE-01..04 into backlog F-IDs:_ deferred to advisory; the audit doc captures them so the operator triages alongside the prior v3 recs.
+- _Ship invite-by-email this turn:_ deferred to P2 — needs admin lookup of `auth.users` by email via service role and a workspace settings sheet. Marked in the audit.
+- _Sweep all 31 routes for em dashes this turn:_ deferred to P1 — would inflate the diff and slow review. Audit lists every target route.
+- _Per-action confirmation modal vs typed-name guard for destructive flows:_ picked typed-name guard for workspace/product delete (operators delete by accident; typing the name is a 2-second pause that catches the wrong-row case).
+
+**Impact:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `docs/strategy/README.md`, `docs/planning/feature-backlog.md`, `plan.md` (§4). No schema changes. RLS unchanged (workspace owner-manage + member-read policies already covered the new server fns).
 
 ---
 
-*This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-06.*
+### 2026-06-10 — Rebranding to Circuit (B2B Enterprise Cockpit) & 12-Stage Lifecycle loop
+
+**Decision:** Rename the product from "Cadence" to **Circuit** (inspired by Bloomberg’s _The Circuit_ with Emily Chang) and pivot the strategic positioning to the **B2B Enterprise Product Cockpit**. The core platform thesis is now structured around the "closed-loop circuit" of product development, where customer signals flow unbroken through S1–S12 to outcomes under human governance.
+
+**Sub-decisions:**
+
+1. **Insert Rename Disclaimer:** Add a clear disclaimer across all root files and pointers (`CLAUDE.md`, `GEMINI.md`, `AGENTS.md`, `README.md`, `.lovable-config.txt`) to ensure that other co-development tools (Claude Code, Lovable, Antigravity, Gemini CLI) recognize that legacy database schemas, env vars, or variables containing `cadence` are equivalent to `circuit`.
+2. **Preserve Existing Build:** Group and restructure existing features (discovery, spec editors, roadmaps, builder, traces, outcomes) logically under the new pillars without discarding any written code.
+3. **The 12-Stage Lifecycle & 8 Cockpit Pillars:** Map all product development workflows into 12 stages run by specialized agents (Discover, Audio Sync, ICE Prioritization, Spec Draft, Issue Planning, Agentic Build, Visual QA, Safe Release, GTM Launch, Support Triage, Cohort Analytics, and Learn & Reflect) consolidated under 8 simple visual cockpit pillars.
+4. **Pluggable Multi-Model Routing:** Route cognitive tasks dynamically based on model strengths (Gemini 1.5 Pro for audio and signal ingestion, Claude 3.5 Sonnet / GPT-4o for reasoning/specs, DeepSeek-Coder-V2 for code, Gemini 1.5 Flash for chat intents) with secure support for encrypted client BYO Keys.
+5. **Lovable Co-Development Compatibility:** To prevent automated cloud deployment conflicts, keep Code Sandboxing and Automated Rollbacks as _logical roadmap milestones_ and _agent system prompts_ rather than local system scripts or hooks.
+6. **Persona Expansion:** Align the cockpit for the entire cross-functional enterprise team, introducing specific workflows and governance gates for the VP/Director of Product, the PM (Operator), the Tech Lead (Gatekeeper), the UX Designer, the Product Marketer, and the Support Lead.
+
+**Why:** The name "Cadence" was highly contested and lacked strategic branding leverage. The new name "Circuit" represents an unbroken closed-loop flow of signal current, matching our positioning. Pivoting to the B2B Enterprise Cockpit provides a highly defensible category (the governance/trust flight deck for swarms) while avoiding point-tool competition and ensuring Lovable co-development stays clean.
+
+**Tradeoffs considered:**
+
+- _Perform destructive renaming of database tables / columns:_ rejected — would break Lovable's active build paths. Map logical namespaces at the documentation and user levels instead.
+- _Widen S6-S8 IDE build scope to replace Cursor/Devin:_ rejected — Circuit remains an orchestration cockpit that drives existing systems, not a replacement IDE.
+
+**Impact:** Updated `README.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `ENTRY.md`, `.lovable-config.txt` with the Rename Disclaimer and Circuit branding. Created a new positioning document `v3-positioning-circuit-2026-06-10.md` as current, archiving `v2-positioning-2026-06-02.md`. `plan.md` and `docs/planning/feature-backlog.md` queued for updates.
+
+---
+
+_This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-10._

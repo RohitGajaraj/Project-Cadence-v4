@@ -35,10 +35,18 @@ export type ReflectionRow = {
 };
 
 function safeJson<T = unknown>(s: string): T | null {
-  try { return JSON.parse(s) as T; } catch { /* fall through */ }
+  try {
+    return JSON.parse(s) as T;
+  } catch {
+    /* fall through */
+  }
   const m = s.match(/\{[\s\S]*\}/);
   if (!m) return null;
-  try { return JSON.parse(m[0]) as T; } catch { return null; }
+  try {
+    return JSON.parse(m[0]) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -60,17 +68,24 @@ async function renderTrace(
   let toolBlock = "";
   if (traceId) {
     try {
-      const { data } = await supabase.from("tool_calls")
+      const { data } = await supabase
+        .from("tool_calls")
         .select("tool_name,ok,error,latency_ms")
-        .eq("user_id", userId).eq("trace_id", traceId)
-        .order("created_at", { ascending: true }).limit(20);
+        .eq("user_id", userId)
+        .eq("trace_id", traceId)
+        .order("created_at", { ascending: true })
+        .limit(20);
       if (data?.length) {
-        toolBlock = data.map((t) => {
-          const tag = t.ok ? "ok" : `err: ${(t.error ?? "").slice(0, 120)}`;
-          return `- ${t.tool_name} (${t.latency_ms ?? 0}ms · ${tag})`;
-        }).join("\n");
+        toolBlock = data
+          .map((t) => {
+            const tag = t.ok ? "ok" : `err: ${(t.error ?? "").slice(0, 120)}`;
+            return `- ${t.tool_name} (${t.latency_ms ?? 0}ms · ${tag})`;
+          })
+          .join("\n");
       }
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
   }
   return [
     `Goal: ${goal}`,
@@ -90,8 +105,12 @@ export async function autoReflect(
 ): Promise<ReflectionRow | null> {
   try {
     const trace = await renderTrace(
-      supabase, input.userId, input.traceId,
-      input.goal, input.finalMsg, input.stepSummary,
+      supabase,
+      input.userId,
+      input.traceId,
+      input.goal,
+      input.finalMsg,
+      input.stepSummary,
     );
 
     const res = await callModel(supabase, input.userId, {
@@ -102,41 +121,57 @@ export async function autoReflect(
       runId: input.runId,
       workspaceId: input.workspaceId,
       messages: [
-        { role: "system", content:
-          "You distil a one-paragraph LESSON the agent should remember for next time. " +
-          "Return strict JSON: {\"lesson\":string, \"what_worked\":string, \"what_to_change\":string, \"importance\":1|2|3|4|5}. " +
-          "lesson <= 240 chars, written in second person (\"You\"). importance: 1 = trivial, 5 = pivotal. " +
-          "Skip vague platitudes — if there is nothing specific, set importance=1." },
+        {
+          role: "system",
+          content:
+            "You distil a one-paragraph LESSON the agent should remember for next time. " +
+            'Return strict JSON: {"lesson":string, "what_worked":string, "what_to_change":string, "importance":1|2|3|4|5}. ' +
+            'lesson <= 240 chars, written in second person ("You"). importance: 1 = trivial, 5 = pivotal. ' +
+            "Skip vague platitudes — if there is nothing specific, set importance=1.",
+        },
         { role: "user", content: trace },
       ],
     });
 
-    const parsed = safeJson<{ lesson?: string; what_worked?: string; what_to_change?: string; importance?: number }>(res.output);
+    const parsed = safeJson<{
+      lesson?: string;
+      what_worked?: string;
+      what_to_change?: string;
+      importance?: number;
+    }>(res.output);
     const lesson = parsed?.lesson?.trim();
     if (!lesson) return null;
 
     const importance = Math.max(1, Math.min(5, Math.round(parsed?.importance ?? 3)));
 
     let emb: number[] | null = null;
-    try { emb = await embedOne(lesson); } catch { /* embedding is optional */ }
+    try {
+      emb = await embedOne(lesson);
+    } catch {
+      /* embedding is optional */
+    }
 
-    const { data, error } = await supabase.from("agent_memory").insert({
-      user_id: input.userId,
-      agent_id: input.agentId,
-      agent_slug: input.agentSlug,
-      scope: "agent",
-      kind: "reflection",
-      content: lesson,
-      importance,
-      embedding: emb as unknown as string | null,
-      metadata: {
-        run_id: input.runId,
-        trace_id: input.traceId,
-        what_worked: parsed?.what_worked ?? null,
-        what_to_change: parsed?.what_to_change ?? null,
-        goal: input.goal.slice(0, 400),
-      },
-    }).select("id,content,importance").single();
+    const { data, error } = await supabase
+      .from("agent_memory")
+      .insert({
+        user_id: input.userId,
+        agent_id: input.agentId,
+        agent_slug: input.agentSlug,
+        scope: "agent",
+        kind: "reflection",
+        content: lesson,
+        importance,
+        embedding: emb as unknown as string | null,
+        metadata: {
+          run_id: input.runId,
+          trace_id: input.traceId,
+          what_worked: parsed?.what_worked ?? null,
+          what_to_change: parsed?.what_to_change ?? null,
+          goal: input.goal.slice(0, 400),
+        },
+      })
+      .select("id,content,importance")
+      .single();
 
     if (error) {
       console.error("autoReflect insert failed:", error);

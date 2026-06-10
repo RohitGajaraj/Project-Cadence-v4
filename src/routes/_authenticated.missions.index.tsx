@@ -33,8 +33,11 @@ function MissionsPage() {
   const start = useMutation({
     mutationFn: (input: { goal: string; title?: string }) => fStart({ data: input }),
     onSuccess: (res) => {
-      toast.success(`Orchestrator dispatched ${res.approvals_queued ?? 0} approval(s); mission running.`);
-      setGoal(""); setTitle("");
+      toast.success(
+        `Orchestrator dispatched ${res.approvals_queued ?? 0} approval(s); mission running.`,
+      );
+      setGoal("");
+      setTitle("");
       qc.invalidateQueries({ queryKey: ["missions"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -51,9 +54,14 @@ function MissionsPage() {
           </div>
           <h1 className="mt-3 font-display text-3xl tracking-tight">Missions</h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-            A mission groups every hop an agent makes on one operator intent — Discovery → Strategist → PRD Writer → Builder.
-            Each hop is a structured handoff (not a pasted prompt). Start an <strong>orchestrated</strong> mission below — the Orchestrator
-            plans a DAG and dispatches specialists for you — or start a single-agent mission from <Link to="/agents" className="underline">Agents</Link>.
+            A mission groups every hop an agent makes on one operator intent — Discovery →
+            Strategist → PRD Writer → Builder. Each hop is a structured handoff (not a pasted
+            prompt). Start an <strong>orchestrated</strong> mission below — the Orchestrator plans a
+            DAG and dispatches specialists for you — or start a single-agent mission from{" "}
+            <Link to="/agents" className="underline">
+              Agents
+            </Link>
+            .
           </p>
         </header>
 
@@ -78,14 +86,19 @@ function MissionsPage() {
           />
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              The Orchestrator will plan a 1–6 step DAG and dispatch the right specialists. Requires at least one enabled specialist agent.
+              The Orchestrator will plan a 1–6 step DAG and dispatch the right specialists. Requires
+              at least one enabled specialist agent.
             </p>
             <button
               onClick={() => start.mutate({ goal: goal.trim(), title: title.trim() || undefined })}
               disabled={start.isPending || goal.trim().length < 4}
               className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {start.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {start.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
               Plan & dispatch
             </button>
           </div>
@@ -95,7 +108,8 @@ function MissionsPage() {
           <div className="text-sm text-muted-foreground py-12 text-center">Loading…</div>
         ) : rows.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground text-sm">
-            No missions yet. Dispatch an agent on /agents with "Start as mission" enabled to create one.
+            No missions yet. Dispatch an agent on /agents with "Start as mission" enabled to create
+            one.
           </div>
         ) : (
           <div className="space-y-2">
@@ -109,12 +123,18 @@ function MissionsPage() {
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="font-display text-sm truncate">{m.title}</div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">{m.goal}</div>
+                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {m.goal}
+                    </div>
                   </div>
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] ${statusTone(m.status)}`}>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] ${statusTone(m.status)}`}
+                  >
                     {m.status}
                   </span>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">{m.hop_count} hop{m.hop_count === 1 ? "" : "s"}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {m.hop_count} hop{m.hop_count === 1 ? "" : "s"}
+                  </span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               </Link>

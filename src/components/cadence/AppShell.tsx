@@ -1,9 +1,36 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home, ListTodo, Bot, Compass, MessageSquare, Settings, Telescope, Target, FileText, Map, Calendar, BookOpen, Inbox, Activity,
-  LogOut, FileCode, FlaskConical, ShieldAlert, GitBranch, ChevronDown, Plug, PauseCircle, Hammer,
-  Sun, Moon, Sparkles,
-  Plus, Trash2, MoreHorizontal, Pencil, LogOut as LeaveIcon,
+  Home,
+  ListTodo,
+  Bot,
+  Compass,
+  MessageSquare,
+  Settings,
+  Telescope,
+  Target,
+  FileText,
+  Map,
+  Calendar,
+  BookOpen,
+  Inbox,
+  Activity,
+  LogOut,
+  FileCode,
+  FlaskConical,
+  ShieldAlert,
+  GitBranch,
+  ChevronDown,
+  Plug,
+  PauseCircle,
+  Hammer,
+  Sun,
+  Moon,
+  Sparkles,
+  Plus,
+  Trash2,
+  MoreHorizontal,
+  Pencil,
+  LogOut as LeaveIcon,
   Rocket,
   type LucideIcon,
 } from "lucide-react";
@@ -78,9 +105,7 @@ const groups: NavGroup[] = [
   {
     id: "outcome",
     label: "Outcome",
-    items: [
-      { to: "/outcome", label: "Outcome", icon: Rocket },
-    ],
+    items: [{ to: "/outcome", label: "Outcome", icon: Rocket }],
   },
   {
     id: "run",
@@ -143,7 +168,9 @@ function useOpenGroups(path: string) {
           setOpenId(parsed);
         }
       }
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
     setHydrated(true);
   }, []);
 
@@ -155,7 +182,11 @@ function useOpenGroups(path: string) {
 
   useEffect(() => {
     if (!hydrated) return;
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openId)); } catch { /* noop */ }
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openId));
+    } catch {
+      /* noop */
+    }
   }, [openId, hydrated]);
 
   const toggle = (id: string) => setOpenId((curr) => (curr === id ? null : id));
@@ -186,7 +217,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     queryKey: ["governance", "pause-state", activeWorkspaceId],
     queryFn: async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session) return null;
         return await pauseFn({ data: { workspaceId: activeWorkspaceId ?? null } });
       } catch {
@@ -228,15 +261,23 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     if (!name?.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
-    if (!uid) { toast.error("Not signed in"); return; }
+    if (!uid) {
+      toast.error("Not signed in");
+      return;
+    }
     const { data, error } = await supabase
       .from("workspaces")
       .insert({ name: name.trim(), owner_id: uid })
       .select()
       .single();
-    if (error || !data) { toast.error(error?.message ?? "Could not create workspace"); return; }
+    if (error || !data) {
+      toast.error(error?.message ?? "Could not create workspace");
+      return;
+    }
     // Owner needs an explicit member row for is_workspace_member() RLS checks.
-    await supabase.from("workspace_members").insert({ workspace_id: data.id, user_id: uid, role: "owner" });
+    await supabase
+      .from("workspace_members")
+      .insert({ workspace_id: data.id, user_id: uid, role: "owner" });
     toast.success(`Created "${data.name}".`);
     await refreshWorkspaces();
     setActiveWorkspaceId(data.id);
@@ -300,7 +341,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
   }
 
   async function createProduct() {
-    if (!activeWorkspaceId) { toast.error("Select a workspace first"); return; }
+    if (!activeWorkspaceId) {
+      toast.error("Select a workspace first");
+      return;
+    }
     const name = await prompt({
       title: "New product",
       label: "Product name",
@@ -310,13 +354,19 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     if (!name?.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
-    if (!uid) { toast.error("Not signed in"); return; }
+    if (!uid) {
+      toast.error("Not signed in");
+      return;
+    }
     const { data, error } = await supabase
       .from("projects")
       .insert({ name: name.trim(), workspace_id: activeWorkspaceId, user_id: uid })
       .select()
       .single();
-    if (error || !data) { toast.error(error?.message ?? "Could not create product"); return; }
+    if (error || !data) {
+      toast.error(error?.message ?? "Could not create product");
+      return;
+    }
     toast.success(`Added "${data.name}".`);
     await refreshProducts();
     setActiveProductId(data.id);
@@ -349,7 +399,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
     });
     if (!ok) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Product deleted.");
     if (activeProductId === id) setActiveProductId(null);
     await refreshProducts();
@@ -382,7 +435,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           <div className="px-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-2.5 py-2 hover:bg-secondary/60 transition group text-left">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-2.5 py-2 hover:bg-secondary/60 transition group text-left"
+                >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <div className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 bg-primary text-primary-foreground flex items-center justify-center">
                       <span className="font-display text-sm leading-none">
@@ -393,7 +449,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                       <div className="font-sans text-[13px] font-medium tracking-tight truncate">
                         {activeWorkspace?.name || "Select Workspace"}
                       </div>
-                      <div className="mono-label truncate" style={{ fontSize: "9px" }}>Workspace</div>
+                      <div className="mono-label truncate" style={{ fontSize: "9px" }}>
+                        Workspace
+                      </div>
                     </div>
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-ink-faint group-hover:text-foreground shrink-0 transition" />
@@ -426,7 +484,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={renameActiveWorkspace} className="cursor-pointer gap-2">
+                    <DropdownMenuItem
+                      onClick={renameActiveWorkspace}
+                      className="cursor-pointer gap-2"
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                       <span>Rename</span>
                     </DropdownMenuItem>
@@ -436,11 +497,17 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                         <span>Workspace settings</span>
                       </DropdownMenuItem>
                     </Link>
-                    <DropdownMenuItem onClick={leaveActiveWorkspace} className="cursor-pointer gap-2">
+                    <DropdownMenuItem
+                      onClick={leaveActiveWorkspace}
+                      className="cursor-pointer gap-2"
+                    >
                       <LeaveIcon className="h-3.5 w-3.5" />
                       <span>Leave</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={deleteActiveWorkspace} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                    <DropdownMenuItem
+                      onClick={deleteActiveWorkspace}
+                      className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Delete workspace</span>
                     </DropdownMenuItem>
@@ -486,7 +553,11 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   {isOpen && (
                     <div className="mt-1 flex flex-col gap-0.5">
                       {g.items.map((n) => (
-                        <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
+                        <NavRow
+                          key={`${n.to}:${n.search?.tab ?? ""}`}
+                          item={n}
+                          active={isItemActive(n)}
+                        />
                       ))}
                     </div>
                   )}
@@ -495,7 +566,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             })}
 
             <div className="mt-4 pt-3 border-t hairline">
-              <NavRow item={{ to: "/settings", label: "Settings", icon: Settings }} active={path === "/settings"} />
+              <NavRow
+                item={{ to: "/settings", label: "Settings", icon: Settings }}
+                active={path === "/settings"}
+              />
             </div>
           </nav>
 
@@ -533,7 +607,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                     type="button"
                     onClick={() => setActiveProductId(isActive ? null : p.id)}
                     className={`flex-1 text-left px-3 py-1.5 text-[13px] truncate ${
-                      isActive ? "text-foreground font-medium" : "text-ink-muted group-hover:text-foreground"
+                      isActive
+                        ? "text-foreground font-medium"
+                        : "text-ink-muted group-hover:text-foreground"
                     }`}
                   >
                     {p.name}
@@ -550,16 +626,25 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44">
-                      <DropdownMenuItem onClick={() => setActiveProductId(p.id)} className="cursor-pointer gap-2">
+                      <DropdownMenuItem
+                        onClick={() => setActiveProductId(p.id)}
+                        className="cursor-pointer gap-2"
+                      >
                         <Compass className="h-3.5 w-3.5" />
                         <span>Set active</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => renameProduct(p.id, p.name)} className="cursor-pointer gap-2">
+                      <DropdownMenuItem
+                        onClick={() => renameProduct(p.id, p.name)}
+                        className="cursor-pointer gap-2"
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                         <span>Rename</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => deleteProduct(p.id, p.name)} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                      <DropdownMenuItem
+                        onClick={() => deleteProduct(p.id, p.name)}
+                        className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                         <span>Delete</span>
                       </DropdownMenuItem>
@@ -583,7 +668,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
         {/* Fixed footer: alerts, budget, co-pilot, sign out, theme */}
         <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
           {pauseState?.paused && (
-            <Link to="/governance" className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition">
+            <Link
+              to="/governance"
+              className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition"
+            >
               <div className="flex items-center gap-2">
                 <PauseCircle className="h-4 w-4 shrink-0" />
                 <div className="leading-tight overflow-hidden">
@@ -604,7 +692,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           >
             <div className="flex items-center justify-between mono-label">
               <span>Mission mode</span>
-              <Bot className="h-3 w-3 text-ink-faint group-hover:text-foreground transition" strokeWidth={1.75} />
+              <Bot
+                className="h-3 w-3 text-ink-faint group-hover:text-foreground transition"
+                strokeWidth={1.75}
+              />
             </div>
             <div className="font-display text-base mt-1 leading-none">Hire & dispatch agents</div>
             <div className="text-[11px] text-ink-muted mt-1">
@@ -613,15 +704,20 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                 : "No agents yet · set one up →"}
             </div>
           </Link>
-          <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition"
+          >
             <LogOut className="h-3 w-3" /> Sign out
           </button>
           <div className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30">
-            {([
-              { id: "dark",   label: "Nightshift", Icon: Moon },
-              { id: "aurora", label: "Aurora",     Icon: Sparkles },
-              { id: "light",  label: "Editorial",  Icon: Sun },
-            ] as { id: Theme; label: string; Icon: LucideIcon }[]).map(({ id, label, Icon }) => {
+            {(
+              [
+                { id: "dark", label: "Nightshift", Icon: Moon },
+                { id: "aurora", label: "Aurora", Icon: Sparkles },
+                { id: "light", label: "Editorial", Icon: Sun },
+              ] as { id: Theme; label: string; Icon: LucideIcon }[]
+            ).map(({ id, label, Icon }) => {
               const active = theme === id;
               return (
                 <button
@@ -637,7 +733,11 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
                   }`}
                 >
                   <Icon className="h-3 w-3" strokeWidth={1.75} />
-                  {active && <span className="mono-label" style={{ fontSize: "9px" }}>{label}</span>}
+                  {active && (
+                    <span className="mono-label" style={{ fontSize: "9px" }}>
+                      {label}
+                    </span>
+                  )}
                 </button>
               );
             })}

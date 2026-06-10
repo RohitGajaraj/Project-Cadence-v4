@@ -30,17 +30,39 @@ export class GovernanceHaltError extends Error {
   }
 }
 
-async function checkKillSwitch(supabase: SupabaseClient, workspaceId: string | null | undefined): Promise<void> {
+async function checkKillSwitch(
+  supabase: SupabaseClient,
+  workspaceId: string | null | undefined,
+): Promise<void> {
   try {
-    const { data, error } = await supabase.rpc("current_kill_state", { ws: (workspaceId ?? null) as unknown as string });
-    if (error) { console.error("current_kill_state failed:", error); return; }
-    const row = Array.isArray(data) ? (data[0] as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | undefined) : (data as { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null } | null);
+    const { data, error } = await supabase.rpc("current_kill_state", {
+      ws: (workspaceId ?? null) as unknown as string,
+    });
+    if (error) {
+      console.error("current_kill_state failed:", error);
+      return;
+    }
+    const row = Array.isArray(data)
+      ? (data[0] as
+          | { system_paused?: boolean; workspace_paused?: boolean; reason?: string | null }
+          | undefined)
+      : (data as {
+          system_paused?: boolean;
+          workspace_paused?: boolean;
+          reason?: string | null;
+        } | null);
     if (!row) return;
     if (row.system_paused) {
-      throw new GovernanceHaltError("kill_switch", `System paused${row.reason ? `: ${row.reason}` : ""}`);
+      throw new GovernanceHaltError(
+        "kill_switch",
+        `System paused${row.reason ? `: ${row.reason}` : ""}`,
+      );
     }
     if (row.workspace_paused) {
-      throw new GovernanceHaltError("kill_switch", `Workspace paused${row.reason ? `: ${row.reason}` : ""}`);
+      throw new GovernanceHaltError(
+        "kill_switch",
+        `Workspace paused${row.reason ? `: ${row.reason}` : ""}`,
+      );
     }
   } catch (e) {
     if (e instanceof GovernanceHaltError) throw e;
@@ -48,30 +70,63 @@ async function checkKillSwitch(supabase: SupabaseClient, workspaceId: string | n
   }
 }
 
-async function checkMissionCaps(supabase: SupabaseClient, runId: string | null | undefined): Promise<void> {
+async function checkMissionCaps(
+  supabase: SupabaseClient,
+  runId: string | null | undefined,
+): Promise<void> {
   if (!runId) return;
   const { data, error } = await supabase
     .from("agent_runs")
-    .select("mission_spend_cap_usd,mission_token_cap,tokens_used,spend_used_usd,halted_reason,status")
+    .select(
+      "mission_spend_cap_usd,mission_token_cap,tokens_used,spend_used_usd,halted_reason,status",
+    )
     .eq("id", runId)
     .maybeSingle();
   if (error || !data) return;
-  const r = data as { mission_spend_cap_usd: number | null; mission_token_cap: number | null; tokens_used: number | null; spend_used_usd: number | null; halted_reason: string | null; status: string };
+  const r = data as {
+    mission_spend_cap_usd: number | null;
+    mission_token_cap: number | null;
+    tokens_used: number | null;
+    spend_used_usd: number | null;
+    halted_reason: string | null;
+    status: string;
+  };
   if (r.status === "halted" || r.halted_reason) {
-    throw new GovernanceHaltError("kill_switch", `Mission halted${r.halted_reason ? `: ${r.halted_reason}` : ""}`);
+    throw new GovernanceHaltError(
+      "kill_switch",
+      `Mission halted${r.halted_reason ? `: ${r.halted_reason}` : ""}`,
+    );
   }
   if (r.mission_token_cap != null && Number(r.tokens_used ?? 0) >= Number(r.mission_token_cap)) {
-    throw new GovernanceHaltError("mission_token_cap", `Mission token cap reached (${r.tokens_used}/${r.mission_token_cap})`);
+    throw new GovernanceHaltError(
+      "mission_token_cap",
+      `Mission token cap reached (${r.tokens_used}/${r.mission_token_cap})`,
+    );
   }
-  if (r.mission_spend_cap_usd != null && Number(r.spend_used_usd ?? 0) >= Number(r.mission_spend_cap_usd)) {
-    throw new GovernanceHaltError("mission_spend_cap", `Mission spend cap reached ($${Number(r.spend_used_usd).toFixed(4)}/$${Number(r.mission_spend_cap_usd).toFixed(4)})`);
+  if (
+    r.mission_spend_cap_usd != null &&
+    Number(r.spend_used_usd ?? 0) >= Number(r.mission_spend_cap_usd)
+  ) {
+    throw new GovernanceHaltError(
+      "mission_spend_cap",
+      `Mission spend cap reached ($${Number(r.spend_used_usd).toFixed(4)}/$${Number(r.mission_spend_cap_usd).toFixed(4)})`,
+    );
   }
 }
 
-async function recordMissionUsage(supabase: SupabaseClient, runId: string | null | undefined, tokens: number, costUsd: number): Promise<void> {
+async function recordMissionUsage(
+  supabase: SupabaseClient,
+  runId: string | null | undefined,
+  tokens: number,
+  costUsd: number,
+): Promise<void> {
   if (!runId) return;
   try {
-    await supabase.rpc("record_mission_usage", { _run_id: runId, _tokens: tokens, _cost_usd: costUsd });
+    await supabase.rpc("record_mission_usage", {
+      _run_id: runId,
+      _tokens: tokens,
+      _cost_usd: costUsd,
+    });
   } catch (e) {
     console.error("record_mission_usage failed:", e);
   }
@@ -101,21 +156,40 @@ async function logGovernanceHalt(
       status: "blocked",
       error_message: `governance_halt:${err.kind} — ${err.message}`,
       input_preview: (opts.messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
-      system_preview: (opts.messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
+      system_preview: (opts.messages.find((m) => m.role === "system")?.content ?? "").slice(
+        0,
+        4000,
+      ),
       output_preview: "",
     });
   } catch (e) {
     console.error("governance_halt event insert failed:", e);
   }
   if (opts.runId) {
-    try { await supabase.rpc("halt_agent_run", { _run_id: opts.runId, _reason: `${err.kind}: ${err.message}` }); }
-    catch (e) { console.error("halt_agent_run failed:", e); }
+    try {
+      await supabase.rpc("halt_agent_run", {
+        _run_id: opts.runId,
+        _reason: `${err.kind}: ${err.message}`,
+      });
+    } catch (e) {
+      console.error("halt_agent_run failed:", e);
+    }
   }
 }
 
 export type CallSurface =
-  | "agent" | "chat" | "copilot" | "prd" | "discovery"
-  | "studio" | "brief" | "eval" | "judge" | "embed" | "scheduler" | "test";
+  | "agent"
+  | "chat"
+  | "copilot"
+  | "prd"
+  | "discovery"
+  | "studio"
+  | "brief"
+  | "eval"
+  | "judge"
+  | "embed"
+  | "scheduler"
+  | "test";
 
 export type CallOpts = {
   surface: CallSurface;
@@ -160,51 +234,102 @@ export type CallResult = {
   /** Parsed JSON when responseFormat=json_object (best-effort) */
   json?: unknown;
   /** Chunks injected as context (when retrieval enabled) */
-  citations?: { id: string; source_kind: string; source_id: string | null; title: string | null; chunk_index: number; similarity: number }[];
+  citations?: {
+    id: string;
+    source_kind: string;
+    source_id: string | null;
+    title: string | null;
+    chunk_index: number;
+    similarity: number;
+  }[];
 };
 
 function byoConfig(model: string): { provider: string; url: string; model: string } | null {
   if (model.startsWith("anthropic/") || model.startsWith("claude"))
-    return { provider: "anthropic", url: "https://api.anthropic.com/v1/messages", model: model.replace(/^anthropic\//, "") };
+    return {
+      provider: "anthropic",
+      url: "https://api.anthropic.com/v1/messages",
+      model: model.replace(/^anthropic\//, ""),
+    };
   if (model.startsWith("openai/") || model.startsWith("gpt-"))
-    return { provider: "openai", url: "https://api.openai.com/v1/chat/completions", model: model.replace(/^openai\//, "") };
+    return {
+      provider: "openai",
+      url: "https://api.openai.com/v1/chat/completions",
+      model: model.replace(/^openai\//, ""),
+    };
   if (model.startsWith("deepseek/"))
-    return { provider: "deepseek", url: "https://api.deepseek.com/v1/chat/completions", model: model.replace(/^deepseek\//, "") };
+    return {
+      provider: "deepseek",
+      url: "https://api.deepseek.com/v1/chat/completions",
+      model: model.replace(/^deepseek\//, ""),
+    };
   if (model.startsWith("xai/") || model.startsWith("grok"))
-    return { provider: "xai", url: "https://api.x.ai/v1/chat/completions", model: model.replace(/^xai\//, "") };
+    return {
+      provider: "xai",
+      url: "https://api.x.ai/v1/chat/completions",
+      model: model.replace(/^xai\//, ""),
+    };
   return null;
 }
 
-async function callAnthropic(apiKey: string, model: string, msgs: { role: string; content: string }[]) {
+async function callAnthropic(
+  apiKey: string,
+  model: string,
+  msgs: { role: string; content: string }[],
+) {
   const system = msgs.find((m) => m.role === "system")?.content ?? "";
   const rest = msgs.filter((m) => m.role !== "system");
   const t0 = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ model, max_tokens: 2048, system, messages: rest }),
   });
   const latency = Date.now() - t0;
   if (!res.ok) throw new Error(`Anthropic (${res.status}): ${(await res.text()).slice(0, 200)}`);
-  const j = (await res.json()) as { content?: { text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } };
+  const j = (await res.json()) as {
+    content?: { text?: string }[];
+    usage?: { input_tokens?: number; output_tokens?: number };
+  };
   return {
-    text: j.content?.map((c) => c.text ?? "").join("").trim() ?? "",
+    text:
+      j.content
+        ?.map((c) => c.text ?? "")
+        .join("")
+        .trim() ?? "",
     in_tok: j.usage?.input_tokens ?? 0,
     out_tok: j.usage?.output_tokens ?? 0,
     latency,
   };
 }
 
-async function callOpenAICompat(url: string, apiKey: string, model: string, msgs: { role: string; content: string }[], responseFormat?: "json_object") {
+async function callOpenAICompat(
+  url: string,
+  apiKey: string,
+  model: string,
+  msgs: { role: string; content: string }[],
+  responseFormat?: "json_object",
+) {
   const t0 = Date.now();
   const res = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages: msgs, ...(responseFormat ? { response_format: { type: responseFormat } } : {}) }),
+    body: JSON.stringify({
+      model,
+      messages: msgs,
+      ...(responseFormat ? { response_format: { type: responseFormat } } : {}),
+    }),
   });
   const latency = Date.now() - t0;
   if (!res.ok) throw new Error(`Provider (${res.status}): ${(await res.text()).slice(0, 200)}`);
-  const j = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+  const j = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
   return {
     text: j.choices?.[0]?.message?.content?.trim() ?? "",
     in_tok: j.usage?.prompt_tokens ?? 0,
@@ -213,21 +338,40 @@ async function callOpenAICompat(url: string, apiKey: string, model: string, msgs
   };
 }
 
-async function callGateway(model: string, msgs: { role: string; content: string }[], responseFormat?: "json_object") {
+async function callGateway(
+  model: string,
+  msgs: { role: string; content: string }[],
+  responseFormat?: "json_object",
+) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("AI is not configured (missing LOVABLE_API_KEY).");
   const t0 = Date.now();
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages: msgs, ...(responseFormat ? { response_format: { type: responseFormat } } : {}) }),
+    body: JSON.stringify({
+      model,
+      messages: msgs,
+      ...(responseFormat ? { response_format: { type: responseFormat } } : {}),
+    }),
   });
   const latency = Date.now() - t0;
-  if (res.status === 429) { const e = new Error("AI rate limit reached. Try again in a moment."); (e as { code?: string }).code = "RATE_LIMIT"; throw e; }
+  if (res.status === 429) {
+    const e = new Error("AI rate limit reached. Try again in a moment.");
+    (e as { code?: string }).code = "RATE_LIMIT";
+    throw e;
+  }
   if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Usage.");
-  if (res.status >= 500) { const e = new Error(`AI gateway ${res.status}`); (e as { code?: string }).code = "SERVER_ERROR"; throw e; }
+  if (res.status >= 500) {
+    const e = new Error(`AI gateway ${res.status}`);
+    (e as { code?: string }).code = "SERVER_ERROR";
+    throw e;
+  }
   if (!res.ok) throw new Error(`AI gateway (${res.status}): ${(await res.text()).slice(0, 200)}`);
-  const j = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+  const j = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
   return {
     text: j.choices?.[0]?.message?.content?.trim() ?? "",
     in_tok: j.usage?.prompt_tokens ?? 0,
@@ -254,57 +398,103 @@ async function checkBudget(supabase: SupabaseClient, userId: string): Promise<vo
   if (!b) return;
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7) + "-01";
-  if (b.daily_usd_cap != null && b.day_window === today && Number(b.daily_usd_used) >= Number(b.daily_usd_cap))
+  if (
+    b.daily_usd_cap != null &&
+    b.day_window === today &&
+    Number(b.daily_usd_used) >= Number(b.daily_usd_cap)
+  )
     throw new Error("Daily AI budget reached. Raise the cap in Settings → Budgets.");
-  if (b.monthly_usd_cap != null && b.month_window === thisMonth && Number(b.monthly_usd_used) >= Number(b.monthly_usd_cap))
+  if (
+    b.monthly_usd_cap != null &&
+    b.month_window === thisMonth &&
+    Number(b.monthly_usd_used) >= Number(b.monthly_usd_cap)
+  )
     throw new Error("Monthly AI budget reached. Raise the cap in Settings → Budgets.");
 }
 
 async function checkSurfaceBudget(
-  supabase: SupabaseClient, userId: string, surface: string,
+  supabase: SupabaseClient,
+  userId: string,
+  surface: string,
 ): Promise<void> {
   const { data: b } = await supabase
     .from("ai_surface_budgets")
-    .select("daily_usd_cap,monthly_usd_cap,daily_usd_used,monthly_usd_used,day_window,month_window,enabled")
-    .eq("user_id", userId).eq("surface", surface)
+    .select(
+      "daily_usd_cap,monthly_usd_cap,daily_usd_used,monthly_usd_used,day_window,month_window,enabled",
+    )
+    .eq("user_id", userId)
+    .eq("surface", surface)
     .maybeSingle();
   if (!b || !b.enabled) return;
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7) + "-01";
-  if (b.daily_usd_cap != null && b.day_window === today && Number(b.daily_usd_used) >= Number(b.daily_usd_cap))
+  if (
+    b.daily_usd_cap != null &&
+    b.day_window === today &&
+    Number(b.daily_usd_used) >= Number(b.daily_usd_cap)
+  )
     throw new Error(`Daily budget for "${surface}" reached. Raise the cap in /budgets.`);
-  if (b.monthly_usd_cap != null && b.month_window === thisMonth && Number(b.monthly_usd_used) >= Number(b.monthly_usd_cap))
+  if (
+    b.monthly_usd_cap != null &&
+    b.month_window === thisMonth &&
+    Number(b.monthly_usd_used) >= Number(b.monthly_usd_cap)
+  )
     throw new Error(`Monthly budget for "${surface}" reached. Raise the cap in /budgets.`);
 }
 
 async function logBudgetAlert(
-  supabase: SupabaseClient, userId: string,
-  args: { scope: "global" | "surface"; surface: string | null; window_kind: "day" | "month"; kind: "warn" | "block"; used: number; cap: number },
+  supabase: SupabaseClient,
+  userId: string,
+  args: {
+    scope: "global" | "surface";
+    surface: string | null;
+    window_kind: "day" | "month";
+    kind: "warn" | "block";
+    used: number;
+    cap: number;
+  },
 ) {
   const pct = args.cap > 0 ? Math.min(100, (args.used / args.cap) * 100) : 0;
   try {
     await supabase.from("ai_budget_alerts").insert({
-      user_id: userId, scope: args.scope, surface: args.surface,
-      window_kind: args.window_kind, kind: args.kind,
-      usd_used: args.used, usd_cap: args.cap, pct,
+      user_id: userId,
+      scope: args.scope,
+      surface: args.surface,
+      window_kind: args.window_kind,
+      kind: args.kind,
+      usd_used: args.used,
+      usd_cap: args.cap,
+      pct,
     });
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 }
 
-async function incrementBudget(supabase: SupabaseClient, userId: string, tokens: number, usd: number) {
+async function incrementBudget(
+  supabase: SupabaseClient,
+  userId: string,
+  tokens: number,
+  usd: number,
+) {
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7) + "-01";
   const { data: existing } = await supabase
     .from("ai_budgets")
-    .select("id,day_window,month_window,daily_tokens_used,monthly_tokens_used,daily_usd_used,monthly_usd_used,daily_usd_cap,monthly_usd_cap,alert_at_pct")
+    .select(
+      "id,day_window,month_window,daily_tokens_used,monthly_tokens_used,daily_usd_used,monthly_usd_used,daily_usd_cap,monthly_usd_cap,alert_at_pct",
+    )
     .eq("user_id", userId)
     .maybeSingle();
   if (!existing) {
     await supabase.from("ai_budgets").insert({
       user_id: userId,
-      daily_tokens_used: tokens, monthly_tokens_used: tokens,
-      daily_usd_used: usd, monthly_usd_used: usd,
-      day_window: today, month_window: thisMonth,
+      daily_tokens_used: tokens,
+      monthly_tokens_used: tokens,
+      daily_usd_used: usd,
+      monthly_usd_used: usd,
+      day_window: today,
+      month_window: thisMonth,
     });
     return;
   }
@@ -312,14 +502,17 @@ async function incrementBudget(supabase: SupabaseClient, userId: string, tokens:
   const monthReset = existing.month_window !== thisMonth;
   const newDailyUsd = Number(dayReset ? 0 : existing.daily_usd_used) + usd;
   const newMonthlyUsd = Number(monthReset ? 0 : existing.monthly_usd_used) + usd;
-  await supabase.from("ai_budgets").update({
-    day_window: today,
-    month_window: thisMonth,
-    daily_tokens_used: (dayReset ? 0 : existing.daily_tokens_used) + tokens,
-    monthly_tokens_used: (monthReset ? 0 : existing.monthly_tokens_used) + tokens,
-    daily_usd_used: newDailyUsd,
-    monthly_usd_used: newMonthlyUsd,
-  }).eq("id", existing.id);
+  await supabase
+    .from("ai_budgets")
+    .update({
+      day_window: today,
+      month_window: thisMonth,
+      daily_tokens_used: (dayReset ? 0 : existing.daily_tokens_used) + tokens,
+      monthly_tokens_used: (monthReset ? 0 : existing.monthly_tokens_used) + tokens,
+      daily_usd_used: newDailyUsd,
+      monthly_usd_used: newMonthlyUsd,
+    })
+    .eq("id", existing.id);
 
   // Soft-cap alert: emit one when crossing the threshold (between prior and new).
   const pctAlert = Number(existing.alert_at_pct ?? 80);
@@ -328,7 +521,14 @@ async function incrementBudget(supabase: SupabaseClient, userId: string, tokens:
   if (dailyCap > 0) {
     const thr = (pctAlert / 100) * dailyCap;
     if (prevDaily < thr && newDailyUsd >= thr) {
-      await logBudgetAlert(supabase, userId, { scope: "global", surface: null, window_kind: "day", kind: "warn", used: newDailyUsd, cap: dailyCap });
+      await logBudgetAlert(supabase, userId, {
+        scope: "global",
+        surface: null,
+        window_kind: "day",
+        kind: "warn",
+        used: newDailyUsd,
+        cap: dailyCap,
+      });
     }
   }
   const prevMonthly = Number(monthReset ? 0 : existing.monthly_usd_used);
@@ -336,20 +536,33 @@ async function incrementBudget(supabase: SupabaseClient, userId: string, tokens:
   if (monthlyCap > 0) {
     const thr = (pctAlert / 100) * monthlyCap;
     if (prevMonthly < thr && newMonthlyUsd >= thr) {
-      await logBudgetAlert(supabase, userId, { scope: "global", surface: null, window_kind: "month", kind: "warn", used: newMonthlyUsd, cap: monthlyCap });
+      await logBudgetAlert(supabase, userId, {
+        scope: "global",
+        surface: null,
+        window_kind: "month",
+        kind: "warn",
+        used: newMonthlyUsd,
+        cap: monthlyCap,
+      });
     }
   }
 }
 
 async function incrementSurfaceBudget(
-  supabase: SupabaseClient, userId: string, surface: string, usd: number,
+  supabase: SupabaseClient,
+  userId: string,
+  surface: string,
+  usd: number,
 ) {
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7) + "-01";
   const { data: existing } = await supabase
     .from("ai_surface_budgets")
-    .select("id,day_window,month_window,daily_usd_used,monthly_usd_used,daily_usd_cap,monthly_usd_cap")
-    .eq("user_id", userId).eq("surface", surface)
+    .select(
+      "id,day_window,month_window,daily_usd_used,monthly_usd_used,daily_usd_cap,monthly_usd_cap",
+    )
+    .eq("user_id", userId)
+    .eq("surface", surface)
     .maybeSingle();
   if (!existing) return; // no per-surface budget configured
   const dayReset = existing.day_window !== today;
@@ -358,23 +571,42 @@ async function incrementSurfaceBudget(
   const prevMonthly = Number(monthReset ? 0 : existing.monthly_usd_used);
   const newDaily = prevDaily + usd;
   const newMonthly = prevMonthly + usd;
-  await supabase.from("ai_surface_budgets").update({
-    day_window: today, month_window: thisMonth,
-    daily_usd_used: newDaily, monthly_usd_used: newMonthly,
-  }).eq("id", existing.id);
+  await supabase
+    .from("ai_surface_budgets")
+    .update({
+      day_window: today,
+      month_window: thisMonth,
+      daily_usd_used: newDaily,
+      monthly_usd_used: newMonthly,
+    })
+    .eq("id", existing.id);
 
   const dailyCap = Number(existing.daily_usd_cap ?? 0);
   if (dailyCap > 0) {
     const thr = 0.8 * dailyCap;
     if (prevDaily < thr && newDaily >= thr) {
-      await logBudgetAlert(supabase, userId, { scope: "surface", surface, window_kind: "day", kind: "warn", used: newDaily, cap: dailyCap });
+      await logBudgetAlert(supabase, userId, {
+        scope: "surface",
+        surface,
+        window_kind: "day",
+        kind: "warn",
+        used: newDaily,
+        cap: dailyCap,
+      });
     }
   }
   const monthlyCap = Number(existing.monthly_usd_cap ?? 0);
   if (monthlyCap > 0) {
     const thr = 0.8 * monthlyCap;
     if (prevMonthly < thr && newMonthly >= thr) {
-      await logBudgetAlert(supabase, userId, { scope: "surface", surface, window_kind: "month", kind: "warn", used: newMonthly, cap: monthlyCap });
+      await logBudgetAlert(supabase, userId, {
+        scope: "surface",
+        surface,
+        window_kind: "month",
+        kind: "warn",
+        used: newMonthly,
+        cap: monthlyCap,
+      });
     }
   }
 }
@@ -394,7 +626,10 @@ export async function callModel(
     await checkKillSwitch(supabase, opts.workspaceId ?? null);
     await checkMissionCaps(supabase, opts.runId ?? null);
   } catch (e) {
-    if (e instanceof GovernanceHaltError) { await logGovernanceHalt(supabase, userId, opts, e); throw e; }
+    if (e instanceof GovernanceHaltError) {
+      await logGovernanceHalt(supabase, userId, opts, e);
+      throw e;
+    }
     throw e;
   }
 
@@ -404,7 +639,14 @@ export async function callModel(
 
   // 2. Pre-guardrails on the user content
   const rules = useGuards ? await loadGuardrails(supabase, userId) : [];
-  const hits: { rule_id: string; rule_name: string; side: "input" | "output"; action: string; kind: string; matched: string }[] = [];
+  const hits: {
+    rule_id: string;
+    rule_name: string;
+    side: "input" | "output";
+    action: string;
+    kind: string;
+    matched: string;
+  }[] = [];
   let messages = opts.messages;
   // 2a. Prompt template resolution — prepend the assigned system prompt
   let resolvedPrompt: Awaited<ReturnType<typeof resolvePrompt>> = null;
@@ -414,7 +656,9 @@ export async function callModel(
       if (resolvedPrompt?.system_prompt) {
         messages = [{ role: "system", content: resolvedPrompt.system_prompt }, ...messages];
       }
-    } catch (e) { console.error("prompt resolve failed:", e); }
+    } catch (e) {
+      console.error("prompt resolve failed:", e);
+    }
   }
   let citations: RetrievedChunk[] = [];
   if (opts.retrieval) {
@@ -428,7 +672,9 @@ export async function callModel(
           sourceKinds: rOpts.sourceKinds,
           mmr: true,
         });
-      } catch (e) { console.error("retrieval failed:", e); }
+      } catch (e) {
+        console.error("retrieval failed:", e);
+      }
       if (citations.length > 0) {
         const ctx = formatContextBlock(citations);
         messages = [{ role: "system", content: ctx }, ...opts.messages];
@@ -440,7 +686,11 @@ export async function callModel(
       if (m.role !== "user") return m;
       const r = evaluateGuardrails(m.content, rules, "input");
       r.hits.forEach((h) => hits.push(h));
-      if (r.blocked) throw Object.assign(new Error(`Blocked by guardrail: ${r.hits.find((h) => h.action === "block")?.rule_name}`), { code: "GUARDRAIL_BLOCK" });
+      if (r.blocked)
+        throw Object.assign(
+          new Error(`Blocked by guardrail: ${r.hits.find((h) => h.action === "block")?.rule_name}`),
+          { code: "GUARDRAIL_BLOCK" },
+        );
       return { ...m, content: r.text };
     });
   }
@@ -470,27 +720,39 @@ export async function callModel(
   const maxRetries = opts.maxRetries ?? 2;
   const attempt = async (model: string) => {
     if (opts.byoOverride) {
-      via = "byo"; provider = opts.byoOverride.provider;
+      via = "byo";
+      provider = opts.byoOverride.provider;
       if (provider === "anthropic") {
         return callAnthropic(opts.byoOverride.apiKey, model.replace(/^anthropic\//, ""), messages);
       }
-      return callOpenAICompat(opts.byoOverride.baseUrl ?? (byo?.url ?? "https://api.openai.com/v1/chat/completions"), opts.byoOverride.apiKey, model.replace(/^[^/]+\//, ""), messages, opts.responseFormat);
+      return callOpenAICompat(
+        opts.byoOverride.baseUrl ?? byo?.url ?? "https://api.openai.com/v1/chat/completions",
+        opts.byoOverride.apiKey,
+        model.replace(/^[^/]+\//, ""),
+        messages,
+        opts.responseFormat,
+      );
     }
     if (byo && keyRow?.api_key) {
-      via = "byo"; provider = byo.provider;
+      via = "byo";
+      provider = byo.provider;
       return byo.provider === "anthropic"
         ? callAnthropic(keyRow.api_key, byo.model, messages)
         : callOpenAICompat(byo.url, keyRow.api_key, byo.model, messages, opts.responseFormat);
     }
-    via = "gateway"; provider = "lovable";
+    via = "gateway";
+    provider = "lovable";
     return callGateway(model, messages, opts.responseFormat);
   };
 
   providerOut = { text: "", in_tok: 0, out_tok: 0, latency: Date.now() - t0 };
   let lastErr: unknown = null;
   for (let i = 0; i <= maxRetries; i++) {
-    try { providerOut = await attempt(opts.model); lastErr = null; break; }
-    catch (e) {
+    try {
+      providerOut = await attempt(opts.model);
+      lastErr = null;
+      break;
+    } catch (e) {
       lastErr = e;
       const code = (e as { code?: string }).code;
       if (code !== "RATE_LIMIT" && code !== "SERVER_ERROR") break;
@@ -500,8 +762,12 @@ export async function callModel(
   if (lastErr && opts.fallbackModel && opts.fallbackModel !== opts.model) {
     try {
       providerOut = await attempt(opts.fallbackModel);
-      modelUsed = opts.fallbackModel; fallback = true; lastErr = null;
-    } catch (e) { lastErr = e; }
+      modelUsed = opts.fallbackModel;
+      fallback = true;
+      lastErr = null;
+    } catch (e) {
+      lastErr = e;
+    }
   }
   if (lastErr) {
     status = "error";
@@ -523,40 +789,46 @@ export async function callModel(
   // 6. Persist event + hits
   let eventId: string | null = null;
   try {
-    const { data: evt } = await supabase.from("ai_events").insert({
-      user_id: userId,
-      trace_id: opts.traceId ?? null,
-      parent_event_id: opts.parentEventId ?? null,
-      surface: opts.surface,
-      surface_ref: opts.surface_ref ?? null,
-      provider,
-      via,
-      model: modelUsed,
-      fallback,
-      prompt_tokens: providerOut.in_tok,
-      completion_tokens: providerOut.out_tok,
-      total_tokens: totalTok,
-      est_cost_usd: est,
-      latency_ms: providerOut.latency,
-      status,
-      error_message: errMsg ?? null,
-      input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
-      system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
-      output_preview: outputText.slice(0, 1000),
-    }).select("id").single();
+    const { data: evt } = await supabase
+      .from("ai_events")
+      .insert({
+        user_id: userId,
+        trace_id: opts.traceId ?? null,
+        parent_event_id: opts.parentEventId ?? null,
+        surface: opts.surface,
+        surface_ref: opts.surface_ref ?? null,
+        provider,
+        via,
+        model: modelUsed,
+        fallback,
+        prompt_tokens: providerOut.in_tok,
+        completion_tokens: providerOut.out_tok,
+        total_tokens: totalTok,
+        est_cost_usd: est,
+        latency_ms: providerOut.latency,
+        status,
+        error_message: errMsg ?? null,
+        input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+        system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
+        output_preview: outputText.slice(0, 1000),
+      })
+      .select("id")
+      .single();
     eventId = (evt as { id: string } | null)?.id ?? null;
 
     if (hits.length && eventId) {
-      await supabase.from("guardrail_hits").insert(hits.map((h) => ({
-        user_id: userId,
-        event_id: eventId,
-        rule_id: h.rule_id,
-        rule_name: h.rule_name,
-        kind: h.kind,
-        action: h.action,
-        side: h.side,
-        matched: h.matched,
-      })));
+      await supabase.from("guardrail_hits").insert(
+        hits.map((h) => ({
+          user_id: userId,
+          event_id: eventId,
+          rule_id: h.rule_id,
+          rule_name: h.rule_name,
+          kind: h.kind,
+          action: h.action,
+          side: h.side,
+          matched: h.matched,
+        })),
+      );
     }
 
     if (status === "ok" && totalTok > 0) {
@@ -583,7 +855,11 @@ export async function callModel(
 
   let parsedJson: unknown = undefined;
   if (opts.responseFormat === "json_object" && outputText) {
-    try { parsedJson = JSON.parse(outputText); } catch { /* leave undefined */ }
+    try {
+      parsedJson = JSON.parse(outputText);
+    } catch {
+      /* leave undefined */
+    }
   }
 
   return {
@@ -600,8 +876,12 @@ export async function callModel(
     fallback,
     json: parsedJson,
     citations: citations.map((c) => ({
-      id: c.id, source_kind: c.source_kind, source_id: c.source_id,
-      title: c.title, chunk_index: c.chunk_index, similarity: c.similarity,
+      id: c.id,
+      source_kind: c.source_kind,
+      source_id: c.source_id,
+      title: c.title,
+      chunk_index: c.chunk_index,
+      similarity: c.similarity,
     })),
   };
 }
@@ -633,25 +913,29 @@ export async function logAiEvent(
   try {
     const totalTok = (evt.prompt_tokens ?? 0) + (evt.completion_tokens ?? 0);
     const est = estimateCostUsd(evt.model, evt.prompt_tokens ?? 0, evt.completion_tokens ?? 0);
-    const { data } = await supabase.from("ai_events").insert({
-      user_id: userId,
-      surface: evt.surface,
-      surface_ref: evt.surface_ref ?? null,
-      provider: evt.provider ?? "lovable",
-      via: evt.via ?? "gateway",
-      model: evt.model,
-      prompt_tokens: evt.prompt_tokens ?? 0,
-      completion_tokens: evt.completion_tokens ?? 0,
-      total_tokens: totalTok,
-      est_cost_usd: est,
-      latency_ms: evt.latency_ms ?? 0,
-      status: evt.status ?? "ok",
-      error_message: evt.error_message ?? null,
-      input_preview: (evt.input_preview ?? "").slice(0, 500),
-      system_preview: (evt.system_preview ?? "").slice(0, 4000),
-      output_preview: (evt.output_preview ?? "").slice(0, 1000),
-      trace_id: evt.trace_id ?? null,
-    }).select("id").single();
+    const { data } = await supabase
+      .from("ai_events")
+      .insert({
+        user_id: userId,
+        surface: evt.surface,
+        surface_ref: evt.surface_ref ?? null,
+        provider: evt.provider ?? "lovable",
+        via: evt.via ?? "gateway",
+        model: evt.model,
+        prompt_tokens: evt.prompt_tokens ?? 0,
+        completion_tokens: evt.completion_tokens ?? 0,
+        total_tokens: totalTok,
+        est_cost_usd: est,
+        latency_ms: evt.latency_ms ?? 0,
+        status: evt.status ?? "ok",
+        error_message: evt.error_message ?? null,
+        input_preview: (evt.input_preview ?? "").slice(0, 500),
+        system_preview: (evt.system_preview ?? "").slice(0, 4000),
+        output_preview: (evt.output_preview ?? "").slice(0, 1000),
+        trace_id: evt.trace_id ?? null,
+      })
+      .select("id")
+      .single();
     if (evt.status !== "error" && totalTok > 0) {
       await incrementBudget(supabase, userId, totalTok, est);
       await incrementSurfaceBudget(supabase, userId, evt.surface, est);
@@ -684,7 +968,10 @@ export async function callModelStream(
     await checkKillSwitch(supabase, opts.workspaceId ?? null);
     await checkMissionCaps(supabase, opts.runId ?? null);
   } catch (e) {
-    if (e instanceof GovernanceHaltError) { await logGovernanceHalt(supabase, userId, opts, e); throw e; }
+    if (e instanceof GovernanceHaltError) {
+      await logGovernanceHalt(supabase, userId, opts, e);
+      throw e;
+    }
     throw e;
   }
 
@@ -694,7 +981,14 @@ export async function callModelStream(
 
   // 2. Pre-guardrails on the user content
   const rules = useGuards ? await loadGuardrails(supabase, userId) : [];
-  const hits: { rule_id: string; rule_name: string; side: "input" | "output"; action: string; kind: string; matched: string }[] = [];
+  const hits: {
+    rule_id: string;
+    rule_name: string;
+    side: "input" | "output";
+    action: string;
+    kind: string;
+    matched: string;
+  }[] = [];
   let messages = opts.messages;
 
   // 2a. Prompt template resolution — prepend the assigned system prompt
@@ -705,7 +999,9 @@ export async function callModelStream(
       if (resolvedPrompt?.system_prompt) {
         messages = [{ role: "system", content: resolvedPrompt.system_prompt }, ...messages];
       }
-    } catch (e) { console.error("prompt resolve failed:", e); }
+    } catch (e) {
+      console.error("prompt resolve failed:", e);
+    }
   }
 
   let citations: RetrievedChunk[] = [];
@@ -720,7 +1016,9 @@ export async function callModelStream(
           sourceKinds: rOpts.sourceKinds,
           mmr: true,
         });
-      } catch (e) { console.error("retrieval failed:", e); }
+      } catch (e) {
+        console.error("retrieval failed:", e);
+      }
       if (citations.length > 0) {
         const ctx = formatContextBlock(citations);
         messages = [{ role: "system", content: ctx }, ...opts.messages];
@@ -733,7 +1031,11 @@ export async function callModelStream(
       if (m.role !== "user") return m;
       const r = evaluateGuardrails(m.content, rules, "input");
       r.hits.forEach((h) => hits.push(h));
-      if (r.blocked) throw Object.assign(new Error(`Blocked by guardrail: ${r.hits.find((h) => h.action === "block")?.rule_name}`), { code: "GUARDRAIL_BLOCK" });
+      if (r.blocked)
+        throw Object.assign(
+          new Error(`Blocked by guardrail: ${r.hits.find((h) => h.action === "block")?.rule_name}`),
+          { code: "GUARDRAIL_BLOCK" },
+        );
       return { ...m, content: r.text };
     });
   }
@@ -760,7 +1062,8 @@ export async function callModelStream(
 
   const attemptStream = async (model: string): Promise<Response> => {
     if (opts.byoOverride) {
-      via = "byo"; provider = opts.byoOverride.provider;
+      via = "byo";
+      provider = opts.byoOverride.provider;
       if (provider === "anthropic") {
         const system = messages.find((m) => m.role === "system")?.content ?? "";
         const rest = messages.filter((m) => m.role !== "system");
@@ -769,19 +1072,37 @@ export async function callModelStream(
           headers: {
             "x-api-key": opts.byoOverride.apiKey,
             "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ model: model.replace(/^anthropic\//, ""), max_tokens: 2048, system, messages: rest, stream: true }),
+          body: JSON.stringify({
+            model: model.replace(/^anthropic\//, ""),
+            max_tokens: 2048,
+            system,
+            messages: rest,
+            stream: true,
+          }),
         });
       }
-      return fetch(opts.byoOverride.baseUrl ?? (byo?.url ?? "https://api.openai.com/v1/chat/completions"), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${opts.byoOverride.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: model.replace(/^[^/]+\//, ""), messages, stream: true, ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}) }),
-      });
+      return fetch(
+        opts.byoOverride.baseUrl ?? byo?.url ?? "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${opts.byoOverride.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: model.replace(/^[^/]+\//, ""),
+            messages,
+            stream: true,
+            ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
+          }),
+        },
+      );
     }
     if (byo && keyRow?.api_key) {
-      via = "byo"; provider = byo.provider;
+      via = "byo";
+      provider = byo.provider;
       if (byo.provider === "anthropic") {
         const system = messages.find((m) => m.role === "system")?.content ?? "";
         const rest = messages.filter((m) => m.role !== "system");
@@ -790,24 +1111,41 @@ export async function callModelStream(
           headers: {
             "x-api-key": keyRow.api_key,
             "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ model: byo.model, max_tokens: 2048, system, messages: rest, stream: true }),
+          body: JSON.stringify({
+            model: byo.model,
+            max_tokens: 2048,
+            system,
+            messages: rest,
+            stream: true,
+          }),
         });
       }
       return fetch(byo.url, {
         method: "POST",
         headers: { Authorization: `Bearer ${keyRow.api_key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: byo.model, messages, stream: true, ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}) }),
+        body: JSON.stringify({
+          model: byo.model,
+          messages,
+          stream: true,
+          ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
+        }),
       });
     }
-    via = "gateway"; provider = "lovable";
+    via = "gateway";
+    provider = "lovable";
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI is not configured (missing LOVABLE_API_KEY).");
     return fetch(GATEWAY, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, stream: true, ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}) }),
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
+      }),
     });
   };
 
@@ -819,7 +1157,9 @@ export async function callModelStream(
     try {
       response = await attemptStream(opts.model);
       if (response.status === 429) {
-        throw Object.assign(new Error("AI rate limit reached. Try again in a moment."), { code: "RATE_LIMIT" });
+        throw Object.assign(new Error("AI rate limit reached. Try again in a moment."), {
+          code: "RATE_LIMIT",
+        });
       }
       if (response.status >= 500) {
         throw Object.assign(new Error(`AI gateway ${response.status}`), { code: "SERVER_ERROR" });
@@ -844,12 +1184,15 @@ export async function callModelStream(
       modelUsed = opts.fallbackModel;
       fallback = true;
       lastErr = null;
-    } catch (e) { lastErr = e; }
+    } catch (e) {
+      lastErr = e;
+    }
   }
 
   if (lastErr || !response || !response.body) {
     status = "error";
-    errMsg = lastErr instanceof Error ? lastErr.message : String(lastErr || "Failed to initiate stream");
+    errMsg =
+      lastErr instanceof Error ? lastErr.message : String(lastErr || "Failed to initiate stream");
     await logAiEvent(supabase, userId, {
       surface: opts.surface,
       surface_ref: opts.surface_ref,
@@ -888,7 +1231,7 @@ export async function callModelStream(
             while ((nl = buffer.indexOf("\n")) !== -1) {
               const line = buffer.slice(0, nl).trim();
               buffer = buffer.slice(nl + 1);
-              
+
               if (line.startsWith("event: ")) continue;
               if (!line.startsWith("data: ")) continue;
               const payload = line.slice(6).trim();
@@ -899,7 +1242,7 @@ export async function callModelStream(
                   const piece = parsed.delta.text;
                   assistantText += piece;
                   const openAiChunk = {
-                    choices: [{ delta: { content: piece } }]
+                    choices: [{ delta: { content: piece } }],
                   };
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
                 } else if (parsed.type === "message_start" && parsed.message?.usage) {
@@ -959,46 +1302,55 @@ export async function callModelStream(
         }
 
         try {
-          const { data: evt } = await supabase.from("ai_events").insert({
-            user_id: userId,
-            trace_id: opts.traceId ?? null,
-            parent_event_id: opts.parentEventId ?? null,
-            surface: opts.surface,
-            surface_ref: opts.surface_ref ?? null,
-            provider,
-            via,
-            model: modelUsed,
-            fallback,
-            prompt_tokens: inTok,
-            completion_tokens: outTok,
-            total_tokens: inTok + outTok,
-            est_cost_usd: estCost,
-            latency_ms: finalLatency,
-            status: hits.some((h) => h.action === "block") ? "blocked" : "ok",
-            error_message: hits.some((h) => h.action === "block")
-              ? `Blocked by guardrail: ${hits.find((h) => h.action === "block")?.rule_name}`
-              : null,
-            input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
-            system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(0, 4000),
-            output_preview: outputText.slice(0, 1000),
-          }).select("id").single();
-          
+          const { data: evt } = await supabase
+            .from("ai_events")
+            .insert({
+              user_id: userId,
+              trace_id: opts.traceId ?? null,
+              parent_event_id: opts.parentEventId ?? null,
+              surface: opts.surface,
+              surface_ref: opts.surface_ref ?? null,
+              provider,
+              via,
+              model: modelUsed,
+              fallback,
+              prompt_tokens: inTok,
+              completion_tokens: outTok,
+              total_tokens: inTok + outTok,
+              est_cost_usd: estCost,
+              latency_ms: finalLatency,
+              status: hits.some((h) => h.action === "block") ? "blocked" : "ok",
+              error_message: hits.some((h) => h.action === "block")
+                ? `Blocked by guardrail: ${hits.find((h) => h.action === "block")?.rule_name}`
+                : null,
+              input_preview: (messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+              system_preview: (messages.find((m) => m.role === "system")?.content ?? "").slice(
+                0,
+                4000,
+              ),
+              output_preview: outputText.slice(0, 1000),
+            })
+            .select("id")
+            .single();
+
           const eventId = (evt as { id: string } | null)?.id ?? null;
 
           if (hits.length && eventId) {
-            await supabase.from("guardrail_hits").insert(hits.map((h) => ({
-              user_id: userId,
-              event_id: eventId,
-              rule_id: h.rule_id,
-              rule_name: h.rule_name,
-              kind: h.kind,
-              action: h.action,
-              side: h.side,
-              matched: h.matched,
-            })));
+            await supabase.from("guardrail_hits").insert(
+              hits.map((h) => ({
+                user_id: userId,
+                event_id: eventId,
+                rule_id: h.rule_id,
+                rule_name: h.rule_name,
+                kind: h.kind,
+                action: h.action,
+                side: h.side,
+                matched: h.matched,
+              })),
+            );
           }
 
-          if (!hits.some((h) => h.action === "block") && (inTok + outTok) > 0) {
+          if (!hits.some((h) => h.action === "block") && inTok + outTok > 0) {
             await incrementBudget(supabase, userId, inTok + outTok, estCost);
             await incrementSurfaceBudget(supabase, userId, opts.surface, estCost);
             await recordMissionUsage(supabase, opts.runId ?? null, inTok + outTok, estCost);
@@ -1017,7 +1369,7 @@ export async function callModelStream(
           console.error("[callModelStream] telemetry insert failed:", e);
         }
       }
-    }
+    },
   });
 
   return {

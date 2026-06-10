@@ -36,9 +36,14 @@ export function BudgetBar() {
   const label = data.daily_usd_cap ? "today" : "month";
 
   return (
-    <Link to="/budgets" className="block rounded-xl border hairline p-3 hover:bg-secondary/40 transition">
+    <Link
+      to="/budgets"
+      className="block rounded-xl border hairline p-3 hover:bg-secondary/40 transition"
+    >
       <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" /> AI spend / {label}</span>
+        <span className="flex items-center gap-1">
+          <DollarSign className="h-3 w-3" /> AI spend / {label}
+        </span>
         <span>{pct.toFixed(0)}%</span>
       </div>
       <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">

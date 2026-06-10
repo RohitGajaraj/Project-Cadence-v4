@@ -3,41 +3,52 @@
 > TanStack Start patterns. Rules: [`AGENTS.md`](../AGENTS.md). UI/visual contract: [`design.md`](../design.md). Data: [`data.md`](./data.md).
 
 ## Stack
+
 TanStack Start v1 (React 19 + Vite 7) on Cloudflare Workers (`nodejs_compat`), TailwindCSS v4, shadcn/ui (Radix), Framer Motion, Tiptap, Lucide. Canonical runtime: Bun.
 
 ## Server boundary
+
 - **App logic = `createServerFn` (RPC).** Type-safe, plain function calls.
 - **Cron-poked endpoints = `/api/public/hooks/*`** server routes (anon-key auth), poked by `pg_cron`.
 - **SSE endpoints** for streaming (`api/chat.ts`, `api/studio-chat.ts`). SSE over WebSockets because Workers stream SSE natively and we never need client→server mid-stream; reconnect uses `Last-Event-ID`.
 - Service-role Supabase client is server-only (see [`data.md`](./data.md)).
 
 ## Data fetching — the one pattern
+
 **Loader + Suspense, never `useEffect + fetch`** for initial render.
+
 ```
 loader: context.queryClient.ensureQueryData(queryOptions)
 component: useSuspenseQuery(queryOptions)
 ```
+
 Mutations are optimistic where it helps (chat send, task toggle, decision approve). Streaming state belongs in the route loader + Suspense, not a hidden `useEffect`.
 
 ## Route boundaries — on every route
+
 - `errorComponent` with a retry that calls both `router.invalidate()` and `reset()`.
 - `notFoundComponent`.
 - Root-level `defaultErrorComponent`.
-Stack traces never leak to the UI. Long operations link to `/traces/$traceId` instead of inlining raw errors.
+  Stack traces never leak to the UI. Long operations link to `/traces/$traceId` instead of inlining raw errors.
 
 ## State persistence
+
 `localStorage` for UI state only (active workspace/project, sidebar open/closed under `cadence.nav.open`). Never business data.
 
 ## Components
+
 shadcn/ui primitives; bespoke in `src/components/cadence/`. The shared AI-message component renders the full [AI message contract](../design.md) — no surface invents its own. Tokens only, never hex (see [`design.md`](../design.md)).
 
 ## Realtime & streaming
+
 Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace waterfalls update live. Streaming text uses a CSS cursor, not Framer (high-frequency Framer animation janks).
 
 ## Keyboard-first
+
 ⌘K command palette (`cmdk`) resolves every destination, create action, and recent artifact. Every interactive surface has a keyboard equivalent.
 
 ## Invariants
+
 - No `useEffect+fetch` for initial render.
 - No service-role import in client code.
 - Every route has error + not-found boundaries.
@@ -68,11 +79,13 @@ The pinned (always-visible) rail in `AppShell` holds **four** items only: **Toda
 The workspace's strategic brief — read by every agent mission — is **not** a top-level route. It lives as an inline section in `/settings`, deep-linked via `/settings?section=brief` (validated via `validateSearch`; the section scrolls into view and ring-highlights when the param is present). Reuses `getActiveBrief` / `upsertBrief` unchanged. Legacy `/briefing` is a `beforeLoad`-redirect to `/settings?section=brief`. This follows the inline-management convention: workspace-scoped settings live next to the workspace.
 
 ## Confirmation, toasts & dialogs
+
 Canonical rule: [`../docs/conventions/ui-chrome.md`](../docs/conventions/ui-chrome.md). This section is the contract restatement.
 
 No native browser chrome. `window.alert`, `window.confirm`, `window.prompt`, `window.open`, and `window.onbeforeunload` are banned in `src/**` and fail ESLint (`no-restricted-globals` + `no-restricted-syntax` in `eslint.config.js`). The single allow-listed exception is `src/lib/error-page.ts` (pre-bootstrap fallback only).
 
 Use instead:
+
 - **Confirm / typed-name confirm** — `useConfirm()` from [`src/hooks/use-confirm.tsx`](../src/hooks/use-confirm.tsx). Promise-based, themed shadcn `AlertDialog`, focus-trapped. Pass `destructive: true` for delete flows, `typedConfirm: name` for irreversible ones.
 - **One-field prompt** — `usePrompt()` from the same module. For richer inputs build a proper shadcn `Dialog`.
 - **Non-blocking feedback** — `toast.success` / `toast.error` from `sonner`. Never use toasts for errors that require attention (use an inline `Alert` instead — see [`design.md`](../design.md) anti-patterns).
@@ -81,6 +94,7 @@ Use instead:
 `ConfirmProvider` is mounted once in `src/routes/__root.tsx` inside `ThemeProvider`. Voice rules for the strings these primitives render live in [`../design.md`](../design.md) and the audit at [`../docs/strategy/v3-audit-language-voice-2026-06-06.md`](../docs/strategy/v3-audit-language-voice-2026-06-06.md).
 
 ## Inline workspace & product management
+
 Canonical rule: [`../docs/conventions/inline-management.md`](../docs/conventions/inline-management.md). This section is the contract restatement.
 
 Operators never leave the current surface to administer a workspace or product. The `AppShell` top-left switcher is a popover, not a route.

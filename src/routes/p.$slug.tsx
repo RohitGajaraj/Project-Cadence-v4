@@ -33,26 +33,52 @@ function PublicPrototype() {
         .select("id,name,entry_path,is_public")
         .eq("share_slug", slug)
         .maybeSingle();
-      if (error || !proto || !proto.is_public) { setErr("This prototype is private or not found."); return; }
+      if (error || !proto || !proto.is_public) {
+        setErr("This prototype is private or not found.");
+        return;
+      }
       const { data: files, error: e2 } = await supabase
         .from("prototype_files")
         .select("path,content,language")
         .eq("prototype_id", proto.id);
-      if (e2) { setErr(e2.message); return; }
+      if (e2) {
+        setErr(e2.message);
+        return;
+      }
       setState({ name: proto.name, src: buildSrcDoc(files ?? [], proto.entry_path) });
     })();
   }, [slug]);
 
-  if (err) return <div className="min-h-screen grid place-items-center bg-background text-foreground p-8 text-center"><div><div className="font-display text-xl">Unavailable</div><p className="text-sm text-muted-foreground mt-2">{err}</p></div></div>;
-  if (!state) return <div className="min-h-screen grid place-items-center bg-background text-muted-foreground text-sm">Loading prototype…</div>;
+  if (err)
+    return (
+      <div className="min-h-screen grid place-items-center bg-background text-foreground p-8 text-center">
+        <div>
+          <div className="font-display text-xl">Unavailable</div>
+          <p className="text-sm text-muted-foreground mt-2">{err}</p>
+        </div>
+      </div>
+    );
+  if (!state)
+    return (
+      <div className="min-h-screen grid place-items-center bg-background text-muted-foreground text-sm">
+        Loading prototype…
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="border-b hairline px-4 py-2.5 flex items-center justify-between bg-background/60 backdrop-blur">
         <div className="font-display text-sm">{state.name}</div>
-        <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Made with Cadence</div>
+        <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          Made with Cadence
+        </div>
       </header>
-      <iframe title={state.name} sandbox="allow-scripts allow-forms allow-modals" srcDoc={state.src} className="flex-1 w-full bg-white" />
+      <iframe
+        title={state.name}
+        sandbox="allow-scripts allow-forms allow-modals"
+        srcDoc={state.src}
+        className="flex-1 w-full bg-white"
+      />
     </div>
   );
 }

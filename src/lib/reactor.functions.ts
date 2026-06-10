@@ -32,7 +32,9 @@ export const listEventSubscriptions = createServerFn({ method: "POST" })
     if (!workspaceId) return { subscriptions: [] };
     const { data: rows, error } = await supabase
       .from("event_subscriptions")
-      .select("id,event_type,target_agent_slug,approval_mode,filter,enabled,is_default,created_at,updated_at")
+      .select(
+        "id,event_type,target_agent_slug,approval_mode,filter,enabled,is_default,created_at,updated_at",
+      )
       .eq("workspace_id", workspaceId)
       .order("event_type")
       .order("created_at");
@@ -62,8 +64,12 @@ export const upsertEventSubscription = createServerFn({ method: "POST" })
     }
     if (!workspaceId) throw new Error("No workspace");
     // Verify the target agent exists for this user (otherwise dispatch will fail later).
-    const { data: agent } = await supabase.from("agents")
-      .select("id").eq("user_id", userId).eq("slug", data.target_agent_slug).maybeSingle();
+    const { data: agent } = await supabase
+      .from("agents")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("slug", data.target_agent_slug)
+      .maybeSingle();
     if (!agent) throw new Error(`Unknown agent slug: ${data.target_agent_slug}`);
 
     const row = {
@@ -76,13 +82,19 @@ export const upsertEventSubscription = createServerFn({ method: "POST" })
       filter: (data.filter ?? {}) as unknown as Json,
     };
     if (data.id) {
-      const { error } = await supabase.from("event_subscriptions")
-        .update(row).eq("id", data.id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("event_subscriptions")
+        .update(row)
+        .eq("id", data.id)
+        .eq("user_id", userId);
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
-    const { data: inserted, error } = await supabase.from("event_subscriptions")
-      .insert(row).select("id").single();
+    const { data: inserted, error } = await supabase
+      .from("event_subscriptions")
+      .insert(row)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { ok: true, id: (inserted as { id: string }).id };
   });
@@ -92,15 +104,20 @@ export const deleteEventSubscription = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string }) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("event_subscriptions")
-      .delete().eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("event_subscriptions")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listEventQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { workspaceId?: string | null; status?: string } | undefined) => input ?? {})
+  .inputValidator(
+    (input: { workspaceId?: string | null; status?: string } | undefined) => input ?? {},
+  )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     let workspaceId = data.workspaceId ?? null;
@@ -111,7 +128,9 @@ export const listEventQueue = createServerFn({ method: "POST" })
     if (!workspaceId) return { events: [] };
     let q = supabase
       .from("event_queue")
-      .select("id,event_type,source_table,source_id,payload,status,approval_mode,target_agent_slug,mission_id,run_id,error,created_at,dispatched_at,decided_at")
+      .select(
+        "id,event_type,source_table,source_id,payload,status,approval_mode,target_agent_slug,mission_id,run_id,error,created_at,dispatched_at,decided_at",
+      )
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -131,17 +150,25 @@ export const decideEventDispatch = createServerFn({ method: "POST" })
   .inputValidator((input) => DecideSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { data: evt, error } = await supabase.from("event_queue")
+    const { data: evt, error } = await supabase
+      .from("event_queue")
       .select("id,user_id,workspace_id,event_type,target_agent_slug,payload,status,source_id")
-      .eq("id", data.eventId).maybeSingle();
+      .eq("id", data.eventId)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     if (!evt) throw new Error("Event not found");
-    if (evt.status !== "pending") return { ok: true, skipped: true, reason: `already ${evt.status}` };
+    if (evt.status !== "pending")
+      return { ok: true, skipped: true, reason: `already ${evt.status}` };
 
     if (data.decision === "reject") {
-      await supabase.from("event_queue").update({
-        status: "skipped", decided_at: new Date().toISOString(), error: "rejected by operator",
-      }).eq("id", data.eventId);
+      await supabase
+        .from("event_queue")
+        .update({
+          status: "skipped",
+          decided_at: new Date().toISOString(),
+          error: "rejected by operator",
+        })
+        .eq("id", data.eventId);
       return { ok: true, dispatched: false };
     }
 
@@ -152,9 +179,14 @@ export const decideEventDispatch = createServerFn({ method: "POST" })
 // ---------- shared dispatch helper (used by server fn + cron) ----------
 
 export type EventRow = {
-  id: string; user_id: string; workspace_id: string;
-  event_type: string; target_agent_slug: string;
-  payload: Record<string, unknown>; source_id: string; status: string;
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  event_type: string;
+  target_agent_slug: string;
+  payload: Record<string, unknown>;
+  source_id: string;
+  status: string;
 };
 
 function goalForEvent(evt: EventRow): string {
@@ -181,12 +213,20 @@ export async function dispatchEvent(
     const goal = goalForEvent(evt);
     // Find target agent in the row owner's namespace (subscriptions are
     // per-user; cron uses admin client so we must explicitly scope).
-    const { data: agent } = await supabase.from("agents")
-      .select("id").eq("user_id", evt.user_id).eq("slug", evt.target_agent_slug).maybeSingle();
+    const { data: agent } = await supabase
+      .from("agents")
+      .select("id")
+      .eq("user_id", evt.user_id)
+      .eq("slug", evt.target_agent_slug)
+      .maybeSingle();
     if (!agent) throw new Error(`Target agent '${evt.target_agent_slug}' not found for user`);
 
     const mission = await createMission(supabase, evt.user_id, evt.workspace_id, {
-      title: `[${evt.event_type}] ${(evt.payload?.title as string) ?? evt.source_id.slice(0, 8)}`.slice(0, 200),
+      title:
+        `[${evt.event_type}] ${(evt.payload?.title as string) ?? evt.source_id.slice(0, 8)}`.slice(
+          0,
+          200,
+        ),
       goal,
       starting_agent_id: (agent as { id: string }).id,
     });
@@ -198,24 +238,34 @@ export async function dispatchEvent(
       workspaceId: evt.workspace_id,
     });
 
-    await supabase.from("event_queue").update({
-      status: "dispatched",
-      dispatched_at: new Date().toISOString(),
-      decided_at: actorUserId ? new Date().toISOString() : null,
-      mission_id: mission.id,
-      run_id: result.run_id ?? null,
-    }).eq("id", evt.id);
+    await supabase
+      .from("event_queue")
+      .update({
+        status: "dispatched",
+        dispatched_at: new Date().toISOString(),
+        decided_at: actorUserId ? new Date().toISOString() : null,
+        mission_id: mission.id,
+        run_id: result.run_id ?? null,
+      })
+      .eq("id", evt.id);
 
     const halted =
-      result.halted == null ? null
-      : typeof result.halted === "string" ? result.halted
-      : (result.halted as { reason?: string }).reason ?? "halted";
+      result.halted == null
+        ? null
+        : typeof result.halted === "string"
+          ? result.halted
+          : ((result.halted as { reason?: string }).reason ?? "halted");
     return { mission_id: mission.id, run_id: result.run_id ?? null, halted };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await supabase.from("event_queue").update({
-      status: "failed", dispatched_at: new Date().toISOString(), error: msg,
-    }).eq("id", evt.id);
+    await supabase
+      .from("event_queue")
+      .update({
+        status: "failed",
+        dispatched_at: new Date().toISOString(),
+        error: msg,
+      })
+      .eq("id", evt.id);
     throw e;
   }
 }

@@ -4,16 +4,16 @@
 
 **Use instead.**
 
-| Need | Use | Where |
-|---|---|---|
-| Confirm | `useConfirm()` | [`src/hooks/use-confirm.tsx`](../../src/hooks/use-confirm.tsx) |
-| Typed-name confirm | `useConfirm({ destructive: true, typedConfirm: name })` | same |
-| One-field prompt | `usePrompt()` | same |
-| Multi-field / richer dialog | shadcn `<Dialog>` | `src/components/ui/dialog.tsx` |
-| Non-blocking feedback | `toast.success` / `toast.error` from `sonner` | global |
-| Errors that need attention | inline shadcn `<Alert>` | `src/components/ui/alert.tsx` |
-| Unsaved-changes guard | TanStack Router `useBlocker` wired to `useConfirm` | |
-| Cross-route navigation | TanStack `<Link>` / `navigate()` | not `window.open` |
+| Need                        | Use                                                     | Where                                                          |
+| --------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
+| Confirm                     | `useConfirm()`                                          | [`src/hooks/use-confirm.tsx`](../../src/hooks/use-confirm.tsx) |
+| Typed-name confirm          | `useConfirm({ destructive: true, typedConfirm: name })` | same                                                           |
+| One-field prompt            | `usePrompt()`                                           | same                                                           |
+| Multi-field / richer dialog | shadcn `<Dialog>`                                       | `src/components/ui/dialog.tsx`                                 |
+| Non-blocking feedback       | `toast.success` / `toast.error` from `sonner`           | global                                                         |
+| Errors that need attention  | inline shadcn `<Alert>`                                 | `src/components/ui/alert.tsx`                                  |
+| Unsaved-changes guard       | TanStack Router `useBlocker` wired to `useConfirm`      |                                                                |
+| Cross-route navigation      | TanStack `<Link>` / `navigate()`                        | not `window.open`                                              |
 
 `ConfirmProvider` is mounted once in [`../../src/routes/__root.tsx`](../../src/routes/__root.tsx) inside `ThemeProvider`.
 

@@ -1,10 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  authorizeAppUserOAuth,
-  callAsAppUser,
-} from "@/integrations/lovable/appUserConnector";
+import { authorizeAppUserOAuth, callAsAppUser } from "@/integrations/lovable/appUserConnector";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 
@@ -27,10 +24,12 @@ function scopesFor(provider: Provider): string[] {
 export const startCalendarConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      provider: z.enum(["google", "microsoft"]),
-      targetOrigin: z.string().url(),
-    }).parse(i),
+    z
+      .object({
+        provider: z.enum(["google", "microsoft"]),
+        targetOrigin: z.string().url(),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const clientId = clientIdFor(data.provider);
@@ -52,7 +51,10 @@ export const startCalendarConnect = createServerFn({ method: "POST" })
     return { authorizationUrl };
   });
 
-async function fetchAccountIdentity(provider: Provider, connectionId: string): Promise<{ email: string | null; name: string | null }> {
+async function fetchAccountIdentity(
+  provider: Provider,
+  connectionId: string,
+): Promise<{ email: string | null; name: string | null }> {
   try {
     if (provider === "google") {
       const res = await callAsAppUser({
@@ -73,7 +75,11 @@ async function fetchAccountIdentity(provider: Provider, connectionId: string): P
       path: "/v1.0/me",
     });
     if (!res.ok) return { email: null, name: null };
-    const body = (await res.json()) as { mail?: string; userPrincipalName?: string; displayName?: string };
+    const body = (await res.json()) as {
+      mail?: string;
+      userPrincipalName?: string;
+      displayName?: string;
+    };
     return { email: body.mail ?? body.userPrincipalName ?? null, name: body.displayName ?? null };
   } catch {
     return { email: null, name: null };
@@ -83,25 +89,25 @@ async function fetchAccountIdentity(provider: Provider, connectionId: string): P
 export const saveCalendarConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      provider: z.enum(["google", "microsoft"]),
-      connectionId: z.string().min(1).max(300),
-    }).parse(i),
+    z
+      .object({
+        provider: z.enum(["google", "microsoft"]),
+        connectionId: z.string().min(1).max(300),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { email, name } = await fetchAccountIdentity(data.provider, data.connectionId);
-    const { error } = await context.supabase
-      .from("user_calendar_connections")
-      .upsert(
-        {
-          user_id: context.userId,
-          provider: data.provider,
-          connection_id: data.connectionId,
-          account_email: email,
-          display_name: name,
-        } as never,
-        { onConflict: "user_id,provider,account_email" },
-      );
+    const { error } = await context.supabase.from("user_calendar_connections").upsert(
+      {
+        user_id: context.userId,
+        provider: data.provider,
+        connection_id: data.connectionId,
+        account_email: email,
+        display_name: name,
+      } as never,
+      { onConflict: "user_id,provider,account_email" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, email, name };
   });
@@ -157,5 +163,12 @@ export const getPrimaryConnection = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { connection: data as { id: string; provider: Provider; connection_id: string; account_email: string | null } | null };
+    return {
+      connection: data as {
+        id: string;
+        provider: Provider;
+        connection_id: string;
+        account_email: string | null;
+      } | null,
+    };
   });

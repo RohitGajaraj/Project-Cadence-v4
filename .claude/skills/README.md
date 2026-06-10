@@ -12,7 +12,7 @@ Antigravity, Gemini, and Lovable do not have a Skill runtime. See `AGENTS.md` §
 ## What does NOT belong here
 
 - ❌ Your **personal user-level library** (`~/.claude/skills/`, e.g. the gstack suite).
-  Leave it at user level — it is how *you* work, it updates globally, and bulk-copying
+  Leave it at user level — it is how _you_ work, it updates globally, and bulk-copying
   it bloats the repo and drifts from upstream. It already works in your Claude Code.
 - ❌ **Marketplace plugins** (`ecc:*`, `ruflo-*`, `superpowers:*`, `context7`, …).
   Declare them in `.claude/settings.json` → `enabledPlugins`, never vendor their source.

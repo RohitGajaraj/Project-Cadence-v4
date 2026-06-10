@@ -22,14 +22,19 @@ export async function connectAppUser(opts: {
   const targetOrigin = window.location.origin;
 
   const popup = window.open("", "lovable-oauth", "width=600,height=720");
-  if (!popup) return { success: false, connectorId, error: "Popup blocked. Allow popups and try again." };
+  if (!popup)
+    return { success: false, connectorId, error: "Popup blocked. Allow popups and try again." };
 
   let authorizationUrl: string;
   try {
     authorizationUrl = (await start(targetOrigin)).authorizationUrl;
   } catch (e) {
     popup.close();
-    return { success: false, connectorId, error: e instanceof Error ? e.message : "Failed to start OAuth" };
+    return {
+      success: false,
+      connectorId,
+      error: e instanceof Error ? e.message : "Failed to start OAuth",
+    };
   }
   popup.location.href = authorizationUrl;
 
@@ -40,7 +45,13 @@ export async function connectAppUser(opts: {
     };
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== gatewayOrigin) return;
-      const data = event.data as { type?: string; connector_id?: string; success?: boolean; connection_id?: string; error?: string } | null;
+      const data = event.data as {
+        type?: string;
+        connector_id?: string;
+        success?: boolean;
+        connection_id?: string;
+        error?: string;
+      } | null;
       if (!data || data.type !== OAUTH_MESSAGE_TYPE || data.connector_id !== connectorId) return;
       cleanup();
       popup.close();

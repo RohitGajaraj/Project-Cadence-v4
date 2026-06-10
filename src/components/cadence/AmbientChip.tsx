@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog, MapPin } from "lucide-react";
+import {
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Sun,
+  CloudSun,
+  CloudFog,
+  MapPin,
+} from "lucide-react";
 
 type Place = { city: string; country: string; countryCode: string };
 type Weather = { tempC: number; code: number; isDay: boolean };
@@ -19,11 +28,16 @@ function describe(code: number, isDay: boolean): WxStyle {
       : { label: "Clear night", Icon: Cloud, tone: "ambient-weather--night" };
   if (code <= 2) return { label: "Partly cloudy", Icon: CloudSun, tone: "ambient-weather--partly" };
   if (code === 3) return { label: "Overcast", Icon: Cloud, tone: "ambient-weather--overcast" };
-  if (code === 45 || code === 48) return { label: "Fog", Icon: CloudFog, tone: "ambient-weather--fog" };
-  if (code >= 51 && code <= 67) return { label: "Drizzle", Icon: CloudRain, tone: "ambient-weather--rain" };
-  if (code >= 71 && code <= 77) return { label: "Snow", Icon: CloudSnow, tone: "ambient-weather--snow" };
-  if (code >= 80 && code <= 82) return { label: "Showers", Icon: CloudRain, tone: "ambient-weather--showers" };
-  if (code >= 95) return { label: "Thunderstorm", Icon: CloudLightning, tone: "ambient-weather--storm" };
+  if (code === 45 || code === 48)
+    return { label: "Fog", Icon: CloudFog, tone: "ambient-weather--fog" };
+  if (code >= 51 && code <= 67)
+    return { label: "Drizzle", Icon: CloudRain, tone: "ambient-weather--rain" };
+  if (code >= 71 && code <= 77)
+    return { label: "Snow", Icon: CloudSnow, tone: "ambient-weather--snow" };
+  if (code >= 80 && code <= 82)
+    return { label: "Showers", Icon: CloudRain, tone: "ambient-weather--showers" };
+  if (code >= 95)
+    return { label: "Thunderstorm", Icon: CloudLightning, tone: "ambient-weather--storm" };
   return { label: "Weather", Icon: Cloud, tone: "ambient-weather--neutral" };
 }
 
@@ -47,7 +61,9 @@ async function fetchJson(url: string, timeoutMs = 6000) {
 }
 
 async function weatherFor(lat: number, lon: number, place: Place): Promise<AmbientPayload> {
-  const wJson = await fetchJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`);
+  const wJson = await fetchJson(
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`,
+  );
   return {
     place,
     weather: {
@@ -60,7 +76,9 @@ async function weatherFor(lat: number, lon: number, place: Place): Promise<Ambie
 
 async function loadFromBrowserPosition(coords: GeolocationCoordinates): Promise<AmbientPayload> {
   const { latitude: lat, longitude: lon } = coords;
-  const gJson = await fetchJson(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+  const gJson = await fetchJson(
+    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+  );
   return weatherFor(lat, lon, {
     city: gJson.city || gJson.locality || gJson.principalSubdivision || "Here",
     country: gJson.countryName || "",
@@ -72,7 +90,8 @@ async function loadFromNetworkLocation(): Promise<AmbientPayload> {
   const gJson = await fetchJson("https://ipapi.co/json/");
   const lat = Number(gJson.latitude);
   const lon = Number(gJson.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error("Network location unavailable");
+  if (!Number.isFinite(lat) || !Number.isFinite(lon))
+    throw new Error("Network location unavailable");
   return weatherFor(lat, lon, {
     city: gJson.city || "Local",
     country: gJson.country_name || "",
@@ -83,7 +102,9 @@ async function loadFromNetworkLocation(): Promise<AmbientPayload> {
 async function loadFromTimeZone(): Promise<AmbientPayload> {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const city = timeZone?.split("/").pop()?.replace(/_/g, " ") || "Local";
-  const geo = await fetchJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+  const geo = await fetchJson(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`,
+  );
   const match = geo.results?.[0];
   if (!match) throw new Error("Timezone location unavailable");
   return weatherFor(Number(match.latitude), Number(match.longitude), {
@@ -151,7 +172,7 @@ export function AmbientChip() {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => loadFromBrowserPosition(coords).then(applyPayload).catch(fallback),
       fallback,
-      { maximumAge: 15 * 60_000, timeout: 4500 }
+      { maximumAge: 15 * 60_000, timeout: 4500 },
     );
   }, []);
 
@@ -173,7 +194,11 @@ export function AmbientChip() {
         {place ? (
           <>
             {place.city}
-            {place.countryCode ? <span className="ml-1 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide">{place.countryCode}</span> : null}
+            {place.countryCode ? (
+              <span className="ml-1 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide">
+                {place.countryCode}
+              </span>
+            ) : null}
           </>
         ) : denied ? (
           tz || "Local"
@@ -187,9 +212,7 @@ export function AmbientChip() {
           title={w.label}
         >
           <Icon className="h-3 w-3" />
-          <span className="font-medium tabular-nums">
-            {weather.tempC}°
-          </span>
+          <span className="font-medium tabular-nums">{weather.tempC}°</span>
         </span>
       ) : null}
     </div>

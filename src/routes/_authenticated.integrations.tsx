@@ -2,8 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
-  Plug, Copy, Check, Globe, Server, Bot, Sparkles, ExternalLink,
-  Search, Code2, FolderTree, Network, ShieldCheck,
+  Plug,
+  Copy,
+  Check,
+  Globe,
+  Server,
+  Bot,
+  Sparkles,
+  ExternalLink,
+  Search,
+  Code2,
+  FolderTree,
+  Network,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,29 +41,39 @@ const PRESETS: ClientPreset[] = [
     label: "Claude Desktop",
     description: "Add to claude_desktop_config.json then restart Claude Desktop.",
     configPath: "~/Library/Application Support/Claude/claude_desktop_config.json",
-    snippet: (url, token) => JSON.stringify({
-      mcpServers: {
-        cadence: {
-          url: `${url}/api/mcp`,
-          transport: "http",
-          headers: { Authorization: `Bearer ${token}` },
+    snippet: (url, token) =>
+      JSON.stringify(
+        {
+          mcpServers: {
+            cadence: {
+              url: `${url}/api/mcp`,
+              transport: "http",
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          },
         },
-      },
-    }, null, 2),
+        null,
+        2,
+      ),
   },
   {
     id: "cursor",
     label: "Cursor",
     description: "Drop into ~/.cursor/mcp.json (or your project's .cursor/mcp.json).",
     configPath: "~/.cursor/mcp.json",
-    snippet: (url, token) => JSON.stringify({
-      mcpServers: {
-        cadence: {
-          url: `${url}/api/mcp`,
-          headers: { Authorization: `Bearer ${token}` },
+    snippet: (url, token) =>
+      JSON.stringify(
+        {
+          mcpServers: {
+            cadence: {
+              url: `${url}/api/mcp`,
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          },
         },
-      },
-    }, null, 2),
+        null,
+        2,
+      ),
   },
   {
     id: "chatgpt",
@@ -72,10 +93,34 @@ type BuiltInServer = {
 };
 
 const BUILT_INS: BuiltInServer[] = [
-  { id: "web", name: "Web search", description: "Routed through the AI Gateway, cached, and logged to ai_events.", Icon: Search, status: "beta" },
-  { id: "github", name: "Code & repo read", description: "Read-only GitHub OAuth; destructive ops gated by Approvals.", Icon: Code2, status: "planned" },
-  { id: "files", name: "Filesystem (/mnt/documents)", description: "Sandboxed file read/write scoped to the workspace.", Icon: FolderTree, status: "planned" },
-  { id: "cadence", name: "Cadence (self)", description: "Cadence exposes its own surface so peer agents can call it as a tool.", Icon: Server, status: "beta" },
+  {
+    id: "web",
+    name: "Web search",
+    description: "Routed through the AI Gateway, cached, and logged to ai_events.",
+    Icon: Search,
+    status: "beta",
+  },
+  {
+    id: "github",
+    name: "Code & repo read",
+    description: "Read-only GitHub OAuth; destructive ops gated by Approvals.",
+    Icon: Code2,
+    status: "planned",
+  },
+  {
+    id: "files",
+    name: "Filesystem (/mnt/documents)",
+    description: "Sandboxed file read/write scoped to the workspace.",
+    Icon: FolderTree,
+    status: "planned",
+  },
+  {
+    id: "cadence",
+    name: "Cadence (self)",
+    description: "Cadence exposes its own surface so peer agents can call it as a tool.",
+    Icon: Server,
+    status: "beta",
+  },
 ];
 
 function StatusPill({ status }: { status: BuiltInServer["status"] }) {
@@ -85,7 +130,9 @@ function StatusPill({ status }: { status: BuiltInServer["status"] }) {
     planned: "bg-muted text-muted-foreground border-border",
   } as const;
   return (
-    <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${map[status]}`}>
+    <span
+      className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${map[status]}`}
+    >
       {status}
     </span>
   );
@@ -117,7 +164,8 @@ function IntegrationsPage() {
   const fProjects = useServerFn(listProjects);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://your-cadence.app";
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://your-cadence.app";
   const cardUrl = `${origin}/api/public/a2a/agents/cadence/card`;
   // Display-only placeholder; real token issuance lands with mcp_tokens table in 7.1.
   const sampleToken = "cdn_sk_••••••••••••••••";
@@ -147,8 +195,8 @@ function IntegrationsPage() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Cadence speaks <strong className="text-foreground">MCP</strong> and{" "}
-              <strong className="text-foreground">A2A</strong>. Plug it into Claude Desktop, Cursor, or ChatGPT —
-              or let peer agents discover it via the public Agent Card.
+              <strong className="text-foreground">A2A</strong>. Plug it into Claude Desktop, Cursor,
+              or ChatGPT — or let peer agents discover it via the public Agent Card.
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1 text-[11px] text-muted-foreground">
@@ -161,9 +209,13 @@ function IntegrationsPage() {
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div className="flex items-center gap-2">
               <Server className="h-4 w-4 text-violet-400" />
-              <h2 className="font-display text-sm uppercase tracking-wider">Cadence as an MCP server</h2>
+              <h2 className="font-display text-sm uppercase tracking-wider">
+                Cadence as an MCP server
+              </h2>
             </div>
-            <span className="text-[11px] text-muted-foreground">Endpoint: <code className="font-mono">{origin}/api/mcp</code></span>
+            <span className="text-[11px] text-muted-foreground">
+              Endpoint: <code className="font-mono">{origin}/api/mcp</code>
+            </span>
           </div>
 
           <div className="grid gap-0 md:grid-cols-[180px_1fr]">
@@ -198,7 +250,8 @@ function IntegrationsPage() {
                 {snippet}
               </pre>
               <p className="text-[11px] text-muted-foreground">
-                Replace the sample token above with a per-user MCP token. Token issuance with scoped capabilities ships in 7.1.
+                Replace the sample token above with a per-user MCP token. Token issuance with scoped
+                capabilities ships in 7.1.
               </p>
             </div>
           </div>
@@ -210,13 +263,18 @@ function IntegrationsPage() {
             <h2 className="font-display text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Network className="h-4 w-4 text-violet-400" /> Built-in MCP servers
             </h2>
-            <span className="text-[11px] text-muted-foreground">Every call routes through the chokepoint — same budgets, guardrails, traces.</span>
+            <span className="text-[11px] text-muted-foreground">
+              Every call routes through the chokepoint — same budgets, guardrails, traces.
+            </span>
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {BUILT_INS.map((s) => {
               const Icon = s.Icon;
               return (
-                <li key={s.id} className="rounded-xl border border-border bg-background/40 p-4 hover:bg-background/60 transition">
+                <li
+                  key={s.id}
+                  className="rounded-xl border border-border bg-background/40 p-4 hover:bg-background/60 transition"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="rounded-md border border-border bg-background/60 p-1.5">
@@ -261,7 +319,9 @@ function IntegrationsPage() {
               <CopyButton text={cardUrl} />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Public, unauthenticated, cached for 5 minutes. Peer agents fetch this to discover Cadence's skills, auth schemes, and rate limits — the A2A equivalent of <code className="font-mono">/.well-known/openid-configuration</code>.
+              Public, unauthenticated, cached for 5 minutes. Peer agents fetch this to discover
+              Cadence's skills, auth schemes, and rate limits — the A2A equivalent of{" "}
+              <code className="font-mono">/.well-known/openid-configuration</code>.
             </p>
             <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-background/60 p-4 text-xs font-mono leading-relaxed text-foreground/90">
               {cardQuery.isLoading

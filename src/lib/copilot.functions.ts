@@ -28,7 +28,11 @@ export async function ensureTodayBrief(
   if (existing) return existing;
 
   const [{ data: tasks }, { data: meetings }, { data: profile }] = await Promise.all([
-    supabase.from("tasks").select("title,priority,is_deep_work,status,due_date").neq("status", "done").limit(30),
+    supabase
+      .from("tasks")
+      .select("title,priority,is_deep_work,status,due_date")
+      .neq("status", "done")
+      .limit(30),
     supabase
       .from("meetings")
       .select("title,start_at,end_at,stakeholder")
@@ -48,7 +52,10 @@ OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
     surface: "brief",
     model: MODEL,
     messages: [
-      { role: "system", content: "You are Cadence, an agent-native chief of staff. Tone: Apple-calm, Notion-clear." },
+      {
+        role: "system",
+        content: "You are Cadence, an agent-native chief of staff. Tone: Apple-calm, Notion-clear.",
+      },
       { role: "user", content: prompt },
     ],
   });
@@ -59,7 +66,10 @@ OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
     0,
   );
   const deepCount = (tasks ?? []).filter((t) => t.is_deep_work).length;
-  const focus = Math.max(5, Math.min(100, 60 + deepCount * 8 - Math.floor(meetingMinutes / 30) * 4));
+  const focus = Math.max(
+    5,
+    Math.min(100, 60 + deepCount * 8 - Math.floor(meetingMinutes / 30) * 4),
+  );
 
   const { data, error } = await supabase
     .from("daily_briefs")
@@ -87,7 +97,9 @@ export const listCopilotMessages = createServerFn({ method: "GET" })
 
 export const sendCopilotMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ prompt: z.string().min(1).max(2000) }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ prompt: z.string().min(1).max(2000) }).parse(input),
+  )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
@@ -97,20 +109,21 @@ export const sendCopilotMessage = createServerFn({ method: "POST" })
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [{ data: tasks }, { data: meetings }, { data: projects }, { data: history }] = await Promise.all([
-      supabase.from("tasks").select("title,status,priority,is_deep_work,due_date").limit(40),
-      supabase
-        .from("meetings")
-        .select("title,start_at,end_at,stakeholder")
-        .gte("start_at", today.toISOString())
-        .lt("start_at", tomorrow.toISOString()),
-      supabase.from("projects").select("name,north_star,status").limit(10),
-      supabase
-        .from("copilot_messages")
-        .select("role,content")
-        .order("created_at", { ascending: false })
-        .limit(10),
-    ]);
+    const [{ data: tasks }, { data: meetings }, { data: projects }, { data: history }] =
+      await Promise.all([
+        supabase.from("tasks").select("title,status,priority,is_deep_work,due_date").limit(40),
+        supabase
+          .from("meetings")
+          .select("title,start_at,end_at,stakeholder")
+          .gte("start_at", today.toISOString())
+          .lt("start_at", tomorrow.toISOString()),
+        supabase.from("projects").select("name,north_star,status").limit(10),
+        supabase
+          .from("copilot_messages")
+          .select("role,content")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
 
     const ctxBlob = JSON.stringify({ projects, todayMeetings: meetings, tasks }).slice(0, 6000);
 
@@ -121,7 +134,9 @@ You have access to the user's current state below. Use it to ground every answer
 USER STATE (JSON, may be partial):
 ${ctxBlob}`;
 
-    const historyMsgs = (history ?? []).reverse().map((m) => ({ role: m.role, content: m.content }));
+    const historyMsgs = (history ?? [])
+      .reverse()
+      .map((m) => ({ role: m.role, content: m.content }));
     const messages = [
       { role: "system", content: system },
       ...historyMsgs,
@@ -129,7 +144,9 @@ ${ctxBlob}`;
     ];
 
     // Save user message first
-    await supabase.from("copilot_messages").insert({ user_id: userId, role: "user", content: data.prompt });
+    await supabase
+      .from("copilot_messages")
+      .insert({ user_id: userId, role: "user", content: data.prompt });
 
     const r = await callModel(supabase as never, userId, {
       surface: "copilot",
@@ -139,7 +156,9 @@ ${ctxBlob}`;
     });
     const reply = r.output;
 
-    await supabase.from("copilot_messages").insert({ user_id: userId, role: "assistant", content: reply });
+    await supabase
+      .from("copilot_messages")
+      .insert({ user_id: userId, role: "assistant", content: reply });
 
     return { reply };
   });

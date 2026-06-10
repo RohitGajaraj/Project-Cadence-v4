@@ -33,22 +33,20 @@ export async function recordLineage(
     ai_event_id?: string | null;
   },
 ): Promise<void> {
-  await supabase
-    .from("artifact_lineage")
-    .upsert(
-      {
-        user_id: userId,
-        parent_kind: edge.parent_kind,
-        parent_id: edge.parent_id,
-        child_kind: edge.child_kind,
-        child_id: edge.child_id,
-        relation: edge.relation ?? "promoted",
-        rationale: edge.rationale ?? null,
-        created_by_agent: edge.created_by_agent ?? null,
-        ai_event_id: edge.ai_event_id ?? null,
-      },
-      { onConflict: "user_id,parent_kind,parent_id,child_kind,child_id,relation" },
-    );
+  await supabase.from("artifact_lineage").upsert(
+    {
+      user_id: userId,
+      parent_kind: edge.parent_kind,
+      parent_id: edge.parent_id,
+      child_kind: edge.child_kind,
+      child_id: edge.child_id,
+      relation: edge.relation ?? "promoted",
+      rationale: edge.rationale ?? null,
+      created_by_agent: edge.created_by_agent ?? null,
+      ai_event_id: edge.ai_event_id ?? null,
+    },
+    { onConflict: "user_id,parent_kind,parent_id,child_kind,child_id,relation" },
+  );
 }
 
 type LineageEdge = {
@@ -104,11 +102,13 @@ async function hydrateTitles(
     const table = TABLE[kind];
     const col = TITLE_COLUMN[kind];
     if (!table) continue;
-    const { data } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (s: string) => { in: (c: string, v: string[]) => Promise<{ data: unknown }> };
-      };
-    })
+    const { data } = await (
+      supabase as unknown as {
+        from: (t: string) => {
+          select: (s: string) => { in: (c: string, v: string[]) => Promise<{ data: unknown }> };
+        };
+      }
+    )
       .from(table)
       .select(`id, ${col}`)
       .in("id", ids);
@@ -127,9 +127,7 @@ async function hydrateTitles(
 
 export const getLineage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ kind: KindSchema, id: z.string().uuid() }).parse(i),
-  )
+  .inputValidator((i: unknown) => z.object({ kind: KindSchema, id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
 
@@ -164,10 +162,12 @@ export const getLineage = createServerFn({ method: "GET" })
 export const promotePrdToTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({
-      prd_id: z.string().uuid(),
-      model: z.string().max(80).default("google/gemini-2.5-flash"),
-    }).parse(i),
+    z
+      .object({
+        prd_id: z.string().uuid(),
+        model: z.string().max(80).default("google/gemini-2.5-flash"),
+      })
+      .parse(i),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -195,9 +195,13 @@ Each title must be a concrete verb-led action under 80 chars. Order by build seq
       ],
     });
 
-    let parsed: { tasks?: Array<{ title: string; priority?: string; is_deep_work?: boolean }> } = {};
+    let parsed: { tasks?: Array<{ title: string; priority?: string; is_deep_work?: boolean }> } =
+      {};
     try {
-      const cleaned = result.output.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
+      const cleaned = result.output
+        .trim()
+        .replace(/^```json\s*|\s*```$/g, "")
+        .replace(/^```\s*|\s*```$/g, "");
       parsed = JSON.parse(cleaned);
     } catch {
       throw new Error("AI returned malformed task list");

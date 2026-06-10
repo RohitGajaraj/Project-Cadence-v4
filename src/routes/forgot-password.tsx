@@ -61,7 +61,8 @@ function ForgotPasswordPage() {
               <Mail className="h-5 w-5 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">
-              If an account exists for <strong className="text-foreground">{email}</strong>, you’ll receive a reset link shortly.
+              If an account exists for <strong className="text-foreground">{email}</strong>, you’ll
+              receive a reset link shortly.
             </p>
             <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
               Send again
@@ -70,7 +71,9 @@ function ForgotPasswordPage() {
         ) : (
           <form onSubmit={sendResetLink} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs">Email</Label>
+              <Label htmlFor="email" className="text-xs">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -87,7 +90,10 @@ function ForgotPasswordPage() {
         )}
 
         <div className="text-xs text-center">
-          <Link to="/login" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+          >
             <ArrowLeft className="h-3 w-3" /> Back to sign in
           </Link>
         </div>

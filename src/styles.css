@@ -76,8 +76,8 @@
    * more professional than Instrument Serif at display sizes), Inter for
    * UI, JetBrains Mono for technical labels. */
   --font-display: "Fraunces", "Instrument Serif", ui-serif, Georgia, serif;
-  --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Cohere-inspired editorial color tokens. Available as bg-canvas,
    * text-ink, bg-deep-green, text-coral, etc. */
@@ -106,48 +106,48 @@
    * Coral reserved for editorial taxonomy chips; action-blue for links. */
 
   /* Surfaces */
-  --canvas:         oklch(1 0 0);                  /* #ffffff */
-  --soft-stone:     oklch(0.945 0.005 75);         /* #eeece7 warm neutral */
-  --pale-green:     oklch(0.975 0.025 145);        /* #edfce9 */
-  --pale-blue:      oklch(0.975 0.012 250);        /* #f1f5ff */
-  --paper:          var(--canvas);
+  --canvas: oklch(1 0 0); /* #ffffff */
+  --soft-stone: oklch(0.945 0.005 75); /* #eeece7 warm neutral */
+  --pale-green: oklch(0.975 0.025 145); /* #edfce9 */
+  --pale-blue: oklch(0.975 0.012 250); /* #f1f5ff */
+  --paper: var(--canvas);
   --paper-elevated: var(--canvas);
-  --surface-1:      oklch(0.985 0.002 80);         /* near-white wash */
-  --surface-2:      var(--soft-stone);
-  --surface-3:      oklch(0.97 0 0);               /* light gray-stone */
+  --surface-1: oklch(0.985 0.002 80); /* near-white wash */
+  --surface-2: var(--soft-stone);
+  --surface-3: oklch(0.97 0 0); /* light gray-stone */
 
   /* Ink scale */
-  --ink:            oklch(0.225 0.005 280);        /* #212121 */
-  --ink-muted:      oklch(0.45 0.005 280);         /* #616161 body-muted */
-  --ink-subtle:     oklch(0.60 0.008 280);         /* #75758a slate */
-  --ink-faint:      oklch(0.66 0.008 280);         /* #93939f muted slate */
+  --ink: oklch(0.225 0.005 280); /* #212121 */
+  --ink-muted: oklch(0.45 0.005 280); /* #616161 body-muted */
+  --ink-subtle: oklch(0.6 0.008 280); /* #75758a slate */
+  --ink-faint: oklch(0.66 0.008 280); /* #93939f muted slate */
 
   /* Rules / borders */
-  --hairline:         oklch(0.86 0.002 280);       /* #d9d9dd */
-  --hairline-strong:  oklch(0.78 0.003 280);
-  --border-light:     oklch(0.91 0.002 280);       /* #e5e7eb */
-  --card-border:      oklch(0.95 0.002 280);       /* #f2f2f2 */
+  --hairline: oklch(0.86 0.002 280); /* #d9d9dd */
+  --hairline-strong: oklch(0.78 0.003 280);
+  --border-light: oklch(0.91 0.002 280); /* #e5e7eb */
+  --card-border: oklch(0.95 0.002 280); /* #f2f2f2 */
 
   /* Brand / accent — Cohere palette */
-  --cohere-black:  oklch(0 0 0);                   /* #000000 */
-  --primary-ink:   oklch(0.12 0.008 280);          /* #17171c near-black CTA */
-  --deep-green:    oklch(0.30 0.045 175);          /* #003c33 product band */
-  --dark-navy:     oklch(0.21 0.05 255);           /* #071829 */
-  --action-blue:   oklch(0.52 0.20 260);           /* #1863dc */
-  --focus-blue:    oklch(0.60 0.16 260);           /* #4c6ee6 */
-  --coral:         oklch(0.72 0.18 35);            /* #ff7759 editorial chip */
-  --coral-soft:    oklch(0.80 0.10 30);            /* #ffad9b */
-  --form-focus:    oklch(0.55 0.12 320);           /* #9b60aa */
+  --cohere-black: oklch(0 0 0); /* #000000 */
+  --primary-ink: oklch(0.12 0.008 280); /* #17171c near-black CTA */
+  --deep-green: oklch(0.3 0.045 175); /* #003c33 product band */
+  --dark-navy: oklch(0.21 0.05 255); /* #071829 */
+  --action-blue: oklch(0.52 0.2 260); /* #1863dc */
+  --focus-blue: oklch(0.6 0.16 260); /* #4c6ee6 */
+  --coral: oklch(0.72 0.18 35); /* #ff7759 editorial chip */
+  --coral-soft: oklch(0.8 0.1 30); /* #ffad9b */
+  --form-focus: oklch(0.55 0.12 320); /* #9b60aa */
 
   /* Legacy accent names — remapped to Cohere palette so existing pages
    * using these tokens stay coherent during the phased migration.
    * Phase 2+ will replace direct uses with semantic Cohere names. */
-  --violet:      var(--primary-ink);
+  --violet: var(--primary-ink);
   --violet-soft: var(--ink-subtle);
-  --amber:       var(--coral);
-  --cyan:        var(--action-blue);
-  --emerald:     oklch(0.62 0.13 155);
-  --rose:        oklch(0.50 0.20 25);              /* #b30000 error */
+  --amber: var(--coral);
+  --cyan: var(--action-blue);
+  --emerald: oklch(0.62 0.13 155);
+  --rose: oklch(0.5 0.2 25); /* #b30000 error */
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -183,13 +183,27 @@
   --sidebar-ring: var(--focus-blue);
 
   /* Editorial — gradients reserved for media-led panels only; UI is flat. */
-  --gradient-aurora: radial-gradient(60% 70% at 20% 30%, color-mix(in oklab, var(--pale-green) 100%, transparent) 0%, transparent 70%),
-                     radial-gradient(50% 60% at 80% 20%, color-mix(in oklab, var(--pale-blue) 100%, transparent) 0%, transparent 70%);
+  --gradient-aurora:
+    radial-gradient(
+      60% 70% at 20% 30%,
+      color-mix(in oklab, var(--pale-green) 100%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 60% at 80% 20%,
+      color-mix(in oklab, var(--pale-blue) 100%, transparent) 0%,
+      transparent 70%
+    );
   --gradient-card: linear-gradient(180deg, var(--canvas) 0%, var(--surface-1) 100%);
-  --gradient-trace: linear-gradient(90deg, var(--primary-ink), var(--action-blue) 55%, var(--coral));
-  --shadow-glass:    0 1px 0 0 var(--hairline) inset, 0 1px 2px -1px oklch(0 0 0 / 6%);
+  --gradient-trace: linear-gradient(
+    90deg,
+    var(--primary-ink),
+    var(--action-blue) 55%,
+    var(--coral)
+  );
+  --shadow-glass: 0 1px 0 0 var(--hairline) inset, 0 1px 2px -1px oklch(0 0 0 / 6%);
   --shadow-elevated: 0 1px 0 0 var(--hairline) inset, 0 8px 24px -12px oklch(0 0 0 / 12%);
-  --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--focus-blue) 70%, transparent);
+  --shadow-focus: 0 0 0 2px color-mix(in oklab, var(--focus-blue) 70%, transparent);
 }
 
 /* === Cadence Nightshift — dark theme override ===
@@ -204,44 +218,44 @@
   --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   /* Surfaces */
-  --canvas:         oklch(0.155 0.012 260);
-  --soft-stone:     oklch(0.215 0.015 258);
-  --pale-green:     oklch(0.255 0.05 155);
-  --pale-blue:      oklch(0.255 0.05 220);
-  --paper:          oklch(0.155 0.012 260);
+  --canvas: oklch(0.155 0.012 260);
+  --soft-stone: oklch(0.215 0.015 258);
+  --pale-green: oklch(0.255 0.05 155);
+  --pale-blue: oklch(0.255 0.05 220);
+  --paper: oklch(0.155 0.012 260);
   --paper-elevated: oklch(0.185 0.014 260);
-  --surface-1:      oklch(0.175 0.013 260);
-  --surface-2:      oklch(0.215 0.015 258);
-  --surface-3:      oklch(0.255 0.016 258);
+  --surface-1: oklch(0.175 0.013 260);
+  --surface-2: oklch(0.215 0.015 258);
+  --surface-3: oklch(0.255 0.016 258);
 
   /* Ink */
-  --ink:            oklch(0.985 0.003 250);
-  --ink-muted:      oklch(0.80 0.012 250);
-  --ink-subtle:     oklch(0.64 0.014 250);
-  --ink-faint:      oklch(0.56 0.014 250);
+  --ink: oklch(0.985 0.003 250);
+  --ink-muted: oklch(0.8 0.012 250);
+  --ink-subtle: oklch(0.64 0.014 250);
+  --ink-faint: oklch(0.56 0.014 250);
 
   /* Rules */
-  --hairline:         oklch(0.85 0.02 260 / 12%);
-  --hairline-strong:  oklch(0.85 0.02 260 / 22%);
-  --border-light:     oklch(0.85 0.02 260 / 14%);
-  --card-border:      oklch(0.85 0.02 260 / 10%);
+  --hairline: oklch(0.85 0.02 260 / 12%);
+  --hairline-strong: oklch(0.85 0.02 260 / 22%);
+  --border-light: oklch(0.85 0.02 260 / 14%);
+  --card-border: oklch(0.85 0.02 260 / 10%);
 
   /* Brand / accent — Nightshift dual-accent */
-  --primary-ink:   oklch(0.72 0.22 295);          /* electric violet primary */
-  --deep-green:    oklch(0.72 0.22 295);          /* remap: product band → violet */
-  --dark-navy:     oklch(0.185 0.014 260);
-  --action-blue:   oklch(0.82 0.14 220);          /* cyan info */
-  --focus-blue:    oklch(0.72 0.22 295);
-  --coral:         oklch(0.78 0.19 52);           /* ember orange signal */
-  --coral-soft:    oklch(0.82 0.14 52);
-  --form-focus:    oklch(0.72 0.22 295);
+  --primary-ink: oklch(0.72 0.22 295); /* electric violet primary */
+  --deep-green: oklch(0.72 0.22 295); /* remap: product band → violet */
+  --dark-navy: oklch(0.185 0.014 260);
+  --action-blue: oklch(0.82 0.14 220); /* cyan info */
+  --focus-blue: oklch(0.72 0.22 295);
+  --coral: oklch(0.78 0.19 52); /* ember orange signal */
+  --coral-soft: oklch(0.82 0.14 52);
+  --form-focus: oklch(0.72 0.22 295);
 
-  --violet:      oklch(0.72 0.22 295);
+  --violet: oklch(0.72 0.22 295);
   --violet-soft: oklch(0.78 0.16 295);
-  --amber:       oklch(0.78 0.19 52);
-  --cyan:        oklch(0.82 0.14 220);
-  --emerald:     oklch(0.80 0.17 155);
-  --rose:        oklch(0.72 0.22 18);
+  --amber: oklch(0.78 0.19 52);
+  --cyan: oklch(0.82 0.14 220);
+  --emerald: oklch(0.8 0.17 155);
+  --rose: oklch(0.72 0.22 18);
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -276,38 +290,88 @@
   --sidebar-border: var(--hairline);
   --sidebar-ring: var(--violet);
 
-  --gradient-aurora: radial-gradient(55% 75% at 18% 28%, color-mix(in oklab, var(--violet) 65%, transparent) 0%, transparent 65%),
-                     radial-gradient(50% 65% at 82% 22%, color-mix(in oklab, var(--cyan) 38%, transparent) 0%, transparent 65%),
-                     radial-gradient(48% 60% at 62% 95%, color-mix(in oklab, var(--amber) 50%, transparent) 0%, transparent 65%);
-  --gradient-card: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 100%, transparent) 0%, color-mix(in oklab, var(--surface-1) 100%, transparent) 100%);
+  --gradient-aurora:
+    radial-gradient(
+      55% 75% at 18% 28%,
+      color-mix(in oklab, var(--violet) 65%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      50% 65% at 82% 22%,
+      color-mix(in oklab, var(--cyan) 38%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      48% 60% at 62% 95%,
+      color-mix(in oklab, var(--amber) 50%, transparent) 0%,
+      transparent 65%
+    );
+  --gradient-card: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-2) 100%, transparent) 0%,
+    color-mix(in oklab, var(--surface-1) 100%, transparent) 100%
+  );
   --gradient-trace: linear-gradient(90deg, var(--violet), var(--cyan) 55%, var(--amber));
-  --shadow-glass:    0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
+  --shadow-glass: 0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
   --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 6%) inset, 0 24px 60px -20px oklch(0 0 0 / 70%);
-  --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--violet) 65%, transparent), 0 0 28px -4px color-mix(in oklab, var(--violet) 55%, transparent);
+  --shadow-focus:
+    0 0 0 2px color-mix(in oklab, var(--violet) 65%, transparent),
+    0 0 28px -4px color-mix(in oklab, var(--violet) 55%, transparent);
 }
 
 /* Dark-theme body sizing matches Nightshift density (15px / 1.55). */
-.dark, .dark body {
+.dark,
+.dark body {
   font-size: 15px;
   line-height: 1.55;
   letter-spacing: -0.01em;
 }
-.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
   font-weight: 600;
   letter-spacing: -0.022em;
   line-height: 1.2;
 }
-.dark h1 { font-size: clamp(1.75rem, 2.4vw, 2.35rem); font-weight: 650; letter-spacing: -0.03em; }
-.dark h2 { font-size: clamp(1.35rem, 1.7vw, 1.625rem); }
-.dark h3 { font-size: 1.125rem; }
+.dark h1 {
+  font-size: clamp(1.75rem, 2.4vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.dark h2 {
+  font-size: clamp(1.35rem, 1.7vw, 1.625rem);
+}
+.dark h3 {
+  font-size: 1.125rem;
+}
 
 /* Restore saturated Nightshift decorative utilities under .dark only.
  * Light theme keeps the neutralized soft-wash versions defined below. */
 .dark .neural-gradient {
-  background: radial-gradient(55% 75% at 18% 25%, color-mix(in oklab, var(--violet) 80%, transparent) 0%, transparent 70%),
-              radial-gradient(50% 65% at 82% 20%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 70%),
-              radial-gradient(50% 60% at 62% 95%, color-mix(in oklab, var(--amber) 60%, transparent) 0%, transparent 70%),
-              radial-gradient(35% 45% at 8% 92%, color-mix(in oklab, var(--violet) 35%, transparent) 0%, transparent 70%);
+  background:
+    radial-gradient(
+      55% 75% at 18% 25%,
+      color-mix(in oklab, var(--violet) 80%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 65% at 82% 20%,
+      color-mix(in oklab, var(--cyan) 50%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 60% at 62% 95%,
+      color-mix(in oklab, var(--amber) 60%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      35% 45% at 8% 92%,
+      color-mix(in oklab, var(--violet) 35%, transparent) 0%,
+      transparent 70%
+    );
   filter: blur(0.5px) saturate(1.2);
 }
 .dark .neural-text {
@@ -317,8 +381,9 @@
   color: transparent;
 }
 .dark .ring-glow-violet {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent),
-              0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent),
+    0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent);
 }
 .dark .bento {
   background: var(--gradient-card);
@@ -339,8 +404,16 @@
 }
 .dark .indigo-grid {
   background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--violet) 16%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--violet) 16%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--violet) 16%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 56px 56px;
 }
 
@@ -353,47 +426,47 @@
   /* Futuristic display: Space Grotesk's geometric forms + tightened tracking
    * read modern + technical. Inter Tight as fallback keeps weight match. */
   --font-display: "Space Grotesk", "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-sans:    "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
   /* Deep cosmic canvas — near-black with a violet/indigo bias. */
-  --canvas:         oklch(0.13 0.025 285);
-  --paper:          oklch(0.13 0.025 285);
+  --canvas: oklch(0.13 0.025 285);
+  --paper: oklch(0.13 0.025 285);
   --paper-elevated: oklch(0.175 0.03 285);
-  --surface-1:      oklch(0.165 0.028 285);
-  --surface-2:      oklch(0.21 0.035 285);
-  --surface-3:      oklch(0.255 0.04 285);
-  --soft-stone:     oklch(0.21 0.035 285);
-  --pale-green:     oklch(0.30 0.10 165);
-  --pale-blue:      oklch(0.30 0.10 240);
+  --surface-1: oklch(0.165 0.028 285);
+  --surface-2: oklch(0.21 0.035 285);
+  --surface-3: oklch(0.255 0.04 285);
+  --soft-stone: oklch(0.21 0.035 285);
+  --pale-green: oklch(0.3 0.1 165);
+  --pale-blue: oklch(0.3 0.1 240);
 
-  --ink:            oklch(0.99 0.005 280);
-  --ink-muted:      oklch(0.84 0.02 270);
-  --ink-subtle:     oklch(0.70 0.03 270);
-  --ink-faint:      oklch(0.58 0.03 270);
+  --ink: oklch(0.99 0.005 280);
+  --ink-muted: oklch(0.84 0.02 270);
+  --ink-subtle: oklch(0.7 0.03 270);
+  --ink-faint: oklch(0.58 0.03 270);
 
-  --hairline:        oklch(0.85 0.05 285 / 14%);
+  --hairline: oklch(0.85 0.05 285 / 14%);
   --hairline-strong: oklch(0.85 0.05 285 / 28%);
-  --border-light:    oklch(0.85 0.05 285 / 18%);
-  --card-border:     oklch(0.85 0.05 285 / 12%);
+  --border-light: oklch(0.85 0.05 285 / 18%);
+  --card-border: oklch(0.85 0.05 285 / 12%);
 
   /* Neon ramp — electric violet primary, magenta + cyan + lime accents. */
-  --primary-ink:   oklch(0.74 0.27 295);
-  --deep-green:    oklch(0.74 0.27 295);
-  --dark-navy:     oklch(0.175 0.03 285);
-  --action-blue:   oklch(0.78 0.18 220);
-  --focus-blue:    oklch(0.74 0.27 295);
-  --coral:         oklch(0.78 0.24 25);
-  --coral-soft:    oklch(0.82 0.18 25);
-  --form-focus:    oklch(0.74 0.27 320);
+  --primary-ink: oklch(0.74 0.27 295);
+  --deep-green: oklch(0.74 0.27 295);
+  --dark-navy: oklch(0.175 0.03 285);
+  --action-blue: oklch(0.78 0.18 220);
+  --focus-blue: oklch(0.74 0.27 295);
+  --coral: oklch(0.78 0.24 25);
+  --coral-soft: oklch(0.82 0.18 25);
+  --form-focus: oklch(0.74 0.27 320);
 
-  --violet:      oklch(0.74 0.27 295);
+  --violet: oklch(0.74 0.27 295);
   --violet-soft: oklch(0.82 0.22 305);
-  --magenta:     oklch(0.72 0.28 340);
-  --amber:       oklch(0.84 0.20 60);
-  --cyan:        oklch(0.84 0.18 215);
-  --lime:        oklch(0.88 0.22 135);
-  --emerald:     oklch(0.80 0.20 155);
-  --rose:        oklch(0.72 0.24 18);
+  --magenta: oklch(0.72 0.28 340);
+  --amber: oklch(0.84 0.2 60);
+  --cyan: oklch(0.84 0.18 215);
+  --lime: oklch(0.88 0.22 135);
+  --emerald: oklch(0.8 0.2 155);
+  --rose: oklch(0.72 0.24 18);
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -428,43 +501,106 @@
   --sidebar-border: var(--hairline);
   --sidebar-ring: var(--violet);
 
-  --gradient-aurora: radial-gradient(60% 80% at 12% 18%, color-mix(in oklab, var(--violet) 78%, transparent) 0%, transparent 60%),
-                     radial-gradient(55% 70% at 88% 20%, color-mix(in oklab, var(--cyan) 55%, transparent) 0%, transparent 60%),
-                     radial-gradient(55% 65% at 70% 92%, color-mix(in oklab, var(--magenta) 65%, transparent) 0%, transparent 60%),
-                     radial-gradient(45% 55% at 18% 88%, color-mix(in oklab, var(--lime) 35%, transparent) 0%, transparent 65%);
-  --gradient-card: linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 100%, transparent) 0%, color-mix(in oklab, var(--surface-1) 100%, transparent) 100%);
-  --gradient-trace: linear-gradient(90deg, var(--violet), var(--magenta) 40%, var(--cyan) 70%, var(--lime));
+  --gradient-aurora:
+    radial-gradient(
+      60% 80% at 12% 18%,
+      color-mix(in oklab, var(--violet) 78%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      55% 70% at 88% 20%,
+      color-mix(in oklab, var(--cyan) 55%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      55% 65% at 70% 92%,
+      color-mix(in oklab, var(--magenta) 65%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      45% 55% at 18% 88%,
+      color-mix(in oklab, var(--lime) 35%, transparent) 0%,
+      transparent 65%
+    );
+  --gradient-card: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-2) 100%, transparent) 0%,
+    color-mix(in oklab, var(--surface-1) 100%, transparent) 100%
+  );
+  --gradient-trace: linear-gradient(
+    90deg,
+    var(--violet),
+    var(--magenta) 40%,
+    var(--cyan) 70%,
+    var(--lime)
+  );
 
-  --shadow-glass:    0 1px 0 0 oklch(1 0 0 / 7%) inset,
-                     0 10px 36px -8px oklch(0 0 0 / 60%),
-                     0 0 80px -20px color-mix(in oklab, var(--violet) 35%, transparent);
-  --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 8%) inset,
-                     0 28px 70px -22px oklch(0 0 0 / 75%),
-                     0 0 120px -30px color-mix(in oklab, var(--violet) 45%, transparent);
-  --shadow-focus:    0 0 0 2px color-mix(in oklab, var(--violet) 75%, transparent),
-                     0 0 32px -2px color-mix(in oklab, var(--violet) 65%, transparent);
+  --shadow-glass:
+    0 1px 0 0 oklch(1 0 0 / 7%) inset, 0 10px 36px -8px oklch(0 0 0 / 60%),
+    0 0 80px -20px color-mix(in oklab, var(--violet) 35%, transparent);
+  --shadow-elevated:
+    0 1px 0 0 oklch(1 0 0 / 8%) inset, 0 28px 70px -22px oklch(0 0 0 / 75%),
+    0 0 120px -30px color-mix(in oklab, var(--violet) 45%, transparent);
+  --shadow-focus:
+    0 0 0 2px color-mix(in oklab, var(--violet) 75%, transparent),
+    0 0 32px -2px color-mix(in oklab, var(--violet) 65%, transparent);
 }
 
 /* Aurora-specific decorative overrides. Saturation cranked, blur lifted. */
 .aurora body {
   background-color: var(--paper);
   background-image:
-    radial-gradient(60% 80% at 12% 18%, color-mix(in oklab, var(--violet) 28%, transparent) 0%, transparent 60%),
-    radial-gradient(55% 70% at 88% 20%, color-mix(in oklab, var(--cyan) 18%, transparent) 0%, transparent 60%),
-    radial-gradient(55% 65% at 70% 92%, color-mix(in oklab, var(--magenta) 22%, transparent) 0%, transparent 60%);
+    radial-gradient(
+      60% 80% at 12% 18%,
+      color-mix(in oklab, var(--violet) 28%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      55% 70% at 88% 20%,
+      color-mix(in oklab, var(--cyan) 18%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      55% 65% at 70% 92%,
+      color-mix(in oklab, var(--magenta) 22%, transparent) 0%,
+      transparent 60%
+    );
   background-attachment: fixed;
 }
 
 .aurora .neural-gradient {
-  background: radial-gradient(60% 80% at 14% 22%, color-mix(in oklab, var(--violet) 90%, transparent) 0%, transparent 65%),
-              radial-gradient(55% 70% at 86% 18%, color-mix(in oklab, var(--cyan) 70%, transparent) 0%, transparent 65%),
-              radial-gradient(55% 65% at 70% 94%, color-mix(in oklab, var(--magenta) 80%, transparent) 0%, transparent 65%),
-              radial-gradient(40% 50% at 10% 90%, color-mix(in oklab, var(--lime) 50%, transparent) 0%, transparent 70%);
+  background:
+    radial-gradient(
+      60% 80% at 14% 22%,
+      color-mix(in oklab, var(--violet) 90%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      55% 70% at 86% 18%,
+      color-mix(in oklab, var(--cyan) 70%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      55% 65% at 70% 94%,
+      color-mix(in oklab, var(--magenta) 80%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      40% 50% at 10% 90%,
+      color-mix(in oklab, var(--lime) 50%, transparent) 0%,
+      transparent 70%
+    );
   filter: blur(0.5px) saturate(1.35);
 }
 
 .aurora .neural-text {
-  background: linear-gradient(110deg, var(--cyan) 0%, var(--violet) 40%, var(--magenta) 75%, var(--amber) 100%);
+  background: linear-gradient(
+    110deg,
+    var(--cyan) 0%,
+    var(--violet) 40%,
+    var(--magenta) 75%,
+    var(--amber) 100%
+  );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -473,21 +609,28 @@
 }
 
 @keyframes aurora-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .aurora .ring-glow-violet {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--violet) 60%, transparent),
-              0 0 24px -2px color-mix(in oklab, var(--violet) 70%, transparent),
-              0 0 60px -10px color-mix(in oklab, var(--magenta) 50%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--violet) 60%, transparent),
+    0 0 24px -2px color-mix(in oklab, var(--violet) 70%, transparent),
+    0 0 60px -10px color-mix(in oklab, var(--magenta) 50%, transparent);
 }
 
 .aurora .bento {
-  background:
-    linear-gradient(180deg,
-      color-mix(in oklab, var(--surface-2) 92%, transparent) 0%,
-      color-mix(in oklab, var(--surface-1) 92%, transparent) 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-2) 92%, transparent) 0%,
+    color-mix(in oklab, var(--surface-1) 92%, transparent) 100%
+  );
   border: 1px solid color-mix(in oklab, var(--violet) 18%, var(--hairline));
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-glass);
@@ -496,8 +639,14 @@
 }
 .aurora .bento::before {
   content: "";
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(60% 80% at 0% 0%, color-mix(in oklab, var(--violet) 14%, transparent) 0%, transparent 60%);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 80% at 0% 0%,
+    color-mix(in oklab, var(--violet) 14%, transparent) 0%,
+    transparent 60%
+  );
   opacity: 0.9;
 }
 
@@ -510,18 +659,40 @@
 
 .aurora .indigo-grid {
   background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--cyan) 22%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--violet) 22%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--cyan) 22%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--violet) 22%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 48px 48px;
 }
 
 /* Stronger aurora animation — slower drift + scale for hero backdrops. */
-.aurora .animate-aurora { animation: aurora-drift 22s ease-in-out infinite; }
+.aurora .animate-aurora {
+  animation: aurora-drift 22s ease-in-out infinite;
+}
 @keyframes aurora-drift {
-  0%   { transform: translate3d(0,0,0) scale(1) rotate(0deg); filter: hue-rotate(0deg) saturate(1.2); }
-  33%  { transform: translate3d(-4%, 2%, 0) scale(1.12) rotate(2deg); filter: hue-rotate(15deg) saturate(1.4); }
-  66%  { transform: translate3d(3%, -3%, 0) scale(1.08) rotate(-2deg); filter: hue-rotate(-12deg) saturate(1.35); }
-  100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); filter: hue-rotate(0deg) saturate(1.2); }
+  0% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
+  33% {
+    transform: translate3d(-4%, 2%, 0) scale(1.12) rotate(2deg);
+    filter: hue-rotate(15deg) saturate(1.4);
+  }
+  66% {
+    transform: translate3d(3%, -3%, 0) scale(1.08) rotate(-2deg);
+    filter: hue-rotate(-12deg) saturate(1.35);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
 }
 
 /* Aurora btn-pill — neon gradient fill with shimmer on hover. */
@@ -530,18 +701,28 @@
   background-size: 200% 100%;
   background-position: 0% 50%;
   color: oklch(0.99 0.005 280);
-  box-shadow: 0 6px 24px -8px color-mix(in oklab, var(--violet) 60%, transparent),
-              0 0 0 1px color-mix(in oklab, var(--violet) 30%, transparent) inset;
-  transition: background-position 600ms var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  box-shadow:
+    0 6px 24px -8px color-mix(in oklab, var(--violet) 60%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--violet) 30%, transparent) inset;
+  transition:
+    background-position 600ms var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 .aurora .btn-pill:hover {
   background-position: 100% 50%;
-  box-shadow: 0 10px 30px -8px color-mix(in oklab, var(--magenta) 60%, transparent),
-              0 0 0 1px color-mix(in oklab, var(--magenta) 40%, transparent) inset;
+  box-shadow:
+    0 10px 30px -8px color-mix(in oklab, var(--magenta) 60%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--magenta) 40%, transparent) inset;
 }
 
 .aurora .band-deep-green {
-  background-image: linear-gradient(135deg, var(--violet) 0%, oklch(0.32 0.10 285) 55%, var(--magenta) 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--violet) 0%,
+    oklch(0.32 0.1 285) 55%,
+    var(--magenta) 100%
+  );
   color: oklch(0.99 0.005 280);
 }
 
@@ -556,7 +737,8 @@
 }
 
 /* Subtle animated underline scan for headings under Aurora. */
-.aurora h1, .aurora h2 {
+.aurora h1,
+.aurora h2 {
   text-shadow: 0 0 24px color-mix(in oklab, var(--violet) 18%, transparent);
 }
 
@@ -570,7 +752,8 @@
     border-color: var(--color-border);
   }
 
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -582,9 +765,16 @@
     font-size: 16px;
     letter-spacing: 0;
   }
-  body { min-height: 100vh; }
+  body {
+    min-height: 100vh;
+  }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     /* Fraunces is variable; 400 for body headings, 500 for h2/h1.
      * opsz auto-applies via font-variation-settings so display sizes get
@@ -592,19 +782,41 @@
     font-weight: 500;
     line-height: 1.08;
     letter-spacing: -0.022em;
-    font-variation-settings: "opsz" 96, "SOFT" 30;
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 30;
   }
-  h1 { font-size: clamp(2.25rem, 4vw, 3.75rem); letter-spacing: -0.03em; font-weight: 500; }
-  h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); letter-spacing: -0.025em; font-weight: 500; }
-  h3 { font-size: clamp(1.25rem, 1.6vw, 1.5rem); letter-spacing: -0.018em; font-weight: 500; font-variation-settings: "opsz" 36, "SOFT" 30; }
+  h1 {
+    font-size: clamp(2.25rem, 4vw, 3.75rem);
+    letter-spacing: -0.03em;
+    font-weight: 500;
+  }
+  h2 {
+    font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+    letter-spacing: -0.025em;
+    font-weight: 500;
+  }
+  h3 {
+    font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+    letter-spacing: -0.018em;
+    font-weight: 500;
+    font-variation-settings:
+      "opsz" 36,
+      "SOFT" 30;
+  }
 
   /* Section rhythm — global density nudge. Pages using py-8 / space-y-8 now
    * compress by ~25% without per-route edits. Keeps generous breathing on
    * landing surfaces (which use explicit larger values). */
-  main, [role="main"] { font-feature-settings: "ss01", "cv11", "tnum"; }
+  main,
+  [role="main"] {
+    font-feature-settings: "ss01", "cv11", "tnum";
+  }
 
   /* Tabular numerals everywhere — dashboards, traces, budgets read cleaner. */
-  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 
   /* Focus ring — visible only for keyboard nav, ember glow with halo. */
   :focus-visible {
@@ -621,7 +833,9 @@
 
   /* Inputs / textareas — restore visible hairline so fields don't dissolve
    * into the surface. Critical for accessibility on dark backgrounds. */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     background-color: color-mix(in oklab, var(--surface-1) 100%, transparent);
   }
 
@@ -632,12 +846,15 @@
   [role="button"]:not([aria-disabled="true"]):active {
     transform: scale(0.98);
   }
-  button, a, [role="button"] {
-    transition: transform var(--dur-fast) var(--ease-out),
-                background-color var(--dur-fast) var(--ease-out),
-                color var(--dur-fast) var(--ease-out),
-                border-color var(--dur-fast) var(--ease-out),
-                opacity var(--dur-fast) var(--ease-out);
+  button,
+  a,
+  [role="button"] {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
   }
 
   /* Popovers / dropdowns / tooltips — origin-aware scale-in from trigger.
@@ -650,24 +867,46 @@
 
 /* Accessibility — reduce motion but keep opacity/color for comprehension. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .animate-aurora { animation: none !important; }
+  .animate-aurora {
+    animation: none !important;
+  }
 }
 
 @layer utilities {
-  .hairline { border-color: var(--color-hairline); }
-  .hairline-strong { border-color: var(--hairline-strong); }
-  .text-ink-subtle { color: var(--ink-subtle); }
-  .text-ink-faint { color: var(--ink-faint); }
-  .surface-1 { background-color: var(--surface-1); }
-  .surface-2 { background-color: var(--surface-2); }
-  .surface-3 { background-color: var(--surface-3); }
-  .shadow-glass { box-shadow: var(--shadow-glass); }
-  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .hairline {
+    border-color: var(--color-hairline);
+  }
+  .hairline-strong {
+    border-color: var(--hairline-strong);
+  }
+  .text-ink-subtle {
+    color: var(--ink-subtle);
+  }
+  .text-ink-faint {
+    color: var(--ink-faint);
+  }
+  .surface-1 {
+    background-color: var(--surface-1);
+  }
+  .surface-2 {
+    background-color: var(--surface-2);
+  }
+  .surface-3 {
+    background-color: var(--surface-3);
+  }
+  .shadow-glass {
+    box-shadow: var(--shadow-glass);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
 
   /* === Cohere editorial utilities === */
 
@@ -699,7 +938,9 @@
     border-radius: 32px;
     transition: background-color var(--dur-fast) var(--ease-out);
   }
-  .btn-pill:hover { background-color: oklch(0 0 0); }
+  .btn-pill:hover {
+    background-color: oklch(0 0 0);
+  }
   .btn-pill-outline {
     display: inline-flex;
     align-items: center;
@@ -715,7 +956,9 @@
     border: 1px solid var(--ink);
     transition: background-color var(--dur-fast) var(--ease-out);
   }
-  .btn-pill-outline:hover { background-color: var(--soft-stone); }
+  .btn-pill-outline:hover {
+    background-color: var(--soft-stone);
+  }
 
   /* Deep-green product band — full-width Cohere feature surface. */
   .band-deep-green {
@@ -732,8 +975,12 @@
   }
 
   /* Editorial rule — thin hairline divider for research-table list rows. */
-  .rule-hairline { border-bottom: 1px solid var(--hairline); }
-  .rule-strong { border-bottom: 1px solid var(--hairline-strong); }
+  .rule-hairline {
+    border-bottom: 1px solid var(--hairline);
+  }
+  .rule-strong {
+    border-bottom: 1px solid var(--hairline-strong);
+  }
 
   /* Editorial taxonomy chip — coral outline (inactive) / coral fill (active). */
   .chip-taxonomy {
@@ -747,7 +994,9 @@
     font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 500;
-    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
   }
   .chip-taxonomy[data-active="true"] {
     background-color: var(--coral);
@@ -763,19 +1012,77 @@
     border: 1px solid color-mix(in oklab, currentColor 28%, transparent);
     box-shadow: inset 0 1px 0 color-mix(in oklab, var(--canvas) 42%, transparent);
   }
-  .ambient-weather--sunny { color: var(--coral); background: linear-gradient(90deg, color-mix(in oklab, var(--coral) 20%, transparent), color-mix(in oklab, var(--amber) 12%, transparent)); }
-  .ambient-weather--partly { color: var(--coral); background: linear-gradient(90deg, color-mix(in oklab, var(--coral) 16%, transparent), color-mix(in oklab, var(--action-blue) 10%, transparent)); }
-  .ambient-weather--night { color: var(--action-blue); background: linear-gradient(90deg, color-mix(in oklab, var(--dark-navy) 14%, transparent), color-mix(in oklab, var(--action-blue) 12%, transparent)); }
+  .ambient-weather--sunny {
+    color: var(--coral);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--coral) 20%, transparent),
+      color-mix(in oklab, var(--amber) 12%, transparent)
+    );
+  }
+  .ambient-weather--partly {
+    color: var(--coral);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--coral) 16%, transparent),
+      color-mix(in oklab, var(--action-blue) 10%, transparent)
+    );
+  }
+  .ambient-weather--night {
+    color: var(--action-blue);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--dark-navy) 14%, transparent),
+      color-mix(in oklab, var(--action-blue) 12%, transparent)
+    );
+  }
   .ambient-weather--overcast,
-  .ambient-weather--fog { color: var(--ink-subtle); background: linear-gradient(90deg, color-mix(in oklab, var(--ink-subtle) 12%, transparent), color-mix(in oklab, var(--soft-stone) 55%, transparent)); }
+  .ambient-weather--fog {
+    color: var(--ink-subtle);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ink-subtle) 12%, transparent),
+      color-mix(in oklab, var(--soft-stone) 55%, transparent)
+    );
+  }
   .ambient-weather--rain,
-  .ambient-weather--showers { color: var(--action-blue); background: linear-gradient(90deg, color-mix(in oklab, var(--action-blue) 20%, transparent), color-mix(in oklab, var(--pale-blue) 80%, transparent)); }
+  .ambient-weather--showers {
+    color: var(--action-blue);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--action-blue) 20%, transparent),
+      color-mix(in oklab, var(--pale-blue) 80%, transparent)
+    );
+  }
   .ambient-weather--snow,
-  .ambient-weather--freezing { color: var(--cyan); background: linear-gradient(90deg, color-mix(in oklab, var(--cyan) 14%, transparent), color-mix(in oklab, var(--pale-blue) 90%, transparent)); }
-  .ambient-weather--storm { color: var(--violet); background: linear-gradient(90deg, color-mix(in oklab, var(--violet) 18%, transparent), color-mix(in oklab, var(--coral) 10%, transparent)); }
-  .ambient-weather--hot { color: var(--coral); background: linear-gradient(90deg, color-mix(in oklab, var(--coral) 24%, transparent), color-mix(in oklab, var(--amber) 16%, transparent)); }
-  .ambient-weather--neutral { color: var(--muted-foreground); background: color-mix(in oklab, var(--accent) 70%, transparent); }
-
+  .ambient-weather--freezing {
+    color: var(--cyan);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--cyan) 14%, transparent),
+      color-mix(in oklab, var(--pale-blue) 90%, transparent)
+    );
+  }
+  .ambient-weather--storm {
+    color: var(--violet);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--violet) 18%, transparent),
+      color-mix(in oklab, var(--coral) 10%, transparent)
+    );
+  }
+  .ambient-weather--hot {
+    color: var(--coral);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--coral) 24%, transparent),
+      color-mix(in oklab, var(--amber) 16%, transparent)
+    );
+  }
+  .ambient-weather--neutral {
+    color: var(--muted-foreground);
+    background: color-mix(in oklab, var(--accent) 70%, transparent);
+  }
 
   /* Action link — editorial blue with underline-on-hover. */
   .link-action {
@@ -792,9 +1099,22 @@
   .hero-editorial {
     background-color: oklch(0.18 0.018 265);
     background-image:
-      radial-gradient(70% 90% at 92% 8%,  color-mix(in oklab, var(--coral) 38%, transparent) 0%, transparent 55%),
-      radial-gradient(60% 75% at 4% 96%,  color-mix(in oklab, var(--soft-stone) 22%, transparent) 0%, transparent 60%),
-      linear-gradient(135deg, oklch(0.19 0.022 270) 0%, oklch(0.15 0.018 260) 60%, oklch(0.12 0.02 255) 100%);
+      radial-gradient(
+        70% 90% at 92% 8%,
+        color-mix(in oklab, var(--coral) 38%, transparent) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        60% 75% at 4% 96%,
+        color-mix(in oklab, var(--soft-stone) 22%, transparent) 0%,
+        transparent 60%
+      ),
+      linear-gradient(
+        135deg,
+        oklch(0.19 0.022 270) 0%,
+        oklch(0.15 0.018 260) 60%,
+        oklch(0.12 0.02 255) 100%
+      );
     color: var(--canvas);
     border: 1px solid color-mix(in oklab, var(--coral) 14%, transparent);
     box-shadow:
@@ -802,32 +1122,58 @@
       0 20px 60px -30px color-mix(in oklab, var(--coral) 35%, oklch(0 0 0));
   }
   .hero-editorial::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      radial-gradient(color-mix(in oklab, var(--canvas) 7%, transparent) 1px, transparent 1px);
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--canvas) 7%, transparent) 1px,
+      transparent 1px
+    );
     background-size: 3px 3px;
     mix-blend-mode: overlay;
     opacity: 0.35;
   }
   .hero-editorial h1 {
-    font-variation-settings: "opsz" 144, "SOFT" 50;
+    font-variation-settings:
+      "opsz" 144,
+      "SOFT" 50;
     font-weight: 400;
   }
-  .hero-editorial h1 em { font-style: italic; font-weight: 300; }
+  .hero-editorial h1 em {
+    font-style: italic;
+    font-weight: 300;
+  }
 
   /* Dark + Aurora override hero — keep theme-native palette. */
   .dark .hero-editorial {
     background-color: var(--surface-2);
     background-image:
-      radial-gradient(70% 90% at 88% 10%, color-mix(in oklab, var(--violet) 55%, transparent) 0%, transparent 55%),
-      radial-gradient(60% 75% at 8% 92%, color-mix(in oklab, var(--cyan) 28%, transparent) 0%, transparent 60%),
+      radial-gradient(
+        70% 90% at 88% 10%,
+        color-mix(in oklab, var(--violet) 55%, transparent) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        60% 75% at 8% 92%,
+        color-mix(in oklab, var(--cyan) 28%, transparent) 0%,
+        transparent 60%
+      ),
       linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
     border-color: color-mix(in oklab, var(--violet) 22%, var(--hairline));
   }
   .aurora .hero-editorial {
     background-image:
-      radial-gradient(70% 90% at 88% 10%, color-mix(in oklab, var(--magenta) 60%, transparent) 0%, transparent 55%),
-      radial-gradient(60% 75% at 8% 92%, color-mix(in oklab, var(--cyan) 50%, transparent) 0%, transparent 60%),
+      radial-gradient(
+        70% 90% at 88% 10%,
+        color-mix(in oklab, var(--magenta) 60%, transparent) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        60% 75% at 8% 92%,
+        color-mix(in oklab, var(--cyan) 50%, transparent) 0%,
+        transparent 60%
+      ),
       linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
     border-color: color-mix(in oklab, var(--violet) 35%, var(--hairline));
   }
@@ -846,22 +1192,44 @@
     border: 1px solid var(--hairline);
     backdrop-filter: saturate(120%) blur(12px);
   }
-  .text-balance { text-wrap: balance; }
+  .text-balance {
+    text-wrap: balance;
+  }
 
   /* Neutralized — was a saturated dark hero gradient; now a soft
    * pale-green / pale-blue wash for light editorial surfaces. */
   .neural-gradient {
-    background: radial-gradient(60% 70% at 20% 30%, color-mix(in oklab, var(--pale-green) 100%, transparent) 0%, transparent 70%),
-                radial-gradient(50% 60% at 80% 25%, color-mix(in oklab, var(--pale-blue) 100%, transparent) 0%, transparent 70%),
-                radial-gradient(45% 55% at 60% 90%, color-mix(in oklab, var(--soft-stone) 100%, transparent) 0%, transparent 70%);
+    background:
+      radial-gradient(
+        60% 70% at 20% 30%,
+        color-mix(in oklab, var(--pale-green) 100%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 60% at 80% 25%,
+        color-mix(in oklab, var(--pale-blue) 100%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        45% 55% at 60% 90%,
+        color-mix(in oklab, var(--soft-stone) 100%, transparent) 0%,
+        transparent 70%
+      );
   }
   .neural-text {
-    background: linear-gradient(110deg, var(--primary-ink) 0%, var(--deep-green) 60%, var(--action-blue) 100%);
+    background: linear-gradient(
+      110deg,
+      var(--primary-ink) 0%,
+      var(--deep-green) 60%,
+      var(--action-blue) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .ring-glow-violet { box-shadow: 0 0 0 1px var(--hairline); }
+  .ring-glow-violet {
+    box-shadow: 0 0 0 1px var(--hairline);
+  }
 
   /* Agentic action button — used for AI-initiated actions (cluster, plan,
    * generate, run agent…). Distinct from a plain primary button: deep
@@ -871,18 +1239,20 @@
     position: relative;
     isolation: isolate;
     color: var(--canvas);
-    background:
-      linear-gradient(135deg,
-        var(--deep-green) 0%,
-        var(--primary-ink) 55%,
-        var(--action-blue) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--deep-green) 0%,
+      var(--primary-ink) 55%,
+      var(--action-blue) 100%
+    );
     box-shadow:
       0 1px 0 0 color-mix(in oklab, white 12%, transparent) inset,
       0 8px 24px -10px color-mix(in oklab, var(--action-blue) 55%, transparent),
       0 2px 6px -2px color-mix(in oklab, var(--primary-ink) 40%, transparent);
-    transition: transform var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-base) var(--ease-out),
-                filter var(--dur-base) var(--ease-out);
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      filter var(--dur-base) var(--ease-out);
   }
   .btn-agentic::before {
     content: "";
@@ -890,15 +1260,17 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg,
+    background: linear-gradient(
+      135deg,
       color-mix(in oklab, white 35%, transparent) 0%,
       transparent 40%,
-      color-mix(in oklab, var(--action-blue) 55%, transparent) 100%);
+      color-mix(in oklab, var(--action-blue) 55%, transparent) 100%
+    );
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
-            mask-composite: exclude;
+    mask-composite: exclude;
     pointer-events: none;
     z-index: 1;
   }
@@ -907,16 +1279,21 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(115deg,
+    background: linear-gradient(
+      115deg,
       transparent 30%,
       color-mix(in oklab, white 22%, transparent) 50%,
-      transparent 70%);
+      transparent 70%
+    );
     transform: translateX(-100%);
     transition: transform 700ms var(--ease-out);
     pointer-events: none;
     z-index: 0;
   }
-  .btn-agentic > * { position: relative; z-index: 2; }
+  .btn-agentic > * {
+    position: relative;
+    z-index: 2;
+  }
   .btn-agentic:hover:not(:disabled) {
     filter: brightness(1.05);
     box-shadow:
@@ -924,14 +1301,23 @@
       0 12px 32px -10px color-mix(in oklab, var(--action-blue) 70%, transparent),
       0 3px 10px -2px color-mix(in oklab, var(--primary-ink) 50%, transparent);
   }
-  .btn-agentic:hover:not(:disabled)::after { transform: translateX(100%); }
-  .btn-agentic:active:not(:disabled) { transform: translateY(1px); }
-  .btn-agentic:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-agentic:hover:not(:disabled)::after {
+    transform: translateX(100%);
+  }
+  .btn-agentic:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn-agentic:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
   .dark .btn-agentic {
-    background: linear-gradient(135deg,
+    background: linear-gradient(
+      135deg,
       color-mix(in oklab, var(--violet) 85%, black) 0%,
       color-mix(in oklab, var(--violet) 60%, var(--cyan) 40%) 55%,
-      var(--cyan) 100%);
+      var(--cyan) 100%
+    );
     box-shadow:
       0 1px 0 0 color-mix(in oklab, white 18%, transparent) inset,
       0 10px 30px -8px color-mix(in oklab, var(--violet) 60%, transparent),
@@ -940,52 +1326,100 @@
 
   .indigo-grid {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px);
+      linear-gradient(
+        to right,
+        color-mix(in oklab, var(--ink) 5%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--ink) 5%, transparent) 1px,
+        transparent 1px
+      );
     background-size: 64px 64px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 80%);
   }
 
   .grain::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   /* Aurora animation for hero */
   @keyframes aurora {
-    0%   { transform: translate3d(0,0,0) scale(1); }
-    50%  { transform: translate3d(-2%, 1%, 0) scale(1.03); }
-    100% { transform: translate3d(0,0,0) scale(1); }
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(-2%, 1%, 0) scale(1.03);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
   }
-  .animate-aurora { animation: aurora 24s ease-in-out infinite; }
+  .animate-aurora {
+    animation: aurora 24s ease-in-out infinite;
+  }
 
   /* Stagger entrance — apply data-stagger-index to children of a list.
    * Uses @starting-style with a tiny translate + opacity for natural feel.
    * Never starts from scale(0): nothing in the real world appears from nothing. */
   @keyframes cadence-rise {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0);  }
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .stagger-rise > * {
     animation: cadence-rise 320ms var(--ease-out) both;
   }
-  .stagger-rise > *:nth-child(1)  { animation-delay: 0ms; }
-  .stagger-rise > *:nth-child(2)  { animation-delay: 24ms; }
-  .stagger-rise > *:nth-child(3)  { animation-delay: 48ms; }
-  .stagger-rise > *:nth-child(4)  { animation-delay: 72ms; }
-  .stagger-rise > *:nth-child(5)  { animation-delay: 96ms; }
-  .stagger-rise > *:nth-child(6)  { animation-delay: 120ms; }
-  .stagger-rise > *:nth-child(7)  { animation-delay: 144ms; }
-  .stagger-rise > *:nth-child(8)  { animation-delay: 168ms; }
-  .stagger-rise > *:nth-child(9)  { animation-delay: 192ms; }
-  .stagger-rise > *:nth-child(10) { animation-delay: 216ms; }
-  .stagger-rise > *:nth-child(n+11) { animation-delay: 240ms; }
+  .stagger-rise > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-rise > *:nth-child(2) {
+    animation-delay: 24ms;
+  }
+  .stagger-rise > *:nth-child(3) {
+    animation-delay: 48ms;
+  }
+  .stagger-rise > *:nth-child(4) {
+    animation-delay: 72ms;
+  }
+  .stagger-rise > *:nth-child(5) {
+    animation-delay: 96ms;
+  }
+  .stagger-rise > *:nth-child(6) {
+    animation-delay: 120ms;
+  }
+  .stagger-rise > *:nth-child(7) {
+    animation-delay: 144ms;
+  }
+  .stagger-rise > *:nth-child(8) {
+    animation-delay: 168ms;
+  }
+  .stagger-rise > *:nth-child(9) {
+    animation-delay: 192ms;
+  }
+  .stagger-rise > *:nth-child(10) {
+    animation-delay: 216ms;
+  }
+  .stagger-rise > *:nth-child(n + 11) {
+    animation-delay: 240ms;
+  }
 
   /* Hover-lift — only on hover-capable pointers (no false touch positives). */
   @media (hover: hover) and (pointer: fine) {
     .hover-lift {
-      transition: transform var(--dur-base) var(--ease-out),
-                  box-shadow var(--dur-base) var(--ease-out),
-                  border-color var(--dur-base) var(--ease-out);
+      transition:
+        transform var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out),
+        border-color var(--dur-base) var(--ease-out);
     }
     .hover-lift:hover {
       transform: translateY(-2px);
@@ -995,15 +1429,30 @@
   }
 
   /* Scrollbar polish */
-  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--ink) 12%, transparent); border-radius: 999px; }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--ink) 12%, transparent);
+    border-radius: 999px;
+  }
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
-.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
 
 /* ==========================================================================
  * Aurora polish — typography rhythm, form controls, alignment.
@@ -1012,7 +1461,8 @@
 
 /* Body — slightly larger, looser line-height for breathing room on the
  * darker canvas. Tabular numerals everywhere for dashboard readability. */
-.aurora, .aurora body {
+.aurora,
+.aurora body {
   font-size: 15px;
   line-height: 1.6;
   letter-spacing: -0.005em;
@@ -1021,7 +1471,12 @@
 
 /* Display headings — geometric, tightly tracked, with a soft neon wash on
  * the largest sizes. Weight ramps with size so h1 feels heroic, h3 clean. */
-.aurora h1, .aurora h2, .aurora h3, .aurora h4, .aurora h5, .aurora h6 {
+.aurora h1,
+.aurora h2,
+.aurora h3,
+.aurora h4,
+.aurora h5,
+.aurora h6 {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.12;
@@ -1045,8 +1500,17 @@
   letter-spacing: -0.022em;
   text-shadow: none;
 }
-.aurora h4 { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.018em; }
-.aurora h5, .aurora h6 { font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.012em; }
+.aurora h4 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+.aurora h5,
+.aurora h6 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
 
 /* Mono labels — brighter under aurora, slightly tighter tracking. */
 .aurora .mono-label {
@@ -1070,16 +1534,21 @@
   font-size: 14px;
   line-height: 1.4;
   padding: 10px 14px;
-  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 4%),
-              inset 0 0 0 1px transparent;
-  transition: border-color var(--dur-fast) var(--ease-out),
-              box-shadow var(--dur-base) var(--ease-out),
-              background-color var(--dur-fast) var(--ease-out);
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 4%),
+    inset 0 0 0 1px transparent;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
 }
 .aurora input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
   height: 40px;
 }
-.aurora textarea { min-height: 96px; line-height: 1.55; }
+.aurora textarea {
+  min-height: 96px;
+  line-height: 1.55;
+}
 
 .aurora input::placeholder,
 .aurora textarea::placeholder {
@@ -1153,13 +1622,20 @@
 }
 
 /* Cards / bento — tighter inner padding rhythm, gradient hairline on hover. */
-.aurora .bento { padding: 1rem; }
-@media (min-width: 768px) { .aurora .bento { padding: 1.25rem; } }
+.aurora .bento {
+  padding: 1rem;
+}
+@media (min-width: 768px) {
+  .aurora .bento {
+    padding: 1.25rem;
+  }
+}
 
 @media (hover: hover) and (pointer: fine) {
   .aurora .hover-lift:hover {
-    box-shadow: 0 14px 38px -14px color-mix(in oklab, var(--violet) 55%, transparent),
-                0 0 40px -10px color-mix(in oklab, var(--magenta) 35%, transparent);
+    box-shadow:
+      0 14px 38px -14px color-mix(in oklab, var(--violet) 55%, transparent),
+      0 0 40px -10px color-mix(in oklab, var(--magenta) 35%, transparent);
     border-color: color-mix(in oklab, var(--violet) 55%, var(--hairline-strong));
   }
 }
@@ -1187,7 +1663,9 @@
   color: var(--cyan);
   text-decoration-color: color-mix(in oklab, var(--cyan) 55%, transparent);
   text-underline-offset: 4px;
-  transition: color var(--dur-fast) var(--ease-out), text-decoration-color var(--dur-fast) var(--ease-out);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    text-decoration-color var(--dur-fast) var(--ease-out);
 }
 .aurora .link-action:hover,
 .aurora a.underline:hover {
@@ -1196,7 +1674,10 @@
 }
 
 /* Scrollbar — thinner + neon-glow thumb. */
-.aurora .scrollbar-thin::-webkit-scrollbar { width: 10px; height: 10px; }
+.aurora .scrollbar-thin::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
 .aurora .scrollbar-thin::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, var(--violet), var(--magenta));
   border-radius: 999px;
@@ -1231,48 +1712,48 @@
  * so we only retune the 200/300/400 text shades — not the 500 fills. */
 html:not(.dark):not(.aurora) {
   /* Amber / Yellow — warnings, queued states */
-  --color-amber-200:   oklch(0.58 0.13 72);
-  --color-amber-300:   oklch(0.54 0.14 70);
-  --color-amber-400:   oklch(0.50 0.14 68);
-  --color-yellow-200:  oklch(0.58 0.13 90);
-  --color-yellow-300:  oklch(0.54 0.14 88);
-  --color-yellow-400:  oklch(0.50 0.14 86);
+  --color-amber-200: oklch(0.58 0.13 72);
+  --color-amber-300: oklch(0.54 0.14 70);
+  --color-amber-400: oklch(0.5 0.14 68);
+  --color-yellow-200: oklch(0.58 0.13 90);
+  --color-yellow-300: oklch(0.54 0.14 88);
+  --color-yellow-400: oklch(0.5 0.14 86);
 
   /* Emerald / Lime / Teal — success, completed */
   --color-emerald-200: oklch(0.52 0.13 158);
   --color-emerald-300: oklch(0.48 0.14 156);
   --color-emerald-400: oklch(0.46 0.14 154);
-  --color-lime-200:    oklch(0.52 0.14 140);
-  --color-lime-300:    oklch(0.48 0.15 138);
-  --color-lime-400:    oklch(0.46 0.15 136);
-  --color-teal-200:    oklch(0.52 0.10 190);
-  --color-teal-300:    oklch(0.48 0.11 188);
-  --color-teal-400:    oklch(0.46 0.11 186);
+  --color-lime-200: oklch(0.52 0.14 140);
+  --color-lime-300: oklch(0.48 0.15 138);
+  --color-lime-400: oklch(0.46 0.15 136);
+  --color-teal-200: oklch(0.52 0.1 190);
+  --color-teal-300: oklch(0.48 0.11 188);
+  --color-teal-400: oklch(0.46 0.11 186);
 
   /* Cyan / Sky — in-flight, info */
-  --color-cyan-200:    oklch(0.52 0.11 220);
-  --color-cyan-300:    oklch(0.48 0.12 222);
-  --color-cyan-400:    oklch(0.46 0.13 224);
-  --color-sky-200:     oklch(0.52 0.13 240);
-  --color-sky-300:     oklch(0.48 0.14 242);
-  --color-sky-400:     oklch(0.46 0.15 244);
+  --color-cyan-200: oklch(0.52 0.11 220);
+  --color-cyan-300: oklch(0.48 0.12 222);
+  --color-cyan-400: oklch(0.46 0.13 224);
+  --color-sky-200: oklch(0.52 0.13 240);
+  --color-sky-300: oklch(0.48 0.14 242);
+  --color-sky-400: oklch(0.46 0.15 244);
 
   /* Rose / Pink / Fuchsia — errors, halted, blocked */
-  --color-rose-200:    oklch(0.55 0.17 22);
-  --color-rose-300:    oklch(0.50 0.18 20);
-  --color-rose-400:    oklch(0.48 0.20 20);
-  --color-pink-200:    oklch(0.55 0.16 0);
-  --color-pink-300:    oklch(0.50 0.18 0);
-  --color-pink-400:    oklch(0.48 0.20 0);
-  --color-fuchsia-200: oklch(0.52 0.20 330);
+  --color-rose-200: oklch(0.55 0.17 22);
+  --color-rose-300: oklch(0.5 0.18 20);
+  --color-rose-400: oklch(0.48 0.2 20);
+  --color-pink-200: oklch(0.55 0.16 0);
+  --color-pink-300: oklch(0.5 0.18 0);
+  --color-pink-400: oklch(0.48 0.2 0);
+  --color-fuchsia-200: oklch(0.52 0.2 330);
   --color-fuchsia-300: oklch(0.48 0.22 328);
   --color-fuchsia-400: oklch(0.46 0.23 326);
 
   /* Violet / Indigo — deep-work, intel, agent chips */
-  --color-violet-200:  oklch(0.50 0.18 295);
-  --color-violet-300:  oklch(0.46 0.20 293);
-  --color-violet-400:  oklch(0.44 0.21 291);
-  --color-indigo-200:  oklch(0.50 0.17 268);
-  --color-indigo-300:  oklch(0.46 0.18 266);
-  --color-indigo-400:  oklch(0.44 0.19 264);
+  --color-violet-200: oklch(0.5 0.18 295);
+  --color-violet-300: oklch(0.46 0.2 293);
+  --color-violet-400: oklch(0.44 0.21 291);
+  --color-indigo-200: oklch(0.5 0.17 268);
+  --color-indigo-300: oklch(0.46 0.18 266);
+  --color-indigo-400: oklch(0.44 0.19 264);
 }

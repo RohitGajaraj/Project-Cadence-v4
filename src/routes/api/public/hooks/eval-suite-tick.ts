@@ -26,7 +26,10 @@ export const Route = createFileRoute("/api/public/hooks/eval-suite-tick")({
           .or(`last_run_at.is.null,last_run_at.lt.${cutoff}`)
           .limit(20);
         if (error) {
-          return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ ok: false, error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const results: Array<{ suite_id: string; ok: boolean; error?: string }> = [];
@@ -35,7 +38,11 @@ export const Route = createFileRoute("/api/public/hooks/eval-suite-tick")({
             await runEvalSuite(supabaseAdmin, s.user_id, s.id, "scheduled");
             results.push({ suite_id: s.id, ok: true });
           } catch (e: unknown) {
-            results.push({ suite_id: s.id, ok: false, error: e instanceof Error ? e.message : String(e) });
+            results.push({
+              suite_id: s.id,
+              ok: false,
+              error: e instanceof Error ? e.message : String(e),
+            });
           }
         }
 

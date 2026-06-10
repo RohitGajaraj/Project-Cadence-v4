@@ -1,16 +1,19 @@
-## ## A very explicit and strict instruction: even before reading this, The below data inputs are the research that I have done through an agent. I know that it is not extensive or could be helpful, but I'm attaching all the dump of data that I've got through. I want you to take a look at it at a very high level. I don't want you to go through every hyperlink here. Do your own research and spend some time and tokens on that part. ## Strict Note to agents/ AI whoever is seeing it: This is just for references. Whatever is necessary, please decide on your hand and do it, but I don't want it to have a detailed planning stage and researching and spending time and sitting on this and burning our tokens here. I don't want to do that. 
-Just a small caveat: the below research is purely from a guy called Akash Gupta, who runs the product growth and has his presence on LinkedIn, YouTube (for several podcasts) and Twitter. He majorly focuses on EIA product management, bringing the right stakeholders from this domain and speaking to them, positioning, and also he has his business around this. Below information, just consider it from a reference point. It should not be a sole decision maker, and you shouldn't be influenced by it. Whatever is the right information and market trends and whatever he is calling out, please pick out from that, but it should not be just derived based out of this whole agenda thesis on Akash Gupta. 
+## ## A very explicit and strict instruction: even before reading this, The below data inputs are the research that I have done through an agent. I know that it is not extensive or could be helpful, but I'm attaching all the dump of data that I've got through. I want you to take a look at it at a very high level. I don't want you to go through every hyperlink here. Do your own research and spend some time and tokens on that part. ## Strict Note to agents/ AI whoever is seeing it: This is just for references. Whatever is necessary, please decide on your hand and do it, but I don't want it to have a detailed planning stage and researching and spending time and sitting on this and burning our tokens here. I don't want to do that.
+
+Just a small caveat: the below research is purely from a guy called Akash Gupta, who runs the product growth and has his presence on LinkedIn, YouTube (for several podcasts) and Twitter. He majorly focuses on EIA product management, bringing the right stakeholders from this domain and speaking to them, positioning, and also he has his business around this. Below information, just consider it from a reference point. It should not be a sole decision maker, and you shouldn't be influenced by it. Whatever is the right information and market trends and whatever he is calling out, please pick out from that, but it should not be just derived based out of this whole agenda thesis on Akash Gupta.
 
 Please consider the below sources only if it helps you; however, I don't want your decision and references to be called out of this. This is just an idea; what we can do is what I thought about, but this is not the main decision which you need to lean on.
 
-Pick the keywords, trends by titles, or all that sort of thing from below if it helps, but I don't want to lean from this thing. Obviously it's speaking more about him rather than the industry or the product management metrics about him, which you can completely ignore. 
+Pick the keywords, trends by titles, or all that sort of thing from below if it helps, but I don't want to lean from this thing. Obviously it's speaking more about him rather than the industry or the product management metrics about him, which you can completely ignore.
 
 ---
+
 Source 1: https://hyperagent.com/s/C8Q0j2TSaGGX1YFJyT1ovA - [Aakash Gupta — Content Catalogue & Pattern Analysis (Jun 2025–May 2026)](https://hyperagent.com/s/C8Q0j2TSaGGX1YFJyT1ovA)
 
-Source 2: 
+Source 2:
 
 ---
+
 title: "Aakash Gupta PM-Content Intelligence → Build Brief"
 subtitle: "What the market is signaling, and what we should build"
 window: "2025-06-01 to 2026-05-29"
@@ -19,6 +22,7 @@ dataset: "225 unique de-duplicated threads across newsletter, podcast, X/Notes, 
 audience_reach: "LinkedIn ~311K · X ~255K · Newsletter ~215K · YouTube 41K"
 confidence: "High on topic mix & patterns (newsletter ≈ complete); Medium on engagement ranking (per-post metrics largely bot-walled)"
 doc_purpose: "Agent-readable intelligence + build recommendation. Read top-to-bottom; Sections 0, 6, 7 are the decision core."
+
 ---
 
 # Aakash Gupta PM-Content Intelligence → Build Brief
@@ -35,7 +39,7 @@ doc_purpose: "Agent-readable intelligence + build recommendation. Read top-to-bo
 - **T4.** The **demand is for doing, not theory** — tactical, tool-specific, "do-it-today" enablement (Claude Code, Bolt/Lovable/v0, evals, agents), packaged as "Complete Guide + named framework."
 - **T5.** His **distribution is a repurposing flywheel**: one idea → newsletter → LinkedIn → X/Note → podcast → YouTube within days. (278 raw items collapsed to 225 unique after cross-surface de-dupe.)
 - **T6. Whitespace he has vacated:** classic **growth/PLG, metrics rigor, discovery/research craft**, and **depth/practice over breadth/content**. This is the strategic opening.
-- **BUILD THESIS (T7):** Build an **AI-PM enablement agent that operationalizes the work he only describes** — eval-first, prototype-first, with real feedback loops — entering through the highest-anxiety wedge (interview/skills practice) and expanding into on-the-job PM workflows. Don't compete with his content; productize the *doing* of it.
+- **BUILD THESIS (T7):** Build an **AI-PM enablement agent that operationalizes the work he only describes** — eval-first, prototype-first, with real feedback loops — entering through the highest-anxiety wedge (interview/skills practice) and expanding into on-the-job PM workflows. Don't compete with his content; productize the _doing_ of it.
 
 ---
 
@@ -49,33 +53,33 @@ Scope: June 2025 – May 2026. Sources: Product Growth newsletter (157 posts, �
 
 ## 2. Subject Snapshot
 
-| Attribute | Value |
-|---|---|
-| Identity | Aakash Gupta — ex-PM leader (Apollo, Affirm, Epic Games), now full-time creator |
-| Flagship | "Product Growth" newsletter (Substack), ~215K subscribers |
-| Channels | LinkedIn (~311K), X @aakashgupta (~255K), Product Growth Podcast, YouTube @growproduct (41K) |
-| Cadence | ~3 newsletter posts/week · ~1–2 podcast episodes/week · near-daily LinkedIn |
-| Posture | Prolific, tactical, generous-with-free-resources, authority-borrowing via guests |
+| Attribute | Value                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------- |
+| Identity  | Aakash Gupta — ex-PM leader (Apollo, Affirm, Epic Games), now full-time creator              |
+| Flagship  | "Product Growth" newsletter (Substack), ~215K subscribers                                    |
+| Channels  | LinkedIn (~311K), X @aakashgupta (~255K), Product Growth Podcast, YouTube @growproduct (41K) |
+| Cadence   | ~3 newsletter posts/week · ~1–2 podcast episodes/week · near-daily LinkedIn                  |
+| Posture   | Prolific, tactical, generous-with-free-resources, authority-borrowing via guests             |
 
 ---
 
 ## 3. Topic Map — What He Publishes (with counts)
 
-| Rank | Topic cluster | Threads | AI-native? |
-|---|---|---|---|
-| 1 | PM Interviews & Prep | 42 | Mostly (AI-reskinned) |
-| 2 | AI Tooling & Workflows for PMs | 37 | Yes |
-| 3 | AI Evals & Observability | 24 | Yes |
-| 3 | AI Prototyping & Design | 24 | Yes |
-| 5 | PM Career, Job Search & Comp | 23 | Mostly (AI-reskinned) |
-| 6 | AI Agents (Building & Distribution) | 22 | Yes |
-| 7 | Weekly "AI Update" News Series | 14 | Yes |
-| 7 | AI Product Strategy, PRDs, Roadmaps & Discovery | 14 | Yes |
-| 9 | Builder PM & Creator / Solo Business | 12 | Yes |
-| 10 | PM Craft, Fundamentals & Legends | 6 | Partial |
-| 11 | AI in PM — General / Other | 4 | Yes |
-| 12 | Growth, Pricing & Metrics | 3 | Partial |
-| | **Total** | **225** | |
+| Rank | Topic cluster                                   | Threads | AI-native?            |
+| ---- | ----------------------------------------------- | ------- | --------------------- |
+| 1    | PM Interviews & Prep                            | 42      | Mostly (AI-reskinned) |
+| 2    | AI Tooling & Workflows for PMs                  | 37      | Yes                   |
+| 3    | AI Evals & Observability                        | 24      | Yes                   |
+| 3    | AI Prototyping & Design                         | 24      | Yes                   |
+| 5    | PM Career, Job Search & Comp                    | 23      | Mostly (AI-reskinned) |
+| 6    | AI Agents (Building & Distribution)             | 22      | Yes                   |
+| 7    | Weekly "AI Update" News Series                  | 14      | Yes                   |
+| 7    | AI Product Strategy, PRDs, Roadmaps & Discovery | 14      | Yes                   |
+| 9    | Builder PM & Creator / Solo Business            | 12      | Yes                   |
+| 10   | PM Craft, Fundamentals & Legends                | 6       | Partial               |
+| 11   | AI in PM — General / Other                      | 4       | Yes                   |
+| 12   | Growth, Pricing & Metrics                       | 3       | Partial               |
+|      | **Total**                                       | **225** |                       |
 
 **Interpretation:** The top 9 clusters are AI-native or AI-reskinned and account for **~95% of output**. The two "classic PM" clusters (Craft/Legends 6, Growth/Metrics 3) are now a rounding error — a deliberate, market-following pivot.
 
@@ -85,12 +89,12 @@ Scope: June 2025 – May 2026. Sources: Product Growth newsletter (157 posts, �
 
 These are the recurring messages, framed as what the audience is buying:
 
-1. **"Evals are the new PRD."** Eval literacy is positioned as THE defining AI-PM skill (repeat experts: Hamel Husain & Shreya Shankar, Ankur Goyal/Braintrust, Aparna Dhinakaran/Arize). → *Demand: teach/operationalize evals.*
-2. **"The spec moved" / prototype-first.** Build the prototype, then write the spec as a decision record. → *Demand: prototyping speed + judgment.*
-3. **"Taste at speed is the new moat."** When building ≈ free, fast high-quality judgment is the scarce asset. → *Demand: structured judgment/feedback.*
-4. **"Builder PM."** PMs should build in the real codebase (Claude Code, Codex) and ship PRs. → *Demand: hands-on building capability for non-engineers.*
-5. **"Agents are a new distribution channel" (API + CLI + MCP).** Roadmaps must serve agent users, not just humans. → *Demand: agent-readiness know-how.*
-6. **Career arbitrage.** AI-PM roles pay $300K–$1M; <5% of senior PMs have shipped an agent; "12-month window." → *Demand (highest-engagement): get hired / get promoted in AI.*
+1. **"Evals are the new PRD."** Eval literacy is positioned as THE defining AI-PM skill (repeat experts: Hamel Husain & Shreya Shankar, Ankur Goyal/Braintrust, Aparna Dhinakaran/Arize). → _Demand: teach/operationalize evals._
+2. **"The spec moved" / prototype-first.** Build the prototype, then write the spec as a decision record. → _Demand: prototyping speed + judgment._
+3. **"Taste at speed is the new moat."** When building ≈ free, fast high-quality judgment is the scarce asset. → _Demand: structured judgment/feedback._
+4. **"Builder PM."** PMs should build in the real codebase (Claude Code, Codex) and ship PRs. → _Demand: hands-on building capability for non-engineers._
+5. **"Agents are a new distribution channel" (API + CLI + MCP).** Roadmaps must serve agent users, not just humans. → _Demand: agent-readiness know-how._
+6. **Career arbitrage.** AI-PM roles pay $300K–$1M; <5% of senior PMs have shipped an agent; "12-month window." → _Demand (highest-engagement): get hired / get promoted in AI._
 
 ---
 
@@ -103,60 +107,67 @@ These are the recurring messages, framed as what the audience is buying:
 - **Receipts & contrarian hooks:** big numbers (100K lines of code, 120 features/90 days, 4M survey responses) and declaratives ("AI killed the 10-page PRD").
 - **Repurposing flywheel:** newsletter → LinkedIn → X/Note → podcast → YouTube, within days.
 
-**Lesson for us:** distribution is a *system*, not posts. Any build should ship with a framework-as-IP and a free-tool wedge, and assume multi-surface repurposing.
+**Lesson for us:** distribution is a _system_, not posts. Any build should ship with a framework-as-IP and a free-tool wedge, and assume multi-surface repurposing.
 
 ---
 
 ## 6. Whitespace & Saturation Analysis (the strategic core)
 
-| Lane | State | Implication for us |
-|---|---|---|
-| AI tooling guides / tool bakeoffs | **Saturated** (he + many others) | Avoid head-on; commoditizing fast |
-| "Learn AI PM" content / courses | **Saturated** | Crowded; hard to differentiate on content alone |
-| Interview/career *content* | **Saturated** | But the *doing* (practice w/ real feedback) is under-served |
-| **Evals & prototyping — operationalized** | **Talked about, not productized** | **Open:** turn the #1 thesis into a *doing* tool |
-| **Classic growth/PLG, pricing, metrics rigor** | **Vacated** (3/225) | Open lane if your audience still needs it |
-| **Discovery / user-research craft** | **Thin** | Open; AI-augmented discovery under-built |
-| **Depth / practice / community** vs. one-to-many content | **Under-served** | Open: cohorts, simulators, feedback loops |
-| **Engagement data on what actually resonates** | **Opaque** (metrics bot-walled) | Whoever measures demand precisely has an edge |
+| Lane                                                     | State                             | Implication for us                                          |
+| -------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
+| AI tooling guides / tool bakeoffs                        | **Saturated** (he + many others)  | Avoid head-on; commoditizing fast                           |
+| "Learn AI PM" content / courses                          | **Saturated**                     | Crowded; hard to differentiate on content alone             |
+| Interview/career _content_                               | **Saturated**                     | But the _doing_ (practice w/ real feedback) is under-served |
+| **Evals & prototyping — operationalized**                | **Talked about, not productized** | **Open:** turn the #1 thesis into a _doing_ tool            |
+| **Classic growth/PLG, pricing, metrics rigor**           | **Vacated** (3/225)               | Open lane if your audience still needs it                   |
+| **Discovery / user-research craft**                      | **Thin**                          | Open; AI-augmented discovery under-built                    |
+| **Depth / practice / community** vs. one-to-many content | **Under-served**                  | Open: cohorts, simulators, feedback loops                   |
+| **Engagement data on what actually resonates**           | **Opaque** (metrics bot-walled)   | Whoever measures demand precisely has an edge               |
 
-**Synthesis:** The loudest demand (AI enablement, career) is also the most saturated *as content*. The leverage is to **productize the doing** — especially **evals + prototyping + interview/skill practice with real feedback** — and/or to **re-enter the rigor lanes he abandoned** (growth, metrics, discovery) for audiences who still need them.
+**Synthesis:** The loudest demand (AI enablement, career) is also the most saturated _as content_. The leverage is to **productize the doing** — especially **evals + prototyping + interview/skill practice with real feedback** — and/or to **re-enter the rigor lanes he abandoned** (growth, metrics, discovery) for audiences who still need them.
 
 ---
 
 ## 7. BUILD RECOMMENDATION — What We Should Build
 
 ### 7.1 Recommended direction (primary)
+
 **An AI-PM enablement agent that operationalizes "evals-first, prototype-first" PM work — entering through the highest-anxiety wedge (interview & skill practice with real, eval-graded feedback), then expanding into on-the-job PM workflows.**
 
 Why this wins given the data:
-- **Rides the strongest demand** (T3/T4: career + tactical doing) but **escapes the saturated lane** (content) by being a *tool that does the work*, not another guide.
+
+- **Rides the strongest demand** (T3/T4: career + tactical doing) but **escapes the saturated lane** (content) by being a _tool that does the work_, not another guide.
 - **Embodies his own #1 thesis** ("evals are the new PRD") as the product mechanic — credible to exactly his audience.
 - **Defensible:** real feedback loops + an eval/rubric engine + accumulated practice data are hard to copy with a newsletter.
 - **Platform-native:** an agentic build fits the "agents are the new channel" thesis and the tooling the audience already uses.
 
 ### 7.2 MVP (v0) — narrowest valuable slice
-- **Wedge feature:** an **AI-PM Interview & Skill Simulator** — user picks a round (product sense / metrics / system design / behavioral / AI safety), gets realistic prompts, answers, and receives **eval-graded feedback against a transparent rubric** (mirrors his DASME/HEART-AI/SAFE frameworks). 
+
+- **Wedge feature:** an **AI-PM Interview & Skill Simulator** — user picks a round (product sense / metrics / system design / behavioral / AI safety), gets realistic prompts, answers, and receives **eval-graded feedback against a transparent rubric** (mirrors his DASME/HEART-AI/SAFE frameworks).
 - **Second feature (expansion seed):** "**Idea → Evals → Prototype-spec**" — paste a feature idea, get a starter eval set + a prototype brief the user can run in Bolt/Lovable/Claude Code.
 - **Free-tool hook (list growth, his playbook):** a free "PM Eval Rubric Generator" or "PRD-that-moved" template.
 - **Framework-as-IP:** ship one named framework of our own (the memorable, ownable asset).
 
 ### 7.3 Differentiation vs. Aakash (don't compete; complement)
-- He **explains**; we let users **do + get judged**. 
+
+- He **explains**; we let users **do + get judged**.
 - He is **breadth**; we are **depth + feedback loops + measured outcomes**.
 - Optional contrarian flank: own a **vacated rigor lane** (growth/PLG, metrics, discovery) that his audience still needs but he no longer serves.
 
 ### 7.4 Go-to-market cues (borrow his system)
+
 - Lead with the **career/anxiety wedge** (highest engagement) for acquisition; retain via on-the-job value.
 - Ship a **named framework** + a **free tool**; assume **multi-surface repurposing** from day one.
 - Use **authority borrowing** (a few credible PM/AI names) for launch trust.
 
 ### 7.5 Alternative directions (ranked)
+
 - **B — Vacated-lane play:** AI-augmented **growth/PLG + metrics rigor** product for PMs he no longer serves. Lower competition, smaller current hype, but loyal demand.
 - **C — Practice community/cohort:** depth + accountability around building/evals. Strong retention, harder to scale, ops-heavy.
 
 ### 7.6 Risks & assumptions
-- **R1.** Tool-fatigue: the AI-PM tooling space is noisy → mitigate with the *doing/feedback* moat, not feature parity.
+
+- **R1.** Tool-fatigue: the AI-PM tooling space is noisy → mitigate with the _doing/feedback_ moat, not feature parity.
 - **R2.** Eval quality is the product — bad rubrics = no trust. Invest in the rubric/eval engine first.
 - **R3.** The "career arbitrage window" he sells may compress; build durable on-the-job value beyond interview prep.
 - **A1 (assumption).** Target user = aspiring/early-mid AI PMs (his core audience). Confirm in §9.
@@ -194,7 +205,7 @@ NON-GOALS (v0): another tool-comparison blog; a generic chatbot; head-on content
 
 ## 9. Open Questions (human-confirmation gates — do NOT skip before committing)
 
-1. **What are you actually building** — a *tool/agent*, a *content/education* product, or a *community/cohort*? (This brief assumes tool/agent; §7.5 covers the others.)
+1. **What are you actually building** — a _tool/agent_, a _content/education_ product, or a _community/cohort_? (This brief assumes tool/agent; §7.5 covers the others.)
 2. **Target user:** aspiring AI-PMs (acquisition-friendly, lower willingness-to-pay) vs. in-seat senior PMs/teams (higher WTP, harder to reach)?
 3. **Monetization:** freemium tool, cohort/course, B2B team license?
 4. **Your unfair advantage:** do you have a "unicorn candidate-market fit" (specific domain/credibility) we should lean into?
@@ -205,14 +216,14 @@ NON-GOALS (v0): another tool-comparison blog; a generic chatbot; head-on content
 ## 10. Provenance & Caveats
 
 - **Dataset:** 225 unique threads (278 raw, de-duplicated by URL) from newsletter (157), podcast (~54), X/Notes (~26), recovered LinkedIn (~30); full YouTube list (168 titles). Companion **interactive webpage** + **master CSV** accompany this brief.
-- **Engagement caveat:** LinkedIn logged-in feed and YouTube view counts were **bot-walled**; per-post engagement is largely unavailable (a few LinkedIn comment counts recovered: 118/95/27/23; one post 176 reactions). Topic-mix and pattern claims are high-confidence (newsletter ≈ complete); *relative popularity* of individual posts is lower-confidence.
+- **Engagement caveat:** LinkedIn logged-in feed and YouTube view counts were **bot-walled**; per-post engagement is largely unavailable (a few LinkedIn comment counts recovered: 118/95/27/23; one post 176 reactions). Topic-mix and pattern claims are high-confidence (newsletter ≈ complete); _relative popularity_ of individual posts is lower-confidence.
 - **Coverage:** Newsletter ≈ complete · Podcast ~50 of a claimed ~70 · X ~30–40% · LinkedIn-native ~6% of an est. ~500 posts.
 - **Freshness:** window ends 2026-05-29. Re-run periodically to catch thesis drift (his agenda moves fast).
 - **Recommendation status:** §7 is a data-derived recommendation, not a validated plan. Confirm §9 before committing engineering.
+
 ```
 END OF BRIEF
 ```
-
 
 Source 3: Date,Topic cluster,Thread / Title,Sources,Link,Topic (raw),Summary,Key takeaway,Engagement
 2026-02-10,Weekly 'AI Update' News Series,OpenAI's Codex is the Best Way to Use ChatGPT: AI Update #13,Newsletter,https://www.news.aakashg.com/p/openai-codex-guide,AI Update / AI Tools,"AI Update companion to the Codex guide — covers GPT-5.3 release, Codex app launch, and weekly AI news summary.","Use Codex (not ChatGPT) for any multi-step build task; GPT-5.3 is Codex-only, meaning Codex users have access to the most capable OpenAI model.",
@@ -439,5 +450,4 @@ Source 3: Date,Topic cluster,Thread / Title,Sources,Link,Topic (raw),Summary,Key
 2025-12-10,AI in PM - General / Other,Announcing Aakash's Bundle,Newsletter,https://www.news.aakashg.com/p/aakashs-bundle,Product Announcement,"Announces the launch of Aakash's premium bundle — aggregating all courses, tools, and resources for AI PMs.","Bundle access gives you the complete AI PM curriculum, tool discounts, and cohort access in one package.",
 2025-09-22,AI in PM - General / Other,The AI PM's Guide to Security with Okta VP of PM & AI Jack Hirsch,Newsletter,https://www.news.aakashg.com/p/jack-hirsch-podcast,AI in PM / Security,"Okta's Jack Hirsch walks PMs through the security considerations every AI PM must understand — prompt injection, data leakage, access control.",Add a security review checklist to your AI feature launch process; Jack's 5-question checklist catches the most common PM-level security oversights.,
 2025-09-22,AI in PM - General / Other,AI Cybersecurity Threats: Complete Security Playbook,Podcast,https://www.aakashg.com/ai-cybersecurity-threats/,"AI security threats, PM security playbook",Guest: (Security expert),,
-2025-09-11,AI in PM - General / Other,How to Build AI Products in FinTech — $100B Lessons from Robinhood VP PM Abhishek Fatehpuria,"Newsletter, Podcast",https://www.news.aakashg.com/p/abhishek-fatehpuria-podcast,AI in PM / FinTech,Robinhood VP PM Abhishek Fatehpuria shares lessons from building AI products in highly regulated financial environments.,"In regulated industries, design your AI features to be explainable by default — regulators and legal teams need to understand the AI's decision logic.", 
-
+2025-09-11,AI in PM - General / Other,How to Build AI Products in FinTech — $100B Lessons from Robinhood VP PM Abhishek Fatehpuria,"Newsletter, Podcast",https://www.news.aakashg.com/p/abhishek-fatehpuria-podcast,AI in PM / FinTech,Robinhood VP PM Abhishek Fatehpuria shares lessons from building AI products in highly regulated financial environments.,"In regulated industries, design your AI features to be explainable by default — regulators and legal teams need to understand the AI's decision logic.",
