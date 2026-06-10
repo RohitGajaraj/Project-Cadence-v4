@@ -11,6 +11,7 @@
 | [`planning/feature-backlog.md`](./planning/feature-backlog.md)           | **Live status board** (Now building / Next up / Blocked / Recent log) + full feature ledger with "How to use / verify" blocks. The shared cursor every tool reads at session start.                                                             |
 | [`planning/foundation-audit.md`](./planning/foundation-audit.md)         | Foundation-phase audit tickets and acceptance criteria.                                                                                                                                                                                         |
 | [`planning/considerations.md`](./planning/considerations.md)             | Cross-cutting concerns that don't fit a single architecture doc.                                                                                                                                                                                |
+| [`planning/v4-rebuild-handoff-2026-06-11.md`](./planning/v4-rebuild-handoff-2026-06-11.md) | **v4 rebuild session tracker** — what was decided/produced on 2026-06-11 and how a fresh session resumes without re-spending tokens.                                                                                                  |
 | [`operations/demo-credentials.md`](./operations/demo-credentials.md)     | Pre-provisioned demo logins (two emails + shared password), what each account ships with, how they were created, and the re-seed SQL. Use for screen recordings, YC / investor demos, and anywhere a working login is needed.                   |
 | [`features/agent-ecosystem-plan.md`](./features/agent-ecosystem-plan.md) | **F-AGENT-1 → F-AGENT-4 bundle plan** — orchestrator (shipped), persistent memory + self-reflection + trust auto-advance, event reactor + auto-pipelines, Swarm HUD. The canonical, session-surviving plan for the agent-native behavior layer. |
 | [`features/auth-flows.md`](./features/auth-flows.md)                     | Authentication flows — sign-up, sign-in, password visibility toggle, forgot-password / reset-password flow, session lifecycle, demo accounts.                                                                                                   |
@@ -40,7 +41,7 @@ One canonical page per shipped, user-facing feature. The **single place** to ope
 
 ## Strategy (versioned positioning)
 
-See [`strategy/README.md`](./strategy/README.md) for the version index and the cascade rule. Current positioning: [`strategy/v3-positioning-circuit-2026-06-10.md`](./strategy/v3-positioning-circuit-2026-06-10.md). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
+See [`strategy/README.md`](./strategy/README.md) for the version index and the cascade rule. **Current source of truth: [`strategy/v4-feature-map-2026-06-11.md`](./strategy/v4-feature-map-2026-06-11.md)** (scope, agent mesh, IA, milestones M1–M5) with its adversarial companion [`strategy/v4-stress-test-2026-06-11.md`](./strategy/v4-stress-test-2026-06-11.md). Personas remain in [`strategy/v3-positioning-circuit-2026-06-10.md`](./strategy/v3-positioning-circuit-2026-06-10.md). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
 
 ## Conventions (durable cross-tool rules)
 
@@ -68,7 +69,8 @@ Git-tracked rules every tool follows. One file per rule. Index + how to add: [`c
 
 | File                                                                                                 | Purpose                               |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| [`references/competitive-reference.md`](./references/competitive-reference.md)                       | Competitive landscape notes.          |
+| [`references/competitive-landscape-2026-06-11.md`](./references/competitive-landscape-2026-06-11.md) | **June-2026 market scan with source links** (AI-PM tools, suite agents, autonomous engineering, MCP/A2A, naming, investor signal). Read this instead of re-researching. |
+| [`references/competitive-reference.md`](./references/competitive-reference.md)                       | Competitive landscape notes (older).  |
 | [`references/idea-origination-inputs.md`](./references/idea-origination-inputs.md)                   | Inputs that shaped the original idea. |
 | [`references/research-references-aakash-gupta.md`](./references/research-references-aakash-gupta.md) | PM-voice research references.         |
 

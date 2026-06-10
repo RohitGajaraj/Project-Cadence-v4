@@ -180,15 +180,16 @@ Built on **shadcn/ui** (Radix). Bespoke components in `src/components/cadence/`.
 
 ---
 
-## Information architecture
+## Information architecture (v4 contract — 2026-06-11)
 
-Pinned items + three collapsible buckets (state persisted in `localStorage`; the active route's group auto-opens; a small `--primary-glow` dot marks a collapsed group holding the active route; ⌘K resolves everything regardless).
+> Canonical spec: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) §7. The rule: **≤7 user-facing surfaces; the engine is never primary navigation.** Every absorbed legacy route becomes a `beforeLoad` redirect (established pattern). No new top-level routes without a session decision.
 
-- **Pinned:** Today (Mission Control) · AI Chat · Agents · Approvals.
-- **Discover:** Discovery · Opportunities · Meetings · Calendar.
-- **Build (default open):** PRDs · Docs · Roadmap · Code Studio · Tasks · Sync Inbox.
-- **AI Ops:** AI Analytics · Traces · Prompt Studio · Eval Harness · Drift · Budgets · Guardrails.
-- **Below divider:** Settings.
+- **Pinned rail (3):** Home · Chat · Missions.
+- **Loop group:** Product (tabs: Signals · Opportunities · Specs · Roadmap · Releases) · Knowledge (Memory · Decisions · Docs · Calendar) · Learn (Support · Outcomes · Learnings).
+- **Engine room (1):** Govern (tabs: Approvals policy · Budgets · Guardrails · Traces · Evals · Drift · Prompts).
+- **Below divider:** Settings (workspace/products · Staff/agent config · Connectors · Models/BYOK · Profile).
+- Sidebar behavior unchanged: single-open accordion, `localStorage` persistence, active-group auto-open, ⌘K resolves everything.
+- Vocabulary on all chrome: Mission · Agent · Approval · Trace (feature map §6); banned labels list in the v3 language audit applies.
 
 ## Mission Control composition
 

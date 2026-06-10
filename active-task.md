@@ -1,4 +1,10 @@
-# Active task — Calendar OAuth credentials
+# Active tasks
+
+> **2026-06-11 — v4 feature-map rebuild: COMPLETE.** The strategic source of truth is now [`docs/strategy/v4-feature-map-2026-06-11.md`](docs/strategy/v4-feature-map-2026-06-11.md). Next build work = **Milestone M1 "The Golden Path"** (start with `F-IA-V4`, the 7-surface IA collapse). Full session log + resume instructions: [`docs/planning/v4-rebuild-handoff-2026-06-11.md`](docs/planning/v4-rebuild-handoff-2026-06-11.md).
+
+---
+
+## Open ops task — Calendar OAuth credentials
 
 **Task:** Add provider Client IDs to unlock per-user calendar connect.
 **Owner:** workspace admin

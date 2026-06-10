@@ -16,7 +16,7 @@
 
 Building software is no longer the bottleneck. The bottleneck is running the _whole_ product lifecycle as one coherent, governed, closed-loop circuit — not a dozen disconnected tools held together by a human doing manual glue work. **Circuit** is that loop. A swarm of specialist agents takes an intent — "turn this customer signal into a shipped, launched feature" — and carries it end to end: ingests feedback, transcribes syncs (WhisperFlow), defines the spec, plans the issues, writes and tests the code (Cursor/Lovable sandbox), ships the release, drafts GTM copy, handles customer support, evaluates outcomes, and feeds what it learned back into the next decision cycle. Every action is cited, observable in a live trace, and reversible; the human governs only at approval gates. **Agents execute. Humans govern.** The platform runs continuously, learning and compounding with every mission.
 
-Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENTS.md). Full feature scope + build log: [`plan.md`](./plan.md). Design contract: [`design.md`](./design.md). Architecture: [`architecture/`](./architecture/). Strategic positioning rationale: [`docs/strategy/v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md).
+Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENTS.md). **Feature scope, agent mesh, IA, and milestones (strategic source of truth): [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md).** Build order + build log: [`plan.md`](./plan.md). Design contract: [`design.md`](./design.md). Architecture: [`architecture/`](./architecture/). Market evidence: [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md).
 
 ---
 
@@ -92,18 +92,22 @@ We serve B2B Enterprise product organizations, establishing a collaborative envi
 
 ---
 
-## The 8 Cockpit Pillars (The Platform Offerings)
+## Six stations, one loop (the platform offering)
 
-Circuit consolidates the fragmented PM tools into a unified, distraction-free cockpit:
+The engine runs a 12-stage loop internally; the operator sees **six stations**, each run by named specialist agents (full mesh — 19 agents, sub-agents, handoff contract, HITL gates — in [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md)):
 
-1. **"Perplexity for PMs" (Intelligent Discovery):** Signal ingestion (Slack, Intercom, Sales logs) auto-clustered into opportunities with RAG-grounded citations.
-2. **"WhisperFlow for PMs" (Speech-to-Spec):** Capturing user interviews, transcribing meetings, and extracting spec parameters from spoken discussions.
-3. **"ChatGPT/Claude for PMs" (Ambient Command):** Conversational chat to prompt the swarm, brainstorm strategies, and steer missions in natural language.
-4. **"Jira/Linear for PMs" (Structured Planning):** Generates cited specs (PRDs), automated dependency graphs, and syncs issues to external systems.
-5. **"Lovable for PMs" (Interactive UI Scaffolding):** Real-time UI mockup generation, layout editors, and sandbox visual previews.
-6. **"Cursor for PMs" (Agentic Build & Ship):** Multi-file autonomous coding, file lock claims, compiler/test-driven self-correction, and PRs with CI logs.
-7. **"Analytics & Outcomes" (Loop Closure):** Product analytics telemetry tracking, automated cohort/churn analysis, and support ticket triage back to discovery.
-8. **"Miro for PMs" (Visual Dispatch Deck):** Swarm HUD, active mission graphs, and trace observability in Human/Machine Mode.
+1. **SENSE** — Scout, Listener, Researcher, Quant ingest everything users feel, say, and do (support, meetings, reviews, analytics, competitor moves) into one cited signal stream.
+2. **DECIDE** — Strategist keeps a living, re-scored opportunity queue; Critic red-teams every candidate before the human ever sees it.
+3. **DEFINE** — Scribe drafts cited specs; Designer scaffolds mockups checked against design tokens; Critic stress-tests the spec.
+4. **BUILD** — Planner graphs the work; Builder codes on isolated branches with CI self-correction — or delegates to Devin/Cursor/Factory-class agents under the same governance; Inspector gates quality; Releaser ships safely.
+5. **LAUNCH** — Marketer drafts the full launch kit in brand voice; Pricer analyzes packaging; everything customer-visible is approval-gated.
+6. **LEARN** — Support triages tickets back into signals; Quant reads outcomes; Historian writes what we learned into Product Memory, which re-ranks everything upstream.
+
+The user-facing app is **seven surfaces** (Home · Chat · Missions · Product · Knowledge · Learn · Govern + Settings) — the engine never appears as navigation. IA contract: [`design.md`](./design.md) § Information architecture.
+
+### GTM posture (decided 2026-06-11)
+
+**PLG wedge → enterprise.** Land with the individual senior PM (self-serve, 10-minute wow: connect a source → themes → cited spec + task graph), expand team → org. Enterprise governance (SSO, audit, roles, budgets) is built into the architecture from day 1 and sold at milestone M4. Pain-point-first; investor framing secondary.
 
 ---
 
@@ -166,7 +170,9 @@ Where each layer lives in detail: [`architecture/`](./architecture/). Stack rati
 | If you are…                                                               | Read                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Evaluating Circuit                                                        | **README.md** (here)                                                                                                                                                                                                                                |
-| Understanding strategic positioning                                       | [`docs/strategy/v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md)                                                                                                                                        |
+| Understanding strategic scope (source of truth)                           | [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) · why: [`docs/strategy/v4-stress-test-2026-06-11.md`](./docs/strategy/v4-stress-test-2026-06-11.md) · personas: [`docs/strategy/v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md) |
+| Market & competitor evidence                                              | [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md)                                                                                                                                      |
+| Resuming the v4 rebuild session                                           | [`docs/planning/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/v4-rebuild-handoff-2026-06-11.md)                                                                                                                                                |
 | Navigating the repo                                                       | [`ENTRY.md`](./ENTRY.md)                                                                                                                                                                                                                            |
 | Building (human or agent)                                                 | [`AGENTS.md`](./AGENTS.md). Claude Code: [`CLAUDE.md`](./CLAUDE.md). Antigravity/Gemini: [`GEMINI.md`](./GEMINI.md).                                                                                                                                |
 | Feature scope + build order + build log                                   | [`plan.md`](./plan.md)                                                                                                                                                                                                                              |

@@ -1,77 +1,38 @@
-# Decision: Product name — shortlist & recommendation
+# Decision: Product name — status & candidate log
 
-> Status: **AWAITING FOUNDER PICK.** Date: 2026-06-11. We are pivoting from "Circuit" (due to a conflict with competitor `circuit.ai`) and the previous working name "Cadence" (contested trademark).
+> Status: **DEFERRED — FINAL ACTIVITY BEFORE LAUNCH.** Updated: 2026-06-11.
+> Founder decision (2026-06-11): none of the shortlisted names felt right; renaming is explicitly the **last activity** of the pre-launch sequence. **"Circuit" remains the interim working name** everywhere (with the existing Cadence➔Circuit disclaimer pattern). Do not block or rename anything until this file's status reads DECIDED.
 
-## Why rename
+## Why rename (unchanged)
 
-We want a short, brandable, ownable name with the Lovable / Cursor / Comet / Perplexity quality: easy to say, easy to remember, and a _story_ you can hang a tagline on.
+"Cadence" — contested trademark; Cadence Design Systems ($80B EDA) now brands aggressively in *agentic AI* (announced a "fully autonomous virtual AI design engineer," Computex 2026). "Circuit" — circuit.ai conflict, Circuit Route Planner (10M+ users), generic word, weak SEO ownability. Target quality bar: Perplexity / Comet / Claude / Lovable — short, evocative, a story to hang a tagline on.
 
-To ensure trademark and SEO safety, all suggested names have been screened via web searches for active products, software packages, or AI startups. Names with significant conflicts (e.g., _Kea_, _Halcyon_, _Vela_, _Hadron_, _Fermion_, _Nidus_, _Cairn_, _Valence_, _Kilonova_, _Flamingo_) have been disqualified.
+## Founder-rejected candidates (do not re-propose)
 
----
+- 2026-06-11 round 1: **Sittella, Tanager, Perihelion, Libration** (researched clean, rejected on feel).
+- 2026-06-11 round 2: **Rigel, Argon, Osprey** (researched relatively clean, rejected on feel).
+- Researched and **conflicted** (never propose): Kea, Halcyon, Vela, Hadron, Fermion, Nidus, Cairn, Valence, Kilonova, Flamingo, Vega, Lyra, Altair, Quark, Flux, Helix, Heron, Kestrel, Catalyst, Pulsar, Photon, Meridian, Orbit (mid), Relay, Axon, Synapse, Cascade (Windsurf agent), Lattice, Ansible, Polaris, Quasar, Parsec, Starling (bank).
 
-## Shortlist (vetted, by lane)
+## Fresh directions for the final round (logged 2026-06-11, NOT yet researched for clearance — verify before picking)
 
-### 1. Birds (Ornithology)
+The strongest unexplored lane: names whose *story is the product mechanic itself* — coordination without doing the rowing.
 
-#### **Sittella** (Top Pick)
+1. **Murmuration** — thousands of starlings moving as one coordinated swarm, no central controller, instant signal propagation. The single most accurate metaphor for the agent mesh that exists in nature. Long (4 syllables) but unforgettable; "Murmur" as the casual short form. Tagline: *"A thousand agents. One motion."*
+2. **Auriga** — the Charioteer constellation; the one who holds the reins of many horses but doesn't pull the chariot. Exactly "agents execute, humans govern." 3 syllables, clean sound. Known minor collision: Auriga (IT services firm) — verify weight.
+3. **Coxswain** — steers the boat and sets the rhythm; the only crew member who doesn't row. The literal product thesis. Risk: spelling/pronunciation ("COX-n"). Could brand as **Coxn**.
+4. **Godwit** — the bar-tailed godwit flies ~13,000 km nonstop, the longest uninterrupted flight of any animal: pure autonomous endurance, no pit stops. Short, quirky-memorable in the Lovable register. Tagline: *"Nonstop from signal to ship."*
+5. **Orrery** — the clockwork model of the whole solar system on one desk; the cockpit metaphor as an object. Beautiful story, risky spelling ("OR-er-ee").
 
-- **The Hook:** Sittellas (_Neosittidae_) are small Australasian birds known for **cooperative breeding** and **collective swarming**. In the wild, they work in tight family units, sharing tasks (feeding, building, guarding). They are also known for **tree-running**—scaling branches in any direction (up, down, sideways) with great speed.
-- **The Metaphor:** It perfectly represents a coordinated swarm of specialized agents working in unison to build, test, and support your product under your governance. Instead of a single monolithic AI, you have a coordinated group (the Sittella swarm) navigating the branches of your codebase and product feedback in any direction.
-- **Tagline:** _"Cooperative intelligence. Endless direction."_
-- **Market Safety:** **100% Clean**. No active software, AI startups, or tech products use "Sittella". The domain `sittella.ai` is open.
+## Decision criteria (apply at final round)
 
-#### **Tanager**
-
-- **The Hook:** A family of brightly colored, diverse songbirds found in the Americas, known for striking plumages and active foraging behavior.
-- **The Metaphor:** A modern, crisp three-syllable sound resembling premium tools (e.g., Perplexity, Lovable). Suggests a vibrant, active, and clean ecosystem.
-- **Tagline:** _"Vibrant coordination for your entire product loop."_
-- **Market Safety:** **Very Clean**. The domain `tanager.ai` is listed for purchase. Planet Labs uses the name "Tanager" for a hyperspectral satellite payload mission, but it is not a software platform or competitor.
-
----
-
-### 2. Space & Physics
-
-#### **Perihelion**
-
-- **The Hook:** The astronomical point in a body's elliptical orbit where it is **closest to the sun** (its central star)—representing the point of highest orbital speed and peak energy.
-- **The Metaphor:** Symbolizes maximum alignment and peak velocity. The platform brings the developer/product execution loop as close as possible to the user's intent (the sun), running at its fastest with continuous AI memory.
-- **Tagline:** _"Bringing execution closest to intent."_
-- **Market Safety:** **Highly Clean**. A parallel operating systems company named "Perihelion Software" ceased trading in 1998. It is used in sci-fi fiction, but there are no active AI or software entities.
-
-#### **Libration** (or **Libraton**)
-
-- **The Hook:** Lunar libration is the slow, rocking oscillation of the Moon that allows observers on Earth to see slightly beyond its edges—revealing hidden parts of its surface.
-- **The Metaphor:** Represents uncovering hidden insights, user needs, and product opportunities from customer feedback. It aligns the loop to show the operator what is normally hidden.
-- **Tagline:** _"Reveal the unseen. Align the loop."_
-- **Market Safety:** **Clean**. There is a minor open-source Python package (`llm-libration`) for astronomical resonance plots, but no SaaS or commercial software products.
-
----
-
-## Disqualified Names & Rationale
-
-To maintain absolute brand safety, the following candidates were thoroughly vetted and disqualified due to active conflicts:
-
-- **Kea:** Disqualified due to **kea.ai**, an active voice AI platform for restaurant automation.
-- **Halcyon:** Disqualified due to **halcyon.ai**, a prominent enterprise anti-ransomware platform.
-- **Vela:** Disqualified due to multiple active AI startups: **tryvela.ai** (scheduling), **getvela.ai** (voice agents), and IBM's **Vela** supercomputer.
-- **Hadron:** Disqualified due to Tether's institutional asset tokenization platform, **Hadron by Tether**, and decentralized AI projects.
-- **Fermion:** Disqualified due to **Fermion AI Group** (meeting assistants, guidance tools) and Indian software services.
-- **Nidus:** Disqualified due to **nidus.ai** (medical expert panels) and character chatbots.
-- **Cairn:** Disqualified due to **cairninsights.ai** (workplace AI analysis) and **cairn.studio** (AI writer tools).
-- **Valence:** Disqualified due to **valence.co** (AI coaching), **valenceai.co** (SaaS security), and **getvalenceai.com** (emotion AI).
-- **Kilonova:** Disqualified due to **kilonovaventures.com**, an AI-native company building platform ("Founder OS").
-- **Flamingo:** Disqualified due to Google DeepMind's **Flamingo** visual language model and **flamingo.run** (MSP agent automation).
-
----
-
-## Product-level taglines (name-independent)
-
-- _"A product org that runs itself — under your command."_
-- _"Mission control for a swarm of product agents."_
-- _"You set the intent. Agents do the rest."_
-- _"From signal to ship, run by agents."_
+≤3 syllables preferred · spellable on first hearing · .ai or .com obtainable · no funded company in agentic/dev-tools space · carries a one-line story · works as a verb or team noun ("the X is on it").
 
 ## Next step
 
-Founder selects a name from the shortlist (Sittella, Perihelion, Tanager, or Libration). Once chosen, we will run a single find-replace sweep of "Circuit" across the codebase and set this file's status to DECIDED.
+At the end of the pre-launch sequence: founder reviews the fresh directions (plus any new candidates), one web-clearance pass on the favorites, set status DECIDED, then a single find-replace sweep of user-level "Circuit" (DB/plumbing names stay, per the standing disclaimer in [`../../CLAUDE.md`](../../CLAUDE.md) / [`../../plan.md`](../../plan.md)).
+
+## Product-level taglines (name-independent, keep)
+
+- *"A product org that runs itself — under your command."*
+- *"You set the intent. Agents do the rest."*
+- *"From signal to ship, run by agents."*

@@ -59,7 +59,7 @@ FIRST SESSION OR WHEN CONTEXT IS STALE:
 
 3. docs/strategy/ (2 min — find latest version)
    — Open docs/strategy/README.md to find the current version
-   — Read the latest positioning file (e.g., v3-positioning-circuit-2026-06-10.md)
+   — Read the latest positioning file (current: v4-feature-map-2026-06-11.md — scope, agent mesh, 7-surface IA, milestones; personas in v3-positioning-circuit-2026-06-10.md)
    — Go here when: you need the strategic USP, feature rationale, or personas
 
 4. plan.md section 1-3 (5 min read)
@@ -305,7 +305,7 @@ update positioning, update the latest docs/strategy/vN file and cascade to READM
 
 FINDING THE LATEST POSITIONING:
 Always open docs/strategy/README.md first — it indexes all versions and marks
-which is current. As of writing: v3-positioning-circuit-2026-06-10.md is current.
+which is current. As of writing: v4-feature-map-2026-06-11.md is current (personas remain in v3-positioning-circuit-2026-06-10.md).
 A newer version may exist by the time you read this. Always read the latest.
 
 ================================================================================

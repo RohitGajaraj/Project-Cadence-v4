@@ -26,7 +26,7 @@ Keep this file thin. Keep any global `~/.gemini/GEMINI.md` thin too — a fat gl
 -1. **`git pull origin main`** — before anything else, sync all work from Claude Code, Lovable, Antigravity, and Gemini. The repository is the live source of truth; this file is orientation only. 0. **`active-task.md`** (if present in root) — the current in-progress task list and handoff status. Read this first!
 
 1. [`AGENTS.md`](./AGENTS.md) — pre-action protocol, engineering rules, skill-first protocol, escalation, founding principles.
-   1.5. [`docs/strategy/v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md) — strategic source of truth: positioning, target personas, 8 cockpit pillars, and pluggable model architecture. Read before any feature, UX, or positioning work.
+   1.5. [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) — **strategic source of truth**: the 7 platform laws, 6 lifecycle stations, 19-agent mesh, handoff contract, HITL gate matrix, 7-surface IA, and milestones M1–M5. Read before any feature, UX, or positioning work. (Personas remain in [`v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md); session resume: [`docs/planning/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/v4-rebuild-handoff-2026-06-11.md).)
    1.6. [`docs/conventions/`](./docs/conventions/) — durable, cross-tool conventions (UI chrome, voice, destructive actions, inline management, doc-closure checklist). These are _rules_, applied automatically on every task.
 2. [`README.md`](./README.md) — product thesis, positioning, MOAT.
 3. [`plan.md`](./plan.md) — build log + milestone roadmap.
