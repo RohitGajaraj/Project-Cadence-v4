@@ -1,62 +1,90 @@
-# F-IA-V4 — Collapse 30+ routes into 7 surfaces
+## Phase 1d — Knowledge + Learn surfaces
 
-This is the M1 keystone refactor. It touches every route file, the sidebar (`AppShell.tsx`), the command palette, and several conventions docs. I want your sign-off on the mapping and phasing before I move any files, because the wrong call here breaks every bookmark in the app.
+Final phase of F-IA-V4 (7-surface IA collapse). Folds Memory, Docs, Calendar, Meetings, and a new Decisions tab into `/knowledge`. Creates `/learn` with Support · Outcomes · Learnings. Pins Knowledge to the top rail.
 
-## Target IA (from `v4-feature-map-2026-06-11.md` §7)
+### Decisions confirmed
 
-| # | Surface | Route | Tabs / sections | Absorbs |
-|---|---|---|---|---|
-| 1 | **Home** | `/` | Daily brief · Needs-you · Loop pulse · Flow | index, briefing, inbox(badge) |
-| 2 | **Chat** | `/chat` | (unchanged) | chat |
-| 3 | **Missions** | `/missions` | Live list · DAG · Build · Activity | cockpit, missions, swarm, build, agents(view) |
-| 4 | **Product** | `/product` | Signals · Opportunities · Specs · Roadmap · Releases | discovery, opportunities, prds, roadmap, tasks, outcome(part) |
-| 5 | **Knowledge** | `/knowledge` | Memory · Decisions · Docs · Calendar | docs, decisions(?), calendar, meetings |
-| 6 | **Learn** | `/learn` | Support · Outcomes · Learnings | outcome(part), analytics(user-facing) |
-| 7 | **Govern** | `/govern` | Approvals · Policy · Budgets · Guardrails · Traces · Evals · Drift · Prompts | governance, guardrails, budgets, observe, traces, evals, drift, prompts |
-| — | **Settings** | `/settings` | + Staff (agent config), Connectors, Models/BYOK | settings, integrations, sync, agents(config) |
+1. **Calendar folds into Knowledge as a tab** (spec-literal Option B). The whole purpose of Knowledge is *one place to find anything the org knows or scheduled* — Calendar belongs there.
+2. **Knowledge gets pinned in the top rail** alongside Home · Chat · Missions. Approvals + Calendar drop off the pinned rail (Approvals already lives in Govern; Calendar is now inside Knowledge).
+3. **Decisions tab = stub for now.** Empty-state explains it'll hold workspace decisions sourced from missions/specs/meetings. Wiring those capture points is a follow-up ticket, not part of 1d.
+4. **Learn = 3 tabs.** Outcomes is real (extracted from `/outcome`); Support + Learnings ship as "Coming soon" panels so the IA shape is locked.
 
-**Pinned rail:** Home · Chat · Missions (per spec). Approvals + Calendar drop off the pin (they live inside Home/Knowledge); current pin has 4, spec says 3.
+### Knowledge surface (`/knowledge`)
 
-## Phasing (I will pause after each phase for review)
+4 tabs: **Memory · Decisions · Docs · Calendar**. Tab state in `?tab=` via `validateSearch`, default `memory`. Container `max-w-[1400px]` (Calendar's list view needs the width).
 
-### Phase 1 — Scaffold the 7 surfaces (additive, no breakage)
-1. Create `_authenticated.missions.tsx` (layout), `_authenticated.product.tsx`, `_authenticated.knowledge.tsx`, `_authenticated.learn.tsx`, `_authenticated.govern.tsx` as tabbed shells using the existing `validateSearch` ?tab= pattern (proven on `/observe`, `/governance`).
-2. Each new surface initially **re-uses existing panel components** (e.g. `/product?tab=signals` renders the current `DiscoveryPage` body as a panel). No business-logic edits — pure composition.
-3. Add a temporary feature flag `cadence.ia.v4` (localStorage) so AppShell can show the new nav alongside the old one during cutover.
+Panel extraction:
+- `MemoryPanel` — extract from existing memory views (currently surfaced inside Settings/agent context). Read-only list of memory entries grouped by source.
+- `DecisionsPanel` — new, stub. Empty state + "How decisions get captured" copy. No server fn yet.
+- `DocsPanel` — extract body of `_authenticated.docs.tsx`.
+- `CalendarPanel` — extract body of `_authenticated.calendar.tsx` (already merged Calendar+Meetings; keep `?meeting=<id>` sheet behavior intact by forwarding the search param through to the panel).
 
-### Phase 2 — Rewrite AppShell + CommandPalette
-1. New nav: pinned (Home/Chat/Missions) + collapsible groups (Product, Knowledge, Learn, Govern, Settings).
-2. CommandPalette destinations updated to the 7 surfaces (deep-links via `?tab=`).
-3. Update `architecture/frontend.md` (pinned rail rule, surface contracts) in the same commit.
+Route redirects:
+- `/docs` → `/knowledge?tab=docs`
+- `/calendar` → `/knowledge?tab=calendar` (preserves existing `?meeting=` if present)
+- `/meetings` and `/meetings/$id` — already redirect to `/calendar`; update both to `/knowledge?tab=calendar` (with `?meeting=$id` for the deep-link variant)
 
-### Phase 3 — Convert legacy routes to redirects
-Flip these to `beforeLoad: throw redirect(...)`:
-- `/cockpit`, `/swarm`, `/build`, `/agents` (view) → `/missions?tab=…`
-- `/discovery`, `/opportunities`, `/prds`, `/roadmap`, `/tasks`, `/outcome` → `/product?tab=…`
-- `/docs`, `/calendar`, `/meetings`, `/meetings/$id` → `/knowledge?tab=…` (+ `?item=`)
-- `/governance`, `/guardrails`, `/budgets`, `/observe`, `/traces` (index), `/evals`, `/drift`, `/prompts` → `/govern?tab=…`
-- `/integrations`, `/sync`, `/agents` (config) → `/settings?section=…`
-- `/inbox`, `/briefing`, `/analytics` already redirect — repoint to new surfaces.
+### Learn surface (`/learn`)
 
-Deep-link routes preserved as-is: `/prds/$id`, `/missions/$missionId`, `/traces/$traceId`.
+3 tabs: **Support · Outcomes · Learnings**. Tab state in `?tab=`, default `outcomes` (the only real one).
 
-### Phase 4 — Close the doc loop
-- Update `architecture/frontend.md` surface-by-surface contracts (replace `/observe` and `/governance` sections with the 7 new ones).
-- Update `docs/feature-backlog.md` live status board: flip `F-IA-V4` to ✅, log entry.
-- Append to `plan.md` §4.
-- Delete `active-task.md` if F-IA-V4 was the only open thing (it isn't — Calendar OAuth task survives, so update that file's preamble).
+Panel work:
+- `OutcomesPanel` — extract the non-Releases slice of `_authenticated.outcome.tsx` (Releases already lives in `/product`).
+- `SupportPanel` — stub. Empty state describing the loop from Discovery → Support → Discovery.
+- `LearningsPanel` — stub. Empty state describing what insight memos will look like.
 
-## What I will NOT do without further direction
+Route redirects:
+- `/outcome` → `/learn?tab=outcomes`
+- `/analytics` (already redirecting to `/govern`) — confirm the user-facing analytics slice the spec calls out for Learn is not duplicated; leave Govern's Analytics tab as-is (it's observability, not learning).
 
-- **Touch business logic, server fns, or DB.** Pure routing + composition refactor.
-- **Redesign panel internals.** A "Signals tab" in Phase 1 is the current `/discovery` page body in a tab, not a redesigned one.
-- **Merge `decisions` into Knowledge** unless you confirm — there's no `/decisions` route today; decisions live inside missions/specs. I'll leave Knowledge with Memory/Docs/Calendar in Phase 1 and add Decisions if/when we build that surface.
-- **Remove the v3 feature flag** until you've clicked through the new IA and signed off.
+### AppShell rewrite
 
-## Risk / open questions
+New pinned rail (top): **Home · Chat · Missions · Knowledge**. Drop Approvals and Calendar from the pin. Approvals is reachable via `/govern?tab=approvals` and from the Home needs-you queue (when 1d ships that).
 
-1. **Pinned rail is 4 today (Home/Approvals/Calendar/Chat), spec says 3 (Home/Chat/Missions).** Approvals badge moves to Home's needs-you queue; Calendar moves into Knowledge. Confirm you want me to drop them from the pin.
-2. **`/tasks` absorption.** Spec says "Tasks fold into Product→Roadmap." I'll fold the current Tasks page in as a Roadmap sub-view or a "Tasks" tab — your call which.
-3. **Estimated touch:** ~7 new route files, ~15 route files converted to redirects, AppShell rewrite, CommandPalette rewrite, 2 doc files. Probably 3 sequential turns to land cleanly. I'll pause after Phase 1 so you can click around before I rip out the old nav.
+Collapsible groups below:
+- **Product** → `/product`
+- **Knowledge** → `/knowledge` *(also pinned — group entry mirrors the pin, like Missions does today)*
+- **Learn** → `/learn`
+- **Govern** → Govern, Integrations
+- **Build** → Builder, Docs *(Docs entry here just deep-links to `/knowledge?tab=docs`)*
+- **Settings** → `/settings`
 
-Reply **"go phase 1"** to start, or correct the mapping first.
+Remove now-empty top-level entries for Calendar, Meetings, Docs, Outcome.
+
+CommandPalette: add `/knowledge`, `/knowledge?tab=…`, `/learn`, `/learn?tab=…`. Remove standalone Calendar/Meetings/Docs/Outcome destinations.
+
+### Files
+
+**Create:**
+- `src/components/knowledge/{Memory,Decisions,Docs,Calendar}Panel.tsx`
+- `src/components/learn/{Support,Outcomes,Learnings}Panel.tsx`
+- `src/routes/_authenticated.knowledge.tsx`
+- `src/routes/_authenticated.learn.tsx`
+
+**Convert to redirects:**
+- `src/routes/_authenticated.docs.tsx`
+- `src/routes/_authenticated.calendar.tsx`
+- `src/routes/_authenticated.meetings.tsx` (repoint)
+- `src/routes/_authenticated.meetings.$id.tsx` (repoint)
+- `src/routes/_authenticated.outcome.tsx`
+
+**Edit:**
+- `src/components/cadence/AppShell.tsx` — pinned rail + groups
+- `src/components/cadence/CommandPalette.tsx` — destinations
+- `architecture/frontend.md` — pinned rail contract (4 items now, Knowledge added, Approvals/Calendar removed), Knowledge + Learn surface contracts
+- `active-task.md`, `docs/planning/feature-backlog.md`, `plan.md` §4
+
+### What I will NOT do
+
+- Build the unified Knowledge search bar / cross-tab Q&A (that's a Phase 2 / M2 feature).
+- Wire mission/spec/meeting → Decisions capture (follow-up ticket; I'll add it to the backlog as `F-DECISIONS-CAPTURE`).
+- Touch any server functions or DB. Pure routing + composition, same as Phases 1a–1c.
+- Redesign any panel internals.
+
+### Risk / open questions
+
+1. **Pinning Knowledge** means the top rail has Home · Chat · Missions · Knowledge — four pins. Spec literally said three (Home · Chat · Missions). I'm reading your direction as overriding that and pinning Knowledge because consolidated knowledge access *is* a daily-loop job, not a reference one. Confirm.
+2. **Calendar deep-link `?meeting=<id>`** must keep working after the route move. I'll forward the search param through `validateSearch` on `/knowledge` so `/knowledge?tab=calendar&meeting=abc` opens the meeting sheet. Old `/meetings/abc` and `/calendar?meeting=abc` redirect to the new shape.
+3. **Memory panel content.** There's no `/memory` route today — memory is read in agent context and shown in scattered places. I'll start with a simple list view of memory entries (source + content + created-at) and we can iterate. Confirm that's fine for the stub.
+
+Reply **"go phase 1d"** to start, or correct any of the three points first.
