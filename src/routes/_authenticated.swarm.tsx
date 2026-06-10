@@ -1,9 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// Swarm page has been merged into Cockpit.
-// /swarm redirects to /cockpit?tab=agents.
+// /swarm absorbed into /missions per F-IA-V4 (7-surface IA collapse).
 export const Route = createFileRoute("/_authenticated/swarm")({
   beforeLoad: () => {
-    throw redirect({ to: "/cockpit", search: { tab: "agents" } });
+    throw redirect({ to: "/missions", search: { tab: "agents" } });
   },
 });
