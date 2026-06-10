@@ -10,6 +10,8 @@ import {
   BarChart3,
   Route as RouteIcon,
   Waves,
+  FlaskConical,
+  FileCode,
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
@@ -22,16 +24,19 @@ import { BudgetsPanel } from "@/components/governance/BudgetsPanel";
 import { AnalyticsPanel } from "@/components/observe/AnalyticsPanel";
 import { TracesPanel } from "@/components/observe/TracesPanel";
 import { DriftPanel } from "@/components/observe/DriftPanel";
+import { EvalsPanel } from "@/components/governance/EvalsPanel";
+import { PromptsPanel } from "@/components/governance/PromptsPanel";
 
 // Govern surface — v4 IA. Absorbs /governance + /observe + thin redirects
-// (/guardrails, /budgets, /traces, /drift). Evals + Prompts stay as their
-// own routes for the Phase 1b-2 pass.
+// (/guardrails, /budgets, /traces, /drift) and, in Phase 1b-2, /evals + /prompts.
 
 type Tab =
   | "controls"
   | "approvals"
   | "guardrails"
   | "budgets"
+  | "prompts"
+  | "evals"
   | "analytics"
   | "traces"
   | "drift";
@@ -41,6 +46,8 @@ const TABS: Tab[] = [
   "approvals",
   "guardrails",
   "budgets",
+  "prompts",
+  "evals",
   "analytics",
   "traces",
   "drift",
@@ -141,6 +148,20 @@ function GovernPage() {
       tone: "amber",
     },
     {
+      id: "prompts",
+      label: "Prompts",
+      description: "Version, A/B test, and roll back the system prompts powering every AI surface.",
+      Icon: FileCode,
+      tone: "violet",
+    },
+    {
+      id: "evals",
+      label: "Evals",
+      description: "Regression tests on prompts. Catch quality drops before they ship.",
+      Icon: FlaskConical,
+      tone: "emerald",
+    },
+    {
       id: "analytics",
       label: "Analytics",
       description: "Spend, tokens, and latency rolled up across every agent run.",
@@ -232,6 +253,8 @@ function GovernPage() {
         {tab === "approvals" && <ApprovalsPanel />}
         {tab === "guardrails" && <GuardrailsPanel />}
         {tab === "budgets" && <BudgetsPanel />}
+        {tab === "prompts" && <PromptsPanel />}
+        {tab === "evals" && <EvalsPanel />}
         {tab === "analytics" && <AnalyticsPanel />}
         {tab === "traces" && <TracesPanel />}
         {tab === "drift" && <DriftPanel />}
