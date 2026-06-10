@@ -73,22 +73,23 @@ const workspace: NavItem[] = [
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
 const groups: NavGroup[] = [
   {
-    id: "discover",
-    label: "Discover",
+    id: "product",
+    label: "Product",
     items: [
-      { to: "/discovery", label: "Discovery", icon: Telescope },
-      { to: "/opportunities", label: "Opportunities", icon: Target },
+      { to: "/product", label: "Signals", icon: Telescope, search: { tab: "signals" } },
+      { to: "/product", label: "Opportunities", icon: Target, search: { tab: "opportunities" } },
+      { to: "/product", label: "Specs", icon: FileText, search: { tab: "specs" } },
+      { to: "/product", label: "Roadmap", icon: Map, search: { tab: "roadmap" } },
+      { to: "/product", label: "Tasks", icon: ListTodo, search: { tab: "tasks" } },
+      { to: "/product", label: "Releases", icon: Rocket, search: { tab: "releases" } },
     ],
   },
   {
-    id: "deliver",
-    label: "Deliver",
+    id: "build",
+    label: "Build",
     items: [
-      { to: "/prds", label: "PRDs", icon: FileText },
-      { to: "/docs", label: "Docs", icon: BookOpen },
-      { to: "/roadmap", label: "Roadmap", icon: Map },
-      { to: "/tasks", label: "Tasks", icon: ListTodo },
       { to: "/build", label: "Builder", icon: Hammer },
+      { to: "/docs", label: "Docs", icon: BookOpen },
     ],
   },
   {
