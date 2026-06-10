@@ -65,7 +65,7 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 // Meetings → merged into Calendar (one mental model: time + capture).
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
-  { to: "/governance", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
+  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: Calendar },
   { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
@@ -107,18 +107,11 @@ const groups: NavGroup[] = [
     items: [{ to: "/outcome", label: "Outcome", icon: Rocket }],
   },
   {
-    id: "run",
-    label: "Run",
-    items: [
-      { to: "/observe", label: "Observe", icon: Activity },
-      { to: "/evals", label: "Evals", icon: FlaskConical },
-    ],
-  },
-  {
     id: "govern",
     label: "Govern",
     items: [
-      { to: "/governance", label: "Governance", icon: ShieldAlert },
+      { to: "/govern", label: "Govern", icon: ShieldAlert },
+      { to: "/evals", label: "Evals", icon: FlaskConical },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
@@ -668,7 +661,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
         <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
           {pauseState?.paused && (
             <Link
-              to="/governance"
+              to="/govern"
               className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition"
             >
               <div className="flex items-center gap-2">
