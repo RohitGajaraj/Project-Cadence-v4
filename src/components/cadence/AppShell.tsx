@@ -76,12 +76,7 @@ const groups: NavGroup[] = [
     id: "product",
     label: "Product",
     items: [
-      { to: "/product", label: "Signals", icon: Telescope, search: { tab: "signals" } },
-      { to: "/product", label: "Opportunities", icon: Target, search: { tab: "opportunities" } },
-      { to: "/product", label: "Specs", icon: FileText, search: { tab: "specs" } },
-      { to: "/product", label: "Roadmap", icon: Map, search: { tab: "roadmap" } },
-      { to: "/product", label: "Tasks", icon: ListTodo, search: { tab: "tasks" } },
-      { to: "/product", label: "Releases", icon: Rocket, search: { tab: "releases" } },
+      { to: "/product", label: "Product", icon: Telescope },
     ],
   },
   {
@@ -111,8 +106,6 @@ const groups: NavGroup[] = [
     label: "Govern",
     items: [
       { to: "/govern", label: "Govern", icon: ShieldAlert },
-      { to: "/govern", label: "Prompts", icon: FileCode, search: { tab: "prompts" } },
-      { to: "/govern", label: "Evals", icon: FlaskConical, search: { tab: "evals" } },
       { to: "/integrations", label: "Integrations", icon: Plug },
     ],
   },
