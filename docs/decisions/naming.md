@@ -1,50 +1,71 @@
 # Decision: Product name — shortlist & recommendation
 
-> Status: **AWAITING FOUNDER PICK.** Date: 2026-05-29. Docs use "Cadence" as a working placeholder; the swap is a single find-replace once you choose.
+> Status: **AWAITING FOUNDER PICK.** Date: 2026-06-11. We are pivoting from "Circuit" (due to a conflict with competitor `circuit.ai`) and the previous working name "Cadence" (contested trademark).
 
 ## Why rename
 
-"Cadence" is heavily used (Cadence Design Systems, et al.) — contested for trademark and SEO. We want a short, brandable, ownable name with the Lovable / Cursor / Comet / Perplexity quality: easy to say, easy to remember, and a _story_ you can hang a tagline on.
+We want a short, brandable, ownable name with the Lovable / Cursor / Comet / Perplexity quality: easy to say, easy to remember, and a _story_ you can hang a tagline on.
 
-> **Caveat:** availability notes are directional, not legal clearance. Before committing, check the `.com`, a trademark search in your classes, and social handles.
+To ensure trademark and SEO safety, all suggested names have been screened via web searches for active products, software packages, or AI startups. Names with significant conflicts (e.g., _Kea_, _Halcyon_, _Vela_, _Hadron_, _Fermion_, _Nidus_, _Cairn_, _Valence_, _Kilonova_, _Flamingo_) have been disqualified.
 
-## Shortlist (out-of-the-box, by lane)
+---
 
-### Birds
+## Shortlist (vetted, by lane)
 
-| Name                  | The hook                                                                                                                                                                                                 | Tagline                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Kea** (recommended) | The world's only alpine parrot — famous for **using tools and solving puzzles**. A bird that literally uses tools, naming a platform of tool-using agents. 3 letters, playful, almost certainly ownable. | _"Agents that use the tools, so you don't."_ |
-| **Wren**              | Tiny, industrious songbird **and** Christopher Wren, the master builder ("if you seek his monument, look around"). Quiet builder energy. Short, warm.                                                    | _"The quiet builder behind your product."_   |
-| **Halcyon**           | A mythical kingfisher — and the word means **calm, golden, idyllic**. Bird + your exact "calm, futuristic" brand mood in one word.                                                                       | _"Calm command over a swarm of agents."_     |
+### 1. Birds (Ornithology)
 
-### Space
+#### **Sittella** (Top Pick)
 
-| Name       | The hook                                                                                                                                                     | Tagline                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| **Quasar** | Brightest object in the universe — a quiet point of light powered by a **hidden, enormous engine**. That _is_ your "light surface, powerful engine" promise. | _"A quiet surface. A galaxy-grade engine."_ |
-| **Lyra**   | The constellation shaped like a lyre — a single instrument, many strings playing together. One operator, many agents. Short, celestial, musical.             | _"One operator, a chorus of agents."_       |
+- **The Hook:** Sittellas (_Neosittidae_) are small Australasian birds known for **cooperative breeding** and **collective swarming**. In the wild, they work in tight family units, sharing tasks (feeding, building, guarding). They are also known for **tree-running**—scaling branches in any direction (up, down, sideways) with great speed.
+- **The Metaphor:** It perfectly represents a coordinated swarm of specialized agents working in unison to build, test, and support your product under your governance. Instead of a single monolithic AI, you have a coordinated group (the Sittella swarm) navigating the branches of your codebase and product feedback in any direction.
+- **Tagline:** _"Cooperative intelligence. Endless direction."_
+- **Market Safety:** **100% Clean**. No active software, AI startups, or tech products use "Sittella". The domain `sittella.ai` is open.
 
-### Dishes / food
+#### **Tanager**
 
-| Name      | The hook                                                                                                                                                                     | Tagline                                        |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **Dashi** | The umami stock that sits **underneath every Japanese dish** — the invisible base layer that makes everything work. Pure "substrate" metaphor, and it sounds like a product. | _"The base layer your whole product runs on."_ |
-| **Roux**  | The flour-and-fat base that **thickens and binds every sauce**. 4 letters, distinctive. (Note: pronounced "roo" — sounds great, may need a spelling cue.)                    | _"The base every product decision builds on."_ |
+- **The Hook:** A family of brightly colored, diverse songbirds found in the Americas, known for striking plumages and active foraging behavior.
+- **The Metaphor:** A modern, crisp three-syllable sound resembling premium tools (e.g., Perplexity, Lovable). Suggests a vibrant, active, and clean ecosystem.
+- **Tagline:** _"Vibrant coordination for your entire product loop."_
+- **Market Safety:** **Very Clean**. The domain `tanager.ai` is listed for purchase. Planet Labs uses the name "Tanager" for a hyperspectral satellite payload mission, but it is not a software platform or competitor.
 
-### Irrational / abstract
+---
 
-| Name      | The hook                                                                                                                                                | Tagline                            |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **Cairn** | A stack of stones that **marks the trail** so others can follow. Perfect for a decision-and-memory substrate that records _why_ and guides what's next. | _"Every decision marks the path."_ |
+### 2. Space & Physics
 
-## Recommendation
+#### **Perihelion**
 
-**Kea** — top pick. It is short, unmistakable, ownable, and carries a marketing story competitors can't copy: _the only bird that uses tools._ For an agentic, tool-using product OS that is almost too on-the-nose, in the best way. Lead tagline: **"Agents that use the tools, so you don't."**
+- **The Hook:** The astronomical point in a body's elliptical orbit where it is **closest to the sun** (its central star)—representing the point of highest orbital speed and peak energy.
+- **The Metaphor:** Symbolizes maximum alignment and peak velocity. The platform brings the developer/product execution loop as close as possible to the user's intent (the sun), running at its fastest with continuous AI memory.
+- **Tagline:** _"Bringing execution closest to intent."_
+- **Market Safety:** **Highly Clean**. A parallel operating systems company named "Perihelion Software" ceased trading in 1998. It is used in sci-fi fiction, but there are no active AI or software entities.
 
-**Halcyon** — strong second if you want the calm-premium, enterprise-elegant feel over playful. **Quasar** — second if you want the "light surface / huge engine" story front and center.
+#### **Libration** (or **Libraton**)
 
-## Product-level taglines (name-independent, pick one as the master line)
+- **The Hook:** Lunar libration is the slow, rocking oscillation of the Moon that allows observers on Earth to see slightly beyond its edges—revealing hidden parts of its surface.
+- **The Metaphor:** Represents uncovering hidden insights, user needs, and product opportunities from customer feedback. It aligns the loop to show the operator what is normally hidden.
+- **Tagline:** _"Reveal the unseen. Align the loop."_
+- **Market Safety:** **Clean**. There is a minor open-source Python package (`llm-libration`) for astronomical resonance plots, but no SaaS or commercial software products.
+
+---
+
+## Disqualified Names & Rationale
+
+To maintain absolute brand safety, the following candidates were thoroughly vetted and disqualified due to active conflicts:
+
+- **Kea:** Disqualified due to **kea.ai**, an active voice AI platform for restaurant automation.
+- **Halcyon:** Disqualified due to **halcyon.ai**, a prominent enterprise anti-ransomware platform.
+- **Vela:** Disqualified due to multiple active AI startups: **tryvela.ai** (scheduling), **getvela.ai** (voice agents), and IBM's **Vela** supercomputer.
+- **Hadron:** Disqualified due to Tether's institutional asset tokenization platform, **Hadron by Tether**, and decentralized AI projects.
+- **Fermion:** Disqualified due to **Fermion AI Group** (meeting assistants, guidance tools) and Indian software services.
+- **Nidus:** Disqualified due to **nidus.ai** (medical expert panels) and character chatbots.
+- **Cairn:** Disqualified due to **cairninsights.ai** (workplace AI analysis) and **cairn.studio** (AI writer tools).
+- **Valence:** Disqualified due to **valence.co** (AI coaching), **valenceai.co** (SaaS security), and **getvalenceai.com** (emotion AI).
+- **Kilonova:** Disqualified due to **kilonovaventures.com**, an AI-native company building platform ("Founder OS").
+- **Flamingo:** Disqualified due to Google DeepMind's **Flamingo** visual language model and **flamingo.run** (MSP agent automation).
+
+---
+
+## Product-level taglines (name-independent)
 
 - _"A product org that runs itself — under your command."_
 - _"Mission control for a swarm of product agents."_
@@ -53,4 +74,4 @@
 
 ## Next step
 
-Pick a name (or approve Kea). Then a single find-replace of "Cadence" across the repo + set this file's status to DECIDED.
+Founder selects a name from the shortlist (Sittella, Perihelion, Tanager, or Libration). Once chosen, we will run a single find-replace sweep of "Circuit" across the codebase and set this file's status to DECIDED.

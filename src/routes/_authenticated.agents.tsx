@@ -269,7 +269,7 @@ function AgentsPage() {
                           <TooltipContent className="max-w-xs text-left p-3 text-[11px] leading-snug">
                             Wraps this run in a mission so the agent can hand off to other agents
                             using the <code>agent.handoff</code> tool. Each hop appears in{" "}
-                            <Link to="/missions" className="underline">
+                            <Link to="/cockpit" search={{ tab: "missions" }} className="underline">
                               Missions
                             </Link>{" "}
                             with structured payloads.

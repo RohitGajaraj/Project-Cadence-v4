@@ -96,8 +96,7 @@ const groups: NavGroup[] = [
     label: "Agents",
     items: [
       { to: "/agents", label: "Agents", icon: Bot },
-      { to: "/missions", label: "Missions", icon: GitBranch },
-      { to: "/swarm", label: "Swarm", icon: Activity },
+      { to: "/cockpit", label: "Cockpit", icon: Activity },
       { to: "/prompts", label: "Prompts", icon: FileCode },
       { to: "/sync", label: "Connectors", icon: Plug },
     ],

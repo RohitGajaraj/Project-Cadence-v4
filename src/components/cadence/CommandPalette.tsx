@@ -105,6 +105,11 @@ export function CommandPalette() {
                 <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/tasks")} />
                 <Item
                   icon={Activity}
+                  label="Cockpit · live swarm, agents, missions"
+                  onSelect={() => go("/cockpit")}
+                />
+                <Item
+                  icon={Activity}
                   label="Observe · analytics, traces, drift"
                   onSelect={() => go("/observe")}
                 />

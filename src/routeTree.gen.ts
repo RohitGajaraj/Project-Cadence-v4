@@ -37,6 +37,7 @@ import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
 import { Route as AuthenticatedDocsRouteImport } from './routes/_authenticated.docs'
 import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authenticated.discovery'
+import { Route as AuthenticatedCockpitRouteImport } from './routes/_authenticated.cockpit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedBuildRouteImport } from './routes/_authenticated.build'
@@ -201,6 +202,11 @@ const AuthenticatedDiscoveryRoute = AuthenticatedDiscoveryRouteImport.update({
   path: '/discovery',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCockpitRoute = AuthenticatedCockpitRouteImport.update({
+  id: '/cockpit',
+  path: '/cockpit',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -335,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/cockpit': typeof AuthenticatedCockpitRoute
   '/discovery': typeof AuthenticatedDiscoveryRoute
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/cockpit': typeof AuthenticatedCockpitRoute
   '/discovery': typeof AuthenticatedDiscoveryRoute
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/_authenticated/build': typeof AuthenticatedBuildRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/cockpit': typeof AuthenticatedCockpitRoute
   '/_authenticated/discovery': typeof AuthenticatedDiscoveryRoute
   '/_authenticated/docs': typeof AuthenticatedDocsRoute
   '/_authenticated/drift': typeof AuthenticatedDriftRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/build'
     | '/calendar'
     | '/chat'
+    | '/cockpit'
     | '/discovery'
     | '/docs'
     | '/drift'
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/build'
     | '/calendar'
     | '/chat'
+    | '/cockpit'
     | '/discovery'
     | '/docs'
     | '/drift'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/_authenticated/build'
     | '/_authenticated/calendar'
     | '/_authenticated/chat'
+    | '/_authenticated/cockpit'
     | '/_authenticated/discovery'
     | '/_authenticated/docs'
     | '/_authenticated/drift'
@@ -852,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDiscoveryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cockpit': {
+      id: '/_authenticated/cockpit'
+      path: '/cockpit'
+      fullPath: '/cockpit'
+      preLoaderRoute: typeof AuthenticatedCockpitRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat': {
       id: '/_authenticated/chat'
       path: '/chat'
@@ -1052,6 +1071,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBuildRoute: typeof AuthenticatedBuildRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedCockpitRoute: typeof AuthenticatedCockpitRoute
   AuthenticatedDiscoveryRoute: typeof AuthenticatedDiscoveryRoute
   AuthenticatedDocsRoute: typeof AuthenticatedDocsRoute
   AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
@@ -1085,6 +1105,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBuildRoute: AuthenticatedBuildRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedCockpitRoute: AuthenticatedCockpitRoute,
   AuthenticatedDiscoveryRoute: AuthenticatedDiscoveryRoute,
   AuthenticatedDocsRoute: AuthenticatedDocsRoute,
   AuthenticatedDriftRoute: AuthenticatedDriftRoute,
