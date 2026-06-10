@@ -6,7 +6,7 @@
 
 ## In-flight — F-IA-V4 (7-surface IA collapse)
 
-**Status:** Phase 1a + 1b + 1b-2 shipped (Missions + Govern with Prompts & Evals folded in). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
+**Status:** Phase 1a + 1b + 1b-2 + 1c shipped (Missions + Govern + Product). Approved plan: [`.lovable/plan.md`](.lovable/plan.md).
 
 ### Done
 
@@ -25,11 +25,10 @@
 - [x] Add `prompts` + `evals` tabs to `/govern` (Govern now has 9 tabs); widen container to `max-w-[1400px]`.
 - [x] Convert `/evals` + `/prompts` → `beforeLoad` redirects to `/govern?tab=…`.
 - [x] Repoint sidebar: Prompts moved from Agents group into Govern group; both Prompts + Evals now deep-link to `/govern?tab=…`.
-
-### Phase 1c — Product surface
-
-- [ ] Extract panel bodies from `/discovery`, `/opportunities`, `/prds`, `/roadmap`, `/tasks`, `/outcome`.
-- [ ] Create `_authenticated.product.tsx` with tabs: Signals · Opportunities · Specs · Roadmap · Releases.
+- [x] Extract panel bodies from `/discovery`, `/opportunities`, `/prds`, `/roadmap`, `/tasks` into `src/components/product/{Signals,Opportunities,Specs,Roadmap,Tasks}Panel.tsx`; extract the Releases slice of `/outcome` into `ReleasesPanel.tsx`.
+- [x] Create `_authenticated.product.tsx` with 6 tabs: Signals · Opportunities · Specs · Roadmap · Tasks · Releases.
+- [x] Convert `/discovery`, `/opportunities`, `/roadmap`, `/tasks` → `beforeLoad` redirects to `/product?tab=…`. `/prds` split into a layout + `prds.index` redirect so `/prds/$id` still renders.
+- [x] Repoint sidebar: collapsed `discover` + `deliver` groups into a single **Product** group with deep-links; spun off Builder + Docs into a new **Build** group. `/outcome` group stays until Phase 1d folds Launches/Support/Learnings into Learn.
 
 ### Phase 1d — Knowledge + Learn surfaces
 

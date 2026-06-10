@@ -24,6 +24,7 @@ import { Route as AuthenticatedSwarmRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
+import { Route as AuthenticatedProductRouteImport } from './routes/_authenticated.product'
 import { Route as AuthenticatedPrdsRouteImport } from './routes/_authenticated.prds'
 import { Route as AuthenticatedOutcomeRouteImport } from './routes/_authenticated.outcome'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
@@ -46,6 +47,7 @@ import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
+import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
@@ -134,6 +136,11 @@ const AuthenticatedRoadmapRoute = AuthenticatedRoadmapRouteImport.update({
 const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
   id: '/prompts',
   path: '/prompts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProductRoute = AuthenticatedProductRouteImport.update({
+  id: '/product',
+  path: '/product',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPrdsRoute = AuthenticatedPrdsRouteImport.update({
@@ -247,6 +254,11 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPrdsIndexRoute = AuthenticatedPrdsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedPrdsRoute,
 } as any)
 const AuthenticatedMissionsIndexRoute =
   AuthenticatedMissionsIndexRouteImport.update({
@@ -362,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/outcome': typeof AuthenticatedOutcomeRoute
   '/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/product': typeof AuthenticatedProductRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -376,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
+  '/prds/': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -413,7 +427,7 @@ export interface FileRoutesByTo {
   '/observe': typeof AuthenticatedObserveRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/outcome': typeof AuthenticatedOutcomeRoute
-  '/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/product': typeof AuthenticatedProductRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -429,6 +443,7 @@ export interface FileRoutesByTo {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
+  '/prds': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -469,6 +484,7 @@ export interface FileRoutesById {
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/outcome': typeof AuthenticatedOutcomeRoute
   '/_authenticated/prds': typeof AuthenticatedPrdsRouteWithChildren
+  '/_authenticated/product': typeof AuthenticatedProductRoute
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -484,6 +500,7 @@ export interface FileRoutesById {
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
+  '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -525,6 +542,7 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/outcome'
     | '/prds'
+    | '/product'
     | '/prompts'
     | '/roadmap'
     | '/settings'
@@ -539,6 +557,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/traces/$traceId'
     | '/missions/'
+    | '/prds/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -576,7 +595,7 @@ export interface FileRouteTypes {
     | '/observe'
     | '/opportunities'
     | '/outcome'
-    | '/prds'
+    | '/product'
     | '/prompts'
     | '/roadmap'
     | '/settings'
@@ -592,6 +611,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/traces/$traceId'
     | '/missions'
+    | '/prds'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -631,6 +651,7 @@ export interface FileRouteTypes {
     | '/_authenticated/opportunities'
     | '/_authenticated/outcome'
     | '/_authenticated/prds'
+    | '/_authenticated/product'
     | '/_authenticated/prompts'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
@@ -646,6 +667,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prds/$id'
     | '/_authenticated/traces/$traceId'
     | '/_authenticated/missions/'
+    | '/_authenticated/prds/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -783,6 +805,13 @@ declare module '@tanstack/react-router' {
       path: '/prompts'
       fullPath: '/prompts'
       preLoaderRoute: typeof AuthenticatedPromptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/product': {
+      id: '/_authenticated/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof AuthenticatedProductRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/prds': {
@@ -939,6 +968,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/prds/': {
+      id: '/_authenticated/prds/'
+      path: '/'
+      fullPath: '/prds/'
+      preLoaderRoute: typeof AuthenticatedPrdsIndexRouteImport
+      parentRoute: typeof AuthenticatedPrdsRoute
+    }
     '/_authenticated/missions/': {
       id: '/_authenticated/missions/'
       path: '/missions'
@@ -1062,10 +1098,12 @@ const AuthenticatedMeetingsRouteWithChildren =
 
 interface AuthenticatedPrdsRouteChildren {
   AuthenticatedPrdsIdRoute: typeof AuthenticatedPrdsIdRoute
+  AuthenticatedPrdsIndexRoute: typeof AuthenticatedPrdsIndexRoute
 }
 
 const AuthenticatedPrdsRouteChildren: AuthenticatedPrdsRouteChildren = {
   AuthenticatedPrdsIdRoute: AuthenticatedPrdsIdRoute,
+  AuthenticatedPrdsIndexRoute: AuthenticatedPrdsIndexRoute,
 }
 
 const AuthenticatedPrdsRouteWithChildren =
@@ -1105,6 +1143,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedOutcomeRoute: typeof AuthenticatedOutcomeRoute
   AuthenticatedPrdsRoute: typeof AuthenticatedPrdsRouteWithChildren
+  AuthenticatedProductRoute: typeof AuthenticatedProductRoute
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -1140,6 +1179,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedOutcomeRoute: AuthenticatedOutcomeRoute,
   AuthenticatedPrdsRoute: AuthenticatedPrdsRouteWithChildren,
+  AuthenticatedProductRoute: AuthenticatedProductRoute,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
