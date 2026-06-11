@@ -22,6 +22,22 @@
 - [ ] Then verify: generate token on `/sync`, curl one signal, see it in Product · Signals (+ auto-discovery run)
 - [ ] Post-demo hardening queued: per-token rate cap, token hashing (KI-10)
 
+## `F-CONN` Phase 1 — Connector Platform base (BUILDING 2026-06-12)
+
+Plan: connections (account level) · connection_bindings (workspace level) · `resolveProviderAuth` chain · GitHub App exemplar · 9 call sites migrated with env fallback preserved. Decision entry in `docs/strategy/session-decisions.md`.
+
+### Open ops task — register the Circuit GitHub App (founder, ~10 min — gates the connect flow)
+
+1. [ ] github.com → Settings → Developer settings → **GitHub Apps** → New GitHub App
+   - Name: e.g. `circuit-cockpit` (the slug becomes `GITHUB_APP_SLUG`)
+   - Homepage: `https://cadence-flow-beta.lovable.app`
+   - Callback URL: `https://cadence-flow-beta.lovable.app/api/public/connect/github/callback` (add `http://localhost:8080/api/public/connect/github/callback` as a second callback for local dev)
+   - ✅ "Request user authorization (OAuth) during installation" · Webhooks: **off** for now
+   - Permissions: Issues **RW** · Pull requests **RW** · Contents **R** · Actions **R**
+2. [ ] After creating: note the **App ID**, generate a **client secret**, and generate + download a **private key** (.pem)
+3. [ ] Add backend secrets (Lovable project env): `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY` (paste PEM), and `CONNECTOR_SECRETS_KEY` (run `openssl rand -base64 32`)
+4. [ ] Until these exist, the GitHub card in Settings → Connected accounts shows "setup pending" (everything else still works; old env-var path keeps the demo alive)
+
 ## ~~Slack app credentials~~ — RETIRED 2026-06-12
 
 Founder decision: no Slack app. The **webhook ingest door is the ingest strategy** (`F-V5-INGEST-WEBHOOK`); anything — including Slack via its own outgoing-webhook/workflow tools — POSTs to `/api/public/ingest-signals`. `F-V5-SLACK` (native OAuth connector) removed from the queue.

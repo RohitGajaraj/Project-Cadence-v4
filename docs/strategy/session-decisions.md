@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — Connector Platform adopted (F-CONN): connect once at account level, bind resources per workspace
+
+**Decision:** Build the integration base the platform was missing: (1) **`connections`** — account-level, user-owned, self-serve connect/disconnect/status in the UI, zero env vars for end users; (2) **`connection_bindings`** — workspace-level resource mapping (which repo/team/database this workspace acts on); (3) **`resolveProviderAuth`** — one credential chokepoint for every external call (workspace binding → user connection → env fallback flagged deprecated → actionable error). Founder-ratified specifics: **GitHub connects via a GitHub App from day one** (installation flow; actions run as the app, not a member; founder registers the app — checklist in `active-task.md`); **secrets vault = app-layer AES-256-GCM** (ciphertext-only `connection_secrets`, service-role-only, `CONNECTOR_SECRETS_KEY`) — correcting the docs' pgsodium claim (deprecated; `user_api_keys` was in fact plaintext); **multi-member workspaces share bindings with attribution** until org-owned connections at multi-seat. Full plan: `~/.claude/plans` F-CONN (Phase 1 GitHub exemplar + call-site migration; Phase 2 Linear/Notion/GDocs/Firecrawl + GitHub webhook; Phase 3 calendar fold-in + org entity).
+
+**Why:** Founder directive — enterprises sit on existing stacks; Circuit must ingest/outflow through their tools without replacing them day one, and every connection must be end-user self-serve ("couple of clicks"), not deploy-time secrets. Current state was broken pieces: GitHub/Linear/Notion on env vars, four inconsistent connection tables, no workspace mapping. Also corrected en route: `nango/` was already removed 2026-05-30 — CLAUDE.md's vendored-nango claim was stale (fixed in this unit).
+
+**Tradeoffs considered:** PAT-paste-first for GitHub (faster, no app registration) — rejected by founder for day-one OAuth polish; Nango as backbone — already rejected 2026-05-30 (separate-service overhead; Lovable gateway + per-provider adapters cover the wedge); Supabase Vault for secrets — rejected (unverified on Lovable-managed Supabase).
+
+**Impact:** New `src/lib/connectors/` namespace (registry, adapters, crypto, resolve chain), `connections.functions.ts`, Settings "Connected accounts" + `/sync` "Workspace bindings" UI, migration (3 tables + `user_api_keys` cipher columns), 9 GitHub call sites migrated (3 server fns, outcome-tick cron, 4 agent tools, callback route). Env fallback preserved so the demo never breaks. Built via 4-agent parallel workflow.
+
 ### 2026-06-12 — No Slack app: the universal webhook door is the ingest strategy
 
 **Decision:** Retire `F-V5-SLACK` (native Slack OAuth connector). The ingest strategy at the wedge stage is the universal webhook door (`F-V5-INGEST-WEBHOOK`, shipped 2026-06-12): per-workspace token + public `POST /api/public/ingest-signals`; any source that can POST — Slack's own webhook/workflow tools, Zapier, forms, scripts — feeds signals directly into the `signal.created` → Scout auto-pipeline.
