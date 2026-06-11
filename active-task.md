@@ -1,10 +1,6 @@
 # Active tasks
 
 > **2026-06-11 — `F-IA-V4` (7-surface IA collapse) STRUCTURALLY COMPLETE.** Phases 1a–1d all shipped: `/missions`, `/govern`, `/product`, `/knowledge`, `/learn` live as tabbed surfaces; every absorbed legacy route flipped to `beforeLoad` redirects. Pinned rail = Today · Approvals · Knowledge · Chat. Calendar is the default tab of `/knowledge` so daily muscle memory survives.
->
-> **Remaining for the F-IA-V4 ticket itself:** Phase 2 (AppShell pinned-rail rewrite to spec-literal `Home · Chat · Missions` + drop Approvals/Calendar entirely), and Phase 4 doc closure update on `architecture/frontend.md`. Both are small. Open as separate work when picked up.
->
-> **Follow-ups spawned by 1d:** `F-DECISIONS-CAPTURE` — wire mission / spec / meeting extract → entries in `/knowledge?tab=decisions`. Backlog row pending.
 
 ---
 
