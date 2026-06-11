@@ -8,6 +8,7 @@ import {
   Settings,
   Telescope,
   BookOpen,
+  Inbox,
   Activity,
   LogOut,
   ShieldAlert,
@@ -25,6 +26,7 @@ import {
   Pencil,
   LogOut as LeaveIcon,
   GraduationCap,
+  Calendar as CalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -39,6 +41,12 @@ import { getWorkspacePauseState } from "@/lib/governance.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +64,14 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/chat", label: "Chat", icon: MessageSquare },
+];
+
+// Floating quick-access dock — Approvals + Calendar, the two highest-frequency
+// daily gates. Calendar deep-links into /knowledge?tab=calendar so it stays
+// consistent with Calendar's new home as a Knowledge tab.
+const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
+  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
+  { to: "/knowledge", label: "Calendar", icon: CalIcon, search: { tab: "calendar" } },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
