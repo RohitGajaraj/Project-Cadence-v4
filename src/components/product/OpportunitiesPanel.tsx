@@ -108,13 +108,18 @@ export function OpportunitiesPanel() {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-right">
+                  {(() => {
+                    const isPrdPending = prd.isPending && prd.variables === o.id;
+                    const isDelPending = del.isPending && del.variables === o.id;
+                    return (
+                      <>
                   <button
                     onClick={() => prd.mutate(o.id)}
-                    disabled={prd.isPending}
+                    disabled={isPrdPending}
                     className="btn-agentic rounded-lg px-2.5 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
                   >
                     <FileText className="h-3 w-3" />{" "}
-                    {prd.isPending ? "Generating…" : "Generate PRD"}
+                    {isPrdPending ? "Generating…" : "Generate PRD"}
                   </button>
                   <button
                     onClick={() => setLineage({ id: o.id, title: o.title })}
@@ -125,10 +130,14 @@ export function OpportunitiesPanel() {
                   </button>
                   <button
                     onClick={() => del.mutate(o.id)}
+                    disabled={isDelPending}
                     className="ml-2 text-muted-foreground hover:text-destructive p-1.5"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                      </>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}

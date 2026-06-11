@@ -134,7 +134,7 @@ export function ApprovalsPanel() {
                 {a.status === "pending" && (
                   <div className="flex shrink-0 gap-2">
                     <button
-                      disabled={decide.isPending}
+                      disabled={decide.isPending && decide.variables?.approvalId === a.id}
                       onClick={() => decide.mutate({ approvalId: a.id, decision: "reject" })}
                       className="btn-pill-outline disabled:opacity-50"
                       title={`Reject. Nothing runs. ${a.agent_slug ?? "Agent"} stays paused on this step.`}
@@ -142,7 +142,7 @@ export function ApprovalsPanel() {
                       <X className="h-3.5 w-3.5" /> Reject. Nothing runs.
                     </button>
                     <button
-                      disabled={decide.isPending}
+                      disabled={decide.isPending && decide.variables?.approvalId === a.id}
                       onClick={() => decide.mutate({ approvalId: a.id, decision: "approve" })}
                       className="btn-pill disabled:opacity-50"
                       title={`Approve. Runs ${a.tool_name} now. Reject keeps it paused.`}

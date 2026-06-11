@@ -196,7 +196,7 @@ export function SignalsPanel() {
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                       <button
                         onClick={() => promoteSignal.mutate(s.id)}
-                        disabled={promoteSignal.isPending}
+                        disabled={promoteSignal.isPending && promoteSignal.variables === s.id}
                         title="Promote to opportunity"
                         className="text-muted-foreground hover:text-violet-300 disabled:opacity-50"
                       >
@@ -258,7 +258,7 @@ export function SignalsPanel() {
                   <div className="mt-3 flex items-center gap-1.5">
                     <button
                       onClick={() => promote.mutate(t.id)}
-                      disabled={promote.isPending}
+                      disabled={promote.isPending && promote.variables === t.id}
                       className="rounded-lg border hairline px-2.5 py-1 text-[11px] hover:bg-secondary inline-flex items-center gap-1.5"
                     >
                       <Wand2 className="h-3 w-3" /> Promote to opportunity
