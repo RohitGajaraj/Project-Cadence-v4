@@ -54,17 +54,15 @@ type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<st
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 // Workspace — your daily rail. Spec-literal: Today · Chat · Missions.
-// Approvals + Calendar get their own Quick-access dock above the nav
-// (two adjacent tiles, like the team switcher pattern) so they stay one
-// click away without burying the spec rail. Knowledge moved to a group.
+// Approvals + Calendar sit as quiet utility icons in the fixed sidebar
+// footer so they stay one click away without fighting page headers.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/missions", label: "Missions", icon: Activity },
 ];
 
-// Quick-access dock — two-tile spotlight for the highest-frequency
-// surfaces that aren't part of the linear nav (Approvals + Calendar).
+// Quick-access dock — compact utility links for highest-frequency daily gates.
 const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: CalIcon },
@@ -138,6 +136,38 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
       <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
       <span className="truncate">{item.label}</span>
     </Link>
+  );
+}
+
+function QuickAccessRow({ path, searchTab }: { path: string; searchTab: string | null }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border hairline bg-secondary/20 px-2 py-1.5">
+      <span className="mono-label" style={{ fontSize: "9px" }}>
+        Daily
+      </span>
+      <div className="flex items-center gap-1">
+        {quickAccess.map((q) => {
+          const Icon = q.icon;
+          const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
+          return (
+            <Link
+              key={q.label}
+              to={q.to}
+              search={q.search as never}
+              title={q.label}
+              aria-label={q.label}
+              className={`flex h-6 w-6 items-center justify-center rounded transition ${
+                active
+                  ? "bg-foreground/10 text-foreground"
+                  : "text-ink-faint hover:bg-secondary/60 hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -655,8 +685,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           </div>
         </div>
 
-        {/* Fixed footer: alerts, budget, co-pilot, sign out, theme */}
+        {/* Fixed footer: daily shortcuts, alerts, budget, co-pilot, sign out, theme */}
         <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
+          <QuickAccessRow path={path} searchTab={searchTab} />
           {pauseState?.paused && (
             <Link
               to="/govern"
@@ -736,31 +767,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
       </aside>
 
       <main className="flex-1 min-w-0">{children}</main>
-
-      {/* Quick access — subtle floating cluster, always-reachable shortcuts to
-          Approvals + Calendar. Sits top-right, out of the page's own header. */}
-      <div className="hidden lg:flex fixed top-3 right-4 z-40 items-center gap-1 rounded-md border hairline bg-card/80 backdrop-blur px-1 py-1 shadow-sm">
-        {quickAccess.map((q) => {
-          const Icon = q.icon;
-          const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
-          return (
-            <Link
-              key={q.label}
-              to={q.to}
-              search={q.search as never}
-              title={q.label}
-              aria-label={q.label}
-              className={`flex h-7 w-7 items-center justify-center rounded transition ${
-                active
-                  ? "bg-secondary text-foreground"
-                  : "text-ink-faint hover:text-foreground hover:bg-secondary/60"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </Link>
-          );
-        })}
-      </div>
     </div>
   );
 }
