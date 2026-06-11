@@ -4,11 +4,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/linear/graphql";
 
+export function isLinearConfigured() {
+  return Boolean(process.env.LOVABLE_API_KEY && process.env.LINEAR_API_KEY);
+}
+
 function headers() {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+  if (!LOVABLE_API_KEY) throw new Error("Linear isn't connected yet. Link it from Integrations.");
   const LINEAR_API_KEY = process.env.LINEAR_API_KEY;
-  if (!LINEAR_API_KEY) throw new Error("LINEAR_API_KEY is not configured");
+  if (!LINEAR_API_KEY) throw new Error("Linear isn't connected yet. Link it from Integrations.");
   return {
     Authorization: `Bearer ${LOVABLE_API_KEY}`,
     "X-Connection-Api-Key": LINEAR_API_KEY,
@@ -60,10 +64,11 @@ const STATE_TO_LOCAL = (t: string): "todo" | "doing" | "done" => {
 export const listLinearTeams = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
+    if (!isLinearConfigured()) return { teams: [], connected: false as const };
     const data = await gql<{ teams: { nodes: { id: string; key: string; name: string }[] } }>(
       `query { teams(first: 50) { nodes { id key name } } }`,
     );
-    return { teams: data.teams.nodes };
+    return { teams: data.teams.nodes, connected: true as const };
   });
 
 export const searchLinearIssues = createServerFn({ method: "POST" })
@@ -78,6 +83,7 @@ export const searchLinearIssues = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
+    if (!isLinearConfigured()) return { issues: [], connected: false as const };
     const filters: string[] = [];
     if (data.teamId) filters.push(`team: { id: { eq: "${data.teamId}" } }`);
     if (data.onlyMine) filters.push(`assignee: { isMe: { eq: true } }`);
