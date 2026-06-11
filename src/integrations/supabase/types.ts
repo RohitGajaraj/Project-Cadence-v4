@@ -1013,6 +1013,162 @@ export type Database = {
         }
         Relationships: []
       }
+      connection_bindings: {
+        Row: {
+          config: Json
+          connection_id: string
+          created_at: string
+          created_by: string
+          id: string
+          product_id: string | null
+          provider: string
+          resource_id: string
+          resource_kind: string
+          resource_label: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json
+          connection_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          product_id?: string | null
+          provider: string
+          resource_id: string
+          resource_kind: string
+          resource_label?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          config?: Json
+          connection_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          product_id?: string | null
+          provider?: string
+          resource_id?: string
+          resource_kind?: string
+          resource_label?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connection_bindings_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connection_bindings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connection_bindings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connection_secrets: {
+        Row: {
+          ciphertext: string
+          created_at: string
+          id: string
+          iv: string
+          key_version: number
+          updated_at: string
+        }
+        Insert: {
+          ciphertext: string
+          created_at?: string
+          id?: string
+          iv: string
+          key_version?: number
+          updated_at?: string
+        }
+        Update: {
+          ciphertext?: string
+          created_at?: string
+          id?: string
+          iv?: string
+          key_version?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      connections: {
+        Row: {
+          account_email: string | null
+          account_label: string | null
+          auth_kind: string
+          created_at: string
+          external_handle: string | null
+          id: string
+          last_verified_at: string | null
+          metadata: Json
+          provider: string
+          scopes: string[]
+          secret_id: string | null
+          status: string
+          status_detail: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_email?: string | null
+          account_label?: string | null
+          auth_kind: string
+          created_at?: string
+          external_handle?: string | null
+          id?: string
+          last_verified_at?: string | null
+          metadata?: Json
+          provider: string
+          scopes?: string[]
+          secret_id?: string | null
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_email?: string | null
+          account_label?: string | null
+          auth_kind?: string
+          created_at?: string
+          external_handle?: string | null
+          id?: string
+          last_verified_at?: string | null
+          metadata?: Json
+          provider?: string
+          scopes?: string[]
+          secret_id?: string | null
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_secret_id_fkey"
+            columns: ["secret_id"]
+            isOneToOne: false
+            referencedRelation: "connection_secrets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
