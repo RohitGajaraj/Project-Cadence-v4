@@ -24,6 +24,8 @@ import { listProjects } from "@/lib/projects.functions";
 import { getMission, type HopStep, type HopToolCall } from "@/lib/missions.functions";
 import { MissionGraph } from "@/components/cadence/MissionGraph";
 import { listMissionSteps, advanceMission } from "@/lib/orchestrator.functions";
+import { createDecision } from "@/lib/decisions.functions";
+import { Gavel } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetail,
@@ -392,6 +394,13 @@ function MissionDetail() {
                     <Loader2 className="h-3 w-3 animate-spin" /> live · refreshing every 2s
                   </span>
                 )}
+              </div>
+              <div className="mt-3">
+                <CaptureMissionDecision
+                  missionId={data.mission.id}
+                  title={data.mission.title}
+                  goal={data.mission.goal}
+                />
               </div>
             </>
           )}
