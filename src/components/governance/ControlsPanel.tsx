@@ -364,7 +364,7 @@ export function ControlsPanel() {
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    disabled={extendMut.isPending}
+                    disabled={extendMut.isPending && extendMut.variables === a.id}
                     onClick={() => extendMut.mutate(a.id)}
                     className="rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition"
                     title="Extend TTL 24h"
@@ -373,7 +373,7 @@ export function ControlsPanel() {
                   </button>
                   <button
                     type="button"
-                    disabled={resolveMut.isPending}
+                    disabled={resolveMut.isPending && resolveMut.variables?.approvalId === a.id}
                     onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "approved" })}
                     className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
                     title="Approve — runs the tool call. Reject keeps it paused."
@@ -382,7 +382,7 @@ export function ControlsPanel() {
                   </button>
                   <button
                     type="button"
-                    disabled={resolveMut.isPending}
+                    disabled={resolveMut.isPending && resolveMut.variables?.approvalId === a.id}
                     onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "rejected" })}
                     className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 transition inline-flex items-center gap-1"
                     title="Reject — nothing runs. The mission stays paused on this step."
