@@ -2042,6 +2042,69 @@ export type Database = {
           },
         ]
       }
+      learnings: {
+        Row: {
+          created_at: string
+          id: string
+          metric_label: string | null
+          metric_value: string | null
+          new_ice: number | null
+          opportunity_id: string | null
+          prd_id: string | null
+          prior_ice: number | null
+          summary: string
+          updated_at: string
+          user_id: string
+          verdict: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_label?: string | null
+          metric_value?: string | null
+          new_ice?: number | null
+          opportunity_id?: string | null
+          prd_id?: string | null
+          prior_ice?: number | null
+          summary: string
+          updated_at?: string
+          user_id: string
+          verdict: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_label?: string | null
+          metric_value?: string | null
+          new_ice?: number | null
+          opportunity_id?: string | null
+          prd_id?: string | null
+          prior_ice?: number | null
+          summary?: string
+          updated_at?: string
+          user_id?: string
+          verdict?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learnings_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learnings_prd_id_fkey"
+            columns: ["prd_id"]
+            isOneToOne: false
+            referencedRelation: "prds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           action_items: Json
@@ -2391,8 +2454,10 @@ export type Database = {
           id: string
           model: string | null
           opportunity_id: string | null
+          outcome: Json | null
           product_id: string | null
           project_id: string | null
+          shipped_at: string | null
           status: string
           title: string
           updated_at: string
@@ -2408,8 +2473,10 @@ export type Database = {
           id?: string
           model?: string | null
           opportunity_id?: string | null
+          outcome?: Json | null
           product_id?: string | null
           project_id?: string | null
+          shipped_at?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2425,8 +2492,10 @@ export type Database = {
           id?: string
           model?: string | null
           opportunity_id?: string | null
+          outcome?: Json | null
           product_id?: string | null
           project_id?: string | null
+          shipped_at?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -2462,6 +2531,7 @@ export type Database = {
           role: string | null
           timezone: string | null
           updated_at: string
+          voice_anchor_text: string | null
           working_hours_end: number
           working_hours_start: number
         }
@@ -2476,6 +2546,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string
+          voice_anchor_text?: string | null
           working_hours_end?: number
           working_hours_start?: number
         }
@@ -2490,6 +2561,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string
+          voice_anchor_text?: string | null
           working_hours_end?: number
           working_hours_start?: number
         }

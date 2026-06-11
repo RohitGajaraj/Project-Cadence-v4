@@ -56,6 +56,7 @@ import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
+import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
 import { Route as ApiPublicHooksMemoryTickRouteImport } from './routes/api/public/hooks/memory-tick'
 import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/public/hooks/indexer-tick'
 import { Route as ApiPublicHooksEventReactorTickRouteImport } from './routes/api/public/hooks/event-reactor-tick'
@@ -306,6 +307,12 @@ const ApiPublicHooksResumeRunsRoute =
     path: '/api/public/hooks/resume-runs',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOutcomeTickRoute =
+  ApiPublicHooksOutcomeTickRouteImport.update({
+    id: '/api/public/hooks/outcome-tick',
+    path: '/api/public/hooks/outcome-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMemoryTickRoute =
   ApiPublicHooksMemoryTickRouteImport.update({
     id: '/api/public/hooks/memory-tick',
@@ -412,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/event-reactor-tick': typeof ApiPublicHooksEventReactorTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
+  '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -468,6 +476,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/event-reactor-tick': typeof ApiPublicHooksEventReactorTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
+  '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -527,6 +536,7 @@ export interface FileRoutesById {
   '/api/public/hooks/event-reactor-tick': typeof ApiPublicHooksEventReactorTickRoute
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
+  '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/event-reactor-tick'
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
+    | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/event-reactor-tick'
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
+    | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   id:
@@ -700,6 +712,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/event-reactor-tick'
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
+    | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
@@ -720,6 +733,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEventReactorTickRoute: typeof ApiPublicHooksEventReactorTickRoute
   ApiPublicHooksIndexerTickRoute: typeof ApiPublicHooksIndexerTickRoute
   ApiPublicHooksMemoryTickRoute: typeof ApiPublicHooksMemoryTickRoute
+  ApiPublicHooksOutcomeTickRoute: typeof ApiPublicHooksOutcomeTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -1055,6 +1069,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksResumeRunsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/outcome-tick': {
+      id: '/api/public/hooks/outcome-tick'
+      path: '/api/public/hooks/outcome-tick'
+      fullPath: '/api/public/hooks/outcome-tick'
+      preLoaderRoute: typeof ApiPublicHooksOutcomeTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/memory-tick': {
       id: '/api/public/hooks/memory-tick'
       path: '/api/public/hooks/memory-tick'
@@ -1254,6 +1275,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEventReactorTickRoute: ApiPublicHooksEventReactorTickRoute,
   ApiPublicHooksIndexerTickRoute: ApiPublicHooksIndexerTickRoute,
   ApiPublicHooksMemoryTickRoute: ApiPublicHooksMemoryTickRoute,
+  ApiPublicHooksOutcomeTickRoute: ApiPublicHooksOutcomeTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
