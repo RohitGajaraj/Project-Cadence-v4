@@ -42,6 +42,12 @@ import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -139,35 +145,44 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function QuickAccessRow({ path, searchTab }: { path: string; searchTab: string | null }) {
+function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string | null }) {
+  // Floating dock pinned to bottom-right of the viewport. Sits above content
+  // (z-50) but below modal overlays, so it never hides page controls and
+  // never gets hidden by them. Tooltips name each shortcut on hover.
   return (
-    <div className="flex items-center justify-between rounded-md border hairline bg-secondary/20 px-2 py-1.5">
-      <span className="mono-label" style={{ fontSize: "9px" }}>
-        Daily
-      </span>
-      <div className="flex items-center gap-1">
+    <TooltipProvider delayDuration={150}>
+      <div
+        role="navigation"
+        aria-label="Daily shortcuts"
+        className="fixed bottom-5 right-5 z-50 hidden md:flex items-center gap-1 rounded-full border hairline bg-card/90 backdrop-blur-md px-1.5 py-1 shadow-lg"
+      >
         {quickAccess.map((q) => {
           const Icon = q.icon;
           const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
           return (
-            <Link
-              key={q.label}
-              to={q.to}
-              search={q.search as never}
-              title={q.label}
-              aria-label={q.label}
-              className={`flex h-6 w-6 items-center justify-center rounded transition ${
-                active
-                  ? "bg-foreground/10 text-foreground"
-                  : "text-ink-faint hover:bg-secondary/60 hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </Link>
+            <Tooltip key={q.label}>
+              <TooltipTrigger asChild>
+                <Link
+                  to={q.to}
+                  search={q.search as never}
+                  aria-label={q.label}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
+                    active
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-ink-muted hover:bg-secondary/60 hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.75} />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="left" sideOffset={6}>
+                {q.label}
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -687,7 +702,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
 
         {/* Fixed footer: daily shortcuts, alerts, budget, co-pilot, sign out, theme */}
         <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
-          <QuickAccessRow path={path} searchTab={searchTab} />
           {pauseState?.paused && (
             <Link
               to="/govern"
@@ -767,6 +781,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
       </aside>
 
       <main className="flex-1 min-w-0">{children}</main>
+      <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );
 }
