@@ -11,7 +11,7 @@
 - [x] UI: `OutcomeCard` on PRD detail (3 states) · re-score delta chip beside ICE in OpportunitiesPanel
 - [x] Loop: KI-07 fixed (failed model call ⇒ run `failed`, mission `halted`) · recalled memories persisted to checkpoints + "Memory context · N" pill on mission hops · voice anchor end-to-end (settings → profiles → agent prompts)
 - [x] Verify: lint + `bun run build:dev` green on all touched files
-- [ ] **GATE (founder): authorize the migration apply to the live DB** (KI-08) — until then outcome/learnings/voice-anchor features are inert; everything else deployed is unaffected
+- [ ] **GATE (KI-08, founder-chosen Lovable path):** open the Lovable project so it syncs main + applies `20260611161500` — DB stays Lovable-operated until migrating off (decision 2026-06-11). Probe: REST `/rest/v1/learnings` returns rows/[] instead of PGRST205
 - [ ] After apply: regenerate Supabase types (removes the untyped casts), then walk the loop end-to-end: approve a PRD with an issue → close the issue → "Check ship status" → record outcome → see the re-score chip in Opportunities
 - [ ] Doc closure remainder: `architecture/orchestration.md` (halted-mission semantics) + `docs/features/` operator page for the outcome loop
 

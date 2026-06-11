@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-11 — Database stays Lovable-operated until a deliberate migration off
+
+**Decision:** Lovable Cloud remains the sole operator of the Supabase database. Migrations reach production only by Lovable syncing `supabase/migrations/` from GitHub — no direct dashboard applies, no read-write Supabase access from agents; the project-level Supabase MCP stays `--read-only` (`.mcp.json` unchanged). Direct DB administration is deferred until the application is fully built and the founder decides to migrate off Lovable — at which point the accumulated migration files are the portable record.
+
+**Why:** Founder call — evaluate Lovable's capabilities end-to-end first; keep exactly one writer of production state while the same DB serves the hosted demo; avoid platform surgery days before the June 22 demo.
+
+**Tradeoffs considered:** Direct dashboard apply (faster, but creates a second apply path Lovable doesn't know about); flipping the MCP to read-write (lets agents apply reviewed migrations, but weakens a deliberate guard). Both rejected for now; revisit at migration-off time.
+
+**Impact:** KI-08 re-pointed: `F-V5-LOOP-CLOSE` features stay inert until Lovable syncs + applies `20260611161500_f_v5_loop_close_learnings.sql` (made idempotent so any double-apply is harmless). Verification probe: REST `GET /rest/v1/learnings` stops returning PGRST205.
+
 ### 2026-06-11 — v5 adopted: the PM Chief of Staff wedge (identity · mothball-hard cut · Slack door)
 
 **Decision:** Founder ratified three calls that define the felt product through June 22 and beyond: (1) **Identity = PM Chief of Staff** — Circuit's felt product is the senior PM's daily evidence-to-decision ritual (the Calls queue), not the org-cockpit; the cockpit remains the expansion story. (2) **Cut = mothball hard** — nav collapses to Today · Product · Knowledge · Chat + a Trust drawer; Govern becomes a drawer-accessed Engine Room page; `/build`, `/learn`, agents-config hidden behind redirects (code intact, reversal ≈ 1 day); UI vocabulary = 5 agents (Scout, Strategist, Critic, Scribe, Chief of Staff). (3) **Ingest door = Slack connector** (email-forward/webhook as day-6 fallback). Full thesis + gap analysis + phases A–E (`F-V5-RITUAL`, `F-V5-MOTHBALL`, `F-V5-SLACK`, `F-V5-LOOP-CLOSE`, `F-V5-DEMO`): [`v5-chief-of-staff-2026-06-11.md`](./v5-chief-of-staff-2026-06-11.md). **v4 is not superseded** — it remains the expansion map; v5 governs the wedge/felt product.
