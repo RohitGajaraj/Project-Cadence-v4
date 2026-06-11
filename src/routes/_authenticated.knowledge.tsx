@@ -99,10 +99,9 @@ function KnowledgePage() {
   ];
 
   const activeTab = tabs.find((t) => t.id === tab)!;
-  const setTab = (next: Tab) =>
-    navigate({ search: (prev) => ({ ...prev, tab: next }) });
+  const setTab = (next: Tab) => navigate({ search: { tab: next, meeting } });
   const setMeeting = (m: string | undefined) =>
-    navigate({ search: (prev) => ({ ...prev, meeting: m }) });
+    navigate({ search: { tab, meeting: m } });
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
