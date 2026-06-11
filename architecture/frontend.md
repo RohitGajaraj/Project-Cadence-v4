@@ -56,7 +56,7 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 
 ## Observe surface (Run group)
 
-`/observe` is one page with three tabs (Analytics · Traces · Drift). Tab state is a URL search param (`?tab=analytics|traces|drift`) declared by `validateSearch`; Traces and Drift labels carry live count badges. The three legacy routes — `/analytics`, `/traces` (index only), and `/drift` — are reduced to `throw redirect({ to: "/observe", search: { tab: ... } })` so bookmarks survive. `/traces/$traceId` is preserved untouched and is the deep-link target from the Traces tab. Panel JSX lives in `src/components/observe/{Analytics,Traces,Drift}Panel.tsx`; the route file is a thin AppShell + tabs shell. The sidebar group is `Run` (Observe · Evals) — Evals stays separate because authoring ≠ observation.
+`/observe` is a redirect surface since F-IA-V4 Phase 1b. It forwards `?tab=analytics|traces|drift` to `/govern?tab=…` so bookmarks survive. `/traces/$traceId` is preserved untouched and is the deep-link target from the Traces tab. Panel JSX for Analytics, Traces, and Drift lives in `src/components/observe/{Analytics,Traces,Drift}Panel.tsx` and mounts inside the Govern surface. The sidebar group is `Run` (Observe · Evals) — Evals stays separate because authoring ≠ observation.
 
 ## Governance surface (Govern group)
 
