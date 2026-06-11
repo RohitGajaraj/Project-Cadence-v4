@@ -8,7 +8,6 @@ import {
   Settings,
   Telescope,
   BookOpen,
-  Inbox,
   Activity,
   LogOut,
   ShieldAlert,
@@ -26,7 +25,6 @@ import {
   Pencil,
   LogOut as LeaveIcon,
   GraduationCap,
-  Calendar as CalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,12 +40,6 @@ import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -59,19 +51,11 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail. Spec-literal: Today · Chat · Missions.
-// Approvals + Calendar sit as quiet utility icons in the fixed sidebar
-// footer so they stay one click away without fighting page headers.
+// Workspace — your daily rail. Just Today + Chat. Missions lives in the
+// Agents group; Approvals reaches via Govern; Calendar reaches via Knowledge.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/chat", label: "Chat", icon: MessageSquare },
-  { to: "/missions", label: "Missions", icon: Activity },
-];
-
-// Quick-access dock — compact utility links for highest-frequency daily gates.
-const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/calendar", label: "Calendar", icon: CalIcon },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
@@ -142,47 +126,6 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
       <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
       <span className="truncate">{item.label}</span>
     </Link>
-  );
-}
-
-function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string | null }) {
-  // Floating dock pinned to bottom-right of the viewport. Sits above content
-  // (z-50) but below modal overlays, so it never hides page controls and
-  // never gets hidden by them. Tooltips name each shortcut on hover.
-  return (
-    <TooltipProvider delayDuration={150}>
-      <div
-        role="navigation"
-        aria-label="Daily shortcuts"
-        className="fixed bottom-5 right-5 z-50 hidden md:flex items-center gap-1 rounded-full border hairline bg-card/90 backdrop-blur-md px-1.5 py-1 shadow-lg"
-      >
-        {quickAccess.map((q) => {
-          const Icon = q.icon;
-          const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
-          return (
-            <Tooltip key={q.label}>
-              <TooltipTrigger asChild>
-                <Link
-                  to={q.to}
-                  search={q.search as never}
-                  aria-label={q.label}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                    active
-                      ? "bg-foreground/10 text-foreground"
-                      : "text-ink-muted hover:bg-secondary/60 hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="left" sideOffset={6}>
-                {q.label}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-    </TooltipProvider>
   );
 }
 
@@ -781,7 +724,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
       </aside>
 
       <main className="flex-1 min-w-0">{children}</main>
-      <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );
 }
