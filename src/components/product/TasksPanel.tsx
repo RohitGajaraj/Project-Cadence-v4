@@ -310,7 +310,7 @@ export function TasksPanel() {
               {linearIssues.data?.issues?.map((i) => (
                 <button
                   key={i.id}
-                  disabled={mImportLinear.isPending}
+                  disabled={mImportLinear.isPending && mImportLinear.variables === i.id}
                   onClick={() => mImportLinear.mutate(i.id)}
                   className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-secondary/60 disabled:opacity-50 border-b hairline last:border-b-0"
                 >
