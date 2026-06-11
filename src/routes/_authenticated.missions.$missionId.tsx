@@ -24,6 +24,44 @@ import { listProjects } from "@/lib/projects.functions";
 import { getMission, type HopStep, type HopToolCall } from "@/lib/missions.functions";
 import { MissionGraph } from "@/components/cadence/MissionGraph";
 import { listMissionSteps, advanceMission } from "@/lib/orchestrator.functions";
+import { createDecision } from "@/lib/decisions.functions";
+import { Gavel } from "lucide-react";
+
+function CaptureMissionDecision({
+  missionId,
+  title,
+  goal,
+}: {
+  missionId: string;
+  title: string;
+  goal: string;
+}) {
+  const fCreate = useServerFn(createDecision);
+  const cap = useMutation({
+    mutationFn: () =>
+      fCreate({
+        data: {
+          title: `Mission decision: ${title.slice(0, 220)}`,
+          rationale: goal.slice(0, 2000),
+          status: "approved",
+          mission_id: missionId,
+        },
+      }),
+    onSuccess: () => toast.success("Captured to Decisions"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <button
+      type="button"
+      onClick={() => cap.mutate()}
+      disabled={cap.isPending}
+      className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50 inline-flex items-center gap-1"
+    >
+      <Gavel className="h-3 w-3" />
+      {cap.isPending ? "Capturing…" : "Capture as decision"}
+    </button>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetail,
@@ -392,6 +430,13 @@ function MissionDetail() {
                     <Loader2 className="h-3 w-3 animate-spin" /> live · refreshing every 2s
                   </span>
                 )}
+              </div>
+              <div className="mt-3">
+                <CaptureMissionDecision
+                  missionId={data.mission.id}
+                  title={data.mission.title}
+                  goal={data.mission.goal}
+                />
               </div>
             </>
           )}

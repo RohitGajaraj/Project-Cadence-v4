@@ -230,9 +230,41 @@ export async function maybeCompleteMission(
     .eq("mission_id", missionId)
     .is("consumed_by_run_id", null);
   if ((count ?? 0) > 0) return;
-  await supabase
+  const { data: updated } = await supabase
     .from("missions")
     .update({ status: "completed", completed_at: new Date().toISOString() })
     .eq("id", missionId)
-    .eq("status", "running");
+    .eq("status", "running")
+    .select("id,user_id,workspace_id,title,goal")
+    .maybeSingle();
+
+  // F-DECISIONS-CAPTURE: a mission completing is a captured decision.
+  // Idempotent: skip if a row already exists for this mission.
+  if (updated) {
+    const { count: existing } = await supabase
+      .from("decisions")
+      .select("id", { count: "exact", head: true })
+      .eq("mission_id", updated.id);
+    if ((existing ?? 0) === 0) {
+      // Pull the final hop's output as the rationale (best-effort).
+      const { data: lastRun } = await supabase
+        .from("agent_runs")
+        .select("output,agent_slug")
+        .eq("mission_id", updated.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const rationale = (lastRun?.output ?? updated.goal ?? "").slice(0, 2000);
+      await supabase.from("decisions").insert({
+        user_id: updated.user_id,
+        workspace_id: updated.workspace_id,
+        title: `Mission completed: ${(updated.title ?? "Untitled").slice(0, 240)}`,
+        rationale,
+        status: "approved",
+        mission_id: updated.id,
+        source_kind: "mission",
+        decided_by_agent_slug: lastRun?.agent_slug ?? null,
+      });
+    }
+  }
 }
