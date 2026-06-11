@@ -53,16 +53,21 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail. Always visible, never collapsed.
-// Pin test (docs/conventions/inline-management.md): used most days, entry
-// point for an active workflow, not derivable from another pinned surface.
-// Calendar stays pinned (daily-cadence surface). Knowledge moves to a
-// group entry and now defaults to Memory · Decisions · Docs tabs.
+// Workspace — your daily rail. Spec-literal: Today · Chat · Missions.
+// Approvals + Calendar get their own Quick-access dock above the nav
+// (two adjacent tiles, like the team switcher pattern) so they stay one
+// click away without burying the spec rail. Knowledge moved to a group.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
+  { to: "/missions", label: "Missions", icon: Activity },
+];
+
+// Quick-access dock — two-tile spotlight for the highest-frequency
+// surfaces that aren't part of the linear nav (Approvals + Calendar).
+const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: CalIcon },
-  { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
@@ -505,6 +510,34 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
 
         {/* Scrollable middle: nav + products */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
+          {/* Quick access — Approvals + Calendar, always one click away */}
+          <div className="mb-4 mt-1">
+            <div className="px-3 mb-1.5 mono-label">Quick access</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {quickAccess.map((q) => {
+                const Icon = q.icon;
+                const active =
+                  path === q.to && (!q.search?.tab || searchTab === q.search.tab);
+                return (
+                  <Link
+                    key={q.label}
+                    to={q.to}
+                    search={q.search as never}
+                    title={q.label}
+                    className={`group flex flex-col items-center justify-center gap-1 rounded-md border hairline px-2 py-2.5 transition ${
+                      active
+                        ? "bg-secondary text-foreground border-foreground/30"
+                        : "text-ink-muted hover:text-foreground hover:bg-secondary/60"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={1.75} />
+                    <span className="text-[11px] leading-none">{q.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
           <nav className="flex flex-col">
             {/* Workspace rail — always-on daily surfaces */}
             <div className="px-3 mb-1.5 mono-label">Workspace</div>
