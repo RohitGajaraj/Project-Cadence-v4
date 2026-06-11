@@ -65,6 +65,9 @@ async function weatherFor(lat: number, lon: number, place: Place): Promise<Ambie
   // Open-Meteo forecast host is blocked from sandboxed previews, so we
   // call our server proxy. The browser geocoders below stay client-side.
   const weather = await fetchWeather({ data: { lat, lon } });
+  if ((weather as { unavailable?: boolean }).unavailable) {
+    return { place, weather: null as unknown as Weather };
+  }
   return { place, weather };
 }
 
