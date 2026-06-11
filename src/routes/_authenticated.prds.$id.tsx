@@ -13,6 +13,7 @@ import {
   Github,
   Hammer,
   ExternalLink,
+  Gavel,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
@@ -21,6 +22,7 @@ import { getPrd, savePrd, prdAssist, createGithubIssueForPrd } from "@/lib/disco
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { runAgent } from "@/lib/agent_loop.functions";
+import { createDecision } from "@/lib/decisions.functions";
 
 export const Route = createFileRoute("/_authenticated/prds/$id")({
   component: PrdEditor,
@@ -37,6 +39,7 @@ function PrdEditor() {
   const mAssist = useServerFn(prdAssist);
   const fRunAgent = useServerFn(runAgent);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
+  const mCaptureDecision = useServerFn(createDecision);
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prdQ = useQuery({ queryKey: ["prd", id], queryFn: () => fGet({ data: { id } }) });
@@ -91,6 +94,23 @@ function PrdEditor() {
     onSuccess: (r) => {
       toast.success(r.cached ? "GitHub issue already linked" : `GitHub issue #${r.number} created`);
       qc.invalidateQueries({ queryKey: ["prd", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const captureDecision = useMutation({
+    mutationFn: () =>
+      mCaptureDecision({
+        data: {
+          title: `Spec decision: ${(title || prdQ.data?.prd?.title || "Untitled spec").slice(0, 220)}`,
+          rationale: (body || prdQ.data?.prd?.body_md || "").slice(0, 500) || undefined,
+          status: "approved",
+          prd_id: id,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Captured to Decisions");
+      qc.invalidateQueries({ queryKey: ["decisions"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
