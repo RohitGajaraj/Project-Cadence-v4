@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchWeather } from "@/lib/ambient.functions";
 import {
   Cloud,
   CloudRain,
@@ -61,17 +62,10 @@ async function fetchJson(url: string, timeoutMs = 6000) {
 }
 
 async function weatherFor(lat: number, lon: number, place: Place): Promise<AmbientPayload> {
-  const wJson = await fetchJson(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`,
-  );
-  return {
-    place,
-    weather: {
-      tempC: Math.round(wJson.current?.temperature_2m ?? 0),
-      code: wJson.current?.weather_code ?? 0,
-      isDay: (wJson.current?.is_day ?? 1) === 1,
-    },
-  };
+  // Open-Meteo forecast host is blocked from sandboxed previews, so we
+  // call our server proxy. The browser geocoders below stay client-side.
+  const weather = await fetchWeather({ data: { lat, lon } });
+  return { place, weather };
 }
 
 async function loadFromBrowserPosition(coords: GeolocationCoordinates): Promise<AmbientPayload> {
