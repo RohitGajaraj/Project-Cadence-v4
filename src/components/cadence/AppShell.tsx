@@ -8,7 +8,6 @@ import {
   Settings,
   Telescope,
   BookOpen,
-  Inbox,
   Activity,
   LogOut,
   ShieldAlert,
@@ -26,7 +25,6 @@ import {
   Pencil,
   LogOut as LeaveIcon,
   GraduationCap,
-  Calendar as CalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,12 +40,6 @@ import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -59,19 +51,11 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail. Spec-literal: Today · Chat · Missions.
-// Approvals + Calendar sit as quiet utility icons in the fixed sidebar
-// footer so they stay one click away without fighting page headers.
+// Workspace — your daily rail. Just Today + Chat. Missions lives in the
+// Agents group; Approvals reaches via Govern; Calendar reaches via Knowledge.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/chat", label: "Chat", icon: MessageSquare },
-  { to: "/missions", label: "Missions", icon: Activity },
-];
-
-// Quick-access dock — compact utility links for highest-frequency daily gates.
-const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/calendar", label: "Calendar", icon: CalIcon },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
