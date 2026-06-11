@@ -10,6 +10,8 @@ import {
   deleteOpportunity,
   generatePrd,
 } from "@/lib/discovery.functions";
+import type { CriticReview } from "@/lib/discovery.functions";
+import { CriticBadge } from "@/components/governance/CriticBadge";
 import { useState } from "react";
 
 const STATUSES = ["backlog", "now", "next", "later", "shipped", "dropped"] as const;
@@ -71,6 +73,13 @@ export function OpportunitiesPanel() {
                       {o.problem}
                     </div>
                   )}
+                  <div className="mt-1.5">
+                    <CriticBadge
+                      review={(o as { critic_review?: CriticReview | null }).critic_review ?? null}
+                      target={{ kind: "opportunity", id: o.id }}
+                      invalidateKey={["opportunities"]}
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3 tabular-nums">
                   <span className="neural-text font-display text-base">

@@ -86,6 +86,10 @@ The first two of those tables — `missions` and `agent_messages` (the structure
 - **Still deferred:** explicit `agent.spawn` fan-out tool + parent merge step (E4 polish), per-mission message-cap loop guard, pause/steer-from-graph controls.
 - **Canonical doc:** [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md). Keep in sync when the payload contract or lifecycle changes.
 
+## Adversarial review (Critic, M1 DEC-02)
+
+Every new opportunity (theme- or signal-promoted) and every freshly generated PRD is reviewed inline by the `critic` agent before the operator sees the row. The verdict (`ship | revise | kill` + risks + kill criteria + missing evidence + confidence) is persisted to `opportunities.critic_review` / `prds.critic_review` and surfaced on the row as a `CriticBadge`. The Critic is a chokepoint Gemini call (`surface='judge'`); failures are swallowed so a missing Critic never blocks the upstream Strategist/Scribe write. Operator may re-run from the badge. See [`../docs/features/critic-agent.md`](../docs/features/critic-agent.md).
+
 ## Invariants
 
 - No multi-step autonomous work outside the orchestrator.

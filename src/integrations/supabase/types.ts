@@ -2307,6 +2307,7 @@ export type Database = {
         Row: {
           confidence: number
           created_at: string
+          critic_review: Json | null
           ease: number
           hypothesis: string | null
           ice_score: number | null
@@ -2326,6 +2327,7 @@ export type Database = {
         Insert: {
           confidence?: number
           created_at?: string
+          critic_review?: Json | null
           ease?: number
           hypothesis?: string | null
           ice_score?: number | null
@@ -2345,6 +2347,7 @@ export type Database = {
         Update: {
           confidence?: number
           created_at?: string
+          critic_review?: Json | null
           ease?: number
           hypothesis?: string | null
           ice_score?: number | null
@@ -2381,7 +2384,9 @@ export type Database = {
       prds: {
         Row: {
           body_md: string
+          citations: Json | null
           created_at: string
+          critic_review: Json | null
           github_issue_url: string | null
           id: string
           model: string | null
@@ -2396,7 +2401,9 @@ export type Database = {
         }
         Insert: {
           body_md?: string
+          citations?: Json | null
           created_at?: string
+          critic_review?: Json | null
           github_issue_url?: string | null
           id?: string
           model?: string | null
@@ -2411,7 +2418,9 @@ export type Database = {
         }
         Update: {
           body_md?: string
+          citations?: Json | null
           created_at?: string
+          critic_review?: Json | null
           github_issue_url?: string | null
           id?: string
           model?: string | null
