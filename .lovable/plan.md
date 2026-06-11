@@ -1,90 +1,94 @@
-## Phase 1d — Knowledge + Learn surfaces
 
-Final phase of F-IA-V4 (7-surface IA collapse). Folds Memory, Docs, Calendar, Meetings, and a new Decisions tab into `/knowledge`. Creates `/learn` with Support · Outcomes · Learnings. Pins Knowledge to the top rail.
+# F-DECISIONS-CAPTURE — plan
 
-### Decisions confirmed
+## Current state (what already works)
 
-1. **Calendar folds into Knowledge as a tab** (spec-literal Option B). The whole purpose of Knowledge is *one place to find anything the org knows or scheduled* — Calendar belongs there.
-2. **Knowledge gets pinned in the top rail** alongside Home · Chat · Missions. Approvals + Calendar drop off the pinned rail (Approvals already lives in Govern; Calendar is now inside Knowledge).
-3. **Decisions tab = stub for now.** Empty-state explains it'll hold workspace decisions sourced from missions/specs/meetings. Wiring those capture points is a follow-up ticket, not part of 1d.
-4. **Learn = 3 tabs.** Outcomes is real (extracted from `/outcome`); Support + Learnings ship as "Coming soon" panels so the IA shape is locked.
+- `decisions` table exists with workspace-scoped RLS, columns: `id, user_id, workspace_id, product_id, project_id, title, rationale, status, meeting_id, created_at`. Realtime is enabled.
+- Server fns exist: `listDecisions` (last 20, workspace-scoped), `createDecision`, `updateDecision`.
+- **Meetings** already emit decisions: `extractMeeting({commit:true})` writes one row per AI-extracted decision, linked via `meeting_id`.
+- The **Today** page (`/`) already shows a "Recent decisions" list with approve/reject + manual add.
+- `/knowledge?tab=decisions` renders a stub (`DecisionsPanel`).
 
-### Knowledge surface (`/knowledge`)
+## Gaps to close
 
-4 tabs: **Memory · Decisions · Docs · Calendar**. Tab state in `?tab=` via `validateSearch`, default `memory`. Container `max-w-[1400px]` (Calendar's list view needs the width).
+1. **No source link for missions or specs.** `decisions` has `meeting_id` but no `mission_id` or `prd_id`. Missions never write decision rows; PRDs/specs never do either.
+2. **No real Decisions UI.** The Knowledge tab is a stub; the Today list is the only surface.
+3. **No "capture as decision" affordance** on mission detail or PRD detail pages, so an operator can't pin a choice they just made.
 
-Panel extraction:
-- `MemoryPanel` — extract from existing memory views (currently surfaced inside Settings/agent context). Read-only list of memory entries grouped by source.
-- `DecisionsPanel` — new, stub. Empty state + "How decisions get captured" copy. No server fn yet.
-- `DocsPanel` — extract body of `_authenticated.docs.tsx`.
-- `CalendarPanel` — extract body of `_authenticated.calendar.tsx` (already merged Calendar+Meetings; keep `?meeting=<id>` sheet behavior intact by forwarding the search param through to the panel).
+## Scope (what this ticket ships)
 
-Route redirects:
-- `/docs` → `/knowledge?tab=docs`
-- `/calendar` → `/knowledge?tab=calendar` (preserves existing `?meeting=` if present)
-- `/meetings` and `/meetings/$id` — already redirect to `/calendar`; update both to `/knowledge?tab=calendar` (with `?meeting=$id` for the deep-link variant)
+### A. Schema (one migration)
 
-### Learn surface (`/learn`)
+Add to `decisions`:
+- `mission_id uuid NULL` → `missions(id) ON DELETE SET NULL` + index
+- `prd_id uuid NULL` → `prds(id) ON DELETE SET NULL` + index
+- `source_kind text NULL` with check constraint `IN ('meeting','mission','prd','manual')` (denormalized for fast filter; meeting backfill = `'meeting'` where `meeting_id IS NOT NULL` else `'manual'`)
+- `decided_by_agent_slug text NULL` (for agent-initiated captures; future-proofs the Trust score loop)
 
-3 tabs: **Support · Outcomes · Learnings**. Tab state in `?tab=`, default `outcomes` (the only real one).
+No new policies — existing workspace-scoped RLS covers it.
 
-Panel work:
-- `OutcomesPanel` — extract the non-Releases slice of `_authenticated.outcome.tsx` (Releases already lives in `/product`).
-- `SupportPanel` — stub. Empty state describing the loop from Discovery → Support → Discovery.
-- `LearningsPanel` — stub. Empty state describing what insight memos will look like.
+### B. Server fns (extend `src/lib/decisions.functions.ts`)
 
-Route redirects:
-- `/outcome` → `/learn?tab=outcomes`
-- `/analytics` (already redirecting to `/govern`) — confirm the user-facing analytics slice the spec calls out for Learn is not duplicated; leave Govern's Analytics tab as-is (it's observability, not learning).
+- `listDecisions` → return joined source labels (mission title, prd title, meeting title) via separate cheap selects; accept optional `{ source?: 'meeting'|'mission'|'prd'|'manual', status?, q? }` filters. Cap at 100.
+- `createDecision` → accept optional `mission_id | prd_id | meeting_id` + `source_kind`. Derive `source_kind` from whichever id was passed (defaults `'manual'`).
+- Add `getDecisionContext({ id })` → returns the decision + linked source summary (for the side sheet).
 
-### AppShell rewrite
+### C. Auto-capture hooks (sources → decisions)
 
-New pinned rail (top): **Home · Chat · Missions · Knowledge**. Drop Approvals and Calendar from the pin. Approvals is reachable via `/govern?tab=approvals` and from the Home needs-you queue (when 1d ships that).
+- **Missions**: in `src/lib/missions.functions.ts`, when a mission transitions to `status='completed'` (find the existing update path), insert one decision row `{ title: "Mission completed: <goal>", rationale: <final output summary>, mission_id, source_kind: 'mission', status: 'approved' }`. Idempotent: skip if a `mission_id`-linked row already exists.
+- **PRDs / specs**: in `src/lib/discovery.functions.ts` (or wherever PRD status updates live), when `prds.status` flips to `'approved'`, insert `{ title: "Spec approved: <prd title>", rationale: first 500 chars of body, prd_id, source_kind: 'prd', status: 'approved' }`. Same idempotency.
+- **Meetings**: already wired; just stamp `source_kind='meeting'` on the existing insert.
 
-Collapsible groups below:
-- **Product** → `/product`
-- **Knowledge** → `/knowledge` *(also pinned — group entry mirrors the pin, like Missions does today)*
-- **Learn** → `/learn`
-- **Govern** → Govern, Integrations
-- **Build** → Builder, Docs *(Docs entry here just deep-links to `/knowledge?tab=docs`)*
-- **Settings** → `/settings`
+### D. DecisionsPanel UI (replace stub)
 
-Remove now-empty top-level entries for Calendar, Meetings, Docs, Outcome.
+`src/components/knowledge/DecisionsPanel.tsx` rewrite:
+- Header with source filter chips (All · Meetings · Missions · Specs · Manual) + status filter (All · Pending · Approved · Rejected) + search.
+- List rows: title, source badge (icon + label linking to `/missions/$id` | `/prds/$id` | meeting sheet via `/knowledge?tab=calendar&meeting=$id`), status pill, age, owner avatar.
+- Empty state per filter.
+- Side sheet on row click: full rationale, source context, approve/reject, manual edit.
+- "Log decision" CTA opens a small dialog using `usePrompt`-style modal (title + rationale + optional source picker).
+- No native chrome; semantic tokens only; voice rules.
 
-CommandPalette: add `/knowledge`, `/knowledge?tab=…`, `/learn`, `/learn?tab=…`. Remove standalone Calendar/Meetings/Docs/Outcome destinations.
+### E. Capture affordances on source pages
 
-### Files
+- Mission detail (`/missions/$id`): "Capture as decision" button in the page header → opens the same dialog pre-filled with mission context (title + goal as rationale).
+- PRD detail (`/prds/$id`): same button in the sticky actions bar.
+- Meeting sheet: already covered by `extractMeeting`; no change.
 
-**Create:**
-- `src/components/knowledge/{Memory,Decisions,Docs,Calendar}Panel.tsx`
-- `src/components/learn/{Support,Outcomes,Learnings}Panel.tsx`
-- `src/routes/_authenticated.knowledge.tsx`
-- `src/routes/_authenticated.learn.tsx`
+### F. Today page
 
-**Convert to redirects:**
-- `src/routes/_authenticated.docs.tsx`
-- `src/routes/_authenticated.calendar.tsx`
-- `src/routes/_authenticated.meetings.tsx` (repoint)
-- `src/routes/_authenticated.meetings.$id.tsx` (repoint)
-- `src/routes/_authenticated.outcome.tsx`
+Today's "Recent decisions" stays as a 5-item glance, but the empty state now points to `/knowledge?tab=decisions` and the "View all" link points there too.
 
-**Edit:**
-- `src/components/cadence/AppShell.tsx` — pinned rail + groups
-- `src/components/cadence/CommandPalette.tsx` — destinations
-- `architecture/frontend.md` — pinned rail contract (4 items now, Knowledge added, Approvals/Calendar removed), Knowledge + Learn surface contracts
-- `active-task.md`, `docs/planning/feature-backlog.md`, `plan.md` §4
+## Out of scope
 
-### What I will NOT do
+- Decision threads / comments / collaboration.
+- Decision templates.
+- Workflow rules ("decisions of type X auto-create a task").
+- Re-litigation / supersedence chains.
 
-- Build the unified Knowledge search bar / cross-tab Q&A (that's a Phase 2 / M2 feature).
-- Wire mission/spec/meeting → Decisions capture (follow-up ticket; I'll add it to the backlog as `F-DECISIONS-CAPTURE`).
-- Touch any server functions or DB. Pure routing + composition, same as Phases 1a–1c.
-- Redesign any panel internals.
+These can be follow-up tickets (`F-DECISIONS-THREADS`, `F-DECISIONS-TEMPLATES`).
 
-### Risk / open questions
+## Doc closure (same turn)
 
-1. **Pinning Knowledge** means the top rail has Home · Chat · Missions · Knowledge — four pins. Spec literally said three (Home · Chat · Missions). I'm reading your direction as overriding that and pinning Knowledge because consolidated knowledge access *is* a daily-loop job, not a reference one. Confirm.
-2. **Calendar deep-link `?meeting=<id>`** must keep working after the route move. I'll forward the search param through `validateSearch` on `/knowledge` so `/knowledge?tab=calendar&meeting=abc` opens the meeting sheet. Old `/meetings/abc` and `/calendar?meeting=abc` redirect to the new shape.
-3. **Memory panel content.** There's no `/memory` route today — memory is read in agent context and shown in scattered places. I'll start with a simple list view of memory entries (source + content + created-at) and we can iterate. Confirm that's fine for the stub.
+- Flip `F-DECISIONS-CAPTURE` to ✅ in `docs/planning/feature-backlog.md` with a "How to use / verify" block (routes, controls, what each source does, verification checklist).
+- Append one-liner to `plan.md` §4.
+- Update `architecture/frontend.md` Knowledge section: Decisions is now live with source filters + side sheet.
+- Update `architecture/data.md` (if it exists) for the schema additions.
+- Delete `active-task.md` if this is the only in-flight item.
 
-Reply **"go phase 1d"** to start, or correct any of the three points first.
+## Open question for you
+
+**How aggressive should auto-capture be?**
+
+- **(default in this plan) Conservative**: only mission completion + PRD approval auto-write decisions. Everything else is operator-triggered via "Capture as decision".
+- **Aggressive**: also auto-write on mission approval gates, every agent run that crosses a confidence threshold, every PRD section flagged "decision".
+
+I'd ship Conservative first (smaller blast radius, easier to reason about, cheap to add Aggressive later). Say "go aggressive" if you want me to flip it before I start.
+
+## Files (estimate)
+
+- new: 1 migration in `supabase/migrations/`
+- edit: `src/lib/decisions.functions.ts`, `src/lib/missions.functions.ts`, `src/lib/discovery.functions.ts` (PRD status updater), `src/lib/meetings.functions.ts` (stamp source_kind)
+- rewrite: `src/components/knowledge/DecisionsPanel.tsx`
+- edit: `src/routes/_authenticated.missions.$missionId.tsx`, `src/routes/_authenticated.prds.$id.tsx` (add capture button)
+- docs: `feature-backlog.md`, `plan.md`, `architecture/frontend.md`
