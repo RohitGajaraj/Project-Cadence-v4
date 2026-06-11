@@ -3,6 +3,119 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
 import { recordLineage } from "@/lib/lineage.functions";
+import { retrieve } from "@/lib/rag/retriever.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+// ---------- CRITIC (M1 Golden Path: DEC-02) ----------
+
+export type CriticReview = {
+  verdict: "ship" | "revise" | "kill";
+  summary: string;
+  risks: string[];
+  kill_criteria: string[];
+  missing_evidence: string[];
+  confidence: number;
+  reviewer_model: string;
+  reviewed_at: string;
+};
+
+/**
+ * Run the Critic agent against an opportunity or PRD. Persists the verdict
+ * on the row's `critic_review jsonb` column. Called inline from
+ * `promoteThemeToOpportunity` / `promoteSignalToOpportunity` / `generatePrd`
+ * so the verdict is present the first time the operator sees the row.
+ * Failures are swallowed: a missing Critic must never block the upstream
+ * write.
+ */
+async function runCritic(
+  supabase: SupabaseClient,
+  userId: string,
+  target: { kind: "opportunity" | "prd"; id: string },
+): Promise<CriticReview | null> {
+  const table = target.kind === "opportunity" ? "opportunities" : "prds";
+  const { data: row } = await supabase
+    .from(table)
+    .select("*")
+    .eq("id", target.id)
+    .single();
+  if (!row) return null;
+
+  const subject =
+    target.kind === "opportunity"
+      ? `OPPORTUNITY
+Title: ${row.title}
+Problem: ${row.problem ?? ""}
+Target user: ${row.target_user ?? "—"}
+Hypothesis: ${row.hypothesis ?? "—"}
+ICE — Impact:${row.impact} Confidence:${row.confidence} Ease:${row.ease}`
+      : `SPEC
+Title: ${row.title}
+Body:
+${(row.body_md ?? "").slice(0, 6000)}`;
+
+  const system = `You are the Critic agent. Red-team the proposal before a human approves it.
+Return STRICT JSON only:
+{"verdict":"ship|revise|kill","summary":"max 240 chars","risks":["..."],"kill_criteria":["..."],"missing_evidence":["..."],"confidence":0.0-1.0}
+Be specific. No filler. Use "ship" only when risks are bounded and evidence is strong; "kill" when the bet is unsalvageable; "revise" otherwise.`;
+
+  const model = "google/gemini-2.5-pro";
+  try {
+    const result = await callModel(supabase, userId, {
+      surface: "judge",
+      surface_ref: `critic:${target.kind}:${target.id}`,
+      model,
+      fallbackModel: "google/gemini-2.5-flash",
+      responseFormat: "json_object",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: subject },
+      ],
+    });
+    const parsed = (result.json ?? {}) as Partial<CriticReview>;
+    const verdict =
+      parsed.verdict === "ship" || parsed.verdict === "kill" || parsed.verdict === "revise"
+        ? parsed.verdict
+        : "revise";
+    const review: CriticReview = {
+      verdict,
+      summary: (parsed.summary ?? "").slice(0, 280),
+      risks: Array.isArray(parsed.risks) ? parsed.risks.slice(0, 8).map(String) : [],
+      kill_criteria: Array.isArray(parsed.kill_criteria)
+        ? parsed.kill_criteria.slice(0, 6).map(String)
+        : [],
+      missing_evidence: Array.isArray(parsed.missing_evidence)
+        ? parsed.missing_evidence.slice(0, 6).map(String)
+        : [],
+      confidence: Math.min(1, Math.max(0, Number(parsed.confidence) || 0.5)),
+      reviewer_model: model,
+      reviewed_at: new Date().toISOString(),
+    };
+    await supabase.from(table).update({ critic_review: review }).eq("id", target.id);
+    return review;
+  } catch {
+    return null;
+  }
+}
+
+/** Manual Critic re-run from the UI ("Re-run Critic" on the badge). */
+export const runCriticReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        target_kind: z.enum(["opportunity", "prd"]),
+        target_id: z.string().uuid(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const review = await runCritic(context.supabase, context.userId, {
+      kind: data.target_kind,
+      id: data.target_id,
+    });
+    if (!review) throw new Error("Critic review failed");
+    return { review };
+  });
 
 // ---------- SIGNALS ----------
 
@@ -232,6 +345,7 @@ export const promoteThemeToOpportunity = createServerFn({ method: "POST" })
         rationale: "Promoted from theme",
         created_by_agent: "discovery-scout",
       });
+      await runCritic(supabase, userId, { kind: "opportunity", id: opp.id });
     }
     return { opportunity: opp };
   });
@@ -648,6 +762,7 @@ Return STRICT JSON only:
         rationale: "Promoted directly from signal",
         created_by_agent: "discovery-scout",
       });
+      await runCritic(supabase, userId, { kind: "opportunity", id: opp.id });
     }
     return { opportunity: opp };
   });
