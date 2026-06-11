@@ -781,6 +781,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
       </aside>
 
       <main className="flex-1 min-w-0">{children}</main>
+      <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );
 }
