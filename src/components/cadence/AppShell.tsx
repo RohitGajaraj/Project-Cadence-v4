@@ -26,6 +26,7 @@ import {
   Pencil,
   LogOut as LeaveIcon,
   GraduationCap,
+  Calendar as CalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -55,12 +56,12 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 // Workspace — your daily rail. Always visible, never collapsed.
 // Pin test (docs/conventions/inline-management.md): used most days, entry
 // point for an active workflow, not derivable from another pinned surface.
-// Calendar → folded into Knowledge (Phase 1d); Knowledge pinned in its slot
-// because consolidated knowledge access is a daily-loop job.
+// Calendar stays pinned (daily-cadence surface). Knowledge moves to a
+// group entry and now defaults to Memory · Decisions · Docs tabs.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { to: "/calendar", label: "Calendar", icon: CalIcon },
   { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
@@ -93,6 +94,11 @@ const groups: NavGroup[] = [
     id: "learn",
     label: "Learn",
     items: [{ to: "/learn", label: "Learn", icon: GraduationCap }],
+  },
+  {
+    id: "knowledge",
+    label: "Knowledge",
+    items: [{ to: "/knowledge", label: "Knowledge", icon: BookOpen }],
   },
   {
     id: "govern",

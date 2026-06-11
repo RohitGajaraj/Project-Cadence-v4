@@ -14,6 +14,7 @@ import {
   GraduationCap,
   ShieldAlert,
   Activity,
+  Calendar as CalIcon,
 } from "lucide-react";
 
 export function CommandPalette() {
@@ -77,6 +78,11 @@ export function CommandPalette() {
                 <Item icon={MessageSquare} label="Chat" hint="G C" onSelect={() => go("/chat")} />
                 <Item icon={Bot} label="Agents" hint="G A" onSelect={() => go("/agents")} />
                 <Item
+                  icon={CalIcon}
+                  label="Calendar · events & meetings"
+                  onSelect={() => go("/calendar")}
+                />
+                <Item
                   icon={Telescope}
                   label="Product · signals, opportunities, specs"
                   hint="G I"
@@ -84,7 +90,7 @@ export function CommandPalette() {
                 />
                 <Item
                   icon={BookOpen}
-                  label="Knowledge · memory, decisions, docs, calendar"
+                  label="Knowledge · memory, decisions, docs"
                   hint="G M"
                   onSelect={() => go("/knowledge")}
                 />

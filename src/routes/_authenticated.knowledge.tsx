@@ -1,28 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Brain, Gavel, FileText, Calendar as CalIcon } from "lucide-react";
+import { BookOpen, Brain, Gavel, FileText } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import { MemoryPanel } from "@/components/knowledge/MemoryPanel";
 import { DecisionsPanel } from "@/components/knowledge/DecisionsPanel";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
-import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 
-// Knowledge surface — v4 IA Phase 1d. Absorbs /docs, /calendar, /meetings, and
-// stubs Memory + Decisions ahead of those features landing. Calendar is the
-// default tab (highest-frequency use). `meeting` search param preserves the
-// meeting deep-link sheet from the prior /calendar route.
+// Knowledge surface — v4 IA Phase 1d. Memory · Decisions · Docs. Calendar
+// stayed pinned in the workspace rail (daily cadence) instead of folding in.
 
-type Tab = "calendar" | "memory" | "decisions" | "docs";
-const TABS: Tab[] = ["calendar", "memory", "decisions", "docs"];
+type Tab = "memory" | "decisions" | "docs";
+const TABS: Tab[] = ["memory", "decisions", "docs"];
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  validateSearch: (search: Record<string, unknown>): { tab: Tab; meeting?: string } => {
+  validateSearch: (search: Record<string, unknown>): { tab: Tab } => {
     const t = search.tab;
     return {
-      tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "calendar",
-      meeting: typeof search.meeting === "string" ? search.meeting : undefined,
+      tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "memory",
     };
   },
   component: KnowledgePage,
@@ -61,21 +57,13 @@ type TabDef = {
 };
 
 function KnowledgePage() {
-  const { tab, meeting } = Route.useSearch();
+  const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/knowledge" });
 
   const fProjects = useServerFn(listProjects);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
 
   const tabs: TabDef[] = [
-    {
-      id: "calendar",
-      label: "Calendar",
-      description:
-        "Events and meeting transcripts in one feed. Open a meeting to capture and extract.",
-      Icon: CalIcon,
-      tone: "violet",
-    },
     {
       id: "memory",
       label: "Memory",
@@ -101,10 +89,7 @@ function KnowledgePage() {
   ];
 
   const activeTab = tabs.find((t) => t.id === tab)!;
-  const setTab = (next: Tab) =>
-    navigate({ search: (prev: { tab: Tab; meeting?: string }) => ({ ...prev, tab: next }) });
-  const setMeeting = (m: string | undefined) =>
-    navigate({ search: (prev: { tab: Tab; meeting?: string }) => ({ ...prev, meeting: m }) });
+  const setTab = (next: Tab) => navigate({ search: { tab: next } });
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -115,8 +100,7 @@ function KnowledgePage() {
           </div>
           <h1 className="font-display text-3xl tracking-tight mt-1">Knowledge</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            One place for what the swarm knows and what's on the calendar. Memory, decisions, docs,
-            meetings.
+            What the swarm knows. Memory, decisions, docs. Calendar lives in its own pinned rail.
           </p>
         </header>
 
@@ -156,9 +140,6 @@ function KnowledgePage() {
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">{activeTab.description}</p>
 
-        {tab === "calendar" && (
-          <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />
-        )}
         {tab === "memory" && <MemoryPanel />}
         {tab === "decisions" && <DecisionsPanel />}
         {tab === "docs" && <DocsPanel />}
