@@ -315,13 +315,45 @@ export const savePrd = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { id, ...rest } = data;
-    const { data: row, error } = await context.supabase
+    const { supabase, userId } = context;
+
+    // Capture prior status so we can detect a draft/review → approved transition
+    // and write a Decisions log entry exactly once.
+    const { data: prior } = await supabase
+      .from("prds")
+      .select("status,workspace_id,title,body_md")
+      .eq("id", id)
+      .maybeSingle();
+
+    const { data: row, error } = await supabase
       .from("prds")
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    // F-DECISIONS-CAPTURE: spec approval is a logged decision. Idempotent on prd_id.
+    if (prior && rest.status === "approved" && prior.status !== "approved") {
+      const { count } = await supabase
+        .from("decisions")
+        .select("id", { count: "exact", head: true })
+        .eq("prd_id", id);
+      if ((count ?? 0) === 0) {
+        const title = (rest.title ?? prior.title ?? "Untitled spec").slice(0, 240);
+        const rationale = (prior.body_md ?? "").slice(0, 500) || "Spec approved.";
+        await supabase.from("decisions").insert({
+          user_id: userId,
+          workspace_id: prior.workspace_id,
+          title: `Spec approved: ${title}`,
+          rationale,
+          status: "approved",
+          prd_id: id,
+          source_kind: "prd",
+        });
+      }
+    }
+
     return { prd: row };
   });
 
