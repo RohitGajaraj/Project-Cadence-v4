@@ -130,46 +130,6 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string | null }) {
-  // Floating dock pinned to bottom-right of the viewport. Sits above content
-  // (z-50) but below modal overlays, so it never hides page controls and
-  // never gets hidden by them. Tooltips name each shortcut on hover.
-  return (
-    <TooltipProvider delayDuration={150}>
-      <div
-        role="navigation"
-        aria-label="Daily shortcuts"
-        className="fixed bottom-5 right-5 z-50 hidden md:flex items-center gap-1 rounded-full border hairline bg-card/90 backdrop-blur-md px-1.5 py-1 shadow-lg"
-      >
-        {quickAccess.map((q) => {
-          const Icon = q.icon;
-          const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
-          return (
-            <Tooltip key={q.label}>
-              <TooltipTrigger asChild>
-                <Link
-                  to={q.to}
-                  search={q.search as never}
-                  aria-label={q.label}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                    active
-                      ? "bg-foreground/10 text-foreground"
-                      : "text-ink-muted hover:bg-secondary/60 hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="left" sideOffset={6}>
-                {q.label}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-    </TooltipProvider>
-  );
-}
-
 function useOpenGroups(path: string) {
   // Single-open accordion: only one group expanded at a time. The active
   // route's group auto-opens; user clicks toggle which group is open.
