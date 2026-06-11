@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
@@ -96,46 +97,37 @@ export const getOutcomeData = createServerFn({ method: "GET" })
 // generated Database types, so these handlers use the untyped-client cast
 // precedent (see briefs/discovery/lineage helpers).
 
-/** Same GITHUB_REPO normalization as createGithubIssueForPrd (discovery.functions.ts). */
-function normalizeGithubRepo(rawRepo: string): string | null {
-  const repo = rawRepo
-    .trim()
-    .replace(/^https?:\/\/github\.com\//i, "")
-    .replace(/^git@github\.com:/i, "")
-    .replace(/\.git$/i, "")
-    .replace(/\/+$/, "");
-  return /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : null;
-}
-
 /**
  * Check whether a PRD's linked GitHub issue has been closed; if so, mark the
- * PRD shipped (idempotent — shipped_at is only stamped once). Config absence
- * (no GitHub env, no linked issue) returns issueState "unknown", never throws.
+ * PRD shipped (idempotent — shipped_at is only stamped once). No linked issue
+ * returns issueState "unknown"; an unresolvable GitHub connection throws
+ * resolveGitHub's actionable error (binding → user connection → env chain).
  */
 export const checkPrdShipped = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ prdId: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const { userId } = context;
     const db = context.supabase as unknown as SupabaseClient;
     const { data: prd, error: prdErr } = await db
       .from("prds")
-      .select("id,github_issue_url,status,shipped_at")
+      .select("id,github_issue_url,status,shipped_at,workspace_id")
       .eq("id", data.prdId)
       .single();
     if (prdErr) throw new Error(prdErr.message);
     if (!prd.github_issue_url) return { shipped: false, issueState: "unknown" as const };
-
-    const token = process.env.GITHUB_TOKEN;
-    const rawRepo = process.env.GITHUB_REPO;
-    if (!token || !rawRepo) return { shipped: false, issueState: "unknown" as const };
-    const repo = normalizeGithubRepo(rawRepo);
-    if (!repo) return { shipped: false, issueState: "unknown" as const };
     const match = String(prd.github_issue_url).match(/\/issues\/(\d+)/);
     if (!match) return { shipped: false, issueState: "unknown" as const };
 
-    const res = await fetch(`https://api.github.com/repos/${repo}/issues/${match[1]}`, {
+    const gh = await resolveGitHub({
+      userId,
+      workspaceId: prd.workspace_id as string | null,
+      userClient: db,
+    });
+
+    const res = await fetch(`https://api.github.com/repos/${gh.repo}/issues/${match[1]}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${gh.token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "cadence-agent",

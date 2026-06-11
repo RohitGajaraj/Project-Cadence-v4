@@ -19,6 +19,7 @@ import {
   missionFinalize,
 } from "./orchestrator.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
+import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -44,6 +45,19 @@ export type ToolDef<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 
 function def<S extends z.ZodTypeAny>(d: ToolDef<S>) {
   return d as unknown as ToolDef;
+}
+
+/**
+ * Resolve GitHub credentials via the connector chain
+ * (workspace binding → user connection → env fallback). The ONE way GitHub
+ * tools obtain {token, repo}; never read GITHUB_TOKEN/GITHUB_REPO directly.
+ */
+async function requireGithub(ctx: ToolCtx) {
+  return resolveGitHub({
+    userId: ctx.userId,
+    workspaceId: ctx.workspaceId,
+    userClient: ctx.supabase,
+  });
 }
 
 // ── read tools ────────────────────────────────────────────────────────
@@ -403,7 +417,8 @@ const createCalendarEvent = def({
 // ── lifecycle / build tools ───────────────────────────────────────────
 /**
  * github.issue.create — opens a real GitHub issue on the allow-listed repo.
- * Allow-list = the single repo configured in GITHUB_REPO env (e.g. "owner/name").
+ * Allow-list = the single repo resolved by requireGithub (workspace binding →
+ * user connection → GITHUB_REPO env fallback), always "owner/name".
  * Idempotent via key = github_issue:{idempotency_key}; safe to retry across
  * worker restarts without double-creating issues.
  */
@@ -419,11 +434,10 @@ const githubIssueCreate = def({
     idempotency_key: z.string().min(1).max(200),
   }),
   preview: (a) => `Open GitHub issue: "${a.title}"`,
-  run: async (a, { supabase, userId, runId }) => {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+  run: async (a, ctx) => {
+    const { supabase, userId, runId } = ctx;
+    const { token, repo } = await requireGithub(ctx);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GitHub repo format: ${repo}`);
     const outcome = await withIdempotency(
       supabase,
       "github_issue",
@@ -456,7 +470,8 @@ const githubIssueCreate = def({
 
 /**
  * github.pr.open — Bundle 9 Slice 1.
- * Opens a SINGLE-FILE scoped PR on the allow-listed repo (GITHUB_REPO).
+ * Opens a SINGLE-FILE scoped PR on the allow-listed repo (resolved via
+ * requireGithub: workspace binding → user connection → env fallback).
  * REST-only flow because the Worker runtime has no native git. Steps:
  *   1) GET the default branch + its head sha (the base)
  *   2) POST a new ref (branch) off that sha
@@ -487,11 +502,10 @@ const githubPrOpen = def({
     idempotency_key: z.string().min(1).max(200),
   }),
   preview: (a) => `Open PR for issue #${a.issue_number}: "${a.title}" · ${a.path}`,
-  run: async (a, { supabase, userId, runId, missionId, workspaceId }) => {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+  run: async (a, ctx) => {
+    const { supabase, userId, runId, missionId, workspaceId } = ctx;
+    const { token, repo, actorLabel } = await requireGithub(ctx);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GitHub repo format: ${repo}`);
     // Disallow paths the Builder must never touch.
     const forbiddenPrefixes = [
       ".github/",
@@ -666,7 +680,7 @@ const githubPrOpen = def({
         }
 
         // 5) open PR
-        const prBody = `${a.body.trim()}\n\nCloses #${a.issue_number}\n\n_Opened by the Cadence Builder agent — approval-gated, single file (\`${a.path}\`)._`;
+        const prBody = `${a.body.trim()}\n\nCloses #${a.issue_number}\n\n_Opened by the Cadence Builder agent — approval-gated, single file (\`${a.path}\`) · acting as ${actorLabel}._`;
         const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls`, {
           method: "POST",
           headers,
@@ -713,11 +727,10 @@ const githubCiRead = def({
     pr_number: z.number().int().min(1).max(10_000_000),
   }),
   preview: (a) => `Read CI on PR #${a.pr_number}`,
-  run: async (a, { supabase, userId, runId }) => {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+  run: async (a, ctx) => {
+    const { supabase, userId, runId } = ctx;
+    const { token, repo } = await requireGithub(ctx);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GitHub repo format: ${repo}`);
 
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -867,11 +880,10 @@ const githubCommitAppend = def({
     idempotency_key: z.string().min(1).max(200),
   }),
   preview: (a) => `Append fix to PR #${a.pr_number} (${a.path}): "${a.message.slice(0, 60)}"`,
-  run: async (a, { supabase, userId, runId }) => {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    if (!token || !repo) throw new Error("GITHUB_TOKEN / GITHUB_REPO not configured");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+  run: async (a, ctx) => {
+    const { supabase, userId, runId } = ctx;
+    const { token, repo } = await requireGithub(ctx);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GitHub repo format: ${repo}`);
     // Same allow-list as github.pr.open — Builder must never touch CI / migrations / lockfiles.
     const forbiddenPrefixes = [
       ".github/",

@@ -13,11 +13,23 @@ Cadence is **agent-first**: built to be operated by agents over open protocols, 
 - **Linear** — paginated GraphQL pull → `tasks` (`external_ref`, `external_source='linear'`); push via mutation; Sync Inbox resolves conflicts (keep-local / keep-remote / merge); PRD → Linear cycle.
 - **Google Calendar** — read + write (create/edit/delete, optimistic upsert into `calendar_events`); Scheduler agent proposes slots within working hours.
 - **Firecrawl (web access)** — powers `web.search` / `web.fetch` / `web.map` / `web.crawl` agent tools (see [`../docs/web-access.md`](../docs/web-access.md)). Single chokepoint in `src/lib/ai/tools/firecrawl.server.ts`; results re-enter the loop as untrusted input and run through pre-guardrails on the next `callModel`. `web.crawl` defaults to `confirm` (spends real credits).
-- **GitHub (issue write)** — `github.issue.create` + `prd.link_issue` agentic tools (write / `confirm`), allow-listed to the single `GITHUB_REPO` env using `GITHUB_TOKEN` (fine-grained PAT, Issues: Read & Write on that repo only). Wrapped in `withIdempotency('github_issue', idempotency_key, …)` so retries / sweeper-resumes never double-create. Canonical operator guide: [`../docs/github-issue-approval-flow.md`](../docs/github-issue-approval-flow.md).
+- **GitHub (issue write)** — `github.issue.create` + `prd.link_issue` agentic tools (write / `confirm`), allow-listed to a single repo resolved through `resolveGitHub` (workspace binding → user connection → `GITHUB_REPO`/`GITHUB_TOKEN` env fallback — see Connections & bindings below). Wrapped in `withIdempotency('github_issue', idempotency_key, …)` so retries / sweeper-resumes never double-create. Canonical operator guide: [`../docs/github-issue-approval-flow.md`](../docs/github-issue-approval-flow.md).
+
+## Connections & bindings (F-CONN)
+
+Three primitives, all in `src/lib/connectors/`:
+
+- **`connections`** (account-level) — a user owns a provider identity: GitHub App installation, Lovable-gateway OAuth connection, or pasted API key. Own-row RLS (`auth.uid() = user_id`); managed in Settings → Connected accounts via `src/lib/connections.functions.ts`.
+- **`connection_bindings`** (workspace-level) — which resource a workspace uses (e.g. which repo for the Builder). Membership RLS via `is_workspace_member`; carries `created_by` for attribution; managed on the `/sync` Connectors surface.
+- **`resolveProviderAuth`** (`src/lib/connectors/resolve.server.ts`) — the ONE credential chokepoint for every external call site. Resolution chain: **workspace binding → user connection → env fallback** (e.g. `GITHUB_TOKEN`/`GITHUB_REPO`). Provider adapters (e.g. `providers/github.server.ts`) wrap it with provider-specific token minting.
+
+Pasted secrets live in `connection_secrets` as ciphertext + IV only — encrypted app-layer with AES-256-GCM under `CONNECTOR_SECRETS_KEY` (wrangler secret, base64 32 bytes); the table has RLS enabled with no policies and no `authenticated` grants, so service-role is the only reader. All GitHub App / gateway env vars may be absent — every path degrades to a clean "setup pending" state instead of throwing.
+
+**Invariant: no provider env var may be read outside `resolveProviderAuth` (the env path is a deprecated fallback).**
 
 ## BYO keys
 
-`user_api_keys`: provider, encrypted key (pgsodium `crypto_secretbox`), optional base_url, label, last-test result. UI masks the key (`sk-***…last4`), supports Test (1-token completion), Rotate, Delete. Service-role client is the only decrypt path. Adding a provider = adding a chokepoint adapter (see [`runtime.md`](./runtime.md)), not touching call sites.
+`user_api_keys`: provider, encrypted key (app-layer AES-256-GCM under `CONNECTOR_SECRETS_KEY` — ciphertext + IV columns; replaces the earlier pgsodium design), optional base_url, label, last-test result. UI masks the key (`sk-***…last4`), supports Test (1-token completion), Rotate, Delete. Service-role client is the only decrypt path. Adding a provider = adding a chokepoint adapter (see [`runtime.md`](./runtime.md)), not touching call sites.
 
 ## Why managed connectors over hand-rolled OAuth
 

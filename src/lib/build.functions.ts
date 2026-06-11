@@ -7,9 +7,11 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
+import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type BuilderRun = {
   run_id: string;
@@ -301,17 +303,22 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
       title: string;
       body_md: string | null;
       github_issue_url: string | null;
+      workspace_id: string | null;
     };
     let prd: PrdCtx | null = null;
     if (data.prdId) {
       const { data: row, error } = await supabase
         .from("prds")
-        .select("id,title,body_md,github_issue_url")
+        .select("id,title,body_md,github_issue_url,workspace_id")
         .eq("id", data.prdId)
         .single();
       if (error) throw new Error(`PRD lookup failed: ${error.message}`);
       prd = row as unknown as PrdCtx;
     }
+
+    // Workspace: prefer the PRD's, else the user's default (also used for the mission).
+    const { data: ws } = await supabase.rpc("current_user_default_workspace");
+    const workspaceId = prd?.workspace_id ?? (ws as string | null) ?? null;
 
     // Resolve issue number.
     let issueNumber: number | null = data.issueNumber ?? null;
@@ -326,13 +333,11 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     }
 
     if (!issueNumber && data.autoCreateIssue) {
-      const token = process.env.GITHUB_TOKEN;
-      const repo = process.env.GITHUB_REPO;
-      if (!token || !repo)
-        throw new Error(
-          "GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)",
-        );
-      if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Invalid GITHUB_REPO format: ${repo}`);
+      const gh = await resolveGitHub({
+        userId,
+        workspaceId,
+        userClient: supabase as unknown as SupabaseClient,
+      });
 
       const titleSrc = data.missionTitle?.trim() || data.goal.split(/\r?\n/)[0].slice(0, 120);
       const bodyParts: string[] = [data.goal.slice(0, 40_000)];
@@ -347,10 +352,10 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
       }
       bodyParts.push(`\n---\n_Opened from Cadence Build Console_`);
 
-      const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      const res = await fetch(`https://api.github.com/repos/${gh.repo}/issues`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${gh.token}`,
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
           "User-Agent": "cadence-agent",
@@ -398,9 +403,7 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
     }
     const fullGoal = goalSections.join("\n");
 
-    // Resolve workspace + builder agent, create mission, then run.
-    const { data: ws } = await supabase.rpc("current_user_default_workspace");
-    const workspaceId = (ws as string | null) ?? null;
+    // Resolve builder agent, create mission, then run.
     const { data: agent } = await supabase
       .from("agents")
       .select("id")

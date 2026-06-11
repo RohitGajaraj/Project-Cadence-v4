@@ -21,9 +21,10 @@ Three nested scopes, enforced at every layer:
 
 ## Secrets
 
-- **BYO model keys** encrypted with pgsodium `crypto_secretbox`; decrypted server-side on use only; masked in UI (`sk-***…last4`).
+- **BYO model keys & connector secrets** encrypted app-layer with AES-256-GCM under `CONNECTOR_SECRETS_KEY` (base64 32-byte wrangler secret; ciphertext + IV stored in `user_api_keys` / `connection_secrets` — the latter has RLS enabled with no policies, service-role-only); decrypted server-side on use only; masked in UI (`sk-***…last4`).
 - No provider key required for the default gateway path.
 - Connector OAuth tokens handled by the managed connector layer (refresh/revoke solved).
+- **Cross-member binding attribution** — workspace `connection_bindings` carry `created_by`; GitHub side effects run as the installed GitHub App (and are labeled "acting as …" in previews), not as any individual member's identity.
 
 ## Agent governance (security as a product feature)
 

@@ -66,6 +66,7 @@ import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
+import { Route as ApiPublicConnectGithubCallbackRouteImport } from './routes/api/public/connect/github/callback'
 import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
 const SignupRoute = SignupRouteImport.update({
@@ -364,6 +365,12 @@ const ApiPublicHooksAgentTickRoute = ApiPublicHooksAgentTickRouteImport.update({
   path: '/api/public/hooks/agent-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicConnectGithubCallbackRoute =
+  ApiPublicConnectGithubCallbackRouteImport.update({
+    id: '/api/public/connect/github/callback',
+    path: '/api/public/connect/github/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicA2aAgentsCadenceCardRoute =
   ApiPublicA2aAgentsCadenceCardRouteImport.update({
     id: '/api/public/a2a/agents/cadence/card',
@@ -428,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesByTo {
@@ -486,6 +494,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesById {
@@ -547,6 +556,7 @@ export interface FileRoutesById {
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRouteTypes {
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
+    | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
+    | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   id:
     | '__root__'
@@ -726,6 +738,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
+    | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
 }
@@ -748,6 +761,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMemoryTickRoute: typeof ApiPublicHooksMemoryTickRoute
   ApiPublicHooksOutcomeTickRoute: typeof ApiPublicHooksOutcomeTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
+  ApiPublicConnectGithubCallbackRoute: typeof ApiPublicConnectGithubCallbackRoute
   ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 
@@ -1152,6 +1166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAgentTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/connect/github/callback': {
+      id: '/api/public/connect/github/callback'
+      path: '/api/public/connect/github/callback'
+      fullPath: '/api/public/connect/github/callback'
+      preLoaderRoute: typeof ApiPublicConnectGithubCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/a2a/agents/cadence/card': {
       id: '/api/public/a2a/agents/cadence/card'
       path: '/api/public/a2a/agents/cadence/card'
@@ -1298,6 +1319,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMemoryTickRoute: ApiPublicHooksMemoryTickRoute,
   ApiPublicHooksOutcomeTickRoute: ApiPublicHooksOutcomeTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
+  ApiPublicConnectGithubCallbackRoute: ApiPublicConnectGithubCallbackRoute,
   ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
 export const routeTree = rootRouteImport

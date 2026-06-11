@@ -32,6 +32,7 @@ import {
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Calendar as CalIcon, Link2 } from "lucide-react";
+import { AccountConnectionsSection } from "@/components/connections/AccountConnectionsSection";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (search: Record<string, unknown>): { section?: string } => ({
@@ -517,6 +518,8 @@ function SettingsPage() {
             ))}
           </div>
         </section>
+
+        <AccountConnectionsSection active={section === "connections"} />
 
         <CalendarAccountsSection />
       </div>

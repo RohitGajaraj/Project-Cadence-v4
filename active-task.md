@@ -34,7 +34,7 @@ Plan: connections (account level) · connection_bindings (workspace level) · `r
    - Callback URL: `https://cadence-flow-beta.lovable.app/api/public/connect/github/callback` (add `http://localhost:8080/api/public/connect/github/callback` as a second callback for local dev)
    - ✅ "Request user authorization (OAuth) during installation" · Webhooks: **off** for now
    - Permissions: Issues **RW** · Pull requests **RW** · Contents **R** · Actions **R**
-2. [ ] After creating: note the **App ID**, generate a **client secret**, and generate + download a **private key** (.pem)
+2. [ ] After creating: note the **App ID**, generate a **client secret**, and generate + download a **private key** (.pem). **⚠️ Convert it to PKCS#8 before pasting** (GitHub downloads PKCS#1): `openssl pkcs8 -topk8 -nocrypt -in downloaded.pem -out github-app-pkcs8.pem` — the Worker's WebCrypto requires PKCS#8 and will throw a clear error otherwise
 3. [ ] Add backend secrets (Lovable project env): `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY` (paste PEM), and `CONNECTOR_SECRETS_KEY` (run `openssl rand -base64 32`)
 4. [ ] Until these exist, the GitHub card in Settings → Connected accounts shows "setup pending" (everything else still works; old env-var path keeps the demo alive)
 

@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
 import { recordLineage } from "@/lib/lineage.functions";
 import { retrieve } from "@/lib/rag/retriever.server";
+import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ---------- CRITIC (M1 Golden Path: DEC-02) ----------
@@ -486,10 +487,10 @@ export const createGithubIssueForPrd = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: prd, error: prdErr } = await supabase
       .from("prds")
-      .select("id,title,body_md,github_issue_url")
+      .select("id,title,body_md,github_issue_url,workspace_id")
       .eq("id", data.id)
       .single();
     if (prdErr) throw new Error(prdErr.message);
@@ -497,24 +498,17 @@ export const createGithubIssueForPrd = createServerFn({ method: "POST" })
       return { url: prd.github_issue_url, cached: true };
     }
 
-    const token = process.env.GITHUB_TOKEN;
-    const rawRepo = process.env.GITHUB_REPO;
-    if (!token || !rawRepo)
-      throw new Error("GitHub is not connected on the server (GITHUB_TOKEN / GITHUB_REPO missing)");
-    const repo = rawRepo
-      .trim()
-      .replace(/^https?:\/\/github\.com\//i, "")
-      .replace(/^git@github\.com:/i, "")
-      .replace(/\.git$/i, "")
-      .replace(/\/+$/, "");
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo))
-      throw new Error(`Invalid GITHUB_REPO format: ${rawRepo} (expected owner/name)`);
+    const gh = await resolveGitHub({
+      userId,
+      workspaceId: prd.workspace_id,
+      userClient: supabase as unknown as SupabaseClient,
+    });
 
     const body = `${(prd.body_md ?? "").slice(0, 55_000)}\n\n---\n_Opened from Cadence PRD ${prd.id}_`;
-    const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+    const res = await fetch(`https://api.github.com/repos/${gh.repo}/issues`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${gh.token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "cadence-agent",

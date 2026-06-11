@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
+import { WorkspaceBindingsSection } from "@/components/connections/WorkspaceBindingsSection";
 import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functions";
 import { pullMapping, pushMapping } from "@/lib/sync.functions";
 import { getIngestToken, rotateIngestToken, revokeIngestToken } from "@/lib/ingest.functions";
@@ -97,6 +98,8 @@ function SyncInboxPage() {
         <p className="text-sm text-muted-foreground mb-8">
           Resolve conflicts between Cadence docs and your connected tools.
         </p>
+
+        <WorkspaceBindingsSection />
 
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-3">
