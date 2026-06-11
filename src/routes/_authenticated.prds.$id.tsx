@@ -18,7 +18,15 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
-import { getPrd, savePrd, prdAssist, createGithubIssueForPrd } from "@/lib/discovery.functions";
+import {
+  getPrd,
+  savePrd,
+  prdAssist,
+  createGithubIssueForPrd,
+  type CriticReview,
+} from "@/lib/discovery.functions";
+import { CriticBadge } from "@/components/governance/CriticBadge";
+import { CitationsCard, type Citation } from "@/components/product/CitationsCard";
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { runAgent } from "@/lib/agent_loop.functions";
@@ -210,6 +218,12 @@ function PrdEditor() {
                 ) : null;
               })()
             : null}
+          <span aria-hidden>/</span>
+          <CriticBadge
+            review={(prdQ.data.prd as { critic_review?: CriticReview | null }).critic_review ?? null}
+            target={{ kind: "prd", id }}
+            invalidateKey={["prd", id]}
+          />
         </div>
 
         <div className="flex items-center gap-3 mb-6">
@@ -338,6 +352,14 @@ function PrdEditor() {
             <ReactMarkdown>{body || "_Empty PRD_"}</ReactMarkdown>
           </article>
         )}
+
+        <div className="mt-6">
+          <CitationsCard
+            citations={
+              (prdQ.data.prd as { citations?: Citation[] | null }).citations ?? null
+            }
+          />
+        </div>
       </div>
     </AppShell>
   );
