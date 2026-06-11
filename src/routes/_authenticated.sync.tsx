@@ -1,20 +1,28 @@
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Eye,
+  EyeOff,
   Inbox,
   RefreshCcw,
   ExternalLink,
   ArrowDownToLine,
   ArrowUpFromLine,
   Loader2,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functions";
 import { pullMapping, pushMapping } from "@/lib/sync.functions";
+import { getIngestToken, rotateIngestToken, revokeIngestToken } from "@/lib/ingest.functions";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   component: SyncInboxPage,
@@ -247,7 +255,186 @@ function SyncInboxPage() {
             ))}
           </div>
         </section>
+
+        <WebhookIngestCard />
       </div>
     </AppShell>
+  );
+}
+
+type IngestToken = {
+  id: string;
+  token: string;
+  label: string | null;
+  created_at: string;
+};
+
+function WebhookIngestCard() {
+  const qc = useQueryClient();
+  const fGet = useServerFn(getIngestToken);
+  const fRotate = useServerFn(rotateIngestToken);
+  const fRevoke = useServerFn(revokeIngestToken);
+
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const endpoint = `${origin}/api/public/ingest-signals`;
+
+  const [revealed, setRevealed] = useState(false);
+  const [rotateArmed, setRotateArmed] = useState(false);
+  const [curlOpen, setCurlOpen] = useState(false);
+
+  useEffect(() => {
+    if (!rotateArmed) return;
+    const t = setTimeout(() => setRotateArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [rotateArmed]);
+
+  const q = useQuery({ queryKey: ["ingest-token"], queryFn: () => fGet() });
+  const token = (q.data?.token ?? null) as IngestToken | null;
+
+  const mRotate = useMutation({
+    mutationFn: () => fRotate(),
+    onSuccess: () => {
+      toast.success(token ? "Token rotated" : "Token generated");
+      setRevealed(false);
+      setRotateArmed(false);
+      qc.invalidateQueries({ queryKey: ["ingest-token"] });
+    },
+    onError: (e: unknown) => {
+      setRotateArmed(false);
+      toast.error(e instanceof Error ? e.message : "Token update failed");
+    },
+  });
+  const mRevoke = useMutation({
+    mutationFn: () => fRevoke(),
+    onSuccess: () => {
+      toast.success("Token revoked");
+      setRevealed(false);
+      qc.invalidateQueries({ queryKey: ["ingest-token"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Revoke failed"),
+  });
+
+  const copy = (text: string, label: string) =>
+    navigator.clipboard.writeText(text).then(
+      () => toast.success(`${label} copied`),
+      () => toast.error("Copy failed"),
+    );
+
+  const curlExample = [
+    `curl -X POST ${endpoint} \\`,
+    `  -H "Authorization: Bearer YOUR_TOKEN" \\`,
+    `  -H "Content-Type: application/json" \\`,
+    `  -d '{"signals":[{"title":"Checkout drop-off spike","content":"From support thread","source":"zapier"}]}'`,
+  ].join("\n");
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-center gap-2 mb-3">
+        <Webhook className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-display text-sm tracking-tight uppercase text-muted-foreground">
+          Webhook ingest
+        </h2>
+      </div>
+      <div className="rounded-xl border hairline bg-background/60 p-4">
+        <p className="text-sm text-muted-foreground">
+          Point anything that can POST here: Zapier, Slack outgoing webhooks, forms, scripts. Each
+          request becomes signals in this workspace.
+        </p>
+
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground w-20 shrink-0">
+            Endpoint
+          </span>
+          <code className="min-w-0 flex-1 truncate rounded-md bg-secondary/40 px-2 py-1 text-xs">
+            {endpoint}
+          </code>
+          <button
+            onClick={() => copy(endpoint, "Endpoint")}
+            className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
+          >
+            <Copy className="h-3 w-3" />
+            Copy
+          </button>
+        </div>
+
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground w-20 shrink-0">
+            Token
+          </span>
+          {q.isLoading ? (
+            <span className="text-xs text-muted-foreground">Loading…</span>
+          ) : token ? (
+            <>
+              <code className="min-w-0 flex-1 truncate rounded-md bg-secondary/40 px-2 py-1 text-xs">
+                {revealed ? token.token : `${token.token.slice(0, 8)}…`}
+              </code>
+              <button
+                onClick={() => setRevealed((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
+              >
+                {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                {revealed ? "Hide" : "Reveal"}
+              </button>
+              <button
+                onClick={() => copy(token.token, "Token")}
+                className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <Copy className="h-3 w-3" />
+                Copy
+              </button>
+              <button
+                disabled={mRotate.isPending}
+                onClick={() => (rotateArmed ? mRotate.mutate() : setRotateArmed(true))}
+                className={`inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  rotateArmed
+                    ? "text-amber-400 border-amber-400/40"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {mRotate.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-3 w-3" />
+                )}
+                {rotateArmed ? "Confirm rotate?" : "Rotate"}
+              </button>
+              <button
+                disabled={mRevoke.isPending}
+                onClick={() => mRevoke.mutate()}
+                className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {mRevoke.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                Revoke
+              </button>
+            </>
+          ) : (
+            <button
+              disabled={mRotate.isPending}
+              onClick={() => mRotate.mutate()}
+              className="inline-flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {mRotate.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+              Generate token
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <button
+            onClick={() => setCurlOpen((v) => !v)}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {curlOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            curl example
+          </button>
+          {curlOpen && (
+            <pre className="mt-2 overflow-x-auto rounded-md bg-secondary/40 p-3 text-xs leading-relaxed">
+              <code>{curlExample}</code>
+            </pre>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

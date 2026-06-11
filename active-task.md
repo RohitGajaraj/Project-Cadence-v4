@@ -15,12 +15,16 @@
 - [ ] After apply: regenerate Supabase types (removes the untyped casts), then walk the loop end-to-end: approve a PRD with an issue → close the issue → "Check ship status" → record outcome → see the re-score chip in Opportunities
 - [ ] Doc closure remainder: `architecture/orchestration.md` (halted-mission semantics) + `docs/features/` operator page for the outcome loop
 
-## Open ops task — Slack app credentials (gates `F-V5-SLACK`, Phase C)
+## `F-V5-INGEST-WEBHOOK` — Phase C universal half: CODE LANDED 2026-06-12
 
-**Owner:** founder. Day-6 fallback: `feedback@` email-forward + webhook ingest instead.
+- [x] `ingest_tokens` migration (idempotent) · `ingest.functions.ts` (get/rotate/revoke) · public `POST /api/public/ingest-signals` (Bearer token) · Webhook ingest card on `/sync` — lint + build green; reactor fan-out to Scout confirmed
+- [ ] **GATE (KI-09): founder opens Lovable → syncs → migration applies + frontend deploys**
+- [ ] Then verify: generate token on `/sync`, curl one signal, see it in Product · Signals (+ auto-discovery run)
+- [ ] Post-demo hardening queued: per-token rate cap, token hashing (KI-10)
 
-- [ ] Create a Slack app (scopes: `channels:history`, `channels:read`)
-- [ ] Provide client ID + secret as wrangler secrets
+## ~~Slack app credentials~~ — RETIRED 2026-06-12
+
+Founder decision: no Slack app. The **webhook ingest door is the ingest strategy** (`F-V5-INGEST-WEBHOOK`); anything — including Slack via its own outgoing-webhook/workflow tools — POSTs to `/api/public/ingest-signals`. `F-V5-SLACK` (native OAuth connector) removed from the queue.
 
 ## Open ops task — Calendar OAuth credentials (KI-01, unchanged)
 

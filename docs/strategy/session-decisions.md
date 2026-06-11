@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — No Slack app: the universal webhook door is the ingest strategy
+
+**Decision:** Retire `F-V5-SLACK` (native Slack OAuth connector). The ingest strategy at the wedge stage is the universal webhook door (`F-V5-INGEST-WEBHOOK`, shipped 2026-06-12): per-workspace token + public `POST /api/public/ingest-signals`; any source that can POST — Slack's own webhook/workflow tools, Zapier, forms, scripts — feeds signals directly into the `signal.created` → Scout auto-pipeline.
+
+**Why:** Founder ruling — building and maintaining a per-vendor OAuth app adds integration overhead with no wedge value when one door covers every source; matches the constitution's build-vs-integrate rule (integration is a bridge, not a dependency).
+
+**Tradeoffs considered:** Native Slack connector gives channel-picking UX + permalink metadata — deferred to expansion (M2+, if customer demand proves it). Webhook door risks logged as KI-10 (rate cap, token hashing) for post-demo hardening.
+
+**Impact:** Backlog board + `active-task.md` + v5 doc Phase C row updated; the Slack-credentials ops task removed. Remaining v5 queue: `F-V5-DEMO` only.
+
 ### 2026-06-11 — Database stays Lovable-operated until a deliberate migration off
 
 **Decision:** Lovable Cloud remains the sole operator of the Supabase database. Migrations reach production only by Lovable syncing `supabase/migrations/` from GitHub — no direct dashboard applies, no read-write Supabase access from agents; the project-level Supabase MCP stays `--read-only` (`.mcp.json` unchanged). Direct DB administration is deferred until the application is fully built and the founder decides to migrate off Lovable — at which point the accumulated migration files are the portable record.
