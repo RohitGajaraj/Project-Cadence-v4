@@ -161,6 +161,7 @@ Rules: be terse, no markdown fences, no prose outside JSON.`;
       rationale: d.rationale?.slice(0, 2000) ?? null,
       meeting_id: m.id,
       status: "pending",
+      source_kind: "meeting" as const,
     }));
     if (decRows.length) await supabase.from("decisions").insert(decRows);
 
