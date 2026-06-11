@@ -253,8 +253,8 @@ function OrchestratorPlanPanel({
     <div className="bento p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-          <GitMerge className="h-3 w-3 text-violet-300" /> Orchestrator plan · {done}/{steps.length}{" "}
-          done{failed > 0 ? ` · ${failed} failed` : ""}
+          <GitMerge className="h-3 w-3 text-violet-300" /> Chief of Staff plan · {done}/
+          {steps.length} done{failed > 0 ? ` · ${failed} failed` : ""}
         </div>
         {canAdvance && (
           <button
@@ -360,7 +360,7 @@ function MissionDetail() {
   const advance = useMutation({
     mutationFn: () => fAdvance({ data: { missionId } }),
     onSuccess: () => {
-      toast.success("Orchestrator advanced — dispatching newly-ready steps.");
+      toast.success("Chief of Staff advanced — dispatching newly-ready steps.");
       qc.invalidateQueries({ queryKey: ["mission", missionId] });
       qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
     },

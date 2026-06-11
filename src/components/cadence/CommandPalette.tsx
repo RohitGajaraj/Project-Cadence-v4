@@ -11,7 +11,6 @@ import {
   Search,
   Telescope,
   BookOpen,
-  GraduationCap,
   ShieldAlert,
   Activity,
   Calendar as CalIcon,
@@ -33,9 +32,9 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const go = (to: string) => {
+  const go = (to: string, search?: Record<string, string>) => {
     setOpen(false);
-    navigate({ to });
+    navigate({ to, search: search as never });
   };
 
   return (
@@ -76,11 +75,16 @@ export function CommandPalette() {
                   onSelect={() => go("/")}
                 />
                 <Item icon={MessageSquare} label="Chat" hint="G C" onSelect={() => go("/chat")} />
-                <Item icon={Bot} label="Agents" hint="G A" onSelect={() => go("/agents")} />
+                <Item
+                  icon={Bot}
+                  label="Agents · roster & telemetry"
+                  hint="G A"
+                  onSelect={() => go("/missions", { tab: "agents" })}
+                />
                 <Item
                   icon={CalIcon}
                   label="Calendar · events & meetings"
-                  onSelect={() => go("/calendar")}
+                  onSelect={() => go("/knowledge", { tab: "calendar" })}
                 />
                 <Item
                   icon={Telescope}
@@ -94,17 +98,7 @@ export function CommandPalette() {
                   hint="G M"
                   onSelect={() => go("/knowledge")}
                 />
-                <Item
-                  icon={GraduationCap}
-                  label="Learn · outcomes, support, learnings"
-                  onSelect={() => go("/learn")}
-                />
-                <Item
-                  icon={ListTodo}
-                  label="Tasks"
-                  hint="G T"
-                  onSelect={() => go("/product", )}
-                />
+                <Item icon={ListTodo} label="Tasks" hint="G T" onSelect={() => go("/product")} />
                 <Item
                   icon={Activity}
                   label="Missions · live swarm, agents, missions"
@@ -112,7 +106,7 @@ export function CommandPalette() {
                 />
                 <Item
                   icon={ShieldAlert}
-                  label="Govern · controls, approvals, traces, drift"
+                  label="Engine Room · controls, approvals, traces, drift"
                   onSelect={() => go("/govern")}
                 />
                 <Item
@@ -183,16 +177,18 @@ export function GotoShortcuts() {
       if (waiting) {
         waiting = false;
         if (timer) clearTimeout(timer);
+        // /agents and /learn are mothballed (F-V5-MOTHBALL) — point at their
+        // v5 homes so shortcuts never land on a redirect.
         const map: Record<string, string> = {
           d: "/",
           c: "/chat",
-          a: "/agents",
+          a: "/missions",
           t: "/tasks",
           s: "/settings",
           p: "/product",
           k: "/knowledge",
           m: "/knowledge",
-          l: "/learn",
+          l: "/knowledge",
           v: "/govern",
         };
         const to = map[e.key.toLowerCase()];

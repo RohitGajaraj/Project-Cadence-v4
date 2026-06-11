@@ -8,13 +8,15 @@
 
 **Spec:** v5 doc, Phase A row. **Key files:** `src/routes/_authenticated.index.tsx`, `src/components/cadence/AppShell.tsx`, `src/lib/copilot.functions.ts` (`generateDailyBrief`), `src/lib/governance.functions.ts`, `src/lib/missions.functions.ts`, `src/components/governance/CriticBadge.tsx`.
 
-- [ ] "Needs you" Calls section at top of Today: pending `agent_approvals` + Critic-flagged (revise/kill) opportunities + PRDs as call cards — evidence snippet, Critic verdict chip, inline Approve / Reject / Open
-- [ ] Brief rewritten to lead with "your N calls today," then overnight agent activity (from `agent_runs`)
-- [ ] **Start mission** button on Today (+ Missions surface): direct `createMission` + orchestrator dispatch — no chat-classifier dependency
-- [ ] Cost chip in Today header: today's spend from `ai_events` (tap → Trust drawer/budgets)
-- [ ] Approvals pinned to the workspace rail
-- [ ] Verify on `demo@redcadence.app`: ≥2 real call cards on login; approve one → executes + decision logs without leaving Today
-- [ ] Doc closure: backlog board + plan.md §4 + `architecture/frontend.md`; update this file → flip to `F-V5-MOTHBALL`
+- [x] "Needs you" Calls section at top of Today (approvals + Critic-flagged opps/PRDs as call cards, inline Approve/Reject/Open via `getNeedsYou` in new `src/lib/today.functions.ts`)
+- [x] Brief leads with "your calls today" + overnight agent activity (`ensureTodayBrief` rewritten)
+- [x] **Start mission** button on Today → `startOrchestratedMission` direct (no chat-classifier dependency)
+- [x] Cost chip in Today header (today's `ai_events` spend)
+- [x] Approvals pinned to the workspace rail (Today · Approvals · Chat)
+- [x] **F-V5-MOTHBALL landed same batch:** nav groups → Product · Missions · Knowledge; Trust icon row in sidebar footer (Approvals · Budgets · Engine Room · Connectors); `/build` → `/`, `/learn` → `/knowledge`, `/agents` → `/missions?tab=agents` redirects; "Chief of Staff" UI vocabulary. Build green (`bun run build:dev` exit 0); all touched files lint clean.
+- [ ] **Verify on `demo@redcadence.app`** (v5 bar 1): ≥2 real call cards on login; approve one → executes + decision logs without leaving Today; nav shows 4 surfaces + Trust row
+- [ ] Doc closure remainder: `architecture/frontend.md` (new nav + Today contract)
+- [ ] Known risks to re-check in walkthrough: `startOrchestratedMission` awaits the full loop (30s+, possible Worker timeout → double-dispatch on retry); needs-you query has no polling; pre-existing repo-wide prettier drift (3,385 errors in untouched files — consider one-shot `eslint --fix` cleanup commit)
 
 **Done when:** verification bar 1 in the v5 doc passes end-to-end on a demo account.
 

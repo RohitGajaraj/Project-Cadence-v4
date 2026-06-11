@@ -347,7 +347,7 @@ function MissionsTable({ hud }: { hud: SwarmHud }) {
       <MonoLabel>Missions in flight</MonoLabel>
       {hud.missions.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-xl">
-          No missions in flight. The orchestrator is idle.
+          No missions in flight. The Chief of Staff is idle.
         </p>
       ) : (
         <div className="rounded-xl border border-border bg-background/40 divide-y divide-border">

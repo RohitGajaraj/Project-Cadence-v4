@@ -27,7 +27,16 @@ export async function ensureTodayBrief(
     .maybeSingle();
   if (existing) return existing;
 
-  const [{ data: tasks }, { data: meetings }, { data: profile }] = await Promise.all([
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const [
+    { data: tasks },
+    { data: meetings },
+    { data: profile },
+    { count: approvalsCount },
+    { data: reviewPrds },
+    { data: agentRuns },
+  ] = await Promise.all([
     supabase
       .from("tasks")
       .select("title,priority,is_deep_work,status,due_date")
@@ -39,12 +48,27 @@ export async function ensureTodayBrief(
       .gte("start_at", today.toISOString())
       .lt("start_at", tomorrow.toISOString()),
     supabase.from("profiles").select("display_name").maybeSingle(),
+    supabase
+      .from("agent_approvals")
+      .select("id", { count: "exact", head: true })
+      .in("escalation_state", ["pending", "expired"]),
+    supabase.from("prds").select("id,title").eq("status", "review").limit(5),
+    supabase
+      .from("agent_runs")
+      .select("agent_name,status")
+      .gte("created_at", dayAgo.toISOString())
+      .limit(8),
   ]);
 
-  const prompt = `Write a calm, 2-3 sentence daily brief for ${profile?.display_name ?? "the user"}.
-Reference what kind of day this is (maker / collaboration / mixed) based on the meetings and deep-work tasks.
-Mention one concrete focus. Avoid emojis. Address the user by first name.
+  const prompt = `Write a calm daily brief for ${profile?.display_name ?? "the user"}. Avoid emojis. Address the user by first name.
+Structure, in order:
+1. Lead with the operator's calls today: the pending approvals count and the specs awaiting review (by title — at most 3). Imperative voice ("Approve...", "Review...").
+2. One line on what agents completed overnight.
+3. One concrete focus for the day, based on the meetings and deep-work tasks.
 
+PENDING APPROVALS: ${approvalsCount ?? 0}
+SPECS AWAITING REVIEW: ${JSON.stringify(reviewPrds ?? [])}
+OVERNIGHT AGENT RUNS: ${JSON.stringify(agentRuns ?? [])}
 TODAY'S MEETINGS: ${JSON.stringify(meetings ?? [])}
 OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
 

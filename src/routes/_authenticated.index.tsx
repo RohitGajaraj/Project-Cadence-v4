@@ -22,6 +22,9 @@ import {
   XCircle,
   Clock,
   ArrowRight,
+  Coins,
+  Rocket,
+  ShieldAlert,
 } from "lucide-react";
 const DASHBOARD_TABS: Array<{
   id: "overview" | "work" | "agents" | "pulse";
@@ -62,6 +65,10 @@ import {
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { listDecisions, createDecision, updateDecision } from "@/lib/decisions.functions";
 import { getGreeting } from "@/lib/greeting.functions";
+import { getNeedsYou } from "@/lib/today.functions";
+import { resolveApproval } from "@/lib/governance.functions";
+import { startOrchestratedMission } from "@/lib/orchestrator.functions";
+import { CriticBadge } from "@/components/governance/CriticBadge";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -83,6 +90,7 @@ function Dashboard() {
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchDecisions = useServerFn(listDecisions);
   const fetchGreeting = useServerFn(getGreeting);
+  const fetchNeedsYou = useServerFn(getNeedsYou);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -96,6 +104,8 @@ function Dashboard() {
   const mRunAgent = useServerFn(runAgent);
   const mCreateDecision = useServerFn(createDecision);
   const mUpdateDecision = useServerFn(updateDecision);
+  const mResolveApproval = useServerFn(resolveApproval);
+  const mStartMission = useServerFn(startOrchestratedMission);
 
   const dash = useQuery({ queryKey: ["dashboard"], queryFn: () => fetchDashboard() });
   const tasks = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
@@ -104,6 +114,7 @@ function Dashboard() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const decisions = useQuery({ queryKey: ["decisions"], queryFn: () => fetchDecisions() });
+  const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
   // bucket matches their wall clock, not the server's UTC. Country comes
@@ -193,6 +204,21 @@ function Dashboard() {
       mUpdateDecision({ data }),
     onSuccess: () => invalidate("decisions"),
   });
+  const decideApproval = useMutation({
+    mutationFn: (data: { approvalId: string; decision: "approved" | "rejected" }) =>
+      mResolveApproval({ data }),
+    onSuccess: (_res, vars) => {
+      invalidate("needs-you");
+      toast.success(vars.decision === "approved" ? "Approved — agent unblocked" : "Rejected");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const startMission = useMutation({
+    // The orchestrator loop is awaited server-side — this can run 30s+.
+    mutationFn: (data: { goal: string }) => mStartMission({ data }),
+    onSuccess: () => toast.success("Mission dispatched — track it in Missions"),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const d = dash.data;
   const [today, setToday] = useState("");
@@ -205,6 +231,9 @@ function Dashboard() {
   const profileName = d?.profile?.display_name?.split(" ")[0] ?? "there";
   const greetText = greeting.data?.greeting ?? "Hello";
   const activeAgents = (runs.data?.runs ?? []).filter((r) => r.status === "running").length;
+  const ny = needsYou.data;
+  const callCount =
+    (ny?.approvals.length ?? 0) + (ny?.prdCalls.length ?? 0) + (ny?.oppCalls.length ?? 0);
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -222,6 +251,13 @@ function Dashboard() {
             )}
           </div>
           <div className="flex-1" />
+          <span className="mono-label inline-flex items-center gap-1.5 mr-1">
+            <Coins className="h-3 w-3" /> ${(ny?.spendTodayUsd ?? 0).toFixed(2)} today
+          </span>
+          <StartMissionButton
+            pending={startMission.isPending}
+            onDispatch={(goal, onSuccess) => startMission.mutate({ goal }, { onSuccess })}
+          />
           <button
             onClick={() => regenBrief.mutate()}
             disabled={regenBrief.isPending}
@@ -250,9 +286,16 @@ function Dashboard() {
                 .
               </h1>
               <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
-                Your AI team is ready. Hit{" "}
-                <em className="not-italic text-[color:var(--canvas)]">Refresh brief</em> to orient
-                the day.
+                {callCount > 0 ? (
+                  <>
+                    <em className="not-italic text-[color:var(--canvas)]">
+                      {callCount} call{callCount === 1 ? "" : "s"}
+                    </em>{" "}
+                    need{callCount === 1 ? "s" : ""} your judgment below. Agents handle the rest.
+                  </>
+                ) : (
+                  <>All clear — no calls waiting. Agents keep watch.</>
+                )}
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <Pill
@@ -282,6 +325,120 @@ function Dashboard() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* NEEDS YOU — the calls queue (F-V5-RITUAL) */}
+        <section className="rounded-lg border hairline bg-card p-6 md:p-8 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="mono-label flex items-center gap-1.5">
+              <ShieldAlert className="h-3 w-3" /> Needs you · {callCount} call
+              {callCount === 1 ? "" : "s"}
+            </div>
+            <Link
+              to="/govern"
+              search={{ tab: "approvals" }}
+              className="link-action text-xs inline-flex items-center gap-1"
+            >
+              All approvals <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {callCount === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              All clear. Agents are working; the next call lands here.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {(ny?.approvals ?? []).map((a) => (
+                <li key={a.id} className="rounded-md border hairline bg-background p-3">
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <span className="font-medium">{a.agent_slug}</span>
+                    <span className="text-muted-foreground">wants to run</span>
+                    <span className="font-medium">{a.tool_name}</span>
+                    {a.expires_at && (
+                      <span className="ml-auto mono-label text-muted-foreground inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {a.escalation_state === "expired"
+                          ? "expired"
+                          : `expires ${new Date(a.expires_at).toLocaleTimeString([], {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}`}
+                      </span>
+                    )}
+                  </div>
+                  {a.rationale && (
+                    <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+                      {a.rationale}
+                    </p>
+                  )}
+                  <div className="mt-2.5 flex gap-2">
+                    <button
+                      onClick={() =>
+                        decideApproval.mutate({ approvalId: a.id, decision: "approved" })
+                      }
+                      disabled={decideApproval.isPending}
+                      className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
+                    >
+                      Approve · run {a.tool_name}
+                    </button>
+                    <button
+                      onClick={() =>
+                        decideApproval.mutate({ approvalId: a.id, decision: "rejected" })
+                      }
+                      disabled={decideApproval.isPending}
+                      className="btn-pill-outline px-3 py-1 text-[11px] disabled:opacity-60"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {(ny?.prdCalls ?? []).map((p) => (
+                <li
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-md border hairline bg-background px-3 py-2.5"
+                >
+                  <span className="flex-1 text-sm truncate">
+                    Spec awaiting your call: <span className="font-medium">{p.title}</span>
+                  </span>
+                  <CriticBadge
+                    review={p.critic_review}
+                    target={{ kind: "prd", id: p.id }}
+                    invalidateKey={["needs-you"]}
+                  />
+                  <Link
+                    to="/prds/$id"
+                    params={{ id: p.id }}
+                    className="link-action text-xs inline-flex items-center gap-1"
+                  >
+                    Open <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </li>
+              ))}
+              {(ny?.oppCalls ?? []).map((o) => (
+                <li
+                  key={o.id}
+                  className="flex items-center gap-3 rounded-md border hairline bg-background px-3 py-2.5"
+                >
+                  <span className="flex-1 text-sm truncate">
+                    Critic challenged: <span className="font-medium">{o.title}</span>
+                  </span>
+                  <CriticBadge
+                    review={o.critic_review}
+                    target={{ kind: "opportunity", id: o.id }}
+                    invalidateKey={["needs-you"]}
+                  />
+                  <Link
+                    to="/product"
+                    search={{ tab: "opportunities" }}
+                    className="link-action text-xs inline-flex items-center gap-1"
+                  >
+                    Open <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {/* TODAY'S BRIEF — clean bullets */}
@@ -321,7 +478,11 @@ function Dashboard() {
                 Tap to dispatch · grounded in your workspace
               </span>
             </div>
-            <Link to="/agents" className="link-action text-xs inline-flex items-center gap-1">
+            <Link
+              to="/missions"
+              search={{ tab: "agents" }}
+              className="link-action text-xs inline-flex items-center gap-1"
+            >
               Manage <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -641,6 +802,68 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`mono-label inline-flex items-center gap-1 ${v.cls}`}>
       <v.icon className="h-3 w-3" /> {v.label}
     </span>
+  );
+}
+
+function StartMissionButton({
+  pending,
+  onDispatch,
+}: {
+  pending: boolean;
+  /** onSuccess closes the form — the orchestrator loop can run 30s+. */
+  onDispatch: (goal: string, onSuccess: () => void) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [goal, setGoal] = useState("");
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((s) => !s)}
+        className="btn-pill-outline px-4 py-2 text-sm disabled:opacity-60"
+        disabled={pending}
+      >
+        <Rocket className="h-3.5 w-3.5" />
+        {pending ? "Dispatching…" : "Start mission"}
+      </button>
+      {open && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!goal.trim() || pending) return;
+            onDispatch(goal.trim(), () => {
+              setGoal("");
+              setOpen(false);
+            });
+          }}
+          className="absolute z-40 top-full mt-2 right-0 w-72 rounded-md border hairline bg-card p-3 shadow-elevated"
+        >
+          <textarea
+            autoFocus
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            rows={3}
+            placeholder="What should the swarm pursue?"
+            className="w-full rounded-md border hairline bg-background px-2.5 py-2 text-xs outline-none focus:border-foreground resize-none"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-[11px] text-muted-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={pending}
+              className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
+            >
+              {pending ? "Dispatching…" : "Dispatch"}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 

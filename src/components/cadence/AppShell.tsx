@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Plug,
   PauseCircle,
-  Hammer,
+  Gauge,
   Sun,
   Moon,
   Sparkles,
@@ -25,7 +25,6 @@ import {
   MoreHorizontal,
   Pencil,
   LogOut as LeaveIcon,
-  GraduationCap,
   Calendar as CalIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -41,12 +40,7 @@ import { getWorkspacePauseState } from "@/lib/governance.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,64 +53,58 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail. Just Today + Chat. Missions lives in the
-// Agents group; Approvals reaches via Govern; Calendar reaches via Knowledge.
+// Workspace — your daily rail: Today · Approvals · Chat (the v5 felt product).
+// Missions lives in its own group; Calendar reaches via the quick-access dock.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
+  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
-// Floating quick-access dock — Approvals + Calendar, the two highest-frequency
-// daily gates. Calendar deep-links into /knowledge?tab=calendar so it stays
-// consistent with Calendar's new home as a Knowledge tab.
-const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/knowledge", label: "Calendar", icon: CalIcon, search: { tab: "calendar" } },
-];
+// Floating quick-access dock — Calendar only (Approvals is pinned in the
+// workspace rail). Deep-links into /knowledge?tab=calendar so it stays
+// consistent with Calendar's home as a Knowledge tab.
+const quickAccess: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  search?: Record<string, string>;
+}[] = [{ to: "/knowledge", label: "Calendar", icon: CalIcon, search: { tab: "calendar" } }];
 
-// Phase + Ops + Govern groups. Collapsible; auto-open the active group.
+// Nav groups — cut to the v5 felt product: Product · Missions · Knowledge.
+// Build/Learn/Agents/Govern mothballed (F-V5-MOTHBALL); the engine room stays
+// reachable via the Trust row in the footer. Collapsible; auto-open active.
 const groups: NavGroup[] = [
   {
     id: "product",
     label: "Product",
-    items: [
-      { to: "/product", label: "Product", icon: Telescope },
-    ],
+    items: [{ to: "/product", label: "Product", icon: Telescope }],
   },
   {
-    id: "build",
-    label: "Build",
-    items: [
-      { to: "/build", label: "Builder", icon: Hammer },
-    ],
-  },
-  {
-    id: "agents",
-    label: "Agents",
-    items: [
-      { to: "/agents", label: "Agents", icon: Bot },
-      { to: "/missions", label: "Missions", icon: Activity },
-      { to: "/sync", label: "Connectors", icon: Plug },
-    ],
-  },
-  {
-    id: "learn",
-    label: "Learn",
-    items: [{ to: "/learn", label: "Learn", icon: GraduationCap }],
+    id: "missions",
+    label: "Missions",
+    items: [{ to: "/missions", label: "Missions", icon: Activity }],
   },
   {
     id: "knowledge",
     label: "Knowledge",
     items: [{ to: "/knowledge", label: "Knowledge", icon: BookOpen }],
   },
-  {
-    id: "govern",
-    label: "Govern",
-    items: [
-      { to: "/govern", label: "Govern", icon: ShieldAlert },
-      { to: "/integrations", label: "Integrations", icon: Plug },
-    ],
-  },
+];
+
+// Trust row — pinned governance shortcuts in the sidebar footer. With the
+// Govern nav group mothballed (F-V5-MOTHBALL), this is the only visible path
+// into the engine room — keep it visible.
+const trustLinks: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  search?: Record<string, string>;
+}[] = [
+  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
+  { to: "/govern", label: "Budgets", icon: Gauge, search: { tab: "budgets" } },
+  { to: "/govern", label: "Engine Room", icon: ShieldAlert },
+  { to: "/sync", label: "Connectors", icon: Plug },
 ];
 
 const STORAGE_KEY = "cadence.nav.open";
@@ -212,7 +200,6 @@ function useOpenGroups(path: string) {
   useEffect(() => {
     const active = groups.find((g) => g.items.some((i) => i.to === path));
     if (active) setOpenId(active.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
   useEffect(() => {
@@ -228,7 +215,7 @@ function useOpenGroups(path: string) {
   return [openId, toggle] as const;
 }
 
-export function AppShell({ children }: { children: React.ReactNode; projects?: any }) {
+export function AppShell({ children }: { children: React.ReactNode; projects?: unknown }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const searchTab = useRouterState({
     select: (s) => (s.location.search as { tab?: string })?.tab ?? null,
@@ -700,7 +687,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
           </div>
         </div>
 
-        {/* Fixed footer: daily shortcuts, alerts, budget, co-pilot, sign out, theme */}
+        {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}
         <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
           {pauseState?.paused && (
             <Link
@@ -721,8 +708,42 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: a
             </Link>
           )}
           <BudgetBar />
+          {/* Trust row — same pattern as Daily shortcuts; only path to the engine room */}
+          <TooltipProvider delayDuration={150}>
+            <div
+              role="navigation"
+              aria-label="Trust"
+              title="Trust"
+              className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30"
+            >
+              <span className="mono-label px-1.5" style={{ fontSize: "9px" }}>
+                Trust
+              </span>
+              {trustLinks.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <Tooltip key={t.label}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={t.to}
+                        search={t.search as never}
+                        aria-label={t.label}
+                        className="flex-1 flex items-center justify-center rounded px-2 py-1.5 text-ink-muted hover:text-foreground hover:bg-secondary/60 transition"
+                      >
+                        <Icon className="h-3 w-3" strokeWidth={1.75} />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={6}>
+                      {t.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
           <Link
-            to="/agents"
+            to="/missions"
+            search={{ tab: "agents" } as never}
             className="block rounded-md border hairline p-3 bg-soft-stone/40 hover:bg-soft-stone/70 hover:border-foreground/20 transition group"
           >
             <div className="flex items-center justify-between mono-label">

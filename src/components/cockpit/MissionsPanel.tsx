@@ -26,7 +26,7 @@ export function MissionsPanel() {
     mutationFn: (input: { goal: string; title?: string }) => fStart({ data: input }),
     onSuccess: (res) => {
       toast.success(
-        `Orchestrator dispatched ${res.approvals_queued ?? 0} approval(s); mission running.`,
+        `Chief of Staff dispatched ${res.approvals_queued ?? 0} approval(s); mission running.`,
       );
       setGoal("");
       setTitle("");
@@ -60,7 +60,7 @@ export function MissionsPanel() {
         />
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] text-muted-foreground">
-            The Orchestrator will plan a 1–6 step DAG and dispatch the right specialists. Requires
+            The Chief of Staff will plan a 1–6 step DAG and dispatch the right specialists. Requires
             at least one enabled specialist agent.
           </p>
           <button
