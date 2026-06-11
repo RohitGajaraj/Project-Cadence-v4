@@ -46,6 +46,7 @@
 | If you are…                                                | Read first                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Asking "what is Circuit?"                                  | [`README.md`](./README.md)                                                                                                                                                                                                                          |
+| The founding constitution (AI co-founder role + mandates)  | [`Ai_Cofounder.md`](./Ai_Cofounder.md) — posture, north star, mandates; its **Repo Concordance** maps its 13 mandated docs onto this doc system                                                                                                     |
 | About to build (any agent or human)                        | [`AGENTS.md`](./AGENTS.md). Claude Code: [`CLAUDE.md`](./CLAUDE.md). Antigravity/Gemini: [`GEMINI.md`](./GEMINI.md).                                                                                                                                |
 | Designing UI / motion / tokens                             | [`design.md`](./design.md)                                                                                                                                                                                                                          |
 | Modifying the AI runtime                                   | [`architecture/runtime.md`](./architecture/runtime.md)                                                                                                                                                                                              |
@@ -94,6 +95,7 @@ Environment is auto-provisioned by the cloud project (Supabase URL/key + AI gate
 ```text
 Circuit/
 ├── ENTRY.md              <- repo index (here)
+├── Ai_Cofounder.md       <- founding constitution (co-founder posture + mandates; see its Repo Concordance)
 ├── README.md             <- product: what + why
 ├── AGENTS.md             <- CANONICAL operating & engineering rules
 ├── CLAUDE.md             <- Claude Code pointer to AGENTS.md
@@ -139,6 +141,7 @@ Circuit/
     │   ├── considerations.md
     │   ├── feature-backlog.md
     │   ├── foundation-audit.md
+    │   ├── known-issues.md
     │   └── strategic-tasks.md
     ├── references/       <- market research & competitive inputs
     └── strategy/         <- versioned strategic positioning

@@ -3,7 +3,7 @@
 > **Canonical, tool-agnostic source of truth for every agent and human working in this repo.**
 > Read natively by Google Antigravity, Gemini CLI, OpenAI Codex, Cursor, and the agents behind Lovable. Claude Code reads [`CLAUDE.md`](./CLAUDE.md) (a thin pointer to this file). Antigravity/Gemini precedence notes live in [`GEMINI.md`](./GEMINI.md).
 >
-> **Rule of the repo:** this file holds the operating rules. Product framing is in [`README.md`](./README.md). The build log and roadmap are in [`plan.md`](./plan.md). The UI contract is in [`design.md`](./design.md). Architecture contracts are in [`architecture/`](./architecture/). Do not duplicate content between files — link instead.
+> **Rule of the repo:** this file holds the operating rules. The founding constitution — co-founder posture, north star, model-agnostic mandate — is in [`Ai_Cofounder.md`](./Ai_Cofounder.md); its **Repo Concordance** section maps its mandated documents onto this doc system (never create its 13 root files; update the mapped equivalents). Product framing is in [`README.md`](./README.md). The build log and roadmap are in [`plan.md`](./plan.md). The UI contract is in [`design.md`](./design.md). Architecture contracts are in [`architecture/`](./architecture/). Do not duplicate content between files — link instead.
 
 ---
 
@@ -298,6 +298,10 @@ If you hit the same friction twice, add a row here before the third time. The co
 - **Permanent behavior:** batch independent operations into one message with parallel tool calls. Do not narrate each step. Do not retry a blocked op in isolation — fix the pattern, then retry the batch.
 
 ---
+
+### Stale redirect rot (absolute `file://` links to other repos)
+
+18 redirect stubs (root `TASKS.md`, `commits.md`, `skills.md`, `memory.md`, `hooks.md`, `subagents.md`, `tools.md`, `docs/agent-ecosystem-plan.md`, and 11 under `docs/`) silently pointed into the retired `project-Cadence-v3` repo via absolute `file://` links — routing any tool that followed them out of this codebase (found and fixed 2026-06-11). **Rule:** redirect/pointer docs use relative in-repo links only — never absolute `file://` paths, never paths into another repo. When relocating a doc, retarget every stub in the same commit and verify with `grep -rn "file://" --include="*.md" .`.
 
 ## 8. Founding principles we build by (YC + Anthropic 2026 playbook, applied)
 

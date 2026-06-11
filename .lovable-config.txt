@@ -1,7 +1,7 @@
 ================================================================================
 LOVABLE KNOWLEDGE FIELD — Complete Co-Development Instructions
 Copy/Paste ENTIRE CONTENT into Lovable.dev Settings -> Knowledge field -> Save
-Last updated: 2026-06-10
+Last updated: 2026-06-11
 ================================================================================
 
 HOW TO START EVERY SESSION:
@@ -56,6 +56,13 @@ FIRST SESSION OR WHEN CONTEXT IS STALE:
    — Pre-action protocol, skill/agent/plugin/MCP scan mandate
    — Engineering rules, behavioral guidelines
    — Go here when: you need to understand how to work here
+
+2.5. Ai_Cofounder.md (5 min read)
+   — The founding constitution: co-founder posture, north star, agentic-first
+     + model-agnostic (BYOK) mandates, documentation-first development
+   — Its "Repo Concordance" section maps its 13 mandated living docs onto the
+     existing canon — never create those root files; update the equivalents
+   — Go here when: you need the founding principles behind every decision
 
 3. docs/strategy/ (2 min — find latest version)
    — Open docs/strategy/README.md to find the current version
@@ -285,6 +292,8 @@ SECTION 7: MULTI-TOOL CONSISTENCY & SOURCE OF TRUTH
 
 CANONICAL SOURCE OF TRUTH HIERARCHY:
   - AGENTS.md: operating rules (ALL tools follow this)
+  - Ai_Cofounder.md: founding constitution — posture, north star, mandates
+    (its Repo Concordance maps its 13 mandated docs onto the files below)
   - docs/conventions/: durable cross-tool rules (UI chrome, voice, destructive, inline-mgmt, doc-closure). Apply automatically.
   - docs/strategy/: versioned positioning history (always read the latest version)
   - docs/strategy/session-decisions.md: major strategic decisions log
