@@ -4,11 +4,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
-import { CONNECTOR_REGISTRY, type ProviderId } from "@/lib/connectors/registry";
-import { encryptSecret } from "@/lib/connectors/crypto.server";
+import {
+  CONNECTOR_REGISTRY,
+  type AuthMethod,
+  type ProviderId,
+  type ProviderSpec,
+} from "@/lib/connectors/registry";
 import { materializeAuth, type ResolvedAuth } from "@/lib/connectors/resolve.server";
 import { getProviderAdapter } from "@/lib/connectors/providers/index.server";
 import { makeConnectState } from "@/lib/connectors/providers/github.server";
+import { authorizeAppUserOAuth } from "@/integrations/lovable/appUserConnector";
 
 // F-CONN Phase 1 — account-level connections + workspace-level bindings.
 // connections: own-row RLS (the caller only ever sees their own rows).
@@ -16,11 +21,18 @@ import { makeConnectState } from "@/lib/connectors/providers/github.server";
 // member can read/bind, attribution via created_by + owner of the connection.
 // connection_secrets: service-role only — always touched via supabaseAdmin.
 //
+// POLICY (founder decision): user connectors are OAuth-only. Connect flows go
+// through the Lovable connector gateway (startGatewayConnect →
+// saveGatewayConnection, generalized from calendar-connections.functions.ts).
+// Tokens live in the gateway; we persist only the gateway connection_id as
+// external_handle. There is no API-key connect path — connectWithApiKey was
+// removed. connection_secrets is retained solely so legacy api_key rows can
+// still be disconnected/deleted cleanly.
+//
 // New tables are not yet in the generated Database types, so handlers use the
 // untyped-client cast precedent (see outcome.functions.ts / ingest.functions.ts).
 //
 // Cross-module contracts consumed here (built alongside this file):
-// - crypto.server: encryptSecret(plain) -> { ciphertext, iv, keyVersion }.
 // - resolve.server: materializeAuth(row, provider) -> ResolvedAuth | null
 //   (decrypts vault secrets / mints installation tokens via supabaseAdmin).
 // - providers index: getProviderAdapter(provider) -> adapter with
@@ -28,6 +40,8 @@ import { makeConnectState } from "@/lib/connectors/providers/github.server";
 //   listResources?(auth: ResolvedAuth, kind, { q? }) -> { id, label }[].
 // - github.server: makeConnectState(userId) -> signed state for the GitHub App
 //   install URL (CSRF; consumed by the public callback route).
+// - lovable/appUserConnector: authorizeAppUserOAuth(...) ->
+//   { authorizationUrl, sessionId } (gateway OAuth start; web_message popup).
 
 export type ConnectionRow = {
   id: string;
@@ -72,7 +86,14 @@ export type WorkspaceBindingRow = BindingRow & {
 
 export type ProviderAvailability = Record<
   ProviderId,
-  { githubAppConfigured?: boolean; gatewayConfigured?: boolean }
+  {
+    /** True when every env credential the provider's connect flow needs is present. */
+    configured: boolean;
+    /** Exact env vars still unset — drives the UI's "Admin setup required" copy. */
+    missingEnv: string[];
+    githubAppConfigured?: boolean;
+    gatewayConfigured?: boolean;
+  }
 >;
 
 const CONNECTION_COLUMNS =
@@ -81,7 +102,22 @@ const CONNECTION_COLUMNS =
 const BINDING_COLUMNS =
   "id,connection_id,workspace_id,product_id,provider,resource_kind,resource_id,resource_label,config,created_by,created_at,updated_at";
 
-const PROVIDER_IDS = Object.keys(CONNECTOR_REGISTRY) as [ProviderId, ...ProviderId[]];
+// Same gateway the calendar flow uses (calendar-connections.functions.ts).
+const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
+
+const GATEWAY_PROVIDER_IDS = Object.values(CONNECTOR_REGISTRY)
+  .filter((spec) => spec.authMethods.some((m) => m.kind === "oauth_gateway"))
+  .map((spec) => spec.id) as [ProviderId, ...ProviderId[]];
+
+type GatewayAuthMethod = Extract<AuthMethod, { kind: "oauth_gateway" }>;
+
+function findGatewayMethod(spec: ProviderSpec): GatewayAuthMethod {
+  const method = spec.authMethods.find((m) => m.kind === "oauth_gateway");
+  if (!method || method.kind !== "oauth_gateway") {
+    throw new Error(`${spec.label} does not support OAuth connect.`);
+  }
+  return method;
+}
 
 /** Load a connection the caller owns (own-row RLS enforces ownership). */
 async function loadOwnConnection(db: SupabaseClient, id: string): Promise<ConnectionRow> {
@@ -107,16 +143,27 @@ async function materializeAdapterAuth(row: ConnectionRow): Promise<ResolvedAuth 
 
 function deriveProviderAvailability(): ProviderAvailability {
   const availability = {} as ProviderAvailability;
+  const lovableKeyPresent = !!process.env.LOVABLE_API_KEY;
   for (const spec of Object.values(CONNECTOR_REGISTRY)) {
-    const entry: { githubAppConfigured?: boolean; gatewayConfigured?: boolean } = {};
+    const missingEnv: string[] = [];
+    const entry: ProviderAvailability[ProviderId] = { configured: false, missingEnv };
     for (const method of spec.authMethods) {
       if (method.kind === "github_app") {
+        if (!process.env.GITHUB_APP_ID) missingEnv.push("GITHUB_APP_ID");
+        if (!process.env.GITHUB_APP_SLUG) missingEnv.push("GITHUB_APP_SLUG");
         entry.githubAppConfigured = !!(process.env.GITHUB_APP_ID && process.env.GITHUB_APP_SLUG);
       }
       if (method.kind === "oauth_gateway") {
-        entry.gatewayConfigured = !!process.env[method.clientIdEnv];
+        // Gateway connect needs the founder-registered OAuth client AND the
+        // gateway credential itself.
+        if (!process.env[method.clientIdEnv]) missingEnv.push(method.clientIdEnv);
+        if (!lovableKeyPresent) missingEnv.push("LOVABLE_API_KEY");
+        entry.gatewayConfigured = !!process.env[method.clientIdEnv] && lovableKeyPresent;
       }
     }
+    // Providers with no user-facing auth method (userFacing: false infra like
+    // firecrawl) report configured: false and are filtered out by the UI.
+    entry.configured = spec.authMethods.length > 0 && missingEnv.length === 0;
     availability[spec.id] = entry;
   }
   return availability;
@@ -144,7 +191,9 @@ export const startGithubAppConnect = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const slug = process.env.GITHUB_APP_SLUG;
     if (!slug || !process.env.GITHUB_APP_ID) {
-      throw new Error("GitHub App setup pending — admin must configure the app credentials.");
+      throw new Error(
+        "GitHub setup pending — an admin must register the GitHub App and set GITHUB_APP_ID and GITHUB_APP_SLUG before members can connect.",
+      );
     }
     const state = await makeConnectState(context.userId);
     return {
@@ -240,65 +289,138 @@ export const deleteConnection = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Validate an API key with the provider adapter, vault it, create the connection. */
-export const connectWithApiKey = createServerFn({ method: "POST" })
+/**
+ * Kick off the gateway OAuth flow for any oauth_gateway provider — returns the
+ * provider authorization URL for a popup (web_message posts the gateway
+ * connection_id back to targetOrigin; the UI then calls saveGatewayConnection).
+ * Generalized from startCalendarConnect. Tokens never touch our DB.
+ */
+export const startGatewayConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
-        provider: z.enum(PROVIDER_IDS),
-        apiKey: z.string().min(8).max(4000),
-        label: z.string().min(1).max(80).optional(),
+        provider: z.enum(GATEWAY_PROVIDER_IDS),
+        targetOrigin: z.string().url(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const spec = CONNECTOR_REGISTRY[data.provider];
+    const method = findGatewayMethod(spec);
+    const clientId = process.env[method.clientIdEnv];
+    if (!clientId) {
+      throw new Error(
+        `${spec.label} setup pending — an admin must register the ${spec.label} OAuth app and set ${method.clientIdEnv}.` +
+          (spec.setupHint ? ` ${spec.setupHint}` : ""),
+      );
+    }
+    const { authorizationUrl, sessionId } = await authorizeAppUserOAuth({
+      gatewayBaseUrl: GATEWAY_BASE_URL,
+      connectorId: method.connectorId,
+      appUserId: context.userId,
+      connectorClientId: clientId,
+      // Fallback redirect target; web_message is the primary completion path.
+      // The connections UI lives in /settings (section "connections").
+      returnUrl: `${data.targetOrigin}/settings`,
+      responseMode: "web_message",
+      webMessageTargetOrigin: data.targetOrigin,
+      ...(method.scopes ? { credentialsConfiguration: { scopes: method.scopes } } : {}),
+    });
+    return { authorizationUrl, sessionId };
+  });
+
+/**
+ * Persist a completed gateway OAuth grant. We store ONLY the gateway
+ * connection_id (external_handle) — auth_kind 'oauth_gateway', no secret row.
+ * account_label is best-effort: the provider adapter's validate when
+ * implemented, else the provider label. Insert-or-update on the caller's
+ * existing oauth_gateway row (select-then-write, upsertBinding precedent).
+ */
+export const saveGatewayConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        provider: z.enum(GATEWAY_PROVIDER_IDS),
+        connectionId: z.string().min(1).max(300),
       })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as SupabaseClient;
-    const admin = supabaseAdmin as unknown as SupabaseClient;
     const spec = CONNECTOR_REGISTRY[data.provider];
-    if (!spec.authMethods.some((m) => m.kind === "api_key")) {
-      throw new Error(`${spec.label} does not support API-key connect.`);
-    }
-    let accountLabel: string | null = data.label ?? null;
-    const adapter = getProviderAdapter(data.provider);
-    if (!adapter) throw new Error("No adapter registered for this provider yet.");
-    // Bare-token ResolvedAuth shape — no connection row exists yet.
-    const result = await adapter.validate({ kind: "env", token: data.apiKey });
-    if (!result.ok) throw new Error(result.detail || "API key validation failed.");
-    accountLabel = accountLabel ?? result.accountLabel ?? null;
+    const method = findGatewayMethod(spec);
 
-    const encrypted = await encryptSecret(data.apiKey);
-    const { data: secretRow, error: secretError } = await admin
-      .from("connection_secrets")
-      .insert({
-        ciphertext: encrypted.ciphertext,
-        iv: encrypted.iv,
-        key_version: encrypted.keyVersion ?? 1,
-      })
-      .select("id")
-      .single();
-    if (secretError) throw new Error(secretError.message);
+    // Best-effort identity. Stub adapters return ok:false ("adapter not
+    // implemented") — a fresh OAuth grant is still connected regardless.
+    let accountLabel: string | null = null;
+    let accountEmail: string | null = null;
+    try {
+      const adapter = getProviderAdapter(data.provider);
+      const result = await adapter.validate({
+        kind: "gateway",
+        connectionId: data.connectionId,
+        connectorId: method.connectorId,
+        ownerUserId: context.userId,
+        connectionRowId: "", // no row yet — adapters key off connectionId/connectorId
+      });
+      if (result.ok) {
+        accountLabel = result.accountLabel ?? null;
+        accountEmail = result.accountEmail ?? null;
+      }
+    } catch {
+      // best-effort only — never block saving the grant
+    }
+    accountLabel = accountLabel ?? spec.label;
 
     const now = new Date().toISOString();
-    const { data: connection, error: connError } = await db
+    const { data: existing, error: existingError } = await db
+      .from("connections")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("provider", data.provider)
+      .eq("auth_kind", "oauth_gateway")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+
+    if (existing) {
+      const { data: updated, error } = await db
+        .from("connections")
+        .update({
+          external_handle: data.connectionId,
+          account_label: accountLabel,
+          account_email: accountEmail,
+          status: "connected",
+          status_detail: null,
+          last_verified_at: now,
+          updated_at: now,
+        })
+        .eq("id", existing.id as string)
+        .select(CONNECTION_COLUMNS)
+        .single();
+      if (error) throw new Error(error.message);
+      return { connection: updated as unknown as ConnectionRow };
+    }
+
+    const { data: inserted, error } = await db
       .from("connections")
       .insert({
         user_id: context.userId,
         provider: data.provider,
-        auth_kind: "api_key",
-        secret_id: secretRow.id as string,
+        auth_kind: "oauth_gateway",
+        external_handle: data.connectionId,
         account_label: accountLabel,
+        account_email: accountEmail,
         status: "connected",
         last_verified_at: now,
       })
       .select(CONNECTION_COLUMNS)
       .single();
-    if (connError) {
-      // Never leave an orphaned ciphertext row behind.
-      await admin.from("connection_secrets").delete().eq("id", secretRow.id);
-      throw new Error(connError.message);
-    }
-    return { connection: connection as unknown as ConnectionRow };
+    if (error) throw new Error(error.message);
+    return { connection: inserted as unknown as ConnectionRow };
   });
 
 /**

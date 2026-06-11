@@ -16,7 +16,7 @@ function key(): string {
   if (!k) {
     throw new Error(
       "web tools are not configured: FIRECRAWL_API_KEY is missing. " +
-        "Ask the workspace owner to connect Firecrawl in Connectors.",
+        "An admin must set the FIRECRAWL_API_KEY server secret (platform infrastructure — not a user connector).",
     );
   }
   return k;

@@ -693,6 +693,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
           {pauseState?.paused && (
             <Link
               to="/govern"
+              search={{ tab: "controls" }}
               className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition"
             >
               <div className="flex items-center gap-2">

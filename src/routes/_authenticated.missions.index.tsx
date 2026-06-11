@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/missions/")({
 
 function MissionsPage() {
   const { tab } = Route.useSearch();
-  const navigate = useNavigate({ from: "/missions" });
+  const navigate = useNavigate({ from: "/missions/" });
   const { activeWorkspaceId } = useWorkspace();
 
   const fProjects = useServerFn(listProjects);

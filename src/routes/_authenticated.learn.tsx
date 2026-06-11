@@ -5,6 +5,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 // (its tabs have no Knowledge equivalents, so no search params carry over).
 export const Route = createFileRoute("/_authenticated/learn")({
   beforeLoad: () => {
-    throw redirect({ to: "/knowledge" });
+    throw redirect({ to: "/knowledge", search: { tab: "calendar" } });
   },
 });
