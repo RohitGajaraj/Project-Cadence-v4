@@ -92,10 +92,52 @@ function ageOf(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-function sourceHref(d: DecisionRow): { to: string; search?: Record<string, string> } | null {
-  if (d.mission_id) return { to: `/missions/${d.mission_id}` };
-  if (d.prd_id) return { to: `/prds/${d.prd_id}` };
-  if (d.meeting_id) return { to: `/knowledge`, search: { tab: "calendar", meeting: d.meeting_id } };
+function hasSource(d: DecisionRow): boolean {
+  return !!(d.mission_id || d.prd_id || d.meeting_id);
+}
+
+function SourceLink({
+  d,
+  className,
+  onClick,
+  children,
+}: {
+  d: DecisionRow;
+  className?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+}) {
+  if (d.mission_id) {
+    return (
+      <Link
+        to="/missions/$missionId"
+        params={{ missionId: d.mission_id }}
+        className={className}
+        onClick={onClick}
+      >
+        {children}
+      </Link>
+    );
+  }
+  if (d.prd_id) {
+    return (
+      <Link to="/prds/$id" params={{ id: d.prd_id }} className={className} onClick={onClick}>
+        {children}
+      </Link>
+    );
+  }
+  if (d.meeting_id) {
+    return (
+      <Link
+        to="/knowledge"
+        search={{ tab: "calendar", meeting: d.meeting_id }}
+        className={className}
+        onClick={onClick}
+      >
+        {children}
+      </Link>
+    );
+  }
   return null;
 }
 
