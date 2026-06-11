@@ -128,9 +128,8 @@ export function AmbientChip() {
     if (typeof window === "undefined") {
       return;
     }
-    const CACHE_KEY = "cadence.ambient.v3";
+    const CACHE_KEY = "cadence.ambient.v4";
     const applyPayload = (payload: AmbientPayload) => {
-      console.warn("[AmbientChip] applyPayload", payload);
       setPlace(payload.place);
       setWeather(payload.weather);
       setDenied(false);
@@ -151,6 +150,7 @@ export function AmbientChip() {
     try {
       localStorage.removeItem("cadence.ambient.v1");
       localStorage.removeItem("cadence.ambient.v2");
+      localStorage.removeItem("cadence.ambient.v3");
     } catch {}
 
     const fallback = () =>
