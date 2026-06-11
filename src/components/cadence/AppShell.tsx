@@ -32,6 +32,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
+import { CookingBanner } from "./CookingBanner";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useTheme, type Theme } from "@/hooks/use-theme";
 import { useServerFn } from "@tanstack/react-start";
@@ -801,7 +802,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+        <CookingBanner />
+        <div className="flex-1 min-w-0">{children}</div>
+      </main>
       <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );
