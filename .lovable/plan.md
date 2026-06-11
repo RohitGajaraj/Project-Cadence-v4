@@ -1,94 +1,91 @@
+# Next M1 Golden Path slice
 
-# F-DECISIONS-CAPTURE — plan
+## Where M1 stands (audit result)
 
-## Current state (what already works)
+The 10-hop golden path is ~60% complete. **Ends are strong, middle is hollow.**
 
-- `decisions` table exists with workspace-scoped RLS, columns: `id, user_id, workspace_id, product_id, project_id, title, rationale, status, meeting_id, created_at`. Realtime is enabled.
-- Server fns exist: `listDecisions` (last 20, workspace-scoped), `createDecision`, `updateDecision`.
-- **Meetings** already emit decisions: `extractMeeting({commit:true})` writes one row per AI-extracted decision, linked via `meeting_id`.
-- The **Today** page (`/`) already shows a "Recent decisions" list with approve/reject + manual add.
-- `/knowledge?tab=decisions` renders a stub (`DecisionsPanel`).
+| Hop | State |
+|---|---|
+| Slack connector | ❌ missing |
+| GitHub connector | 🟡 PAT only, no OAuth |
+| Scout: signals → themes → opportunities | 🟡 real AI, manual ingest only |
+| Strategist ranking | 🟡 tool exists, no surfaced trigger |
+| **Critic attached to Strategist** | ❌ **0%** |
+| Operator approve (gate 1) | ✅ |
+| **Scribe PRD with RAG citations** | 🟡 PRD generates, **no citations** |
+| Operator approve PRD (gate 2) | ✅ |
+| Planner task graph from PRD | 🟡 mission DAG, not engineering tasks |
+| Builder PR + CI | ✅ most polished hop |
+| Release notes draft | 🔴 agent seeded, no fn, no publish tool |
+| Outcome card seeded | 🟡 read-only rollup, no seeding action |
 
-## Gaps to close
+Five hops are missing or stubbed. Shipping all five in one slice leaves five half-built hops. This plan picks the **two highest-leverage** ones; together they make the Strategist → gate 1 → Scribe → gate 2 segment actually demoable.
 
-1. **No source link for missions or specs.** `decisions` has `meeting_id` but no `mission_id` or `prd_id`. Missions never write decision rows; PRDs/specs never do either.
-2. **No real Decisions UI.** The Knowledge tab is a stub; the Today list is the only surface.
-3. **No "capture as decision" affordance** on mission detail or PRD detail pages, so an operator can't pin a choice they just made.
+## What this slice builds
 
-## Scope (what this ticket ships)
+### 1. Critic agent (DEC-02)
+Every opportunity and PRD gets an adversarial red-team verdict before it reaches a human. Today the operator approves a raw ICE score with no challenge.
 
-### A. Schema (one migration)
+- **DB**: migration seeds `critic` agent, adds `critic_review jsonb` on `opportunities` and `prds` (verdict, risks[], kill_criteria[], reviewer_model, reviewed_at).
+- **Tool**: `critic.review` in `TOOL_REGISTRY` — takes `{ target_kind: 'opportunity'|'prd', target_id }`, loads the row, runs an adversarial prompt through `callModel` (Gemini 2.5 Pro), writes `critic_review`. Auto mode for opportunities, confirm for PRDs.
+- **Auto-attach**: `promoteThemeToOpportunity`, `promoteSignalToOpportunity`, and `generatePrd` enqueue `critic.review` inline (awaited) so the verdict lands before the row appears to the operator.
+- **UI**: `CriticBadge` (verdict chip + risk count) in `OpportunitiesPanel`, opportunity detail, and PRD detail. Side sheet shows full review.
 
-Add to `decisions`:
-- `mission_id uuid NULL` → `missions(id) ON DELETE SET NULL` + index
-- `prd_id uuid NULL` → `prds(id) ON DELETE SET NULL` + index
-- `source_kind text NULL` with check constraint `IN ('meeting','mission','prd','manual')` (denormalized for fast filter; meeting backfill = `'meeting'` where `meeting_id IS NOT NULL` else `'manual'`)
-- `decided_by_agent_slug text NULL` (for agent-initiated captures; future-proofs the Trust score loop)
+### 2. RAG-cited PRDs (SCR-01)
+`generatePrd` doesn't call `retrieve()` today. The retriever already exists and is production quality.
 
-No new policies — existing workspace-scoped RLS covers it.
+- Wire `retrieve()` from `src/lib/rag/retriever.server.ts` into `generatePrd`: query = opportunity title + summary, top-k 8 across signals/docs/meetings.
+- Inject chunks as a numbered context block; instruct the model to use `[1]`-style citations.
+- Persist `prds.citations jsonb` (`{n, source_kind, source_id, snippet, score}[]`) — new column in the same migration.
+- PRD detail renders a Citations card linking back to each source row.
 
-### B. Server fns (extend `src/lib/decisions.functions.ts`)
+### 3. Closing the doc loop (same turn)
+- Flip `F-CRITIC-AGENT` and `F-SCRIBE-CITATIONS` in `docs/planning/feature-backlog.md` Live status board with Recent log + Last updated.
+- Two one-liners to `plan.md` §4.
+- Update `architecture/orchestration.md` (Critic step in planner contract) and `architecture/runtime.md` (RAG injection in generatePrd).
+- New `docs/features/critic-agent.md` and `docs/features/prd-rag-citations.md`, each with the How-to-use / verify block.
+- `active-task.md` tracks sub-steps, deleted when both ship.
 
-- `listDecisions` → return joined source labels (mission title, prd title, meeting title) via separate cheap selects; accept optional `{ source?: 'meeting'|'mission'|'prd'|'manual', status?, q? }` filters. Cap at 100.
-- `createDecision` → accept optional `mission_id | prd_id | meeting_id` + `source_kind`. Derive `source_kind` from whichever id was passed (defaults `'manual'`).
-- Add `getDecisionContext({ id })` → returns the decision + linked source summary (for the side sheet).
+## Explicitly out of scope (next slices)
 
-### C. Auto-capture hooks (sources → decisions)
+- **Slack connector** — full app-user OAuth + ingest fn → Scout.
+- **PRD → engineering task graph** (Planner gap; `mission.plan` plans agents, not eng tasks).
+- **Release notes + outcome-card seeding** — bundle as a "launch + learn" slice.
 
-- **Missions**: in `src/lib/missions.functions.ts`, when a mission transitions to `status='completed'` (find the existing update path), insert one decision row `{ title: "Mission completed: <goal>", rationale: <final output summary>, mission_id, source_kind: 'mission', status: 'approved' }`. Idempotent: skip if a `mission_id`-linked row already exists.
-- **PRDs / specs**: in `src/lib/discovery.functions.ts` (or wherever PRD status updates live), when `prds.status` flips to `'approved'`, insert `{ title: "Spec approved: <prd title>", rationale: first 500 chars of body, prd_id, source_kind: 'prd', status: 'approved' }`. Same idempotency.
-- **Meetings**: already wired; just stamp `source_kind='meeting'` on the existing insert.
+GitHub OAuth vs PAT is polish, not a missing hop — current PAT flow demos fine.
 
-### D. DecisionsPanel UI (replace stub)
+## Technical details
 
-`src/components/knowledge/DecisionsPanel.tsx` rewrite:
-- Header with source filter chips (All · Meetings · Missions · Specs · Manual) + status filter (All · Pending · Approved · Rejected) + search.
-- List rows: title, source badge (icon + label linking to `/missions/$id` | `/prds/$id` | meeting sheet via `/knowledge?tab=calendar&meeting=$id`), status pill, age, owner avatar.
-- Empty state per filter.
-- Side sheet on row click: full rationale, source context, approve/reject, manual edit.
-- "Log decision" CTA opens a small dialog using `usePrompt`-style modal (title + rationale + optional source picker).
-- No native chrome; semantic tokens only; voice rules.
+**Migration (one file)**
+```sql
+ALTER TABLE public.opportunities ADD COLUMN critic_review jsonb;
+ALTER TABLE public.prds ADD COLUMN critic_review jsonb;
+ALTER TABLE public.prds ADD COLUMN citations jsonb;
 
-### E. Capture affordances on source pages
+INSERT INTO public.agents (user_id, slug, name, description, system_prompt, enabled)
+SELECT user_id, 'critic', 'Critic',
+       'Adversarial reviewer that red-teams opportunities and PRDs before human approval.',
+       '<critic prompt>', true
+FROM public.agents WHERE slug = 'strategist'
+ON CONFLICT (user_id, slug) DO NOTHING;
+```
 
-- Mission detail (`/missions/$id`): "Capture as decision" button in the page header → opens the same dialog pre-filled with mission context (title + goal as rationale).
-- PRD detail (`/prds/$id`): same button in the sticky actions bar.
-- Meeting sheet: already covered by `extractMeeting`; no change.
+**Files touched**
+- new: `supabase/migrations/<ts>_critic_and_citations.sql`
+- new: `src/components/governance/CriticBadge.tsx`
+- new: `src/components/product/CitationsCard.tsx`
+- edit: `src/lib/ai/tools/registry.server.ts` (+ `critic.review`)
+- edit: `src/lib/discovery.functions.ts` (`generatePrd` calls `retrieve`, persists citations; promote fns trigger critic inline)
+- edit: `src/components/product/OpportunitiesPanel.tsx`, `src/routes/_authenticated.prds.$id.tsx`
+- edit: `architecture/orchestration.md`, `architecture/runtime.md`, `plan.md`, `docs/planning/feature-backlog.md`
+- new: `docs/features/critic-agent.md`, `docs/features/prd-rag-citations.md`
+- update: `active-task.md`
 
-### F. Today page
+**Verification**
+- Promote a theme → `critic_review` non-null within the same request.
+- Open the opportunity → CriticBadge renders with verdict + risks.
+- Generate a PRD from it → `prds.citations` populated, body contains `[1]`-style markers, Citations card links back to source signals/docs.
 
-Today's "Recent decisions" stays as a 5-item glance, but the empty state now points to `/knowledge?tab=decisions` and the "View all" link points there too.
+## Why this slice
 
-## Out of scope
-
-- Decision threads / comments / collaboration.
-- Decision templates.
-- Workflow rules ("decisions of type X auto-create a task").
-- Re-litigation / supersedence chains.
-
-These can be follow-up tickets (`F-DECISIONS-THREADS`, `F-DECISIONS-TEMPLATES`).
-
-## Doc closure (same turn)
-
-- Flip `F-DECISIONS-CAPTURE` to ✅ in `docs/planning/feature-backlog.md` with a "How to use / verify" block (routes, controls, what each source does, verification checklist).
-- Append one-liner to `plan.md` §4.
-- Update `architecture/frontend.md` Knowledge section: Decisions is now live with source filters + side sheet.
-- Update `architecture/data.md` (if it exists) for the schema additions.
-- Delete `active-task.md` if this is the only in-flight item.
-
-## Open question for you
-
-**How aggressive should auto-capture be?**
-
-- **(default in this plan) Conservative**: only mission completion + PRD approval auto-write decisions. Everything else is operator-triggered via "Capture as decision".
-- **Aggressive**: also auto-write on mission approval gates, every agent run that crosses a confidence threshold, every PRD section flagged "decision".
-
-I'd ship Conservative first (smaller blast radius, easier to reason about, cheap to add Aggressive later). Say "go aggressive" if you want me to flip it before I start.
-
-## Files (estimate)
-
-- new: 1 migration in `supabase/migrations/`
-- edit: `src/lib/decisions.functions.ts`, `src/lib/missions.functions.ts`, `src/lib/discovery.functions.ts` (PRD status updater), `src/lib/meetings.functions.ts` (stamp source_kind)
-- rewrite: `src/components/knowledge/DecisionsPanel.tsx`
-- edit: `src/routes/_authenticated.missions.$missionId.tsx`, `src/routes/_authenticated.prds.$id.tsx` (add capture button)
-- docs: `feature-backlog.md`, `plan.md`, `architecture/frontend.md`
+These two hops sit on either side of the operator's first two approval gates and together turn the demo from "AI fills forms" into "AI red-teams its own work and cites sources; human governs." That's the M1 product claim verbatim. Slack and release/outcome are valuable but don't unblock the demo narrative the way Critic + Citations do.
