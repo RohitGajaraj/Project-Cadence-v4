@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ import {
   disconnectIntegration,
   PROVIDERS,
 } from "@/lib/integrations.functions";
-import { Plug, CheckCircle2, Clock, Key, Trash2, Compass, Save } from "lucide-react";
+import { Trash2, Compass, Save } from "lucide-react";
 import {
   listApiKeys,
   saveApiKey,
@@ -23,16 +23,31 @@ import {
 } from "@/lib/byokeys.functions";
 import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { useWorkspace } from "@/hooks/use-workspace";
-import {
-  listMyCalendarConnections,
-  startCalendarConnect,
-  saveCalendarConnection,
-  disconnectCalendar,
-} from "@/lib/calendar-connections.functions";
-import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
-import { useConfirm } from "@/hooks/use-confirm";
-import { Calendar as CalIcon, Link2 } from "lucide-react";
 import { AccountConnectionsSection } from "@/components/connections/AccountConnectionsSection";
+
+const SETTINGS_SECTIONS = [
+  { id: "profile", label: "Profile" },
+  { id: "workspace", label: "Workspace" },
+  { id: "connections", label: "Connections" },
+  { id: "ai", label: "AI & models" },
+] as const;
+
+type SectionId = (typeof SETTINGS_SECTIONS)[number]["id"];
+
+// Legacy deep links still arrive with the old section values. Map them so
+// /settings?section=brief and /settings?section=calendar keep landing on the
+// right content (calendar accounts now live inside AccountConnectionsSection).
+const LEGACY_SECTION_MAP: Record<string, SectionId> = {
+  brief: "workspace",
+  calendar: "connections",
+};
+
+function normalizeSection(raw: string | undefined): SectionId {
+  if (!raw) return "profile";
+  const mapped = LEGACY_SECTION_MAP[raw];
+  if (mapped) return mapped;
+  return SETTINGS_SECTIONS.some((s) => s.id === raw) ? (raw as SectionId) : "profile";
+}
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (search: Record<string, unknown>): { section?: string } => ({
@@ -44,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const { section } = Route.useSearch();
+  const active = normalizeSection(section);
   const briefRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (section === "brief" && briefRef.current) {
@@ -195,333 +211,379 @@ function SettingsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveButtonClass =
+    "shrink-0 text-xs font-medium rounded-md bg-foreground text-background px-3 py-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed";
+
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="px-6 lg:px-10 py-10 max-w-3xl mx-auto">
-        <header className="mb-8">
-          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Personal</div>
-          <h1 className="mt-3 font-display text-4xl tracking-tight">
-            Settings &amp; <span className="neural-text">profile</span>
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            How Cadence and your AI agents should address you and operate.
-          </p>
-        </header>
-
-        <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            save.mutate();
-          }}
-          className="space-y-5"
-        >
-          <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-              Identity
-            </h2>
-            <Field label="Full name" hint="Used on documents, briefs, and stakeholder updates.">
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Jane Q. Doe"
-                className="input"
-              />
-            </Field>
-            <Field
-              label="Preferred display name"
-              hint="How Cadence and your agents will greet you."
-            >
-              <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Jane"
-                className="input"
-              />
-            </Field>
-            <Field label="Role">
-              <input
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="AI Product Manager"
-                className="input"
-              />
-            </Field>
-            <Field label="Timezone">
-              <input
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                placeholder="America/New_York"
-                className="input"
-              />
-            </Field>
-          </section>
-
-          <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-              Working hours
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Start (24h)">
-                <input
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={whStart}
-                  onChange={(e) => setWhStart(Number(e.target.value))}
-                  className="input"
-                />
-              </Field>
-              <Field label="End (24h)">
-                <input
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={whEnd}
-                  onChange={(e) => setWhEnd(Number(e.target.value))}
-                  className="input"
-                />
-              </Field>
-            </div>
-          </section>
-
-          <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-              Default AI model
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Used for chat and agent runs unless you override.
+      <div className="px-6 lg:px-10 py-8">
+        <div className="mx-auto max-w-5xl">
+          <header className="mb-6">
+            <h1 className="text-xl font-medium tracking-tight">Settings</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Profile, workspace context, connections, and AI configuration.
             </p>
-            <select
-              value={defaultModel}
-              onChange={(e) => setDefaultModel(e.target.value)}
-              className="input"
+          </header>
+
+          <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
+            <nav
+              aria-label="Settings sections"
+              className="lg:w-40 lg:shrink-0 lg:sticky lg:top-8 lg:self-start"
             >
-              <optgroup label="Live (Lovable AI Gateway)">
-                {MODELS.filter((m) => m.live).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label} — {m.desc}
-                  </option>
+              <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
+                {SETTINGS_SECTIONS.map((s) => (
+                  <li key={s.id} className="shrink-0">
+                    <Link
+                      to="/settings"
+                      search={{ section: s.id }}
+                      className={`block whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                        active === s.id
+                          ? "bg-secondary/60 font-medium text-foreground"
+                          : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </Link>
+                  </li>
                 ))}
-              </optgroup>
-              <optgroup label="Bring your own key (coming soon)">
-                {MODELS.filter((m) => !m.live).map((m) => (
-                  <option key={m.id} value={m.id} disabled>
-                    {m.label} — {m.desc}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </section>
+              </ul>
+            </nav>
 
-          <section className="bento p-6 space-y-4">
-            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-              Voice anchor
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Operator-set tone and stance, injected into every agent mission's system prompt. Leave
-              empty to skip.
-            </p>
-            <Field
-              label="Voice anchor"
-              hint="How your agents should sound and what stance they should take."
-            >
-              <textarea
-                value={voiceAnchor}
-                onChange={(e) => setVoiceAnchor(e.target.value)}
-                rows={4}
-                maxLength={2000}
-                placeholder="Direct, evidence-first, no hype. Challenge weak assumptions. Prefer short declarative sentences."
-                className="input resize-y"
-              />
-            </Field>
-          </section>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={save.isPending}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-60"
-            >
-              {save.isPending ? "Saving…" : "Save changes"}
-            </button>
-          </div>
-        </form>
-
-        <section className="bento p-6 mt-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-                Integrations
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.
-              </p>
-            </div>
-            <Plug className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {PROVIDERS.map((p) => {
-              const conn = intMap.get(p.id) as
-                | { status: string; account_label: string | null }
-                | undefined;
-              const connected = conn?.status === "connected";
-              const comingSoon = p.desc.startsWith("Coming");
-              return (
-                <div
-                  key={p.id}
-                  className="rounded-xl border hairline p-4 flex flex-col gap-2 bg-background/40"
+            <div className="min-w-0 max-w-3xl flex-1 space-y-6">
+              {active === "profile" && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    save.mutate();
+                  }}
+                  className="space-y-6"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-display text-sm flex items-center gap-1.5">
-                        {p.label}
-                        {connected && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
-                        {comingSoon && <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{p.desc}</div>
-                      {connected && conn?.account_label && (
-                        <div className="text-[10px] text-muted-foreground/70 mt-1">
-                          {conn.account_label}
-                        </div>
-                      )}
+                  <section className="bento p-5 space-y-4">
+                    <h2 className="mono-label">Identity</h2>
+                    <Field
+                      label="Full name"
+                      hint="Used on documents, briefs, and stakeholder updates."
+                    >
+                      <input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Jane Q. Doe"
+                        className="input"
+                      />
+                    </Field>
+                    <Field
+                      label="Preferred display name"
+                      hint="How Cadence and your agents will greet you."
+                    >
+                      <input
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="Jane"
+                        className="input"
+                      />
+                    </Field>
+                    <Field label="Role">
+                      <input
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        placeholder="AI Product Manager"
+                        className="input"
+                      />
+                    </Field>
+                    <Field label="Timezone">
+                      <input
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        placeholder="America/New_York"
+                        className="input"
+                      />
+                    </Field>
+                  </section>
+
+                  <section className="bento p-5 space-y-4">
+                    <h2 className="mono-label">Working hours</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Field label="Start (24h)">
+                        <input
+                          type="number"
+                          min={0}
+                          max={23}
+                          value={whStart}
+                          onChange={(e) => setWhStart(Number(e.target.value))}
+                          className="input"
+                        />
+                      </Field>
+                      <Field label="End (24h)">
+                        <input
+                          type="number"
+                          min={1}
+                          max={24}
+                          value={whEnd}
+                          onChange={(e) => setWhEnd(Number(e.target.value))}
+                          className="input"
+                        />
+                      </Field>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {connected ? (
-                      <button
-                        onClick={() => mDisconnect.mutate(p.id)}
-                        className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60"
-                      >
-                        Disconnect
-                      </button>
-                    ) : (
-                      <button
-                        disabled={comingSoon || mConnect.isPending}
-                        onClick={() => mConnect.mutate(p.id)}
-                        className="text-xs rounded-md bg-foreground text-background px-2.5 py-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {comingSoon ? "Coming soon" : "Connect"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                  </section>
 
-        <section className="bento p-6 mt-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
-                Bring your own AI keys
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT. Stored
-                encrypted per user.
-              </p>
-            </div>
-            <Key className="h-4 w-4 text-muted-foreground" />
-          </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (keyValue.trim()) mSaveKey.mutate();
-            }}
-            className="grid grid-cols-1 sm:grid-cols-12 gap-2"
-          >
-            <select
-              value={keyProv}
-              onChange={(e) => setKeyProv(e.target.value)}
-              className="input sm:col-span-3"
-            >
-              {BYO_PROVIDERS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            <input
-              value={keyLabel}
-              onChange={(e) => setKeyLabel(e.target.value)}
-              placeholder="Label (optional)"
-              className="input sm:col-span-3"
-            />
-            <input
-              value={keyValue}
-              onChange={(e) => setKeyValue(e.target.value)}
-              type="password"
-              placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder}
-              className="input sm:col-span-4"
-            />
-            <input
-              value={keyBase}
-              onChange={(e) => setKeyBase(e.target.value)}
-              placeholder="Base URL (Ollama only)"
-              className="input sm:col-span-2"
-            />
-            <div className="sm:col-span-12 flex items-center justify-end gap-2">
-              {testResult && (
-                <span className={`text-xs ${testResult.ok ? "text-emerald-400" : "text-rose-400"}`}>
-                  {testResult.ok
-                    ? `✓ ${testResult.latency_ms}ms`
-                    : `✗ ${testResult.error?.slice(0, 80)}`}
-                </span>
+                  <div className="flex justify-end">
+                    <button type="submit" disabled={save.isPending} className={saveButtonClass}>
+                      {save.isPending ? "Saving…" : "Save changes"}
+                    </button>
+                  </div>
+                </form>
               )}
-              <button
-                type="button"
-                disabled={mTestKey.isPending || !keyValue.trim()}
-                onClick={() => mTestKey.mutate()}
-                className="text-xs rounded-md border hairline px-3 py-1.5 hover:bg-secondary/60 disabled:opacity-50"
-              >
-                {mTestKey.isPending ? "Testing…" : "Test key"}
-              </button>
-              <button
-                type="submit"
-                disabled={mSaveKey.isPending || !keyValue.trim()}
-                className="text-xs rounded-md bg-foreground text-background px-3 py-1.5 disabled:opacity-50"
-              >
-                {mSaveKey.isPending ? "Saving…" : "Add key"}
-              </button>
+
+              {active === "workspace" && (
+                <>
+                  <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
+
+                  <section className="bento p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="mono-label">Voice anchor</h2>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Operator-set tone and stance, injected into every agent mission's system
+                          prompt. Leave empty to skip.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={save.isPending}
+                        onClick={() => save.mutate()}
+                        className={saveButtonClass}
+                      >
+                        {save.isPending ? "Saving…" : "Save"}
+                      </button>
+                    </div>
+                    <Field
+                      label="Voice anchor"
+                      hint="How your agents should sound and what stance they should take."
+                    >
+                      <textarea
+                        value={voiceAnchor}
+                        onChange={(e) => setVoiceAnchor(e.target.value)}
+                        rows={4}
+                        maxLength={2000}
+                        placeholder="Direct, evidence-first, no hype. Challenge weak assumptions. Prefer short declarative sentences."
+                        className="input resize-y"
+                      />
+                    </Field>
+                  </section>
+                </>
+              )}
+
+              {active === "connections" && (
+                <>
+                  <AccountConnectionsSection />
+
+                  <section className="bento p-5 space-y-3">
+                    <div>
+                      <h2 className="mono-label">Workspace tool sync</h2>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.
+                      </p>
+                    </div>
+                    <div>
+                      {PROVIDERS.map((p) => {
+                        const conn = intMap.get(p.id) as
+                          | { status: string; account_label: string | null }
+                          | undefined;
+                        const connected = conn?.status === "connected";
+                        const comingSoon = p.desc.startsWith("Coming");
+                        return (
+                          <div
+                            key={p.id}
+                            className="flex items-center gap-3 border-b hairline py-2.5 last:border-b-0 last:pb-0 first:pt-0"
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                connected ? "bg-emerald-400" : "bg-muted-foreground/30"
+                              }`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm">{p.label}</div>
+                              <div className="truncate text-xs text-muted-foreground">
+                                {p.desc}
+                                {connected && conn?.account_label ? ` · ${conn.account_label}` : ""}
+                              </div>
+                            </div>
+                            {connected ? (
+                              <button
+                                onClick={() => mDisconnect.mutate(p.id)}
+                                className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60"
+                              >
+                                Disconnect
+                              </button>
+                            ) : (
+                              <button
+                                disabled={comingSoon || mConnect.isPending}
+                                onClick={() => mConnect.mutate(p.id)}
+                                className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {comingSoon ? "Coming soon" : "Connect"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {active === "ai" && (
+                <>
+                  <section className="bento p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="mono-label">Default AI model</h2>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Used for chat and agent runs unless you override.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={save.isPending}
+                        onClick={() => save.mutate()}
+                        className={saveButtonClass}
+                      >
+                        {save.isPending ? "Saving…" : "Save"}
+                      </button>
+                    </div>
+                    <select
+                      value={defaultModel}
+                      onChange={(e) => setDefaultModel(e.target.value)}
+                      className="input"
+                    >
+                      <optgroup label="Live (Lovable AI Gateway)">
+                        {MODELS.filter((m) => m.live).map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label} — {m.desc}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Bring your own key (coming soon)">
+                        {MODELS.filter((m) => !m.live).map((m) => (
+                          <option key={m.id} value={m.id} disabled>
+                            {m.label} — {m.desc}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </section>
+
+                  <section className="bento p-5 space-y-4">
+                    <div>
+                      <h2 className="mono-label">Bring your own AI keys</h2>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT.
+                        Stored encrypted per user.
+                      </p>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (keyValue.trim()) mSaveKey.mutate();
+                      }}
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-2"
+                    >
+                      <select
+                        value={keyProv}
+                        onChange={(e) => setKeyProv(e.target.value)}
+                        className="input sm:col-span-3"
+                      >
+                        {BYO_PROVIDERS.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={keyLabel}
+                        onChange={(e) => setKeyLabel(e.target.value)}
+                        placeholder="Label (optional)"
+                        className="input sm:col-span-3"
+                      />
+                      <input
+                        value={keyValue}
+                        onChange={(e) => setKeyValue(e.target.value)}
+                        type="password"
+                        placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder}
+                        className="input sm:col-span-4"
+                      />
+                      <input
+                        value={keyBase}
+                        onChange={(e) => setKeyBase(e.target.value)}
+                        placeholder="Base URL (Ollama only)"
+                        className="input sm:col-span-2"
+                      />
+                      <div className="sm:col-span-12 flex items-center justify-end gap-2">
+                        {testResult && (
+                          <span
+                            className={`text-xs ${testResult.ok ? "text-emerald-400" : "text-rose-400"}`}
+                          >
+                            {testResult.ok
+                              ? `✓ ${testResult.latency_ms}ms`
+                              : `✗ ${testResult.error?.slice(0, 80)}`}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          disabled={mTestKey.isPending || !keyValue.trim()}
+                          onClick={() => mTestKey.mutate()}
+                          className="text-xs rounded-md border hairline px-3 py-1.5 hover:bg-secondary/60 disabled:opacity-50"
+                        >
+                          {mTestKey.isPending ? "Testing…" : "Test key"}
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={mSaveKey.isPending || !keyValue.trim()}
+                          className="text-xs rounded-md bg-foreground text-background px-3 py-1.5 disabled:opacity-50"
+                        >
+                          {mSaveKey.isPending ? "Saving…" : "Add key"}
+                        </button>
+                      </div>
+                    </form>
+
+                    <div>
+                      {(keys.data?.keys ?? []).length === 0 && (
+                        <div className="text-xs text-muted-foreground">No BYO keys saved yet.</div>
+                      )}
+                      {(keys.data?.keys ?? []).map((k) => (
+                        <div
+                          key={k.id}
+                          className="flex items-center gap-3 border-b hairline py-2.5 last:border-b-0 last:pb-0 first:pt-0"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm">
+                              {BYO_PROVIDERS.find((p) => p.id === k.provider)?.label ?? k.provider}
+                              {k.label && (
+                                <span className="text-muted-foreground"> · {k.label}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {k.preview}
+                              {k.base_url ? ` · ${k.base_url}` : ""}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => mDelKey.mutate(k.id)}
+                            aria-label="Remove key"
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
             </div>
-          </form>
-
-          <div className="space-y-2">
-            {(keys.data?.keys ?? []).length === 0 && (
-              <div className="text-xs text-muted-foreground">No BYO keys saved yet.</div>
-            )}
-            {(keys.data?.keys ?? []).map((k) => (
-              <div
-                key={k.id}
-                className="flex items-center gap-3 rounded-lg border hairline px-3 py-2 bg-background/40"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm">
-                    {BYO_PROVIDERS.find((p) => p.id === k.provider)?.label ?? k.provider}
-                    {k.label && <span className="text-muted-foreground"> · {k.label}</span>}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground font-mono">
-                    {k.preview}
-                    {k.base_url ? ` · ${k.base_url}` : ""}
-                  </div>
-                </div>
-                <button
-                  onClick={() => mDelKey.mutate(k.id)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
           </div>
-        </section>
-
-        <AccountConnectionsSection active={section === "connections"} />
-
-        <CalendarAccountsSection />
+        </div>
       </div>
 
       <style>{`
@@ -668,11 +730,11 @@ function WorkspaceBriefSection({
   return (
     <section
       ref={scrollRef}
-      className={`bento p-6 space-y-4 mb-8 ${highlight ? "ring-1 ring-foreground/30" : ""}`}
+      className={`bento p-5 space-y-4 ${highlight ? "ring-1 ring-foreground/30" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-2">
+          <h2 className="mono-label inline-flex items-center gap-2">
             <Compass className="h-3 w-3" /> Strategic brief
             {activeWorkspace?.name && (
               <span className="normal-case tracking-normal text-muted-foreground/70">
@@ -689,7 +751,7 @@ function WorkspaceBriefSection({
           type="button"
           disabled={!dirty || save.isPending || isLoading}
           onClick={() => save.mutate()}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background px-3 py-1.5 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+          className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium rounded-md bg-foreground text-background px-3 py-1.5 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Save className="h-3 w-3" />
           {save.isPending ? "Saving…" : dirty ? "Save brief" : "Saved"}
@@ -723,125 +785,6 @@ function WorkspaceBriefSection({
           ))}
         </div>
       )}
-    </section>
-  );
-}
-
-function CalendarAccountsSection() {
-  const qc = useQueryClient();
-  const confirm = useConfirm();
-  const fListConns = useServerFn(listMyCalendarConnections);
-  const fStartConnect = useServerFn(startCalendarConnect);
-  const fSaveConn = useServerFn(saveCalendarConnection);
-  const fDisconnect = useServerFn(disconnectCalendar);
-  const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
-  const mConnect = useMutation({
-    mutationFn: async (provider: "google" | "microsoft") => {
-      const result = await connectAppUser({
-        connectorId: provider === "google" ? "google_calendar" : "microsoft_outlook",
-        gatewayBaseUrl: "https://connector-gateway.lovable.dev",
-        start: (targetOrigin) => fStartConnect({ data: { provider, targetOrigin } }),
-      });
-      if (!result.success || !result.connectionId)
-        throw new Error(result.error ?? "Connect failed");
-      return fSaveConn({ data: { provider, connectionId: result.connectionId } });
-    },
-    onSuccess: () => {
-      toast.success("Calendar connected");
-      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const mDisconnect = useMutation({
-    mutationFn: (id: string) => fDisconnect({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Disconnected");
-      qc.invalidateQueries({ queryKey: ["calendar-connections"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const list = connections.data?.connections ?? [];
-  const available = connections.data?.providersAvailable ?? { google: false, microsoft: false };
-  const hasGoogle = list.some((c) => c.provider === "google");
-  const hasMicrosoft = list.some((c) => c.provider === "microsoft");
-
-  return (
-    <section className="bento p-6 mt-8 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground inline-flex items-center gap-2">
-            <CalIcon className="h-3 w-3" /> Calendar accounts
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Connect your Google or Microsoft calendar. Disconnect or switch accounts any time.
-          </p>
-        </div>
-        <Link2 className="h-4 w-4 text-muted-foreground" />
-      </div>
-
-      <div className="space-y-2">
-        {list.map((c) => (
-          <div
-            key={c.id}
-            className="flex items-center justify-between gap-3 rounded-lg border hairline px-3 py-2 bg-background/40"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <div className="min-w-0">
-                <div className="text-sm">
-                  {c.provider === "google" ? "Google Calendar" : "Microsoft Outlook"}
-                </div>
-                {c.account_email && (
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {c.account_email}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                const ok = await confirm({
-                  title: "Disconnect this calendar?",
-                  body: "Stored events stay but no further sync will happen.",
-                  confirmLabel: "Disconnect",
-                  destructive: true,
-                });
-                if (ok) mDisconnect.mutate(c.id);
-              }}
-              className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60"
-            >
-              Disconnect
-            </button>
-          </div>
-        ))}
-
-        {!hasGoogle && (
-          <button
-            onClick={() => mConnect.mutate("google")}
-            disabled={mConnect.isPending}
-            title={available.google ? "" : "Provider credentials not yet configured"}
-            className="w-full text-left text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
-          >
-            <Plug className="h-3.5 w-3.5" /> Connect Google Calendar
-          </button>
-        )}
-        {!hasMicrosoft && (
-          <button
-            onClick={() => mConnect.mutate("microsoft")}
-            disabled={mConnect.isPending}
-            title={available.microsoft ? "" : "Provider credentials not yet configured"}
-            className="w-full text-left text-xs rounded-lg border hairline px-3 py-2 hover:bg-secondary/60 disabled:opacity-60 inline-flex items-center gap-2"
-          >
-            <Plug className="h-3.5 w-3.5" /> Connect Microsoft Outlook
-          </button>
-        )}
-
-        {!available.google && !available.microsoft && list.length === 0 && (
-          <p className="text-[11px] text-muted-foreground italic">
-            Connect setup pending. Admin must add provider credentials.
-          </p>
-        )}
-      </div>
     </section>
   );
 }
