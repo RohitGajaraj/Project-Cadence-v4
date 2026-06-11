@@ -34,6 +34,8 @@ callModel({ surface, traceId, parentEventId, model, messages, tools?, retrieval?
 
 Lovable/AI gateway (default, no user key) and BYO adapters (Anthropic, DeepSeek, Grok, Ollama, OpenAI-compatible). Each normalizes request/response and surfaces `{ text, tool_calls, usage, latency_ms, ttft_ms }`. Cadence is **model-agnostic by contract** — adding a provider means adding an adapter, not touching call sites. This is also the moat lever: the model is an input, never the product ([`README.md`](../README.md)).
 
+**Local-dev gateway fallback (2026-06-11, KI-06).** The cloud injects `LOVABLE_API_KEY`; a local `.env` may not have it. `resolveGateway()` in `runtime.server.ts` routes `google/*` models directly to Google's OpenAI-compatible endpoint using `GEMINI_API_KEY` (free key from [AI Studio](https://aistudio.google.com)) **only when the Lovable key is absent** — cloud behavior is unchanged, and non-`google/*` models still require the Lovable gateway or a BYO key. Covers both `callModel` and `callModelStream`; embeddings (`src/lib/rag/embed.server.ts`) remain Lovable-gateway-only.
+
 ## The agent loop
 
 `src/lib/ai/loop.server.ts`: `plan → tool calls → observe → reflect → answer`, with max-step and max-cost caps. Tools are server-validated against the agent's allow-list and every call logs to `tool_calls`. Side-effect tools honor the agent's `approval_mode` (`auto | confirm | review`). Any trace can be replayed against a different model/prompt version.

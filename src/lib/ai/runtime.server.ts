@@ -14,6 +14,27 @@ import { retrieve, formatContextBlock, type RetrievedChunk } from "../rag/retrie
 import { resolvePrompt, logPromptRun } from "./prompts.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+// Local-dev fallback (KI-06): the cloud injects LOVABLE_API_KEY automatically,
+// but a local .env may not have it. When it is absent, google/* models route
+// directly to Google's OpenAI-compatible endpoint using GEMINI_API_KEY
+// (free key: https://aistudio.google.com). The Lovable gateway always wins
+// when its key exists, so cloud behavior is unchanged.
+const GOOGLE_OPENAI_GATEWAY =
+  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+function resolveGateway(model: string): { url: string; key: string; model: string } {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  if (lovableKey) return { url: GATEWAY, key: lovableKey, model };
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey && model.startsWith("google/")) {
+    return { url: GOOGLE_OPENAI_GATEWAY, key: geminiKey, model: model.slice("google/".length) };
+  }
+  throw new Error(
+    geminiKey
+      ? `AI is not configured for "${model}" (GEMINI_API_KEY only covers google/* models; set LOVABLE_API_KEY).`
+      : "AI is not configured (missing LOVABLE_API_KEY; for local dev, set GEMINI_API_KEY to route google/* models directly).",
+  );
+}
 
 /**
  * Governance halt — thrown by the chokepoint when a kill-switch is engaged
@@ -343,14 +364,13 @@ async function callGateway(
   msgs: { role: string; content: string }[],
   responseFormat?: "json_object",
 ) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI is not configured (missing LOVABLE_API_KEY).");
+  const gw = resolveGateway(model);
   const t0 = Date.now();
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(gw.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${gw.key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model,
+      model: gw.model,
       messages: msgs,
       ...(responseFormat ? { response_format: { type: responseFormat } } : {}),
     }),
@@ -1135,13 +1155,12 @@ export async function callModelStream(
     }
     via = "gateway";
     provider = "lovable";
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("AI is not configured (missing LOVABLE_API_KEY).");
-    return fetch(GATEWAY, {
+    const gw = resolveGateway(model);
+    return fetch(gw.url, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${gw.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model,
+        model: gw.model,
         messages,
         stream: true,
         ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
