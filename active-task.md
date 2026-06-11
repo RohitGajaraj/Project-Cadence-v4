@@ -22,7 +22,11 @@
 - [ ] Then verify: generate token on `/sync`, curl one signal, see it in Product · Signals (+ auto-discovery run)
 - [ ] Post-demo hardening queued: per-token rate cap, token hashing (KI-10)
 
-## `F-CONN` Phase 1 — Connector Platform base (BUILDING 2026-06-12)
+## `F-CONN` — PARKED 2026-06-12 (founder call: revisit later; build is complete, only registrations remain)
+
+All code shipped + deployed (Phase 1 base, OAuth-only correction, settings/connections redesign; proof: rows enable purely on client-ID secrets). To resume: do the registrations below — no code needed. Phase 2 (Linear/Notion/GDocs adapters, GitHub webhook) queued behind them.
+
+## `F-CONN` Phase 1 — Connector Platform base (reference)
 
 Plan: connections (account level) · connection_bindings (workspace level) · `resolveProviderAuth` chain · GitHub App exemplar · 9 call sites migrated with env fallback preserved. Decision entry in `docs/strategy/session-decisions.md`.
 

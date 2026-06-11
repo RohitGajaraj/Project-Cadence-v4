@@ -228,7 +228,10 @@ function Dashboard() {
     );
   }, []);
   const focusScore = d?.focusScore ?? 0;
-  const profileName = d?.profile?.display_name?.split(" ")[0] ?? "there";
+  const profileName =
+    d?.profile?.display_name?.split(" ")[0] ??
+    (d?.profile as { email?: string } | undefined)?.email?.split("@")[0] ??
+    "there";
   const greetText = greeting.data?.greeting ?? "Hello";
   const activeAgents = (runs.data?.runs ?? []).filter((r) => r.status === "running").length;
   const ny = needsYou.data;
@@ -252,7 +255,12 @@ function Dashboard() {
           </div>
           <div className="flex-1" />
           <span className="mono-label inline-flex items-center gap-1.5 mr-1">
-            <Coins className="h-3 w-3" /> ${(ny?.spendTodayUsd ?? 0).toFixed(2)} today
+            <Coins className="h-3 w-3" />{" "}
+            {(() => {
+              const s = ny?.spendTodayUsd ?? 0;
+              return s > 0 && s < 0.01 ? "<$0.01" : `$${s.toFixed(2)}`;
+            })()}{" "}
+            today
           </span>
           <StartMissionButton
             pending={startMission.isPending}
