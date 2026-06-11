@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchWeather } from "@/lib/ambient.functions";
 import {
   Cloud,
   CloudRain,
@@ -61,17 +62,10 @@ async function fetchJson(url: string, timeoutMs = 6000) {
 }
 
 async function weatherFor(lat: number, lon: number, place: Place): Promise<AmbientPayload> {
-  const wJson = await fetchJson(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`,
-  );
-  return {
-    place,
-    weather: {
-      tempC: Math.round(wJson.current?.temperature_2m ?? 0),
-      code: wJson.current?.weather_code ?? 0,
-      isDay: (wJson.current?.is_day ?? 1) === 1,
-    },
-  };
+  // Open-Meteo forecast host is blocked from sandboxed previews, so we
+  // call our server proxy. The browser geocoders below stay client-side.
+  const weather = await fetchWeather({ data: { lat, lon } });
+  return { place, weather };
 }
 
 async function loadFromBrowserPosition(coords: GeolocationCoordinates): Promise<AmbientPayload> {
@@ -134,7 +128,7 @@ export function AmbientChip() {
     if (typeof window === "undefined") {
       return;
     }
-    const CACHE_KEY = "cadence.ambient.v3";
+    const CACHE_KEY = "cadence.ambient.v4";
     const applyPayload = (payload: AmbientPayload) => {
       setPlace(payload.place);
       setWeather(payload.weather);
@@ -156,6 +150,7 @@ export function AmbientChip() {
     try {
       localStorage.removeItem("cadence.ambient.v1");
       localStorage.removeItem("cadence.ambient.v2");
+      localStorage.removeItem("cadence.ambient.v3");
     } catch {}
 
     const fallback = () =>
@@ -169,9 +164,26 @@ export function AmbientChip() {
       return;
     }
 
+    // Sandboxed iframes (e.g. the in-app preview) often neither resolve nor
+    // reject geolocation, leaving the strip stuck on "Locating…" with no
+    // weather. Race the browser permission flow against a 2s timer that
+    // triggers the network/timezone fallback so weather + temperature
+    // always show up.
+    let resolved = false;
+    const settle = (fn: () => void) => {
+      if (resolved) return;
+      resolved = true;
+      fn();
+    };
+    const timer = setTimeout(() => settle(fallback), 2000);
+
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => loadFromBrowserPosition(coords).then(applyPayload).catch(fallback),
-      fallback,
+      ({ coords }) =>
+        settle(() => {
+          clearTimeout(timer);
+          loadFromBrowserPosition(coords).then(applyPayload).catch(fallback);
+        }),
+      () => settle(() => { clearTimeout(timer); fallback(); }),
       { maximumAge: 15 * 60_000, timeout: 4500 },
     );
   }, []);
