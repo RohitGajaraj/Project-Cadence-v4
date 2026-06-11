@@ -53,16 +53,21 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail. Always visible, never collapsed.
-// Pin test (docs/conventions/inline-management.md): used most days, entry
-// point for an active workflow, not derivable from another pinned surface.
-// Calendar stays pinned (daily-cadence surface). Knowledge moves to a
-// group entry and now defaults to Memory · Decisions · Docs tabs.
+// Workspace — your daily rail. Spec-literal: Today · Chat · Missions.
+// Approvals + Calendar get their own Quick-access dock above the nav
+// (two adjacent tiles, like the team switcher pattern) so they stay one
+// click away without burying the spec rail. Knowledge moved to a group.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
+  { to: "/chat", label: "Chat", icon: MessageSquare },
+  { to: "/missions", label: "Missions", icon: Activity },
+];
+
+// Quick-access dock — two-tile spotlight for the highest-frequency
+// surfaces that aren't part of the linear nav (Approvals + Calendar).
+const quickAccess: { to: string; label: string; icon: LucideIcon; search?: Record<string, string> }[] = [
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/calendar", label: "Calendar", icon: CalIcon },
-  { to: "/chat", label: "Chat", icon: MessageSquare },
 ];
 
 // Phase + Ops + Govern groups. Collapsible; auto-open the active group.
