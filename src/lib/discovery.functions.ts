@@ -618,7 +618,37 @@ Sections (use ## headings, in this exact order):
 ## Risks & Open Questions
 ## Milestones
 
-Be concrete, terse, and useful. Use tight bullets. No filler.`;
+Be concrete, terse, and useful. Use tight bullets. No filler.
+
+When the user message contains a CONTEXT block with numbered chunks (e.g. [1], [2]), cite them inline using those numbers wherever you draw from them. Do not invent citation numbers.`;
+
+    // RAG: retrieve workspace evidence (signals, docs, meetings, notes) and
+    // expose it as numbered chunks the model can cite as [n]. Citations are
+    // persisted on the PRD row so the UI can deep-link back to each source.
+    const ragQuery = `${title}\n${source}`.slice(0, 1200);
+    let chunks: Awaited<ReturnType<typeof retrieve>> = [];
+    try {
+      chunks = await retrieve(supabase, userId, { query: ragQuery, k: 8, mmr: true });
+    } catch {
+      chunks = [];
+    }
+    const citations = chunks.map((c, i) => ({
+      n: i + 1,
+      source_kind: c.source_kind,
+      source_id: c.source_id,
+      title: c.title ?? null,
+      snippet: c.content.slice(0, 280),
+      score: Number((c.similarity ?? 0).toFixed(3)),
+    }));
+    const contextBlock =
+      chunks.length === 0
+        ? ""
+        : `\n\nCONTEXT (cite as [n]):\n${chunks
+            .map(
+              (c, i) =>
+                `[${i + 1}] (${c.source_kind}${c.title ? ` · ${c.title.slice(0, 80)}` : ""}) ${c.content.slice(0, 600)}`,
+            )
+            .join("\n\n")}`;
 
     const result = await callModel(supabase, userId, {
       surface: "prd",
@@ -627,7 +657,7 @@ Be concrete, terse, and useful. Use tight bullets. No filler.`;
       fallbackModel: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: system },
-        { role: "user", content: source },
+        { role: "user", content: source + contextBlock },
       ],
     });
     const body_md = result.output;
@@ -641,6 +671,7 @@ Be concrete, terse, and useful. Use tight bullets. No filler.`;
         title,
         body_md,
         model: data.model,
+        citations,
       })
       .select()
       .single();
@@ -654,6 +685,9 @@ Be concrete, terse, and useful. Use tight bullets. No filler.`;
         rationale: "Generated PRD from opportunity",
         created_by_agent: "prd-writer",
       });
+    }
+    if (prd) {
+      await runCritic(supabase, userId, { kind: "prd", id: prd.id });
     }
     return { prd };
   });
