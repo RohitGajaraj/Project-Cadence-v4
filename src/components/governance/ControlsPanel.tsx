@@ -588,7 +588,7 @@ export function ControlsPanel() {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      disabled={decideEvtMut.isPending}
+                      disabled={decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id}
                       onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "approve" })}
                       className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
                     >
@@ -596,7 +596,7 @@ export function ControlsPanel() {
                     </button>
                     <button
                       type="button"
-                      disabled={decideEvtMut.isPending}
+                      disabled={decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id}
                       onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "reject" })}
                       className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 transition inline-flex items-center gap-1"
                     >
