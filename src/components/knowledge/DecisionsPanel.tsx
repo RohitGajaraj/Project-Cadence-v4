@@ -255,7 +255,6 @@ export function DecisionsPanel() {
             const kind = (d.source_kind ?? "manual") as DecisionSource;
             const meta = SOURCE_META[kind];
             const Icon = meta.Icon;
-            const href = sourceHref(d);
             return (
               <li
                 key={d.id}
@@ -286,17 +285,16 @@ export function DecisionsPanel() {
                     )}
                     <span>·</span>
                     <span>{ageOf(d.created_at)}</span>
-                    {href && (
+                    {hasSource(d) && (
                       <>
                         <span>·</span>
-                        <Link
-                          to={href.to}
-                          search={href.search as never}
+                        <SourceLink
+                          d={d}
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 text-foreground/70 hover:text-foreground"
                         >
                           Open source <ExternalLink className="h-3 w-3" />
-                        </Link>
+                        </SourceLink>
                       </>
                     )}
                   </div>
