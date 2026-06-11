@@ -136,6 +136,7 @@ export function AmbientChip() {
     }
     const CACHE_KEY = "cadence.ambient.v3";
     const applyPayload = (payload: AmbientPayload) => {
+      console.warn("[AmbientChip] applyPayload", payload);
       setPlace(payload.place);
       setWeather(payload.weather);
       setDenied(false);
