@@ -46,7 +46,7 @@ export function CookingBanner() {
       <div className="relative flex items-center justify-center px-4 py-1.5 text-[12.5px] font-medium text-white">
         <div className="flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-          <span>Agents are building in the back. We will serve you soon.</span>
+          <span>Agents are building in the back. Fresh build loading.</span>
         </div>
         <button
           type="button"
