@@ -882,9 +882,18 @@ function DecisionPanel({
         <div className="mono-label flex items-center gap-1.5">
           <MessageSquare className="h-3 w-3" /> Decisions awaiting you
         </div>
-        <span className="mono-label">
-          {decisions.filter((d) => d.status === "pending").length} pending
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="mono-label">
+            {decisions.filter((d) => d.status === "pending").length} pending
+          </span>
+          <Link
+            to="/knowledge"
+            search={{ tab: "decisions" }}
+            className="text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            View all →
+          </Link>
+        </div>
       </div>
       <form
         onSubmit={(e) => {
