@@ -43,18 +43,16 @@ export function CookingBanner() {
             "linear-gradient(90deg, transparent 0%, color-mix(in oklab, white 35%, transparent) 50%, transparent 100%)",
         }}
       />
-      <div className="relative flex items-center justify-between gap-3 px-4 py-2 text-[12.5px] font-medium text-white">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="relative flex items-center justify-center px-4 py-1.5 text-[12.5px] font-medium text-white">
+        <div className="flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-          <span className="truncate">
-            Agents are building in the back. Your queue loads next.
-          </span>
+          <span>Agents are building in the back. We will serve you soon.</span>
         </div>
         <button
           type="button"
           onClick={dismiss}
           aria-label="Dismiss"
-          className="shrink-0 rounded p-1 text-white/80 hover:text-white hover:bg-white/15 transition"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-white/80 hover:text-white hover:bg-white/15 transition"
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
