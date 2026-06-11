@@ -51,6 +51,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
 import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
+import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
@@ -279,6 +280,11 @@ const AuthenticatedMissionsIndexRoute =
     path: '/missions/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicIngestSignalsRoute = ApiPublicIngestSignalsRouteImport.update({
+  id: '/api/public/ingest-signals',
+  path: '/api/public/ingest-signals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTracesTraceIdRoute =
   AuthenticatedTracesTraceIdRouteImport.update({
     id: '/$traceId',
@@ -409,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -466,6 +473,7 @@ export interface FileRoutesByTo {
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
@@ -586,6 +595,7 @@ export interface FileRouteTypes {
     | '/missions/$missionId'
     | '/prds/$id'
     | '/traces/$traceId'
+    | '/api/public/ingest-signals'
     | '/missions/'
     | '/prds/'
     | '/api/public/hooks/agent-tick'
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/missions/$missionId'
     | '/prds/$id'
     | '/traces/$traceId'
+    | '/api/public/ingest-signals'
     | '/missions'
     | '/prds'
     | '/api/public/hooks/agent-tick'
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/_authenticated/missions/$missionId'
     | '/_authenticated/prds/$id'
     | '/_authenticated/traces/$traceId'
+    | '/api/public/ingest-signals'
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
     | '/api/public/hooks/agent-tick'
@@ -725,6 +737,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
   PSlugRoute: typeof PSlugRoute
+  ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
@@ -1034,6 +1047,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMissionsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/ingest-signals': {
+      id: '/api/public/ingest-signals'
+      path: '/api/public/ingest-signals'
+      fullPath: '/api/public/ingest-signals'
+      preLoaderRoute: typeof ApiPublicIngestSignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/traces/$traceId': {
       id: '/_authenticated/traces/$traceId'
       path: '/$traceId'
@@ -1267,6 +1287,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
   PSlugRoute: PSlugRoute,
+  ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
@@ -1282,3 +1303,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
