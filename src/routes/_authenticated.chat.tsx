@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  Sparkles,
   Send,
   Plus,
   Trash2,
@@ -14,10 +13,18 @@ import {
   ChevronUp,
   AlertCircle,
   ShieldAlert,
+  Square,
 } from "lucide-react";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
 import { AppShell } from "@/components/cadence/AppShell";
+import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
+import {
+  MessageMetaFooter,
+  parseChatMeta,
+  pickFeedbackId,
+  type ChatMeta,
+} from "@/components/chat/MessageMeta";
+import { ModelSwitcher } from "@/components/chat/ModelSwitcher";
 import {
   listConversations,
   getConversation,
@@ -26,7 +33,6 @@ import {
 } from "@/lib/conversations.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { getProfile } from "@/lib/profile.functions";
-import { MODELS } from "@/lib/ai/models";
 import { getMission } from "@/lib/missions.functions";
 import { listMissionSteps } from "@/lib/orchestrator.functions";
 import { decideApproval } from "@/lib/agent_loop.functions";
@@ -37,7 +43,17 @@ export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({ meta: [{ title: "Chat · Cadence" }] }),
 });
 
-type Msg = { id: string; role: string; content: string; mission_id?: string | null };
+type Msg = {
+  id: string;
+  role: string;
+  content: string;
+  mission_id?: string | null;
+  meta?: ChatMeta | null;
+  error?: boolean;
+};
+
+/** Errors safe to show in the thread verbatim — anything else gets a generic line. */
+class ChatUiError extends Error {}
 
 function ChatPage() {
   const qc = useQueryClient();
@@ -58,6 +74,10 @@ function ChatPage() {
   const [streaming, setStreaming] = useState(false);
   const [liveMessages, setLiveMessages] = useState<Msg[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  // Autoscroll only while the user is pinned to the bottom; scrolling up detaches.
+  const pinnedRef = useRef(true);
 
   // Auto-pick first or auto-create
   useEffect(() => {
@@ -82,11 +102,22 @@ function ChatPage() {
   });
 
   useEffect(() => {
-    setLiveMessages((active.data?.messages as Msg[]) ?? []);
+    // Never clobber the in-flight optimistic messages mid-stream (the query can
+    // resolve right after ensureConversation creates a fresh conversation).
+    if (streaming) return;
+    // Historical messages may carry persisted meta in a `metadata` jsonb column;
+    // absent or malformed metadata simply renders no footer.
+    const rows = (active.data?.messages ?? []) as Array<Msg & { metadata?: unknown }>;
+    setLiveMessages(rows.map((r) => ({ ...r, meta: parseChatMeta(r.metadata) })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- streaming intentionally excluded: re-running on stream end would replace the just-streamed reply with stale rows
   }, [active.data]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    if (!pinnedRef.current) return;
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: streaming ? "auto" : "smooth",
+    });
   }, [liveMessages, streaming]);
 
   const mNew = useMutation({
@@ -114,29 +145,56 @@ function ChatPage() {
     return r.conversation.id;
   }
 
+  function stopStreaming() {
+    abortRef.current?.abort();
+  }
+
   async function send() {
     const content = input.trim();
     if (!content || streaming) return;
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setStreaming(true);
+    pinnedRef.current = true;
 
-    const convId = await ensureConversation();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
     const userMsg: Msg = { id: `u-${Date.now()}`, role: "user", content };
     const assistantMsg: Msg = { id: `a-${Date.now()}`, role: "assistant", content: "" };
     setLiveMessages((prev) => [...prev, userMsg, assistantMsg]);
 
     try {
+      let convId: string;
+      try {
+        convId = await ensureConversation();
+      } catch (err) {
+        console.error(err);
+        throw new ChatUiError("I couldn't start this conversation. Please try again.");
+      }
+      // /api/chat validates a Bearer token (same contract as requireSupabaseAuth);
+      // without this header every chat request 401s silently.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ conversationId: convId, content, model }),
+        signal: ctrl.signal,
       });
-      if (res.status === 429) throw new Error("Rate limit reached. Try again shortly.");
+      if (res.status === 401)
+        throw new ChatUiError("Your session needs a refresh — reload the page and try again.");
+      if (res.status === 429)
+        throw new ChatUiError("Rate limit reached — give it a few seconds and try again.");
       if (res.status === 402)
-        throw new Error("AI credits exhausted. Add credits in Settings → Usage.");
+        throw new ChatUiError("AI credits exhausted. Add credits in Settings → Usage.");
       if (!res.ok || !res.body) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || `Error ${res.status}`);
+        console.error("chat request failed", res.status, await res.text().catch(() => ""));
+        throw new ChatUiError("I couldn't reach the model just now. Please try again.");
       }
 
       const reader = res.body.getReader();
@@ -157,6 +215,16 @@ function ChatPage() {
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
+            // Shared contract: one `{"meta": …}` event arrives just before [DONE].
+            const meta = parseChatMeta((parsed as { meta?: unknown }).meta);
+            if (meta) {
+              setLiveMessages((prev) => {
+                const next = [...prev];
+                next[next.length - 1] = { ...next[next.length - 1], meta };
+                return next;
+              });
+              continue;
+            }
             const piece: string | undefined = parsed.choices?.[0]?.delta?.content;
             const missionId: string | undefined = parsed.choices?.[0]?.delta?.mission_id;
             if (piece || missionId) {
@@ -179,9 +247,29 @@ function ChatPage() {
       }
       qc.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Chat failed");
-      setLiveMessages((prev) => prev.slice(0, -1));
+      if (e instanceof Error && e.name === "AbortError") {
+        // User pressed Stop — keep the partial reply; drop the bubble if empty.
+        setLiveMessages((prev) => {
+          const last = prev[prev.length - 1];
+          return last?.role === "assistant" && !last.content ? prev.slice(0, -1) : prev;
+        });
+      } else {
+        console.error(e);
+        const friendly =
+          e instanceof ChatUiError
+            ? e.message
+            : "Something went wrong reaching the model. Please try again.";
+        setLiveMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.role === "assistant" && !last.content) {
+            next[next.length - 1] = { ...last, content: friendly, error: true };
+          }
+          return next;
+        });
+      }
     } finally {
+      abortRef.current = null;
       setStreaming(false);
     }
   }
@@ -201,7 +289,10 @@ function ChatPage() {
         <aside className="border-r hairline bg-background/40 backdrop-blur-xl flex flex-col min-h-0">
           <div className="p-3 border-b hairline">
             <button
-              onClick={() => mNew.mutate()}
+              onClick={() => {
+                abortRef.current?.abort();
+                mNew.mutate();
+              }}
               className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
               style={{
                 background:
@@ -221,7 +312,10 @@ function ChatPage() {
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
                 }`}
-                onClick={() => setActiveId(c.id)}
+                onClick={() => {
+                  abortRef.current?.abort();
+                  setActiveId(c.id);
+                }}
               >
                 <MessageSquare className="h-3.5 w-3.5 shrink-0" />
                 <span className="flex-1 truncate">{c.title}</span>
@@ -248,27 +342,17 @@ function ChatPage() {
             <div className="text-sm text-muted-foreground truncate">
               {active.data?.conversation?.title ?? "New conversation"}
             </div>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="text-xs bg-background/60 border hairline rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-ring"
-            >
-              {MODELS.filter((m) => m.live).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-              <optgroup label="— Bring your own key (coming) —">
-                {MODELS.filter((m) => !m.live).map((m) => (
-                  <option key={m.id} value={m.id} disabled>
-                    {m.label}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
           </header>
 
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+          <div
+            ref={scrollRef}
+            onScroll={() => {
+              const el = scrollRef.current;
+              if (!el) return;
+              pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            }}
+            className="flex-1 min-h-0 overflow-y-auto scrollbar-thin"
+          >
             {isEmpty ? (
               <div className="h-full grid place-items-center px-6 py-10">
                 <div className="max-w-2xl text-center">
@@ -279,15 +363,15 @@ function ChatPage() {
                     Hi <span className="neural-text">{firstName}</span>. How can I help?
                   </h1>
                   <p className="mt-3 text-sm md:text-base text-muted-foreground">
-                    Ask anything about your products, tasks, or strategy. I'm grounded in your
+                    Ask anything — answers can draw on the live web and stay grounded in your
                     workspace.
                   </p>
                   <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                     {[
-                      "Summarize today and tell me what to focus on",
-                      "Draft a PRD outline for my top product",
-                      "What's slipping across my open tasks?",
-                      "Propose a 2-week sprint plan",
+                      "What's the weather in Munich?",
+                      "Summarize this week's signals",
+                      "Draft a status update for stakeholders",
+                      "What should I focus on today?",
                     ].map((s) => (
                       <button
                         key={s}
@@ -301,13 +385,16 @@ function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+              <div className="max-w-3xl mx-auto px-6 py-10 space-y-7">
                 {liveMessages.map((m) => (
                   <MessageBubble
                     key={m.id}
                     role={m.role}
                     content={m.content}
                     missionId={m.mission_id}
+                    meta={m.meta}
+                    error={m.error}
+                    feedbackId={pickFeedbackId(m.id, activeId)}
                     streaming={streaming && m === liveMessages[liveMessages.length - 1]}
                   />
                 ))}
@@ -331,36 +418,53 @@ function ChatPage() {
                     "linear-gradient(135deg, color-mix(in oklab, var(--primary) 55%, transparent), color-mix(in oklab, #a78bfa 45%, transparent), color-mix(in oklab, #38bdf8 35%, transparent))",
                 }}
               >
-                <div className="flex items-end gap-2 rounded-2xl bg-background/80 backdrop-blur-xl p-2">
+                <div className="rounded-2xl bg-background/80 backdrop-blur-xl">
                   <textarea
+                    ref={textareaRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      const el = e.currentTarget;
+                      el.style.height = "auto";
+                      el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         send();
                       }
                     }}
-                    rows={2}
-                    placeholder="Message Cadence…   (Enter to send · Shift+Enter for newline)"
-                    className="flex-1 bg-transparent px-3 py-2 text-sm outline-none resize-none max-h-40 placeholder:text-muted-foreground/70"
+                    rows={1}
+                    placeholder="Message Cadence…"
+                    className="block w-full bg-transparent px-4 pt-3.5 pb-1 text-sm outline-none resize-none min-h-[44px] placeholder:text-muted-foreground/70"
                   />
-                  <button
-                    type="submit"
-                    disabled={streaming || !input.trim()}
-                    className="h-10 w-10 grid place-items-center rounded-xl text-white shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] disabled:opacity-40 transition hover:scale-[1.03]"
-                    style={{ background: "linear-gradient(135deg, var(--primary), #a78bfa)" }}
-                  >
+                  <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1">
+                    <ModelSwitcher value={model} onChange={setModel} />
                     {streaming ? (
-                      <Sparkles className="h-4 w-4 animate-pulse" />
+                      <button
+                        type="button"
+                        onClick={stopStreaming}
+                        aria-label="Stop generating"
+                        className="h-9 w-9 grid place-items-center rounded-xl border hairline bg-background/60 text-foreground transition hover:bg-secondary/60 active:scale-[0.97]"
+                      >
+                        <Square className="h-3 w-3 fill-current" />
+                      </button>
                     ) : (
-                      <Send className="h-4 w-4" />
+                      <button
+                        type="submit"
+                        disabled={!input.trim()}
+                        aria-label="Send message"
+                        className="h-9 w-9 grid place-items-center rounded-xl text-white shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] disabled:opacity-40 transition active:scale-[0.97]"
+                        style={{ background: "linear-gradient(135deg, var(--primary), #a78bfa)" }}
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               </div>
               <div className="mt-2.5 text-[10px] text-muted-foreground text-center tracking-wide">
-                Grounded in your workspace · {MODELS.find((m) => m.id === model)?.label ?? model}
+                Enter to send · Shift+Enter for newline · Answers can use your workspace and the web
               </div>
             </form>
           </div>
@@ -659,60 +763,66 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
   );
 }
 
+function StreamingCaret() {
+  return (
+    <span
+      aria-hidden
+      className="ml-0.5 inline-block h-4 w-[3px] translate-y-[2px] rounded-full bg-foreground/50 animate-pulse"
+    />
+  );
+}
+
 function MessageBubble({
   role,
   content,
   missionId,
+  meta,
+  error,
+  feedbackId,
   streaming,
 }: {
   role: string;
   content: string;
   missionId?: string | null;
+  meta?: ChatMeta | null;
+  error?: boolean;
+  feedbackId?: string | null;
   streaming?: boolean;
 }) {
-  const isUser = role === "user";
-
-  if (!isUser && missionId) {
+  if (role === "user") {
     return (
-      <div className="flex gap-3 animate-in fade-in duration-200">
-        {!isUser && (
-          <div className="h-7 w-7 rounded-lg relative overflow-hidden shrink-0 ring-glow-violet">
-            <div className="absolute inset-0 neural-gradient" />
-          </div>
-        )}
-        <div className="flex-1 space-y-3 max-w-full">
-          {content && (
-            <div className="text-sm text-muted-foreground leading-relaxed prose prose-neutral dark:prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:mt-3 prose-pre:bg-background/60 prose-pre:border prose-pre:border-hairline">
-              <ReactMarkdown>{content}</ReactMarkdown>
-            </div>
-          )}
-          <InlineMissionProgress missionId={missionId} />
+      <div className="flex justify-end animate-in fade-in slide-in-from-bottom-1 duration-200">
+        <div className="max-w-[75%] rounded-2xl bg-secondary/60 px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">
+          {content}
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
-      {!isUser && (
-        <div className="h-7 w-7 rounded-lg relative overflow-hidden shrink-0 ring-glow-violet">
-          <div className="absolute inset-0 neural-gradient" />
-        </div>
-      )}
-      <div
-        className={`${isUser ? "bento bg-secondary/60 max-w-[80%]" : "max-w-full"} px-4 py-3 rounded-2xl`}
-      >
-        {content ? (
-          <div className="prose prose-neutral dark:prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:mt-3 prose-pre:bg-background/60 prose-pre:border prose-pre:border-hairline">
-            <ReactMarkdown>{content}</ReactMarkdown>
+    <div className="flex gap-3 animate-in fade-in duration-200">
+      <div className="h-7 w-7 rounded-lg relative overflow-hidden shrink-0 ring-glow-violet">
+        <div className="absolute inset-0 neural-gradient" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-3 pt-0.5">
+        {error ? (
+          <div className="flex items-start gap-2 rounded-xl border border-coral-soft bg-coral/5 px-3.5 py-2.5 text-sm text-ink-muted">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-coral" />
+            <span>{content}</span>
           </div>
-        ) : streaming ? (
-          <div className="flex gap-1 py-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-foreground/60 animate-pulse" />
-            <span className="h-1.5 w-1.5 rounded-full bg-foreground/60 animate-pulse [animation-delay:120ms]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-foreground/60 animate-pulse [animation-delay:240ms]" />
-          </div>
-        ) : null}
+        ) : (
+          <>
+            {content && (
+              <div>
+                <ChatMarkdown content={content} />
+                {streaming && <StreamingCaret />}
+              </div>
+            )}
+            {!content && streaming && <StreamingCaret />}
+            {missionId && <InlineMissionProgress missionId={missionId} />}
+            {meta && !streaming && <MessageMetaFooter meta={meta} feedbackId={feedbackId} />}
+          </>
+        )}
       </div>
     </div>
   );
