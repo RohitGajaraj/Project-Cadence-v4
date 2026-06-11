@@ -270,6 +270,18 @@ function PrdEditor() {
 
           <span className="mx-1 h-4 w-px bg-[var(--hairline)]" />
 
+          <button
+            onClick={() => captureDecision.mutate()}
+            disabled={captureDecision.isPending}
+            className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
+            title="Log this spec as a decision in /knowledge?tab=decisions"
+          >
+            <Gavel className="h-3 w-3" />
+            {captureDecision.isPending ? "Capturing…" : "Capture as decision"}
+          </button>
+
+          <span className="mx-1 h-4 w-px bg-[var(--hairline)]" />
+
           <span className="mono-label inline-flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" /> AI
           </span>
