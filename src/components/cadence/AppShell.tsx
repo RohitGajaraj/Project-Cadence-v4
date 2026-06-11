@@ -129,7 +129,6 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string | null }) {
 function useOpenGroups(path: string) {
   // Single-open accordion: only one group expanded at a time. The active
   // route's group auto-opens; user clicks toggle which group is open.
