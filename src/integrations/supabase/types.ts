@@ -2531,6 +2531,7 @@ export type Database = {
           role: string | null
           timezone: string | null
           updated_at: string
+          voice_anchor_text: string | null
           working_hours_end: number
           working_hours_start: number
         }
@@ -2545,6 +2546,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string
+          voice_anchor_text?: string | null
           working_hours_end?: number
           working_hours_start?: number
         }
@@ -2559,6 +2561,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string
+          voice_anchor_text?: string | null
           working_hours_end?: number
           working_hours_start?: number
         }
