@@ -10,7 +10,7 @@
 -- needed to admit 'halted'/'failed'.
 
 -- 1. learnings ----------------------------------------------------------------
-CREATE TABLE public.learnings (
+CREATE TABLE IF NOT EXISTS public.learnings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   -- Default bridge mirrors the tenancy retrofit (20260530120200) so inserts
@@ -27,8 +27,8 @@ CREATE TABLE public.learnings (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_learnings_ws_created ON public.learnings (workspace_id, created_at DESC);
-CREATE INDEX idx_learnings_prd ON public.learnings (prd_id);
+CREATE INDEX IF NOT EXISTS idx_learnings_ws_created ON public.learnings (workspace_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_learnings_prd ON public.learnings (prd_id);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.learnings TO authenticated;
 GRANT ALL ON public.learnings TO service_role;
@@ -36,8 +36,12 @@ GRANT ALL ON public.learnings TO service_role;
 ALTER TABLE public.learnings ENABLE ROW LEVEL SECURITY;
 
 -- Membership-keyed RLS, exact pattern from tenancy retrofit C/3 (20260530120200).
+-- DROP-then-CREATE keeps the migration idempotent (safe if applied via both the
+-- dashboard SQL editor and a later migration sync).
+DROP POLICY IF EXISTS "learnings ws read" ON public.learnings;
 CREATE POLICY "learnings ws read" ON public.learnings
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+DROP POLICY IF EXISTS "learnings ws write" ON public.learnings;
 CREATE POLICY "learnings ws write" ON public.learnings
   FOR ALL USING (public.is_workspace_member(workspace_id))
   WITH CHECK (public.is_workspace_member(workspace_id));
