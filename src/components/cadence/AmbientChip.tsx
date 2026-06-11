@@ -169,9 +169,26 @@ export function AmbientChip() {
       return;
     }
 
+    // Sandboxed iframes (e.g. the in-app preview) often neither resolve nor
+    // reject geolocation, leaving the strip stuck on "Locating…" with no
+    // weather. Race the browser permission flow against a 2s timer that
+    // triggers the network/timezone fallback so weather + temperature
+    // always show up.
+    let resolved = false;
+    const settle = (fn: () => void) => {
+      if (resolved) return;
+      resolved = true;
+      fn();
+    };
+    const timer = setTimeout(() => settle(fallback), 2000);
+
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => loadFromBrowserPosition(coords).then(applyPayload).catch(fallback),
-      fallback,
+      ({ coords }) =>
+        settle(() => {
+          clearTimeout(timer);
+          loadFromBrowserPosition(coords).then(applyPayload).catch(fallback);
+        }),
+      () => settle(() => { clearTimeout(timer); fallback(); }),
       { maximumAge: 15 * 60_000, timeout: 4500 },
     );
   }, []);
