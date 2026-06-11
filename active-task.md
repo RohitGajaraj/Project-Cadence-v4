@@ -38,6 +38,19 @@ Plan: connections (account level) · connection_bindings (workspace level) · `r
 3. [ ] Add backend secrets (Lovable project env): `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY` (paste PEM), and `CONNECTOR_SECRETS_KEY` (run `openssl rand -base64 32`)
 4. [ ] Until these exist, the GitHub card in Settings → Connected accounts shows "setup pending" (everything else still works; old env-var path keeps the demo alive)
 
+### Open ops task — per-provider OAuth client IDs (founder, ~5-10 min each — each unlocks that provider's Connect button)
+
+OAuth-only ruling 2026-06-12: every Connect button needs a one-time OAuth app registration. Register at each provider with redirect URI `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback`, then add the client ID as a backend secret:
+
+- [ ] **Google** (covers Calendar + Docs): Google Cloud Console → Credentials → OAuth client → `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID` (this is long-pending KI-01)
+- [ ] **Microsoft** (Outlook calendar): Entra admin → App registrations → `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID` (KI-01)
+- [ ] **Notion**: notion.so/my-integrations → public OAuth integration → `NOTION_APP_USER_CONNECTOR_CLIENT_ID`
+- [ ] **Linear**: linear.app settings → API → OAuth application → `LINEAR_APP_USER_CONNECTOR_CLIENT_ID`
+- [ ] **Figma** (optional now): figma.com/developers → `FIGMA_APP_USER_CONNECTOR_CLIENT_ID`
+- [ ] **Jira/Atlassian** (optional now): developer.atlassian.com → `ATLASSIAN_APP_USER_CONNECTOR_CLIENT_ID`
+
+Each card flips from "Admin setup required" to a live Connect button as its secret lands. No client secrets needed in our env — the gateway handles token exchange.
+
 ## ~~Slack app credentials~~ — RETIRED 2026-06-12
 
 Founder decision: no Slack app. The **webhook ingest door is the ingest strategy** (`F-V5-INGEST-WEBHOOK`); anything — including Slack via its own outgoing-webhook/workflow tools — POSTs to `/api/public/ingest-signals`. `F-V5-SLACK` (native OAuth connector) removed from the queue.

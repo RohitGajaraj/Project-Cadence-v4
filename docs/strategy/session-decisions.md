@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — Connectors are OAuth-only for end users: one Connect button, no API-key paste
+
+**Decision:** Every user-facing connector is a single **Connect** button → provider OAuth (redirect/popup) → permissions granted → done. The API-key paste path is removed from the UI entirely; storing user-pasted provider keys is rejected. Disabled connectors must show an explanatory "Admin setup required" state naming the missing setup, never a mute disabled button. Mechanism: the Lovable connector gateway's app-user OAuth (the live calendar precedent — tokens stay in the gateway, we store only a connection handle), generalized to Linear/Notion/Google Docs/Figma/Jira; GitHub keeps its GitHub App flow. Firecrawl is removed from the user-facing connector list (platform infrastructure, not a user connector). The AES vault remains for internal/infra use only.
+
+**Why:** Founder ruling — "build the platform for an end user, not just for the demo"; asking users for API keys and keeping them in our database is wrong on both UX and security. Reference bar: Lovable's own integration UX.
+
+**Tradeoffs considered (and the honest constraint):** Every OAuth Connect button requires a **one-time per-provider OAuth app registration by the founder** (that is where the permissions are declared) — there is no registration-free OAuth. The gateway removes token custody/refresh burden, not app registration. Per-provider client-ID checklist added to `active-task.md` (`*_APP_USER_CONNECTOR_CLIENT_ID` pattern; Google client covers Calendar + Docs).
+
+**Impact:** `registry.ts` (oauth_gateway primary everywhere, firecrawl de-listed from UI), `connections.functions.ts` (`startGatewayConnect`/`saveGatewayConnection` generalized from the calendar flow; `connectWithApiKey` removed), `ApiKeyConnectDialog` deleted, ProviderCard setup-pending copy. Saved as standing memory rule for all future connector work.
+
 ### 2026-06-12 — Connector Platform adopted (F-CONN): connect once at account level, bind resources per workspace
 
 **Decision:** Build the integration base the platform was missing: (1) **`connections`** — account-level, user-owned, self-serve connect/disconnect/status in the UI, zero env vars for end users; (2) **`connection_bindings`** — workspace-level resource mapping (which repo/team/database this workspace acts on); (3) **`resolveProviderAuth`** — one credential chokepoint for every external call (workspace binding → user connection → env fallback flagged deprecated → actionable error). Founder-ratified specifics: **GitHub connects via a GitHub App from day one** (installation flow; actions run as the app, not a member; founder registers the app — checklist in `active-task.md`); **secrets vault = app-layer AES-256-GCM** (ciphertext-only `connection_secrets`, service-role-only, `CONNECTOR_SECRETS_KEY`) — correcting the docs' pgsodium claim (deprecated; `user_api_keys` was in fact plaintext); **multi-member workspaces share bindings with attribution** until org-owned connections at multi-seat. Full plan: `~/.claude/plans` F-CONN (Phase 1 GitHub exemplar + call-site migration; Phase 2 Linear/Notion/GDocs/Firecrawl + GitHub webhook; Phase 3 calendar fold-in + org entity).
