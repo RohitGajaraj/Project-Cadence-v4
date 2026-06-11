@@ -363,14 +363,13 @@ export function DecisionsPanel() {
                     {active.rationale || "No rationale captured."}
                   </p>
                 </div>
-                {sourceHref(active) && (
-                  <Link
-                    to={sourceHref(active)!.to}
-                    search={sourceHref(active)!.search as never}
+                {hasSource(active) && (
+                  <SourceLink
+                    d={active}
                     className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground"
                   >
                     Open source <ExternalLink className="h-3 w-3" />
-                  </Link>
+                  </SourceLink>
                 )}
                 <div className="flex items-center gap-2 pt-2">
                   <Button
