@@ -64,7 +64,7 @@ Supabase Realtime on `agent_runs` (cockpit feed); SSE on chat/studio; trace wate
 
 ## Pinned workspace rail
 
-The pinned (always-visible) rail in `AppShell` holds **four** items only: **Today · Approvals · Knowledge · Chat**. The Pin test (see [`../docs/conventions/inline-management.md`](../docs/conventions/inline-management.md#pin-test-applies-to-the-sidebars-pinned-workspace-rail)) governs what earns a pin. Calendar is reachable as the default tab of `/knowledge` (preserves daily muscle memory while keeping the rail at four items); Approvals deep-links into `/govern?tab=approvals`. Everything else lives inside a collapsible group, inside a parent surface (tab / sheet / inline section), or in Settings.
+The pinned (always-visible) rail in `AppShell` holds **three** items only: **Today · Chat · Missions**. The Pin test (see [`../docs/conventions/inline-management.md`](../docs/conventions/inline-management.md#pin-test-applies-to-the-sidebars-pinned-workspace-rail)) governs what earns a pin. Approvals and Calendar remain one-click daily utilities, but sit as a compact **Daily** icon pair in the fixed sidebar footer above budget / mission mode so they do not overlap the ambient bar or page-level actions. Approvals deep-links into `/govern?tab=approvals`; Calendar remains `/calendar`. Everything else lives inside a collapsible group, inside a parent surface (tab / sheet / inline section), or in Settings.
 
 ## Global ambient bar
 
