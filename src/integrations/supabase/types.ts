@@ -1125,11 +1125,15 @@ export type Database = {
       decisions: {
         Row: {
           created_at: string
+          decided_by_agent_slug: string | null
           id: string
           meeting_id: string | null
+          mission_id: string | null
+          prd_id: string | null
           product_id: string | null
           project_id: string | null
           rationale: string | null
+          source_kind: string | null
           status: string
           title: string
           user_id: string
@@ -1137,11 +1141,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          decided_by_agent_slug?: string | null
           id?: string
           meeting_id?: string | null
+          mission_id?: string | null
+          prd_id?: string | null
           product_id?: string | null
           project_id?: string | null
           rationale?: string | null
+          source_kind?: string | null
           status?: string
           title: string
           user_id: string
@@ -1149,17 +1157,35 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          decided_by_agent_slug?: string | null
           id?: string
           meeting_id?: string | null
+          mission_id?: string | null
+          prd_id?: string | null
           product_id?: string | null
           project_id?: string | null
           rationale?: string | null
+          source_kind?: string | null
           status?: string
           title?: string
           user_id?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "decisions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decisions_prd_id_fkey"
+            columns: ["prd_id"]
+            isOneToOne: false
+            referencedRelation: "prds"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "decisions_product_id_fkey"
             columns: ["product_id"]
