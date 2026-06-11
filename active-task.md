@@ -14,7 +14,7 @@
 - [x] Cost chip in Today header (today's `ai_events` spend)
 - [x] Approvals pinned to the workspace rail (Today · Approvals · Chat)
 - [x] **F-V5-MOTHBALL landed same batch:** nav groups → Product · Missions · Knowledge; Trust icon row in sidebar footer (Approvals · Budgets · Engine Room · Connectors); `/build` → `/`, `/learn` → `/knowledge`, `/agents` → `/missions?tab=agents` redirects; "Chief of Staff" UI vocabulary. Build green (`bun run build:dev` exit 0); all touched files lint clean.
-- [ ] **Verify on `demo@redcadence.app`** (v5 bar 1): ≥2 real call cards on login; approve one → executes + decision logs without leaving Today; nav shows 4 surfaces + Trust row
+- [x] **Verified on `demo@redcadence.app`** (v5 bar 1, Playwright walkthrough 2026-06-11): 3 real call cards on login; inline Approve executed (queue 3→2, consistent on Govern page); Start-mission popover created + dispatched a real mission; nav = Today·Approvals·Chat + Product·Missions·Knowledge + Trust row; Engine Room 9 tabs intact; /build /learn /agents redirects pass. **Caveat:** brief-leads-with-calls could not execute locally — KI-06 (no AI-gateway key in local `.env`) blocks all model calls; verify after key added. New: KI-07 (mission stuck `running` on model failure). Screenshot: `v5-today-calls-queue.png` (repo root, untracked).
 - [ ] Doc closure remainder: `architecture/frontend.md` (new nav + Today contract)
 - [ ] Known risks to re-check in walkthrough: `startOrchestratedMission` awaits the full loop (30s+, possible Worker timeout → double-dispatch on retry); needs-you query has no polling; pre-existing repo-wide prettier drift (3,385 errors in untouched files — consider one-shot `eslint --fix` cleanup commit)
 
