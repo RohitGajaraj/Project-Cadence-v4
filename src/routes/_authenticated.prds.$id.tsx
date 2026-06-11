@@ -27,6 +27,7 @@ import {
 } from "@/lib/discovery.functions";
 import { CriticBadge } from "@/components/governance/CriticBadge";
 import { CitationsCard, type Citation } from "@/components/product/CitationsCard";
+import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { runAgent } from "@/lib/agent_loop.functions";
@@ -220,7 +221,9 @@ function PrdEditor() {
             : null}
           <span aria-hidden>/</span>
           <CriticBadge
-            review={(prdQ.data.prd as { critic_review?: CriticReview | null }).critic_review ?? null}
+            review={
+              (prdQ.data.prd as { critic_review?: CriticReview | null }).critic_review ?? null
+            }
             target={{ kind: "prd", id }}
             invalidateKey={["prd", id]}
           />
@@ -355,10 +358,12 @@ function PrdEditor() {
 
         <div className="mt-6">
           <CitationsCard
-            citations={
-              (prdQ.data.prd as { citations?: Citation[] | null }).citations ?? null
-            }
+            citations={(prdQ.data.prd as { citations?: Citation[] | null }).citations ?? null}
           />
+        </div>
+
+        <div className="mt-6">
+          <OutcomeCard prd={prdQ.data.prd as unknown as OutcomePrd} invalidateKey={["prd", id]} />
         </div>
       </div>
     </AppShell>

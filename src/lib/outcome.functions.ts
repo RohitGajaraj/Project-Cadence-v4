@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Outcome surface: read-only roll-ups over existing tables.
@@ -86,4 +88,180 @@ export const getOutcomeData = createServerFn({ method: "GET" })
       support: supportRes.data ?? [],
       learnings,
     };
+  });
+
+// ---------------------------------------------------------------------------
+// F-V5-LOOP-CLOSE Phase D — ship detection + outcome → learnings → ICE re-score.
+// New columns (prds.shipped_at/outcome, public.learnings) are not yet in the
+// generated Database types, so these handlers use the untyped-client cast
+// precedent (see briefs/discovery/lineage helpers).
+
+/** Same GITHUB_REPO normalization as createGithubIssueForPrd (discovery.functions.ts). */
+function normalizeGithubRepo(rawRepo: string): string | null {
+  const repo = rawRepo
+    .trim()
+    .replace(/^https?:\/\/github\.com\//i, "")
+    .replace(/^git@github\.com:/i, "")
+    .replace(/\.git$/i, "")
+    .replace(/\/+$/, "");
+  return /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : null;
+}
+
+/**
+ * Check whether a PRD's linked GitHub issue has been closed; if so, mark the
+ * PRD shipped (idempotent — shipped_at is only stamped once). Config absence
+ * (no GitHub env, no linked issue) returns issueState "unknown", never throws.
+ */
+export const checkPrdShipped = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ prdId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: prd, error: prdErr } = await db
+      .from("prds")
+      .select("id,github_issue_url,status,shipped_at")
+      .eq("id", data.prdId)
+      .single();
+    if (prdErr) throw new Error(prdErr.message);
+    if (!prd.github_issue_url) return { shipped: false, issueState: "unknown" as const };
+
+    const token = process.env.GITHUB_TOKEN;
+    const rawRepo = process.env.GITHUB_REPO;
+    if (!token || !rawRepo) return { shipped: false, issueState: "unknown" as const };
+    const repo = normalizeGithubRepo(rawRepo);
+    if (!repo) return { shipped: false, issueState: "unknown" as const };
+    const match = String(prd.github_issue_url).match(/\/issues\/(\d+)/);
+    if (!match) return { shipped: false, issueState: "unknown" as const };
+
+    const res = await fetch(`https://api.github.com/repos/${repo}/issues/${match[1]}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "cadence-agent",
+      },
+    });
+    if (!res.ok) return { shipped: false, issueState: "unknown" as const };
+    const issue = (await res.json()) as { state?: string; closed_at?: string | null };
+    if (issue.state !== "closed") return { shipped: false, issueState: "open" as const };
+
+    let shippedAt = prd.shipped_at as string | null;
+    if (!shippedAt) {
+      shippedAt = issue.closed_at ?? new Date().toISOString();
+      const { error: upErr } = await db
+        .from("prds")
+        .update({ status: "shipped", shipped_at: shippedAt, updated_at: new Date().toISOString() })
+        .eq("id", prd.id);
+      if (upErr) throw new Error(upErr.message);
+    }
+    return { shipped: true, issueState: "closed" as const, shippedAt };
+  });
+
+/**
+ * Record a shipped PRD's real-world outcome: write prds.outcome, adjust the
+ * linked opportunity's confidence by verdict (validated +2 / missed -2 /
+ * mixed 0, clamped 1..10; ice_score is DB-generated), and append a learnings
+ * row carrying the prior/new ICE for the audit trail.
+ */
+export const recordOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        prdId: z.string().uuid(),
+        verdict: z.enum(["validated", "missed", "mixed"]),
+        summary: z.string().min(1).max(2000),
+        metricLabel: z.string().optional(),
+        metricValue: z.string().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { userId } = context;
+    const db = context.supabase as unknown as SupabaseClient;
+
+    const { data: prd, error: prdErr } = await db
+      .from("prds")
+      .select("id,workspace_id,opportunity_id")
+      .eq("id", data.prdId)
+      .single();
+    if (prdErr) throw new Error(prdErr.message);
+
+    const now = new Date().toISOString();
+    const { error: outErr } = await db
+      .from("prds")
+      .update({
+        outcome: {
+          verdict: data.verdict,
+          summary: data.summary,
+          metric_label: data.metricLabel ?? null,
+          metric_value: data.metricValue ?? null,
+          checked_at: now,
+        },
+        updated_at: now,
+      })
+      .eq("id", prd.id);
+    if (outErr) throw new Error(outErr.message);
+
+    let priorIce: number | null = null;
+    let newIce: number | null = null;
+    let opportunity: { id: string; prior_ice: number | null; new_ice: number | null } | null = null;
+
+    if (prd.opportunity_id) {
+      const { data: opp } = await db
+        .from("opportunities")
+        .select("id,impact,confidence,ease,ice_score")
+        .eq("id", prd.opportunity_id)
+        .maybeSingle();
+      if (opp) {
+        priorIce = opp.ice_score == null ? null : Number(opp.ice_score);
+        const delta = data.verdict === "validated" ? 2 : data.verdict === "missed" ? -2 : 0;
+        const newConfidence = Math.min(10, Math.max(1, (opp.confidence ?? 5) + delta));
+        const { error: oppErr } = await db
+          .from("opportunities")
+          .update({ confidence: newConfidence, updated_at: now })
+          .eq("id", opp.id);
+        if (oppErr) throw new Error(oppErr.message);
+        // ice_score is a GENERATED column — recompute here for the return value
+        // and the learning row rather than re-reading.
+        newIce = ((opp.impact ?? 5) + newConfidence + (opp.ease ?? 5)) / 3;
+        opportunity = { id: opp.id, prior_ice: priorIce, new_ice: newIce };
+      }
+    }
+
+    const { data: learning, error: learnErr } = await db
+      .from("learnings")
+      .insert({
+        user_id: userId,
+        workspace_id: prd.workspace_id,
+        prd_id: prd.id,
+        opportunity_id: prd.opportunity_id,
+        verdict: data.verdict,
+        summary: data.summary,
+        metric_label: data.metricLabel ?? null,
+        metric_value: data.metricValue ?? null,
+        prior_ice: priorIce,
+        new_ice: newIce,
+      })
+      .select()
+      .single();
+    if (learnErr) throw new Error(learnErr.message);
+
+    return { learning, opportunity };
+  });
+
+/** Latest 50 learnings, newest first (workspace-scoped via RLS). */
+export const listLearnings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: learnings, error } = await db
+      .from("learnings")
+      .select(
+        "id, prd_id, opportunity_id, verdict, summary, metric_label, metric_value, prior_ice, new_ice, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return { learnings: learnings ?? [] };
   });

@@ -125,6 +125,28 @@ function xmlEscape(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/**
+ * Voice anchor (F-V5-LOOP-CLOSE) — operator-set tone/stance from
+ * profiles.voice_anchor_text, injected into every agent system prompt
+ * between the agent's own prompt and the workspace brief. Empty or
+ * failed loads return "" (non-fatal).
+ */
+async function loadVoiceAnchorBlock(supabase: SupabaseClient, userId: string): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("voice_anchor_text")
+      .eq("id", userId)
+      .maybeSingle();
+    const text = (data as { voice_anchor_text?: string | null } | null)?.voice_anchor_text?.trim();
+    if (!text) return "";
+    return `\n--- Voice anchor (operator-set, follow this tone and stance) ---\n${text}\n--- End voice anchor ---`;
+  } catch (e) {
+    console.error("voice anchor load failed:", e);
+    return "";
+  }
+}
+
 export async function runAgentLoop(
   supabase: SupabaseClient,
   userId: string,
@@ -222,6 +244,7 @@ export async function runAgentLoop(
   );
 
   const memories = await recallMemory(supabase, userId, input.agentSlug, input.goal);
+  const voiceBlock = await loadVoiceAnchorBlock(supabase, userId);
 
   // Workspace Strategic Brief (Bundle 2 / C5) — shared operating context.
   // Injected into every agent's system prompt so editing the brief visibly
@@ -259,6 +282,7 @@ export async function runAgentLoop(
 
   const system = [
     agent.system_prompt,
+    voiceBlock,
     briefBlock,
     handoffBlock,
     memories.length
@@ -280,7 +304,7 @@ export async function runAgentLoop(
   ];
 
   const steps: LoopStep[] = [];
-  let approvalsQueued = 0;
+  const approvalsQueued = 0;
   const ctx: ToolCtx = {
     supabase,
     userId,
@@ -292,7 +316,7 @@ export async function runAgentLoop(
   };
   const model = input.model ?? "google/gemini-2.5-flash";
 
-  let halted: { kind: string; reason: string } | null = null;
+  const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {
     if (runId) {
       try {
@@ -361,6 +385,7 @@ export async function runAgentLoop(
     approvalsQueued,
     startStep: 0,
     goal: input.goal,
+    recalledMemories: memories,
     finalize,
   });
 }
@@ -382,6 +407,8 @@ type LoopState = {
   approvalsQueued: number;
   startStep: number;
   goal: string;
+  /** Memories recalled at prompt-build time — persisted into checkpoint state for UI surfacing. */
+  recalledMemories: string[];
   finalize: (m: string) => Promise<LoopResult>;
 };
 
@@ -424,6 +451,7 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
               conv,
               steps,
               approvalsQueued,
+              recalledMemories: s.recalledMemories,
             } as unknown as Record<string, unknown>,
           },
           { onConflict: "run_id,step_index" },
@@ -476,6 +504,31 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
           halted,
         };
       }
+      // KI-07: a non-governance provider failure previously left the run
+      // stuck in "running" and its mission spinning forever. Mark both
+      // terminal before re-throwing so the UI and sweeper see the failure.
+      const errMsg = e instanceof Error ? e.message : String(e);
+      if (runId) {
+        try {
+          await supabase
+            .from("agent_runs")
+            .update({ status: "failed", output: errMsg })
+            .eq("id", runId);
+        } catch (err) {
+          console.error("agent_runs fail-mark failed:", err);
+        }
+      }
+      if (ctx.missionId) {
+        try {
+          await supabase
+            .from("missions")
+            .update({ status: "halted", updated_at: new Date().toISOString() })
+            .eq("id", ctx.missionId);
+        } catch (err) {
+          console.error("mission halt-mark failed:", err);
+        }
+      }
+      steps.push({ kind: "final", message: `Run failed: ${errMsg}` });
       throw e;
     }
     const parsed = safeParseAction(r.output);
@@ -697,17 +750,22 @@ export async function resumeAgentLoop(
   let conv: { role: string; content: string }[];
   let steps: LoopStep[];
   let approvalsQueued = 0;
+  let recalledMemories: string[] = [];
   if (cp?.state && (cp.state as { conv?: unknown }).conv) {
     const st = cp.state as {
       conv: { role: string; content: string }[];
       steps: LoopStep[];
       approvalsQueued?: number;
+      recalledMemories?: string[];
     };
     conv = st.conv;
     steps = st.steps;
     approvalsQueued = st.approvalsQueued ?? 0;
+    recalledMemories = Array.isArray(st.recalledMemories) ? st.recalledMemories : [];
   } else {
     const memories = await recallMemory(supabase, run.user_id, agent.slug, run.input);
+    recalledMemories = memories;
+    const voiceBlock = await loadVoiceAnchorBlock(supabase, run.user_id);
     // Workspace brief + inbound handoff (Bundle 2 + Bundle 4).
     let briefBlock = "";
     if (run.workspace_id) {
@@ -737,6 +795,7 @@ export async function resumeAgentLoop(
     }
     const system = [
       agent.system_prompt,
+      voiceBlock,
       briefBlock,
       handoffBlock,
       memories.length
@@ -767,7 +826,7 @@ export async function resumeAgentLoop(
     missionId: run.mission_id ?? null,
     workspaceId: run.workspace_id ?? null,
   };
-  let halted: { kind: string; reason: string } | null = null;
+  const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {
     try {
       await supabase
@@ -829,6 +888,7 @@ export async function resumeAgentLoop(
     approvalsQueued,
     startStep,
     goal: run.input,
+    recalledMemories,
     finalize,
   });
 }

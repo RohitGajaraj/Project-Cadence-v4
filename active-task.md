@@ -1,34 +1,26 @@
 # Active tasks
 
-> **2026-06-11 — v5 Chief-of-Staff rebuild ACTIVE.** Thesis, gap analysis, phases A–E: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](docs/strategy/v5-chief-of-staff-2026-06-11.md). Now building: **`F-V5-RITUAL`** (Phase A). Felt product = Today (Calls queue) · Product · Knowledge · Chat + Trust drawer; cockpit = expansion (v4 map).
+> **2026-06-11 — v5 Chief-of-Staff rebuild.** Spec: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](docs/strategy/v5-chief-of-staff-2026-06-11.md). Phases A (`F-V5-RITUAL`) + B (`F-V5-MOTHBALL`) ✅ shipped + walkthrough-verified (incl. AI brief via the Gemini local fallback). Phase D (`F-V5-LOOP-CLOSE`) **code landed, one gate open — see below**.
 
 ---
 
-## `F-V5-RITUAL` — Phase A: Today becomes the Calls queue (days 1–3)
+## `F-V5-LOOP-CLOSE` — Phase D status
 
-**Spec:** v5 doc, Phase A row. **Key files:** `src/routes/_authenticated.index.tsx`, `src/components/cadence/AppShell.tsx`, `src/lib/copilot.functions.ts` (`generateDailyBrief`), `src/lib/governance.functions.ts`, `src/lib/missions.functions.ts`, `src/components/governance/CriticBadge.tsx`.
+- [x] Migration written: `supabase/migrations/20260611161500_f_v5_loop_close_learnings.sql` (learnings table + prds.shipped_at/outcome + profiles.voice_anchor_text + hourly outcome-tick cron) — audited purely additive
+- [x] Server: `checkPrdShipped` (GitHub issue-state read, idempotent ship stamp) · `recordOutcome` (verdict → confidence ±2 → learning row with prior/new ICE) · `listLearnings` · `api/public/hooks/outcome-tick.ts`
+- [x] UI: `OutcomeCard` on PRD detail (3 states) · re-score delta chip beside ICE in OpportunitiesPanel
+- [x] Loop: KI-07 fixed (failed model call ⇒ run `failed`, mission `halted`) · recalled memories persisted to checkpoints + "Memory context · N" pill on mission hops · voice anchor end-to-end (settings → profiles → agent prompts)
+- [x] Verify: lint + `bun run build:dev` green on all touched files
+- [ ] **GATE (founder): authorize the migration apply to the live DB** (KI-08) — until then outcome/learnings/voice-anchor features are inert; everything else deployed is unaffected
+- [ ] After apply: regenerate Supabase types (removes the untyped casts), then walk the loop end-to-end: approve a PRD with an issue → close the issue → "Check ship status" → record outcome → see the re-score chip in Opportunities
+- [ ] Doc closure remainder: `architecture/orchestration.md` (halted-mission semantics) + `docs/features/` operator page for the outcome loop
 
-- [x] "Needs you" Calls section at top of Today (approvals + Critic-flagged opps/PRDs as call cards, inline Approve/Reject/Open via `getNeedsYou` in new `src/lib/today.functions.ts`)
-- [x] Brief leads with "your calls today" + overnight agent activity (`ensureTodayBrief` rewritten)
-- [x] **Start mission** button on Today → `startOrchestratedMission` direct (no chat-classifier dependency)
-- [x] Cost chip in Today header (today's `ai_events` spend)
-- [x] Approvals pinned to the workspace rail (Today · Approvals · Chat)
-- [x] **F-V5-MOTHBALL landed same batch:** nav groups → Product · Missions · Knowledge; Trust icon row in sidebar footer (Approvals · Budgets · Engine Room · Connectors); `/build` → `/`, `/learn` → `/knowledge`, `/agents` → `/missions?tab=agents` redirects; "Chief of Staff" UI vocabulary. Build green (`bun run build:dev` exit 0); all touched files lint clean.
-- [x] **Verified on `demo@redcadence.app`** (v5 bar 1, Playwright walkthrough 2026-06-11): 3 real call cards on login; inline Approve executed (queue 3→2, consistent on Govern page); Start-mission popover created + dispatched a real mission; nav = Today·Approvals·Chat + Product·Missions·Knowledge + Trust row; Engine Room 9 tabs intact; /build /learn /agents redirects pass. **Caveat:** brief-leads-with-calls could not execute locally — KI-06 (no AI-gateway key in local `.env`) blocks all model calls; verify after key added. New: KI-07 (mission stuck `running` on model failure). Screenshot: `v5-today-calls-queue.png` (repo root, untracked).
-- [ ] Doc closure remainder: `architecture/frontend.md` (new nav + Today contract)
-- [ ] Known risks to re-check in walkthrough: `startOrchestratedMission` awaits the full loop (30s+, possible Worker timeout → double-dispatch on retry); needs-you query has no polling; pre-existing repo-wide prettier drift (3,385 errors in untouched files — consider one-shot `eslint --fix` cleanup commit)
+## Open ops task — Slack app credentials (gates `F-V5-SLACK`, Phase C)
 
-**Done when:** verification bar 1 in the v5 doc passes end-to-end on a demo account.
+**Owner:** founder. Day-6 fallback: `feedback@` email-forward + webhook ingest instead.
 
----
-
-## Open ops task — Slack app credentials (gates `F-V5-SLACK`, Phase C — needed by ~day 4)
-
-**Owner:** founder/workspace admin.
-
-- [ ] Create a Slack app (OAuth, scopes: `channels:history`, `channels:read`, `chat:write` optional)
-- [ ] Add client ID + secret as wrangler secrets (names TBD in Phase C migration)
-- [ ] Fallback decision (day 6): if creds stall, ship `feedback@` email-forward + webhook ingest instead
+- [ ] Create a Slack app (scopes: `channels:history`, `channels:read`)
+- [ ] Provide client ID + secret as wrangler secrets
 
 ## Open ops task — Calendar OAuth credentials (KI-01, unchanged)
 
@@ -36,4 +28,4 @@
 
 - [ ] Google OAuth Client ID → secret `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID`
 - [ ] Microsoft App Registration → secret `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] Smoke test both Connect buttons on `/knowledge?tab=calendar`; then flip `F-CALENDAR-PERUSER` ✅ in the backlog
+- [ ] Smoke test both Connect buttons on `/knowledge?tab=calendar`; then flip `F-CALENDAR-PERUSER` ✅

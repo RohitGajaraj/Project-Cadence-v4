@@ -33,6 +33,7 @@ const UpdateSchema = z.object({
   working_hours_start: z.number().int().min(0).max(23).optional(),
   working_hours_end: z.number().int().min(1).max(24).optional(),
   default_model: z.string().min(1).max(80).optional(),
+  voice_anchor_text: z.string().max(2000).optional(),
   onboarded: z.boolean().optional(),
 });
 
@@ -50,10 +51,12 @@ export const updateProfile = createServerFn({ method: "POST" })
       working_hours_start?: number;
       working_hours_end?: number;
       default_model?: string;
+      voice_anchor_text?: string | null;
       onboarded?: boolean;
       updated_at: string;
     } = { ...data, updated_at: new Date().toISOString() };
     if (data.avatar_url === "") patch.avatar_url = null;
+    if (data.voice_anchor_text === "") patch.voice_anchor_text = null;
     const { data: row, error } = await supabase
       .from("profiles")
       .update(patch)

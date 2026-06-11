@@ -36,6 +36,7 @@ export type MissionDetail = {
     step_index: number;
     steps: HopStep[];
     tool_calls: HopToolCall[];
+    recalled_memories: string[];
   }[];
   messages: {
     id: string;
@@ -186,7 +187,11 @@ export const getMission = createServerFn({ method: "POST" })
       mission: mission as MissionDetail["mission"],
       hops: (runs ?? []).map((r) => {
         const cp = latestByRun.get(r.id);
-        const state = (cp?.state ?? {}) as { traceId?: string; steps?: HopStep[] };
+        const state = (cp?.state ?? {}) as {
+          traceId?: string;
+          steps?: HopStep[];
+          recalledMemories?: string[];
+        };
         const traceId = state.traceId ?? null;
         return {
           run_id: r.id,
@@ -201,6 +206,7 @@ export const getMission = createServerFn({ method: "POST" })
           step_index: cp?.step_index ?? 0,
           steps: Array.isArray(state.steps) ? state.steps : [],
           tool_calls: traceId ? (tcByTrace.get(traceId) ?? []) : [],
+          recalled_memories: Array.isArray(state.recalledMemories) ? state.recalledMemories : [],
         };
       }),
       messages: (messages ?? []) as MissionDetail["messages"],

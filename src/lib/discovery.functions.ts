@@ -33,11 +33,7 @@ async function runCritic(
   target: { kind: "opportunity" | "prd"; id: string },
 ): Promise<CriticReview | null> {
   const table = target.kind === "opportunity" ? "opportunities" : "prds";
-  const { data: row } = await supabase
-    .from(table)
-    .select("*")
-    .eq("id", target.id)
-    .single();
+  const { data: row } = await supabase.from(table).select("*").eq("id", target.id).single();
   if (!row) return null;
 
   const subject =

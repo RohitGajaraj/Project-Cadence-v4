@@ -555,6 +555,36 @@ function MissionDetail() {
 
                     {/* Progress panel — always visible so steps + tool spans are inline, live or completed */}
                     <div className="mt-3 rounded-md border border-border/60 bg-muted/20 p-3">
+                      {h.recalled_memories.length > 0 && (
+                        <div className="mb-3">
+                          <button
+                            onClick={() => toggle(`mem-${h.run_id}`)}
+                            className="inline-flex items-center gap-1.5 rounded-full border hairline px-2 py-0.5 hover:bg-secondary/60"
+                          >
+                            {expanded.has(`mem-${h.run_id}`) ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                            <Brain className="h-3 w-3 text-violet-300" />
+                            <span className="mono-label">
+                              Memory context · {h.recalled_memories.length}
+                            </span>
+                          </button>
+                          {expanded.has(`mem-${h.run_id}`) && (
+                            <ul className="mt-2 space-y-1">
+                              {h.recalled_memories.map((mem, mi) => (
+                                <li
+                                  key={mi}
+                                  className="text-[11px] text-muted-foreground break-words"
+                                >
+                                  – {mem}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                       <HopProgressPanel
                         steps={h.steps}
                         toolCalls={h.tool_calls}

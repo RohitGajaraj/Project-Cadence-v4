@@ -147,6 +147,7 @@ function SettingsPage() {
   const [defaultModel, setDefaultModel] = useState("google/gemini-3-flash-preview");
   const [whStart, setWhStart] = useState(9);
   const [whEnd, setWhEnd] = useState(18);
+  const [voiceAnchor, setVoiceAnchor] = useState("");
 
   useEffect(() => {
     const p = profile.data?.profile as {
@@ -157,6 +158,7 @@ function SettingsPage() {
       default_model?: string;
       working_hours_start?: number;
       working_hours_end?: number;
+      voice_anchor_text?: string | null;
     } | null;
     if (!p) return;
     setFullName(p.full_name ?? "");
@@ -166,6 +168,7 @@ function SettingsPage() {
     setDefaultModel(p.default_model ?? "google/gemini-3-flash-preview");
     setWhStart(p.working_hours_start ?? 9);
     setWhEnd(p.working_hours_end ?? 18);
+    setVoiceAnchor(p.voice_anchor_text ?? "");
   }, [profile.data]);
 
   const save = useMutation({
@@ -179,6 +182,7 @@ function SettingsPage() {
           default_model: defaultModel,
           working_hours_start: whStart,
           working_hours_end: whEnd,
+          voice_anchor_text: voiceAnchor,
           onboarded: true,
         },
       }),
@@ -308,6 +312,29 @@ function SettingsPage() {
                 ))}
               </optgroup>
             </select>
+          </section>
+
+          <section className="bento p-6 space-y-4">
+            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-muted-foreground">
+              Voice anchor
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Operator-set tone and stance, injected into every agent mission's system prompt. Leave
+              empty to skip.
+            </p>
+            <Field
+              label="Voice anchor"
+              hint="How your agents should sound and what stance they should take."
+            >
+              <textarea
+                value={voiceAnchor}
+                onChange={(e) => setVoiceAnchor(e.target.value)}
+                rows={4}
+                maxLength={2000}
+                placeholder="Direct, evidence-first, no hype. Challenge weak assumptions. Prefer short declarative sentences."
+                className="input resize-y"
+              />
+            </Field>
           </section>
 
           <div className="flex justify-end">
