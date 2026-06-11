@@ -7,14 +7,26 @@ export const listMeetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await context.supabase
-      .from("meetings")
-      .select(
-        "id,title,start_at,end_at,stakeholder,summary,processed_at,action_items,decisions_made",
-      )
-      .gte("start_at", since)
-      .order("start_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    const run = () =>
+      context.supabase
+        .from("meetings")
+        .select(
+          "id,title,start_at,end_at,stakeholder,summary,processed_at,action_items,decisions_made",
+        )
+        .gte("start_at", since)
+        .order("start_at", { ascending: false });
+
+    let { data, error } = await run();
+    if (error) {
+      // Retry once on transient upstream errors (e.g. Cloudflare 502 from the DB gateway).
+      await new Promise((r) => setTimeout(r, 250));
+      ({ data, error } = await run());
+    }
+    if (error) {
+      console.error("[listMeetings] supabase error", error);
+      // Don't surface raw HTML/gateway bodies to the client.
+      throw new Error("Couldn't load meetings. Try again in a moment.");
+    }
     return { meetings: data ?? [] };
   });
 
