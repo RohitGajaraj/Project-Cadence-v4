@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+  Hammer,
   Plus,
   Trash2,
   MoreHorizontal,
@@ -80,7 +81,12 @@ const groups: NavGroup[] = [
   {
     id: "product",
     label: "Product",
-    items: [{ to: "/product", label: "Product", icon: Telescope }],
+    items: [
+      { to: "/product", label: "Product", icon: Telescope },
+      // F-STUDIO: the development engine is a first-class destination, not a
+      // palette-only surface (founder ruling 2026-06-12).
+      { to: "/studio", label: "Studio", icon: Hammer },
+    ],
   },
   {
     id: "missions",
