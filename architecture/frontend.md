@@ -6,7 +6,7 @@
 
 TanStack Start v1 (React 19 + Vite 7) on Cloudflare Workers (`nodejs_compat`), TailwindCSS v4, shadcn/ui (Radix), Framer Motion, Tiptap, Lucide. Canonical runtime: Bun.
 
-`vite.config.ts` is load-bearing for published builds: it keeps the custom SSR error-wrapper entry and explicitly injects the public backend URL/key from the build environment into `import.meta.env`. Without that public injection, protected pages can hydrate into the root error boundary before the auth redirect runs.
+`vite.config.ts` is load-bearing for published builds: it keeps the custom SSR error-wrapper entry and explicitly injects the public backend URL/key into `import.meta.env`. The config uses Vite `loadEnv(...)` at module evaluation plus checked-in public fallbacks because Lovable publish builds may not expose these values on `process.env` early enough for config-time `define` replacement. Without that public injection, protected pages hydrate into the root error boundary before the auth redirect runs.
 
 ## Server boundary
 
