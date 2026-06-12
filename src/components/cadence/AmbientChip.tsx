@@ -115,7 +115,7 @@ function fmtTime(d: Date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function AmbientChip() {
+export function AmbientChip({ inline = false }: { inline?: boolean } = {}) {
   const [now, setNow] = useState(() => new Date());
   const [place, setPlace] = useState<Place | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -148,13 +148,17 @@ export function AmbientChip() {
           applyPayload({ place: parsed.place, weather: parsed.weather });
           return;
         }
-      } catch {}
+      } catch {
+        /* stale cache — refetch below */
+      }
     }
     try {
       localStorage.removeItem("cadence.ambient.v1");
       localStorage.removeItem("cadence.ambient.v2");
       localStorage.removeItem("cadence.ambient.v3");
-    } catch {}
+    } catch {
+      /* noop */
+    }
 
     const fallback = () =>
       loadFromNetworkLocation()
@@ -186,7 +190,11 @@ export function AmbientChip() {
           clearTimeout(timer);
           loadFromBrowserPosition(coords).then(applyPayload).catch(fallback);
         }),
-      () => settle(() => { clearTimeout(timer); fallback(); }),
+      () =>
+        settle(() => {
+          clearTimeout(timer);
+          fallback();
+        }),
       { maximumAge: 15 * 60_000, timeout: 4500 },
     );
   }, []);
@@ -198,7 +206,11 @@ export function AmbientChip() {
 
   return (
     <div
-      className="sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
+      className={
+        inline
+          ? "flex items-center gap-2 text-[11px] text-muted-foreground whitespace-nowrap"
+          : "sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
+      }
       role="status"
       aria-label={`Local time ${fmtTime(now)}${place ? `, ${place.city}` : ""}${weather ? `, ${weather.tempC} degrees, ${w?.label}` : ""}`}
     >

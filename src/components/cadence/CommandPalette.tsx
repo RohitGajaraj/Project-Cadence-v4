@@ -29,8 +29,14 @@ export function CommandPalette() {
       }
       if (e.key === "Escape") setOpen(false);
     };
+    // Sidebar "Jump to…" button opens the palette without simulating keys.
+    const onOpenEvent = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("cadence:open-cmdk", onOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("cadence:open-cmdk", onOpenEvent);
+    };
   }, []);
 
   const go = (to: string, search?: Record<string, string>) => {

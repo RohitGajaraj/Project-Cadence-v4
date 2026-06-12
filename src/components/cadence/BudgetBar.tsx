@@ -32,26 +32,32 @@ export function BudgetBar() {
   const used = Number(data.daily_usd_cap ? data.daily_usd_used : data.monthly_usd_used);
   const pct = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
   const alertAt = Number(data.alert_at_pct ?? 80);
-  const color = pct >= 100 ? "bg-destructive" : pct >= alertAt ? "bg-amber-500" : "bg-emerald-500";
   const label = data.daily_usd_cap ? "today" : "month";
 
+  // Reference BudgetChip (shell.jsx): mono "$burn / $cap" + slim 52px bar,
+  // toned by burn fraction — ink → ember → madder as the cap approaches.
+  const tone =
+    pct >= 100 || pct >= alertAt ? "var(--rose)" : pct > 50 ? "var(--coral)" : "var(--ink-subtle)";
   return (
     <Link
       to="/budgets"
-      className="block rounded-xl border hairline p-3 hover:bg-secondary/40 transition"
+      title={`AI spend / ${label} — open budgets`}
+      className="mono-label flex items-center gap-[7px]"
+      style={{ color: tone }}
     >
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <DollarSign className="h-3 w-3" /> AI spend / {label}
-        </span>
-        <span>{pct.toFixed(0)}%</span>
-      </div>
-      <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
-      </div>
-      <div className="mt-1.5 text-[11px] text-muted-foreground">
-        ${used.toFixed(4)} / ${cap.toFixed(2)}
-      </div>
+      <DollarSign className="h-3 w-3" strokeWidth={1.75} />
+      <span className="tabular-nums">
+        ${used < 0.01 && used > 0 ? "<0.01" : used.toFixed(2)} / ${cap.toFixed(0)}
+      </span>
+      <span
+        className="inline-block overflow-hidden rounded-full"
+        style={{ width: 52, height: 3, background: "var(--surface-2)" }}
+      >
+        <span
+          className="block h-full rounded-full"
+          style={{ width: `${pct}%`, background: tone, transition: "width var(--dur-slow)" }}
+        />
+      </span>
     </Link>
   );
 }

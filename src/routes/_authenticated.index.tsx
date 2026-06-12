@@ -22,9 +22,12 @@ import {
   Gauge,
   Focus,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
+import { TopBar } from "@/components/cadence/TopBar";
 import { CadenceMark, MonoLabel, StepDot } from "@/components/cadence/Primitives";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
 import { listProjects } from "@/lib/projects.functions";
@@ -146,12 +149,7 @@ function Dashboard() {
   });
 
   const d = dash.data;
-  const [today, setToday] = useState("");
-  useEffect(() => {
-    setToday(
-      new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
-    );
-  }, []);
+  const { activeWorkspace } = useWorkspace();
   const profileName =
     d?.profile?.display_name?.split(" ")[0] ??
     (d?.profile as { email?: string } | undefined)?.email?.split("@")[0] ??
@@ -175,49 +173,65 @@ function Dashboard() {
   const briefRow = d?.brief as { summary?: string | null; created_at?: string } | null | undefined;
 
   const agentRows = agents.data?.agents ?? [];
+  // Latest run per agent — the rail note shows what each agent last did,
+  // like the reference's per-agent status notes (live, not invented).
+  const latestRunByAgent = new Map<string, { input: string; status: string }>();
+  for (const r of runRows) {
+    if (r.agent_name && !latestRunByAgent.has(r.agent_name)) {
+      latestRunByAgent.set(r.agent_name, { input: r.input ?? "", status: r.status });
+    }
+  }
   const taskRows = tasks.data?.tasks ?? [];
   const deepQueued = taskRows.filter((t) => t.is_deep_work && t.status !== "done").length;
   const deepBlocksWeek = (d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0);
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      {/* TopBar — the shell's breadcrumb bar; ported with the shell screen. */}
-      <header className="sticky top-0 z-30 glass border-b hairline">
-        <div className="flex items-center gap-4 px-6 lg:px-10 h-14">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--deep-green)] pulse-dot" />
-            <span>{today}</span>
-            {activeAgents > 0 && (
-              <span className="ml-3 inline-flex items-center gap-1.5 mono-label">
-                <Activity className="h-3 w-3" /> {activeAgents} agent{activeAgents > 1 ? "s" : ""}{" "}
-                running
-              </span>
-            )}
-          </div>
-          <div className="flex-1" />
-          <span className="mono-label inline-flex items-center gap-1.5 mr-1">
-            <Coins className="h-3 w-3" /> {spendLabel} today
-          </span>
+      <TopBar
+        crumbs={[activeWorkspace?.name ?? "Workspace", "Today"]}
+        actions={
           <StartMissionButton
             pending={startMission.isPending}
             onDispatch={(goal, onSuccess) => startMission.mutate({ goal }, { onSuccess })}
           />
-          <button
-            onClick={() => regenBrief.mutate()}
-            disabled={regenBrief.isPending}
-            className="btn btn-primary disabled:opacity-60"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            {regenBrief.isPending ? "Thinking…" : "Refresh brief"}
-          </button>
-        </div>
-      </header>
+        }
+      />
 
       <div style={{ padding: "30px 44px 56px", maxWidth: 1120, margin: "0 auto" }}>
-        {/* HERO — plum-umber band, ghost butterfly, calls-cleared ring */}
-        <section className="hero-editorial rise" style={{ padding: "26px 30px", marginBottom: 24 }}>
+        {/* HERO — plum-umber band, ghost butterfly, calls-cleared ring.
+            Taller than the reference's 26px band per founder input (2026-06-12):
+            more vertical prominence, plus a small calm kaleidoscope of
+            butterflies drifting top-left to balance the big ghost mark. */}
+        <section
+          className="hero-editorial rise"
+          style={{ padding: "44px 30px 40px", marginBottom: 24 }}
+        >
           <div className="hero-ghost-mark" aria-hidden="true">
             <CadenceMark size={230} tile={false} />
+          </div>
+          <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            {(
+              [
+                { size: 22, left: 26, top: 16, opacity: 0.18, delay: "0s" },
+                { size: 14, left: 74, top: 38, opacity: 0.12, delay: "1.4s" },
+                { size: 17, left: 142, top: 10, opacity: 0.1, delay: "2.6s" },
+              ] as const
+            ).map((b, i) => (
+              <span
+                key={i}
+                className="float-soft"
+                style={{
+                  position: "absolute",
+                  left: b.left,
+                  top: b.top,
+                  opacity: b.opacity,
+                  color: "var(--hero-ink)",
+                  animationDelay: b.delay,
+                }}
+              >
+                <CadenceMark size={b.size} tile={false} />
+              </span>
+            ))}
           </div>
           <div
             style={{
@@ -649,6 +663,7 @@ function Dashboard() {
               <AgentChip
                 key={a.id}
                 agent={a}
+                note={latestRunByAgent.get(a.name)?.input || null}
                 running={runRows.some((r) => r.status === "running" && r.agent_name === a.name)}
                 onRun={(input) => dispatchAgent.mutate({ agentId: a.id, input })}
                 pending={dispatchAgent.isPending && dispatchAgent.variables?.agentId === a.id}
@@ -748,6 +763,84 @@ function Dashboard() {
                   </p>
                 )}
               </div>
+            </section>
+
+            {/* State of the product — reference band-stone panel, wired to
+                real workspace numbers (founder ruling: keep the panel; never
+                fake metrics — these are live counts). */}
+            <section
+              className="band-stone"
+              style={{ gridColumn: "span 7", padding: "var(--bento-pad)" }}
+            >
+              <MonoLabel icon={Zap} style={{ marginBottom: 12 }}>
+                State of the product
+              </MonoLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                {(
+                  [
+                    [
+                      "Tasks shipped",
+                      `${taskRows.filter((t) => t.status === "done").length}`,
+                      "done in workspace",
+                      "var(--emerald)",
+                    ],
+                    [
+                      "In flight",
+                      `${taskRows.filter((t) => t.status !== "done").length}`,
+                      "open now",
+                      "var(--ink)",
+                    ],
+                    ["Agent runs", `${runRows.length}`, "recent window", "var(--ink)"],
+                    ["AI spend", spendLabel, "today", "var(--ink-subtle)"],
+                  ] as [string, string, string, string][]
+                ).map(([l, v, s, c]) => (
+                  <div key={l}>
+                    <div className="mono-label" style={{ fontSize: 8.5 }}>
+                      {l}
+                    </div>
+                    <div
+                      className="font-display tabular-nums"
+                      style={{ fontSize: 22, marginTop: 2, color: c }}
+                    >
+                      {v}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: "var(--ink-faint)" }}>{s}</div>
+                  </div>
+                ))}
+              </div>
+              {(d?.stakeholders ?? []).length > 0 && (
+                <div
+                  style={{
+                    borderTop: "1px solid var(--hairline)",
+                    marginTop: 12,
+                    paddingTop: 10,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
+                  {(d?.stakeholders ?? []).slice(0, 3).map((p) => (
+                    <div
+                      key={p.name}
+                      style={{ fontSize: 12, display: "flex", gap: 8, alignItems: "baseline" }}
+                    >
+                      <span
+                        className="mono-label"
+                        style={{ fontSize: 8.5, color: "var(--ink)", flexShrink: 0 }}
+                      >
+                        {p.name}
+                      </span>
+                      <span style={{ color: "var(--ink-subtle)" }}>
+                        {p.count} meeting{p.count === 1 ? "" : "s"} · last{" "}
+                        {new Date(p.last).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <TasksPanel
@@ -905,7 +998,15 @@ function Dashboard() {
                     "recent window",
                   ],
                   ["Median run time", medianRunSeconds(runRows), "dispatch to done"],
-                  ["Open calls", `${callCount}`, "waiting on you"],
+                  [
+                    "Gate response",
+                    ny?.gateMedianMinutes != null
+                      ? ny.gateMedianMinutes >= 60
+                        ? `${Math.round(ny.gateMedianMinutes / 60)}h`
+                        : `${ny.gateMedianMinutes}m`
+                      : "—",
+                    "your median, 7d",
+                  ],
                 ] as [string, string, string][]
               ).map(([l, v, s]) => (
                 <div key={l} style={{ marginBottom: 14 }}>
@@ -1047,11 +1148,13 @@ function StartMissionButton({
    status dot + note); production behavior (tap to open the dispatch form). */
 function AgentChip({
   agent,
+  note,
   running,
   onRun,
   pending,
 }: {
   agent: { id: string; name: string; role: string };
+  note: string | null;
   running: boolean;
   onRun: (input: string) => void;
   pending: boolean;
@@ -1091,8 +1194,17 @@ function AgentChip({
             color: "var(--ink-subtle)",
           }}
         >
-          <StepDot status={running ? "running" : "planned"} />
-          {running ? "running now" : "idle · ready"}
+          <StepDot status={running ? "running" : note ? "completed" : "planned"} />
+          <span
+            style={{
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: 120,
+            }}
+          >
+            {running ? "running now" : note || "idle · ready"}
+          </span>
         </div>
       </button>
       {open && (

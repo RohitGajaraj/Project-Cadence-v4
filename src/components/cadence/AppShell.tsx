@@ -1,8 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
-  ListTodo,
-  Bot,
   Brain,
   Compass,
   Settings,
@@ -12,13 +10,13 @@ import {
   Activity,
   LogOut,
   ShieldAlert,
-  GitBranch,
   ChevronDown,
   Plug,
   PauseCircle,
   Gauge,
   Sun,
   Moon,
+  Search,
   Hammer,
   Plus,
   Trash2,
@@ -32,12 +30,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
-import { CookingBanner } from "./CookingBanner";
+import { CookingBanner, ConstructionPill } from "./CookingBanner";
+import { CadenceMark } from "./Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { useTheme, type Theme } from "@/hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspacePauseState } from "@/lib/governance.functions";
+import { getNeedsYou } from "@/lib/today.functions";
+import { listAgentRuns } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
@@ -114,9 +115,7 @@ const trustLinks: {
   { to: "/sync", label: "Connectors", icon: Plug },
 ];
 
-const STORAGE_KEY = "cadence.nav.open";
-
-function NavRow({ item, active }: { item: NavItem; active: boolean }) {
+function NavRow({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
   return (
     <Link
@@ -135,7 +134,23 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         />
       )}
       <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-      <span className="truncate">{item.label}</span>
+      <span className="flex-1 truncate">{item.label}</span>
+      {badge ? (
+        <span
+          className="inline-flex items-center justify-center rounded-full px-1"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            fontWeight: 600,
+            background: "var(--coral)",
+            color: "oklch(0.99 0.005 60)",
+            minWidth: 17,
+            height: 17,
+          }}
+        >
+          {badge}
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -181,53 +196,11 @@ function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string 
   );
 }
 
-function useOpenGroups(path: string) {
-  // Single-open accordion: only one group expanded at a time. The active
-  // route's group auto-opens; user clicks toggle which group is open.
-  // SSR-safe: start from a stable default, rehydrate from localStorage in
-  // an effect so server + client markup match on first render.
-  const [openId, setOpenId] = useState<string | null>("deliver");
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (typeof parsed === "string" || parsed === null) {
-          setOpenId(parsed);
-        }
-      }
-    } catch {
-      /* noop */
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    const active = groups.find((g) => g.items.some((i) => i.to === path));
-    if (active) setOpenId(active.id);
-  }, [path]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openId));
-    } catch {
-      /* noop */
-    }
-  }, [openId, hydrated]);
-
-  const toggle = (id: string) => setOpenId((curr) => (curr === id ? null : id));
-  return [openId, toggle] as const;
-}
-
 export function AppShell({ children }: { children: React.ReactNode; projects?: unknown }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const searchTab = useRouterState({
     select: (s) => (s.location.search as { tab?: string })?.tab ?? null,
   });
-  const [openGroupId, toggleGroup] = useOpenGroups(path);
 
   const {
     workspaces,
@@ -267,18 +240,48 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const leaveWsFn = useServerFn(leaveWorkspace);
   const updateProjectFn = useServerFn(updateProject);
 
-  // Real agent count for the Mission mode card
-  const { data: agentCount = 0 } = useQuery({
-    queryKey: ["agents", "count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("agents")
-        .select("id", { count: "exact", head: true })
-        .eq("enabled", true);
-      if (error) return 0;
-      return count ?? 0;
-    },
+  // Pending-calls badge (Approvals) — shares the "needs-you" cache key with
+  // the Today page, so no extra fetch when both are mounted.
+  const fetchNeedsYou = useServerFn(getNeedsYou);
+  const { data: needsYou } = useQuery({
+    queryKey: ["needs-you"],
+    queryFn: () => fetchNeedsYou(),
+    refetchInterval: 60_000,
   });
+  const callCount =
+    (needsYou?.approvals.length ?? 0) +
+    (needsYou?.prdCalls.length ?? 0) +
+    (needsYou?.oppCalls.length ?? 0);
+
+  // Running-agents line above the Trust row (shares the "runs" cache key).
+  const fetchRuns = useServerFn(listAgentRuns);
+  const { data: runsData } = useQuery({
+    queryKey: ["runs"],
+    queryFn: () => fetchRuns(),
+    refetchInterval: 60_000,
+  });
+  const runningCount = (runsData?.runs ?? []).filter((r) => r.status === "running").length;
+
+  // Profile row identity from the auth session.
+  const [userName, setUserName] = useState("Account");
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      const name =
+        (u?.user_metadata as { display_name?: string } | undefined)?.display_name ??
+        u?.email?.split("@")[0] ??
+        "Account";
+      setUserName(name);
+    });
+  }, []);
+  const userInitials = userName
+    .split(/[\s._-]+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const activeProduct = products.find((p) => p.id === activeProductId) ?? null;
 
   async function createWorkspace() {
     const name = await prompt({
@@ -458,147 +461,146 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
 
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
-      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-sidebar">
-        {/* Fixed top: workspace selector */}
-        <div className="px-3 pt-5 pb-3 shrink-0">
-          <div className="px-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between gap-2 rounded-md border hairline px-2.5 py-2 hover:bg-secondary/60 transition group text-left"
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 bg-primary text-primary-foreground flex items-center justify-center">
-                      <span className="font-display text-sm leading-none">
-                        {(activeWorkspace?.name?.[0] ?? "C").toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="leading-tight overflow-hidden">
-                      <div className="font-sans text-[13px] font-medium tracking-tight truncate">
-                        {activeWorkspace?.name || "Select Workspace"}
-                      </div>
-                      <div className="mono-label truncate" style={{ fontSize: "9px" }}>
-                        Workspace
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronDown className="h-3.5 w-3.5 text-ink-faint group-hover:text-foreground shrink-0 transition" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52" align="start">
-                <DropdownMenuLabel className="mono-label">Switch workspace</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {workspaces.map((w) => (
-                  <DropdownMenuItem
-                    key={w.id}
-                    onClick={() => setActiveWorkspaceId(w.id)}
-                    className="flex items-center justify-between cursor-pointer"
+      <aside className="hidden lg:flex h-screen sticky top-0 w-[232px] shrink-0 flex-col border-r hairline bg-sidebar">
+        {/* Workspace switcher — butterfly + Cadence wordmark, per shell.jsx */}
+        <div className="shrink-0 border-b hairline" style={{ padding: "14px 14px 10px" }}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center gap-[9px] text-left group"
+                aria-label="Workspace switcher"
+              >
+                <span className="inline-flex h-7 w-7 items-center justify-center text-foreground shrink-0">
+                  <CadenceMark size={26} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span
+                    className="block font-display"
+                    style={{
+                      fontSize: 14.5,
+                      fontWeight: 500,
+                      lineHeight: 1.2,
+                      letterSpacing: "-0.01em",
+                    }}
                   >
-                    <span className="truncate font-medium">{w.name}</span>
-                    {w.id === activeWorkspaceId && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                {workspaces.length === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-ink-faint italic">No workspaces yet</div>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>New workspace</span>
+                    Cadence
+                  </span>
+                  <span className="block text-[11px] text-ink-subtle truncate">
+                    {activeWorkspace?.name || "Select workspace"}
+                    {activeProduct ? ` · ${activeProduct.name}` : ""}
+                  </span>
+                </span>
+                <ChevronDown className="h-3 w-3 text-ink-faint group-hover:text-foreground shrink-0 transition" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-52" align="start">
+              <DropdownMenuLabel className="mono-label">Switch workspace</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {workspaces.map((w) => (
+                <DropdownMenuItem
+                  key={w.id}
+                  onClick={() => setActiveWorkspaceId(w.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span className="truncate font-medium">{w.name}</span>
+                  {w.id === activeWorkspaceId && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                  )}
                 </DropdownMenuItem>
-                {activeWorkspace && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      onClick={renameActiveWorkspace}
-                      className="cursor-pointer gap-2"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      <span>Rename</span>
+              ))}
+              {workspaces.length === 0 && (
+                <div className="px-2 py-1.5 text-xs text-ink-faint italic">No workspaces yet</div>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
+                <Plus className="h-3.5 w-3.5" />
+                <span>New workspace</span>
+              </DropdownMenuItem>
+              {activeWorkspace && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={renameActiveWorkspace}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>Rename</span>
+                  </DropdownMenuItem>
+                  <Link to="/settings">
+                    <DropdownMenuItem className="cursor-pointer gap-2">
+                      <Settings className="h-3.5 w-3.5" />
+                      <span>Workspace settings</span>
                     </DropdownMenuItem>
-                    <Link to="/settings">
-                      <DropdownMenuItem className="cursor-pointer gap-2">
-                        <Settings className="h-3.5 w-3.5" />
-                        <span>Workspace settings</span>
-                      </DropdownMenuItem>
-                    </Link>
-                    <DropdownMenuItem
-                      onClick={leaveActiveWorkspace}
-                      className="cursor-pointer gap-2"
-                    >
-                      <LeaveIcon className="h-3.5 w-3.5" />
-                      <span>Leave</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={deleteActiveWorkspace}
-                      className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span>Delete workspace</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                  </Link>
+                  <DropdownMenuItem onClick={leaveActiveWorkspace} className="cursor-pointer gap-2">
+                    <LeaveIcon className="h-3.5 w-3.5" />
+                    <span>Leave</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={deleteActiveWorkspace}
+                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete workspace</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="cursor-pointer gap-2">
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* ⌘K search — opens the command palette */}
+        <div style={{ padding: "10px 12px 4px" }}>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("cadence:open-cmdk"))}
+            className="flex w-full items-center gap-2 rounded-md border hairline bg-surface-1 px-2.5 py-1.5 text-[12.5px] text-ink-faint hover:text-ink-muted transition"
+          >
+            <Search className="h-[13px] w-[13px]" strokeWidth={1.75} />
+            <span className="flex-1 text-left">Jump to…</span>
+            <span className="mono-label" style={{ fontSize: 10 }}>
+              ⌘K
+            </span>
+          </button>
         </div>
 
         {/* Scrollable middle: nav + products */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
           <nav className="flex flex-col">
-            {/* Workspace rail — always-on daily surfaces */}
-            <div className="px-3 mb-1.5 mono-label">Workspace</div>
-            <div className="flex flex-col gap-0.5">
+            {/* Workspace rail — always-on daily surfaces. Approvals carries
+                the pending-calls badge (ember = needs-human). */}
+            <div className="flex flex-col gap-0.5 pt-1.5">
               {workspace.map((n) => (
-                <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
+                <NavRow
+                  key={`${n.to}:${n.search?.tab ?? ""}`}
+                  item={n}
+                  active={isItemActive(n)}
+                  badge={n.label === "Approvals" && callCount > 0 ? callCount : undefined}
+                />
               ))}
             </div>
 
-            {groups.map((g) => {
-              const isOpen = openGroupId === g.id;
-              const hasActive = g.items.some((i) => isItemActive(i));
-              return (
-                <div key={g.id} className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(g.id)}
-                    className="w-full flex items-center justify-between px-3 py-1 mono-label hover:text-foreground transition"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {g.label}
-                      {hasActive && !isOpen && (
-                        <span aria-hidden className="h-1 w-1 rounded-full bg-foreground" />
-                      )}
-                    </span>
-                    <ChevronDown
-                      className={`h-3 w-3 transition-transform duration-200 ease-out ${isOpen ? "rotate-0" : "-rotate-90"}`}
-                      strokeWidth={1.75}
+            {/* Loop — flat rows per shell.jsx (no accordion) */}
+            <div className="mt-4">
+              <div className="px-3 pb-1.5 mono-label">Loop</div>
+              <div className="flex flex-col gap-0.5">
+                {groups
+                  .flatMap((g) => g.items)
+                  .map((n) => (
+                    <NavRow
+                      key={`${n.to}:${n.search?.tab ?? ""}`}
+                      item={n}
+                      active={isItemActive(n)}
                     />
-                  </button>
-                  {isOpen && (
-                    <div className="mt-1 flex flex-col gap-0.5">
-                      {g.items.map((n) => (
-                        <NavRow
-                          key={`${n.to}:${n.search?.tab ?? ""}`}
-                          item={n}
-                          active={isItemActive(n)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            <div className="mt-4 pt-3 border-t hairline">
-              <NavRow
-                item={{ to: "/settings", label: "Settings", icon: Settings }}
-                active={path === "/settings"}
-              />
+                  ))}
+              </div>
             </div>
           </nav>
 
@@ -715,30 +717,50 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               </div>
             </Link>
           )}
-          <BudgetBar />
-          {/* Trust row — same pattern as Daily shortcuts; only path to the engine room */}
-          <TooltipProvider delayDuration={150}>
-            <div
-              role="navigation"
-              aria-label="Trust"
-              title="Trust"
-              className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30"
+          {/* Running status lives at the sidebar bottom, above Trust (contract). */}
+          {runningCount > 0 && (
+            <Link
+              to="/missions"
+              search={{ tab: "missions" } as never}
+              className="mono-label flex items-center gap-[7px] px-1 pb-1"
+              style={{ color: "var(--action-blue)", fontSize: 9.5 }}
             >
-              <span className="mono-label px-1.5" style={{ fontSize: "9px" }}>
-                Trust
-              </span>
+              <span className="dot dot-running" style={{ width: 5, height: 5 }} />
+              {runningCount} agent{runningCount === 1 ? "" : "s"} running →
+            </Link>
+          )}
+          <div className="mono-label px-1">Trust</div>
+          <TooltipProvider delayDuration={150}>
+            <div role="navigation" aria-label="Trust" className="flex gap-1">
               {trustLinks.map((t) => {
                 const Icon = t.icon;
+                const showBadge = t.label === "Approvals" && callCount > 0;
                 return (
                   <Tooltip key={t.label}>
                     <TooltipTrigger asChild>
                       <Link
                         to={t.to}
                         search={t.search as never}
-                        aria-label={t.label}
-                        className="flex-1 flex items-center justify-center rounded px-2 py-1.5 text-ink-muted hover:text-foreground hover:bg-secondary/60 transition"
+                        aria-label={showBadge ? `Approvals · ${callCount} pending` : t.label}
+                        className="relative flex h-[30px] flex-1 items-center justify-center rounded-md border hairline text-ink-subtle hover:text-foreground transition"
                       >
-                        <Icon className="h-3 w-3" strokeWidth={1.75} />
+                        <Icon className="h-[13px] w-[13px]" strokeWidth={1.75} />
+                        {showBadge && (
+                          <span
+                            className="dot-gate absolute -top-[5px] -right-1 inline-flex items-center justify-center rounded-full px-[3px]"
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontSize: 8.5,
+                              fontWeight: 700,
+                              background: "var(--coral)",
+                              color: "oklch(0.99 0.005 60)",
+                              minWidth: 14,
+                              height: 14,
+                            }}
+                          >
+                            {callCount}
+                          </span>
+                        )}
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="top" sideOffset={6}>
@@ -749,69 +771,49 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               })}
             </div>
           </TooltipProvider>
-          <Link
-            to="/missions"
-            search={{ tab: "agents" } as never}
-            className="block rounded-md border hairline p-3 bg-soft-stone/40 hover:bg-soft-stone/70 hover:border-foreground/20 transition group"
-          >
-            <div className="flex items-center justify-between mono-label">
-              <span>Mission mode</span>
-              <Bot
-                className="h-3 w-3 text-ink-faint group-hover:text-foreground transition"
-                strokeWidth={1.75}
-              />
-            </div>
-            <div className="font-display text-base mt-1 leading-none">Hire & dispatch agents</div>
-            <div className="text-[11px] text-ink-muted mt-1">
-              {agentCount > 0
-                ? `${agentCount} agent${agentCount === 1 ? "" : "s"} ready · open roster →`
-                : "No agents yet · set one up →"}
-            </div>
-          </Link>
-          <button
-            onClick={signOut}
-            className="w-full flex items-center justify-center gap-2 rounded-md border hairline px-3 py-2 text-xs text-ink-muted hover:text-foreground hover:bg-secondary/40 transition"
-          >
-            <LogOut className="h-3 w-3" /> Sign out
-          </button>
-          <div className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30">
-            {(
-              [
-                { id: "light", label: "Light", Icon: Sun },
-                { id: "dark", label: "Dark", Icon: Moon },
-              ] as { id: Theme; label: string; Icon: LucideIcon }[]
-            ).map(({ id, label, Icon }) => {
-              const active = theme === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTheme(id)}
-                  title={label}
-                  aria-pressed={active}
-                  className={`flex-1 flex items-center justify-center gap-1 rounded px-2 py-1.5 text-[10px] transition ${
-                    active
-                      ? "bg-foreground/10 text-foreground"
-                      : "text-ink-muted hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-3 w-3" strokeWidth={1.75} />
-                  {active && (
-                    <span className="mono-label" style={{ fontSize: "9px" }}>
-                      {label}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2 px-0.5">
+            <BudgetBar />
+            <span className="flex-1" />
+            <button
+              type="button"
+              aria-label="Toggle theme"
+              title="Toggle theme"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex p-1 text-ink-subtle hover:text-foreground transition"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[13px] w-[13px]" strokeWidth={1.75} />
+              ) : (
+                <Moon className="h-[13px] w-[13px]" strokeWidth={1.75} />
+              )}
+            </button>
+          </div>
+          <div className="flex items-center gap-[9px] pt-0.5">
+            <span
+              className="inline-flex items-center justify-center rounded-full bg-soft-stone text-foreground"
+              style={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 600 }}
+            >
+              {userInitials}
+            </span>
+            <span className="flex-1 truncate text-[12.5px] text-ink-muted">{userName}</span>
+            <Link
+              to="/settings"
+              title="Settings"
+              aria-label="Settings"
+              className={`flex transition ${path === "/settings" ? "text-foreground" : "text-ink-subtle hover:text-foreground"}`}
+            >
+              <Settings className="h-[13px] w-[13px]" strokeWidth={1.75} />
+            </Link>
+            <span className="dot dot-completed" title="All systems normal" />
           </div>
         </div>
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col min-h-screen">
-        <CookingBanner />
+        <CookingBanner runningCount={runningCount} />
         <div className="flex-1 min-w-0">{children}</div>
       </main>
+      <ConstructionPill />
       <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );

@@ -1,55 +1,89 @@
+// CookingBanner — the mission ticker: a quiet "something is running" strip on
+// every screen (ember sweep). ConstructionPill — temporary fixed top-center
+// notice while the platform is actively being built; remove at GA.
+// Both ported from design-reference/cadence/shell.jsx.
 import { useEffect, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { X } from "lucide-react";
+import { CadenceMark } from "./Primitives";
 
-const STORAGE_KEY = "cadence:cooking-banner-dismissed:v1";
+const BANNER_KEY = "cadence:cooking-banner-dismissed:v2";
+const PILL_KEY = "cadence:construction-pill-dismissed:v1";
 
-export function CookingBanner() {
+function useDismissable(key: string) {
   const [visible, setVisible] = useState(false);
-
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_KEY) !== "1") setVisible(true);
+      if (localStorage.getItem(key) !== "1") setVisible(true);
     } catch {
       setVisible(true);
     }
-  }, []);
-
-  if (!visible) return null;
-
+  }, [key]);
   const dismiss = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(key, "1");
     } catch {
       /* ignore */
     }
     setVisible(false);
   };
+  return [visible, dismiss] as const;
+}
+
+export function CookingBanner({ runningCount = 0 }: { runningCount?: number }) {
+  const [visible, dismiss] = useDismissable(BANNER_KEY);
+  if (!visible) return null;
+
+  const running = runningCount > 0;
+  const text = running
+    ? `Agents are building · ${runningCount} run${runningCount === 1 ? "" : "s"} in flight`
+    : "Loop idle · agents on watch · the next run lands here";
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="relative overflow-hidden border-b hairline cooking-banner-sweep"
+      className="cooking-banner-sweep flex items-center gap-2.5 border-b hairline shrink-0"
       style={{
+        padding: "0 24px",
+        height: 32,
         background:
           "linear-gradient(90deg, color-mix(in oklab, var(--ember) 13%, var(--canvas)) 0%, var(--canvas) 38%, color-mix(in oklab, var(--ember) 8%, var(--canvas)) 72%, var(--canvas) 100%)",
         backgroundSize: "220% 100%",
       }}
     >
-      <div className="relative flex items-center justify-center px-4 py-1.5 text-[12px] font-medium text-ink-muted">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-coral" strokeWidth={2} />
-          <span>Agents are building in the back. Fresh build loading.</span>
-        </div>
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label="Dismiss"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-ink-faint hover:text-foreground hover:bg-foreground/10 transition"
-        >
-          <X className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-      </div>
+      <span
+        className={`dot ${running ? "dot-running" : "dot-completed"}`}
+        style={{ width: 6, height: 6 }}
+      />
+      <span
+        className="mono-label"
+        style={{
+          fontSize: 9.5,
+          color: "var(--ink-muted)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {text}
+      </span>
+      <span style={{ flex: 1 }} />
+      <Link
+        to="/missions"
+        search={{ tab: "missions" } as never}
+        className="mono-label"
+        style={{ fontSize: 9.5, color: "var(--action-blue)" }}
+      >
+        Watch live →
+      </Link>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss banner"
+        className="flex text-ink-faint hover:text-foreground transition"
+      >
+        <X size={11} strokeWidth={2} />
+      </button>
       <style>{`
         @keyframes cooking-banner-sweep {
           from { background-position: 0% 0; }
@@ -62,6 +96,25 @@ export function CookingBanner() {
           .cooking-banner-sweep { animation: none; }
         }
       `}</style>
+    </div>
+  );
+}
+
+export function ConstructionPill() {
+  const [visible, dismiss] = useDismissable(PILL_KEY);
+  if (!visible) return null;
+  return (
+    <div className="construction-pill" role="status">
+      <CadenceMark size={13} />
+      <span>Agents are building in the back · fresh build loading</span>
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={dismiss}
+        className="flex p-[3px] text-ink-faint hover:text-foreground transition"
+      >
+        <X size={10} strokeWidth={2} />
+      </button>
     </div>
   );
 }

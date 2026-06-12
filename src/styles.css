@@ -194,7 +194,7 @@
   --chart-3: var(--emerald);
   --chart-4: var(--saffron);
   --chart-5: var(--agent);
-  --sidebar: var(--surface-1);
+  --sidebar: var(--canvas); /* per shell.jsx — aside sits on the canvas */
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
   --sidebar-primary-foreground: var(--canvas);
@@ -555,6 +555,20 @@
   }
   .rise-3 {
     animation: fadeUp 420ms var(--ease-out);
+  }
+
+  /* Gentle vertical drift for the small hero butterflies — transform only,
+   * calm and slow; killed by prefers-reduced-motion globally. */
+  @keyframes floatSoft {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-7px);
+    }
+  }
+  .float-soft {
+    animation: floatSoft 5.6s ease-in-out infinite alternate;
   }
 
   /* Ghost butterfly watermark inside the hero band. */
@@ -1243,6 +1257,29 @@
   }
   .cite:hover .cite-pop {
     display: block;
+  }
+
+  /* Construction pill — temporary "still building" notice, all screens. */
+  .construction-pill {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: color-mix(in oklab, var(--ember) 10%, var(--canvas));
+    border: 1px solid color-mix(in oklab, var(--ember) 35%, transparent);
+    border-radius: 99px;
+    padding: 5px 8px 5px 13px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    box-shadow: 0 6px 20px -8px oklch(0.2 0.02 60 / 25%);
+    animation: fadeUp var(--dur-slow) var(--ease-out);
   }
 
   /* Cooking-banner sweep — something is always running. */

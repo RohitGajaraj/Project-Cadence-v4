@@ -34,6 +34,10 @@ export type NeedsYou = {
     created_at: string;
   }[];
   spendTodayUsd: number;
+  /** Median minutes from gate raised to human decision, last 7 days.
+   *  Null until at least one gate has been decided. Backs the Today
+   *  throughput panel ("Gate response · your median"). */
+  gateMedianMinutes: number | null;
 };
 
 export const getNeedsYou = createServerFn({ method: "GET" })
@@ -43,7 +47,9 @@ export const getNeedsYou = createServerFn({ method: "GET" })
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
 
-    const [approvals, prds, opps, events] = await Promise.all([
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [approvals, prds, opps, events, decided] = await Promise.all([
       supabase
         .from("agent_approvals")
         .select("id,agent_slug,tool_name,rationale,escalation_state,expires_at,created_at")
@@ -68,6 +74,13 @@ export const getNeedsYou = createServerFn({ method: "GET" })
         .select("est_cost_usd")
         .gte("created_at", dayStart.toISOString())
         .limit(1000),
+      supabase
+        .from("agent_approvals")
+        .select("created_at,decided_at")
+        .eq("user_id", userId)
+        .not("decided_at", "is", null)
+        .gte("decided_at", weekAgo)
+        .limit(200),
     ]);
 
     const spendTodayUsd = (events.data ?? []).reduce(
@@ -75,10 +88,20 @@ export const getNeedsYou = createServerFn({ method: "GET" })
       0,
     );
 
+    // Gate response — median raised→decided latency over the last week.
+    const latencies = ((decided.data ?? []) as { created_at: string; decided_at: string }[])
+      .map((a) => (+new Date(a.decided_at) - +new Date(a.created_at)) / 60_000)
+      .filter((m) => Number.isFinite(m) && m >= 0)
+      .sort((a, b) => a - b);
+    const gateMedianMinutes = latencies.length
+      ? Math.round(latencies[Math.floor(latencies.length / 2)])
+      : null;
+
     return {
       approvals: (approvals.data ?? []) as NeedsYou["approvals"],
       prdCalls: (prds.data ?? []) as NeedsYou["prdCalls"],
       oppCalls: (opps.data ?? []) as NeedsYou["oppCalls"],
       spendTodayUsd,
+      gateMedianMinutes,
     };
   });
