@@ -196,6 +196,165 @@ export function VerdictChip({
   );
 }
 
+/* SurfaceHeader — the loop-screen header: mono kicker, serif h1, one-line
+   sub. Ported 1:1 from design-reference/cadence/loop.jsx (SurfaceHeader). */
+export function SurfaceHeader({
+  kicker,
+  icon,
+  title,
+  sub,
+}: {
+  kicker: ReactNode;
+  icon?: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
+  title: ReactNode;
+  sub: ReactNode;
+}) {
+  return (
+    <header style={{ marginBottom: 26 }}>
+      <MonoLabel icon={icon}>{kicker}</MonoLabel>
+      <h1 className="font-display" style={{ fontSize: 26, marginTop: 7, fontWeight: 430 }}>
+        {title}
+      </h1>
+      <p style={{ fontSize: 12.5, color: "var(--ink-subtle)", marginTop: 3, maxWidth: 520 }}>
+        {sub}
+      </p>
+    </header>
+  );
+}
+
+/* TabRow — hairline tab bar with ember underline + per-tab description line.
+   Ported 1:1 from design-reference/cadence/loop.jsx (TabRow). Production
+   addition: tabs may be { id, label, badge } so search-param ids and live
+   counts (a production affordance the reference lacks) ride the reference
+   visuals — the badge renders as a quiet mono tabular count. */
+export type TabRowItem = { id: string; label: string; badge?: number };
+
+export function TabRow({
+  tabs,
+  active,
+  onSet,
+  desc,
+}: {
+  tabs: (string | TabRowItem)[];
+  active: string;
+  onSet: (id: string) => void;
+  desc?: Record<string, ReactNode>;
+}) {
+  const items: TabRowItem[] = tabs.map((t) => (typeof t === "string" ? { id: t, label: t } : t));
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 2,
+          borderBottom: "1px solid var(--hairline)",
+          flexWrap: "wrap",
+        }}
+      >
+        {items.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => onSet(t.id)}
+            style={{
+              padding: "7px 13px",
+              fontSize: 12.5,
+              marginBottom: -1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: active === t.id ? "var(--ink)" : "var(--ink-subtle)",
+              borderBottom: `2px solid ${active === t.id ? "var(--ember)" : "transparent"}`,
+              fontWeight: active === t.id ? 500 : 400,
+            }}
+          >
+            {t.label}
+            {t.badge != null && t.badge > 0 ? (
+              <span className="mono-label tabular-nums" style={{ fontSize: 8.5 }}>
+                {t.badge}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+      {desc && desc[active] ? (
+        <p style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 8 }}>{desc[active]}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/* EmptyState — bento empty slate with icon tile, serif title, single CTA.
+   Ported 1:1 from design-reference/cadence/loop.jsx (EmptyState). */
+export function EmptyState({
+  icon: Icon,
+  title,
+  body,
+  cta,
+  onCta,
+}: {
+  icon: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
+  title: ReactNode;
+  body: ReactNode;
+  cta: ReactNode;
+  onCta: () => void;
+}) {
+  return (
+    <div className="bento" style={{ padding: 48, textAlign: "center" }}>
+      <span
+        style={{
+          display: "inline-flex",
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          background: "var(--soft-stone)",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--ink-subtle)",
+          marginBottom: 14,
+        }}
+      >
+        <Icon size={18} />
+      </span>
+      <h3 className="font-display" style={{ fontSize: 19 }}>
+        {title}
+      </h3>
+      <p
+        style={{ fontSize: 13, color: "var(--ink-subtle)", margin: "6px auto 16px", maxWidth: 360 }}
+      >
+        {body}
+      </p>
+      <button className="btn btn-primary" onClick={onCta}>
+        {cta}
+      </button>
+    </div>
+  );
+}
+
+/* RiskTag — low / medium / high risk grade on approval cards. Ported 1:1
+   from design-reference/cadence/loop.jsx (RiskTag). */
+export function RiskTag({ risk }: { risk: string }) {
+  const map: Record<string, [string, string]> = {
+    low: ["var(--emerald)", "low risk"],
+    medium: ["var(--ember)", "medium risk"],
+    high: ["var(--rose)", "high risk"],
+  };
+  const [c, label] = map[risk] || map.medium;
+  return (
+    <span
+      className="mono-label"
+      style={{
+        fontSize: 8.5,
+        color: c,
+        border: `1px solid color-mix(in oklab, ${c} 45%, transparent)`,
+        borderRadius: 99,
+        padding: "1px 7px",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 /* Cite — [n] chip with hover evidence card. Production passes the evidence
    in (source name + verbatim quote) instead of the prototype's window data. */
 export function Cite({ n, source, body }: { n: number | string; source?: string; body?: string }) {
