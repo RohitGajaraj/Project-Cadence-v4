@@ -1,30 +1,39 @@
+// Specs tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (ProductScreen, tab "Specs"): bento table with mono-label header
+// (Spec / State / Critic / Cites / Updated), StatusBadge state mapping and
+// Open + "Hand to Studio" actions (Builder → Studio rename). Production
+// functionality kept: brief→PRD composer, row navigation to /prds/$id,
+// create-GitHub-issue gate before Studio dispatch, rename / generate-tasks /
+// lineage / delete via a quiet overflow menu, CriticBadge in the Critic
+// column (real verdicts via listSpecs).
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  FileText,
-  Sparkles,
-  Trash2,
-  GitBranch,
-  ListTodo,
-  Github,
-  Hammer,
-  Pencil,
-  MoreHorizontal,
   ExternalLink,
+  FileText,
+  GitBranch,
+  Github,
+  ListTodo,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState, StatusBadge } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import {
-  listPrds,
+  listSpecs,
   deletePrd,
   generatePrd,
   createGithubIssueForPrd,
   savePrd,
+  type CriticReview,
 } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
 import { dispatchStudioSession } from "@/lib/studio.functions";
+import { CriticBadge } from "@/components/governance/CriticBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,38 +41,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import FolderInteraction from "@/components/ui/folder";
+import { relTime } from "./format";
+
+const GRID = "1fr 100px 150px 56px 80px 210px";
+
+// Reference state mapping: shipped→completed, review→gate, else planned.
+// Production's "approved" (ready for build) reads as queued — live vocabulary
+// from StatusBadge, not a judgment.
+function badgeStatus(status: string): string {
+  if (status === "shipped") return "completed";
+  if (status === "review") return "gate";
+  if (status === "approved") return "queued";
+  return "planned";
+}
 
 export function SpecsPanel() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const fPrds = useServerFn(listPrds);
+  const fSpecs = useServerFn(listSpecs);
   const mDelete = useServerFn(deletePrd);
   const mGen = useServerFn(generatePrd);
   const mTasks = useServerFn(promotePrdToTasks);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
   const mDispatch = useServerFn(dispatchStudioSession);
   const mSave = useServerFn(savePrd);
+
+  const prds = useQuery({ queryKey: ["prds"], queryFn: () => fSpecs() });
+  const inv = () => qc.invalidateQueries({ queryKey: ["prds"] });
+
   const rename = useMutation({
     mutationFn: (v: { id: string; title: string }) => mSave({ data: { id: v.id, title: v.title } }),
     onSuccess: () => {
       inv();
-      toast.success("Renamed");
+      toast.success("Renamed.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const prds = useQuery({ queryKey: ["prds"], queryFn: () => fPrds() });
-  const inv = () => qc.invalidateQueries({ queryKey: ["prds"] });
-
   const del = useMutation({
     mutationFn: (id: string) => mDelete({ data: { id } }),
     onSuccess: inv,
+    onError: (e: Error) => toast.error(e.message),
   });
   const promote = useMutation({
     mutationFn: (prd_id: string) => mTasks({ data: { prd_id } }),
     onSuccess: (r) => {
-      toast.success(`Generated ${r.count} task${r.count === 1 ? "" : "s"}`);
+      toast.success(`Generated ${r.count} task${r.count === 1 ? "" : "s"}.`);
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -71,7 +93,9 @@ export function SpecsPanel() {
   const createIssue = useMutation({
     mutationFn: (id: string) => mCreateIssue({ data: { id } }),
     onSuccess: (r) => {
-      toast.success(r.cached ? "GitHub issue already linked" : `GitHub issue #${r.number} created`);
+      toast.success(
+        r.cached ? "GitHub issue already linked." : `GitHub issue #${r.number} created.`,
+      );
       inv();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -79,7 +103,7 @@ export function SpecsPanel() {
   const sendToStudio = useMutation({
     mutationFn: (prdId: string) => mDispatch({ data: { prdId } }),
     onSuccess: (r) => {
-      toast.success("Studio session dispatched");
+      toast.success("Handed to Studio. Mission dispatched.");
       navigate({ to: "/studio/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -88,7 +112,7 @@ export function SpecsPanel() {
     mutationFn: (brief: string) => mGen({ data: { brief } }),
     onSuccess: (r) => {
       inv();
-      toast.success("PRD drafted");
+      toast.success("PRD drafted. Critic reviewed it.");
       if (r.prd?.id) navigate({ to: "/prds/$id", params: { id: r.prd.id } });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -99,6 +123,7 @@ export function SpecsPanel() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const briefRef = useRef<HTMLTextAreaElement>(null);
   const all = prds.data?.prds ?? [];
 
   useEffect(() => {
@@ -115,69 +140,124 @@ export function SpecsPanel() {
     if (next && next !== original) rename.mutate({ id, title: next });
   };
 
-  const fmtDateTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  if (prds.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load specs
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(prds.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => prds.refetch()}
+        >
+          Retry · reloads specs
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="rounded-lg border hairline bg-card p-6">
-        <div className="mono-label flex items-center gap-1.5">
-          <Sparkles className="h-3 w-3" /> Draft a PRD from a brief
-        </div>
+      <div className="bento" style={{ padding: "14px 16px", marginBottom: 12 }}>
+        <div className="mono-label">Draft a spec from a brief</div>
         <textarea
+          ref={briefRef}
+          className="input"
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
           placeholder="Describe the problem, who it's for, and any constraints. The AI will produce a structured PRD."
           rows={3}
-          className="mt-3 w-full rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground resize-none"
+          style={{ marginTop: 8, resize: "none" }}
         />
-        <button
-          onClick={() => {
-            if (brief.trim()) {
-              gen.mutate(brief.trim());
-              setBrief("");
-            }
-          }}
-          disabled={gen.isPending || !brief.trim()}
-          className="mt-4 btn-agentic rounded-lg px-4 py-2 text-xs font-medium inline-flex items-center gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5" /> {gen.isPending ? "Drafting…" : "Generate PRD"}
-        </button>
-      </div>
-
-      <div className="mono-label mb-3">All PRDs</div>
-      <div className="border-t hairline">
-        {all.map((p) => (
-          <div
-            key={p.id}
-            role="button"
-            tabIndex={0}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={gen.isPending || !brief.trim()}
             onClick={() => {
-              if (renamingId !== p.id) navigate({ to: "/prds/$id", params: { id: p.id } });
-            }}
-            onKeyDown={(e) => {
-              if (renamingId === p.id) return;
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate({ to: "/prds/$id", params: { id: p.id } });
+              if (brief.trim()) {
+                gen.mutate(brief.trim());
+                setBrief("");
               }
             }}
-            className="rule-hairline py-5 group cursor-pointer text-left hover:bg-[var(--soft-stone)] -mx-3 px-3 transition-colors"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+            {gen.isPending ? "Drafting…" : "Generate PRD · Critic reviews it"}
+          </button>
+        </div>
+      </div>
+
+      {prds.isLoading ? (
+        <div
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "32px 0",
+            textAlign: "center",
+          }}
+        >
+          Loading specs…
+        </div>
+      ) : all.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No specs yet"
+          body="Draft one from a brief above, or generate a PRD from a ranked opportunity."
+          cta="Draft a spec · from your brief"
+          onCta={() => briefRef.current?.focus()}
+        />
+      ) : (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            className="mono-label"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID,
+              gap: 12,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span>Spec</span>
+            <span>State</span>
+            <span>Critic</span>
+            <span>Cites</span>
+            <span>Updated</span>
+            <span></span>
+          </div>
+          {all.map((p, i) => {
+            const cites = Array.isArray(p.citations) ? p.citations.length : 0;
+            const isDispatching = sendToStudio.isPending && sendToStudio.variables === p.id;
+            const isCreating = createIssue.isPending && createIssue.variables === p.id;
+            return (
+              <div
+                key={p.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (renamingId !== p.id) navigate({ to: "/prds/$id", params: { id: p.id } });
+                }}
+                onKeyDown={(e) => {
+                  if (renamingId === p.id) return;
+                  if (e.key === "Enter") navigate({ to: "/prds/$id", params: { id: p.id } });
+                }}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: GRID,
+                  gap: 12,
+                  padding: "13px 18px",
+                  alignItems: "center",
+                  borderBottom: i < all.length - 1 ? "1px solid var(--hairline)" : "none",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
                 {renamingId === p.id ? (
                   <input
                     ref={renameInputRef}
+                    className="input"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
@@ -193,109 +273,120 @@ export function SpecsPanel() {
                         setRenamingId(null);
                       }
                     }}
-                    className="flex-1 min-w-0 bg-transparent font-display text-base outline-none border-b hairline focus:border-foreground"
+                    style={{ padding: "3px 8px", fontSize: 13 }}
                   />
                 ) : (
-                  <h3 className="font-display text-base truncate text-foreground">{p.title}</h3>
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {p.title}
+                  </span>
                 )}
-              </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                <StatusBadge status={badgeStatus(p.status)} />
+                <span onClick={(e) => e.stopPropagation()}>
+                  <CriticBadge
+                    review={(p.critic_review as CriticReview | null) ?? null}
+                    target={{ kind: "prd", id: p.id }}
+                    invalidateKey={["prds"]}
+                  />
+                </span>
+                <span className="mono-label tabular-nums">{cites}</span>
+                <span className="mono-label">{relTime(p.updated_at)}</span>
+                <span
+                  style={{
+                    display: "flex",
+                    gap: 6,
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 11 }}
+                    onClick={() => navigate({ to: "/prds/$id", params: { id: p.id } })}
+                  >
+                    Open
+                  </button>
+                  {p.github_issue_url ? (
                     <button
-                      className="opacity-60 hover:opacity-100 text-muted-foreground hover:text-foreground rounded-md p-1 -mr-1"
-                      aria-label="PRD actions"
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 11, color: "var(--agent)" }}
+                      disabled={isDispatching}
+                      onClick={() => sendToStudio.mutate(p.id)}
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      {isDispatching ? "Dispatching…" : "Hand to Studio"}
                     </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onSelect={() => startRename(p.id, p.title)}>
-                      <Pencil className="h-3.5 w-3.5 mr-2" /> Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => promote.mutate(p.id)}
-                      disabled={promote.isPending}
+                  ) : (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 11 }}
+                      disabled={isCreating}
+                      title="Studio builds from the linked GitHub issue"
+                      onClick={() => createIssue.mutate(p.id)}
                     >
-                      <ListTodo className="h-3.5 w-3.5 mr-2" />
-                      {promote.isPending && promote.variables === p.id
-                        ? "Generating tasks…"
-                        : "Generate tasks"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {p.github_issue_url ? (
-                      <>
-                        <DropdownMenuItem
-                          onSelect={() =>
-                            window.open(p.github_issue_url!, "_blank", "noopener,noreferrer")
-                          }
-                        >
-                          <Github className="h-3.5 w-3.5 mr-2" /> Open GitHub issue
-                          <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => sendToStudio.mutate(p.id)}
-                          disabled={sendToStudio.isPending}
-                        >
-                          <Hammer className="h-3.5 w-3.5 mr-2" />
-                          {sendToStudio.isPending && sendToStudio.variables === p.id
-                            ? "Dispatching…"
-                            : "Send to Studio"}
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <DropdownMenuItem
-                        onSelect={() => createIssue.mutate(p.id)}
-                        disabled={createIssue.isPending}
+                      {isCreating ? "Creating…" : "Create GitHub issue"}
+                    </button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        aria-label="Spec actions"
+                        style={{ color: "var(--ink-faint)", display: "inline-flex", padding: 4 }}
                       >
-                        <Github className="h-3.5 w-3.5 mr-2" />
-                        {createIssue.isPending && createIssue.variables === p.id
-                          ? "Creating issue…"
-                          : "Create GitHub issue"}
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onSelect={() => startRename(p.id, p.title)}>
+                        <Pencil className="h-3.5 w-3.5 mr-2" /> Rename
                       </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setLineage({ id: p.id, title: p.title })}>
-                      <GitBranch className="h-3.5 w-3.5 mr-2" /> Lineage
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={() => del.mutate(p.id)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <DropdownMenuItem
+                        onSelect={() => promote.mutate(p.id)}
+                        disabled={promote.isPending}
+                      >
+                        <ListTodo className="h-3.5 w-3.5 mr-2" />
+                        {promote.isPending && promote.variables === p.id
+                          ? "Generating tasks…"
+                          : "Generate tasks"}
+                      </DropdownMenuItem>
+                      {p.github_issue_url ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              window.open(p.github_issue_url!, "_blank", "noopener,noreferrer")
+                            }
+                          >
+                            <Github className="h-3.5 w-3.5 mr-2" /> Open GitHub issue
+                            <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => setLineage({ id: p.id, title: p.title })}>
+                        <GitBranch className="h-3.5 w-3.5 mr-2" /> Lineage
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => del.mutate(p.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete · removes the spec
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </span>
               </div>
-            </div>
-            <div className="mt-2 ml-7 mono-label flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span>{p.status}</span>
-              <span aria-hidden>/</span>
-              <span>Updated {fmtDateTime(p.updated_at)}</span>
-              {p.github_issue_url
-                ? (() => {
-                    const m = p.github_issue_url.match(/\/issues\/(\d+)/);
-                    return m ? (
-                      <>
-                        <span aria-hidden>/</span>
-                        <span>#{m[1]}</span>
-                      </>
-                    ) : null;
-                  })()
-                : null}
-            </div>
-          </div>
-        ))}
-        {all.length === 0 && (
-          <div className="py-16 flex flex-col items-center justify-center">
-            <FolderInteraction label="Your PRDs land here" />
-            <div className="text-sm text-muted-foreground mt-4">
-              No PRDs yet. Draft one above or generate from an opportunity.
-            </div>
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
       <LineageDrawer
         open={lineage !== null}
         onOpenChange={(o) => {

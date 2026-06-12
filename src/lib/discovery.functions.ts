@@ -399,6 +399,23 @@ export const listPrds = createServerFn({ method: "GET" })
     return { prds: data ?? [] };
   });
 
+/**
+ * Specs table (Product · Specs, Ember Editorial port): PRD rows plus the
+ * Critic verdict and citation payload the reference's State/Critic/Cites
+ * columns render. Additive — `listPrds` keeps its narrow select for existing
+ * consumers (roadmap, pickers).
+ */
+export const listSpecs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("prds")
+      .select("id,title,status,updated_at,opportunity_id,github_issue_url,critic_review,citations")
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { prds: data ?? [] };
+  });
+
 export const getPrd = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))

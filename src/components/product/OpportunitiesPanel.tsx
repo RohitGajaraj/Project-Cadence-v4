@@ -1,8 +1,17 @@
+// Opportunities tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (ProductScreen, tab "Opportunities"): ranked bento rows with a big serif
+// rank number (ember for #1), title + status chip + rescore pill, rationale
+// line, mono ICE-input labels, the big serif ICE score with its mono caption,
+// "Generate PRD" primary and a lineage ghost icon. Production functionality
+// kept: status updates, CriticBadge, delete, LineageDrawer, rescore evidence
+// from the real outcome loop (listLearnings), navigation to the drafted PRD.
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, FileText, Trash2, GitBranch } from "lucide-react";
+import { useState } from "react";
+import { GitBranch, Lightbulb, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState, VerdictChip } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import {
   listOpportunities,
@@ -13,7 +22,6 @@ import {
 import { listLearnings } from "@/lib/outcome.functions";
 import type { CriticReview } from "@/lib/discovery.functions";
 import { CriticBadge } from "@/components/governance/CriticBadge";
-import { useState } from "react";
 
 const STATUSES = ["backlog", "now", "next", "later", "shipped", "dropped"] as const;
 
@@ -24,7 +32,6 @@ export function OpportunitiesPanel() {
   const mUpdate = useServerFn(updateOpportunity);
   const mDelete = useServerFn(deleteOpportunity);
   const mPrd = useServerFn(generatePrd);
-
   const fLearnings = useServerFn(listLearnings);
 
   const opps = useQuery({ queryKey: ["opportunities"], queryFn: () => fOpps() });
@@ -34,15 +41,17 @@ export function OpportunitiesPanel() {
   const upd = useMutation({
     mutationFn: (d: { id: string; status: (typeof STATUSES)[number] }) => mUpdate({ data: d }),
     onSuccess: inv,
+    onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: (id: string) => mDelete({ data: { id } }),
     onSuccess: inv,
+    onError: (e: Error) => toast.error(e.message),
   });
   const prd = useMutation({
-    mutationFn: (opportunity_id: string) => mPrd({ data: { opportunity_id } }),
-    onSuccess: (r) => {
-      toast.success("PRD generated");
+    mutationFn: (v: { id: string; title: string }) => mPrd({ data: { opportunity_id: v.id } }),
+    onSuccess: (r, v) => {
+      toast.success(`PRD generated for “${v.title}”. Critic reviewed it.`);
       qc.invalidateQueries({ queryKey: ["prds"] });
       if (r.prd?.id) navigate({ to: "/prds/$id", params: { id: r.prd.id } });
     },
@@ -63,79 +72,99 @@ export function OpportunitiesPanel() {
     }
   }
 
+  if (opps.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load opportunities
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(opps.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => opps.refetch()}
+        >
+          Retry · reloads the queue
+        </button>
+      </div>
+    );
+  }
+
+  if (opps.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading opportunities…
+      </div>
+    );
+  }
+
+  if (all.length === 0) {
+    return (
+      <EmptyState
+        icon={Lightbulb}
+        title="No opportunities yet"
+        body="Promote a clustered theme from Signals — it lands here scored by ICE, with the Critic's read attached."
+        cta="Go to Signals · capture and cluster"
+        onCta={() => navigate({ to: "/product", search: { tab: "signals" } })}
+      />
+    );
+  }
+
   return (
     <>
-      <p className="text-sm text-muted-foreground">
-        Ranked by ICE. Generate a PRD with one click when you're ready to build.
-      </p>
-      <div className="bento overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            <tr className="border-b hairline">
-              <th className="text-left px-4 py-3">Title</th>
-              <th className="text-left px-4 py-3 w-24">ICE</th>
-              <th className="text-left px-4 py-3 w-36">Status</th>
-              <th className="text-right px-4 py-3 w-52">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {all.map((o) => (
-              <tr key={o.id} className="border-b hairline/40 hover:bg-secondary/40">
-                <td className="px-4 py-3">
-                  <div className="font-medium">{o.title}</div>
-                  {o.problem && (
-                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                      {o.problem}
-                    </div>
-                  )}
-                  <div className="mt-1.5">
-                    <CriticBadge
-                      review={(o as { critic_review?: CriticReview | null }).critic_review ?? null}
-                      target={{ kind: "opportunity", id: o.id }}
-                      invalidateKey={["opportunities"]}
-                    />
-                  </div>
-                </td>
-                <td className="px-4 py-3 tabular-nums">
-                  <span className="neural-text font-display text-base">
-                    {Number(o.ice_score).toFixed(1)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground ml-2">
-                    I{o.impact} C{o.confidence} E{o.ease}
-                  </span>
-                  {(() => {
-                    const l = latestLearning.get(o.id);
-                    if (!l || l.prior_ice == null || l.new_ice == null) return null;
-                    const up = Number(l.new_ice) - Number(l.prior_ice) >= 0;
-                    return (
-                      <span
-                        title={l.summary}
-                        className={`ml-2 inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${
-                          up
-                            ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                            : "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                        }`}
-                      >
-                        {up ? (
-                          <ArrowUp className="h-2.5 w-2.5" />
-                        ) : (
-                          <ArrowDown className="h-2.5 w-2.5" />
-                        )}
-                        {Number(l.prior_ice).toFixed(1)} → {Number(l.new_ice).toFixed(1)}
-                      </span>
-                    );
-                  })()}
-                </td>
-                <td className="px-4 py-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {all.map((o, i) => {
+          const l = latestLearning.get(o.id);
+          const hasRescore = l && l.prior_ice != null && l.new_ice != null;
+          const up = hasRescore && Number(l.new_ice) >= Number(l.prior_ice);
+          const isPrdPending = prd.isPending && prd.variables?.id === o.id;
+          const isDelPending = del.isPending && del.variables === o.id;
+          return (
+            <div
+              key={o.id}
+              className="bento lift"
+              style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 18px" }}
+            >
+              <span
+                className="font-display tabular-nums"
+                style={{
+                  fontSize: 22,
+                  width: 26,
+                  textAlign: "center",
+                  color: i === 0 ? "var(--ember)" : "var(--ink-faint)",
+                  flexShrink: 0,
+                }}
+              >
+                {i + 1}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 550 }}>{o.title}</span>
                   <select
+                    className="mono-label"
                     value={o.status}
+                    aria-label="Lane"
                     onChange={(e) =>
-                      upd.mutate({
-                        id: o.id,
-                        status: e.target.value as (typeof STATUSES)[number],
-                      })
+                      upd.mutate({ id: o.id, status: e.target.value as (typeof STATUSES)[number] })
                     }
-                    className="rounded-lg border hairline bg-background/60 px-2 py-1 text-xs capitalize"
+                    style={{
+                      fontSize: 9,
+                      background: "transparent",
+                      border: "1px solid var(--hairline)",
+                      borderRadius: 99,
+                      padding: "1px 7px",
+                      cursor: "pointer",
+                      appearance: "none",
+                    }}
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -143,50 +172,94 @@ export function OpportunitiesPanel() {
                       </option>
                     ))}
                   </select>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {(() => {
-                    const isPrdPending = prd.isPending && prd.variables === o.id;
-                    const isDelPending = del.isPending && del.variables === o.id;
-                    return (
-                      <>
-                        <button
-                          onClick={() => prd.mutate(o.id)}
-                          disabled={isPrdPending}
-                          className="btn-agentic rounded-lg px-2.5 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
-                        >
-                          <FileText className="h-3 w-3" />{" "}
-                          {isPrdPending ? "Generating…" : "Generate PRD"}
-                        </button>
-                        <button
-                          onClick={() => setLineage({ id: o.id, title: o.title })}
-                          className="ml-2 text-muted-foreground hover:text-foreground p-1.5"
-                          aria-label="Lineage"
-                        >
-                          <GitBranch className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => del.mutate(o.id)}
-                          disabled={isDelPending}
-                          className="ml-2 text-muted-foreground hover:text-destructive p-1.5"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </>
-                    );
-                  })()}
-                </td>
-              </tr>
-            ))}
-            {all.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-xs text-muted-foreground">
-                  No opportunities yet. Promote a theme from the Signals tab.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  {hasRescore ? (
+                    <VerdictChip
+                      tone={up ? "moss" : "madder"}
+                      style={{ fontSize: 8.5, padding: "0 7px" }}
+                    >
+                      <span
+                        className="tabular-nums"
+                        title={l.summary ?? "Re-scored by the outcome loop"}
+                      >
+                        {Number(l.prior_ice).toFixed(1)} → {Number(l.new_ice).toFixed(1)}
+                      </span>
+                    </VerdictChip>
+                  ) : null}
+                  <CriticBadge
+                    review={(o as { critic_review?: CriticReview | null }).critic_review ?? null}
+                    target={{ kind: "opportunity", id: o.id }}
+                    invalidateKey={["opportunities"]}
+                  />
+                </div>
+                {o.problem ? (
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: "var(--ink-subtle)",
+                      marginTop: 2,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {o.problem}
+                  </div>
+                ) : null}
+              </div>
+              <div style={{ display: "flex", gap: 14, flexShrink: 0, alignItems: "center" }}>
+                <span className="mono-label">
+                  impact <strong style={{ color: "var(--ink)" }}>{o.impact}</strong>
+                </span>
+                <span className="mono-label">
+                  conf <strong style={{ color: "var(--ink)" }}>{o.confidence}</strong>
+                </span>
+                <span className="mono-label">
+                  ease <strong style={{ color: "var(--ink)" }}>{o.ease}</strong>
+                </span>
+                <span title="ICE · impact, confidence, ease" style={{ textAlign: "right" }}>
+                  <span
+                    className="font-display tabular-nums"
+                    style={{ fontSize: 15, display: "block" }}
+                  >
+                    {Number(o.ice_score).toFixed(1)}
+                  </span>
+                  <span className="mono-label" style={{ fontSize: 7.5 }}>
+                    ICE
+                  </span>
+                </span>
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={isPrdPending}
+                  onClick={() => prd.mutate({ id: o.id, title: o.title })}
+                >
+                  {isPrdPending ? "Generating…" : "Generate PRD"}
+                </button>
+                <button
+                  title="Signal lineage"
+                  aria-label="Signal lineage"
+                  className="btn btn-ghost btn-sm"
+                  style={{ padding: "4px 7px" }}
+                  onClick={() => setLineage({ id: o.id, title: o.title })}
+                >
+                  <GitBranch size={12} />
+                </button>
+                <button
+                  title="Delete · removes the opportunity"
+                  aria-label="Delete opportunity"
+                  className="btn btn-ghost btn-sm"
+                  style={{ padding: "4px 7px", color: "var(--rose)" }}
+                  disabled={isDelPending}
+                  onClick={() => del.mutate(o.id)}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        <p className="mono-label" style={{ fontSize: 8.5, textAlign: "center", marginTop: 4 }}>
+          outcome loop re-scores after every release
+        </p>
       </div>
       <LineageDrawer
         open={lineage !== null}

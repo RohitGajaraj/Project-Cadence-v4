@@ -1,90 +1,161 @@
-import { Link } from "@tanstack/react-router";
+// Releases tab — ported from design-reference/cadence/loop.jsx (ProductScreen,
+// tab "Releases"): bento list rows with a StepDot, the work, a mono timestamp
+// and a chevron. Production data (getOutcomeData): completed Studio missions
+// (row links to the real /missions/$missionId detail) and completed agent
+// runs with duration · tokens · cost. The reference's semver column has no
+// production source — omitted, never invented.
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Rocket, Clock } from "lucide-react";
+import { ChevronRight, Rocket } from "lucide-react";
 import { getOutcomeData } from "@/lib/outcome.functions";
-
-function fmtTime(iso: string | null | undefined) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function fmtUsd(n: number | string | null | undefined) {
-  const v = typeof n === "string" ? Number(n) : (n ?? 0);
-  if (!v) return "$0";
-  return v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`;
-}
+import { EmptyState, StepDot } from "@/components/cadence/Primitives";
+import { fmtUsd, relTime } from "./format";
 
 export function ReleasesPanel() {
+  const navigate = useNavigate();
   const fOutcome = useServerFn(getOutcomeData);
   const outcome = useQuery({ queryKey: ["outcome"], queryFn: () => fOutcome() });
 
-  const releases = outcome.data?.releases;
-  const empty = (releases?.missions.length ?? 0) === 0 && (releases?.runs.length ?? 0) === 0;
+  const missions = outcome.data?.releases.missions ?? [];
+  const runs = outcome.data?.releases.runs ?? [];
+  const empty = missions.length === 0 && runs.length === 0;
+
+  if (outcome.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load releases
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(outcome.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => outcome.refetch()}
+        >
+          Retry · reloads releases
+        </button>
+      </div>
+    );
+  }
+
+  if (outcome.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading releases…
+      </div>
+    );
+  }
+
+  if (empty) {
+    return (
+      <EmptyState
+        icon={Rocket}
+        title="Releases will land here"
+        body="When a Studio mission completes end-to-end (PR merged, deploy webhook lands), it appears here with duration and cost."
+        cta="Go to Specs · hand one to Studio"
+        onCta={() => navigate({ to: "/product", search: { tab: "specs" } })}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {empty ? (
-        <div className="bento p-8 text-center">
-          <Rocket className="h-6 w-6 mx-auto text-violet-300/70" />
-          <h3 className="font-display text-base mt-3">Releases will land here</h3>
-          <p className="text-xs text-muted-foreground mt-2 max-w-sm mx-auto">
-            When a Studio mission completes (PR merged, deploy webhook lands), it will appear here
-            with the agent, duration, and cost.
-          </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {missions.length > 0 ? (
+        <div className="mono-label" style={{ fontSize: 8.5 }}>
+          Completed missions
         </div>
-      ) : (
-        <>
-          {(releases?.missions ?? []).map((m) => (
-            <div key={m.id} className="bento p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <Link
-                    to="/missions/$missionId"
-                    params={{ missionId: m.id }}
-                    className="font-display text-base hover:underline"
-                  >
-                    {m.title}
-                  </Link>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.goal}</p>
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> {fmtTime(m.completed_at ?? m.updated_at)}
-                </div>
-              </div>
-              <div className="mt-2 text-[11px] text-muted-foreground">
-                {m.hop_count} hop{m.hop_count === 1 ? "" : "s"} · mission complete
-              </div>
-            </div>
-          ))}
-          {(releases?.runs ?? []).slice(0, 10).map((r) => (
-            <div key={r.id} className="bento p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-sm">{r.agent_name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{r.input}</div>
-                </div>
-                <div className="text-[10px] text-muted-foreground inline-flex items-center gap-3 shrink-0">
-                  <span>{r.duration_ms ? `${Math.round(r.duration_ms / 100) / 10}s` : "—"}</span>
-                  <span>{r.tokens_used.toLocaleString()} tok</span>
-                  <span>{fmtUsd(r.spend_used_usd)}</span>
-                  <span>{fmtTime(r.created_at)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {outcome.isLoading && <div className="text-xs text-muted-foreground">Loading…</div>}
-      {outcome.error && (
-        <div className="text-xs text-destructive">{(outcome.error as Error).message}</div>
-      )}
+      ) : null}
+      {missions.map((m) => (
+        <Link
+          key={m.id}
+          to="/missions/$missionId"
+          params={{ missionId: m.id }}
+          className="bento lift"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "13px 18px",
+            width: "100%",
+            textAlign: "left",
+          }}
+        >
+          <StepDot status="completed" />
+          <span style={{ fontWeight: 500, fontSize: 13, flexShrink: 0 }}>{m.title}</span>
+          <span
+            style={{
+              flex: 1,
+              fontSize: 13,
+              color: "var(--ink-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {m.goal}
+          </span>
+          <span className="mono-label tabular-nums">
+            {m.hop_count} hop{m.hop_count === 1 ? "" : "s"}
+          </span>
+          <span className="mono-label">{relTime(m.completed_at ?? m.updated_at)}</span>
+          <ChevronRight size={12} style={{ color: "var(--ink-faint)" }} />
+        </Link>
+      ))}
+
+      {runs.length > 0 ? (
+        <div className="mono-label" style={{ fontSize: 8.5, marginTop: missions.length ? 8 : 0 }}>
+          Completed agent runs
+        </div>
+      ) : null}
+      {runs.slice(0, 10).map((r) => (
+        <div
+          key={r.id}
+          className="bento"
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 18px" }}
+        >
+          <StepDot status="completed" />
+          <span className="mono-label" style={{ color: "var(--agent)", flexShrink: 0 }}>
+            {r.agent_name}
+          </span>
+          <span
+            style={{
+              flex: 1,
+              fontSize: 13,
+              color: "var(--ink-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {r.input}
+          </span>
+          <span className="mono-label tabular-nums">
+            {r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"} ·{" "}
+            {Number(r.tokens_used ?? 0).toLocaleString()} tok · {fmtUsd(r.spend_used_usd)}
+          </span>
+          <span className="mono-label">{relTime(r.created_at)}</span>
+          {r.mission_id ? (
+            <Link
+              to="/missions/$missionId"
+              params={{ missionId: r.mission_id }}
+              aria-label="Open mission"
+              style={{ display: "inline-flex", color: "var(--ink-faint)" }}
+            >
+              <ChevronRight size={12} />
+            </Link>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }

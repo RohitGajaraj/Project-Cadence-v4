@@ -1,11 +1,27 @@
+// Tasks tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (ProductScreen, tab "Tasks"): 3-column kanban (To do / In progress / Done)
+// in band-stone columns, bento cards with strikethrough done text and agent
+// attribution (orchid mono label + "agent" outline chip), "Import from
+// Linear" ghost button. Production functionality kept: create / toggle /
+// drag-move / delete tasks, human-agent assignee, deep-work flag, agent-only
+// filter, the real Linear import modal, LineageDrawer — restyled quiet-Ember.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, X, Loader2, ExternalLink, Search, GitBranch, Bot, User } from "lucide-react";
+import { Bot, ExternalLink, GitBranch, User, X } from "lucide-react";
 import { toast } from "sonner";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
 import { searchLinearIssues, importLinearIssue, listLinearTeams } from "@/lib/linear.functions";
+import { MonoLabel } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
+
+const COLS = [
+  ["todo", "To do"],
+  ["doing", "In progress"],
+  ["done", "Done"],
+] as const;
+
+type Col = (typeof COLS)[number][0];
 
 export function TasksPanel() {
   const qc = useQueryClient();
@@ -28,22 +44,24 @@ export function TasksPanel() {
     }) => mCreate({ data }),
     onSuccess: () => {
       invalidate();
-      toast.success("Task added");
+      toast.success("Task added.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const toggle = useMutation({
     mutationFn: (data: { id: string; status: "todo" | "done" }) => mUpdate({ data }),
     onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
   });
   const move = useMutation({
-    mutationFn: (data: { id: string; status: "todo" | "doing" | "done" }) => mUpdate({ data }),
+    mutationFn: (data: { id: string; status: Col }) => mUpdate({ data }),
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
   });
   const remove = useMutation({
     mutationFn: (id: string) => mDelete({ data: { id } }),
     onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [title, setTitle] = useState("");
@@ -51,7 +69,7 @@ export function TasksPanel() {
   const [newKind, setNewKind] = useState<"human" | "agent">("human");
   const [agentOnly, setAgentOnly] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<"todo" | "doing" | "done" | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<Col | null>(null);
   const [linearOpen, setLinearOpen] = useState(false);
   const [linearQuery, setLinearQuery] = useState("");
   const [linearTeam, setLinearTeam] = useState<string>("");
@@ -73,37 +91,53 @@ export function TasksPanel() {
     mutationFn: (issueId: string) => fImportLinear({ data: { issueId } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Imported from Linear");
+      toast.success("Imported from Linear.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const allRaw = tasks.data?.tasks ?? [];
   const all = allRaw.filter((t) => (agentOnly ? (t.assignee_kind ?? "human") === "agent" : true));
-  const groups = {
+  const groups: Record<Col, typeof all> = {
     todo: all.filter((t) => t.status === "todo"),
     doing: all.filter((t) => t.status === "doing"),
     done: all.filter((t) => t.status === "done"),
   };
 
-  return (
-    <>
-      <div className="flex items-center gap-2 flex-wrap justify-end">
+  if (tasks.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load tasks
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(tasks.error as Error).message}
+        </p>
         <button
-          onClick={() => setAgentOnly((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-xl border hairline px-3 py-2 text-xs transition-colors ${agentOnly ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"}`}
-          title="Show only agent-assigned tasks"
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => tasks.refetch()}
         >
-          <Bot className="h-3.5 w-3.5" /> Agent only
+          Retry · reloads the board
         </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
         <button
-          onClick={() => setLinearOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border hairline px-3 py-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-          title="Import from Linear"
+          className="btn btn-ghost btn-sm"
+          aria-pressed={agentOnly}
+          title="Show only agent-assigned tasks"
+          onClick={() => setAgentOnly((v) => !v)}
+          style={agentOnly ? { background: "var(--soft-stone)", color: "var(--ink)" } : undefined}
         >
-          <span className="text-xs font-semibold tracking-wide">L</span>
-          <span className="hidden sm:inline">Import from Linear</span>
-          <span className="sm:hidden">Linear</span>
+          <Bot size={12} /> Agent tasks only
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => setLinearOpen(true)}>
+          Import from Linear
         </button>
       </div>
 
@@ -116,163 +150,291 @@ export function TasksPanel() {
           setDeep(false);
           setNewKind("human");
         }}
-        className="bento p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-2"
+        style={{
+          display: "flex",
+          gap: 8,
+          marginBottom: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
       >
         <input
+          className="input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Capture a new task…"
-          className="flex-1 min-w-0 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+          style={{ flex: 1, minWidth: 220 }}
         />
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex items-center rounded-lg border hairline p-0.5 text-xs">
+        <span
+          style={{
+            display: "inline-flex",
+            border: "1px solid var(--hairline)",
+            borderRadius: 8,
+            padding: 2,
+            flexShrink: 0,
+          }}
+        >
+          {(
+            [
+              ["human", "Human", User],
+              ["agent", "Agent", Bot],
+            ] as const
+          ).map(([kind, label, Icon]) => (
             <button
+              key={kind}
               type="button"
-              onClick={() => setNewKind("human")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "human" ? "bg-foreground text-background" : "text-muted-foreground"}`}
+              onClick={() => setNewKind(kind)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 12,
+                padding: "3px 8px",
+                borderRadius: 6,
+                background: newKind === kind ? "var(--soft-stone)" : "transparent",
+                color: newKind === kind ? "var(--ink)" : "var(--ink-subtle)",
+                fontWeight: newKind === kind ? 500 : 400,
+              }}
             >
-              <User className="h-3 w-3" /> Human
+              <Icon size={11} /> {label}
             </button>
-            <button
-              type="button"
-              onClick={() => setNewKind("agent")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${newKind === "agent" ? "bg-foreground text-background" : "text-muted-foreground"}`}
-            >
-              <Bot className="h-3 w-3" /> Agent
-            </button>
-          </div>
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />{" "}
-            deep work
-          </label>
-          <button className="rounded-xl bg-foreground text-background px-3 py-2 text-sm inline-flex items-center gap-1.5 ml-auto sm:ml-0">
-            <Plus className="h-3.5 w-3.5" /> Add
-          </button>
-        </div>
+          ))}
+        </span>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            color: "var(--ink-muted)",
+            flexShrink: 0,
+          }}
+        >
+          <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep
+          work
+        </label>
+        <button className="btn btn-primary btn-sm" type="submit" disabled={add.isPending}>
+          Add · lands in To do
+        </button>
       </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-        {(["todo", "doing", "done"] as const).map((col) => (
-          <section
-            key={col}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (dragOverCol !== col) setDragOverCol(col);
-            }}
-            onDragLeave={() => {
-              if (dragOverCol === col) setDragOverCol(null);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const id = e.dataTransfer.getData("text/task-id") || dragId;
-              setDragOverCol(null);
-              setDragId(null);
-              if (!id) return;
-              const t = allRaw.find((x) => x.id === id);
-              if (!t || t.status === col) return;
-              move.mutate({ id, status: col });
-            }}
-            className={`bento p-3 sm:p-4 transition-colors ${dragOverCol === col ? "ring-2 ring-ring/60 bg-secondary/30" : ""}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display text-sm capitalize">{col}</h3>
-              <span className="text-[11px] text-muted-foreground">{groups[col].length}</span>
-            </div>
-            <ul className="space-y-2 min-h-[120px]">
-              {groups[col].map((t) => (
-                <li
-                  key={t.id}
-                  draggable
-                  onDragStart={(e) => {
-                    setDragId(t.id);
-                    e.dataTransfer.setData("text/task-id", t.id);
-                    e.dataTransfer.effectAllowed = "move";
-                  }}
-                  onDragEnd={() => {
-                    setDragId(null);
-                    setDragOverCol(null);
-                  }}
-                  className={`rounded-xl border hairline px-3 py-2 flex items-center gap-2 cursor-grab active:cursor-grabbing ${dragId === t.id ? "opacity-50" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={t.status === "done"}
-                    onChange={(e) =>
-                      toggle.mutate({ id: t.id, status: e.target.checked ? "done" : "todo" })
-                    }
-                    className="h-4 w-4 shrink-0"
-                  />
-                  <span
-                    className={`flex-1 min-w-0 text-sm break-words ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}
-                  >
-                    {t.title}
-                  </span>
-                  {(t.assignee_kind ?? "human") === "agent" && (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider rounded-full bg-secondary text-foreground px-2 py-0.5 shrink-0">
-                      <Bot className="h-3 w-3" /> agent
-                    </span>
-                  )}
-                  {t.is_deep_work && (
-                    <span className="text-[10px] uppercase tracking-wider rounded-full bg-violet-500/15 text-violet-200 px-2 py-0.5 shrink-0">
-                      deep
-                    </span>
-                  )}
-                  <button
-                    onClick={() => setLineage({ id: t.id, title: t.title })}
-                    title="Lineage"
-                    className="text-muted-foreground hover:text-foreground shrink-0"
-                  >
-                    <GitBranch className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => remove.mutate(t.id)}
-                    className="text-muted-foreground hover:text-destructive text-xs shrink-0"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-              {groups[col].length === 0 && (
-                <li className="text-xs text-muted-foreground py-2">Nothing here.</li>
-              )}
-            </ul>
-          </section>
-        ))}
-      </div>
-      {linearOpen && (
+      {tasks.isLoading ? (
         <div
-          className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-start justify-center pt-20 px-4"
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "32px 0",
+            textAlign: "center",
+          }}
+        >
+          Loading the board…
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {COLS.map(([col, label]) => (
+            <div
+              key={col}
+              className="band-stone"
+              style={{
+                padding: 12,
+                minHeight: 160,
+                outline: dragOverCol === col ? "1px dashed var(--hairline-strong)" : "none",
+                outlineOffset: -1,
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (dragOverCol !== col) setDragOverCol(col);
+              }}
+              onDragLeave={() => {
+                if (dragOverCol === col) setDragOverCol(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/task-id") || dragId;
+                setDragOverCol(null);
+                setDragId(null);
+                if (!id) return;
+                const t = allRaw.find((x) => x.id === id);
+                if (!t || t.status === col) return;
+                move.mutate({ id, status: col });
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 10,
+                  padding: "0 4px",
+                }}
+              >
+                <MonoLabel>{label}</MonoLabel>
+                <span className="mono-label tabular-nums">{groups[col].length}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {groups[col].map((t) => (
+                  <div
+                    key={t.id}
+                    className="bento lift"
+                    draggable
+                    onDragStart={(e) => {
+                      setDragId(t.id);
+                      e.dataTransfer.setData("text/task-id", t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => {
+                      setDragId(null);
+                      setDragOverCol(null);
+                    }}
+                    style={{
+                      padding: "10px 12px",
+                      cursor: "grab",
+                      opacity: dragId === t.id ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={t.status === "done"}
+                        aria-label="Mark done"
+                        onChange={(e) =>
+                          toggle.mutate({ id: t.id, status: e.target.checked ? "done" : "todo" })
+                        }
+                        style={{ marginTop: 2, accentColor: "var(--ink)", flexShrink: 0 }}
+                      />
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontSize: 12.5,
+                          lineHeight: 1.45,
+                          overflowWrap: "break-word",
+                          textDecoration: col === "done" ? "line-through" : "none",
+                          color: col === "done" ? "var(--ink-faint)" : "var(--ink)",
+                        }}
+                      >
+                        {t.title}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 7 }}>
+                      <span
+                        className="mono-label"
+                        style={{
+                          fontSize: 8.5,
+                          color:
+                            (t.assignee_kind ?? "human") === "agent"
+                              ? "var(--agent)"
+                              : "var(--ink-subtle)",
+                        }}
+                      >
+                        {(t.assignee_kind ?? "human") === "agent" ? "Agent" : "You"}
+                      </span>
+                      {(t.assignee_kind ?? "human") === "agent" ? (
+                        <span
+                          className="mono-label"
+                          style={{
+                            fontSize: 7.5,
+                            border: "1px solid color-mix(in oklab, var(--agent) 40%, transparent)",
+                            color: "var(--agent)",
+                            borderRadius: 99,
+                            padding: "0 6px",
+                          }}
+                        >
+                          agent
+                        </span>
+                      ) : null}
+                      {t.is_deep_work ? (
+                        <span
+                          className="mono-label"
+                          style={{
+                            fontSize: 7.5,
+                            border: "1px solid var(--hairline-strong)",
+                            borderRadius: 99,
+                            padding: "0 6px",
+                          }}
+                        >
+                          deep
+                        </span>
+                      ) : null}
+                      <span style={{ flex: 1 }}></span>
+                      <button
+                        title="Lineage"
+                        aria-label="Lineage"
+                        onClick={() => setLineage({ id: t.id, title: t.title })}
+                        style={{ color: "var(--ink-faint)", display: "inline-flex" }}
+                      >
+                        <GitBranch size={11} />
+                      </button>
+                      <button
+                        title="Delete · removes the task"
+                        aria-label="Delete task"
+                        onClick={() => remove.mutate(t.id)}
+                        style={{ color: "var(--ink-faint)", display: "inline-flex" }}
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {linearOpen ? (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            background: "color-mix(in oklab, var(--ink) 30%, transparent)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: "80px 16px 0",
+          }}
           onClick={() => setLinearOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-xl border hairline bg-background shadow-2xl overflow-hidden"
+            className="bento fade-up"
+            style={{ width: "100%", maxWidth: 640, overflow: "hidden" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b hairline">
-              <div className="font-display text-sm tracking-tight">Import from Linear</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <span className="font-display" style={{ fontSize: 15 }}>
+                Import from Linear
+              </span>
               <button
+                aria-label="Close"
                 onClick={() => setLinearOpen(false)}
-                className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-secondary/60"
+                style={{ color: "var(--ink-faint)", display: "inline-flex" }}
               >
-                <X className="h-3.5 w-3.5" />
+                <X size={14} />
               </button>
             </div>
-            <div className="p-3 border-b hairline space-y-2">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    autoFocus
-                    value={linearQuery}
-                    onChange={(e) => setLinearQuery(e.target.value)}
-                    placeholder="Filter by title…"
-                    className="w-full bg-secondary/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:bg-secondary/60"
-                  />
-                </div>
+            <div style={{ padding: 12, borderBottom: "1px solid var(--hairline)" }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  autoFocus
+                  className="input"
+                  value={linearQuery}
+                  onChange={(e) => setLinearQuery(e.target.value)}
+                  placeholder="Filter by title…"
+                />
                 <select
+                  className="input"
                   value={linearTeam}
                   onChange={(e) => setLinearTeam(e.target.value)}
-                  className="bg-secondary/40 rounded-md px-2 py-1.5 text-xs outline-none"
+                  aria-label="Linear team"
+                  style={{ width: 160, flexShrink: 0 }}
                 >
                   <option value="">All teams</option>
                   {linearTeams.data?.teams?.map((t) => (
@@ -282,7 +444,16 @@ export function TasksPanel() {
                   ))}
                 </select>
               </div>
-              <label className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: "var(--ink-muted)",
+                  marginTop: 8,
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={onlyMine}
@@ -291,46 +462,83 @@ export function TasksPanel() {
                 Only issues assigned to me
               </label>
             </div>
-            <div className="max-h-96 overflow-auto">
-              {linearIssues.isLoading && (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin mx-auto mb-1" /> Searching Linear…
+            <div className="scrollbar-thin" style={{ maxHeight: 384, overflow: "auto" }}>
+              {linearIssues.isLoading ? (
+                <div
+                  style={{
+                    padding: "24px 0",
+                    textAlign: "center",
+                    fontSize: 12.5,
+                    color: "var(--ink-faint)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span className="spinner" style={{ width: 11, height: 11 }} /> Searching Linear…
                 </div>
-              )}
-              {linearIssues.isError && (
-                <div className="px-4 py-4 text-xs text-destructive">
+              ) : null}
+              {linearIssues.isError ? (
+                <div style={{ padding: 16, fontSize: 12, color: "var(--rose)" }}>
                   {(linearIssues.error as Error)?.message}
                 </div>
-              )}
-              {linearIssues.data?.issues?.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+              ) : null}
+              {linearIssues.data?.issues?.length === 0 ? (
+                <div
+                  style={{
+                    padding: "24px 0",
+                    textAlign: "center",
+                    fontSize: 12.5,
+                    color: "var(--ink-faint)",
+                  }}
+                >
                   No issues found.
                 </div>
-              )}
-              {linearIssues.data?.issues?.map((i) => (
+              ) : null}
+              {linearIssues.data?.issues?.map((iss, idx, arr) => (
                 <button
-                  key={i.id}
-                  disabled={mImportLinear.isPending && mImportLinear.variables === i.id}
-                  onClick={() => mImportLinear.mutate(i.id)}
-                  className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-secondary/60 disabled:opacity-50 border-b hairline last:border-b-0"
+                  key={iss.id}
+                  disabled={mImportLinear.isPending && mImportLinear.variables === iss.id}
+                  onClick={() => mImportLinear.mutate(iss.id)}
+                  className="cmdk-item"
+                  style={{
+                    alignItems: "flex-start",
+                    borderRadius: 0,
+                    borderBottom: idx < arr.length - 1 ? "1px solid var(--hairline)" : "none",
+                    opacity:
+                      mImportLinear.isPending && mImportLinear.variables === iss.id ? 0.5 : 1,
+                  }}
                 >
-                  <span className="text-[10px] font-mono mt-1 px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                    {i.identifier}
+                  <span className="mono-label" style={{ marginTop: 2 }}>
+                    {iss.identifier}
                   </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-sm truncate">{i.title}</span>
-                    <span className="block text-[11px] text-muted-foreground">
-                      {i.state.name}
-                      {i.assignee ? ` · ${i.assignee.name}` : ""}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        color: "var(--ink)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {iss.title}
+                    </span>
+                    <span style={{ display: "block", fontSize: 11, color: "var(--ink-subtle)" }}>
+                      {iss.state.name}
+                      {iss.assignee ? ` · ${iss.assignee.name}` : ""}
                     </span>
                   </span>
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground mt-1" />
+                  <ExternalLink size={12} style={{ color: "var(--ink-faint)", marginTop: 2 }} />
                 </button>
               ))}
             </div>
           </div>
         </div>
-      )}
+      ) : null}
+
       <LineageDrawer
         open={Boolean(lineage)}
         onOpenChange={(o) => {
@@ -340,6 +548,6 @@ export function TasksPanel() {
         id={lineage?.id ?? null}
         title={lineage?.title}
       />
-    </>
+    </div>
   );
 }
