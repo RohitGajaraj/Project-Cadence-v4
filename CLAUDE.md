@@ -97,7 +97,7 @@ Every time you build a feature, make a decision, or learn something non-obvious,
 
 - **Skills, agents, plugins, MCP servers.** The active list appears in the session reminder — it is the source of truth; never invoke from training memory. **Before any task: scan available skills/agents/plugins/MCP, shortlist candidates across ALL namespaces, pick the best fit.** Full protocol: [`AGENTS.md`](./AGENTS.md) section 2. Selection logic: [`docs/operations/skills.md`](./docs/operations/skills.md) and [`docs/operations/subagents.md`](./docs/operations/subagents.md). **All namespaces have equal priority — no bias to any vendor.**
 - **Commits.** Use a commit skill — scan available options (`gstack-ship`, `commit-commands:commit`). Full discipline: [`docs/operations/commits.md`](./docs/operations/commits.md).
-- **Memory.** Auto-memory + project-local `.remember/`: [`docs/operations/memory.md`](./docs/operations/memory.md).
+- **Memory.** Auto-memory + project-local `.remember/`: [`docs/operations/memory.md`](./docs/operations/memory.md). **Session handoff: read `.remember/remember.md` first at session start; overwrite it at milestones and before session end** (full rule: [`AGENTS.md`](./AGENTS.md) ⚡ standing order).
 - **Tools.** Read/Edit/Write/Bash/Task conventions: [`docs/operations/tools.md`](./docs/operations/tools.md).
 - **Hooks.** Claude Code hooks enforce repo invariants (commit policy, migration safety, session context). Setup and rationale: [`docs/operations/hooks.md`](./docs/operations/hooks.md).
 - **Session-friction patterns** (fact-forcing gate, case-insensitive FS, `git mv` read-tracking, cost discipline) are documented once in [`AGENTS.md`](./AGENTS.md), section 7. Add to that loop, not here.

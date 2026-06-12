@@ -38,6 +38,8 @@ Three principles govern every decision in this repo:
 > - **While working:** Set **Now building** in [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) and update checked/unchecked items in `active-task.md` as you make progress.
 > - **Before you end or pause — non-negotiable:** Leave the status boards true. If work on a feature is not 100% complete, verify that `active-task.md` details exactly what is left so the next tool/agent can pick it up. If the feature is complete, delete `active-task.md` from the project root and flip status checkmarks in the backlog.
 >
+> - **Session handoff file (`.remember/remember.md`) — read first, overwrite last.** At session start, read it (the boot hook surfaces it) for the conversational context the boards don't carry. During the session, overwrite it at every major milestone; before ending or when the operator signals wrap-up, write the full handoff: what shipped (with F-IDs), open work in priority order, founder-gated items, environment notes (keys, running servers, gotchas), and method notes. This is what lets the next session start without re-deriving context — saving tokens is part of the job.
+>
 > This shared Git-tracked cursor ensures seamless handoffs between co-developing engines. If you only remember one rule, remember this one.
 
 ---

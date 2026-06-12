@@ -46,3 +46,10 @@ nango/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+
+# Local tool artifacts — knowledge-graph / agent DB state, churns every session
+ruvector.db
+agentdb*.rvf
+agentdb*.rvf*.lock
+agentdb*.lock
+*.png
