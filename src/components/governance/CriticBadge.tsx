@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { runCriticReview, type CriticReview } from "@/lib/discovery.functions";
+import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
 type Props = {
   review: CriticReview | null | undefined;
@@ -20,23 +21,17 @@ type Props = {
   size?: "sm" | "md";
 };
 
-const VERDICT_STYLES = {
-  ship: {
-    label: "Ship",
-    cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-    Icon: ShieldCheck,
-  },
-  revise: {
-    label: "Revise",
-    cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
-    Icon: ShieldAlert,
-  },
-  kill: {
-    label: "Kill",
-    cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",
-    Icon: ShieldX,
-  },
-} as const;
+// Verdict chips per the DESIGN.md inline-annotation ruling: moss = ship,
+// ember = revise (the human's call), madder = kill. Icons stay in the sheet
+// header only — the chip itself is the mono-caps word.
+const VERDICT_STYLES: Record<
+  CriticReview["verdict"],
+  { label: string; tone: VerdictTone; Icon: typeof ShieldCheck }
+> = {
+  ship: { label: "Ship", tone: "moss", Icon: ShieldCheck },
+  revise: { label: "Revise", tone: "ember", Icon: ShieldAlert },
+  kill: { label: "Kill", tone: "madder", Icon: ShieldX },
+};
 
 export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Props) {
   const qc = useQueryClient();
@@ -57,7 +52,8 @@ export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Prop
       <button
         onClick={() => run.mutate()}
         disabled={run.isPending}
-        className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="mono-label inline-flex items-center gap-1 rounded-full border hairline px-2 py-0.5 text-ink-faint transition hover:text-ink-muted disabled:opacity-50"
+        style={{ fontSize: 9.5 }}
         title="Run the Critic agent against this row"
       >
         <ShieldAlert className="h-3 w-3" />
@@ -69,23 +65,22 @@ export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Prop
   const v = VERDICT_STYLES[review.verdict];
   const Icon = v.Icon;
   const riskCount = review.risks.length;
-  const px = size === "md" ? "px-2.5 py-1" : "px-2 py-0.5";
-  const txt = size === "md" ? "text-xs" : "text-[10px]";
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`inline-flex items-center gap-1 rounded-md border ${px} ${txt} font-medium ${v.cls} hover:brightness-110`}
+        className="hover:brightness-110"
         title="Open Critic review"
       >
-        <Icon className={size === "md" ? "h-3.5 w-3.5" : "h-3 w-3"} />
-        {v.label}
-        {riskCount > 0 && (
-          <span className="opacity-70">
-            · {riskCount} risk{riskCount === 1 ? "" : "s"}
-          </span>
-        )}
+        <VerdictChip tone={v.tone} style={size === "md" ? { fontSize: 10.5 } : undefined}>
+          {v.label}
+          {riskCount > 0 && (
+            <span style={{ opacity: 0.7 }}>
+              · {riskCount} risk{riskCount === 1 ? "" : "s"}
+            </span>
+          )}
+        </VerdictChip>
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>

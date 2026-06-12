@@ -135,6 +135,67 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/* VerdictChip — founder ruling 2026-06-12: the inline annotation pattern
+   (KEEP / CORRECT / ADD NEXT). A mono-caps OUTLINE pill that classifies the
+   content it precedes — a rendered judgment, not live state (live state with
+   a pulse dot is StatusBadge). No fill, no dot, no icon; the role color IS
+   the meaning:
+     moss    confirmed / keep / validated / ship
+     ember   needs correction / the human's call
+     indigo  next action / do this now
+     orchid  agent-performed
+     saffron highlight / celebrate
+     madder  failed / missed / kill
+   Full usage rules: DESIGN.md "Inline verdict chips". */
+export type VerdictTone = "moss" | "ember" | "indigo" | "orchid" | "saffron" | "madder";
+
+const VERDICT_TONES: Record<VerdictTone, string> = {
+  moss: "var(--emerald)",
+  ember: "var(--ember)",
+  indigo: "var(--action-blue)",
+  orchid: "var(--agent)",
+  saffron: "var(--saffron)",
+  madder: "var(--rose)",
+};
+
+export function VerdictChip({
+  tone,
+  children,
+  selected = false,
+  style,
+}: {
+  tone: VerdictTone;
+  children: ReactNode;
+  /** Picker/selected state — gains a quiet fill of the same role color. */
+  selected?: boolean;
+  style?: CSSProperties;
+}) {
+  const fg = VERDICT_TONES[tone];
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        fontFamily: "var(--font-mono)",
+        fontSize: 9.5,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        fontWeight: 600,
+        color: fg,
+        border: `1px solid color-mix(in oklab, ${fg} 40%, transparent)`,
+        background: selected ? `color-mix(in oklab, ${fg} 10%, transparent)` : "transparent",
+        borderRadius: 99,
+        padding: "2px 9px",
+        whiteSpace: "nowrap",
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 /* Cite — [n] chip with hover evidence card. Production passes the evidence
    in (source name + verbatim quote) instead of the prototype's window data. */
 export function Cite({ n, source, body }: { n: number | string; source?: string; body?: string }) {

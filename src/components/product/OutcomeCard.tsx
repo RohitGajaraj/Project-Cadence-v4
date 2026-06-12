@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CircleDot, Target, XCircle } from "lucide-react";
+import { Target } from "lucide-react";
 import { toast } from "sonner";
 import { recordOutcome, checkPrdShipped } from "@/lib/outcome.functions";
+import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
 type Verdict = "validated" | "mixed" | "missed";
 
@@ -32,19 +33,13 @@ type Props = {
   invalidateKey: readonly unknown[];
 };
 
-const VERDICT_STYLES: Record<Verdict, { cls: string; Icon: typeof CheckCircle2 }> = {
-  validated: {
-    cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-    Icon: CheckCircle2,
-  },
-  mixed: {
-    cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
-    Icon: CircleDot,
-  },
-  missed: {
-    cls: "bg-rose-500/10 text-rose-300 border-rose-500/30",
-    Icon: XCircle,
-  },
+// Verdict chips per the DESIGN.md inline-annotation ruling. Outcomes are the
+// one place moss/madder live; "mixed" is ember — the result needs the human's
+// read before it feeds rescoring.
+const VERDICT_TONES: Record<Verdict, VerdictTone> = {
+  validated: "moss",
+  mixed: "ember",
+  missed: "madder",
 };
 
 const VERDICT_ORDER: Verdict[] = ["validated", "mixed", "missed"];
@@ -121,18 +116,16 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
         <RecordedOutcome outcome={outcome} />
       ) : shipped ? (
         <div className="space-y-3">
-          <div className="flex items-center rounded-md border hairline overflow-hidden w-fit">
+          <div className="flex items-center gap-2">
             {VERDICT_ORDER.map((v) => (
-              <button
-                key={v}
-                onClick={() => setVerdict(v)}
-                className={`px-3 py-1.5 text-xs capitalize ${
-                  verdict === v
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {v}
+              <button key={v} onClick={() => setVerdict(v)} title={`Record as ${v}`}>
+                <VerdictChip
+                  tone={VERDICT_TONES[v]}
+                  selected={verdict === v}
+                  style={verdict !== null && verdict !== v ? { opacity: 0.45 } : undefined}
+                >
+                  {v}
+                </VerdictChip>
               </button>
             ))}
           </div>
@@ -187,18 +180,15 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
 }
 
 function RecordedOutcome({ outcome }: { outcome: PrdOutcome }) {
-  const style = outcome.verdict ? VERDICT_STYLES[outcome.verdict] : null;
-  const Icon = style?.Icon ?? CircleDot;
   return (
     <div className="space-y-3">
-      <span
-        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium capitalize ${
-          style?.cls ?? "hairline text-muted-foreground"
-        }`}
-      >
-        <Icon className="h-3 w-3" />
-        {outcome.verdict ?? "recorded"}
-      </span>
+      {outcome.verdict ? (
+        <VerdictChip tone={VERDICT_TONES[outcome.verdict]}>{outcome.verdict}</VerdictChip>
+      ) : (
+        <span className="mono-label inline-flex rounded-full border hairline px-2 py-0.5 text-ink-faint">
+          recorded
+        </span>
+      )}
       {outcome.summary && <p className="text-sm leading-relaxed">{outcome.summary}</p>}
       {(outcome.metric_label || outcome.metric_value) && (
         <p className="text-xs text-muted-foreground">

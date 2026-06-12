@@ -153,6 +153,47 @@ flutter 3.2s. ALL motion gated by `data-motion="off"` and
 | Calendar | Contribution-style pixel month, ‹ › nav + Today, weekends de-emphasized (pref in Settings → Profile), quick-add syncs back |
 | Docs | Notion-style: click = preview, double-click = full editor (serif title/body, Push to Signals / Share / Delete / Save·syncs-to-brain). Knowledge opens with the "Company brain" strip |
 
+## Inline verdict chips — annotate, don't bury (founder ruling 2026-06-12)
+
+The annotation pattern from the founder's design-review reference: small
+mono-caps OUTLINE pills — `KEEP` `CORRECT` `ADD NEXT` — preceding the content
+they classify. This is how Cadence makes judgments legible at a glance and
+the platform feel edited, prominent, premium. It applies to EVERY current and
+future screen, not one surface.
+
+**The rule: when content carries a judgment (keep/correct/ship/kill/next/won/
+missed), lead with a verdict chip instead of burying the verdict in prose.**
+
+Anatomy (canonical primitive: `src/components/cadence/Primitives.tsx`
+`VerdictChip`): JetBrains Mono 9.5px caps, 0.1em tracking, weight 600,
+border-radius 99, padding 2px 9px, 1px outline at 40% color-mix of the role
+color, **no fill** (selected state may carry a 10% fill), **no dot, no icon**.
+The word + the role color carry the entire meaning.
+
+| Tone | Role color | Means |
+|---|---|---|
+| `moss` | moss | confirmed · keep · validated · ship |
+| `ember` | ember | needs correction · the human's call |
+| `indigo` | indigo | next action · do this now |
+| `orchid` | orchid | agent-performed |
+| `saffron` | saffron | highlight · celebrate |
+| `madder` | madder | failed · missed · kill |
+
+Distinctions that keep the system honest:
+- **VerdictChip ≠ StatusBadge.** StatusBadge (dot + pulse) is LIVE state —
+  running, queued, at-gate. VerdictChip is a rendered judgment on content.
+  Never use a verdict chip for live state or vice versa.
+- Chip text is 1–2 words (3 max), consequence-flavored, sentence-meaningful:
+  `SHIP`, `REVISE`, `KILL`, `KEEP`, `ADD NEXT`, `VALIDATED`, `MISSED`.
+- The role-color law still governs: a moss chip may only ever mean a positive
+  outcome/keep; ember only a needs-human correction. No decorative recolors.
+- No filler: a chip must classify real, data-backed judgment. If there is no
+  verdict in the data, there is no chip.
+
+Where it applies today (and any new surface with a judgment): Critic reviews
+(ship/revise/kill), PRD outcomes (validated/mixed/missed), eval results,
+drift findings, review/feedback annotations, brief callouts, rescore deltas.
+
 ## How to plan and build (instructions for any AI builder)
 
 1. **Read before designing:** this file, then `cadence/tokens.css`, then the
@@ -204,5 +245,6 @@ decoration (the aurora and cooking sweep are the only sanctioned washes).
 | `styles.css` font import | Google Fonts link in `src/routes/__root.tsx` (Newsreader · Schibsted Grotesk · JetBrains Mono) |
 | Theme switching (`data-theme="dark"`) | `.dark` class on `<html>` via `src/hooks/use-theme.tsx` (light = default parchment, dark = char; aurora retired 2026-06-12) |
 | `.bento`, `.mono-label`, `.hero-editorial`, `.ai-glow`, `.dot-*`, `.cite` | `@layer utilities` in `src/styles.css` |
+| Verdict chips (founder ruling above — not yet in the design project; sync it back on the next design-project update) | `VerdictChip` in `src/components/cadence/Primitives.tsx` (applied: CriticBadge, OutcomeCard) |
 | Cooking banner | `src/components/cadence/CookingBanner.tsx` (ember sweep) |
 | Specimens / UI kit | `Project Cadence - Design v1/design-system/` + `Cadence Prototype.html` (not bundled into the app) |
