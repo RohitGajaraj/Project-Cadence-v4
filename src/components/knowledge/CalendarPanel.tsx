@@ -138,7 +138,10 @@ export function CalendarPanel({
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [selDay, setSelDay] = useState<number | null>(null);
+  // Today is selected by default (founder 2026-06-12): opening Month shows
+  // today accent-highlighted with its day list already open below the grid.
+  // The cursor starts on the current month, so today's date is always valid.
+  const [selDay, setSelDay] = useState<number | null>(() => new Date().getDate());
   const [connectOpen, setConnectOpen] = useState(false);
 
   const [showNew, setShowNew] = useState(false);
@@ -801,7 +804,14 @@ function MonthGrid({
           const its = inMonth ? dayItems(day) : [];
           const n = its.length;
           const weekend = i % 7 > 4;
-          const fill = !inMonth ? "transparent" : SHADES[Math.min(n, 3)];
+          // Today always carries the ember accent (founder 2026-06-12) — a
+          // quiet wash when free, the occupancy shade (already ember-mixed,
+          // and stronger) when occupied.
+          const fill = !inMonth
+            ? "transparent"
+            : isToday && n === 0
+              ? "color-mix(in oklab, var(--ember) 12%, var(--canvas))"
+              : SHADES[Math.min(n, 3)];
           return (
             <button
               key={i}
@@ -817,10 +827,10 @@ function MonthGrid({
                 position: "relative",
                 overflow: "hidden",
                 background: fill,
-                border: isSel
-                  ? "1.5px solid var(--ink)"
-                  : isToday
-                    ? "1.5px solid var(--ember)"
+                border: isToday
+                  ? "1.5px solid var(--ember)"
+                  : isSel
+                    ? "1.5px solid var(--ink)"
                     : "1px solid var(--hairline)",
                 opacity: !inMonth ? 0.25 : weekend ? 0.55 : 1,
                 cursor: inMonth ? "pointer" : "default",
@@ -912,6 +922,9 @@ function MonthGrid({
           >
             <span className="mono-label" style={{ fontSize: 8.5, color: "var(--ink)" }}>
               {monthName} {selDay}
+              {isThisMonth && selDay === today.getDate() ? (
+                <span style={{ color: "var(--ember)" }}> · today</span>
+              ) : null}
             </span>
             <span style={{ flex: 1 }}></span>
             <button
