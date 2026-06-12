@@ -127,3 +127,80 @@ Sandboxed test execution (CI is the test runner) · GitHub webhooks (tick pollin
 2. **Human door:** NL-prompt a session, watch steps live, review Monaco diffs, steer mid-session, clear gates. Playwright walkthrough proof.
 3. `bun run lint` (changed files), `tsc`, `bun run build` green; doc closure in the same unit of work.
 4. Demo inclusion only after golden-path QA passes (ruling 2026-06-12).
+
+---
+
+# As built (2026-06-12) — the operator's guide
+
+Everything below documents the shipped implementation: what a session feels like, where each behavior lives, and how to prove it works. (Everything above is the build contract it was built to.)
+
+## The life of a session (what actually happens, step by step)
+
+1. **Dispatch.** Either door converges on `dispatchStudioSession`:
+   - *Agent door:* "Send to Studio" on a PRD (Specs panel dropdown, PRD detail button) passes `{prdId}`. The work order embeds the PRD body as the source of truth plus the linked GitHub issue ("Closes #N") when one exists.
+   - *Human door:* the composer at the top of `/studio` — plain-language prompt, optional approved-PRD picker, model switcher.
+   Dispatch is **queue-then-return**: it creates the mission, inserts the run as `status='queued'` (chosen model stamped on the run row), records the `prd → mission` lineage edge, and immediately returns `{missionId}`. Nothing blocks.
+2. **Start.** The `resume-runs` sweeper (pg_cron, every minute) promotes the queued run and the agent loop begins under the Studio system prompt — seeded in the migration, slug still `builder`, 24-step budget.
+3. **Explore → plan → stage.** The agent maps the repo (`repo.tree`), finds relevant code (`repo.search`), reads every file it will touch (`repo.read` — the prompt forbids editing unread files), states a plan, then `studio.stage`s full file contents into the mission's changeset. **Staging is a DB write only** — `studio_changesets` + `studio_changes` rows, base contents snapshotted from the repo on first stage of each path, forbidden paths (`.github/`, `supabase/migrations/`, `.env*`, lockfiles) rejected at the tool boundary. GitHub is untouched.
+4. **The commit gate.** `studio.commit` is confirm-gated, and it is a **pausing gate**: the loop checkpoints the conversation, flips the run to `waiting_approval`, and stops. The approval appears inline on `/studio/$missionId` *and* in Today's "Needs you" calls queue. Approving executes the tool — branch `studio/<mission-short-id>` created off the default-branch head, all staged changes shipped as one commit via the Git Data API (blobs → tree → commit → ref), every path claimed in `builder_file_claims` so parallel sessions can't collide.
+5. **Resume.** The next sweeper tick (≤1 min) sees the gate is decided *and executed*, re-enters the loop from the checkpoint, and injects the tool's actual result into the conversation (tracked by approval id in checkpoint state, so re-resumes never double-inject). Rejection injects too — the agent is told nothing ran and adjusts or finalizes.
+6. **PR → CI → merge.** Same pause/resume dance: `studio.pr.open` (confirm) opens the multi-file PR from the changeset branch; `github.ci.read` (auto) checks the verdict; on red the agent stages a fix and commits again to the same branch; on green it requests `studio.pr.merge` — **always review-gated, the autonomy dial cannot soften it**. Merging releases the file claims and stamps the changeset `merged`.
+7. **Finalize.** The agent ends with a structured summary (what shipped, PR URL, CI verdict, deferred items); the mission completes; auto-reflection writes the lesson to agent memory.
+
+**Steering at any point:** the composer at the bottom of the session timeline inserts an `agent_messages` row with `kind='steer'`; the loop drains unconsumed steers into the conversation at the top of its next step — that is the Claude Code / Cursor mid-session interaction.
+
+## Where to find it
+
+- **`/studio`** — session list (5s live poll; `waiting_approval` renders as "waiting on you" in amber) + composer. Command palette: "Studio" · shortcut **G B**. `/build` redirects here.
+- **`/studio/$missionId`** — left: live timeline (thoughts, tool calls with status chips, finals, steers interleaved) + inline approve/reject gate cards + steering composer. Right tabs (`?tab=`): **Changes** (file list + per-file Monaco diff, lazy-loaded), **PR & CI** (link, checks, refresh, merge-gate pointer), **Cost** (per-run model/tokens/$ + total).
+- **Today → "Needs you"** — Studio gates surface in the existing calls queue automatically (they are ordinary `agent_approvals`).
+- **PRD detail / Specs panel** — "Send to Studio".
+
+## Trust & governance (operator terms)
+
+| Action | Gate | Who can change it |
+|---|---|---|
+| Read repo (tree/read/search), stage changes | auto | per-tool mode in Agents settings |
+| `studio.commit`, `studio.pr.open` | confirm | floor — dial can tighten, never below confirm |
+| `studio.pr.merge` | review | hard floor — not overridable |
+
+Every model call rides the existing chokepoint (`callModel`, surface `'agent'`): guardrails, budgets, BYOK, cost logging all inherited. Every GitHub mutation is idempotent (`withIdempotency`) — a worker eviction or re-approval never double-commits, double-opens, or double-merges. All tool output re-enters the loop XML-wrapped as untrusted.
+
+## Graceful degradation & known windows
+
+- **No GitHub connection** → `repo.*`/`studio.*` tools fail with the `resolveProviderAuth` actionable error (bind a repo on `/sync` or connect GitHub in Settings); dispatch itself still works and the session reports the blocker.
+- **Pre-migration window (KI-08 pattern):** until `20260612100000_f_studio_engine` applies via Lovable sync, hosted `/studio` queries and approval inserts error on missing tables/columns. Expected; gates in `active-task.md`.
+- **Sweeper cadence is the heartbeat:** queued start and gate-resume each cost ≤1 sweeper tick (1 min hosted). Local dev without the cron: `curl -X POST <app>/api/public/hooks/resume-runs` with the hook secret drives it manually.
+- **CI never blocks the platform:** `github.ci.read` snapshots persist as `tool_calls`; the PR tab's Refresh re-reads on demand.
+
+## Verify checklist (golden-path QA — gates demo inclusion)
+
+1. Approve a PRD with a linked issue → Send to Studio → lands on `/studio/$missionId` with the work order visible.
+2. Watch: repo reads appear as timeline steps; a changeset accumulates files in the Changes tab; diffs render in Monaco.
+3. Commit gate appears inline (and on Today) → approve → branch + commit visible on GitHub → session resumes by itself within a minute.
+4. PR gate → approve → multi-file PR opens with "Closes #N" → CI verdict appears in the PR tab.
+5. Steer mid-session ("also update the README") → the next step acknowledges the guidance.
+6. Merge gate (review) → approve → PR merges, claims release, mission completes, `prd → mission` edge visible in lineage.
+7. Cost tab shows per-run model/tokens/$; the run honored the model picked at dispatch.
+
+## Implementation map
+
+| Piece | Where |
+|---|---|
+| Migration (tables, RLS, approval ctx columns, `agent_runs.model`, Studio prompt + tool seeds) | `supabase/migrations/20260612100000_f_studio_engine.sql` |
+| Engine tools (`repo.*`, `studio.*`) | `src/lib/ai/tools/registry.server.ts` (§ "Studio engine tools") |
+| Loop: 24 steps, steer injection, pause-on-gate, resume outcome injection, gate floors, `executeApproval` mission ctx | `src/lib/ai/loop.server.ts` |
+| Steer-vs-handoff separation (`kind='handoff'` filter) | `src/lib/ai/handoff.server.ts` (`consumeInboundHandoff`) |
+| Server functions (dispatch/list/get/steer/diff/CI) | `src/lib/studio.functions.ts` |
+| `mission` artifact kind (lineage) | `src/lib/lineage.functions.ts` · `src/components/cadence/LineageDrawer.tsx` |
+| KI-02 sweeper fixes (NULL checkpoint, `waiting_approval` pickup) | `src/routes/api/public/hooks/resume-runs.ts` |
+| Surface routes | `src/routes/_authenticated.studio.{index,$missionId}.tsx` |
+| Surface components (timeline, gate cards, changes/CI/cost panels) | `src/components/studio/` |
+| Redirect + palette | `src/routes/_authenticated.build.tsx` · `src/components/cadence/CommandPalette.tsx` |
+| Legacy internals (kept, ≡ Studio) | `src/lib/build.functions.ts`, `builder_file_claims`, single-file `github.pr.open`/`github.commit.append` |
+
+## Notable history
+
+- **2026-06-12 morning:** spec + decisions logged; 5-agent build launched; session crashed mid-build leaving only the rename sweep (and a stale git rebase + index.lock, cleared at resume).
+- **2026-06-12 (this unit):** engine + loop + functions + surface + tick hardening completed in one unit; the pause-on-gate (`waiting_approval`) run state was introduced here — before this, the loop "continued planning" past queued approvals, which made sequential shipping gates (commit → PR → merge) impossible to run unattended.
+- Supersedes Bundle 9's handoff UX (`bundle-9-builder.md` carries the banner); the Builder agent internals live on underneath.
