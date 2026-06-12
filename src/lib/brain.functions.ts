@@ -5,6 +5,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { indexFinding } from "@/lib/rag/findings.server";
 
@@ -70,5 +71,35 @@ export const getBrainStatus = createServerFn({ method: "GET" })
         findings: findings.count ?? 0,
       },
       latest: latestRes.data?.created_at ?? null,
+    };
+  });
+
+/**
+ * F-DESIGN-EMBER (Knowledge) — the "Company brain" strip counts that
+ * getBrainStatus does not cover: chat threads, learnings, live connectors.
+ * Additive export; learnings/connections use the untyped-client cast
+ * precedent (outcome.functions.ts / connections.functions.ts) because those
+ * tables are not yet in the generated Database types.
+ */
+export type CompanyBrainStats = {
+  conversations: number;
+  learnings: number;
+  connectorsLive: number;
+};
+
+export const getCompanyBrainStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CompanyBrainStats> => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const head = { count: "exact" as const, head: true };
+    const [conversations, learnings, connections] = await Promise.all([
+      db.from("conversations").select("id", head),
+      db.from("learnings").select("id", head),
+      db.from("connections").select("id", head).eq("status", "connected"),
+    ]);
+    return {
+      conversations: conversations.count ?? 0,
+      learnings: learnings.count ?? 0,
+      connectorsLive: connections.count ?? 0,
     };
   });

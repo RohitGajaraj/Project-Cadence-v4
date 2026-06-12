@@ -1,20 +1,33 @@
+// Knowledge — screen 5 of the Ember Editorial migration, ported 1:1 from
+// design-reference/cadence/loop.jsx (KnowledgeScreen): kicker "Loop · Learn",
+// serif h1, the Company-brain strip (REAL counts only — getBrainStatus +
+// getCompanyBrainStats), TabRow Calendar | Memory | Decisions | Docs with
+// KNOWLEDGE_DESC lines. Production contracts ride the reference layout:
+// ?tab= + ?meeting= search params, panel-level server-function wiring.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Brain, Gavel, FileText, Calendar as CalIcon } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
+import { TopBar } from "@/components/cadence/TopBar";
+import { MonoLabel, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
+import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
 import { MemoryPanel } from "@/components/knowledge/MemoryPanel";
 import { DecisionsPanel } from "@/components/knowledge/DecisionsPanel";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
 import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 
-// Knowledge surface — v4 IA. Calendar · Memory · Decisions · Docs.
-// Calendar is the default tab so the swarm has one substrate for
-// everything it can pull threads from (events, memory, decisions, docs).
-
 type Tab = "calendar" | "memory" | "decisions" | "docs";
 const TABS: Tab[] = ["calendar", "memory", "decisions", "docs"];
+
+const KNOWLEDGE_DESC: Record<string, string> = {
+  calendar: "Events and meeting transcripts. Open a meeting to capture and extract.",
+  memory: "What the swarm has learned about your workspace, customers, and product.",
+  decisions: "Every choice your team made, captured once. Sourced from missions, specs, meetings.",
+  docs: "Workspace pages. Import from Google Docs or Notion, edit inline.",
+};
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
   validateSearch: (search: Record<string, unknown>): { tab: Tab; meeting?: string } => {
@@ -28,17 +41,14 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   head: () => ({ meta: [{ title: "Knowledge · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
-      <div className="p-8">
-        <div className="rounded-xl border border-rose/30 bg-rose/5 p-6">
-          <h2 className="text-lg font-semibold text-rose-200">Couldn't load knowledge</h2>
-          <p className="mt-2 text-sm text-rose-200/70">
+      <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 8 }}>knowledge · failed to load</MonoLabel>
+          <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 12 }}>
             {(error as Error)?.message ?? "Unknown error"}
           </p>
-          <button
-            onClick={reset}
-            className="mt-4 rounded-md border hairline px-3 py-1.5 text-xs hover:bg-secondary"
-          >
-            Retry
+          <button className="btn btn-ghost btn-sm" onClick={reset}>
+            Retry · reloads this surface
           </button>
         </div>
       </div>
@@ -46,115 +56,106 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   ),
   notFoundComponent: () => (
     <AppShell>
-      <div className="p-8 text-muted-foreground">Not found.</div>
+      <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
+        <p style={{ fontSize: 13, color: "var(--ink-subtle)" }}>Not found.</p>
+      </div>
     </AppShell>
   ),
 });
 
-type TabDef = {
-  id: Tab;
-  label: string;
-  description: string;
-  Icon: typeof BookOpen;
-  tone: "violet" | "emerald" | "sky" | "amber";
-};
-
 function KnowledgePage() {
   const { tab, meeting } = Route.useSearch();
   const navigate = useNavigate({ from: "/knowledge" });
+  const { activeWorkspace } = useWorkspace();
 
   const fProjects = useServerFn(listProjects);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
 
-  const tabs: TabDef[] = [
-    {
-      id: "calendar",
-      label: "Calendar",
-      description: "Events and meeting transcripts. Open a meeting to capture and extract.",
-      Icon: CalIcon,
-      tone: "violet",
-    },
-    {
-      id: "memory",
-      label: "Memory",
-      description: "What the swarm has learned about your workspace, customers, and product.",
-      Icon: Brain,
-      tone: "emerald",
-    },
-    {
-      id: "decisions",
-      label: "Decisions",
-      description:
-        "Every choice your team made, captured once. Sourced from missions, specs, meetings.",
-      Icon: Gavel,
-      tone: "amber",
-    },
-    {
-      id: "docs",
-      label: "Docs",
-      description: "Workspace pages. Import from Google Docs or Notion, edit inline.",
-      Icon: FileText,
-      tone: "sky",
-    },
-  ];
+  const fBrain = useServerFn(getBrainStatus);
+  const brain = useQuery({ queryKey: ["brain-status"], queryFn: () => fBrain() });
+  const fStats = useServerFn(getCompanyBrainStats);
+  const stats = useQuery({ queryKey: ["company-brain-stats"], queryFn: () => fStats() });
 
-  const activeTab = tabs.find((t) => t.id === tab)!;
   const setTab = (next: Tab) => navigate({ search: { tab: next, meeting } });
-  const setMeeting = (m: string | undefined) =>
-    navigate({ search: { tab, meeting: m } });
+  const setMeeting = (m: string | undefined) => navigate({ search: { tab, meeting: m } });
+
+  // Company brain strip — every count is a real head count; nothing renders
+  // until both queries resolve (no-filler law: no placeholder numbers).
+  const brainStats: [string, string][] | null =
+    brain.data && stats.data
+      ? [
+          ["chat threads", String(stats.data.conversations)],
+          ["signals", String(brain.data.counts.signals)],
+          ["meetings", String(brain.data.counts.meetings)],
+          ["decisions", String(brain.data.counts.decisions)],
+          ["learnings", String(stats.data.learnings)],
+          ["docs", String(brain.data.counts.docs)],
+          ["connectors", `${stats.data.connectorsLive} live`],
+        ]
+      : null;
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="px-6 md:px-10 py-8 max-w-[1400px] mx-auto space-y-6">
-        <header>
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            <BookOpen className="h-3 w-3" /> Knowledge
-          </div>
-          <h1 className="font-display text-3xl tracking-tight mt-1">Knowledge</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            What the swarm knows. Calendar, memory, decisions, docs in one place.
-          </p>
-        </header>
+      <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Knowledge"]} />
+      <div
+        data-screen-label="Knowledge"
+        style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}
+      >
+        <SurfaceHeader
+          kicker="Loop · Learn"
+          icon={BookOpen}
+          title="Knowledge"
+          sub="What the swarm knows. Calendar, memory, decisions, docs in one place."
+        />
 
-        <div className="flex flex-wrap gap-1 border-b hairline">
-          {tabs.map((t) => {
-            const active = tab === t.id;
-            const Icon = t.Icon;
-            const toneIcon =
-              t.tone === "violet"
-                ? "bg-violet/10 text-violet border-violet/30"
-                : t.tone === "emerald"
-                  ? "bg-emerald/10 text-emerald border-emerald/30"
-                  : t.tone === "sky"
-                    ? "bg-cyan/10 text-cyan border-cyan/30"
-                    : "bg-amber/10 text-amber border-amber/30";
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`px-4 py-2 text-sm border-b-2 -mb-px inline-flex items-center gap-2 ${
-                  active
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <span
-                  className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${toneIcon} ${
-                    active ? "ring-1 ring-foreground/20" : "opacity-80"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </span>
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
+        {/* Company brain strip — one consolidated substrate, queryable from Chat. */}
+        <div
+          className="band-stone"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
+            padding: "12px 18px",
+            marginBottom: 18,
+            flexWrap: "wrap",
+          }}
+        >
+          <MonoLabel icon={Sparkles} style={{ color: "var(--ink)" }}>
+            Company brain
+          </MonoLabel>
+          {brainStats ? (
+            brainStats.map(([l, v]) => (
+              <span key={l} className="mono-label" style={{ fontSize: 9 }}>
+                <strong className="tabular-nums" style={{ color: "var(--ink)", fontWeight: 600 }}>
+                  {v}
+                </strong>{" "}
+                {l}
+              </span>
+            ))
+          ) : (
+            <span className="mono-label" style={{ fontSize: 9 }}>
+              loading…
+            </span>
+          )}
+          <span style={{ flex: 1 }}></span>
+          <span className="mono-label" style={{ fontSize: 8.5 }}>
+            everything here is what Chat reasons over — one brain
+          </span>
         </div>
-        <p className="text-sm text-muted-foreground max-w-2xl">{activeTab.description}</p>
 
-        {tab === "calendar" && (
-          <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />
-        )}
+        <TabRow
+          tabs={[
+            { id: "calendar", label: "Calendar" },
+            { id: "memory", label: "Memory" },
+            { id: "decisions", label: "Decisions" },
+            { id: "docs", label: "Docs" },
+          ]}
+          active={tab}
+          onSet={(t) => setTab(t as Tab)}
+          desc={KNOWLEDGE_DESC}
+        />
+
+        {tab === "calendar" && <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />}
         {tab === "memory" && <MemoryPanel />}
         {tab === "decisions" && <DecisionsPanel />}
         {tab === "docs" && <DocsPanel />}

@@ -1,24 +1,24 @@
+// Docs — Knowledge tab 4, ported from design-reference/cadence/loop.jsx
+// (KnowledgeScreen · Docs): 2-col card grid (icon tile, title, mono meta,
+// blue "edit", chevron), click = preview expand (serif excerpt), double-click
+// or "edit" = the full-width editor card with "← All docs", Push to Signals
+// (real — createSignal), "Delete · removes everywhere" and the serif title.
+// Production functionality rides the reference: the tiptap DocEditor with
+// autosave, Google Docs + Notion imports, search, emoji icons. The
+// reference's Share popover / resources chips / MD toggle / versioning have
+// no production capability yet — see unported.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Trash2,
-  FileText,
-  Search,
-  Download,
-  X,
-  Loader2,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Search, X } from "lucide-react";
 import { DocEditor } from "@/components/cadence/DocEditor";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { listDocs, getDoc, createDoc, updateDoc, deleteDoc } from "@/lib/docs.functions";
 import { importGoogleDoc } from "@/lib/gdocs.functions";
 import { importNotionPage, searchNotionPages } from "@/lib/notion.functions";
-import FolderInteraction from "@/components/ui/folder";
+import { createSignal } from "@/lib/discovery.functions";
+import { EmptyState, MonoLabel } from "@/components/cadence/Primitives";
 
 type DocNode = {
   id: string;
@@ -30,6 +30,32 @@ type DocNode = {
   position: number;
   updated_at: string;
 };
+
+type DocFull = {
+  id: string;
+  title: string;
+  icon: string | null;
+  content_json: unknown;
+  content_text: string | null;
+  updated_at: string;
+};
+
+function extractText(node: unknown): string {
+  if (!node || typeof node !== "object") return "";
+  const n = node as { text?: string; content?: unknown[] };
+  if (typeof n.text === "string") return n.text;
+  if (Array.isArray(n.content)) return n.content.map(extractText).join(" ");
+  return "";
+}
+
+function excerptOf(doc: DocFull): string {
+  const text = doc.content_text?.trim() || extractText(doc.content_json).trim();
+  return text.slice(0, 320);
+}
+
+function updatedLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
+}
 
 export function DocsPanel() {
   const qc = useQueryClient();
@@ -43,12 +69,13 @@ export function DocsPanel() {
   const fImportGDoc = useServerFn(importGoogleDoc);
   const fImportNotion = useServerFn(importNotionPage);
   const fSearchNotion = useServerFn(searchNotionPages);
+  const fCreateSignal = useServerFn(createSignal);
 
   const docs = useQuery({ queryKey: ["docs"], queryFn: () => fList() });
   const allDocs = (docs.data?.docs ?? []) as DocNode[];
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(null); // editor
+  const [openDocId, setOpenDocId] = useState<string | null>(null); // preview
   const [search, setSearch] = useState("");
   const [notionOpen, setNotionOpen] = useState(false);
   const [notionQuery, setNotionQuery] = useState("");
@@ -58,44 +85,47 @@ export function DocsPanel() {
     queryFn: () => fGet({ data: { id: selectedId! } }),
     enabled: !!selectedId,
   });
+  const preview = useQuery({
+    queryKey: ["doc", openDocId],
+    queryFn: () => fGet({ data: { id: openDocId! } }),
+    enabled: !!openDocId,
+  });
 
   const mCreate = useMutation({
-    mutationFn: (vars: { parent_id?: string | null }) =>
-      fCreate({ data: { title: "Untitled", parent_id: vars.parent_id ?? null } }),
+    mutationFn: () => fCreate({ data: { title: "Untitled", parent_id: null } }),
     onSuccess: ({ doc }) => {
       qc.invalidateQueries({ queryKey: ["docs"] });
       setSelectedId(doc.id);
-      if (doc.parent_id) setExpanded((e) => ({ ...e, [doc.parent_id!]: true }));
+      setOpenDocId(null);
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const mUpdate = useMutation({
-    mutationFn: (vars: {
-      id: string;
-      title?: string;
-      icon?: string;
-      content_json?: unknown;
-      archived?: boolean;
-    }) => fUpdate({ data: vars }),
+    mutationFn: (vars: { id: string; title?: string; icon?: string; content_json?: unknown }) =>
+      fUpdate({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["docs"] });
       qc.invalidateQueries({ queryKey: ["doc", selectedId] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const mDelete = useMutation({
-    mutationFn: (id: string) => fDelete({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Deleted");
+    mutationFn: (vars: { id: string; title: string }) => fDelete({ data: { id: vars.id } }),
+    onSuccess: (_r, vars) => {
+      toast.success(`“${vars.title}” deleted · removed from the brain`);
       setSelectedId(null);
+      setOpenDocId(null);
       qc.invalidateQueries({ queryKey: ["docs"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const mImport = useMutation({
     mutationFn: (urlOrId: string) => fImportGDoc({ data: { urlOrId } }),
     onSuccess: ({ doc }) => {
-      toast.success(`Imported "${doc.title}"`);
+      toast.success(`Imported “${doc.title}” · part of the brain now`);
       qc.invalidateQueries({ queryKey: ["docs"] });
       setSelectedId(doc.id);
     },
@@ -107,7 +137,7 @@ export function DocsPanel() {
   const mImportNotion = useMutation({
     mutationFn: (urlOrId: string) => fImportNotion({ data: { urlOrId } }),
     onSuccess: ({ doc }) => {
-      toast.success(`Imported "${doc.title}" from Notion`);
+      toast.success(`Imported “${doc.title}” from Notion · part of the brain now`);
       qc.invalidateQueries({ queryKey: ["docs"] });
       setSelectedId(doc.id);
       setNotionOpen(false);
@@ -115,6 +145,22 @@ export function DocsPanel() {
     onError: (e: unknown) => {
       toast.error(e instanceof Error ? e.message : "Notion import failed");
     },
+  });
+
+  const mPush = useMutation({
+    mutationFn: (doc: DocFull) =>
+      fCreateSignal({
+        data: {
+          content: (doc.content_text?.trim() || doc.title).slice(0, 8000),
+          source: "doc",
+          title: doc.title,
+        },
+      }),
+    onSuccess: (_r, doc) => {
+      qc.invalidateQueries({ queryKey: ["signals"] });
+      toast.success(`“${doc.title}” pushed to Signals. Scout will cluster it.`);
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const notionSearch = useQuery({
@@ -135,157 +181,155 @@ export function DocsPanel() {
     })();
   }
 
-  const tree = useMemo(() => {
-    const byParent = new Map<string | null, DocNode[]>();
-    const filter = search.trim().toLowerCase();
-    const list = filter ? allDocs.filter((d) => d.title.toLowerCase().includes(filter)) : allDocs;
-    for (const d of list) {
-      const k = filter ? null : d.parent_id;
-      const arr = byParent.get(k) ?? [];
-      arr.push(d);
-      byParent.set(k, arr);
-    }
-    return byParent;
-  }, [allDocs, search]);
+  function openEditor(id: string) {
+    setOpenDocId(null);
+    setSelectedId(id);
+  }
 
-  const doc = selected.data?.doc as
-    | { id: string; title: string; icon: string | null; content_json: unknown; updated_at: string }
-    | null
-    | undefined;
+  const filter = search.trim().toLowerCase();
+  const cards = filter ? allDocs.filter((d) => d.title.toLowerCase().includes(filter)) : allDocs;
 
-  function renderNode(node: DocNode, depth = 0) {
-    const children = tree.get(node.id) ?? [];
-    const hasChildren = children.length > 0;
-    const open = expanded[node.id] ?? false;
-    const active = selectedId === node.id;
+  const doc = (selected.data?.doc ?? null) as DocFull | null;
+  const previewDoc = (preview.data?.doc ?? null) as DocFull | null;
+
+  if (docs.isLoading) {
     return (
-      <div key={node.id}>
-        <div
-          className={`group flex items-center gap-1 rounded-md px-1.5 py-1 text-sm cursor-pointer transition ${active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"}`}
-          style={{ paddingLeft: 6 + depth * 12 }}
-          onClick={() => setSelectedId(node.id)}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded((x) => ({ ...x, [node.id]: !open }));
-            }}
-            className="h-4 w-4 inline-flex items-center justify-center opacity-60 hover:opacity-100"
-          >
-            {hasChildren ? (
-              open ? (
-                <ChevronDown className="h-3 w-3" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
-              )
-            ) : (
-              <span className="h-3 w-3" />
-            )}
-          </button>
-          <span className="text-xs w-4 text-center">{node.icon ?? "📄"}</span>
-          <span className="flex-1 truncate">{node.title || "Untitled"}</span>
-          <button
-            title="New nested page"
-            onClick={(e) => {
-              e.stopPropagation();
-              mCreate.mutate({ parent_id: node.id });
-            }}
-            className="opacity-0 group-hover:opacity-100 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-secondary"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        </div>
-        {open && hasChildren && children.map((c) => renderNode(c, depth + 1))}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 2px" }}>
+        <span className="spinner" />
+        <span className="mono-label" style={{ fontSize: 9 }}>
+          loading…
+        </span>
+      </div>
+    );
+  }
+  if (docs.isError) {
+    return (
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        <MonoLabel style={{ marginBottom: 8 }}>docs · failed to load</MonoLabel>
+        <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 12 }}>
+          {(docs.error as Error).message}
+        </p>
+        <button className="btn btn-ghost btn-sm" onClick={() => void docs.refetch()}>
+          Retry · reloads docs
+        </button>
       </div>
     );
   }
 
-  const roots = tree.get(null) ?? [];
-
   return (
-    <>
-      <div className="flex h-[calc(100vh-260px)] min-h-[480px] rounded-xl border hairline overflow-hidden">
-        {/* Tree */}
-        <aside className="w-64 shrink-0 border-r hairline bg-background/40 backdrop-blur-md flex flex-col">
-          <div className="p-3 border-b hairline space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="font-display text-sm tracking-tight">Docs</div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={handleImportGDoc}
-                  disabled={mImport.isPending}
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md border hairline text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
-                  title="Import from Google Docs"
-                >
-                  <span className="text-[11px] font-semibold">G</span>
-                </button>
-                <button
-                  onClick={() => setNotionOpen(true)}
-                  disabled={mImportNotion.isPending}
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md border hairline text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
-                  title="Import from Notion"
-                >
-                  <span className="text-[11px] font-semibold">N</span>
-                </button>
-                <button
-                  onClick={() => mCreate.mutate({})}
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md border hairline text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                  title="New page"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search…"
-                className="w-full bg-secondary/40 rounded-md pl-7 pr-2 py-1.5 text-xs outline-none focus:bg-secondary/60"
-              />
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto p-2">
-            {docs.isLoading && (
-              <div className="text-xs text-muted-foreground px-2 py-1">Loading…</div>
-            )}
-            {!docs.isLoading && roots.length === 0 && (
-              <div className="text-xs text-muted-foreground px-2 py-6 text-center">
-                <FileText className="h-5 w-5 mx-auto opacity-50 mb-2" />
-                No docs yet. Click + to create one.
-              </div>
-            )}
-            {roots.map((n) => renderNode(n))}
-          </div>
-        </aside>
+    <div>
+      {selectedId == null ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ position: "relative", width: 220 }}>
+            <Search
+              size={12}
+              style={{
+                position: "absolute",
+                left: 9,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--ink-faint)",
+              }}
+            />
+            <input
+              className="input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search docs…"
+              style={{ paddingLeft: 28, fontSize: 12 }}
+            />
+          </span>
+          <span style={{ flex: 1 }}></span>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleImportGDoc}
+            disabled={mImport.isPending}
+          >
+            {mImport.isPending ? "Importing…" : "Import · Google Docs"}
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setNotionOpen(true)}
+            disabled={mImportNotion.isPending}
+          >
+            Import · Notion
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => mCreate.mutate()}
+            disabled={mCreate.isPending}
+          >
+            {mCreate.isPending ? "Creating…" : "New page · opens the editor"}
+          </button>
+        </div>
+      ) : null}
 
-        {/* Editor */}
-        <section className="flex-1 min-w-0 overflow-auto">
-          {!selectedId && (
-            <div className="h-full flex flex-col items-center justify-center text-center px-8">
-              <FolderInteraction label="Tap to peek inside" />
-              <div className="font-display text-lg">Select a page or create a new one</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Native Notion-style workspace. Two-way sync coming next.
-              </div>
+      {selectedId != null ? (
+        selected.isLoading || !doc ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 2px" }}>
+            <span className="spinner" />
+            <span className="mono-label" style={{ fontSize: 9 }}>
+              loading…
+            </span>
+          </div>
+        ) : (
+          <div className="bento fade-up" style={{ padding: 0, overflow: "hidden" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--hairline)",
+                flexWrap: "wrap",
+              }}
+            >
               <button
-                onClick={() => mCreate.mutate({})}
-                className="mt-5 inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm"
+                className="mono-label"
+                style={{ color: "var(--action-blue)", fontSize: 9 }}
+                onClick={() => setSelectedId(null)}
               >
-                <Plus className="h-4 w-4" /> New page
+                ← All docs
+              </button>
+              <span style={{ flex: 1 }}></span>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, color: "var(--agent)" }}
+                disabled={mPush.isPending}
+                onClick={() => mPush.mutate(doc)}
+              >
+                {mPush.isPending ? "Pushing…" : "Push to Signals"}
+              </button>
+              <button
+                className="btn btn-reject btn-sm"
+                style={{ fontSize: 11 }}
+                disabled={mDelete.isPending}
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Delete this doc?",
+                    body: "Removed for everyone — agents stop citing it.",
+                    destructive: true,
+                    confirmLabel: "Delete",
+                  });
+                  if (ok) mDelete.mutate({ id: doc.id, title: doc.title });
+                }}
+              >
+                Delete · removes everywhere
               </button>
             </div>
-          )}
-          {selectedId && selected.isLoading && (
-            <div className="p-6 text-sm text-muted-foreground">Loading…</div>
-          )}
-          {doc && (
-            <div className="max-w-3xl mx-auto px-8 py-8">
-              <div className="flex items-start gap-3 mb-2">
+            <div style={{ padding: "20px 28px 24px", maxWidth: 720 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <button
-                  className="text-3xl leading-none hover:bg-secondary/60 rounded px-1"
                   title="Change icon"
+                  style={{ fontSize: 22, lineHeight: "32px", borderRadius: 6, padding: "0 4px" }}
                   onClick={async () => {
                     const next = await prompt({
                       title: "Change icon",
@@ -301,32 +345,28 @@ export function DocsPanel() {
                 <input
                   defaultValue={doc.title}
                   key={doc.id}
+                  aria-label="Doc title"
+                  placeholder="Untitled"
                   onBlur={(e) => {
                     const v = e.target.value.trim() || "Untitled";
                     if (v !== doc.title) mUpdate.mutate({ id: doc.id, title: v });
                   }}
-                  className="flex-1 font-display text-3xl tracking-tight bg-transparent outline-none placeholder:text-muted-foreground/40"
-                  placeholder="Untitled"
-                />
-                <button
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: "Delete this doc?",
-                      body: "It moves to the trash for 30 days, then it's gone.",
-                      destructive: true,
-                      confirmLabel: "Delete",
-                    });
-                    if (ok) mDelete.mutate(doc.id);
+                  style={{
+                    flex: 1,
+                    border: 0,
+                    outline: "none",
+                    background: "transparent",
+                    fontFamily: "var(--font-display)",
+                    fontSize: 24,
+                    fontWeight: 460,
+                    color: "var(--ink)",
+                    letterSpacing: "-0.015em",
                   }}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary/60"
-                  title="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                />
               </div>
-              <div className="text-xs text-muted-foreground mb-4">
-                Last edited {new Date(doc.updated_at).toLocaleString()}
-                {mUpdate.isPending && <span className="ml-2 text-violet-400">· Saving…</span>}
+              <div className="mono-label" style={{ fontSize: 8.5, margin: "4px 0 14px" }}>
+                doc · last edited {updatedLabel(doc.updated_at)} · autosaves to the brain
+                {mUpdate.isPending ? " · saving…" : ""}
               </div>
               <DocEditor
                 key={doc.id}
@@ -334,88 +374,294 @@ export function DocsPanel() {
                 onChange={(json) => mUpdate.mutate({ id: doc.id, content_json: json })}
               />
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+        )
+      ) : cards.length === 0 ? (
+        filter ? (
+          <div style={{ padding: "18px 2px", fontSize: 12.5, color: "var(--ink-faint)" }}>
+            No doc matches “{search}” yet.
+          </div>
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title="No docs yet"
+            body="Workspace pages live here. Import from Google Docs or Notion, or start blank — everything you write joins the brain."
+            cta="New page · opens the editor"
+            onCta={() => mCreate.mutate()}
+          />
+        )
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          {cards.map((d) => {
+            const open = openDocId === d.id;
+            return (
+              <div key={d.id} className="bento lift" style={{ padding: 0, overflow: "hidden" }}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOpenDocId(open ? null : d.id)}
+                  onDoubleClick={() => openEditor(d.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setOpenDocId(open ? null : d.id);
+                  }}
+                  title="Click to preview · double-click to edit"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "14px 16px",
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: "var(--soft-stone)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--ink-subtle)",
+                      flexShrink: 0,
+                      fontSize: 15,
+                    }}
+                  >
+                    {d.icon && d.icon !== "📄" ? d.icon : <FileText size={14} />}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: "block",
+                        fontWeight: 500,
+                        fontSize: 13.5,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {d.title || "Untitled"}
+                    </span>
+                    <span
+                      className="mono-label"
+                      style={{ fontSize: 9, marginTop: 1, display: "block" }}
+                    >
+                      doc · updated {updatedLabel(d.updated_at)}
+                    </span>
+                  </span>
+                  <button
+                    className="mono-label"
+                    style={{ fontSize: 8, color: "var(--action-blue)", flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditor(d.id);
+                    }}
+                  >
+                    edit
+                  </button>
+                  {open ? (
+                    <ChevronDown size={13} style={{ color: "var(--ink-faint)" }} />
+                  ) : (
+                    <ChevronRight size={13} style={{ color: "var(--ink-faint)" }} />
+                  )}
+                </div>
+                {open ? (
+                  <div
+                    className="fade-up"
+                    style={{
+                      padding: "12px 16px 14px 60px",
+                      borderTop: "1px solid var(--hairline)",
+                      background: "var(--surface-1)",
+                    }}
+                  >
+                    {preview.isLoading || !previewDoc ? (
+                      <span className="mono-label" style={{ fontSize: 9 }}>
+                        loading…
+                      </span>
+                    ) : (
+                      <p
+                        style={{
+                          fontSize: 13.5,
+                          color: "var(--ink-muted)",
+                          lineHeight: 1.6,
+                          fontFamily: "var(--font-display)",
+                        }}
+                      >
+                        {excerptOf(previewDoc) || "Nothing written yet — open the editor to start."}
+                      </p>
+                    )}
+                    <span
+                      className="mono-label"
+                      style={{ fontSize: 8.5, marginTop: 8, display: "block" }}
+                    >
+                      preview · double-click the card (or “edit”) to open the editor
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {notionOpen && (
         <div
-          className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-start justify-center pt-24 px-4"
+          role="dialog"
+          aria-label="Import from Notion"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            paddingTop: 96,
+            background: "color-mix(in oklab, var(--ink) 28%, transparent)",
+          }}
           onClick={() => setNotionOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-xl border hairline bg-background shadow-2xl overflow-hidden"
+            className="bento fade-up"
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              padding: 0,
+              overflow: "hidden",
+              boxShadow: "var(--shadow-elevated)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b hairline">
-              <div className="font-display text-sm tracking-tight">Import from Notion</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <MonoLabel>Import from Notion · joins the brain</MonoLabel>
               <button
                 onClick={() => setNotionOpen(false)}
-                className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-secondary/60"
+                aria-label="Close"
+                style={{ color: "var(--ink-subtle)", display: "inline-flex" }}
               >
-                <X className="h-3.5 w-3.5" />
+                <X size={13} />
               </button>
             </div>
-            <div className="p-3 border-b hairline space-y-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--hairline)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <span style={{ position: "relative" }}>
+                <Search
+                  size={12}
+                  style={{
+                    position: "absolute",
+                    left: 9,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--ink-faint)",
+                  }}
+                />
                 <input
+                  className="input"
                   autoFocus
                   value={notionQuery}
                   onChange={(e) => setNotionQuery(e.target.value)}
                   placeholder="Search your shared Notion pages…"
-                  className="w-full bg-secondary/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:bg-secondary/60"
+                  style={{ paddingLeft: 28, fontSize: 12 }}
                 />
-              </div>
-              <div className="text-[11px] text-muted-foreground">Or paste a Notion page URL:</div>
-              <div className="flex gap-2">
-                <input
-                  placeholder="https://www.notion.so/…"
-                  className="flex-1 bg-secondary/40 rounded-md px-2 py-1.5 text-xs outline-none focus:bg-secondary/60"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const v = (e.target as HTMLInputElement).value.trim();
-                      if (v) mImportNotion.mutate(v);
-                    }
-                  }}
-                />
-              </div>
+              </span>
+              <span className="mono-label" style={{ fontSize: 7.5 }}>
+                or paste a Notion page URL
+              </span>
+              <input
+                className="input"
+                placeholder="https://www.notion.so/…"
+                style={{ fontSize: 11.5 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const v = (e.target as HTMLInputElement).value.trim();
+                    if (v) mImportNotion.mutate(v);
+                  }
+                }}
+              />
             </div>
-            <div className="max-h-80 overflow-auto">
+            <div
+              className="scrollbar-thin"
+              style={{ maxHeight: 320, overflowY: "auto", padding: 5 }}
+            >
               {notionSearch.isLoading && (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin mx-auto mb-1" /> Searching Notion…
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "14px 8px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span className="spinner" />
+                  <span className="mono-label" style={{ fontSize: 9 }}>
+                    searching notion…
+                  </span>
                 </div>
               )}
               {notionSearch.isError && (
-                <div className="px-4 py-4 text-xs text-destructive">
+                <p style={{ fontSize: 12, color: "var(--ink-muted)", padding: "10px 8px" }}>
                   {(notionSearch.error as Error)?.message ?? "Failed to load Notion pages"}
-                </div>
+                </p>
               )}
               {notionSearch.data?.pages?.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--ink-faint)",
+                    padding: "14px 8px",
+                    textAlign: "center",
+                  }}
+                >
                   No pages found. Share pages with the Notion integration first.
-                </div>
+                </p>
               )}
               {notionSearch.data?.pages?.map((p) => (
                 <button
                   key={p.id}
                   disabled={mImportNotion.isPending}
                   onClick={() => mImportNotion.mutate(p.id)}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-secondary/60 disabled:opacity-50"
+                  className="cmdk-item"
+                  style={{ fontSize: 11.5, padding: "6px 8px", display: "flex", gap: 8 }}
                 >
-                  <span className="text-base w-5 text-center">{p.icon ?? "📄"}</span>
-                  <span className="flex-1 truncate">{p.title || "Untitled"}</span>
+                  <span style={{ width: 18, textAlign: "center" }}>{p.icon ?? "·"}</span>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      textAlign: "left",
+                    }}
+                  >
+                    {p.title || "Untitled"}
+                  </span>
                   {mImportNotion.isPending && mImportNotion.variables === p.id ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
+                    <span className="spinner" />
+                  ) : null}
                 </button>
               ))}
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -1,19 +1,15 @@
+// Decisions — Knowledge tab 3, ported from design-reference/cadence/loop.jsx
+// (KnowledgeScreen · Decisions): one bento table — Decision / Made by / When /
+// Why / chevron. Production functionality rides the reference table: source +
+// status filters, title search, the Log-decision dialog, approve/reject
+// mutations and the detail sheet (the reference's DecisionDetail drill-down is
+// a later migration screen). Status is a rendered judgment → VerdictChip
+// (approved moss · rejected madder · pending ember = the human's call).
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import {
-  Gavel,
-  Calendar as CalIcon,
-  Bot,
-  FileText,
-  Pencil,
-  Plus,
-  Check,
-  X,
-  Search,
-  ExternalLink,
-} from "lucide-react";
+import { ChevronRight, ExternalLink, Gavel, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   listDecisions,
@@ -30,10 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -41,43 +33,27 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-
-// Decisions log. Sources: missions (auto on completion), specs (auto on approval),
-// meetings (AI extract), manual capture. Source filters + status + search.
+import {
+  EmptyState,
+  MonoLabel,
+  VerdictChip,
+  type VerdictTone,
+} from "@/components/cadence/Primitives";
 
 type SourceFilter = "all" | DecisionSource;
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
-const SOURCE_META: Record<
-  DecisionSource,
-  { label: string; Icon: typeof Bot; tone: string }
-> = {
-  mission: {
-    label: "Mission",
-    Icon: Bot,
-    tone: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30",
-  },
-  prd: {
-    label: "Spec",
-    Icon: FileText,
-    tone: "bg-sky-500/10 text-sky-300 border-sky-500/30",
-  },
-  meeting: {
-    label: "Meeting",
-    Icon: CalIcon,
-    tone: "bg-violet-500/10 text-violet-300 border-violet-500/30",
-  },
-  manual: {
-    label: "Manual",
-    Icon: Pencil,
-    tone: "bg-muted text-muted-foreground border-border",
-  },
+const SOURCE_LABEL: Record<DecisionSource, string> = {
+  mission: "Mission",
+  prd: "Spec",
+  meeting: "Meeting",
+  manual: "Manual",
 };
 
-const STATUS_TONE: Record<DecisionRow["status"], string> = {
-  pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  approved: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  rejected: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+const STATUS_TONE: Record<DecisionRow["status"], VerdictTone> = {
+  approved: "moss",
+  rejected: "madder",
+  pending: "ember", // awaiting the human's call
 };
 
 function ageOf(iso: string): string {
@@ -89,7 +65,7 @@ function ageOf(iso: string): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function hasSource(d: DecisionRow): boolean {
@@ -99,11 +75,13 @@ function hasSource(d: DecisionRow): boolean {
 function SourceLink({
   d,
   className,
+  style,
   onClick,
   children,
 }: {
   d: DecisionRow;
   className?: string;
+  style?: React.CSSProperties;
   onClick?: (e: React.MouseEvent) => void;
   children: React.ReactNode;
 }) {
@@ -113,6 +91,7 @@ function SourceLink({
         to="/missions/$missionId"
         params={{ missionId: d.mission_id }}
         className={className}
+        style={style}
         onClick={onClick}
       >
         {children}
@@ -121,7 +100,13 @@ function SourceLink({
   }
   if (d.prd_id) {
     return (
-      <Link to="/prds/$id" params={{ id: d.prd_id }} className={className} onClick={onClick}>
+      <Link
+        to="/prds/$id"
+        params={{ id: d.prd_id }}
+        className={className}
+        style={style}
+        onClick={onClick}
+      >
         {children}
       </Link>
     );
@@ -132,6 +117,7 @@ function SourceLink({
         to="/knowledge"
         search={{ tab: "calendar", meeting: d.meeting_id }}
         className={className}
+        style={style}
         onClick={onClick}
       >
         {children}
@@ -167,7 +153,7 @@ export function DecisionsPanel() {
     mutationFn: (data: { title: string; rationale?: string }) => fCreate({ data }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["decisions"] });
-      toast.success("Decision logged");
+      toast.success("Decision logged · the swarm reads it");
       setOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -183,155 +169,229 @@ export function DecisionsPanel() {
   });
 
   const rows = decisions.data?.decisions ?? [];
+  const GRID = "1fr 150px 90px 200px 20px";
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center rounded-md border hairline overflow-hidden">
+    <div>
+      {/* Production filters + search + capture ride above the reference table. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: 2,
+            border: "1px solid var(--hairline)",
+            borderRadius: 7,
+            padding: 2,
+          }}
+        >
           {(["all", "meeting", "mission", "prd", "manual"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSource(s)}
-              className={`px-3 py-1.5 text-xs ${
-                source === s
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className="mono-label"
+              style={{
+                fontSize: 9,
+                padding: "3px 10px",
+                borderRadius: 5,
+                background: source === s ? "var(--surface-2)" : "transparent",
+                color: source === s ? "var(--ink)" : "var(--ink-subtle)",
+              }}
             >
-              {s === "all" ? "All" : SOURCE_META[s as DecisionSource].label}
+              {s === "all" ? "All" : SOURCE_LABEL[s]}
             </button>
           ))}
         </div>
-        <div className="flex items-center rounded-md border hairline overflow-hidden">
+        <div
+          style={{
+            display: "flex",
+            gap: 2,
+            border: "1px solid var(--hairline)",
+            borderRadius: 7,
+            padding: 2,
+          }}
+        >
           {(["all", "pending", "approved", "rejected"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setStatus(s)}
-              className={`px-3 py-1.5 text-xs capitalize ${
-                status === s
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className="mono-label"
+              style={{
+                fontSize: 9,
+                padding: "3px 10px",
+                borderRadius: 5,
+                background: status === s ? "var(--surface-2)" : "transparent",
+                color: status === s ? "var(--ink)" : "var(--ink-subtle)",
+              }}
             >
               {s}
             </button>
           ))}
         </div>
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
+        <span style={{ position: "relative", flex: 1, minWidth: 160, maxWidth: 240 }}>
+          <Search
+            size={12}
+            style={{
+              position: "absolute",
+              left: 9,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--ink-faint)",
+            }}
+          />
+          <input
+            className="input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search titles"
-            className="h-8 pl-7 text-xs"
+            style={{ paddingLeft: 28, fontSize: 12 }}
           />
-        </div>
-        <Button
-          size="sm"
-          variant="default"
-          className="h-8"
-          onClick={() => setOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5" /> Log decision
-        </Button>
+        </span>
+        <button className="btn btn-primary btn-sm" onClick={() => setOpen(true)}>
+          Log decision · the swarm reads it
+        </button>
       </div>
 
-      {/* List */}
       {decisions.isLoading ? (
-        <div className="bento p-8 text-center text-sm text-muted-foreground">Loading…</div>
-      ) : rows.length === 0 ? (
-        <div className="bento p-10 text-center">
-          <Gavel className="h-6 w-6 mx-auto text-amber-300/70" />
-          <h3 className="font-display text-base mt-3">No decisions yet</h3>
-          <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto">
-            Decisions land here automatically when missions complete, specs are approved, or
-            meeting transcripts are extracted. Or log one manually.
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 2px" }}>
+          <span className="spinner" />
+          <span className="mono-label" style={{ fontSize: 9 }}>
+            loading…
+          </span>
         </div>
+      ) : decisions.isError ? (
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 8 }}>decisions · failed to load</MonoLabel>
+          <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 12 }}>
+            {(decisions.error as Error).message}
+          </p>
+          <button className="btn btn-ghost btn-sm" onClick={() => void decisions.refetch()}>
+            Retry · reloads the log
+          </button>
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={Gavel}
+          title="No decisions yet"
+          body="Decisions land here automatically when missions complete, specs are approved, or meeting transcripts are extracted. Or log one manually."
+          cta="Log decision · the swarm reads it"
+          onCta={() => setOpen(true)}
+        />
       ) : (
-        <ul className="divide-y divide-[var(--hairline)] rounded-lg border hairline overflow-hidden">
-          {rows.map((d) => {
-            const kind = (d.source_kind ?? "manual") as DecisionSource;
-            const meta = SOURCE_META[kind];
-            const Icon = meta.Icon;
-            return (
-              <li
-                key={d.id}
-                className="px-4 py-3 hover:bg-secondary/40 cursor-pointer flex items-start gap-3"
-                onClick={() => setActive(d)}
-              >
-                <span
-                  className={`mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md border ${meta.tone}`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            className="mono-label"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID,
+              gap: 12,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span>Decision</span>
+            <span>Made by</span>
+            <span>When</span>
+            <span>Why</span>
+            <span></span>
+          </div>
+          {rows.map((d, i) => (
+            <div
+              key={d.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActive(d)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setActive(d);
+              }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: GRID,
+                gap: 12,
+                padding: "13px 18px",
+                alignItems: "baseline",
+                borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
+                fontSize: 13,
+                width: "100%",
+                textAlign: "left",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <VerdictChip tone={STATUS_TONE[d.status]}>{d.status}</VerdictChip>
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {d.title}
+                  </span>
                 </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium truncate">{d.title}</span>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] capitalize ${STATUS_TONE[d.status]}`}
-                    >
-                      {d.status}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                    <span>{meta.label}</span>
-                    {d.source_label && (
-                      <>
-                        <span>·</span>
-                        <span className="truncate max-w-[240px]">{d.source_label}</span>
-                      </>
-                    )}
-                    <span>·</span>
-                    <span>{ageOf(d.created_at)}</span>
-                    {hasSource(d) && (
-                      <>
-                        <span>·</span>
-                        <SourceLink
-                          d={d}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-foreground/70 hover:text-foreground"
-                        >
-                          Open source <ExternalLink className="h-3 w-3" />
-                        </SourceLink>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {d.status === "pending" && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-emerald-300"
+                {d.status === "pending" ? (
+                  <span style={{ display: "flex", gap: 6, marginTop: 7 }}>
+                    <button
+                      className="btn btn-approve btn-sm"
+                      style={{ fontSize: 10.5 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         update.mutate({ id: d.id, status: "approved" });
                       }}
                     >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-rose-300"
+                      Approve · on record
+                    </button>
+                    <button
+                      className="btn btn-reject btn-sm"
+                      style={{ fontSize: 10.5 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         update.mutate({ id: d.id, status: "rejected" });
                       }}
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                      Reject · off record
+                    </button>
+                  </span>
+                ) : null}
+              </span>
+              <span
+                style={{
+                  fontSize: 12.5,
+                  color: d.decided_by_agent_slug ? "var(--agent)" : "var(--ink-muted)",
+                }}
+              >
+                {d.decided_by_agent_slug ?? "You"}
+              </span>
+              <span className="mono-label tabular-nums">{ageOf(d.created_at)}</span>
+              <span
+                style={{
+                  color: "var(--ink-subtle)",
+                  fontSize: 12.5,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {d.rationale ??
+                  (d.source_label
+                    ? `${SOURCE_LABEL[(d.source_kind ?? "manual") as DecisionSource]} · ${d.source_label}`
+                    : "")}
+              </span>
+              <ChevronRight size={11} style={{ color: "var(--ink-faint)", alignSelf: "center" }} />
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Log decision dialog */}
       <LogDecisionDialog
         open={open}
         onOpenChange={setOpen}
@@ -339,69 +399,82 @@ export function DecisionsPanel() {
         submitting={create.isPending}
       />
 
-      {/* Detail side sheet */}
+      {/* Detail side sheet — production affordance; DecisionDetail drill-down
+          is the next migration screen. */}
       <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <SheetContent className="w-full sm:max-w-md">
           {active && (
             <>
               <SheetHeader>
-                <SheetTitle className="font-display text-lg">{active.title}</SheetTitle>
-                <SheetDescription className="flex items-center gap-2 text-[11px]">
-                  <span className="capitalize">
-                    {SOURCE_META[(active.source_kind ?? "manual") as DecisionSource].label}
+                <SheetTitle className="font-display" style={{ fontSize: 19, fontWeight: 460 }}>
+                  {active.title}
+                </SheetTitle>
+                <SheetDescription asChild>
+                  <span className="mono-label" style={{ fontSize: 8.5 }}>
+                    {SOURCE_LABEL[(active.source_kind ?? "manual") as DecisionSource]}
+                    {active.source_label ? ` · ${active.source_label}` : ""}
+                    {` · ${ageOf(active.created_at)}`}
                   </span>
-                  {active.source_label && <span>· {active.source_label}</span>}
-                  <span>· {ageOf(active.created_at)}</span>
                 </SheetDescription>
               </SheetHeader>
-              <div className="mt-4 space-y-4">
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: "0 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                }}
+              >
                 <div>
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Rationale
-                  </Label>
-                  <p className="mt-1 text-sm whitespace-pre-wrap text-foreground/90">
+                  <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 5 }}>
+                    rationale
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "var(--ink-muted)",
+                      lineHeight: 1.55,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
                     {active.rationale || "No rationale captured."}
                   </p>
                 </div>
                 {hasSource(active) && (
                   <SourceLink
                     d={active}
-                    className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground"
+                    className="mono-label"
+                    style={{
+                      fontSize: 8.5,
+                      color: "var(--action-blue)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                    }}
                   >
-                    Open source <ExternalLink className="h-3 w-3" />
+                    open source <ExternalLink size={11} />
                   </SourceLink>
                 )}
-                <div className="flex items-center gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant={active.status === "approved" ? "default" : "outline"}
-                    onClick={() => {
-                      update.mutate({ id: active.id, status: "approved" });
-                      setActive({ ...active, status: "approved" });
-                    }}
-                  >
-                    <Check className="h-3.5 w-3.5" /> Approved
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={active.status === "rejected" ? "default" : "outline"}
-                    onClick={() => {
-                      update.mutate({ id: active.id, status: "rejected" });
-                      setActive({ ...active, status: "rejected" });
-                    }}
-                  >
-                    <X className="h-3.5 w-3.5" /> Rejected
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={active.status === "pending" ? "default" : "outline"}
-                    onClick={() => {
-                      update.mutate({ id: active.id, status: "pending" });
-                      setActive({ ...active, status: "pending" });
-                    }}
-                  >
-                    Pending
-                  </Button>
+                <div>
+                  <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 7 }}>
+                    verdict
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {(["approved", "rejected", "pending"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          update.mutate({ id: active.id, status: s });
+                          setActive({ ...active, status: s });
+                        }}
+                      >
+                        <VerdictChip tone={STATUS_TONE[s]} selected={active.status === s}>
+                          {s}
+                        </VerdictChip>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </>
@@ -438,16 +511,20 @@ function LogDecisionDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Log decision</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="font-display" style={{ fontSize: 19, fontWeight: 460 }}>
+            Log decision
+          </DialogTitle>
+          <DialogDescription style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
             Capture a choice that should outlive this week. The swarm reads these.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div>
-            <Label htmlFor="dec-title">Title</Label>
-            <Input
-              id="dec-title"
+            <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+              title
+            </div>
+            <input
+              className="input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What was decided?"
@@ -456,27 +533,31 @@ function LogDecisionDialog({
             />
           </div>
           <div>
-            <Label htmlFor="dec-rationale">Rationale (optional)</Label>
-            <Textarea
-              id="dec-rationale"
+            <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+              rationale · optional
+            </div>
+            <textarea
+              className="input"
               value={rationale}
               onChange={(e) => setRationale(e.target.value)}
               placeholder="Why this, and not the alternative."
               rows={4}
               maxLength={2000}
+              style={{ resize: "vertical", minHeight: 84 }}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
+          <button className="btn btn-ghost btn-sm" onClick={() => onOpenChange(false)}>
+            Cancel · nothing logged
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
             disabled={!title.trim() || submitting}
             onClick={() => onSubmit(title.trim(), rationale.trim())}
           >
-            {submitting ? "Logging…" : "Log"}
-          </Button>
+            {submitting ? "Logging…" : "Log · on record"}
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
