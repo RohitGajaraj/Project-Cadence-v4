@@ -547,3 +547,23 @@ _This log is maintained as part of the closed documentation loop. Every session 
 5. **Commit at every milestone.** A concurrent tool session wiped the first uncommitted application of this work (and stubbed two route files, since restored). Uncommitted work in this multi-tool repo is at risk by default.
 
 **Status:** token layer + screen 1 (Home·Today) shipped (`0238a3c1fd`, `2d086f9940`); remaining screens: shell, Chat, Missions, Product, Knowledge, Govern, Settings, onboarding.
+
+---
+
+## 2026-06-12 — Hand-sketched data marks: every data-series graph renders like pencil, platform-wide
+
+**Decision (founder, during the screen-5 design review):** Any graph of data points — trend lines, sparklines, time-series bars, distributions — renders **hand-sketched**: a pencil-on-paper wobble, deliberately distorted, never a smooth system-generated straight/curved vector. The founder's rationale: machine telemetry should look *authentic and observed* rather than synthetic; the sketch quality is part of the platform's editorial trust language. This is an explicit **platform-wide, going-forward pattern** — any new chart on any current or future screen follows it (the founder repeated this scope in-session).
+
+**Sub-decisions:**
+
+1. **Canonical primitives, never parallel styles:** `src/components/cadence/Sketch.tsx` — `SketchLine` (double-pass jittered stroke + hand-set end dot) and `SketchBar` (jittered outline + diagonal hatch shading). New mark types extend this file.
+2. **Deterministic jitter** — seeded from the data series itself, so charts never wobble between renders and the underlying points stay exact. The sketch is a rendering style, not data distortion; the no-filler/honesty law is untouched.
+3. **Scope boundary:** data SERIES only. Single-value meters (budget burn, signal strength, eval score bars, progress rings) stay clean utility marks — a meter is an instrument, not an observation.
+4. **Role colors still govern** — the sketch changes the stroke, never the color meaning.
+5. Codified in `DESIGN.md` ("Hand-sketched data marks") with a production-mapping row; sync back to the design project's DESIGN.md on its next update (same path as the verdict-chip law).
+
+**Applied immediately:** Govern · Drift metric trends (SketchLine), Govern · Analytics daily activity (SketchBar — conversion also fixed its card overflow), Missions · Agents telemetry HUD buckets (SketchBar).
+
+**Companion ruling — the year occupancy grid ends at today:** the Knowledge calendar's year view renders January → today only, GitHub-contribution style (the latest date closes the grid; pending future months never render). Founder rationale: engagement — "the year fills in as it happens."
+
+**Status:** shipped `ecd9aebbb9` (with the escaped-card-padding fix across Govern/Knowledge panels — root cause: reference `.bento`/`.band-stone` carry default padding, production's don't).
