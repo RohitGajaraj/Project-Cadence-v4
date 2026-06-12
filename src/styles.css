@@ -1302,27 +1302,78 @@
     display: block;
   }
 
-  /* Construction pill — temporary "still building" notice, all screens. */
+  /* Construction pill — temporary "still building" notice. Founder review
+     2026-06-12 (top-chrome pass): now an IN-FLOW element living in the
+     TopBar's center slot, never `fixed` — a floating pill overlapped the
+     ticker text behind it. In-flow means overlap is structurally impossible;
+     below 1100px the center slot vanishes, so the pill hides rather than
+     crowd the breadcrumbs. */
   .construction-pill {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 95;
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
     background: color-mix(in oklab, var(--ember) 10%, var(--canvas));
     border: 1px solid color-mix(in oklab, var(--ember) 35%, transparent);
     border-radius: 99px;
-    padding: 5px 8px 5px 13px;
+    padding: 4px 8px 4px 13px;
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-muted);
-    box-shadow: 0 6px 20px -8px oklch(0.2 0.02 60 / 25%);
     animation: fadeUp var(--dur-slow) var(--ease-out);
+  }
+  .construction-pill > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (max-width: 1100px) {
+    .construction-pill {
+      display: none;
+    }
+  }
+
+  /* Cooking banner — the mission ticker strip below the TopBar. The slow
+     ember wash travels the strip (9s, alternate) — the reference's premium
+     "something is alive here" tell; dark rides surface-1 so the warmth stays
+     in the accents (no brown floors). Gated by data-motion + reduced-motion. */
+  .cooking-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 24px;
+    height: 32px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--hairline);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ember) 13%, var(--canvas)) 0%,
+      var(--canvas) 38%,
+      color-mix(in oklab, var(--ember) 8%, var(--canvas)) 72%,
+      var(--canvas) 100%
+    );
+    background-size: 220% 100%;
+    animation: bannerSweep 9s ease-in-out infinite alternate;
+  }
+  .dark .cooking-banner {
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ember) 14%, var(--surface-1)) 0%,
+      var(--surface-1) 38%,
+      color-mix(in oklab, var(--ember) 9%, var(--surface-1)) 72%,
+      var(--surface-1) 100%
+    );
+    background-size: 220% 100%;
+  }
+  html[data-motion="off"] .cooking-banner {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cooking-banner {
+      animation: none;
+    }
   }
 
   /* Cooking-banner sweep — something is always running. */

@@ -30,7 +30,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetBar } from "./BudgetBar";
-import { CookingBanner, ConstructionPill } from "./CookingBanner";
 import { CadenceMark } from "./Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useTheme } from "@/hooks/use-theme";
@@ -838,13 +837,15 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col min-h-screen">
-        <CookingBanner runningCount={runningCount} />
+        {/* CookingBanner + ConstructionPill moved into TopBar (founder
+            top-chrome review 2026-06-12): the pill is in-flow in the bar's
+            center slot (a fixed overlay covered the ticker), the banner is
+            the row below the bar — the reference chrome order. */}
         {/* Flex column so full-height screens (Chat) can pin to the viewport
             with internal scroll, per the reference app.jsx main wrapper.
             Block screens are unaffected — they stretch and scroll the page. */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
       </main>
-      <ConstructionPill />
       <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );

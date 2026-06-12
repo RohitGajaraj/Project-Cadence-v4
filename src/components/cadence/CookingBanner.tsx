@@ -1,10 +1,18 @@
 // CookingBanner — the mission ticker: a quiet "something is running" strip on
-// every screen (ember sweep). ConstructionPill — temporary fixed top-center
-// notice while the platform is actively being built; remove at GA.
-// Both ported from design-reference/cadence/shell.jsx.
+// every screen (slow ember sweep — `.cooking-banner` in styles.css). It NAMES
+// what's running (DESIGN.md banner contract): the newest running mission's
+// real title from getLiveRunCounts, never an invented one. Self-fetching on
+// the AppShell's ["live-run-counts"] key, so the cache is shared and no new
+// polling is added. ConstructionPill — temporary notice while the platform is
+// actively being built (remove at GA); rendered IN-FLOW by the TopBar center
+// slot since the founder's top-chrome review (2026-06-12): a fixed pill
+// overlapped the ticker text behind it.
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { getLiveRunCounts } from "@/lib/agents.functions";
 import { CadenceMark } from "./Primitives";
 
 const BANNER_KEY = "cadence:cooking-banner-dismissed:v2";
@@ -30,28 +38,33 @@ function useDismissable(key: string) {
   return [visible, dismiss] as const;
 }
 
-export function CookingBanner({ runningCount = 0 }: { runningCount?: number }) {
+export function CookingBanner() {
   const [visible, dismiss] = useDismissable(BANNER_KEY);
+
+  const fetchLiveCounts = useServerFn(getLiveRunCounts);
+  const { data: live } = useQuery({
+    queryKey: ["live-run-counts"],
+    queryFn: () => fetchLiveCounts(),
+    refetchInterval: 15_000,
+  });
+
   if (!visible) return null;
 
+  const runningCount = live?.running ?? 0;
+  const missionTitle = live?.runningMissionTitle ?? null;
   const running = runningCount > 0;
+
+  // Names what's running — title first, count only as the honest fallback.
   const text = running
-    ? `Agents are building · ${runningCount} run${runningCount === 1 ? "" : "s"} in flight`
+    ? missionTitle
+      ? `Agents are building · ${missionTitle}${
+          runningCount > 1 ? ` · +${runningCount - 1} more in flight` : ""
+        }`
+      : `Agents are building · ${runningCount} run${runningCount === 1 ? "" : "s"} in flight`
     : "Loop idle · agents on watch · the next run lands here";
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="cooking-banner-sweep flex items-center gap-2.5 border-b hairline shrink-0"
-      style={{
-        padding: "0 24px",
-        height: 32,
-        background:
-          "linear-gradient(90deg, color-mix(in oklab, var(--ember) 13%, var(--canvas)) 0%, var(--canvas) 38%, color-mix(in oklab, var(--ember) 8%, var(--canvas)) 72%, var(--canvas) 100%)",
-        backgroundSize: "220% 100%",
-      }}
-    >
+    <div role="status" aria-live="polite" className="cooking-banner">
       <span
         className={`dot ${running ? "dot-running" : "dot-completed"}`}
         style={{ width: 6, height: 6 }}
@@ -63,6 +76,7 @@ export function CookingBanner({ runningCount = 0 }: { runningCount?: number }) {
           color: "var(--ink-muted)",
           overflow: "hidden",
           textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}
       >
         {text}
@@ -72,7 +86,7 @@ export function CookingBanner({ runningCount = 0 }: { runningCount?: number }) {
         to="/missions"
         search={{ tab: "missions" } as never}
         className="mono-label"
-        style={{ fontSize: 9.5, color: "var(--action-blue)" }}
+        style={{ fontSize: 9.5, color: "var(--action-blue)", whiteSpace: "nowrap" }}
       >
         Watch live →
       </Link>
@@ -84,18 +98,6 @@ export function CookingBanner({ runningCount = 0 }: { runningCount?: number }) {
       >
         <X size={11} strokeWidth={2} />
       </button>
-      <style>{`
-        @keyframes cooking-banner-sweep {
-          from { background-position: 0% 0; }
-          to { background-position: 100% 0; }
-        }
-        .cooking-banner-sweep {
-          animation: cooking-banner-sweep 9s ease-in-out infinite alternate;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .cooking-banner-sweep { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }

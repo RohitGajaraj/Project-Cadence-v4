@@ -43,9 +43,25 @@ export const getLiveRunCounts = createServerFn({ method: "GET" })
       .in("status", ["running", "queued"]);
     if (error) throw new Error(error.message);
     const rows = data ?? [];
+    const running = rows.filter((r) => r.status === "running").length;
+    // The cooking banner names what's running (DESIGN.md banner contract) —
+    // ride the newest running mission's title along with the counts. Null
+    // falls back to count-only copy; never an invented name.
+    let runningMissionTitle: string | null = null;
+    if (running > 0) {
+      const { data: m } = await context.supabase
+        .from("missions")
+        .select("title")
+        .eq("status", "running")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      runningMissionTitle = m?.title ?? null;
+    }
     return {
-      running: rows.filter((r) => r.status === "running").length,
+      running,
       queued: rows.filter((r) => r.status === "queued").length,
+      runningMissionTitle,
     };
   });
 
