@@ -19,7 +19,6 @@ import {
   Gauge,
   Sun,
   Moon,
-  Sparkles,
   Hammer,
   Plus,
   Trash2,
@@ -459,7 +458,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
 
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
-      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-canvas">
+      <aside className="hidden lg:flex h-screen sticky top-0 w-60 shrink-0 flex-col border-r hairline bg-sidebar">
         {/* Fixed top: workspace selector */}
         <div className="px-3 pt-5 pb-3 shrink-0">
           <div className="px-1">
@@ -696,7 +695,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         </div>
 
         {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}
-        <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-canvas">
+        <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-sidebar">
           {pauseState?.paused && (
             <Link
               to="/govern"
@@ -778,9 +777,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
           <div className="rounded-md border hairline p-1 flex items-center gap-1 bg-secondary/30">
             {(
               [
-                { id: "dark", label: "Nightshift", Icon: Moon },
-                { id: "aurora", label: "Aurora", Icon: Sparkles },
-                { id: "light", label: "Editorial", Icon: Sun },
+                { id: "light", label: "Light", Icon: Sun },
+                { id: "dark", label: "Dark", Icon: Moon },
               ] as { id: Theme; label: string; Icon: LucideIcon }[]
             ).map(({ id, label, Icon }) => {
               const active = theme === id;

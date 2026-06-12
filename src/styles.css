@@ -5,17 +5,24 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Cadence — "Ember Editorial" design language.
+ * Source of truth: Project Cadence - Design v1 (DESIGN.md + cadence/tokens.css).
+ * Warm parchment canvas · espresso/cacao ink · burnished ember copper accent ·
+ * Newsreader serif display · Schibsted Grotesk UI · JetBrains Mono metadata.
+ * Depth = surface tints, hairlines whisper-light, shadows rare.
+ *
+ * Color roles (exclusive — color tells the user WHO acts and WHAT is asked):
+ *   --ember        needs-human only: gates, calls, primary CTA
+ *   --action-blue  live/running state + links (indigo)
+ *   --agent        agent actions only: tool calls, agent names, ai-glow (orchid)
+ *   --saffron      highlights / celebration
+ *   --emerald      outcomes: success only (moss)
+ *   --rose         outcomes: failure/alert only (madder)
+ *   --deep-green   the approve button fill (solid espresso)
  *
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
  * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
 @theme inline {
@@ -72,15 +79,16 @@
   --color-emerald: var(--emerald);
   --color-amber: var(--amber);
   --color-rose: var(--rose);
-  /* Editorial type — Fraunces variable serif (modern, opsz-aware; reads
-   * more professional than Instrument Serif at display sizes), Inter for
-   * UI, JetBrains Mono for technical labels. */
-  --font-display: "Fraunces", "Instrument Serif", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Ember Editorial type — Newsreader display serif (optical sizing on),
+   * Schibsted Grotesk for UI, JetBrains Mono for technical labels.
+   * Guardrail: never Copernicus/Tiempos/Styrene, never Fraunces/Inter. */
+  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Cohere-inspired editorial color tokens. Available as bg-canvas,
-   * text-ink, bg-deep-green, text-coral, etc. */
+  /* Ember Editorial color tokens. Available as bg-canvas, text-ink,
+   * bg-ember, text-agent, etc. Legacy names (coral, violet, cyan) stay
+   * registered and resolve to their Ember role equivalents. */
   --color-canvas: var(--canvas);
   --color-soft-stone: var(--soft-stone);
   --color-pale-green: var(--pale-green);
@@ -89,10 +97,14 @@
   --color-dark-navy: var(--dark-navy);
   --color-coral: var(--coral);
   --color-action-blue: var(--action-blue);
+  --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-agent: var(--agent);
+  --color-saffron: var(--saffron);
 }
 
 :root {
-  --radius: 0.5rem; /* 8px base — Cohere's "sm" card radius */
+  --radius: 0.5rem; /* 8px controls · cards 12px · hero 14px · pills 99px */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -100,54 +112,63 @@
   --dur-base: 180ms;
   --dur-slow: 260ms;
 
-  /* === Cadence Editorial — Cohere-inspired light enterprise ===
-   * Stark white canvas, near-black ink, deep-green product bands.
-   * Depth from surface contrast + hairlines, not shadows or gradients.
-   * Coral reserved for editorial taxonomy chips; action-blue for links. */
+  /* === Ember Editorial — light (canonical: cadence/tokens.css) === */
 
-  /* Surfaces */
-  --canvas: oklch(1 0 0); /* #ffffff */
-  --soft-stone: oklch(0.945 0.005 75); /* #eeece7 warm neutral */
-  --pale-green: oklch(0.975 0.025 145); /* #edfce9 */
-  --pale-blue: oklch(0.975 0.012 250); /* #f1f5ff */
+  /* Accent — burnished ember copper */
+  --ember: oklch(0.6 0.155 50);
+  --ember-active: oklch(0.52 0.145 48);
+  --ember-soft: oklch(0.78 0.08 55);
+
+  /* Surfaces — warm parchment ramp */
+  --canvas: oklch(0.977 0.007 85);
+  --soft-stone: oklch(0.938 0.013 82);
+  --pale-green: oklch(0.95 0.025 150);
+  --pale-blue: oklch(0.95 0.015 230);
   --paper: var(--canvas);
   --paper-elevated: var(--canvas);
-  --surface-1: oklch(0.985 0.002 80); /* near-white wash */
+  --surface-1: oklch(0.962 0.009 85);
   --surface-2: var(--soft-stone);
-  --surface-3: oklch(0.97 0 0); /* light gray-stone */
+  --surface-3: oklch(0.922 0.014 80);
 
-  /* Ink scale */
-  --ink: oklch(0.225 0.005 280); /* #212121 */
-  --ink-muted: oklch(0.45 0.005 280); /* #616161 body-muted */
-  --ink-subtle: oklch(0.6 0.008 280); /* #75758a slate */
-  --ink-faint: oklch(0.66 0.008 280); /* #93939f muted slate */
+  /* Ink — warm cacao scale */
+  --ink: oklch(0.225 0.018 50);
+  --ink-muted: oklch(0.45 0.017 55);
+  --ink-subtle: oklch(0.56 0.016 62);
+  --ink-faint: oklch(0.65 0.015 70);
 
-  /* Rules / borders */
-  --hairline: oklch(0.86 0.002 280); /* #d9d9dd */
-  --hairline-strong: oklch(0.78 0.003 280);
-  --border-light: oklch(0.91 0.002 280); /* #e5e7eb */
-  --card-border: oklch(0.95 0.002 280); /* #f2f2f2 */
+  /* Rules — whisper-light; depth comes from surface tints, not lines */
+  --hairline: oklch(0.905 0.01 80);
+  --hairline-strong: oklch(0.82 0.013 75);
+  --border-light: oklch(0.92 0.011 80);
+  --card-border: oklch(0.94 0.011 82);
 
-  /* Brand / accent — Cohere palette */
-  --cohere-black: oklch(0 0 0); /* #000000 */
-  --primary-ink: oklch(0.12 0.008 280); /* #17171c near-black CTA */
-  --deep-green: oklch(0.3 0.045 175); /* #003c33 product band */
-  --dark-navy: oklch(0.21 0.05 255); /* #071829 */
-  --action-blue: oklch(0.52 0.2 260); /* #1863dc */
-  --focus-blue: oklch(0.6 0.16 260); /* #4c6ee6 */
-  --coral: oklch(0.72 0.18 35); /* #ff7759 editorial chip */
-  --coral-soft: oklch(0.8 0.1 30); /* #ffad9b */
-  --form-focus: oklch(0.55 0.12 320); /* #9b60aa */
+  /* Brand roles */
+  --primary-ink: oklch(0.215 0.018 50); /* cacao block (logo, toast) */
+  --deep-green: oklch(0.3 0.018 75); /* approve — solid espresso, premium */
+  --action-blue: oklch(0.47 0.1 265); /* links + running state — indigo */
+  --focus-blue: oklch(0.55 0.11 268);
+  --form-focus: var(--focus-blue);
+  --coral: var(--ember); /* legacy token name → ember */
+  --coral-soft: var(--ember-soft);
+  --saffron: oklch(0.8 0.12 85); /* highlight / celebration */
+  --agent: oklch(0.5 0.11 310); /* orchid — reserved: agent actions only */
 
-  /* Legacy accent names — remapped to Cohere palette so existing pages
-   * using these tokens stay coherent during the phased migration.
-   * Phase 2+ will replace direct uses with semantic Cohere names. */
-  --violet: var(--primary-ink);
-  --violet-soft: var(--ink-subtle);
-  --amber: var(--coral);
+  /* Legacy accent names — remapped to Ember roles so existing pages stay
+   * coherent without per-component edits. */
+  --violet: var(--agent);
+  --violet-soft: oklch(0.65 0.09 310);
+  --amber: var(--saffron);
   --cyan: var(--action-blue);
-  --emerald: oklch(0.62 0.13 155);
-  --rose: oklch(0.5 0.2 25); /* #b30000 error */
+  --emerald: oklch(0.55 0.09 145); /* moss · success */
+  --rose: oklch(0.52 0.16 25); /* madder · alert */
+
+  /* Hero / dark product band — deep plum-umber, lifted by the aurora. */
+  --hero-bg: oklch(0.27 0.03 40);
+  --hero-ink: oklch(0.965 0.008 85);
+  --dark-navy: var(--hero-bg);
+
+  --card-pad: 18px;
+  --bento-pad: 14px;
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -155,34 +176,35 @@
   --card-foreground: var(--ink);
   --popover: var(--canvas);
   --popover-foreground: var(--ink);
-  --primary: var(--primary-ink);
-  --primary-foreground: var(--canvas);
+  --primary: var(--ember);
+  --primary-foreground: oklch(0.99 0.005 85);
   --secondary: var(--soft-stone);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-1);
   --muted-foreground: var(--ink-muted);
-  --accent: var(--soft-stone);
+  --accent: var(--surface-2);
   --accent-foreground: var(--ink);
   --destructive: var(--rose);
-  --destructive-foreground: var(--canvas);
+  --destructive-foreground: oklch(0.99 0.005 85);
   --border: var(--hairline);
   --input: var(--hairline);
   --ring: var(--focus-blue);
-  --chart-1: var(--primary-ink);
+  --chart-1: var(--ember);
   --chart-2: var(--action-blue);
   --chart-3: var(--emerald);
-  --chart-4: var(--coral);
-  --chart-5: var(--rose);
-  --sidebar: var(--canvas);
+  --chart-4: var(--saffron);
+  --chart-5: var(--agent);
+  --sidebar: var(--surface-1);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
   --sidebar-primary-foreground: var(--canvas);
-  --sidebar-accent: var(--soft-stone);
+  --sidebar-accent: var(--surface-2);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--hairline);
   --sidebar-ring: var(--focus-blue);
 
-  /* Editorial — gradients reserved for media-led panels only; UI is flat. */
+  /* Decorative washes — the hero aurora and cooking sweep are the only
+   * sanctioned gradients. Everything else is flat parchment. */
   --gradient-aurora:
     radial-gradient(
       60% 70% at 20% 30%,
@@ -195,556 +217,114 @@
       transparent 70%
     );
   --gradient-card: linear-gradient(180deg, var(--canvas) 0%, var(--surface-1) 100%);
-  --gradient-trace: linear-gradient(
-    90deg,
-    var(--primary-ink),
-    var(--action-blue) 55%,
-    var(--coral)
-  );
-  --shadow-glass: 0 1px 0 0 var(--hairline) inset, 0 1px 2px -1px oklch(0 0 0 / 6%);
-  --shadow-elevated: 0 1px 0 0 var(--hairline) inset, 0 8px 24px -12px oklch(0 0 0 / 12%);
+  --gradient-trace: linear-gradient(90deg, var(--agent), var(--action-blue) 55%, var(--ember));
+  --shadow-glass: 0 1px 0 0 var(--hairline) inset, 0 1px 2px -1px oklch(0.2 0.02 60 / 8%);
+  --shadow-elevated:
+    0 1px 0 0 var(--hairline) inset, 0 8px 24px -12px oklch(0.2 0.02 60 / 16%);
   --shadow-focus: 0 0 0 2px color-mix(in oklab, var(--focus-blue) 70%, transparent);
 }
 
-/* === Cadence Nightshift — dark theme override ===
- * The original pre-Cohere palette. Activated by toggling `.dark` on <html>.
- * Overrides every semantic token declared on :root so every page that uses
- * tokens (bg-canvas, text-ink, btn-pill, band-deep-green, etc.) flips
- * cleanly to a dark surface without per-component edits. */
+/* === Ember Editorial — "Char night" dark theme ===
+ * Near-black floors (hue 60, chroma ≤ 0.01 — never brown); warmth lives only
+ * in the accents. Sidebar one step darker than canvas for separation.
+ * Activated by toggling `.dark` on <html>. */
 .dark {
-  --radius: 0.75rem;
+  --ember: oklch(0.7 0.15 52);
+  --ember-active: oklch(0.62 0.14 50);
+  --ember-soft: oklch(0.5 0.09 55);
 
-  /* Display font for dark theme — Inter Tight (Nightshift original) */
-  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --canvas: oklch(0.148 0.005 60);
+  --soft-stone: oklch(0.21 0.008 58);
+  --pale-green: oklch(0.24 0.035 160);
+  --pale-blue: oklch(0.24 0.03 220);
+  --paper: oklch(0.148 0.005 60);
+  --paper-elevated: oklch(0.178 0.006 58);
+  --surface-1: oklch(0.178 0.006 58);
+  --surface-2: oklch(0.21 0.008 58);
+  --surface-3: oklch(0.245 0.009 58);
 
-  /* Surfaces */
-  --canvas: oklch(0.155 0.012 260);
-  --soft-stone: oklch(0.215 0.015 258);
-  --pale-green: oklch(0.255 0.05 155);
-  --pale-blue: oklch(0.255 0.05 220);
-  --paper: oklch(0.155 0.012 260);
-  --paper-elevated: oklch(0.185 0.014 260);
-  --surface-1: oklch(0.175 0.013 260);
-  --surface-2: oklch(0.215 0.015 258);
-  --surface-3: oklch(0.255 0.016 258);
+  --ink: oklch(0.958 0.008 85);
+  --ink-muted: oklch(0.78 0.012 75);
+  --ink-subtle: oklch(0.62 0.014 70);
+  --ink-faint: oklch(0.53 0.014 68);
 
-  /* Ink */
-  --ink: oklch(0.985 0.003 250);
-  --ink-muted: oklch(0.8 0.012 250);
-  --ink-subtle: oklch(0.64 0.014 250);
-  --ink-faint: oklch(0.56 0.014 250);
+  --hairline: oklch(0.92 0.02 80 / 19%);
+  --hairline-strong: oklch(0.92 0.02 80 / 32%);
+  --border-light: oklch(0.92 0.02 80 / 14%);
+  --card-border: oklch(0.92 0.02 80 / 11%);
 
-  /* Rules */
-  --hairline: oklch(0.85 0.02 260 / 12%);
-  --hairline-strong: oklch(0.85 0.02 260 / 22%);
-  --border-light: oklch(0.85 0.02 260 / 14%);
-  --card-border: oklch(0.85 0.02 260 / 10%);
+  --primary-ink: var(--ember);
+  --deep-green: oklch(0.9 0.01 80);
+  --action-blue: oklch(0.72 0.1 270);
+  --focus-blue: oklch(0.72 0.1 270);
+  --form-focus: var(--focus-blue);
+  --coral: var(--ember);
+  --coral-soft: oklch(0.5 0.09 55);
+  --saffron: oklch(0.84 0.11 88);
+  --agent: oklch(0.72 0.11 308);
 
-  /* Brand / accent — Nightshift dual-accent */
-  --primary-ink: oklch(0.72 0.22 295); /* electric violet primary */
-  --deep-green: oklch(0.72 0.22 295); /* remap: product band → violet */
-  --dark-navy: oklch(0.185 0.014 260);
-  --action-blue: oklch(0.82 0.14 220); /* cyan info */
-  --focus-blue: oklch(0.72 0.22 295);
-  --coral: oklch(0.78 0.19 52); /* ember orange signal */
-  --coral-soft: oklch(0.82 0.14 52);
-  --form-focus: oklch(0.72 0.22 295);
+  --violet: var(--agent);
+  --violet-soft: oklch(0.62 0.1 308);
+  --amber: var(--saffron);
+  --cyan: var(--action-blue);
+  --emerald: oklch(0.72 0.11 148);
+  --rose: oklch(0.68 0.15 28);
 
-  --violet: oklch(0.72 0.22 295);
-  --violet-soft: oklch(0.78 0.16 295);
-  --amber: oklch(0.78 0.19 52);
-  --cyan: oklch(0.82 0.14 220);
-  --emerald: oklch(0.8 0.17 155);
-  --rose: oklch(0.72 0.22 18);
+  /* dark hero — deeper than the floor, ember bloom in one corner */
+  --hero-bg: oklch(0.115 0.005 55);
+  --hero-ink: oklch(0.965 0.008 85);
+  --dark-navy: var(--hero-bg);
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: var(--surface-2);
+  --card: var(--surface-1);
   --card-foreground: var(--ink);
-  --popover: var(--surface-3);
+  --popover: var(--surface-2);
   --popover-foreground: var(--ink);
-  --primary: var(--violet);
-  --primary-foreground: oklch(0.99 0.005 280);
+  --primary: var(--ember);
+  --primary-foreground: oklch(0.16 0.01 55);
   --secondary: var(--surface-2);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-1);
   --muted-foreground: var(--ink-muted);
-  --accent: oklch(0.275 0.018 258);
+  --accent: var(--surface-3);
   --accent-foreground: var(--ink);
   --destructive: var(--rose);
-  --destructive-foreground: oklch(0.98 0.003 85);
+  --destructive-foreground: oklch(0.16 0.01 55);
   --border: var(--hairline);
-  --input: oklch(1 0 0 / 6%);
-  --ring: var(--violet);
-  --chart-1: var(--violet);
-  --chart-2: var(--cyan);
+  --input: var(--hairline);
+  --ring: var(--focus-blue);
+  --chart-1: var(--ember);
+  --chart-2: var(--action-blue);
   --chart-3: var(--emerald);
-  --chart-4: var(--amber);
-  --chart-5: var(--rose);
-  --sidebar: var(--paper);
+  --chart-4: var(--saffron);
+  --chart-5: var(--agent);
+  --sidebar: oklch(0.128 0.004 60); /* one step darker than the floor */
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
   --sidebar-primary-foreground: var(--paper);
   --sidebar-accent: var(--surface-2);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--hairline);
-  --sidebar-ring: var(--violet);
+  --sidebar-ring: var(--focus-blue);
 
   --gradient-aurora:
     radial-gradient(
       55% 75% at 18% 28%,
-      color-mix(in oklab, var(--violet) 65%, transparent) 0%,
+      color-mix(in oklab, var(--ember) 14%, transparent) 0%,
       transparent 65%
     ),
     radial-gradient(
       50% 65% at 82% 22%,
-      color-mix(in oklab, var(--cyan) 38%, transparent) 0%,
-      transparent 65%
-    ),
-    radial-gradient(
-      48% 60% at 62% 95%,
-      color-mix(in oklab, var(--amber) 50%, transparent) 0%,
+      color-mix(in oklab, var(--action-blue) 10%, transparent) 0%,
       transparent 65%
     );
-  --gradient-card: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface-2) 100%, transparent) 0%,
-    color-mix(in oklab, var(--surface-1) 100%, transparent) 100%
-  );
-  --gradient-trace: linear-gradient(90deg, var(--violet), var(--cyan) 55%, var(--amber));
-  --shadow-glass: 0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
-  --shadow-elevated: 0 1px 0 0 oklch(1 0 0 / 6%) inset, 0 24px 60px -20px oklch(0 0 0 / 70%);
-  --shadow-focus:
-    0 0 0 2px color-mix(in oklab, var(--violet) 65%, transparent),
-    0 0 28px -4px color-mix(in oklab, var(--violet) 55%, transparent);
-}
-
-/* Dark-theme body sizing matches Nightshift density (15px / 1.55). */
-.dark,
-.dark body {
-  font-size: 15px;
-  line-height: 1.55;
-  letter-spacing: -0.01em;
-}
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6 {
-  font-weight: 600;
-  letter-spacing: -0.022em;
-  line-height: 1.2;
-}
-.dark h1 {
-  font-size: clamp(1.75rem, 2.4vw, 2.35rem);
-  font-weight: 650;
-  letter-spacing: -0.03em;
-}
-.dark h2 {
-  font-size: clamp(1.35rem, 1.7vw, 1.625rem);
-}
-.dark h3 {
-  font-size: 1.125rem;
-}
-
-/* Restore saturated Nightshift decorative utilities under .dark only.
- * Light theme keeps the neutralized soft-wash versions defined below. */
-.dark .neural-gradient {
-  background:
-    radial-gradient(
-      55% 75% at 18% 25%,
-      color-mix(in oklab, var(--violet) 80%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      50% 65% at 82% 20%,
-      color-mix(in oklab, var(--cyan) 50%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      50% 60% at 62% 95%,
-      color-mix(in oklab, var(--amber) 60%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      35% 45% at 8% 92%,
-      color-mix(in oklab, var(--violet) 35%, transparent) 0%,
-      transparent 70%
-    );
-  filter: blur(0.5px) saturate(1.2);
-}
-.dark .neural-text {
-  background: linear-gradient(110deg, var(--cyan) 0%, var(--violet) 45%, var(--amber) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.dark .ring-glow-violet {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--violet) 50%, transparent),
-    0 8px 40px -10px color-mix(in oklab, var(--violet) 50%, transparent);
-}
-.dark .bento {
-  background: var(--gradient-card);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-glass);
-}
-.dark .glass {
-  background-color: color-mix(in oklab, var(--surface-2) 70%, transparent);
-  border: 1px solid var(--hairline);
-  backdrop-filter: saturate(180%) blur(20px);
-}
-.dark .grain::after {
-  background-image: radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px);
-  background-size: 3px 3px;
-  mix-blend-mode: overlay;
-  opacity: 0.5;
-}
-.dark .indigo-grid {
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in oklab, var(--violet) 16%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--violet) 16%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 56px 56px;
-}
-
-/* === Aurora — futuristic vivid theme ===
- * Layered on top of .dark (both classes active). Pushes saturation, neon
- * accents, animated aurora backdrop, and stronger glassmorphism. */
-.aurora {
-  --radius: 0.875rem;
-
-  /* Futuristic display: Space Grotesk's geometric forms + tightened tracking
-   * read modern + technical. Inter Tight as fallback keeps weight match. */
-  --font-display: "Space Grotesk", "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-
-  /* Deep cosmic canvas — near-black with a violet/indigo bias. */
-  --canvas: oklch(0.13 0.025 285);
-  --paper: oklch(0.13 0.025 285);
-  --paper-elevated: oklch(0.175 0.03 285);
-  --surface-1: oklch(0.165 0.028 285);
-  --surface-2: oklch(0.21 0.035 285);
-  --surface-3: oklch(0.255 0.04 285);
-  --soft-stone: oklch(0.21 0.035 285);
-  --pale-green: oklch(0.3 0.1 165);
-  --pale-blue: oklch(0.3 0.1 240);
-
-  --ink: oklch(0.99 0.005 280);
-  --ink-muted: oklch(0.84 0.02 270);
-  --ink-subtle: oklch(0.7 0.03 270);
-  --ink-faint: oklch(0.58 0.03 270);
-
-  --hairline: oklch(0.85 0.05 285 / 14%);
-  --hairline-strong: oklch(0.85 0.05 285 / 28%);
-  --border-light: oklch(0.85 0.05 285 / 18%);
-  --card-border: oklch(0.85 0.05 285 / 12%);
-
-  /* Neon ramp — electric violet primary, magenta + cyan + lime accents. */
-  --primary-ink: oklch(0.74 0.27 295);
-  --deep-green: oklch(0.74 0.27 295);
-  --dark-navy: oklch(0.175 0.03 285);
-  --action-blue: oklch(0.78 0.18 220);
-  --focus-blue: oklch(0.74 0.27 295);
-  --coral: oklch(0.78 0.24 25);
-  --coral-soft: oklch(0.82 0.18 25);
-  --form-focus: oklch(0.74 0.27 320);
-
-  --violet: oklch(0.74 0.27 295);
-  --violet-soft: oklch(0.82 0.22 305);
-  --magenta: oklch(0.72 0.28 340);
-  --amber: oklch(0.84 0.2 60);
-  --cyan: oklch(0.84 0.18 215);
-  --lime: oklch(0.88 0.22 135);
-  --emerald: oklch(0.8 0.2 155);
-  --rose: oklch(0.72 0.24 18);
-
-  --background: var(--paper);
-  --foreground: var(--ink);
-  --card: var(--surface-2);
-  --card-foreground: var(--ink);
-  --popover: var(--surface-3);
-  --popover-foreground: var(--ink);
-  --primary: var(--violet);
-  --primary-foreground: oklch(0.99 0.005 280);
-  --secondary: var(--surface-2);
-  --secondary-foreground: var(--ink);
-  --muted: var(--surface-1);
-  --muted-foreground: var(--ink-muted);
-  --accent: oklch(0.32 0.06 295);
-  --accent-foreground: var(--ink);
-  --destructive: var(--rose);
-  --destructive-foreground: oklch(0.99 0.005 85);
-  --border: var(--hairline);
-  --input: oklch(1 0 0 / 7%);
-  --ring: var(--violet);
-  --chart-1: var(--violet);
-  --chart-2: var(--cyan);
-  --chart-3: var(--lime);
-  --chart-4: var(--magenta);
-  --chart-5: var(--amber);
-  --sidebar: var(--paper);
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--ink);
-  --sidebar-primary-foreground: var(--paper);
-  --sidebar-accent: var(--surface-2);
-  --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: var(--hairline);
-  --sidebar-ring: var(--violet);
-
-  --gradient-aurora:
-    radial-gradient(
-      60% 80% at 12% 18%,
-      color-mix(in oklab, var(--violet) 78%, transparent) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      55% 70% at 88% 20%,
-      color-mix(in oklab, var(--cyan) 55%, transparent) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      55% 65% at 70% 92%,
-      color-mix(in oklab, var(--magenta) 65%, transparent) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      45% 55% at 18% 88%,
-      color-mix(in oklab, var(--lime) 35%, transparent) 0%,
-      transparent 65%
-    );
-  --gradient-card: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface-2) 100%, transparent) 0%,
-    color-mix(in oklab, var(--surface-1) 100%, transparent) 100%
-  );
-  --gradient-trace: linear-gradient(
-    90deg,
-    var(--violet),
-    var(--magenta) 40%,
-    var(--cyan) 70%,
-    var(--lime)
-  );
-
-  --shadow-glass:
-    0 1px 0 0 oklch(1 0 0 / 7%) inset, 0 10px 36px -8px oklch(0 0 0 / 60%),
-    0 0 80px -20px color-mix(in oklab, var(--violet) 35%, transparent);
+  --gradient-card: linear-gradient(180deg, var(--surface-1) 0%, var(--canvas) 100%);
+  --gradient-trace: linear-gradient(90deg, var(--agent), var(--action-blue) 55%, var(--ember));
+  --shadow-glass: 0 1px 0 0 oklch(0.95 0.015 85 / 4%) inset, 0 8px 32px -8px oklch(0 0 0 / 55%);
   --shadow-elevated:
-    0 1px 0 0 oklch(1 0 0 / 8%) inset, 0 28px 70px -22px oklch(0 0 0 / 75%),
-    0 0 120px -30px color-mix(in oklab, var(--violet) 45%, transparent);
-  --shadow-focus:
-    0 0 0 2px color-mix(in oklab, var(--violet) 75%, transparent),
-    0 0 32px -2px color-mix(in oklab, var(--violet) 65%, transparent);
-}
-
-/* Aurora-specific decorative overrides. Saturation cranked, blur lifted. */
-.aurora body {
-  background-color: var(--paper);
-  background-image:
-    radial-gradient(
-      60% 80% at 12% 18%,
-      color-mix(in oklab, var(--violet) 28%, transparent) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      55% 70% at 88% 20%,
-      color-mix(in oklab, var(--cyan) 18%, transparent) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      55% 65% at 70% 92%,
-      color-mix(in oklab, var(--magenta) 22%, transparent) 0%,
-      transparent 60%
-    );
-  background-attachment: fixed;
-}
-
-.aurora .neural-gradient {
-  background:
-    radial-gradient(
-      60% 80% at 14% 22%,
-      color-mix(in oklab, var(--violet) 90%, transparent) 0%,
-      transparent 65%
-    ),
-    radial-gradient(
-      55% 70% at 86% 18%,
-      color-mix(in oklab, var(--cyan) 70%, transparent) 0%,
-      transparent 65%
-    ),
-    radial-gradient(
-      55% 65% at 70% 94%,
-      color-mix(in oklab, var(--magenta) 80%, transparent) 0%,
-      transparent 65%
-    ),
-    radial-gradient(
-      40% 50% at 10% 90%,
-      color-mix(in oklab, var(--lime) 50%, transparent) 0%,
-      transparent 70%
-    );
-  filter: blur(0.5px) saturate(1.35);
-}
-
-.aurora .neural-text {
-  background: linear-gradient(
-    110deg,
-    var(--cyan) 0%,
-    var(--violet) 40%,
-    var(--magenta) 75%,
-    var(--amber) 100%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: aurora-shift 12s ease-in-out infinite;
-}
-
-@keyframes aurora-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.aurora .ring-glow-violet {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--violet) 60%, transparent),
-    0 0 24px -2px color-mix(in oklab, var(--violet) 70%, transparent),
-    0 0 60px -10px color-mix(in oklab, var(--magenta) 50%, transparent);
-}
-
-.aurora .bento {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface-2) 92%, transparent) 0%,
-    color-mix(in oklab, var(--surface-1) 92%, transparent) 100%
-  );
-  border: 1px solid color-mix(in oklab, var(--violet) 18%, var(--hairline));
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-glass);
-  position: relative;
-  overflow: hidden;
-}
-.aurora .bento::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    60% 80% at 0% 0%,
-    color-mix(in oklab, var(--violet) 14%, transparent) 0%,
-    transparent 60%
-  );
-  opacity: 0.9;
-}
-
-.aurora .glass {
-  background-color: color-mix(in oklab, var(--surface-2) 55%, transparent);
-  border: 1px solid color-mix(in oklab, var(--violet) 22%, var(--hairline));
-  backdrop-filter: saturate(200%) blur(28px);
-  -webkit-backdrop-filter: saturate(200%) blur(28px);
-}
-
-.aurora .indigo-grid {
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in oklab, var(--cyan) 22%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--violet) 22%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 48px 48px;
-}
-
-/* Stronger aurora animation — slower drift + scale for hero backdrops. */
-.aurora .animate-aurora {
-  animation: aurora-drift 22s ease-in-out infinite;
-}
-@keyframes aurora-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-    filter: hue-rotate(0deg) saturate(1.2);
-  }
-  33% {
-    transform: translate3d(-4%, 2%, 0) scale(1.12) rotate(2deg);
-    filter: hue-rotate(15deg) saturate(1.4);
-  }
-  66% {
-    transform: translate3d(3%, -3%, 0) scale(1.08) rotate(-2deg);
-    filter: hue-rotate(-12deg) saturate(1.35);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-    filter: hue-rotate(0deg) saturate(1.2);
-  }
-}
-
-/* Aurora btn-pill — neon gradient fill with shimmer on hover. */
-.aurora .btn-pill {
-  background-image: linear-gradient(120deg, var(--violet) 0%, var(--magenta) 55%, var(--cyan) 100%);
-  background-size: 200% 100%;
-  background-position: 0% 50%;
-  color: oklch(0.99 0.005 280);
-  box-shadow:
-    0 6px 24px -8px color-mix(in oklab, var(--violet) 60%, transparent),
-    0 0 0 1px color-mix(in oklab, var(--violet) 30%, transparent) inset;
-  transition:
-    background-position 600ms var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
-}
-.aurora .btn-pill:hover {
-  background-position: 100% 50%;
-  box-shadow:
-    0 10px 30px -8px color-mix(in oklab, var(--magenta) 60%, transparent),
-    0 0 0 1px color-mix(in oklab, var(--magenta) 40%, transparent) inset;
-}
-
-.aurora .band-deep-green {
-  background-image: linear-gradient(
-    135deg,
-    var(--violet) 0%,
-    oklch(0.32 0.1 285) 55%,
-    var(--magenta) 100%
-  );
-  color: oklch(0.99 0.005 280);
-}
-
-.aurora .chip-taxonomy {
-  border-color: color-mix(in oklab, var(--magenta) 70%, transparent);
-  color: var(--magenta);
-}
-.aurora .chip-taxonomy[data-active="true"] {
-  background-image: linear-gradient(120deg, var(--magenta) 0%, var(--violet) 100%);
-  color: oklch(0.99 0.005 280);
-  border-color: transparent;
-}
-
-/* Subtle animated underline scan for headings under Aurora. */
-.aurora h1,
-.aurora h2 {
-  text-shadow: 0 0 24px color-mix(in oklab, var(--violet) 18%, transparent);
-}
-
-/* Scrollbar in aurora — soft violet glow. */
-.aurora .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--violet), var(--magenta));
+    0 1px 0 0 oklch(0.95 0.015 85 / 5%) inset, 0 24px 60px -20px oklch(0 0 0 / 70%);
+  --shadow-focus: 0 0 0 2px color-mix(in oklab, var(--focus-blue) 65%, transparent);
 }
 
 @layer base {
@@ -752,21 +332,23 @@
     border-color: var(--color-border);
   }
 
+  /* NOTE: html keeps the browser-default 16px so rem-based Tailwind spacing
+   * and type utilities are unaffected; the 13px Ember base applies to body
+   * text inheritance only. */
   html,
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Cohere body: 16px / 1.5 / Inter — generous and editorial. */
-    line-height: 1.5;
-    font-size: 16px;
-    letter-spacing: 0;
   }
   body {
     min-height: 100vh;
+    /* Ember body: 13px / 1.55 / Schibsted Grotesk — dense, editorial. */
+    font-size: 13px;
+    line-height: 1.55;
+    letter-spacing: 0;
   }
 
   h1,
@@ -776,41 +358,29 @@
   h5,
   h6 {
     font-family: var(--font-display);
-    /* Fraunces is variable; 400 for body headings, 500 for h2/h1.
-     * opsz auto-applies via font-variation-settings so display sizes get
-     * the wider, more dramatic contrast. */
-    font-weight: 500;
-    line-height: 1.08;
-    letter-spacing: -0.022em;
-    font-variation-settings:
-      "opsz" 96,
-      "SOFT" 30;
+    font-optical-sizing: auto;
+    font-weight: 450;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
   }
   h1 {
     font-size: clamp(2.25rem, 4vw, 3.75rem);
-    letter-spacing: -0.03em;
-    font-weight: 500;
+    letter-spacing: -0.02em;
+    font-weight: 400;
   }
   h2 {
     font-size: clamp(1.75rem, 2.6vw, 2.5rem);
-    letter-spacing: -0.025em;
-    font-weight: 500;
+    letter-spacing: -0.018em;
+    font-weight: 430;
   }
   h3 {
     font-size: clamp(1.25rem, 1.6vw, 1.5rem);
-    letter-spacing: -0.018em;
-    font-weight: 500;
-    font-variation-settings:
-      "opsz" 36,
-      "SOFT" 30;
+    font-weight: 470;
   }
 
-  /* Section rhythm — global density nudge. Pages using py-8 / space-y-8 now
-   * compress by ~25% without per-route edits. Keeps generous breathing on
-   * landing surfaces (which use explicit larger values). */
   main,
   [role="main"] {
-    font-feature-settings: "ss01", "cv11", "tnum";
+    font-feature-settings: "tnum";
   }
 
   /* Tabular numerals everywhere — dashboards, traces, budgets read cleaner. */
@@ -818,29 +388,28 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Focus ring — visible only for keyboard nav, ember glow with halo. */
+  /* Focus ring — keyboard nav, indigo outline (per tokens.css). */
   :focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-    border-radius: var(--radius-md);
+    outline: 2px solid var(--focus-blue);
+    outline-offset: 1px;
+    box-shadow: none;
   }
 
-  /* Selection — ember tint, never neon. */
+  /* Selection — ember tint. */
   ::selection {
-    background-color: color-mix(in oklab, var(--violet) 38%, transparent);
+    background-color: color-mix(in oklab, var(--ember) 28%, transparent);
     color: var(--ink);
   }
 
-  /* Inputs / textareas — restore visible hairline so fields don't dissolve
-   * into the surface. Critical for accessibility on dark backgrounds. */
+  /* Inputs / textareas — visible hairline so fields don't dissolve into
+   * the parchment. */
   input,
   textarea,
   select {
     background-color: color-mix(in oklab, var(--surface-1) 100%, transparent);
   }
 
-  /* Press feedback — universal scale-down on active for interactive elements.
-   * Subtle (0.97) so it confirms touch without feeling rubbery. */
+  /* Press feedback — universal scale-down on active for interactive elements. */
   button:not(:disabled):active,
   a:active,
   [role="button"]:not([aria-disabled="true"]):active {
@@ -857,9 +426,7 @@
       opacity var(--dur-fast) var(--ease-out);
   }
 
-  /* Popovers / dropdowns / tooltips — origin-aware scale-in from trigger.
-   * Radix exposes the transform-origin so the surface grows from where it
-   * was triggered, not from the center. Modals are exempt (centered). */
+  /* Popovers / dropdowns / tooltips — origin-aware scale-in from trigger. */
   [data-radix-popper-content-wrapper] > * {
     transform-origin: var(--radix-popper-transform-origin);
   }
@@ -876,6 +443,10 @@
   }
   .animate-aurora {
     animation: none !important;
+  }
+  .ai-glow {
+    animation: none !important;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--agent) 18%, transparent);
   }
 }
 
@@ -908,38 +479,39 @@
     box-shadow: var(--shadow-elevated);
   }
 
-  /* === Cohere editorial utilities === */
+  /* === Ember editorial utilities === */
 
-  /* Uppercase mono technical label — for section headings, group labels,
-   * metadata, and category markers. Tracking matches Cohere mono-label. */
+  /* Uppercase mono technical label — metadata, counts, section kickers.
+   * 10px / 0.12em tracking per the design contract. */
   .mono-label {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1.4;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink-subtle);
+    white-space: nowrap;
   }
 
-  /* Pill CTA — Cohere's signature near-black 32px-radius button. */
+  /* Pill CTA — ember fill (ember = primary CTA / needs-human). */
   .btn-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background-color: var(--primary-ink);
-    color: var(--canvas);
+    background-color: var(--ember);
+    color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 500;
     line-height: 1.4;
     padding: 12px 24px;
-    border-radius: 32px;
+    border-radius: 99px;
     transition: background-color var(--dur-fast) var(--ease-out);
   }
   .btn-pill:hover {
-    background-color: oklch(0 0 0);
+    background-color: var(--ember-active);
   }
   .btn-pill-outline {
     display: inline-flex;
@@ -952,55 +524,49 @@
     font-size: 14px;
     font-weight: 500;
     padding: 6px 14px;
-    border-radius: 30px;
-    border: 1px solid var(--ink);
-    transition: background-color var(--dur-fast) var(--ease-out);
+    border-radius: 99px;
+    border: 1px solid var(--hairline-strong);
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
   }
   .btn-pill-outline:hover {
     background-color: var(--soft-stone);
+    border-color: var(--ink-faint);
   }
 
-  /* Deep-green product band — full-width Cohere feature surface. */
-  .band-deep-green {
+  /* Approve / reject — consequence-first governance buttons. */
+  .btn-approve {
     background-color: var(--deep-green);
     color: var(--canvas);
   }
-  .band-dark-navy {
-    background-color: var(--dark-navy);
-    color: var(--canvas);
+  .btn-approve:hover {
+    opacity: 0.9;
   }
+  .dark .btn-approve {
+    color: oklch(0.2 0.01 60);
+  }
+  .btn-reject {
+    color: var(--ember);
+    border: 1px solid color-mix(in oklab, var(--ember) 50%, transparent);
+  }
+  .btn-reject:hover {
+    background-color: color-mix(in oklab, var(--ember) 10%, transparent);
+  }
+
+  /* Stone band — soft parchment block. */
   .band-stone {
     background-color: var(--soft-stone);
     color: var(--ink);
+    border-radius: 12px;
   }
 
-  /* Editorial rule — thin hairline divider for research-table list rows. */
+  /* Editorial rule — thin hairline divider for list rows. */
   .rule-hairline {
     border-bottom: 1px solid var(--hairline);
   }
   .rule-strong {
     border-bottom: 1px solid var(--hairline-strong);
-  }
-
-  /* Editorial taxonomy chip — coral outline (inactive) / coral fill (active). */
-  .chip-taxonomy {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--coral);
-    color: var(--coral);
-    background-color: transparent;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-family: var(--font-sans);
-    font-size: 14px;
-    font-weight: 500;
-    transition:
-      background-color var(--dur-fast) var(--ease-out),
-      color var(--dur-fast) var(--ease-out);
-  }
-  .chip-taxonomy[data-active="true"] {
-    background-color: var(--coral);
-    color: var(--canvas);
   }
 
   .ambient-weather {
@@ -1013,18 +579,18 @@
     box-shadow: inset 0 1px 0 color-mix(in oklab, var(--canvas) 42%, transparent);
   }
   .ambient-weather--sunny {
-    color: var(--coral);
+    color: var(--ember);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--coral) 20%, transparent),
-      color-mix(in oklab, var(--amber) 12%, transparent)
+      color-mix(in oklab, var(--ember) 20%, transparent),
+      color-mix(in oklab, var(--saffron) 12%, transparent)
     );
   }
   .ambient-weather--partly {
-    color: var(--coral);
+    color: var(--ember);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--coral) 16%, transparent),
+      color-mix(in oklab, var(--ember) 16%, transparent),
       color-mix(in oklab, var(--action-blue) 10%, transparent)
     );
   }
@@ -1032,7 +598,7 @@
     color: var(--action-blue);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--dark-navy) 14%, transparent),
+      color-mix(in oklab, var(--hero-bg) 14%, transparent),
       color-mix(in oklab, var(--action-blue) 12%, transparent)
     );
   }
@@ -1056,27 +622,27 @@
   }
   .ambient-weather--snow,
   .ambient-weather--freezing {
-    color: var(--cyan);
+    color: var(--action-blue);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--cyan) 14%, transparent),
+      color-mix(in oklab, var(--action-blue) 14%, transparent),
       color-mix(in oklab, var(--pale-blue) 90%, transparent)
     );
   }
   .ambient-weather--storm {
-    color: var(--violet);
+    color: var(--agent);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--violet) 18%, transparent),
-      color-mix(in oklab, var(--coral) 10%, transparent)
+      color-mix(in oklab, var(--agent) 18%, transparent),
+      color-mix(in oklab, var(--ember) 10%, transparent)
     );
   }
   .ambient-weather--hot {
-    color: var(--coral);
+    color: var(--ember);
     background: linear-gradient(
       90deg,
-      color-mix(in oklab, var(--coral) 24%, transparent),
-      color-mix(in oklab, var(--amber) 16%, transparent)
+      color-mix(in oklab, var(--ember) 24%, transparent),
+      color-mix(in oklab, var(--saffron) 16%, transparent)
     );
   }
   .ambient-weather--neutral {
@@ -1084,7 +650,7 @@
     background: color-mix(in oklab, var(--accent) 70%, transparent);
   }
 
-  /* Action link — editorial blue with underline-on-hover. */
+  /* Action link — indigo with underline-on-hover. */
   .link-action {
     color: var(--action-blue);
     text-decoration-line: underline;
@@ -1092,112 +658,113 @@
     text-underline-offset: 3px;
   }
 
-  /* Editorial hero — refined ink band with warm coral radial accent.
-   * Replaces the saturated deep-green hero. Dark base (charcoal-navy)
-   * with a coral glow top-right and warm sand vignette bottom-left for
-   * editorial depth. Headings inside flip to Fraunces display opsz. */
+  /* Editorial hero — the signature plum-umber band. Slow ember·indigo·saffron
+   * aurora (::after), engraved loop rings (::before). Per cadence/tokens.css. */
   .hero-editorial {
-    background-color: oklch(0.18 0.018 265);
-    background-image:
-      radial-gradient(
-        70% 90% at 92% 8%,
-        color-mix(in oklab, var(--coral) 38%, transparent) 0%,
-        transparent 55%
-      ),
-      radial-gradient(
-        60% 75% at 4% 96%,
-        color-mix(in oklab, var(--soft-stone) 22%, transparent) 0%,
-        transparent 60%
-      ),
-      linear-gradient(
-        135deg,
-        oklch(0.19 0.022 270) 0%,
-        oklch(0.15 0.018 260) 60%,
-        oklch(0.12 0.02 255) 100%
-      );
-    color: var(--canvas);
-    border: 1px solid color-mix(in oklab, var(--coral) 14%, transparent);
-    box-shadow:
-      inset 0 1px 0 0 color-mix(in oklab, var(--canvas) 8%, transparent),
-      0 20px 60px -30px color-mix(in oklab, var(--coral) 35%, oklch(0 0 0));
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    background-color: var(--hero-bg);
+    background-image: linear-gradient(
+      118deg,
+      transparent 55%,
+      color-mix(in oklab, var(--ember) 7%, transparent) 100%
+    );
+    color: var(--hero-ink);
   }
   .hero-editorial::after {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 0;
     pointer-events: none;
-    background-image: radial-gradient(
-      color-mix(in oklab, var(--canvas) 7%, transparent) 1px,
-      transparent 1px
+    background:
+      radial-gradient(
+        46% 64% at 8% 112%,
+        color-mix(in oklab, var(--action-blue) 16%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 58% at 64% -12%,
+        color-mix(in oklab, var(--saffron) 12%, transparent) 0%,
+        transparent 72%
+      ),
+      radial-gradient(
+        48% 72% at 104% 64%,
+        color-mix(in oklab, var(--ember) 20%, transparent) 0%,
+        transparent 70%
+      );
+    background-size: 160% 160%;
+    animation: heroFlow 16s ease-in-out infinite alternate;
+  }
+  .hero-editorial::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: repeating-radial-gradient(
+      circle at 84% 36%,
+      transparent 0px,
+      transparent 30px,
+      color-mix(in oklab, var(--hero-ink) 5%, transparent) 30px,
+      color-mix(in oklab, var(--hero-ink) 5%, transparent) 31px
     );
-    background-size: 3px 3px;
-    mix-blend-mode: overlay;
-    opacity: 0.35;
+    -webkit-mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
+    mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
+    pointer-events: none;
+  }
+  .hero-editorial > * {
+    position: relative;
+    z-index: 1;
   }
   .hero-editorial h1 {
-    font-variation-settings:
-      "opsz" 144,
-      "SOFT" 50;
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
     font-weight: 400;
+    letter-spacing: -0.02em;
   }
   .hero-editorial h1 em {
     font-style: italic;
-    font-weight: 300;
+    font-weight: 380;
+    color: color-mix(in oklab, var(--ember-soft) 80%, var(--hero-ink));
   }
-
-  /* Dark + Aurora override hero — keep theme-native palette. */
   .dark .hero-editorial {
-    background-color: var(--surface-2);
     background-image:
       radial-gradient(
-        70% 90% at 88% 10%,
-        color-mix(in oklab, var(--violet) 55%, transparent) 0%,
-        transparent 55%
+        50% 70% at 88% -8%,
+        color-mix(in oklab, var(--ember) 16%, transparent) 0%,
+        transparent 70%
       ),
-      radial-gradient(
-        60% 75% at 8% 92%,
-        color-mix(in oklab, var(--cyan) 28%, transparent) 0%,
-        transparent 60%
-      ),
-      linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
-    border-color: color-mix(in oklab, var(--violet) 22%, var(--hairline));
-  }
-  .aurora .hero-editorial {
-    background-image:
-      radial-gradient(
-        70% 90% at 88% 10%,
-        color-mix(in oklab, var(--magenta) 60%, transparent) 0%,
-        transparent 55%
-      ),
-      radial-gradient(
-        60% 75% at 8% 92%,
-        color-mix(in oklab, var(--cyan) 50%, transparent) 0%,
-        transparent 60%
-      ),
-      linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
-    border-color: color-mix(in oklab, var(--violet) 35%, var(--hairline));
+      linear-gradient(118deg, transparent 60%, color-mix(in oklab, var(--ember) 5%, transparent) 100%);
+    border: 1px solid oklch(0.92 0.02 80 / 9%);
   }
 
-  /* === Legacy decorative utilities (neutralized for light theme) ===
-   * Kept as no-op-ish soft washes so pages from the old dark theme don't
-   * visually break before Phase 2-4 restyles them per page.            */
+  /* Bento card — parchment, hairline, 12px. Depth from tint, not shadow. */
   .bento {
     background-color: var(--canvas);
     border: 1px solid var(--hairline);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-glass);
+    border-radius: 12px;
+  }
+  .dark .bento {
+    background-color: var(--surface-1);
+    border-color: oklch(0.92 0.02 80 / 13%);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.015 85 / 4%);
   }
   .glass {
     background-color: color-mix(in oklab, var(--canvas) 90%, transparent);
     border: 1px solid var(--hairline);
     backdrop-filter: saturate(120%) blur(12px);
   }
+  .dark .glass {
+    background-color: color-mix(in oklab, var(--surface-2) 70%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
   .text-balance {
     text-wrap: balance;
   }
 
-  /* Neutralized — was a saturated dark hero gradient; now a soft
-   * pale-green / pale-blue wash for light editorial surfaces. */
+  /* Soft editorial wash — parchment-tinted radials (light) / faint ember
+   * breath on char (dark). Used behind auth pages + chat empty state. */
   .neural-gradient {
     background:
       radial-gradient(
@@ -1216,38 +783,69 @@
         transparent 70%
       );
   }
+  .dark .neural-gradient {
+    background:
+      radial-gradient(
+        55% 75% at 18% 25%,
+        color-mix(in oklab, var(--ember) 12%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 65% at 82% 20%,
+        color-mix(in oklab, var(--action-blue) 9%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 60% at 62% 95%,
+        color-mix(in oklab, var(--saffron) 7%, transparent) 0%,
+        transparent 70%
+      );
+  }
   .neural-text {
     background: linear-gradient(
       110deg,
       var(--primary-ink) 0%,
-      var(--deep-green) 60%,
+      var(--ember) 60%,
       var(--action-blue) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .ring-glow-violet {
-    box-shadow: 0 0 0 1px var(--hairline);
+  .dark .neural-text {
+    background: linear-gradient(
+      110deg,
+      var(--ink) 0%,
+      var(--ember) 55%,
+      var(--saffron) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  /* Agentic action button — used for AI-initiated actions (cluster, plan,
-   * generate, run agent…). Distinct from a plain primary button: deep
-   * editorial gradient base, sheen on hover, soft glow that signals
-   * "something AI is about to do work". Works in light + dark. */
+  /* Agent-presence ring — static orchid halo (agent color, exclusive). */
+  .ring-glow-violet {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--agent) 28%, transparent),
+      0 0 14px -6px color-mix(in oklab, var(--agent) 35%, transparent);
+  }
+
+  /* Agentic action button — AI-initiated actions (cluster, plan, generate,
+   * run agent…). Espresso base flowing into orchid — the agent's color. */
   .btn-agentic {
     position: relative;
     isolation: isolate;
     color: var(--canvas);
     background: linear-gradient(
       135deg,
-      var(--deep-green) 0%,
-      var(--primary-ink) 55%,
-      var(--action-blue) 100%
+      var(--primary-ink) 0%,
+      color-mix(in oklab, var(--primary-ink) 55%, var(--agent) 45%) 60%,
+      var(--agent) 100%
     );
     box-shadow:
       0 1px 0 0 color-mix(in oklab, white 12%, transparent) inset,
-      0 8px 24px -10px color-mix(in oklab, var(--action-blue) 55%, transparent),
+      0 8px 24px -10px color-mix(in oklab, var(--agent) 50%, transparent),
       0 2px 6px -2px color-mix(in oklab, var(--primary-ink) 40%, transparent);
     transition:
       transform var(--dur-fast) var(--ease-out),
@@ -1264,7 +862,7 @@
       135deg,
       color-mix(in oklab, white 35%, transparent) 0%,
       transparent 40%,
-      color-mix(in oklab, var(--action-blue) 55%, transparent) 100%
+      color-mix(in oklab, var(--agent) 55%, transparent) 100%
     );
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -1298,7 +896,7 @@
     filter: brightness(1.05);
     box-shadow:
       0 1px 0 0 color-mix(in oklab, white 16%, transparent) inset,
-      0 12px 32px -10px color-mix(in oklab, var(--action-blue) 70%, transparent),
+      0 12px 32px -10px color-mix(in oklab, var(--agent) 65%, transparent),
       0 3px 10px -2px color-mix(in oklab, var(--primary-ink) 50%, transparent);
   }
   .btn-agentic:hover:not(:disabled)::after {
@@ -1312,42 +910,19 @@
     cursor: not-allowed;
   }
   .dark .btn-agentic {
+    color: var(--ink);
     background: linear-gradient(
       135deg,
-      color-mix(in oklab, var(--violet) 85%, black) 0%,
-      color-mix(in oklab, var(--violet) 60%, var(--cyan) 40%) 55%,
-      var(--cyan) 100%
+      color-mix(in oklab, var(--agent) 45%, var(--canvas)) 0%,
+      color-mix(in oklab, var(--agent) 70%, var(--canvas)) 60%,
+      var(--agent) 100%
     );
     box-shadow:
-      0 1px 0 0 color-mix(in oklab, white 18%, transparent) inset,
-      0 10px 30px -8px color-mix(in oklab, var(--violet) 60%, transparent),
-      0 2px 8px -2px color-mix(in oklab, var(--cyan) 35%, transparent);
+      0 1px 0 0 color-mix(in oklab, white 14%, transparent) inset,
+      0 10px 30px -8px color-mix(in oklab, var(--agent) 55%, transparent);
   }
 
-  .indigo-grid {
-    background-image:
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--ink) 5%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--ink) 5%, transparent) 1px,
-        transparent 1px
-      );
-    background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 80%);
-  }
-
-  .grain::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  /* Aurora animation for hero */
+  /* Aurora drift — slow movement for the neural-gradient washes. */
   @keyframes aurora {
     0% {
       transform: translate3d(0, 0, 0) scale(1);
@@ -1363,9 +938,7 @@
     animation: aurora 24s ease-in-out infinite;
   }
 
-  /* Stagger entrance — apply data-stagger-index to children of a list.
-   * Uses @starting-style with a tiny translate + opacity for natural feel.
-   * Never starts from scale(0): nothing in the real world appears from nothing. */
+  /* Stagger entrance — small rise per child. */
   @keyframes cadence-rise {
     from {
       opacity: 0;
@@ -1413,7 +986,35 @@
     animation-delay: 240ms;
   }
 
-  /* Hover-lift — only on hover-capable pointers (no false touch positives). */
+  /* Entrances — transform only, never opacity (content survives print +
+   * reduced motion). Per the Ember motion contract. */
+  @keyframes fadeUp {
+    from {
+      transform: translateY(5px);
+    }
+    to {
+      transform: none;
+    }
+  }
+  .fade-up {
+    animation: fadeUp var(--dur-base) var(--ease-out);
+  }
+  .rise {
+    animation: fadeUp var(--dur-slow) var(--ease-out);
+  }
+
+  /* Subtle lift on interactive rows/cards — motion as affordance. */
+  .lift {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .lift:hover {
+    transform: translateY(-1px);
+    border-color: var(--hairline-strong);
+    box-shadow: 0 2px 8px -4px oklch(0.2 0.02 60 / 14%);
+  }
   @media (hover: hover) and (pointer: fine) {
     .hover-lift {
       transition:
@@ -1423,8 +1024,113 @@
     }
     .hover-lift:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--violet) 35%, transparent);
-      border-color: color-mix(in oklab, var(--violet) 35%, var(--hairline));
+      box-shadow: 0 10px 30px -12px oklch(0.2 0.02 60 / 20%);
+      border-color: var(--hairline-strong);
+    }
+  }
+
+  /* Status dots — color roles: indigo running, moss done, madder failed,
+   * ember gate (needs-human). */
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 99px;
+    flex-shrink: 0;
+  }
+  .dot-running {
+    background: var(--action-blue);
+    animation: pulse-dot 1.6s ease-in-out infinite;
+  }
+  .dot-completed {
+    background: var(--emerald);
+  }
+  .dot-planned {
+    background: var(--ink-faint);
+    opacity: 0.5;
+  }
+  .dot-failed {
+    background: var(--rose);
+  }
+  .dot-gate {
+    background: var(--ember);
+    animation: pulse-dot 1.6s ease-in-out infinite;
+  }
+
+  /* AI-at-work glow — breathing orchid/ember halo on containers actively
+   * thinking/executing. Never overpowering. */
+  @keyframes aiGlow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--agent) 14%, transparent),
+        0 0 14px -4px color-mix(in oklab, var(--ember) 22%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--agent) 26%, transparent),
+        0 0 22px -4px color-mix(in oklab, var(--ember) 38%, transparent);
+    }
+  }
+  .ai-glow {
+    animation: aiGlow 2.8s ease-in-out infinite;
+  }
+
+  /* Streaming caret — ember blink while tokens arrive. */
+  @keyframes caretBlink {
+    50% {
+      opacity: 0;
+    }
+  }
+  .stream-caret {
+    color: var(--ember);
+    animation: caretBlink 0.8s steps(1) infinite;
+  }
+
+  /* Citation chip — [n] inline; evidence is verbatim. */
+  .cite {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    margin: 0 1px;
+    border-radius: 4px;
+    background: var(--surface-3);
+    color: var(--ink-muted);
+    vertical-align: 2px;
+    cursor: default;
+  }
+  .cite:hover {
+    background: var(--hairline);
+    color: var(--ink);
+  }
+
+  /* Cooking-banner sweep — something is always running. */
+  @keyframes bannerSweep {
+    from {
+      background-position: 0% 0;
+    }
+    to {
+      background-position: 100% 0;
+    }
+  }
+
+  @keyframes heroFlow {
+    from {
+      background-position:
+        0% 0%,
+        100% 0%,
+        100% 100%;
+    }
+    to {
+      background-position:
+        100% 100%,
+        0% 100%,
+        0% 0%;
     }
   }
 
@@ -1436,6 +1142,10 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: color-mix(in oklab, var(--ink) 12%, transparent);
     border-radius: 999px;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline-strong) transparent;
   }
 }
 
@@ -1454,263 +1164,17 @@
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* ==========================================================================
- * Aurora polish — typography rhythm, form controls, alignment.
- * Scoped to .aurora so Nightshift + Editorial themes are unchanged.
- * ========================================================================== */
-
-/* Body — slightly larger, looser line-height for breathing room on the
- * darker canvas. Tabular numerals everywhere for dashboard readability. */
-.aurora,
-.aurora body {
-  font-size: 15px;
-  line-height: 1.6;
-  letter-spacing: -0.005em;
-  font-feature-settings: "ss01", "cv11", "tnum", "cv05";
-}
-
-/* Display headings — geometric, tightly tracked, with a soft neon wash on
- * the largest sizes. Weight ramps with size so h1 feels heroic, h3 clean. */
-.aurora h1,
-.aurora h2,
-.aurora h3,
-.aurora h4,
-.aurora h5,
-.aurora h6 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.028em;
-  color: var(--ink);
-}
-.aurora h1 {
-  font-size: clamp(2rem, 3.4vw, 3.25rem);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  text-shadow: 0 0 32px color-mix(in oklab, var(--violet) 22%, transparent);
-}
-.aurora h2 {
-  font-size: clamp(1.5rem, 2.1vw, 2rem);
-  font-weight: 650;
-  letter-spacing: -0.03em;
-}
-.aurora h3 {
-  font-size: clamp(1.175rem, 1.4vw, 1.375rem);
-  font-weight: 600;
-  letter-spacing: -0.022em;
-  text-shadow: none;
-}
-.aurora h4 {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  letter-spacing: -0.018em;
-}
-.aurora h5,
-.aurora h6 {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.012em;
-}
-
-/* Mono labels — brighter under aurora, slightly tighter tracking. */
-.aurora .mono-label {
-  color: color-mix(in oklab, var(--cyan) 78%, var(--ink-faint));
-  letter-spacing: 0.18em;
-  font-weight: 600;
-}
-
-/* ----- Form controls ----- */
-
-/* Inputs / textareas / selects — unified height, padding, hairline,
- * subtle inner glass, neon focus halo. Aligns across forms + filters. */
-.aurora input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
-.aurora textarea,
-.aurora select {
-  background-color: color-mix(in oklab, var(--surface-1) 70%, transparent);
-  border: 1px solid color-mix(in oklab, var(--violet) 16%, var(--hairline-strong));
-  border-radius: calc(var(--radius) - 2px);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.4;
-  padding: 10px 14px;
-  box-shadow:
-    inset 0 1px 0 0 oklch(1 0 0 / 4%),
-    inset 0 0 0 1px transparent;
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
-}
-.aurora input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
-  height: 40px;
-}
-.aurora textarea {
-  min-height: 96px;
-  line-height: 1.55;
-}
-
-.aurora input::placeholder,
-.aurora textarea::placeholder {
-  color: var(--ink-faint);
-  opacity: 0.85;
-}
-
-.aurora input:hover:not(:disabled):not(:focus),
-.aurora textarea:hover:not(:disabled):not(:focus),
-.aurora select:hover:not(:disabled):not(:focus) {
-  border-color: color-mix(in oklab, var(--violet) 28%, var(--hairline-strong));
-  background-color: color-mix(in oklab, var(--surface-1) 85%, transparent);
-}
-
-.aurora input:focus,
-.aurora input:focus-visible,
-.aurora textarea:focus,
-.aurora textarea:focus-visible,
-.aurora select:focus,
-.aurora select:focus-visible {
-  outline: none;
-  border-color: color-mix(in oklab, var(--violet) 65%, transparent);
-  background-color: color-mix(in oklab, var(--surface-1) 95%, transparent);
-  box-shadow:
-    0 0 0 3px color-mix(in oklab, var(--violet) 22%, transparent),
-    0 0 24px -4px color-mix(in oklab, var(--violet) 45%, transparent),
-    inset 0 1px 0 0 oklch(1 0 0 / 6%);
-}
-
-.aurora input:disabled,
-.aurora textarea:disabled,
-.aurora select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Checkbox / radio — neon-tinted accent for native controls. */
-.aurora input[type="checkbox"],
-.aurora input[type="radio"] {
-  accent-color: var(--violet);
-}
-
-/* Buttons (shadcn .btn / generic <button>) under aurora get crisp alignment
- * and a consistent height to line up with inputs in toolbars / forms. */
-.aurora button:not(.btn-pill):not(.btn-pill-outline):not([data-no-aurora]) {
-  font-family: var(--font-sans);
-  letter-spacing: -0.005em;
-}
-
-/* Pill CTA size bump under aurora for stronger visual weight. */
-.aurora .btn-pill {
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  padding: 11px 22px;
-  height: 40px;
-  line-height: 1;
-}
-.aurora .btn-pill-outline {
-  font-weight: 500;
-  padding: 9px 18px;
-  height: 40px;
-  line-height: 1;
-  border-color: color-mix(in oklab, var(--violet) 45%, var(--hairline-strong));
-  color: var(--ink);
-  background-color: color-mix(in oklab, var(--surface-1) 50%, transparent);
-  backdrop-filter: blur(8px);
-}
-.aurora .btn-pill-outline:hover {
-  background-color: color-mix(in oklab, var(--violet) 14%, var(--surface-2));
-  border-color: color-mix(in oklab, var(--violet) 60%, transparent);
-}
-
-/* Cards / bento — tighter inner padding rhythm, gradient hairline on hover. */
-.aurora .bento {
-  padding: 1rem;
-}
-@media (min-width: 768px) {
-  .aurora .bento {
-    padding: 1.25rem;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .aurora .hover-lift:hover {
-    box-shadow:
-      0 14px 38px -14px color-mix(in oklab, var(--violet) 55%, transparent),
-      0 0 40px -10px color-mix(in oklab, var(--magenta) 35%, transparent);
-    border-color: color-mix(in oklab, var(--violet) 55%, var(--hairline-strong));
-  }
-}
-
-/* Selection — neon violet wash. */
-.aurora ::selection {
-  background-color: color-mix(in oklab, var(--violet) 50%, transparent);
-  color: oklch(0.99 0.005 280);
-}
-
-/* Focus ring (keyboard) globally polished under aurora. */
-.aurora :focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--paper),
-    0 0 0 4px color-mix(in oklab, var(--violet) 55%, transparent),
-    0 0 28px -4px color-mix(in oklab, var(--violet) 50%, transparent);
-  border-radius: var(--radius-md);
-}
-
-/* Links — gradient underline that brightens on hover. */
-.aurora .link-action,
-.aurora a.underline,
-.aurora a[data-link="action"] {
-  color: var(--cyan);
-  text-decoration-color: color-mix(in oklab, var(--cyan) 55%, transparent);
-  text-underline-offset: 4px;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    text-decoration-color var(--dur-fast) var(--ease-out);
-}
-.aurora .link-action:hover,
-.aurora a.underline:hover {
-  color: color-mix(in oklab, var(--cyan) 80%, var(--violet));
-  text-decoration-color: var(--violet);
-}
-
-/* Scrollbar — thinner + neon-glow thumb. */
-.aurora .scrollbar-thin::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-.aurora .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--violet), var(--magenta));
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-/* Tabular numerals on numeric-looking spans (metrics, counts). */
-.aurora .tabular-nums,
-.aurora [data-numeric] {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum", "ss01";
-}
-
 /* ===========================================================================
- * Editorial (light) theme — accessible status palette
+ * Light (parchment) theme — accessible status palette
  * ---------------------------------------------------------------------------
- * Many components were authored against the dark themes and use Tailwind's
- * light hues (text-amber-300, text-emerald-300, text-cyan-300, text-rose-300,
- * …) for status chips, badges, and inline highlights. Those shades sit at
- * ~85% lightness — perfectly readable on a dark canvas, but they wash out to
- * near-invisible yellow / mint / pink on the Editorial white canvas
- * (well below WCAG AA, ~1.4:1 contrast).
- *
- * Rather than rewrite every component, we redefine the relevant Tailwind
- * color tokens *only* when neither `.dark` nor `.aurora` is active on the
- * <html> element. This keeps the same class names everywhere; they just
- * resolve to legible mid-tones on white and to their original light tones
- * on Nightshift / Aurora.
- *
- * Translucent fills like `bg-amber-500/15` already pass contrast on white,
- * so we only retune the 200/300/400 text shades — not the 500 fills. */
-html:not(.dark):not(.aurora) {
+ * Several components were authored against dark canvases and use Tailwind's
+ * light hues (text-amber-300, text-emerald-300, …) for status chips. Those
+ * shades sit at ~85% lightness — readable on char, invisible on parchment.
+ * Redefine the relevant Tailwind tokens only when `.dark` is not active so
+ * the same class names resolve to legible mid-tones on parchment.
+ * Translucent fills like `bg-amber-500/15` already pass contrast — only the
+ * 200/300/400 text shades are retuned. */
+html:not(.dark) {
   /* Amber / Yellow — warnings, queued states */
   --color-amber-200: oklch(0.58 0.13 72);
   --color-amber-300: oklch(0.54 0.14 70);

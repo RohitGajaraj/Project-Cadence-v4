@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type Theme = "dark" | "light" | "aurora";
+export type Theme = "dark" | "light";
 
 const STORAGE_KEY = "cadence.theme";
 const DEFAULT_THEME: Theme = "light";
@@ -16,24 +16,26 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 function applyThemeClass(t: Theme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  // Aurora layers on top of dark — both classes active so dark token
-  // overrides apply plus aurora intensifies them.
-  root.classList.toggle("dark", t === "dark" || t === "aurora");
-  root.classList.toggle("aurora", t === "aurora");
+  root.classList.toggle("dark", t === "dark");
+  // Aurora theme retired with the Ember Editorial design system; clear the
+  // class in case a stale bootstrap or extension left it behind.
+  root.classList.remove("aurora");
 }
 
 function readStoredTheme(): Theme {
   if (typeof window === "undefined") return DEFAULT_THEME;
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "dark" || v === "light" || v === "aurora") return v;
+    if (v === "dark" || v === "light") return v;
+    // Legacy stored theme from the pre-Ember generation.
+    if (v === "aurora") return "dark";
   } catch {
     /* noop */
   }
   return DEFAULT_THEME;
 }
 
-const CYCLE: Theme[] = ["dark", "aurora", "light"];
+const CYCLE: Theme[] = ["light", "dark"];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // SSR-safe: start with default; hydrate from localStorage in an effect.

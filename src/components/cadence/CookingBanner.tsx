@@ -29,44 +29,37 @@ export function CookingBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="relative overflow-hidden border-b hairline"
+      className="relative overflow-hidden border-b hairline cooking-banner-sweep"
       style={{
         background:
-          "linear-gradient(90deg, color-mix(in oklab, var(--coral) 92%, transparent) 0%, color-mix(in oklab, var(--coral) 78%, var(--action-blue) 22%) 55%, color-mix(in oklab, var(--action-blue) 85%, transparent) 100%)",
+          "linear-gradient(90deg, color-mix(in oklab, var(--ember) 13%, var(--canvas)) 0%, var(--canvas) 38%, color-mix(in oklab, var(--ember) 8%, var(--canvas)) 72%, var(--canvas) 100%)",
+        backgroundSize: "220% 100%",
       }}
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 cooking-banner-shimmer"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, color-mix(in oklab, white 35%, transparent) 50%, transparent 100%)",
-        }}
-      />
-      <div className="relative flex items-center justify-center px-4 py-1.5 text-[12.5px] font-medium text-white">
+      <div className="relative flex items-center justify-center px-4 py-1.5 text-[12px] font-medium text-ink-muted">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-coral" strokeWidth={2} />
           <span>Agents are building in the back. Fresh build loading.</span>
         </div>
         <button
           type="button"
           onClick={dismiss}
           aria-label="Dismiss"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-white/80 hover:text-white hover:bg-white/15 transition"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-ink-faint hover:text-foreground hover:bg-foreground/10 transition"
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
       </div>
       <style>{`
-        @keyframes cooking-banner-shimmer {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(450%); }
+        @keyframes cooking-banner-sweep {
+          from { background-position: 0% 0; }
+          to { background-position: 100% 0; }
         }
-        .cooking-banner-shimmer {
-          animation: cooking-banner-shimmer 3.2s ease-in-out infinite;
+        .cooking-banner-sweep {
+          animation: cooking-banner-sweep 9s ease-in-out infinite alternate;
         }
         @media (prefers-reduced-motion: reduce) {
-          .cooking-banner-shimmer { animation: none; }
+          .cooking-banner-sweep { animation: none; }
         }
       `}</style>
     </div>
