@@ -28,6 +28,27 @@ export const listAgentRuns = createServerFn({ method: "GET" })
     return { runs: data ?? [] };
   });
 
+/**
+ * Live-state counts for the sidebar status line (DESIGN.md "Status
+ * placement" contract). A dedicated tiny select rather than counting from
+ * listAgentRuns — its 20-row window can drop a long-running run, and the
+ * sidebar must never under-report live work. RLS scopes to the caller.
+ */
+export const getLiveRunCounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("agent_runs")
+      .select("status")
+      .in("status", ["running", "queued"]);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    return {
+      running: rows.filter((r) => r.status === "running").length,
+      queued: rows.filter((r) => r.status === "queued").length,
+    };
+  });
+
 export const runAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

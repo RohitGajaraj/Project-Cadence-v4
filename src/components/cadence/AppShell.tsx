@@ -38,7 +38,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspacePauseState } from "@/lib/governance.functions";
 import { getNeedsYou } from "@/lib/today.functions";
-import { listAgentRuns } from "@/lib/agents.functions";
+import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject } from "@/lib/projects.functions";
@@ -254,14 +254,17 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     (needsYou?.prdCalls.length ?? 0) +
     (needsYou?.oppCalls.length ?? 0);
 
-  // Running-agents line above the Trust row (shares the "runs" cache key).
-  const fetchRuns = useServerFn(listAgentRuns);
-  const { data: runsData } = useQuery({
-    queryKey: ["runs"],
-    queryFn: () => fetchRuns(),
-    refetchInterval: 60_000,
+  // Running-agents line above the Trust row (DESIGN.md status-placement
+  // contract). Dedicated unbounded count — listAgentRuns' 20-row window can
+  // drop a long-running run, and a "live" line must never under-report.
+  const fetchLiveCounts = useServerFn(getLiveRunCounts);
+  const { data: liveCounts } = useQuery({
+    queryKey: ["live-run-counts"],
+    queryFn: () => fetchLiveCounts(),
+    refetchInterval: 15_000,
   });
-  const runningCount = (runsData?.runs ?? []).filter((r) => r.status === "running").length;
+  const runningCount = liveCounts?.running ?? 0;
+  const queuedCount = liveCounts?.queued ?? 0;
 
   // Profile row identity from the auth session.
   const [userName, setUserName] = useState("Account");
@@ -718,8 +721,11 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               </div>
             </Link>
           )}
-          {/* Running status lives at the sidebar bottom, above Trust (contract). */}
-          {runningCount > 0 && (
+          {/* Running status lives at the sidebar bottom, above Trust
+              (contract). Indigo pulsing line while agents run, with queued
+              depth as a quiet suffix; queued-only shows a static quiet line
+              (queued is live state, not "running" — never a fake pulse). */}
+          {runningCount > 0 ? (
             <Link
               to="/missions"
               search={{ tab: "missions" } as never}
@@ -727,9 +733,30 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               style={{ color: "var(--action-blue)", fontSize: 9.5 }}
             >
               <span className="dot dot-running" style={{ width: 5, height: 5 }} />
-              {runningCount} agent{runningCount === 1 ? "" : "s"} running →
+              {runningCount} agent{runningCount === 1 ? "" : "s"} running
+              {queuedCount > 0 && (
+                <span style={{ color: "var(--ink-subtle)" }}>· {queuedCount} queued</span>
+              )}{" "}
+              →
             </Link>
-          )}
+          ) : queuedCount > 0 ? (
+            <Link
+              to="/missions"
+              search={{ tab: "missions" } as never}
+              className="mono-label flex items-center gap-[7px] px-1 pb-1"
+              style={{ color: "var(--ink-subtle)", fontSize: 9.5 }}
+            >
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 99,
+                  background: "var(--ink-faint)",
+                }}
+              />
+              {queuedCount} queued →
+            </Link>
+          ) : null}
           <div className="mono-label px-1">Trust</div>
           <TooltipProvider delayDuration={150}>
             <div role="navigation" aria-label="Trust" className="flex gap-1">
