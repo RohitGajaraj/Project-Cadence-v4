@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchWeather } from "@/lib/ambient.functions";
-import {
-  Cloud,
-  CloudRain,
-  CloudSnow,
-  CloudLightning,
-  Sun,
-  CloudSun,
-  CloudFog,
-  MapPin,
-} from "lucide-react";
+import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, CloudSun, CloudFog } from "lucide-react";
 
 type Place = { city: string; country: string; countryCode: string };
 type Weather = { tempC: number; code: number; isDay: boolean };
@@ -40,13 +31,6 @@ function describe(code: number, isDay: boolean): WxStyle {
   if (code >= 95)
     return { label: "Thunderstorm", Icon: CloudLightning, tone: "ambient-weather--storm" };
   return { label: "Weather", Icon: Cloud, tone: "ambient-weather--neutral" };
-}
-
-// Cold/hot temperature tint overrides icon color for extra "feel"
-function tempTone(t: number) {
-  if (t <= 0) return "ambient-weather--freezing";
-  if (t >= 32) return "ambient-weather--hot";
-  return null;
 }
 
 async function fetchJson(url: string, timeoutMs = 6000) {
@@ -111,21 +95,15 @@ async function loadFromTimeZone(): Promise<AmbientPayload> {
   });
 }
 
-function fmtTime(d: Date) {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-export function AmbientChip({ inline = false }: { inline?: boolean } = {}) {
-  const [now, setNow] = useState(() => new Date());
+// Reference contract (shell.jsx TopBar + DESIGN.md "Status placement":
+// topbar = breadcrumbs + date + weather ONLY): one mono-label run —
+// [condition icon 12] CITY · TEMP° — styled exactly like the date span.
+// The clock, pin icon, country chip, and tinted pill of the previous
+// generation are gone; the real WMO condition picks the icon.
+export function AmbientChip({ inline: _inline = true }: { inline?: boolean } = {}) {
   const [place, setPlace] = useState<Place | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [denied, setDenied] = useState(false);
-
-  // tick clock every 30s
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -200,48 +178,26 @@ export function AmbientChip({ inline = false }: { inline?: boolean } = {}) {
   }, []);
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone?.split("/").pop()?.replace("_", " ");
-
+  const city = place?.city ?? (denied ? tz || "Local" : "Locating…");
   const w = weather ? describe(weather.code, weather.isDay) : null;
   const Icon = w?.Icon ?? Cloud;
 
   return (
-    <div
-      className={
-        inline
-          ? "flex items-center gap-2 text-[11px] text-muted-foreground whitespace-nowrap"
-          : "sticky top-0 z-40 flex h-8 items-center justify-end gap-2 border-b border-border/40 bg-background/80 px-3 text-[11px] text-muted-foreground backdrop-blur-md"
-      }
+    <span
+      className="mono-label"
       role="status"
-      aria-label={`Local time ${fmtTime(now)}${place ? `, ${place.city}` : ""}${weather ? `, ${weather.tempC} degrees, ${w?.label}` : ""}`}
+      title={w ? `${city} · ${w.label}` : city}
+      aria-label={`${city}${weather ? `, ${weather.tempC} degrees, ${w?.label}` : ""}`}
+      style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
     >
-      <span className="font-medium tabular-nums text-foreground/80">{fmtTime(now)}</span>
-      <span className="h-3 w-px bg-border/60" />
-      <MapPin className="h-3 w-3" />
-      <span className="max-w-[12rem] truncate">
-        {place ? (
-          <>
-            {place.city}
-            {place.countryCode ? (
-              <span className="ml-1 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide">
-                {place.countryCode}
-              </span>
-            ) : null}
-          </>
-        ) : denied ? (
-          tz || "Local"
-        ) : (
-          "Locating…"
-        )}
-      </span>
-      {weather && w ? (
-        <span
-          className={`ambient-weather ml-1 ${tempTone(weather.tempC) ?? w.tone}`}
-          title={w.label}
-        >
-          <Icon className="h-3 w-3" />
-          <span className="font-medium tabular-nums">{weather.tempC}°</span>
-        </span>
-      ) : null}
-    </div>
+      {w && <Icon size={12} strokeWidth={1.75} />}
+      {city}
+      {weather && (
+        <>
+          {" "}
+          · <span style={{ fontVariantNumeric: "tabular-nums" }}>{Math.round(weather.tempC)}°</span>
+        </>
+      )}
+    </span>
   );
 }
