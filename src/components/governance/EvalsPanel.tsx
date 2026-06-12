@@ -145,7 +145,7 @@ export function EvalsPanel() {
                 key={s.id}
                 className="bento lift"
                 onClick={() => setSelectedId(s.id)}
-                style={{ textAlign: "left", display: "block" }}
+                style={{ textAlign: "left", display: "block", padding: "var(--card-pad)" }}
               >
                 <div
                   style={{
@@ -648,7 +648,7 @@ function CaseList({
         </div>
       ) : (
         cases.map((c) => (
-          <div key={c.id} className="bento">
+          <div key={c.id} className="bento" style={{ padding: "var(--card-pad)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span>
               <span style={{ flex: 1 }}></span>

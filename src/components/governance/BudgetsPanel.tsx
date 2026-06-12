@@ -256,7 +256,7 @@ export function BudgetsPanel() {
         const pct = cap ? Math.min(100, (burn / cap) * 100) : 0;
         const editing = editCap === key;
         return (
-          <div key={key} className="bento">
+          <div key={key} className="bento" style={{ padding: "var(--card-pad)" }}>
             <div
               style={{
                 display: "flex",
@@ -365,7 +365,7 @@ export function BudgetsPanel() {
       </div>
 
       {/* Token caps + alert threshold — production-only controls, quiet. */}
-      <div className="bento" style={{ gridColumn: "span 2" }}>
+      <div className="bento" style={{ gridColumn: "span 2", padding: "var(--card-pad)" }}>
         <MonoLabel icon={Gauge} style={{ marginBottom: 10 }}>
           Token caps · alert threshold
         </MonoLabel>
@@ -622,7 +622,7 @@ export function BudgetsPanel() {
       </div>
 
       {/* Alerts — production cap warnings/blocks; verdict chips lead each row. */}
-      <div className="bento" style={{ gridColumn: "span 2" }}>
+      <div className="bento" style={{ gridColumn: "span 2", padding: "var(--card-pad)" }}>
         <MonoLabel icon={Shield} style={{ marginBottom: 10 }}>
           Alerts · cap warnings and blocks
         </MonoLabel>

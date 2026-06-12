@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { ArrowRight, GitBranch, Inbox, ShieldAlert, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { MonoLabel, StatusBadge, StepDot } from "@/components/cadence/Primitives";
+import { SketchBar } from "@/components/cadence/Sketch";
 import { getSwarmHud, type SwarmHud } from "@/lib/swarm.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { decideEventDispatch } from "@/lib/reactor.functions";
@@ -309,19 +310,26 @@ function ThroughputStrip({ hud }: { hud: SwarmHud }) {
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 48 }}>
+      {/* Hourly run buckets, hand-sketched (SketchBar — platform data-mark
+          law, founder directive 2026-06-12). */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
         {t.buckets.map((b, i) => (
           <div
             key={b.bucket_start}
             title={`${new Date(b.bucket_start).toLocaleTimeString()} · ${b.runs} runs · $${b.cost_usd.toFixed(4)} · ${b.p50_latency_ms}ms p50`}
             style={{
               flex: 1,
-              borderRadius: 2,
-              background: "var(--ink-muted)",
-              height: `${Math.max(2, (b.runs / max) * 100)}%`,
+              minWidth: 0,
               opacity: 0.4 + 0.6 * (i / Math.max(1, t.buckets.length - 1)),
             }}
-          />
+          >
+            <SketchBar
+              pct={Math.max(4, (b.runs / max) * 100)}
+              seed={i + 1}
+              trackH={48}
+              color="var(--ink-muted)"
+            />
+          </div>
         ))}
       </div>
     </section>

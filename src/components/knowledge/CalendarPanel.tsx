@@ -950,8 +950,11 @@ function MonthGrid({
 }
 
 /* —— Year — GitHub-contribution-style occupancy from real events only.
+   Founder ruling 2026-06-12: the grid runs January → today ONLY — the latest
+   date closes the grid at the right edge, exactly like a contribution graph;
+   pending future months never render (the year fills in as it happens).
    The synced window (last 30 days of meetings + the synced events ahead)
-   renders shaded; everything outside it stays open. —— */
+   renders shaded; days inside the year but outside it stay open. —— */
 function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
   const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -962,10 +965,15 @@ function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
   coverageStart.setHours(0, 0, 0, 0);
   const offset = (new Date(year, 0, 1).getDay() + 6) % 7; // Monday-first
   const dateAt = (w: number, d: number) => new Date(year, 0, 1 + (w * 7 + d - offset));
+  // Weeks elapsed this year — the last rendered column holds today.
+  const dayOfYear = Math.floor(
+    (today.getTime() - new Date(year, 0, 1).getTime()) / (24 * 60 * 60 * 1000),
+  );
+  const weeksToShow = Math.floor((offset + dayOfYear) / 7) + 1;
+  const inRange = (dt: Date) => dt.getFullYear() === year && dt <= today;
   const busy = (w: number, d: number): number => {
     const dt = dateAt(w, d);
-    if (dt.getFullYear() !== year) return -1;
-    if (dt > today) return -1; // future stays open
+    if (!inRange(dt)) return -1;
     if (dt < coverageStart) return -1; // before the synced window — no data, stays open
     return Math.min((buckets[dt.toDateString()] ?? []).length, 3);
   };
@@ -997,7 +1005,7 @@ function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
       </div>
       <div className="scrollbar-thin" style={{ overflowX: "auto", paddingBottom: 4 }}>
         <div style={{ display: "flex", gap: 3, marginBottom: 4, paddingLeft: 30 }}>
-          {MO.map((m) => (
+          {MO.slice(0, today.getMonth() + 1).map((m) => (
             <span key={m} className="mono-label" style={{ fontSize: 7, width: 4.33 * 13 - 3 }}>
               {m}
             </span>
@@ -1015,27 +1023,30 @@ function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
               </span>
             ))}
           </div>
-          {Array.from({ length: 52 }, (_, w) => (
+          {Array.from({ length: weeksToShow }, (_, w) => (
             <div key={w} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {Array.from({ length: 7 }, (_, d) => {
                 const b = busy(w, d);
                 const dt = dateAt(w, d);
                 const isToday = isTodayCell(w, d);
+                // Days before Jan 1 or after today don't exist on this grid —
+                // invisible spacers keep the week lattice aligned.
+                if (!inRange(dt)) {
+                  return (
+                    <span key={d} style={{ width: 10, height: 10, visibility: "hidden" }}></span>
+                  );
+                }
                 return (
                   <span
                     key={d}
-                    title={
-                      b >= 0
-                        ? `${MO[dt.getMonth()]} ${dt.getDate()} · ${WD[d]} · ${b <= 0 ? "free" : `${b} event${b > 1 ? "s" : ""}`}`
-                        : undefined
-                    }
+                    title={`${MO[dt.getMonth()]} ${dt.getDate()} · ${WD[d]} · ${b <= 0 ? "free" : `${b} event${b > 1 ? "s" : ""}`}`}
                     style={{
                       width: 10,
                       height: 10,
                       borderRadius: 2.5,
                       background: b < 0 ? "transparent" : SHADES[b],
                       border: isToday ? "1.5px solid var(--ember)" : "1px solid var(--hairline)",
-                      opacity: d > 4 && b >= 0 ? 0.55 : 1,
+                      opacity: d > 4 ? 0.55 : 1,
                       display: "block",
                     }}
                   ></span>
@@ -1069,7 +1080,7 @@ function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
         </span>
         <span style={{ flex: 1 }}></span>
         <span className="mono-label" style={{ fontSize: 7.5 }}>
-          today ringed ember · future stays open
+          today ringed ember · the year fills in as it happens
         </span>
       </div>
     </div>

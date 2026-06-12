@@ -282,7 +282,7 @@ export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
       </div>
 
       {/* Mission cap */}
-      <div className="bento">
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
         <MonoLabel icon={Gauge} style={{ marginBottom: 8 }}>
           Mission cap
         </MonoLabel>
@@ -296,7 +296,7 @@ export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
       </div>
 
       {/* Stuck approvals */}
-      <div className="bento">
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
         <MonoLabel icon={Clock} style={{ marginBottom: 8 }}>
           Stuck approvals
         </MonoLabel>
@@ -316,7 +316,7 @@ export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
       </div>
 
       {/* Auto-pipelines — span 2 */}
-      <div className="bento" style={{ gridColumn: "span 2" }}>
+      <div className="bento" style={{ gridColumn: "span 2", padding: "var(--card-pad)" }}>
         <MonoLabel icon={Zap} style={{ marginBottom: 10 }}>
           Auto-pipelines
         </MonoLabel>
@@ -558,7 +558,7 @@ export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
 
       {/* Reactor activity — production confirm-mode dispatch queue (no
           reference equivalent); kept and restyled quiet. */}
-      <div className="bento" style={{ gridColumn: "span 2" }}>
+      <div className="bento" style={{ gridColumn: "span 2", padding: "var(--card-pad)" }}>
         <MonoLabel icon={Zap} style={{ marginBottom: 10 }}>
           Reactor activity · confirm-mode rows wait on you
         </MonoLabel>

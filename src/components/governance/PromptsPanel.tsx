@@ -407,6 +407,7 @@ function TemplateDetail({
         <pre
           className="bento"
           style={{
+            padding: "var(--card-pad)",
             fontSize: 11,
             fontFamily: "var(--font-mono)",
             whiteSpace: "pre-wrap",
@@ -437,6 +438,7 @@ function TemplateDetail({
           <pre
             className="bento"
             style={{
+              padding: "var(--card-pad)",
               fontSize: 11,
               fontFamily: "var(--font-mono)",
               whiteSpace: "pre-wrap",

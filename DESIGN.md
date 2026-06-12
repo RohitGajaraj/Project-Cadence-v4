@@ -194,6 +194,33 @@ Where it applies today (and any new surface with a judgment): Critic reviews
 (ship/revise/kill), PRD outcomes (validated/mixed/missed), eval results,
 drift findings, review/feedback annotations, brief callouts, rescore deltas.
 
+## Hand-sketched data marks (founder ruling 2026-06-12)
+
+**Every graph of data points — trend lines, sparklines, time-series bars,
+distributions — renders hand-sketched: a pencil-on-paper wobble, never a
+smooth system-generated vector.** It makes machine telemetry feel authentic
+and observed rather than synthetic, and it is a platform-wide pattern: any
+new chart, on any current or future screen, follows it.
+
+Canonical primitives: `src/components/cadence/Sketch.tsx` — `SketchLine`
+(jittered double-pass stroke + hand-set end dot; drop-in for a sparkline)
+and `SketchBar` (jittered outline with diagonal hatch shading). Extend that
+file for new mark types; never draw a parallel chart style.
+
+Rules that keep it honest and calm:
+- **Jitter is deterministic** — seeded from the data series itself, so a
+  chart never wobbles between renders and the underlying points stay exact.
+  The sketch is a rendering style, not data distortion (no-filler law holds).
+- Role colors still govern (indigo live/links, rose failure, ember
+  needs-human, ink-muted neutral telemetry); the sketch changes the stroke,
+  never the meaning.
+- Scope: data SERIES only. Single-value meters (budget burn bars, strength
+  bars, eval score bars, progress rings) stay clean utility marks — a meter
+  is an instrument, not an observation.
+- Applied today: Govern · Drift metric trends (SketchLine), Govern ·
+  Analytics daily activity (SketchBar), Missions · Agents telemetry HUD
+  buckets (SketchBar).
+
 ## How to plan and build (instructions for any AI builder)
 
 1. **Read before designing:** this file, then `cadence/tokens.css`, then the
@@ -246,5 +273,6 @@ decoration (the aurora and cooking sweep are the only sanctioned washes).
 | Theme switching (`data-theme="dark"`) | `.dark` class on `<html>` via `src/hooks/use-theme.tsx` (light = default parchment, dark = char; aurora retired 2026-06-12) |
 | `.bento`, `.mono-label`, `.hero-editorial`, `.ai-glow`, `.dot-*`, `.cite` | `@layer utilities` in `src/styles.css` |
 | Verdict chips (founder ruling above — not yet in the design project; sync it back on the next design-project update) | `VerdictChip` in `src/components/cadence/Primitives.tsx` (applied: CriticBadge, OutcomeCard) |
+| Hand-sketched data marks (founder ruling above — not yet in the design project; sync back on its next update) | `SketchLine` / `SketchBar` in `src/components/cadence/Sketch.tsx` (applied: drift trends, analytics daily bars, swarm telemetry buckets) |
 | Cooking banner | `src/components/cadence/CookingBanner.tsx` (ember sweep) |
 | Specimens / UI kit | `Project Cadence - Design v1/design-system/` + `Cadence Prototype.html` (not bundled into the app) |

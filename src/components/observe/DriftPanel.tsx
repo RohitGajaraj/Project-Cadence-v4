@@ -21,6 +21,7 @@ import {
   reopenDriftIncident,
 } from "@/lib/drift.functions";
 import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { SketchLine } from "@/components/cadence/Sketch";
 import { relTime } from "@/components/product/format";
 
 const GRID = "1fr 80px 90px 1fr 20px";
@@ -496,40 +497,9 @@ export function DriftPanel() {
   );
 }
 
-/* Tiny inline trend chart — no axes, indigo line, dot on the last point.
-   Ported from design-reference/cadence/govern-detail.jsx (Sparkline). */
-function Sparkline({
-  data,
-  color = "var(--action-blue)",
-  w = 210,
-  h = 42,
-}: {
-  data: number[];
-  color?: string;
-  w?: number;
-  h?: number;
-}) {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const span = max - min || 1;
-  const px = (i: number) => 4 + i * ((w - 8) / (data.length - 1));
-  const py = (v: number) => h - 5 - ((v - min) / span) * (h - 10);
-  const pts = data.map((v, i) => `${px(i)},${py(v)}`).join(" ");
-  return (
-    <svg width={w} height={h} aria-hidden="true" style={{ display: "block", maxWidth: "100%" }}>
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <circle cx={px(data.length - 1)} cy={py(data[data.length - 1])} r="2.5" fill={color} />
-    </svg>
-  );
-}
-
+/* Trend card — the line renders hand-sketched (SketchLine, founder directive
+   2026-06-12): pencil wobble over the exact data points, never a smooth
+   system-generated vector. Layout from govern-detail.jsx (Sparkline card). */
 function TrendBento({
   label,
   series,
@@ -542,7 +512,7 @@ function TrendBento({
   color?: string;
 }) {
   return (
-    <div className="bento">
+    <div className="bento" style={{ padding: "var(--card-pad)" }}>
       <div
         style={{
           display: "flex",
@@ -556,7 +526,7 @@ function TrendBento({
           {last}
         </span>
       </div>
-      <Sparkline data={series} color={color} />
+      <SketchLine data={series} color={color} />
     </div>
   );
 }

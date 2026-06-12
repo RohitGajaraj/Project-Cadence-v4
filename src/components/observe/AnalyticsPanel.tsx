@@ -19,6 +19,7 @@ import {
   getGuardrailStats,
 } from "@/lib/analytics.functions";
 import { MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { SketchBar } from "@/components/cadence/Sketch";
 import { relTime } from "@/components/product/format";
 
 function fmtUsd(n: number) {
@@ -152,7 +153,7 @@ export function AnalyticsPanel() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-          <div className="bento">
+          <div className="bento" style={{ padding: "var(--card-pad)" }}>
             <MonoLabel style={{ marginBottom: 6 }}>Spend · {range}</MonoLabel>
             <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
               {fmtUsd(totalCost)}
@@ -164,14 +165,14 @@ export function AnalyticsPanel() {
               ) : null}
             </div>
           </div>
-          <div className="bento">
+          <div className="bento" style={{ padding: "var(--card-pad)" }}>
             <MonoLabel style={{ marginBottom: 6 }}>Tokens · {range}</MonoLabel>
             <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
               {fmtNum(s?.totalTokens ?? 0)}
             </div>
             <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>in + out</div>
           </div>
-          <div className="bento">
+          <div className="bento" style={{ padding: "var(--card-pad)" }}>
             <MonoLabel style={{ marginBottom: 6 }}>Avg latency</MonoLabel>
             <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
               {fmtMs(s?.avgLatency ?? 0)}
@@ -181,7 +182,7 @@ export function AnalyticsPanel() {
             </div>
           </div>
 
-          <div className="bento" style={{ gridColumn: "span 3" }}>
+          <div className="bento" style={{ gridColumn: "span 3", padding: "var(--card-pad)" }}>
             <div
               style={{
                 display: "flex",
@@ -256,33 +257,29 @@ export function AnalyticsPanel() {
           </div>
 
           {daily.length > 0 ? (
-            <div className="bento" style={{ gridColumn: "span 3" }}>
+            <div className="bento" style={{ gridColumn: "span 3", padding: "var(--card-pad)" }}>
               <MonoLabel style={{ marginBottom: 12 }}>Daily activity · runs</MonoLabel>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 96 }}>
-                {daily.map((d) => (
+              {/* Bars render hand-sketched (SketchBar, founder directive
+                  2026-06-12) on a fixed 72px track; the date labels sit below
+                  the track so nothing escapes the card. */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+                {daily.map((d, i) => (
                   <div
                     key={d.day}
                     title={`${d.runs} runs · ${fmtUsd(d.cost)}`}
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
                       gap: 4,
-                      height: "100%",
-                      justifyContent: "flex-end",
                     }}
                   >
-                    <div
-                      style={{
-                        width: "100%",
-                        borderRadius: "3px 3px 0 0",
-                        background: "var(--ember)",
-                        opacity: 0.85,
-                        height: `${Math.max(2, (d.runs / maxRuns) * 100)}%`,
-                      }}
-                    />
-                    <span className="mono-label tabular-nums" style={{ fontSize: 8 }}>
+                    <SketchBar pct={Math.max(4, (d.runs / maxRuns) * 100)} seed={i + 1} />
+                    <span
+                      className="mono-label tabular-nums"
+                      style={{ fontSize: 8, textAlign: "center" }}
+                    >
                       {d.day.slice(5)}
                     </span>
                   </div>

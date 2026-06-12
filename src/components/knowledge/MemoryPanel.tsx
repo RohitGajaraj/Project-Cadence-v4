@@ -170,7 +170,7 @@ export function MemoryPanel() {
           )}
         </div>
       </div>
-      <div className="band-stone">
+      <div className="band-stone" style={{ padding: "var(--card-pad)" }}>
         <MonoLabel icon={BookOpen} style={{ marginBottom: 12 }}>
           Product memory
         </MonoLabel>
