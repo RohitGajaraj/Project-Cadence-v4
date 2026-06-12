@@ -53,3 +53,4 @@ agentdb*.rvf
 agentdb*.rvf*.lock
 agentdb*.lock
 *.png
+src/routeTree.gen 2.ts
