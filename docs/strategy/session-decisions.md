@@ -511,3 +511,19 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 ---
 
 _This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-12._
+
+---
+
+## 2026-06-12 — Ember Editorial is the platform's design system; screens migrate one at a time from the runnable reference
+
+**Decision:** Adopt the **"Ember Editorial"** design system (Project Cadence Design v1 — warm parchment canvas, cacao ink, ember copper accent, Newsreader/Schibsted Grotesk/JetBrains Mono, exclusive color roles) as the production UI layer, replacing the legacy Cohere-inspired generation (white canvas, Fraunces/Inter). Source of truth: root `DESIGN.md` + `design-reference/` (the frozen runnable prototype, committed as the design of record).
+
+**Sub-decisions:**
+
+1. **Token-level swap first, screens second.** The shared token vocabulary (`--canvas`, `--ink`, `--coral`→ember, `--violet`→orchid, …) flips all surfaces at the chokepoint (`src/styles.css`); per-screen fidelity then lands screen-by-screen.
+2. **Aurora theme retired** (founder's Rule 0: nothing mistakable for neon-gradient decoration; orchid is reserved for agent actions). Themes are Light (parchment, default) and Dark (char night); stored `aurora` preferences migrate to dark.
+3. **Migration methodology (founder-specified):** one screen at a time — run the reference (`npx serve design-reference`), read its source jsx via `data-screen-label`, port layout/spacing/copy/components exactly (tokens only, translate inline styles, change no values), render side-by-side and fix differences before moving on; where the reference has no state, follow DESIGN.md and list what was invented. **No restyling from memory, no "improvements."**
+4. **Reference mock data never ships:** panels whose numbers have no production source (mock product-health metrics, stakeholder pulse) are omitted under DESIGN.md's anti-filler rule and recorded in the port notes, not faked.
+5. **Commit at every milestone.** A concurrent tool session wiped the first uncommitted application of this work (and stubbed two route files, since restored). Uncommitted work in this multi-tool repo is at risk by default.
+
+**Status:** token layer + screen 1 (Home·Today) shipped (`0238a3c1fd`, `2d086f9940`); remaining screens: shell, Chat, Missions, Product, Knowledge, Govern, Settings, onboarding.
