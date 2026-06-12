@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — Drill-downs ride search params; one detail surface per artifact; a richer production detail outranks the reference's
+
+**Decision:** Screen 6 (loop-detail drill-downs, Session A) establishes the platform's list→detail contract, which screen 7 (govern-detail) inherits: (1) drill state rides **optional search params** on the existing route (`?signal=` / `?opp=` / `?decision=` / `?learning=` / `?connector=`), never component state — every detail is linkable and back-button-friendly; (2) the detail replaces **only the tab body** (SurfaceHeader + TabRow stay; switching tabs clears the drill because setTab navigates with a fresh search object); (3) **one detail surface per artifact** — the Decisions side sheet retired in favor of the reference DrillHeader layout, production mutations riding along; (4) when production already has a **richer real detail** than the reference mock, production wins — Releases keeps its `/missions/$missionId` deep-link (full cockpit: steps, gates, trace, cost) instead of gaining the reference's semver ReleaseDetail, whose shipped-list/closed-signals/before→after metrics have no production source.
+
+**Why:** Linkable drills make every judgment shareable (founder demo flows, agent citations); a second detail surface per artifact splits truth; and porting the reference's release screen would have required inventing all of its numbers — the no-filler law decides.
+
+**Tradeoffs considered:** Ephemeral `setDrill` state like the reference (rejected — not linkable, breaks back); a `$id` child route per detail (rejected — heavier, regenerates routeTree, and the tab context would be lost); porting ReleaseDetail with only its real fields (rejected — nothing would remain beyond what the mission cockpit already shows).
+
+**Impact:** `?tab=`-contract routes (`product`, `knowledge`, `settings`), six detail components, `DecisionsPanel` sheet removal. Screen 7's govern drill-downs must follow the same param contract.
+
 ### 2026-06-12 — Onboarding is frictionless: connecting sources is never a gate
 
 **Decision:** Founder ruling (mid-session, screen 8): the first-run flow must never require connecting a source to proceed. Every step is skippable; at zero connections the step-1 primary action IS the skip — "Skip for now · connect anytime in Settings" — and the sub copy promises nothing is required. The three steps form one connected journey: whatever the user keeps (connections, staff toggles, the chosen goal) persists as real data into the next phase and into the workspace.
