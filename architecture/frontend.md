@@ -6,6 +6,8 @@
 
 TanStack Start v1 (React 19 + Vite 7) on Cloudflare Workers (`nodejs_compat`), TailwindCSS v4, shadcn/ui (Radix), Framer Motion, Tiptap, Lucide. Canonical runtime: Bun.
 
+`vite.config.ts` is load-bearing for published builds: it keeps the custom SSR error-wrapper entry and explicitly injects the public backend URL/key from the build environment into `import.meta.env`. Without that public injection, protected pages can hydrate into the root error boundary before the auth redirect runs.
+
 ## Server boundary
 
 - **App logic = `createServerFn` (RPC).** Type-safe, plain function calls.
