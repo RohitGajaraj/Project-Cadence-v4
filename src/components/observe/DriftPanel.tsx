@@ -3,26 +3,24 @@
 // Note 1fr / chevron 20px), surface at 500 weight, the delta mono tabular
 // (ember on watch), the status as a VerdictChip (watch → ember, stable → moss —
 // a drift status is a rendered judgment, never a StatusBadge), the note at
-// 12px ink-subtle, and rows opening the surface's drift detail (incidents with
-// resolve/reopen — production's existing drill-down, expanded inline).
-// Production functionality kept, restyled quiet-Ember: getDriftOverview /
-// runDriftNow / updateDriftBaseline / resolveDriftIncident /
-// reopenDriftIncident, the metric trend sparklines, and the baseline config.
+// 12px ink-subtle. Screen 7: rows navigate to the ?surface= drill
+// (DriftSurfaceDetail) — the former inline expansion, with the per-incident
+// resolve/reopen actions, lives there now; both share the ["drift_overview"]
+// cache. Production functionality kept, restyled quiet-Ember: getDriftOverview
+// / runDriftNow / updateDriftBaseline, the metric trend sparklines, and the
+// baseline config. The Incident/Snapshot row types are exported for the
+// detail; the metric formatters are re-declared there verbatim (react-refresh
+// lint keeps value exports out of component files) — change them in lockstep
+// so list and drill render every number identically.
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Waves } from "lucide-react";
+import { ChevronRight, Waves } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getDriftOverview,
-  runDriftNow,
-  updateDriftBaseline,
-  resolveDriftIncident,
-  reopenDriftIncident,
-} from "@/lib/drift.functions";
+import { getDriftOverview, runDriftNow, updateDriftBaseline } from "@/lib/drift.functions";
 import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
 import { SketchLine } from "@/components/cadence/Sketch";
-import { relTime } from "@/components/product/format";
 
 const GRID = "1fr 80px 90px 1fr 20px";
 
@@ -57,7 +55,7 @@ function fmtDelta(pct: number) {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
-type Incident = {
+export type Incident = {
   id: string;
   status: string;
   surface: string;
@@ -70,7 +68,7 @@ type Incident = {
   detected_at: string;
 };
 
-type Snapshot = {
+export type Snapshot = {
   bucket_date: string;
   surface: string;
   avg_latency_ms: number | string;
@@ -83,11 +81,10 @@ type Snapshot = {
 
 export function DriftPanel() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fetchOverview = useServerFn(getDriftOverview);
   const runNow = useServerFn(runDriftNow);
   const saveCfg = useServerFn(updateDriftBaseline);
-  const resolveFn = useServerFn(resolveDriftIncident);
-  const reopenFn = useServerFn(reopenDriftIncident);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["drift_overview"],
@@ -96,7 +93,6 @@ export function DriftPanel() {
 
   const [cfg, setCfg] = useState(DEFAULT_CFG);
   const [cfgOpen, setCfgOpen] = useState(false);
-  const [openSurface, setOpenSurface] = useState<string | null>(null);
   useEffect(() => {
     if (data?.baseline) setCfg({ ...DEFAULT_CFG, ...data.baseline });
   }, [data?.baseline]);
@@ -119,15 +115,6 @@ export function DriftPanel() {
       setCfgOpen(false);
       qc.invalidateQueries({ queryKey: ["drift_overview"] });
     },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const decideMut = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: "resolve" | "reopen" }) => {
-      if (action === "resolve") return resolveFn({ data: { id } });
-      return reopenFn({ data: { id } });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["drift_overview"] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -343,125 +330,42 @@ export function DriftPanel() {
             <span>Note</span>
             <span></span>
           </div>
-          {rows.map((d, i) => {
-            const open = openSurface === d.surface;
-            const surfaceIncidents = {
-              open: openIncidents.filter((x) => x.surface === d.surface),
-              recent: recentIncidents.filter((x) => x.surface === d.surface),
-            };
-            return (
-              <div key={d.surface}>
-                <button
-                  onClick={() => setOpenSurface(open ? null : d.surface)}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: GRID,
-                    gap: 12,
-                    padding: "12px 18px",
-                    alignItems: "baseline",
-                    borderBottom:
-                      open || i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
-                    fontSize: 13,
-                    width: "100%",
-                    textAlign: "left",
-                  }}
-                >
-                  <span style={{ fontWeight: 500 }}>{d.surface}</span>
-                  <span
-                    className="mono-label tabular-nums"
-                    style={{ color: d.watch ? "var(--ember)" : "var(--ink)" }}
-                  >
-                    {d.delta}
-                  </span>
-                  <span>
-                    <VerdictChip tone={d.watch ? "ember" : "moss"}>
-                      {d.watch ? "watch" : "stable"}
-                    </VerdictChip>
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>{d.note}</span>
-                  <span style={{ color: "var(--ink-faint)", alignSelf: "center", display: "flex" }}>
-                    {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-                  </span>
-                </button>
-                {open ? (
-                  <div
-                    className="fade-up"
-                    style={{
-                      padding: "12px 18px 14px",
-                      background: "var(--surface-1)",
-                      borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
-                    }}
-                  >
-                    {surfaceIncidents.open.length === 0 && surfaceIncidents.recent.length === 0 ? (
-                      <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
-                        No incidents on this surface. The detector compares the last{" "}
-                        {cfg.window_days}d against a {cfg.baseline_days}d baseline.
-                      </p>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {[...surfaceIncidents.open, ...surfaceIncidents.recent].map((inc) => {
-                          const isOpen = inc.status === "open";
-                          return (
-                            <div
-                              key={inc.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                fontSize: 12.5,
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <VerdictChip
-                                tone={
-                                  isOpen
-                                    ? inc.severity === "critical"
-                                      ? "madder"
-                                      : "ember"
-                                    : "moss"
-                                }
-                              >
-                                {isOpen
-                                  ? inc.severity === "critical"
-                                    ? "critical"
-                                    : "watch"
-                                  : "resolved"}
-                              </VerdictChip>
-                              <span style={{ color: "var(--ink-muted)" }}>
-                                {METRIC_LABELS[inc.metric] ?? inc.metric}{" "}
-                                {fmtMetric(inc.metric, Number(inc.baseline_value))} →{" "}
-                                {fmtMetric(inc.metric, Number(inc.current_value))}
-                              </span>
-                              <span className="mono-label tabular-nums">
-                                {fmtDelta(Number(inc.delta_pct))}
-                              </span>
-                              <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
-                                {inc.model} · {relTime(inc.detected_at)}
-                              </span>
-                              <span style={{ flex: 1 }}></span>
-                              <button
-                                className="btn btn-ghost btn-sm"
-                                style={{ fontSize: 11 }}
-                                disabled={decideMut.isPending && decideMut.variables?.id === inc.id}
-                                onClick={() =>
-                                  decideMut.mutate({
-                                    id: inc.id,
-                                    action: isOpen ? "resolve" : "reopen",
-                                  })
-                                }
-                              >
-                                {isOpen ? "Resolve · clears the watch" : "Reopen · back on watch"}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+          {rows.map((d, i) => (
+            <button
+              key={d.surface}
+              onClick={() =>
+                navigate({ to: "/govern", search: { tab: "drift", surface: d.surface } })
+              }
+              style={{
+                display: "grid",
+                gridTemplateColumns: GRID,
+                gap: 12,
+                padding: "12px 18px",
+                alignItems: "baseline",
+                borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
+                fontSize: 13,
+                width: "100%",
+                textAlign: "left",
+              }}
+            >
+              <span style={{ fontWeight: 500 }}>{d.surface}</span>
+              <span
+                className="mono-label tabular-nums"
+                style={{ color: d.watch ? "var(--ember)" : "var(--ink)" }}
+              >
+                {d.delta}
+              </span>
+              <span>
+                <VerdictChip tone={d.watch ? "ember" : "moss"}>
+                  {d.watch ? "watch" : "stable"}
+                </VerdictChip>
+              </span>
+              <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>{d.note}</span>
+              <span style={{ color: "var(--ink-faint)", alignSelf: "center", display: "flex" }}>
+                <ChevronRight size={11} />
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
