@@ -269,6 +269,49 @@ export const getEvalScoreTrends = createServerFn({ method: "GET" })
     return { trends };
   });
 
+/**
+ * F-DESIGN-EMBER (screen 7, Govern · Evals drill-down) — the runs-table
+ * "Prompt" column: per-run prompt version labels ("v3") for a suite.
+ * getEvalSuite's runs select omits prompt_version_id and feeds the live
+ * panel, so it must not be reshaped — this is additive only. Returns
+ * { versions: { [run_id]: "v3" | null } }; prompt_version_id is nullable
+ * (the UI falls back to eval_runs.model or "—").
+ */
+export const getEvalRunPromptVersions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { suite_id: string }) => z.object({ suite_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: runs, error } = await supabase
+      .from("eval_runs")
+      .select("id,prompt_version_id")
+      .eq("suite_id", data.suite_id)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    const versionIds = [
+      ...new Set(
+        (runs ?? [])
+          .map((r) => r.prompt_version_id as string | null)
+          .filter((v): v is string => v != null),
+      ),
+    ];
+    const labels = new Map<string, string>();
+    if (versionIds.length) {
+      const { data: vs } = await supabase
+        .from("prompt_versions")
+        .select("id,version")
+        .in("id", versionIds);
+      (vs ?? []).forEach((v) => labels.set(v.id, `v${v.version}`));
+    }
+    const versions: Record<string, string | null> = {};
+    (runs ?? []).forEach((r) => {
+      versions[r.id] = r.prompt_version_id ? (labels.get(r.prompt_version_id) ?? null) : null;
+    });
+    return { versions };
+  });
+
 export const getEvalRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { run_id: string }) => z.object({ run_id: z.string().uuid() }).parse(d))
