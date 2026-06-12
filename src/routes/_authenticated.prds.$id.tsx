@@ -35,7 +35,7 @@ import { createDecision } from "@/lib/decisions.functions";
 
 export const Route = createFileRoute("/_authenticated/prds/$id")({
   component: PrdEditor,
-  head: () => ({ meta: [{ title: "PRD · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 function PrdEditor() {

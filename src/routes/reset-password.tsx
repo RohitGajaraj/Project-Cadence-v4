@@ -18,7 +18,7 @@ export const Route = createFileRoute("/reset-password")({
     if (data.user) throw redirect({ to: "/" });
   },
   component: ResetPasswordPage,
-  head: () => ({ meta: [{ title: "New password · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 function ResetPasswordPage() {

@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/build/$missionId")({
     return { tab: (TABS as string[]).includes(t as string) ? (t as Tab) : undefined };
   },
   component: BuildSessionPage,
-  head: () => ({ meta: [{ title: "Build session · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>

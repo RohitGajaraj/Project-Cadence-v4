@@ -27,7 +27,7 @@ import { getIngestToken, rotateIngestToken, revokeIngestToken } from "@/lib/inge
 
 export const Route = createFileRoute("/_authenticated/sync")({
   component: SyncInboxPage,
-  head: () => ({ meta: [{ title: "Connectors · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 type Mapping = {

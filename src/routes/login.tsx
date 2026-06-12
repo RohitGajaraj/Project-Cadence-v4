@@ -21,7 +21,7 @@ export const Route = createFileRoute("/login")({
     if (data.user) throw redirect({ to: "/" });
   },
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Sign in · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 function LoginPage() {

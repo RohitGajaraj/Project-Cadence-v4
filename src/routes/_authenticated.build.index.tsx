@@ -35,7 +35,7 @@ import { fmtCost } from "@/components/studio/studio-format";
 
 export const Route = createFileRoute("/_authenticated/build/")({
   component: BuildPage,
-  head: () => ({ meta: [{ title: "Build · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>

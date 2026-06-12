@@ -6,7 +6,7 @@ import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: OnboardingPage,
-  head: () => ({ meta: [{ title: "Setup · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 function OnboardingPage() {

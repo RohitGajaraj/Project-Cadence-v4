@@ -105,8 +105,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      // Branded favicon — the Butterfly mark on the parchment tile, with the
+      // sanctioned subtle wing flutter where SVG favicons animate (Firefox);
+      // SVG-capable browsers prefer it, the PNG stays as the fallback and
+      // the apple-touch-icon (iOS takes no SVG).
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "icon", type: "image/png", sizes: "64x64", href: faviconAsset.url },
-      { rel: "shortcut icon", type: "image/png", href: faviconAsset.url },
       { rel: "apple-touch-icon", href: faviconAsset.url },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

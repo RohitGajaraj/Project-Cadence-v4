@@ -41,7 +41,7 @@ import { CriticBadge } from "@/components/governance/CriticBadge";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Today · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
 });
 
 // Home · Today — ported 1:1 from design-reference/cadence/home.jsx (the

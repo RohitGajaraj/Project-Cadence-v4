@@ -84,7 +84,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
     connector: typeof search.connector === "string" ? search.connector : undefined,
   }),
   component: SettingsPage,
-  head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
