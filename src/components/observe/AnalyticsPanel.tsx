@@ -1,24 +1,31 @@
 // Analytics tab — ported from design-reference/cadence/govern-detail.jsx
-// (AnalyticsTab, list level only): range sub-tab pills, three stat bentos
-// (serif 26 tabular values, 11px faint sub-line), and the span-3 "Spend by …"
-// bento with per-row ember share bars and right-aligned mono spend. The
-// reference rolls spend up per AGENT; production rolls AI events up per
-// SURFACE — the rows render real surfaces in ink (orchid stays reserved for
-// agent names) and don't navigate: no per-agent analytics screen exists yet.
+// (AnalyticsTab): range sub-tab pills, three stat bentos (serif 26 tabular
+// values, 11px faint sub-line), and the span-3 "Spend by …" bentos with
+// per-row ember share bars and right-aligned mono spend. Production keeps the
+// per-SURFACE rollup as the top-level whole-spend view (every AI call, ink
+// labels); the reference's per-AGENT rollup sits underneath it as the
+// also-real layer of the 'agent' surface — orchid labels, rows drill to
+// /govern?tab=analytics&agent=<slug> (AgentSpendDetail replaces the tab
+// body). Reference's "of $X cap" spend sub-line renders only where a real
+// cap exists (ai_budgets daily cap on 24h, monthly cap on 30d); the "ttft"
+// sub-datum is omitted — ai_events.ttft_ms is never written.
 // Production functionality kept, restyled quiet-Ember: by-model rollup, the
 // recent-runs list with its event-detail drawer (existing drill-down), the
 // guardrail-hit stats, and the daily activity bars.
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { X } from "lucide-react";
+import { ChevronRight, Gauge, X } from "lucide-react";
 import {
   getAnalyticsOverview,
+  getAgentSpendBreakdown,
   listAiEvents,
   getEventDetail,
   getGuardrailStats,
 } from "@/lib/analytics.functions";
-import { MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { getBudgetSummary } from "@/lib/budgets.functions";
+import { MonoLabel, SubTabs, VerdictChip } from "@/components/cadence/Primitives";
 import { SketchBar } from "@/components/cadence/Sketch";
 import { relTime } from "@/components/product/format";
 
@@ -43,43 +50,11 @@ const RANGES: { id: string; days: number }[] = [
   { id: "90d", days: 90 },
 ];
 
-/* Pill-row sub-navigation — ported 1:1 from
-   design-reference/cadence/govern-detail.jsx (SubTabs). */
-function SubTabs({
-  tabs,
-  active,
-  onSet,
-}: {
-  tabs: string[];
-  active: string;
-  onSet: (t: string) => void;
-}) {
-  return (
-    <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-      {tabs.map((t) => (
-        <button
-          key={t}
-          onClick={() => onSet(t)}
-          className="mono-label"
-          style={{
-            padding: "5px 11px",
-            borderRadius: 99,
-            fontSize: 9.5,
-            color: t === active ? "var(--canvas)" : "var(--ink-subtle)",
-            background: t === active ? "var(--primary-ink)" : "transparent",
-            border: `1px solid ${t === active ? "transparent" : "var(--hairline)"}`,
-            transition: "background var(--dur-fast), color var(--dur-fast)",
-          }}
-        >
-          {t}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function AnalyticsPanel() {
+  const navigate = useNavigate();
   const fOverview = useServerFn(getAnalyticsOverview);
+  const fByAgent = useServerFn(getAgentSpendBreakdown);
+  const fBudget = useServerFn(getBudgetSummary);
   const fEvents = useServerFn(listAiEvents);
   const fDetail = useServerFn(getEventDetail);
   const fGuards = useServerFn(getGuardrailStats);
@@ -92,6 +67,14 @@ export function AnalyticsPanel() {
   const overview = useQuery({
     queryKey: ["analytics-overview", days],
     queryFn: () => fOverview({ data: { days } }),
+  });
+  const byAgentQ = useQuery({
+    queryKey: ["analytics-by-agent", days],
+    queryFn: () => fByAgent({ data: { days } }),
+  });
+  const budgetQ = useQuery({
+    queryKey: ["budget-summary"],
+    queryFn: () => fBudget(),
   });
   const events = useQuery({
     queryKey: ["analytics-events"],
@@ -131,10 +114,20 @@ export function AnalyticsPanel() {
 
   const s = overview.data?.summary;
   const bySurface = overview.data?.bySurface ?? [];
+  const byAgents = byAgentQ.data?.agents ?? [];
   const byModel = overview.data?.byModel ?? [];
   const daily = overview.data?.daily ?? [];
   const totalCost = s?.totalCost ?? 0;
   const maxRuns = Math.max(...daily.map((d) => d.runs), 1);
+  // "of $X cap" is only honest where a real cap covers the window: ai_budgets
+  // daily_usd_cap for 24h, monthly_usd_cap for 30d — and only when set. No
+  // weekly/quarterly cap concept exists, so 7d/90d keep the runs · errors line.
+  const capForRange =
+    range === "24h"
+      ? (budgetQ.data?.daily_usd_cap ?? null)
+      : range === "30d"
+        ? (budgetQ.data?.monthly_usd_cap ?? null)
+        : null;
 
   return (
     <div>
@@ -159,7 +152,11 @@ export function AnalyticsPanel() {
               {fmtUsd(totalCost)}
             </div>
             <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
-              {s?.totalRuns ?? 0} runs
+              {capForRange != null ? (
+                <>of {fmtUsd(Number(capForRange))} cap</>
+              ) : (
+                <>{s?.totalRuns ?? 0} runs</>
+              )}
               {(s?.errors ?? 0) > 0 ? (
                 <span style={{ color: "var(--rose)" }}> · {s!.errors} errors</span>
               ) : null}
@@ -172,13 +169,15 @@ export function AnalyticsPanel() {
             </div>
             <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>in + out</div>
           </div>
+          {/* Reference headline is the median; its "ttft" sub-datum is never
+              written in production, so the real avg + p95 ride the sub-line. */}
           <div className="bento" style={{ padding: "var(--card-pad)" }}>
-            <MonoLabel style={{ marginBottom: 6 }}>Avg latency</MonoLabel>
+            <MonoLabel style={{ marginBottom: 6 }}>Median latency</MonoLabel>
             <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
-              {fmtMs(s?.avgLatency ?? 0)}
+              {fmtMs(s?.p50Latency ?? 0)}
             </div>
             <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
-              p95 {fmtMs(s?.p95Latency ?? 0)}
+              avg {fmtMs(s?.avgLatency ?? 0)} · p95 {fmtMs(s?.p95Latency ?? 0)}
             </div>
           </div>
 
@@ -252,6 +251,95 @@ export function AnalyticsPanel() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Spend by agent — the reference's per-agent rollup (govern-detail
+              AnalyticsTab), real layer underneath the 'agent' surface row
+              above. Bars are pct of the agent-spend SUBTOTAL; rows drill to
+              the per-agent detail. */}
+          <div className="bento" style={{ gridColumn: "span 3", padding: "var(--card-pad)" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 12,
+              }}
+            >
+              <MonoLabel icon={Gauge}>Spend by agent · {range}</MonoLabel>
+              <span className="mono-label" style={{ fontSize: 8.5 }}>
+                click an agent to drill down
+              </span>
+            </div>
+            {byAgentQ.isLoading ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>Loading agent spend…</p>
+            ) : byAgents.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+                No agent calls in this window yet.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {byAgents.map((x) => (
+                  <button
+                    key={x.slug}
+                    className="lift"
+                    onClick={() =>
+                      navigate({ to: "/govern", search: { tab: "analytics", agent: x.slug } })
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "6px 8px",
+                      borderRadius: 8,
+                      border: "1px solid transparent",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span
+                      className="mono-label"
+                      title={x.name}
+                      style={{
+                        width: 90,
+                        flexShrink: 0,
+                        color: "var(--agent)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {x.name}
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        height: 5,
+                        borderRadius: 99,
+                        background: "var(--surface-2)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "block",
+                          height: "100%",
+                          width: `${x.pct}%`,
+                          background: "var(--ember)",
+                          opacity: 0.85,
+                        }}
+                      ></span>
+                    </span>
+                    <span
+                      className="mono-label tabular-nums"
+                      style={{ width: 56, textAlign: "right", color: "var(--ink)" }}
+                    >
+                      {fmtUsd(x.cost)}
+                    </span>
+                    <ChevronRight size={11} style={{ color: "var(--ink-faint)", flexShrink: 0 }} />
+                  </button>
+                ))}
               </div>
             )}
           </div>
