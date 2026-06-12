@@ -45,7 +45,6 @@ import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCockpitRouteImport } from './routes/_authenticated.cockpit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
-import { Route as AuthenticatedBuildRouteImport } from './routes/_authenticated.build'
 import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticated.budgets'
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
@@ -53,12 +52,14 @@ import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenticated.studio.index'
 import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
+import { Route as AuthenticatedBuildIndexRouteImport } from './routes/_authenticated.build.index'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioMissionIdRouteImport } from './routes/_authenticated.studio.$missionId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
+import { Route as AuthenticatedBuildMissionIdRouteImport } from './routes/_authenticated.build.$missionId'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
 import { Route as ApiPublicHooksMemoryTickRouteImport } from './routes/api/public/hooks/memory-tick'
@@ -253,11 +254,6 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedBuildRoute = AuthenticatedBuildRouteImport.update({
-  id: '/build',
-  path: '/build',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedBudgetsRoute = AuthenticatedBudgetsRouteImport.update({
   id: '/budgets',
   path: '/budgets',
@@ -295,6 +291,11 @@ const AuthenticatedMissionsIndexRoute =
     path: '/missions/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedBuildIndexRoute = AuthenticatedBuildIndexRouteImport.update({
+  id: '/build/',
+  path: '/build/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const ApiPublicIngestSignalsRoute = ApiPublicIngestSignalsRouteImport.update({
   id: '/api/public/ingest-signals',
   path: '/api/public/ingest-signals',
@@ -328,6 +329,12 @@ const AuthenticatedMeetingsIdRoute = AuthenticatedMeetingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedMeetingsRoute,
 } as any)
+const AuthenticatedBuildMissionIdRoute =
+  AuthenticatedBuildMissionIdRouteImport.update({
+    id: '/build/$missionId',
+    path: '/build/$missionId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicHooksResumeRunsRoute =
   ApiPublicHooksResumeRunsRouteImport.update({
     id: '/api/public/hooks/resume-runs',
@@ -408,7 +415,6 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
   '/budgets': typeof AuthenticatedBudgetsRoute
-  '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
@@ -439,12 +445,14 @@ export interface FileRoutesByFullPath {
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/p/$slug': typeof PSlugRoute
+  '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/build/': typeof AuthenticatedBuildIndexRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
   '/studio/': typeof AuthenticatedStudioIndexRoute
@@ -470,7 +478,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
   '/budgets': typeof AuthenticatedBudgetsRoute
-  '/build': typeof AuthenticatedBuildRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
@@ -501,12 +508,14 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/p/$slug': typeof PSlugRoute
   '/': typeof AuthenticatedIndexRoute
+  '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/build': typeof AuthenticatedBuildIndexRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
   '/studio': typeof AuthenticatedStudioIndexRoute
@@ -534,7 +543,6 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
   '/_authenticated/budgets': typeof AuthenticatedBudgetsRoute
-  '/_authenticated/build': typeof AuthenticatedBuildRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/cockpit': typeof AuthenticatedCockpitRoute
@@ -566,12 +574,14 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/p/$slug': typeof PSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/_authenticated/build/': typeof AuthenticatedBuildIndexRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
   '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
@@ -600,7 +610,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/briefing'
     | '/budgets'
-    | '/build'
     | '/calendar'
     | '/chat'
     | '/cockpit'
@@ -631,12 +640,14 @@ export interface FileRouteTypes {
     | '/traces'
     | '/api/chat'
     | '/p/$slug'
+    | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/build/'
     | '/missions/'
     | '/prds/'
     | '/studio/'
@@ -662,7 +673,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/briefing'
     | '/budgets'
-    | '/build'
     | '/calendar'
     | '/chat'
     | '/cockpit'
@@ -693,12 +703,14 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/p/$slug'
     | '/'
+    | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/build'
     | '/missions'
     | '/prds'
     | '/studio'
@@ -725,7 +737,6 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/briefing'
     | '/_authenticated/budgets'
-    | '/_authenticated/build'
     | '/_authenticated/calendar'
     | '/_authenticated/chat'
     | '/_authenticated/cockpit'
@@ -757,12 +768,14 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/p/$slug'
     | '/_authenticated/'
+    | '/_authenticated/build/$missionId'
     | '/_authenticated/meetings/$id'
     | '/_authenticated/missions/$missionId'
     | '/_authenticated/prds/$id'
     | '/_authenticated/studio/$missionId'
     | '/_authenticated/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/_authenticated/build/'
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
     | '/_authenticated/studio/'
@@ -1057,13 +1070,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/build': {
-      id: '/_authenticated/build'
-      path: '/build'
-      fullPath: '/build'
-      preLoaderRoute: typeof AuthenticatedBuildRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/budgets': {
       id: '/_authenticated/budgets'
       path: '/budgets'
@@ -1113,6 +1119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMissionsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/build/': {
+      id: '/_authenticated/build/'
+      path: '/build'
+      fullPath: '/build/'
+      preLoaderRoute: typeof AuthenticatedBuildIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/ingest-signals': {
       id: '/api/public/ingest-signals'
       path: '/api/public/ingest-signals'
@@ -1154,6 +1167,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/meetings/$id'
       preLoaderRoute: typeof AuthenticatedMeetingsIdRouteImport
       parentRoute: typeof AuthenticatedMeetingsRoute
+    }
+    '/_authenticated/build/$missionId': {
+      id: '/_authenticated/build/$missionId'
+      path: '/build/$missionId'
+      fullPath: '/build/$missionId'
+      preLoaderRoute: typeof AuthenticatedBuildMissionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/hooks/resume-runs': {
       id: '/api/public/hooks/resume-runs'
@@ -1284,7 +1304,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
   AuthenticatedBudgetsRoute: typeof AuthenticatedBudgetsRoute
-  AuthenticatedBuildRoute: typeof AuthenticatedBuildRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCockpitRoute: typeof AuthenticatedCockpitRoute
@@ -1314,8 +1333,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBuildMissionIdRoute: typeof AuthenticatedBuildMissionIdRoute
   AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
   AuthenticatedStudioMissionIdRoute: typeof AuthenticatedStudioMissionIdRoute
+  AuthenticatedBuildIndexRoute: typeof AuthenticatedBuildIndexRoute
   AuthenticatedMissionsIndexRoute: typeof AuthenticatedMissionsIndexRoute
   AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
 }
@@ -1325,7 +1346,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
   AuthenticatedBudgetsRoute: AuthenticatedBudgetsRoute,
-  AuthenticatedBuildRoute: AuthenticatedBuildRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCockpitRoute: AuthenticatedCockpitRoute,
@@ -1355,8 +1375,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBuildMissionIdRoute: AuthenticatedBuildMissionIdRoute,
   AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
   AuthenticatedStudioMissionIdRoute: AuthenticatedStudioMissionIdRoute,
+  AuthenticatedBuildIndexRoute: AuthenticatedBuildIndexRoute,
   AuthenticatedMissionsIndexRoute: AuthenticatedMissionsIndexRoute,
   AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
 }
@@ -1390,13 +1412,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
