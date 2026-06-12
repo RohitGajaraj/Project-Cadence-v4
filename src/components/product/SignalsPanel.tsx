@@ -5,7 +5,11 @@
 // per-row "Draft spec" ghost button that becomes the orchid "Scribe drafting"
 // spinner while the real PRD generation runs. Production functionality kept:
 // createSignal / bulkImportSignals / clusterSignals / promote-to-opportunity /
-// deleteSignal / LineageDrawer, all restyled quiet-Ember.
+// deleteSignal / LineageDrawer, all restyled quiet-Ember. Screen 6: theme
+// rows' expanded headers link to the ?signal= drill (SignalDetail) — raw
+// signals stay expand-only (the production analog of the reference's
+// detail-data gate).
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -48,6 +52,7 @@ type Row = {
 
 export function SignalsPanel() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fSignals = useServerFn(listSignals);
   const fThemes = useServerFn(listThemes);
   const mCreate = useServerFn(createSignal);
@@ -455,6 +460,21 @@ export function SignalsPanel() {
                         Evidence · verbatim
                       </div>
                       <span style={{ flex: 1 }}></span>
+                      {r.kind === "theme" ? (
+                        <button
+                          className="mono-label"
+                          style={{ fontSize: 8.5, color: "var(--action-blue)" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate({
+                              to: "/product",
+                              search: { tab: "signals", signal: r.id },
+                            });
+                          }}
+                        >
+                          open full signal — trend, sources, lineage →
+                        </button>
+                      ) : null}
                     </div>
                     {r.summary ? (
                       <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 8 }}>

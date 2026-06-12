@@ -4,6 +4,13 @@
 // lines. Production functionality rides the reference layout: the ?tab=
 // search-param contract (the /prds index redirects to /product?tab=specs),
 // and each tab's TanStack Query + server-function wiring lives in its panel.
+//
+// Screen-6 drill contract (loop-detail.jsx): drill state rides OPTIONAL
+// search params on this route — ?signal= opens SignalDetail, ?opp= opens
+// OpportunityDetail — replacing ONLY the tab body (SurfaceHeader + TabRow
+// stay). setTab navigates with a fresh search object, so switching tabs
+// clears any open drill automatically; DrillHeader's back link navigates to
+// the same tab without the drill param.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +21,9 @@ import { SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { SignalsPanel } from "@/components/product/SignalsPanel";
+import { SignalDetail } from "@/components/product/SignalDetail";
 import { OpportunitiesPanel } from "@/components/product/OpportunitiesPanel";
+import { OpportunityDetail } from "@/components/product/OpportunityDetail";
 import { SpecsPanel } from "@/components/product/SpecsPanel";
 import { RoadmapPanel } from "@/components/product/RoadmapPanel";
 import { TasksPanel } from "@/components/product/TasksPanel";
@@ -42,9 +51,15 @@ const PRODUCT_DESC: Record<Tab, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/product")({
-  validateSearch: (search: Record<string, unknown>): { tab: Tab } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab: Tab; signal?: string; opp?: string } => {
     const t = search.tab;
-    return { tab: TABS.some((x) => x.id === t) ? (t as Tab) : "signals" };
+    return {
+      tab: TABS.some((x) => x.id === t) ? (t as Tab) : "signals",
+      signal: typeof search.signal === "string" ? search.signal : undefined,
+      opp: typeof search.opp === "string" ? search.opp : undefined,
+    };
   },
   component: ProductPage,
   head: () => ({ meta: [{ title: "Product · Cadence" }] }),
@@ -75,7 +90,7 @@ export const Route = createFileRoute("/_authenticated/product")({
 });
 
 function ProductPage() {
-  const { tab } = Route.useSearch();
+  const { tab, signal, opp } = Route.useSearch();
   const navigate = useNavigate({ from: "/product" });
   const { activeWorkspace } = useWorkspace();
 
@@ -99,8 +114,8 @@ function ProductPage() {
         />
         <TabRow tabs={TABS} active={tab} onSet={setTab} desc={PRODUCT_DESC} />
 
-        {tab === "signals" && <SignalsPanel />}
-        {tab === "opportunities" && <OpportunitiesPanel />}
+        {tab === "signals" && (signal ? <SignalDetail id={signal} /> : <SignalsPanel />)}
+        {tab === "opportunities" && (opp ? <OpportunityDetail id={opp} /> : <OpportunitiesPanel />)}
         {tab === "specs" && <SpecsPanel />}
         {tab === "roadmap" && <RoadmapPanel />}
         {tab === "tasks" && <TasksPanel />}

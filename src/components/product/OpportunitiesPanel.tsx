@@ -5,6 +5,9 @@
 // "Generate PRD" primary and a lineage ghost icon. Production functionality
 // kept: status updates, CriticBadge, delete, LineageDrawer, rescore evidence
 // from the real outcome loop (listLearnings), navigation to the drafted PRD.
+// Screen 6: each row is a click target opening the ?opp= drill
+// (OpportunityDetail — full ICE breakdown, rescore history, lineage);
+// interactive children stop propagation so their actions don't open it.
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -132,7 +135,22 @@ export function OpportunitiesPanel() {
             <div
               key={o.id}
               className="bento lift"
-              style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 18px" }}
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                navigate({ to: "/product", search: { tab: "opportunities", opp: o.id } })
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter")
+                  navigate({ to: "/product", search: { tab: "opportunities", opp: o.id } });
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                padding: "14px 18px",
+                cursor: "pointer",
+              }}
             >
               <span
                 className="font-display tabular-nums"
@@ -153,6 +171,7 @@ export function OpportunitiesPanel() {
                     className="mono-label"
                     value={o.status}
                     aria-label="Lane"
+                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) =>
                       upd.mutate({ id: o.id, status: e.target.value as (typeof STATUSES)[number] })
                     }
@@ -185,11 +204,13 @@ export function OpportunitiesPanel() {
                       </span>
                     </VerdictChip>
                   ) : null}
-                  <CriticBadge
-                    review={(o as { critic_review?: CriticReview | null }).critic_review ?? null}
-                    target={{ kind: "opportunity", id: o.id }}
-                    invalidateKey={["opportunities"]}
-                  />
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <CriticBadge
+                      review={(o as { critic_review?: CriticReview | null }).critic_review ?? null}
+                      target={{ kind: "opportunity", id: o.id }}
+                      invalidateKey={["opportunities"]}
+                    />
+                  </span>
                 </div>
                 {o.problem ? (
                   <div
@@ -230,7 +251,10 @@ export function OpportunitiesPanel() {
                 <button
                   className="btn btn-primary btn-sm"
                   disabled={isPrdPending}
-                  onClick={() => prd.mutate({ id: o.id, title: o.title })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prd.mutate({ id: o.id, title: o.title });
+                  }}
                 >
                   {isPrdPending ? "Generating…" : "Generate PRD"}
                 </button>
@@ -239,7 +263,10 @@ export function OpportunitiesPanel() {
                   aria-label="Signal lineage"
                   className="btn btn-ghost btn-sm"
                   style={{ padding: "4px 7px" }}
-                  onClick={() => setLineage({ id: o.id, title: o.title })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLineage({ id: o.id, title: o.title });
+                  }}
                 >
                   <GitBranch size={12} />
                 </button>
@@ -249,7 +276,10 @@ export function OpportunitiesPanel() {
                   className="btn btn-ghost btn-sm"
                   style={{ padding: "4px 7px", color: "var(--rose)" }}
                   disabled={isDelPending}
-                  onClick={() => del.mutate(o.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    del.mutate(o.id);
+                  }}
                 >
                   <Trash2 size={12} />
                 </button>
