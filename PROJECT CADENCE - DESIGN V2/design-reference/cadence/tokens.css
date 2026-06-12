@@ -1,0 +1,436 @@
+/* Cadence — "Ember Editorial" design language.
+   Warm parchment canvas · espresso ink · burnished ember copper accent ·
+   deep forest green for governance approvals · teal for live/running state.
+   Inspired by warm-editorial AI surfaces; deliberately its own voice.
+   Depth = color-block contrast, shadows rare. */
+
+:root {
+  --radius: 0.5rem;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast: 140ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+
+  /* Accent — burnished ember copper (tweakable via data-accent) */
+  --ember: oklch(0.60 0.155 50);
+  --ember-active: oklch(0.52 0.145 48);
+  --ember-soft: oklch(0.78 0.08 55);
+
+  /* Surfaces — warm parchment ramp */
+  --canvas: oklch(0.977 0.007 85);
+  --soft-stone: oklch(0.938 0.013 82);
+  --pale-green: oklch(0.95 0.025 150);
+  --pale-blue: oklch(0.95 0.015 230);
+  --paper: var(--canvas);
+  --surface-1: oklch(0.962 0.009 85);
+  --surface-2: var(--soft-stone);
+  --surface-3: oklch(0.922 0.014 80);
+
+  /* Ink — warm cacao scale */
+  --ink: oklch(0.225 0.018 50);
+  --ink-muted: oklch(0.45 0.017 55);
+  --ink-subtle: oklch(0.56 0.016 62);
+  --ink-faint: oklch(0.65 0.015 70);
+
+  /* Rules — whisper-light; depth comes from surface tints, not lines */
+  --hairline: oklch(0.905 0.010 80);
+  --hairline-strong: oklch(0.82 0.013 75);
+
+  /* Brand roles */
+  --primary-ink: oklch(0.215 0.018 50);      /* cacao block (logo, toast) */
+  --deep-green: oklch(0.30 0.018 75);        /* approve — solid espresso, premium */
+  --action-blue: oklch(0.47 0.10 265);       /* links + running state — indigo */
+  --focus-blue: oklch(0.55 0.11 268);
+  --coral: var(--ember);                     /* legacy token name → ember */
+  --coral-soft: var(--ember-soft);
+  --saffron: oklch(0.80 0.12 85);            /* highlight / celebration */
+  --agent: oklch(0.50 0.11 310);             /* orchid — reserved: agent actions only */
+  --emerald: oklch(0.55 0.09 145);           /* moss · success */
+  --rose: oklch(0.52 0.16 25);               /* madder · alert */
+
+  --primary: var(--ember);
+  --primary-foreground: oklch(0.99 0.005 85);
+
+  /* Hero / dark product band — deep plum-umber, lifted by the aurora. */
+  --hero-bg: oklch(0.27 0.03 40);
+  --hero-ink: oklch(0.965 0.008 85);
+
+  --card-pad: 18px;
+  --bento-pad: 14px;
+}
+
+/* Accent tweaks */
+html[data-accent="rust"] { --ember: oklch(0.55 0.16 38); --ember-active: oklch(0.47 0.15 38); --ember-soft: oklch(0.74 0.09 42); }
+html[data-accent="marigold"] { --ember: oklch(0.67 0.14 70); --ember-active: oklch(0.58 0.13 68); --ember-soft: oklch(0.82 0.08 75); }
+
+/* Dark — "Char night": near-black floors, warmth only in the accents. */
+html[data-theme="dark"] {
+  --ember: oklch(0.70 0.15 52);
+  --ember-active: oklch(0.62 0.14 50);
+  --ember-soft: oklch(0.50 0.09 55);
+
+  --canvas: oklch(0.148 0.005 60);
+  --soft-stone: oklch(0.21 0.008 58);
+  --pale-green: oklch(0.24 0.035 160);
+  --pale-blue: oklch(0.24 0.03 220);
+  --paper: oklch(0.148 0.005 60);
+  --surface-1: oklch(0.178 0.006 58);
+  --surface-2: oklch(0.21 0.008 58);
+  --surface-3: oklch(0.245 0.009 58);
+
+  --ink: oklch(0.958 0.008 85);
+  --ink-muted: oklch(0.78 0.012 75);
+  --ink-subtle: oklch(0.62 0.014 70);
+  --ink-faint: oklch(0.53 0.014 68);
+
+  --hairline: oklch(0.92 0.02 80 / 19%);
+  --hairline-strong: oklch(0.92 0.02 80 / 32%);
+
+  --primary-ink: var(--ember);
+  --deep-green: oklch(0.90 0.01 80);
+  --action-blue: oklch(0.72 0.10 270);
+  --focus-blue: oklch(0.72 0.10 270);
+  --coral: var(--ember);
+  --coral-soft: oklch(0.50 0.09 55);
+  --saffron: oklch(0.84 0.11 88);
+  --agent: oklch(0.72 0.11 308);
+  --emerald: oklch(0.72 0.11 148);
+  --rose: oklch(0.68 0.15 28);
+
+  --primary: var(--ember);
+  --primary-foreground: oklch(0.16 0.01 55);
+
+  /* dark hero — the black accent band: deeper than the floor with a
+     controlled ember bloom in one corner, so it reads carved-in but alive */
+  --hero-bg: oklch(0.115 0.005 55);
+  --hero-ink: oklch(0.965 0.008 85);
+}
+
+/* —— Dark revamp (Phase 3): surface separation + warmth where it counts —— */
+html[data-theme="dark"] aside {
+  background: oklch(0.128 0.004 60) !important;
+}
+html[data-theme="dark"] .hero-editorial {
+  background-image:
+    radial-gradient(50% 70% at 88% -8%, color-mix(in oklab, var(--ember) 16%, transparent) 0%, transparent 70%),
+    linear-gradient(118deg, transparent 60%, color-mix(in oklab, var(--ember) 5%, transparent) 100%);
+  border: 1px solid oklch(0.92 0.02 80 / 9%);
+}
+html[data-theme="dark"] .bento {
+  background: var(--surface-1);
+  border-color: oklch(0.92 0.02 80 / 13%);
+  box-shadow: inset 0 1px 0 oklch(0.95 0.015 85 / 4%);
+}
+html[data-theme="dark"] .band-stone {
+  box-shadow: inset 0 1px 0 oklch(0.95 0.015 85 / 5%);
+}
+html[data-theme="dark"] .btn-ghost {
+  background: var(--surface-2);
+  border-color: oklch(0.92 0.02 80 / 16%);
+}
+html[data-theme="dark"] .input {
+  background: var(--surface-1);
+}
+html[data-theme="dark"] .menu,
+html[data-theme="dark"] .cmdk {
+  background: var(--surface-2);
+  box-shadow: 0 24px 64px -16px oklch(0 0 0 / 70%);
+}
+html[data-theme="dark"] .cooking-banner {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--ember) 14%, var(--surface-1)) 0%,
+    var(--surface-1) 38%,
+    color-mix(in oklab, var(--ember) 9%, var(--surface-1)) 72%,
+    var(--surface-1) 100%);
+  background-size: 220% 100%;
+}
+html[data-accent="rust"][data-theme="dark"] { --ember: oklch(0.66 0.16 40); --ember-active: oklch(0.58 0.15 40); }
+html[data-accent="marigold"][data-theme="dark"] { --ember: oklch(0.76 0.13 72); --ember-active: oklch(0.68 0.12 70); }
+
+html[data-density="compact"] { --card-pad: 14px; --bento-pad: 12px; }
+
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after {
+  transition: none !important; animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+input, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+::selection { background: color-mix(in oklab, var(--ember) 28%, transparent); }
+
+.font-display {
+  font-family: "Newsreader", ui-serif, Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 470;
+  letter-spacing: -0.015em;
+}
+
+/* ---------- Utilities ---------- */
+.mono-label {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-subtle);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.hairline { border: 1px solid var(--hairline); }
+.tabular { font-variant-numeric: tabular-nums; }
+
+.bento {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: var(--bento-pad);
+}
+html[data-theme="dark"] .bento { background: var(--surface-1); }
+
+.band-stone {
+  background: var(--soft-stone);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: var(--bento-pad);
+}
+
+.hero-editorial {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background-color: var(--hero-bg);
+  background-image:
+    linear-gradient(118deg, transparent 55%, color-mix(in oklab, var(--ember) 7%, transparent) 100%);
+  color: var(--hero-ink);
+}
+.hero-editorial h1 {
+  font-family: "Newsreader", ui-serif, Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.hero-editorial h1 em { font-style: italic; font-weight: 380; color: color-mix(in oklab, var(--ember-soft) 80%, var(--hero-ink)); }
+
+/* Hero aurora — slow-flowing color washes (ember · indigo · saffron) that
+   give the band life without shouting. Sits under the content (z 0). */
+.hero-editorial::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(46% 64% at 8% 112%, color-mix(in oklab, var(--action-blue) 16%, transparent) 0%, transparent 70%),
+    radial-gradient(40% 58% at 64% -12%, color-mix(in oklab, var(--saffron) 12%, transparent) 0%, transparent 72%),
+    radial-gradient(48% 72% at 104% 64%, color-mix(in oklab, var(--ember) 20%, transparent) 0%, transparent 70%);
+  background-size: 160% 160%;
+  animation: heroFlow 16s ease-in-out infinite alternate;
+}
+@keyframes heroFlow {
+  from { background-position: 0% 0%, 100% 0%, 100% 100%; }
+  to { background-position: 100% 100%, 0% 100%, 0% 0%; }
+}
+
+/* Engraved loop rings — the brand motif, etched into the band. */
+.hero-editorial::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-radial-gradient(circle at 84% 36%,
+    transparent 0px, transparent 30px,
+    color-mix(in oklab, var(--hero-ink) 5%, transparent) 30px,
+    color-mix(in oklab, var(--hero-ink) 5%, transparent) 31px);
+  -webkit-mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
+  mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
+  pointer-events: none;
+}
+.hero-ghost-mark {
+  position: absolute; right: -48px; top: 50%; transform: translateY(-50%);
+  color: var(--hero-ink); opacity: 0.08; pointer-events: none;
+}
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent; }
+
+/* Status dots */
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 99px; flex-shrink: 0; }
+.dot-running { background: var(--action-blue); animation: pulse 1.6s ease-in-out infinite; }
+.dot-completed { background: var(--emerald); }
+.dot-planned { background: var(--ink-faint); opacity: 0.5; }
+.dot-failed { background: var(--rose); }
+.dot-gate { background: var(--ember); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+@keyframes fadeUp { from { transform: translateY(5px); } to { transform: none; } }
+.fade-up { animation: fadeUp var(--dur-slow) var(--ease-out); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 13px; height: 13px; border-radius: 99px;
+  border: 1.5px solid var(--hairline-strong); border-top-color: var(--ink-muted);
+  animation: spin 0.9s linear infinite;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 8px;
+  padding: 6px 12px; font-size: 12.5px; font-weight: 500;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), opacity var(--dur-fast);
+}
+.btn:focus-visible { outline: 2px solid var(--focus-blue); outline-offset: 1px; }
+.btn:active { transform: translateY(1px); }
+.btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 7px; }
+.btn-primary { background: var(--ember); color: var(--primary-foreground); }
+.btn-primary:hover { background: var(--ember-active); }
+.btn-ghost { color: var(--ink-muted); border-color: var(--hairline); background: var(--canvas); }
+.btn-ghost:hover { color: var(--ink); border-color: var(--hairline-strong); }
+.btn-approve { background: var(--deep-green); color: var(--canvas); }
+html[data-theme="dark"] .btn-approve { color: oklch(0.2 0.01 60); }
+.btn-approve:hover { opacity: 0.9; }
+.btn-reject { color: var(--ember); border-color: color-mix(in oklab, var(--ember) 50%, transparent); }
+.btn-reject:hover { background: color-mix(in oklab, var(--ember) 10%, transparent); }
+
+/* Inputs */
+.input {
+  width: 100%; background: var(--canvas); border: 1px solid var(--hairline);
+  border-radius: 8px; padding: 7px 11px; font-size: 13px;
+  color: var(--ink); outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.input::placeholder { color: var(--ink-faint); }
+.input:focus { border-color: var(--ember); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ember) 15%, transparent); }
+
+/* Citation pill */
+.cite {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  min-width: 16px; height: 16px; padding: 0 3px; margin: 0 1px;
+  border-radius: 4px; background: var(--surface-3); color: var(--ink-muted);
+  vertical-align: 2px; cursor: default; position: relative;
+}
+.cite:hover { background: var(--hairline); color: var(--ink); }
+.cite .cite-pop {
+  display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  width: 230px; background: var(--canvas); border: 1px solid var(--hairline);
+  border-radius: 10px; padding: 9px 11px; font-family: "Schibsted Grotesk", sans-serif;
+  font-size: 11.5px; line-height: 1.45; color: var(--ink-muted); text-align: left;
+  box-shadow: 0 8px 24px -12px oklch(0.2 0.02 60 / 30%); z-index: 40; text-transform: none; letter-spacing: 0;
+}
+.cite:hover .cite-pop { display: block; }
+
+/* Toast */
+.toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.toast {
+  background: var(--primary-ink); color: var(--canvas);
+  border-radius: 99px; padding: 8px 18px; font-size: 13px;
+  box-shadow: 0 8px 24px -8px oklch(0.15 0.02 60 / 40%);
+  animation: fadeUp var(--dur-base) var(--ease-out) both;
+  display: flex; align-items: center; gap: 10px;
+}
+html[data-theme="dark"] .toast { background: var(--surface-3); color: var(--ink); border: 1px solid var(--hairline); }
+.toast button { color: var(--ember-soft); font-weight: 600; font-size: 12px; }
+html[data-theme="dark"] .toast button { color: var(--ember); }
+
+/* Command palette */
+.cmdk-overlay { position: fixed; inset: 0; background: oklch(0.18 0.015 60 / 32%); z-index: 80; display: flex; align-items: flex-start; justify-content: center; padding-top: 14vh; }
+.cmdk {
+  width: 560px; max-width: calc(100vw - 48px); background: var(--canvas);
+  border: 1px solid var(--hairline); border-radius: 14px;
+  box-shadow: 0 24px 80px -24px oklch(0.15 0.02 60 / 45%); overflow: hidden;
+  animation: fadeUp var(--dur-base) var(--ease-out) both;
+}
+.cmdk input { width: 100%; border: 0; outline: none; background: transparent; padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--hairline); }
+.cmdk-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-size: 13px; color: var(--ink-muted); width: 100%; text-align: left; border-radius: 8px; }
+.cmdk-item:hover, .cmdk-item.sel { background: var(--surface-2); color: var(--ink); }
+
+:focus-visible { outline: 2px solid var(--focus-blue); outline-offset: 1px; }
+
+/* Brand mark — butterfly wings breathe in a slow flutter. */
+.cad-orbit { transform-origin: 12px 12px; animation: cadSpin 14s linear infinite; }
+.cad-flutter { transform-origin: 12px 12px; animation: cadFlutter 3.2s ease-in-out infinite alternate; }
+.cad-flutter-l { transform-origin: 12px 12px; animation: cadFlutterL 3.2s ease-in-out infinite alternate; }
+.cad-active { animation: pulse 2.4s ease-in-out infinite; }
+@keyframes cadSpin { to { transform: rotate(360deg); } }
+@keyframes cadFlutter { from { transform: scaleX(1); } to { transform: scaleX(0.86); } }
+@keyframes cadFlutterL { from { transform: scaleX(1); } to { transform: scaleX(0.86); } }
+
+/* Streaming caret */
+.stream-caret { color: var(--ember); animation: caretBlink 0.8s steps(1) infinite; }
+@keyframes caretBlink { 50% { opacity: 0; } }
+
+/* AI-at-work glow — a subtle breathing halo on containers where the
+   platform is actively thinking/executing. Never overpowering. */
+.ai-glow {
+  animation: aiGlow 2.8s ease-in-out infinite;
+}
+@keyframes aiGlow {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--agent) 14%, transparent), 0 0 14px -4px color-mix(in oklab, var(--ember) 22%, transparent); }
+  50% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--agent) 26%, transparent), 0 0 22px -4px color-mix(in oklab, var(--ember) 38%, transparent); }
+}
+html[data-motion="off"] .ai-glow { box-shadow: 0 0 0 1px color-mix(in oklab, var(--agent) 18%, transparent); }
+
+/* Construction pill — temporary "still building" notice, all screens. */
+.construction-pill {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 95;
+  display: flex; align-items: center; gap: 8px;
+  background: color-mix(in oklab, var(--ember) 10%, var(--canvas));
+  border: 1px solid color-mix(in oklab, var(--ember) 35%, transparent);
+  border-radius: 99px; padding: 5px 8px 5px 13px;
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted);
+  box-shadow: 0 6px 20px -8px oklch(0.2 0.02 60 / 25%);
+  animation: fadeUp var(--dur-slow) var(--ease-out);
+}
+
+/* SVG graph node pulse */
+.gnode-live { animation: pulse 1.6s ease-in-out infinite; }
+
+/* Cooking banner — something is always running. */
+.cooking-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 24px; height: 32px; flex-shrink: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--ember) 13%, var(--canvas)) 0%,
+    var(--canvas) 38%,
+    color-mix(in oklab, var(--ember) 8%, var(--canvas)) 72%,
+    var(--canvas) 100%);
+  background-size: 220% 100%;
+  animation: bannerSweep 9s ease-in-out infinite alternate;
+}
+@keyframes bannerSweep { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+
+/* Subtle lift on interactive rows/cards — motion as affordance. */
+.lift { transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast), box-shadow var(--dur-fast); }
+.lift:hover { transform: translateY(-1px); border-color: var(--hairline-strong); box-shadow: 0 2px 8px -4px oklch(0.2 0.02 60 / 14%); }
+
+/* Staggered entrance — transform only, never opacity (content stays visible
+   even if animations don't tick). */
+.rise { animation: fadeUp var(--dur-slow) var(--ease-out); }
+.rise-2 { animation: fadeUp 340ms var(--ease-out); }
+.rise-3 { animation: fadeUp 420ms var(--ease-out); }
+
+/* Dropdown menu (workspace switcher) */
+.menu {
+  position: absolute; left: 10px; right: 10px; top: calc(100% + 4px); z-index: 70;
+  background: var(--canvas); border: 1px solid var(--hairline); border-radius: 12px;
+  box-shadow: 0 16px 48px -16px oklch(0.15 0.02 60 / 35%); padding: 6px;
+  animation: fadeUp var(--dur-base) var(--ease-out);
+}
+.menu-item {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 7px 10px; border-radius: 8px; font-size: 12.5px; color: var(--ink-muted);
+}
+.menu-item:hover { background: var(--surface-2); color: var(--ink); }
+.menu-sep { height: 1px; background: var(--hairline); margin: 5px 4px; }

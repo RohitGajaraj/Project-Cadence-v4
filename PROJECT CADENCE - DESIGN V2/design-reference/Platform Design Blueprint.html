@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadence · Platform Design Blueprint</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg%3E%3Cpath d='M 12.9 11.2 C 13.6 7.6 16.4 4.9 19.1 4.9 C 21.2 4.9 21.9 6.6 21.0 8.6 C 20.0 10.8 16.9 12.4 13.4 12.2 Z' fill='%23C46A2B' opacity='0.85'/%3E%3Cpath d='M 13.2 12.9 C 16.1 12.9 18.6 14.3 19.2 16.2 C 19.7 17.9 18.4 19.1 16.5 18.6 C 14.6 18.1 13.1 16.0 12.9 13.4 Z' fill='%23E3B14E' opacity='0.8'/%3E%3Cg transform='scale(-1 1) translate(-24 0)'%3E%3Cpath d='M 12.9 11.2 C 13.6 7.6 16.4 4.9 19.1 4.9 C 21.2 4.9 21.9 6.6 21.0 8.6 C 20.0 10.8 16.9 12.4 13.4 12.2 Z' fill='%23C46A2B' opacity='0.85'/%3E%3Cpath d='M 13.2 12.9 C 16.1 12.9 18.6 14.3 19.2 16.2 C 19.7 17.9 18.4 19.1 16.5 18.6 C 14.6 18.1 13.1 16.0 12.9 13.4 Z' fill='%23E3B14E' opacity='0.8'/%3E%3C/g%3E%3Cpath d='M 12 6.8 C 12.35 8.2 12.35 15.8 12 18.0 C 11.65 15.8 11.65 8.2 12 6.8 Z' fill='%232B211A'/%3E%3Ccircle cx='12' cy='6.1' r='0.95' fill='%232B211A'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&amp;family=Schibsted+Grotesk:ital,wght@0,400..700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ember: oklch(0.60 0.155 50);
+    --canvas: oklch(0.977 0.007 85);
+    --paper: oklch(0.995 0.003 85);
+    --stone: oklch(0.945 0.011 82);
+    --ink: oklch(0.225 0.018 50);
+    --ink-muted: oklch(0.43 0.017 55);
+    --ink-subtle: oklch(0.56 0.016 62);
+    --hairline: oklch(0.89 0.011 80);
+    --graphite: oklch(0.265 0.022 55);
+    --teal: oklch(0.47 0.10 265);
+    --good: oklch(0.55 0.09 145);
+    --bad: oklch(0.52 0.16 25);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--canvas); color: var(--ink);
+    font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px; line-height: 1.62; padding: 48px 16px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 816px; margin: 0 auto 36px; background: var(--paper);
+    padding: 68px 72px; border-radius: 3px;
+    box-shadow: 0 2px 12px oklch(0.2 0.02 60 / 8%);
+  }
+  h1, h2, h3 { font-family: "Newsreader", ui-serif, Georgia, serif; font-weight: 460; letter-spacing: -0.015em; }
+  h1 { font-size: 34px; line-height: 1.15; }
+  h2 { font-size: 22px; margin: 0 0 6px; }
+  h3 { font-size: 16px; margin: 0 0 4px; }
+  p { color: var(--ink-muted); text-wrap: pretty; }
+  .kicker {
+    font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-subtle); font-weight: 500;
+  }
+  .kicker.ember { color: var(--ember); }
+  section { margin-top: 36px; break-inside: avoid; }
+  .rule { border: 0; border-top: 1px solid var(--hairline); margin: 28px 0 0; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .card { border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 18px; break-inside: avoid; }
+  .card.tint { background: var(--stone); border-color: transparent; print-color-adjust: exact; }
+  .mono { font-family: "JetBrains Mono", monospace; font-size: 11px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  th { text-align: left; font-family: "JetBrains Mono", monospace; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-subtle); font-weight: 500; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--hairline); }
+  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; color: var(--ink-muted); }
+  td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
+  tr { break-inside: avoid; }
+  .tag { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; border: 1px solid var(--hairline); border-radius: 99px; padding: 1px 8px; color: var(--ink-subtle); white-space: nowrap; }
+  .tag.do { color: var(--good); border-color: color-mix(in oklab, var(--good) 45%, transparent); }
+  .tag.fix { color: var(--ember); border-color: color-mix(in oklab, var(--ember) 45%, transparent); }
+  .tag.new { color: var(--teal); border-color: color-mix(in oklab, var(--teal) 45%, transparent); }
+  ul { padding-left: 18px; color: var(--ink-muted); }
+  li { margin: 5px 0; }
+  li::marker { color: var(--ember); }
+  /* sitemap diagram */
+  .map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+  .map .node { border: 1px solid var(--hairline); border-radius: 9px; padding: 11px 13px; }
+  .map .node strong { display: block; font-size: 13px; font-weight: 600; }
+  .map .node span { font-size: 11px; color: var(--ink-subtle); line-height: 1.45; display: block; margin-top: 2px; }
+  .map .node.hub { background: var(--graphite); border-color: transparent; print-color-adjust: exact; }
+  .map .node.hub strong, .map .node.hub span { color: oklch(0.96 0.008 85); }
+  .map .node.hub span { opacity: 0.7; }
+  .map .node.gate { border-color: color-mix(in oklab, var(--ember) 50%, transparent); }
+  .loopbar { display: flex; gap: 6px; margin-top: 16px; align-items: stretch; }
+  .loopbar .step { flex: 1; text-align: center; border: 1px solid var(--hairline); border-radius: 8px; padding: 9px 4px 8px; }
+  .loopbar .step .mono { display: block; font-size: 9px; color: var(--ink-subtle); text-transform: uppercase; letter-spacing: 0.1em; }
+  .loopbar .step strong { font-size: 12.5px; font-weight: 600; }
+  .loopbar .arrow { align-self: center; color: var(--ink-subtle); font-size: 13px; }
+  .footer-note { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--hairline); display: flex; justify-content: space-between; }
+  .swatches { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .sw { width: 92px; border-radius: 8px; overflow: hidden; border: 1px solid var(--hairline); print-color-adjust: exact; }
+  .sw .chip { height: 44px; }
+  .sw .lbl { font-family: "JetBrains Mono", monospace; font-size: 8.5px; padding: 5px 7px; color: var(--ink-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+  .logo-row { display: flex; align-items: center; gap: 10px; }
+  @media print {
+    body { background: none; padding: 0; }
+    .page { box-shadow: none; border-radius: 0; max-width: none; width: auto; margin: 0; padding: 0; }
+    .page + .page { break-before: page; }
+    @page { margin: 0.75in; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 · What it is + principles -->
+<div class="page">
+  <div class="logo-row">
+    <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><g><path d="M 12.9 11.2 C 13.6 7.6 16.4 4.9 19.1 4.9 C 21.2 4.9 21.9 6.6 21.0 8.6 C 20.0 10.8 16.9 12.4 13.4 12.2 Z" fill="#C46A2B" opacity="0.85"></path><path d="M 13.2 12.9 C 16.1 12.9 18.6 14.3 19.2 16.2 C 19.7 17.9 18.4 19.1 16.5 18.6 C 14.6 18.1 13.1 16.0 12.9 13.4 Z" fill="#E3B14E" opacity="0.8"></path><g transform="scale(-1 1) translate(-24 0)"><path d="M 12.9 11.2 C 13.6 7.6 16.4 4.9 19.1 4.9 C 21.2 4.9 21.9 6.6 21.0 8.6 C 20.0 10.8 16.9 12.4 13.4 12.2 Z" fill="#C46A2B" opacity="0.85"></path><path d="M 13.2 12.9 C 16.1 12.9 18.6 14.3 19.2 16.2 C 19.7 17.9 18.4 19.1 16.5 18.6 C 14.6 18.1 13.1 16.0 12.9 13.4 Z" fill="#E3B14E" opacity="0.8"></path></g><path d="M 12 6.8 C 12.35 8.2 12.35 15.8 12 18.0 C 11.65 15.8 11.65 8.2 12 6.8 Z" fill="#2B211A"></path><circle cx="12" cy="6.1" r="0.95" fill="#2B211A"></circle></g></svg>
+    <span class="kicker">Cadence · Platform design blueprint · v2 · final for sign-off · June 2026</span>
+  </div>
+  <h1 style="margin-top: 22px;">One operator. A staff of agents.<br>A product loop that never sleeps.</h1>
+  <p style="margin-top: 14px; max-width: 600px;">
+    Cadence is an agentic product-management platform: a staff of specialist AI agents (Scout, Strategist, Scribe, Builder, Inspector, Marketer, Quant, Historian) runs the product loop continuously — sensing signals, deciding priorities, building, shipping, learning — while the human operator governs through gates. This document is the platform-level design: what each surface is for, what we are correcting from the current prototype, and what we will modify next — agreed here, before it is implemented in code.
+  </p>
+
+  <section>
+    <span class="kicker ember">The spine of the product</span>
+    <h2 style="margin-top: 6px;">The loop, with a human gate</h2>
+    <div class="loopbar">
+      <div class="step"><span class="mono">Sense</span><strong>Signals</strong></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="mono">Decide</span><strong>Opportunities</strong></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="mono">Specify</span><strong>Specs</strong></div>
+      <span class="arrow">→</span>
+      <div class="step" style="border-color: color-mix(in oklab, var(--ember) 55%, transparent);"><span class="mono" style="color: var(--ember);">Gate</span><strong>You approve</strong></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="mono">Build</span><strong>Missions</strong></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="mono">Learn</span><strong>Memory</strong></div>
+    </div>
+    <p style="margin-top: 12px; font-size: 13px;">
+      Every screen serves one station of this loop. Anything that doesn't is cut. The gate is the emotional center of the product — the moment the human matters — so gates get the ember color, the strongest motion, and the shortest path from anywhere.
+    </p>
+  </section>
+
+  <section>
+    <span class="kicker ember">Design principles</span>
+    <h2 style="margin-top: 6px;">Five rules every screen must pass</h2>
+    <div class="cols">
+      <div class="card tint"><h3>1 · Calm by default, loud at the gate</h3><p style="font-size: 13px;">The swarm works quietly (parchment, hairlines, small mono labels). Color and motion are reserved for the moments that need a human: gates, failures, budget pressure.</p></div>
+      <div class="card tint"><h3>2 · Evidence or it didn't happen</h3><p style="font-size: 13px;">Every agent claim carries a citation chip back to its source (ticket, funnel, call, trace). No naked numbers, no unattributed insights, anywhere.</p></div>
+      <div class="card tint"><h3>3 · Consequence-first controls</h3><p style="font-size: 13px;">Buttons say what happens, not what they are: "Approve · opens the PR", "Reject · nothing ships". The cost of a click is always legible before the click.</p></div>
+      <div class="card tint"><h3>4 · Editorial, not dashboard</h3><p style="font-size: 13px;">Newsreader serif voice, generous whitespace, one accent. We read like a well-set briefing, not a wall of widgets. Data slop (stat tiles for their own sake) is banned.</p></div>
+      <div class="card tint" style="grid-column: span 2;"><h3>5 · The trace is always one click away</h3><p style="font-size: 13px;">Premium trust comes from observability: every AI output links to its full execution trace (model, tokens, cost, hops). Nothing the platform does is a black box — that's the difference between "one among many AI tools" and an enterprise operating system.</p></div>
+    </div>
+  </section>
+
+  <div class="footer-note"><span class="kicker">Cadence · blueprint</span><span class="kicker">01 / 04</span></div>
+</div>
+
+<!-- PAGE 2 · IA -->
+<div class="page">
+  <span class="kicker ember">Information architecture</span>
+  <h2 style="margin-top: 6px;">Surface map — 7 surfaces, 3 zones</h2>
+  <p style="font-size: 13px; max-width: 580px;">
+    The sidebar is zoned by tempo: <strong style="color: var(--ink);">Workspace</strong> (daily ritual — Today, Approvals, Chat), <strong style="color: var(--ink);">Loop</strong> (the product stations — Product, Missions, Knowledge), and <strong style="color: var(--ink);">Trust</strong> (governance quick-rail + Settings). Anything reachable in the rail is also reachable by ⌘K.
+  </p>
+  <div class="map">
+    <div class="node hub"><strong>Today</strong><span>The hub. Hero brief, Needs-you queue, agent rail, overview tabs. The one screen an operator must see daily.</span></div>
+    <div class="node gate"><strong>Approvals (Govern)</strong><span>The engine room, 9 tabs: Controls · Approvals · Guardrails · Budgets · Prompts · Evals · Analytics · Traces · Drift.</span></div>
+    <div class="node"><strong>Chat</strong><span>Conversational command. Goals become missions; the Mission Cockpit embeds inline; every AI reply carries its contract footer.</span></div>
+    <div class="node"><strong>Missions</strong><span>The build station. Live runs, plan steps per specialist, execution traces, cost per mission.</span></div>
+    <div class="node"><strong>Product</strong><span>Sense + decide, 6 tabs: Signals · Opportunities · Specs · Roadmap · Tasks · Releases — one per loop stage.</span></div>
+    <div class="node"><strong>Knowledge</strong><span>The learn station, 4 tabs: Calendar (default) · Memory · Decisions · Docs. Compounds over time.</span></div>
+    <div class="node"><strong>Settings</strong><span>Connectors, model routing, staff toggles, profile. Boring on purpose.</span></div>
+    <div class="node"><strong>⌘K everywhere</strong><span>Surfaces + missions as first-class destinations. The fastest path between any two points.</span></div>
+  </div>
+
+  <section>
+    <span class="kicker ember">Navigation rules</span>
+    <ul style="margin-top: 10px; font-size: 13px;">
+      <li><strong style="color: var(--ink);">Pending gates follow you.</strong> Count badges on the nav row and trust rail; the cooking banner names what's running on every screen.</li>
+      <li><strong style="color: var(--ink);">State is shared, never copied.</strong> Approving a gate in Chat resolves it on Today, in Govern, and on the mission page simultaneously.</li>
+      <li><strong style="color: var(--ink);">Three clicks max</strong> from any signal to the mission it became, via citation chips and "open mission" links.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="kicker ember">Brand system</span>
+    <h2 style="margin-top: 6px;">Ember Editorial</h2>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background: oklch(0.977 0.007 85);"></div><div class="lbl">Parchment canvas</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.938 0.013 82);"></div><div class="lbl">Soft stone</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.225 0.018 50);"></div><div class="lbl">Cacao ink</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.60 0.155 50);"></div><div class="lbl">Ember · accent</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.47 0.10 265);"></div><div class="lbl">Indigo · live/links</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.265 0.022 55);"></div><div class="lbl">Umber band</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.80 0.12 85);"></div><div class="lbl">Saffron · highlight</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.55 0.09 145);"></div><div class="lbl">Moss · success</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.52 0.16 25);"></div><div class="lbl">Madder · alert</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.50 0.11 310);"></div><div class="lbl">Orchid · agent action</div></div>
+      <div class="sw"><div class="chip" style="background: oklch(0.138 0.004 60); border-bottom: 1px solid var(--hairline);"></div><div class="lbl">Char · dark floor</div></div>
+    </div>
+    <p style="font-size: 12px; margin-top: 10px;">Ember stays the only voice that asks for attention. Indigo (orange's complement) carries live state and links; <strong style="color: var(--ink);">orchid is reserved exclusively for agent actions</strong> — tool calls, agent names in traces and cockpit steps — so an operator can scan any screen and instantly see where the machine acted; saffron is for highlights and celebration; moss and madder speak only at outcomes. Cacao and umber replace the gray-leaning espresso/graphite so even the dark surfaces feel warm — but the dark theme itself sits on char, a near-black with only a whisper of warmth: umber bands belong to daylight, and in dark mode the hero band drops below the floor (carved in, not raised) so the theme reads true black, not brown. <em>Status: dark mode is provisionally approved — flagged for a dedicated revamp pass (Phase 3).</em></p>
+    <p style="font-size: 12px; margin-top: 10px;"><strong style="color: var(--ink);">Differentiation guardrail:</strong> inspiration may come from the best warm-editorial products, but nothing may mimic Anthropic/Claude — no radial flower or asterisk motifs, no coral-on-cream lookalike pairings, no Tiempos/Styrene-adjacent type. Our identity is bilateral (the butterfly), our accent is burnished ember against indigo and orchid, our serif is Newsreader. If a screen could be mistaken for Claude at a glance, it gets redesigned.</p>
+    <table>
+      <tr><th>Role</th><th>Face</th><th>Use</th></tr>
+      <tr><td>Display</td><td>Newsreader (serif, optical)</td><td>Headlines, scores, mission titles — the editorial voice</td></tr>
+      <tr><td>UI</td><td>Schibsted Grotesk</td><td>Body, controls, everything functional · 13px base</td></tr>
+      <tr><td>Meta</td><td>JetBrains Mono</td><td>Labels, tokens, costs, traces — the machine voice · 10px caps</td></tr>
+      <tr><td>Mark</td><td>The Butterfly</td><td>Two pairs of translucent ember/saffron wings on a cacao body — lightness, precision, metamorphosis (signal → shipped). Bilateral by design; mono variant for watermarks; slow wing-flutter</td></tr>
+    </table>
+  </section>
+
+  <div class="footer-note"><span class="kicker">Cadence · blueprint</span><span class="kicker">02 / 04</span></div>
+</div>
+
+<!-- PAGE 3 · Screen by screen: corrections + modifications -->
+<div class="page">
+  <span class="kicker ember">Screen by screen</span>
+  <h2 style="margin-top: 6px;">Current state → corrections → planned modifications</h2>
+  <p style="font-size: 13px;">What we keep, what we fix, what we add. <span class="tag do">keep</span> <span class="tag fix">correct</span> <span class="tag new">add next</span></p>
+
+  <table>
+    <tr><th style="width: 110px;">Surface</th><th>Verdict &amp; plan</th></tr>
+    <tr>
+      <td>Today</td>
+      <td>
+        <span class="tag do">keep</span> Hero ritual, compact Needs-you queue, cited brief, agent rail.<br>
+        <span class="tag fix">correct</span> Overview tab still carries near-duplicate info (priorities vs pulse) — merge into one "state of the product" band. Focus score needs a defined formula or it goes.<br>
+        <span class="tag new">add next</span> A "yesterday → today" diff line in the hero (what changed overnight, one sentence). Time-aware greeting and brief.
+      </td>
+    </tr>
+    <tr>
+      <td>Chat</td>
+      <td>
+        <span class="tag do">keep</span> Mission Cockpit contract, AI message footer (judge score · model · cost · trace), consequence gates inline.<br>
+        <span class="tag fix">correct</span> Replay-with is a toast stub — needs a model picker popover and a visible diff affordance. Thread list needs unread + mission-linked indicators.<br>
+        <span class="tag new">add next</span> Streaming responses with the cockpit assembling step-by-step; slash-commands (/mission, /spec, /budget) for power operators.
+      </td>
+    </tr>
+    <tr>
+      <td>Missions</td>
+      <td>
+        <span class="tag do">keep</span> List with per-specialist step dots, live trace on detail, cost per mission.<br>
+        <span class="tag fix">correct</span> Trace is flat text — needs per-hop expand/collapse, tool-call syntax tinting, and timing bars. Failed missions need a visible "retry with fix" path, not just a red badge.<br>
+        <span class="tag new">add next</span> Mission graph view (the repo's MissionGraph, redesigned in Ember) showing the agent mesh executing live; budget burn sparkline per mission.
+      </td>
+    </tr>
+    <tr>
+      <td>Product</td>
+      <td>
+        <span class="tag do">keep</span> Tab-per-loop-stage structure; signal strength bars; ranked opportunity queue with rationale.<br>
+        <span class="tag fix">correct</span> Signals table needs row-expand to read the underlying evidence verbatim; "Draft spec" should visibly enqueue a mission, not just toast.<br>
+        <span class="tag new">add next</span> Roadmap drag between Now/Next/Later (writes a decision to memory); release health linked to Quant's funnel reads.
+      </td>
+    </tr>
+    <tr>
+      <td>Govern</td>
+      <td>
+        <span class="tag do">keep</span> Detailed approval cards, guardrails with last-fired, trace ledger, eval scorecards.<br>
+        <span class="tag fix">correct</span> Approvals need bulk actions (approve all low-risk) and a risk grade per card so the queue scales past ~5 items.<br>
+        <span class="tag new">add next</span> Budget caps editable inline with projected burn; guardrail editor with plain-language rule builder.
+      </td>
+    </tr>
+    <tr>
+      <td>Knowledge</td>
+      <td>
+        <span class="tag do">keep</span> Memory feed cited to traces, decision log, pinned docs.<br>
+        <span class="tag fix">correct</span> Docs are dead rows — need preview on click. Memory needs search before it has 500 entries, not after.<br>
+        <span class="tag new">add next</span> "What does Cadence believe?" — a queryable view of accumulated product memory, the platform's long-term moat.
+      </td>
+    </tr>
+    <tr>
+      <td>Platform-wide</td>
+      <td>
+        <span class="tag fix">correct</span> Dark mode is provisionally approved on char floors — a dedicated revamp pass is scheduled (Phase 3): surface separation, ember temperature, band treatment. Mobile/tablet is undesigned. Empty states exist only in Settings.<br>
+        <span class="tag new">add next</span> Onboarding (connect sources → meet the staff → first mission) and a login screen in the brand voice. Notification digest (email/Slack) design.
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer-note"><span class="kicker">Cadence · blueprint</span><span class="kicker">03 / 04</span></div>
+</div>
+
+<!-- PAGE 4 · Components + sequence -->
+<div class="page">
+  <span class="kicker ember">Component contracts</span>
+  <h2 style="margin-top: 6px;">The pieces every surface reuses</h2>
+  <table>
+    <tr><th style="width: 150px;">Component</th><th>Contract</th></tr>
+    <tr><td>Approval card</td><td>Who wants what tool, in which mission · evidence summary · expiry · consequence-labeled approve/reject · link to mission. Compact row on Today, detailed card in Govern — same data, two densities.</td></tr>
+    <tr><td>Mission Cockpit</td><td>Title + status · numbered specialist steps with live dots · inline gate when one is pending · raw trace toggle · open-mission link. Identical wherever a mission appears.</td></tr>
+    <tr><td>AI message footer</td><td>Judge score · model/gateway · latency · tokens · cost · feedback · view-trace · replay-with. Non-negotiable on every AI utterance.</td></tr>
+    <tr><td>Citation chip</td><td>[n] inline → hover card with source name + verbatim quote. The atomic unit of trust.</td></tr>
+    <tr><td>Status dot</td><td>One vocabulary platform-wide: indigo pulse = running, ember pulse = needs human, moss = done, madder = failed, faint = planned.</td></tr>
+    <tr><td>Cooking banner</td><td>One line of what the swarm is doing right now, every screen, dismissible. The heartbeat.</td></tr>
+  </table>
+
+  <section>
+    <span class="kicker ember">Build sequence</span>
+    <h2 style="margin-top: 6px;">Order of implementation, once approved</h2>
+    <table>
+      <tr><th style="width: 70px;">Phase</th><th>Scope</th><th style="width: 180px;">Exit test</th></tr>
+      <tr><td>1</td><td>Corrections pass — merge Today tabs, trace expand/collapse, signal row evidence, approval risk grades</td><td>Every "correct" item above closed</td></tr>
+      <tr><td>2</td><td>Mission graph view + streaming chat cockpit</td><td>A mission is watchable end-to-end live</td></tr>
+      <tr><td>3</td><td>Dark mode pass + onboarding + login</td><td>First-run feels as designed as day-30</td></tr>
+      <tr><td>4</td><td>Memory search, roadmap drag, budget editor, digest design</td><td>The loop closes without leaving the platform</td></tr>
+    </table>
+  <section>
+    <span class="kicker ember">Decision record</span>
+    <h2 style="margin-top: 6px;">Locked in this revision</h2>
+    <table>
+      <tr><th style="width: 170px;">Decision</th><th>Status</th></tr>
+      <tr><td>Mark · The Butterfly</td><td>Locked · replaces Aperture C; bilateral by design under the differentiation guardrail; wired through sidebar, hero watermark, chat avatars, favicon</td></tr>
+      <tr><td>Palette · Ember Editorial</td><td>Locked · ember accent + cacao ink + umber band (daylight), indigo live/links, orchid reserved for agent actions, saffron highlight, moss/madder outcomes</td></tr>
+      <tr><td>Dark theme · char floor</td><td>Provisional · near-black char, carved-in hero band; full revamp committed in Phase 3</td></tr>
+      <tr><td>Density scale</td><td>Locked · 13px base, 10px mono caps, compact card padding with generous section air</td></tr>
+      <tr><td>Differentiation guardrail</td><td>Locked · no radial flower/asterisk motifs, no Claude-lookalike pairings; "mistakable at a glance" = redesign</td></tr>
+    </table>
+    <p style="margin-top: 14px; font-size: 13px;">
+      Nothing beyond this document is code yet — this page is the contract. Mark up anything you disagree with and the blueprint gets revised before a single component is touched; sign-off starts Phase 1.
+    </p>
+  </section>
+
+  <div class="footer-note"><span class="kicker">Cadence · blueprint</span><span class="kicker">04 / 04</span></div>
+</div>
+
+</body>
+</html>
