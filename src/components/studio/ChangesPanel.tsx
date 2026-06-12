@@ -1,9 +1,9 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, FileCode2 } from "lucide-react";
 import { getChangesetDiff, type StudioChangesetSummary } from "@/lib/studio.functions";
-import { changesetTone, opTone, fmtCompact } from "./studio-format";
+import { ChangesetChip } from "./studio-ui";
+import { fmtCompact } from "./studio-format";
 
 // Monaco stays out of the main bundle — it only loads when a file is opened.
 const DiffEditor = lazy(() =>
@@ -48,9 +48,24 @@ function languageFor(path: string): string | undefined {
   return LANG_BY_EXT[ext];
 }
 
+const spinnerBox = (
+  <div
+    style={{
+      height: 420,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <span className="spinner" />
+  </div>
+);
+
 /**
- * Changes tab — the changeset's file list with op chips and char deltas;
- * selecting a file opens a lazy-loaded Monaco diff (base vs staged).
+ * Changes tab — the changeset's file list (op word + char deltas; the word
+ * carries the meaning, no colored chips) and a lazy-loaded Monaco diff
+ * (base vs staged) when a file is selected. Monaco keeps its own diff
+ * colors — code-diff convention, exempt from the role law.
  */
 export function ChangesPanel({
   changeset,
@@ -75,7 +90,16 @@ export function ChangesPanel({
 
   if (!changeset) {
     return (
-      <div className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
+      <div
+        style={{
+          border: "1px dashed var(--hairline)",
+          borderRadius: 12,
+          padding: "48px 0",
+          textAlign: "center",
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+        }}
+      >
         No changes staged yet. The session stages edits as it works.
       </div>
     );
@@ -84,73 +108,169 @@ export function ChangesPanel({
   const selected = selectedPath ? diffByPath.get(selectedPath) : null;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Changeset header — chip carries state + file count; repo/branch are real. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <ChangesetChip status={changeset.status} fileCount={changes.length} />
         <span
-          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] ${changesetTone(changeset.status)}`}
+          className="truncate"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 11.5,
+            color: "var(--ink-muted)",
+            minWidth: 0,
+          }}
         >
-          {changeset.status}
+          {changeset.repo}
         </span>
-        <span className="font-mono truncate">{changeset.repo}</span>
-        {changeset.branch && (
-          <span className="font-mono text-foreground/70 truncate">{changeset.branch}</span>
-        )}
-        <span className="ml-auto tabular-nums">
-          {changes.length} file{changes.length === 1 ? "" : "s"}
-        </span>
+        {changeset.branch ? (
+          <span
+            className="truncate"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11.5,
+              color: "var(--ink-subtle)",
+              minWidth: 0,
+            }}
+          >
+            {changeset.branch}
+          </span>
+        ) : null}
       </div>
 
-      <div className="divide-y divide-border/60 rounded-lg border hairline">
-        {changes.map((c) => {
+      {/* File list — table-bento: padding 0, mono-label header, hairline rows. */}
+      <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 18px",
+            borderBottom: "1px solid var(--hairline)",
+          }}
+        >
+          <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+            File
+          </span>
+          <span className="mono-label" style={{ width: 52, textAlign: "right" }}>
+            Op
+          </span>
+          <span className="mono-label" style={{ width: 52, textAlign: "right" }}>
+            + chars
+          </span>
+          <span className="mono-label" style={{ width: 52, textAlign: "right" }}>
+            − chars
+          </span>
+        </div>
+        {changes.map((c, i) => {
           const active = c.path === selectedPath;
           return (
             <button
               key={c.id}
               type="button"
               onClick={() => setSelectedPath(active ? null : c.path)}
-              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[11px] transition-colors duration-150 hover:bg-secondary/40 ${
-                active ? "bg-secondary/60" : ""
-              }`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                textAlign: "left",
+                padding: "11px 18px",
+                borderBottom: i < changes.length - 1 ? "1px solid var(--hairline)" : "none",
+                background: active ? "var(--surface-1)" : "transparent",
+                transition: "background var(--dur-fast, 140ms)",
+              }}
             >
-              <FileCode2 className="h-3 w-3 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate font-mono text-foreground/90">{c.path}</span>
               <span
-                className={`inline-flex items-center rounded-full border px-1.5 py-px text-[10px] ${opTone(c.op)}`}
+                className="truncate"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11.5,
+                  color: "var(--ink)",
+                }}
+              >
+                {c.path}
+              </span>
+              <span
+                className="mono-label"
+                style={{ width: 52, textAlign: "right", color: "var(--ink-muted)" }}
               >
                 {c.op}
               </span>
-              <span className="tabular-nums text-emerald-300">+{fmtCompact(c.new_chars)}</span>
-              <span className="tabular-nums text-rose-300">-{fmtCompact(c.base_chars)}</span>
+              <span
+                className="tabular-nums"
+                style={{
+                  width: 52,
+                  textAlign: "right",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10.5,
+                  color: "var(--ink-muted)",
+                }}
+              >
+                +{fmtCompact(c.new_chars)}
+              </span>
+              <span
+                className="tabular-nums"
+                style={{
+                  width: 52,
+                  textAlign: "right",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10.5,
+                  color: "var(--ink-subtle)",
+                }}
+              >
+                −{fmtCompact(c.base_chars)}
+              </span>
             </button>
           );
         })}
-        {changes.length === 0 && (
-          <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+        {changes.length === 0 ? (
+          <div
+            style={{
+              padding: "24px 18px",
+              textAlign: "center",
+              fontSize: 12,
+              color: "var(--ink-faint)",
+            }}
+          >
             The changeset is empty.
           </div>
-        )}
+        ) : null}
       </div>
 
-      {selectedPath && (
-        <div className="overflow-hidden rounded-lg border hairline">
-          <div className="flex items-center gap-2 border-b hairline px-3 py-1.5 text-[11px]">
-            <span className="min-w-0 flex-1 truncate font-mono text-foreground/90">
+      {selectedPath ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span
+              className="truncate"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontFamily: "var(--font-mono)",
+                fontSize: 11.5,
+                color: "var(--ink)",
+              }}
+            >
               {selectedPath}
             </span>
-            <span className="text-muted-foreground">base vs staged</span>
+            <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+              base vs staged
+            </span>
           </div>
           {diff.isLoading || !selected ? (
-            <div className="flex h-[420px] items-center justify-center text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
+            spinnerBox
           ) : (
-            <Suspense
-              fallback={
-                <div className="flex h-[420px] items-center justify-center text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                </div>
-              }
-            >
+            <Suspense fallback={spinnerBox}>
               <DiffEditor
                 height="420px"
                 theme="vs-dark"
@@ -169,7 +289,7 @@ export function ChangesPanel({
             </Suspense>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

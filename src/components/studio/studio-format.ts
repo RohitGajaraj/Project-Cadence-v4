@@ -1,38 +1,31 @@
 /**
- * F-STUDIO shared formatters + status tones (pure helpers, no components —
- * components live in studio-ui.tsx so fast refresh stays intact).
- * Follows the mission cockpit visual language (emerald/cyan/amber/rose).
+ * Build (engine: F-STUDIO) shared formatters — pure helpers, no components
+ * (components live in studio-ui.tsx so fast refresh stays intact). Screen 9
+ * Ember port: the old Tailwind palette maps (statusTone/changesetTone/opTone)
+ * are gone — role colors now come from changesetColor + the StatusBadge/
+ * StepDot adapters in studio-ui.tsx. Color is role, never decoration:
+ * moss = outcome success · indigo = live · ember = needs-human · madder =
+ * failure · ink = neutral state.
  */
 
 // agent_runs: queued | running | waiting_approval | completed | halted | failed
 // missions:   running | completed | halted
-export function statusTone(s: string): string {
-  if (s === "completed") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
-  if (s === "running") return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
-  if (s === "queued" || s === "waiting_approval")
-    return "bg-amber-500/15 text-amber-300 border-amber-400/30";
-  if (s === "failed" || s === "halted") return "bg-rose-500/15 text-rose-300 border-rose-400/30";
-  return "bg-muted text-muted-foreground border-border";
-}
-
 export function statusLabel(s: string): string {
-  if (s === "waiting_approval") return "waiting on you";
+  if (s === "waiting_approval") return "at gate";
   return s;
 }
 
 // studio_changesets: staged | committed | pr_open | merged | abandoned
-export function changesetTone(s: string): string {
-  if (s === "merged") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
-  if (s === "pr_open") return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
-  if (s === "committed") return "bg-violet-500/15 text-violet-300 border-violet-500/30";
-  if (s === "staged") return "bg-amber-500/15 text-amber-300 border-amber-400/30";
-  return "bg-muted text-muted-foreground border-border";
+export function changesetColor(s: string): string {
+  if (s === "merged") return "var(--emerald)"; // outcome: shipped
+  if (s === "pr_open") return "var(--action-blue)"; // live: under review
+  if (s === "abandoned") return "var(--ink-faint)";
+  return "var(--ink-subtle)"; // staged · committed — neutral ladder states
 }
 
-export function opTone(op: string): string {
-  if (op === "create") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
-  if (op === "delete") return "bg-rose-500/15 text-rose-300 border-rose-400/30";
-  return "bg-sky-500/15 text-sky-300 border-sky-500/30";
+export function changesetLabel(s: string): string {
+  if (s === "pr_open") return "PR open";
+  return s;
 }
 
 /** Cost format per design.md: 4 dp under 1 cent, 2 dp above; explicit zero. */

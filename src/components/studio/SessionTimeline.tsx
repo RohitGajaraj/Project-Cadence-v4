@@ -1,4 +1,4 @@
-import { Brain, Wrench, MessageSquare, UserRound } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { StudioApproval, StudioRunDetail } from "@/lib/studio.functions";
 import { ApprovalCard } from "./ApprovalCard";
 import { StatusIcon, StatusChip } from "./studio-ui";
@@ -7,42 +7,76 @@ import { fmtCost, summarizeArgs } from "./studio-format";
 type LoopStep = StudioRunDetail["steps"][number];
 type Steer = { id: string; message: string; created_at: string; consumed: boolean };
 
-function toolStepTone(status: string): string {
-  if (status === "error" || status === "denied") return "text-rose-300";
-  if (status === "queued") return "text-amber-300";
-  return "text-emerald-300";
+/* The missions TraceHop rail — step lines hang off a hairline left rail. */
+const rail: CSSProperties = {
+  paddingLeft: 22,
+  borderLeft: "1px solid var(--hairline)",
+  marginLeft: 5,
+};
+const stepLine: CSSProperties = {
+  ...rail,
+  fontFamily: "var(--font-mono)",
+  fontSize: 11,
+  lineHeight: 1.8,
+  display: "flex",
+  gap: 8,
+};
+const stepNum: CSSProperties = {
+  width: 18,
+  textAlign: "right",
+  flexShrink: 0,
+  color: "var(--ink-faint)",
+};
+
+function fmtClock(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function StepLine({ step, idx }: { step: LoopStep; idx: number }) {
   if (step.kind === "thought") {
     return (
-      <div className="flex items-start gap-2 text-[11px]">
-        <span className="mt-0.5 w-5 shrink-0 text-right tabular-nums text-muted-foreground">
+      <div style={stepLine}>
+        <span className="tabular-nums" style={stepNum}>
           {idx + 1}.
         </span>
-        <Brain className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-        <p className="min-w-0 flex-1 italic text-muted-foreground break-words">{step.text}</p>
+        <span
+          style={{
+            minWidth: 0,
+            color: "var(--ink-faint)",
+            fontStyle: "italic",
+            wordBreak: "break-word",
+          }}
+        >
+          thought · {step.text}
+        </span>
       </div>
     );
   }
   if (step.kind === "tool_call") {
-    const tone = toolStepTone(step.status);
+    // madder only on real failure outcomes (error / denied); orchid only on
+    // the tool identifier — the agent-action law.
+    const failed = step.status === "error" || step.status === "denied";
     return (
-      <div className="flex items-start gap-2 text-[11px]">
-        <span className="mt-0.5 w-5 shrink-0 text-right tabular-nums text-muted-foreground">
+      <div style={stepLine}>
+        <span className="tabular-nums" style={stepNum}>
           {idx + 1}.
         </span>
-        <Wrench className={`mt-0.5 h-3 w-3 shrink-0 ${tone}`} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className={`font-mono ${tone}`}>{step.name}</span>
-            <span
-              className={`inline-flex items-center rounded-full border border-current/30 px-1.5 py-px text-[10px] ${tone}`}
-            >
-              {step.status}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <span style={{ color: "var(--agent)", fontWeight: 600 }}>{step.name}</span>
+          {step.status !== "executed" ? (
+            <span style={{ color: failed ? "var(--rose)" : "var(--ink-muted)" }}>
+              {" "}
+              · {step.status}
             </span>
-          </div>
-          <div className="text-muted-foreground line-clamp-1 break-words">
+          ) : null}
+          <div
+            className="line-clamp-1 break-words"
+            style={{ color: step.error ? "var(--rose)" : "var(--ink-muted)" }}
+          >
             {step.error
               ? `error: ${step.error}`
               : summarizeArgs((step.args ?? {}) as Record<string, unknown>)}
@@ -52,12 +86,22 @@ function StepLine({ step, idx }: { step: LoopStep; idx: number }) {
     );
   }
   return (
-    <div className="flex items-start gap-2 text-[11px]">
-      <span className="mt-0.5 w-5 shrink-0 text-right tabular-nums text-muted-foreground">
+    <div style={{ ...rail, display: "flex", gap: 8 }}>
+      <span className="mono-label tabular-nums" style={{ ...stepNum, marginTop: 3 }}>
         {idx + 1}.
       </span>
-      <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-foreground" />
-      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words border-l-2 border-emerald-400/40 pl-2 text-xs text-foreground">
+      <p
+        style={{
+          minWidth: 0,
+          flex: 1,
+          margin: 0,
+          fontSize: 12.5,
+          lineHeight: 1.55,
+          color: "var(--ink-muted)",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
         {step.message}
       </p>
     </div>
@@ -66,48 +110,116 @@ function StepLine({ step, idx }: { step: LoopStep; idx: number }) {
 
 function RunBlock({ run, index }: { run: StudioRunDetail; index: number }) {
   const live = run.status === "running" || run.status === "queued";
+  const footer = [run.model, `${run.tokens.toLocaleString()} tok`, fmtCost(run.cost_usd)]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <div className="bento p-4">
-      <div className="flex items-center gap-2">
+    <div className="bento" style={{ padding: "var(--card-pad)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <StatusIcon s={run.status} />
-        <div className="font-display text-sm">Run {index + 1}</div>
-        {run.model && (
-          <span className="font-mono text-[10px] text-muted-foreground truncate">{run.model}</span>
-        )}
-        <StatusChip status={run.status} />
-        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
-          {fmtCost(run.cost_usd)}
+        <span className="mono-label" style={{ color: "var(--ink)", fontWeight: 600 }}>
+          Run {index + 1}
         </span>
+        <StatusChip status={run.status} />
       </div>
-      <div className="mt-3 space-y-1.5">
+      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 2 }}>
         {run.steps.length === 0 ? (
-          <div className="px-1 text-[11px] italic text-muted-foreground">
-            {live ? "Waiting for first checkpoint…" : "No recorded steps."}
+          <div
+            style={{
+              ...rail,
+              fontSize: 12.5,
+              lineHeight: 1.8,
+              color: "var(--ink-faint)",
+              fontStyle: "italic",
+            }}
+          >
+            {live ? "waiting for the first checkpoint" : "no recorded steps"}
           </div>
         ) : (
           run.steps.map((s, i) => <StepLine key={i} step={s} idx={i} />)
         )}
       </div>
+      {/* Only the fields a Build run really carries — no judge score exists here. */}
+      <div
+        className="tabular-nums"
+        style={{
+          marginTop: 12,
+          paddingTop: 9,
+          borderTop: "1px solid var(--hairline)",
+          fontFamily: "var(--font-mono)",
+          fontSize: 9.5,
+          letterSpacing: "0.05em",
+          color: "var(--ink-faint)",
+        }}
+      >
+        {footer}
+      </div>
     </div>
   );
 }
 
-function SteerBubble({ steer }: { steer: Steer }) {
+/* A steer is a USER utterance — the chat authorship law: ember-ringed
+   initials chip leads the row. Consumed steers dim with a mono "read" stamp;
+   unconsumed keep their "queued" semantics. */
+function SteerRow({ steer }: { steer: Steer }) {
   return (
-    <div className="ml-6 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-indigo-300">
-        <UserRound className="h-3 w-3" /> You steered
-        {!steer.consumed && <span className="normal-case tracking-normal">(queued)</span>}
-      </div>
-      <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        padding: "2px 4px",
+        opacity: steer.consumed ? 0.55 : 1,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        title="You"
+        style={{
+          width: 18,
+          height: 18,
+          flexShrink: 0,
+          marginTop: 1,
+          borderRadius: 99,
+          border: "1px solid color-mix(in oklab, var(--ember) 55%, transparent)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "var(--font-mono)",
+          fontSize: 8.5,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          color: "var(--ember)",
+        }}
+      >
+        Y
+      </span>
+      <p
+        style={{
+          flex: 1,
+          minWidth: 0,
+          margin: 0,
+          fontSize: 12.5,
+          lineHeight: 1.55,
+          color: "var(--ink-muted)",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
         {steer.message}
       </p>
+      <span
+        className="mono-label tabular-nums"
+        style={{ fontSize: 9, flexShrink: 0, marginTop: 3, color: "var(--ink-faint)" }}
+      >
+        {fmtClock(steer.created_at)} · {steer.consumed ? "read" : "queued"}
+      </span>
     </div>
   );
 }
 
 /**
- * The conversation/timeline pane of a Studio session — run step logs and
+ * The conversation/timeline pane of a Build session — run step logs and
  * operator steers interleaved chronologically, with pending governance gates
  * rendered inline at the point of blockage.
  */
@@ -134,19 +246,28 @@ export function SessionTimeline({
 
   if (items.length === 0 && pending.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
+      <div
+        style={{
+          border: "1px dashed var(--hairline)",
+          borderRadius: 12,
+          padding: "48px 0",
+          textAlign: "center",
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+        }}
+      >
         No activity yet. The session starts on the next tick.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {items.map((it) =>
         it.kind === "run" ? (
           <RunBlock key={it.run.run_id} run={it.run} index={it.index} />
         ) : (
-          <SteerBubble key={it.steer.id} steer={it.steer} />
+          <SteerRow key={it.steer.id} steer={it.steer} />
         ),
       )}
       {pending.map((a) => (
