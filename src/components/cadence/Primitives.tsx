@@ -355,6 +355,89 @@ export function RiskTag({ risk }: { risk: string }) {
   );
 }
 
+/* DrillHeader — drill-down screen header: blue mono back link, kicker,
+   serif 21 title, optional right-slot action. Ported 1:1 from
+   design-reference/cadence/govern-detail.jsx (DrillHeader); used by BOTH the
+   loop-detail and govern-detail drill-downs (screens 6 + 7). */
+export function DrillHeader({
+  onBack,
+  backLabel,
+  kicker,
+  title,
+  right,
+}: {
+  onBack: () => void;
+  backLabel: ReactNode;
+  kicker: ReactNode;
+  title: ReactNode;
+  right?: ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <button
+        className="mono-label"
+        style={{ color: "var(--action-blue)", marginBottom: 10 }}
+        onClick={onBack}
+      >
+        ← {backLabel}
+      </button>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <MonoLabel>{kicker}</MonoLabel>
+          <div className="font-display" style={{ fontSize: 21, marginTop: 2 }}>
+            {title}
+          </div>
+        </div>
+        {right || null}
+      </div>
+    </div>
+  );
+}
+
+/* SubTabs — pill-row sub-navigation inside a drill-down (Runs / Failing
+   cases / Config). Ported 1:1 from design-reference/cadence/govern-detail.jsx
+   (SubTabs); active pill fills primary-ink with canvas text. */
+export function SubTabs({
+  tabs,
+  active,
+  onSet,
+}: {
+  tabs: string[];
+  active: string;
+  onSet: (tab: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+      {tabs.map((t) => (
+        <button
+          key={t}
+          onClick={() => onSet(t)}
+          className="mono-label"
+          style={{
+            padding: "5px 11px",
+            borderRadius: 99,
+            fontSize: 9.5,
+            color: t === active ? "var(--canvas)" : "var(--ink-subtle)",
+            background: t === active ? "var(--primary-ink)" : "transparent",
+            border: `1px solid ${t === active ? "transparent" : "var(--hairline)"}`,
+            transition: "background var(--dur-fast), color var(--dur-fast)",
+          }}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* Cite — [n] chip with hover evidence card. Production passes the evidence
    in (source name + verbatim quote) instead of the prototype's window data. */
 export function Cite({ n, source, body }: { n: number | string; source?: string; body?: string }) {
