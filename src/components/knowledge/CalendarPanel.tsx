@@ -804,14 +804,16 @@ function MonthGrid({
           const its = inMonth ? dayItems(day) : [];
           const n = its.length;
           const weekend = i % 7 > 4;
-          // Today always carries the ember accent (founder 2026-06-12) — a
-          // quiet wash when free, the occupancy shade (already ember-mixed,
-          // and stronger) when occupied.
+          // Today wears the DEEP ember treatment (founder 2026-06-12, ref
+          // crop): the 38% shade as its floor (60% at 3+ events), light
+          // canvas text, never weekend-dimmed. Other days tint strictly by
+          // occupancy intensity (the SHADES ramp).
           const fill = !inMonth
             ? "transparent"
-            : isToday && n === 0
-              ? "color-mix(in oklab, var(--ember) 12%, var(--canvas))"
+            : isToday
+              ? SHADES[Math.max(2, Math.min(n, 3))]
               : SHADES[Math.min(n, 3)];
+          const lightText = isToday || n >= 2;
           return (
             <button
               key={i}
@@ -828,11 +830,11 @@ function MonthGrid({
                 overflow: "hidden",
                 background: fill,
                 border: isToday
-                  ? "1.5px solid var(--ember)"
+                  ? "2px solid var(--ember)"
                   : isSel
                     ? "1.5px solid var(--ink)"
                     : "1px solid var(--hairline)",
-                opacity: !inMonth ? 0.25 : weekend ? 0.55 : 1,
+                opacity: !inMonth ? 0.25 : weekend && !isToday ? 0.55 : 1,
                 cursor: inMonth ? "pointer" : "default",
                 transition: "background var(--dur-fast), border-color var(--dur-fast)",
               }}
@@ -844,7 +846,7 @@ function MonthGrid({
                   position: "absolute",
                   top: 3,
                   left: 5,
-                  color: n >= 2 ? "var(--canvas)" : isToday ? "var(--ember)" : "var(--ink-faint)",
+                  color: lightText ? "var(--canvas)" : "var(--ink-faint)",
                 }}
               >
                 {inMonth ? day : ""}
@@ -859,7 +861,7 @@ function MonthGrid({
                     fontSize: 7,
                     lineHeight: 1.2,
                     fontFamily: "var(--font-mono)",
-                    color: n >= 2 ? "var(--canvas)" : "var(--ink-muted)",
+                    color: lightText ? "var(--canvas)" : "var(--ink-muted)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
