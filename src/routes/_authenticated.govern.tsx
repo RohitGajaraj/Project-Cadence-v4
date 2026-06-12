@@ -27,7 +27,6 @@ import { EvalsPanel } from "@/components/governance/EvalsPanel";
 import { PromptsPanel } from "@/components/governance/PromptsPanel";
 import { EvalSuiteDetail } from "@/components/governance/EvalSuiteDetail";
 import { AgentSpendDetail } from "@/components/observe/AgentSpendDetail";
-import { TraceDetail } from "@/components/observe/TraceDetail";
 import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 
 // Govern surface — v4 IA. Absorbs /governance + /observe + thin redirects
@@ -74,15 +73,16 @@ export const Route = createFileRoute("/_authenticated/govern")({
   // search params open a detail in the tab body only — SurfaceHeader +
   // TabRow stay; setTab navigates with a fresh search object so switching
   // tabs clears any open drill; DrillHeader back returns to the bare tab.
+  // Traces deliberately have NO drill param here — /traces/$traceId is the
+  // one detail surface for a trace (screen-6 one-surface ruling).
   validateSearch: (
     search: Record<string, unknown>,
-  ): { tab: Tab; suite?: string; agent?: string; trace?: string; surface?: string } => {
+  ): { tab: Tab; suite?: string; agent?: string; surface?: string } => {
     const t = search.tab;
     return {
       tab: TABS.some((x) => x.id === t) ? (t as Tab) : "controls",
       suite: typeof search.suite === "string" ? search.suite : undefined,
       agent: typeof search.agent === "string" ? search.agent : undefined,
-      trace: typeof search.trace === "string" ? search.trace : undefined,
       surface: typeof search.surface === "string" ? search.surface : undefined,
     };
   },
@@ -115,7 +115,7 @@ export const Route = createFileRoute("/_authenticated/govern")({
 });
 
 function GovernPage() {
-  const { tab, suite, agent, trace, surface } = Route.useSearch();
+  const { tab, suite, agent, surface } = Route.useSearch();
   const navigate = useNavigate({ from: "/govern" });
   const { activeWorkspace } = useWorkspace();
 
@@ -174,7 +174,7 @@ function GovernPage() {
         {tab === "prompts" && <PromptsPanel />}
         {tab === "evals" && (suite ? <EvalSuiteDetail id={suite} /> : <EvalsPanel />)}
         {tab === "analytics" && (agent ? <AgentSpendDetail id={agent} /> : <AnalyticsPanel />)}
-        {tab === "traces" && (trace ? <TraceDetail id={trace} /> : <TracesPanel />)}
+        {tab === "traces" && <TracesPanel />}
         {tab === "drift" && (surface ? <DriftSurfaceDetail id={surface} /> : <DriftPanel />)}
       </div>
     </AppShell>

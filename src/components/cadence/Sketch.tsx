@@ -84,8 +84,7 @@ export function SketchLine({
       passB: sketchPath(pts, mulberry32(seedOf(data, 2)), 1.1),
       endX: px(data.length - 1),
       endY: py(data[data.length - 1]),
-      baseY:
-        baseline != null && baseline >= min && baseline <= max ? py(baseline) : null,
+      baseY: baseline != null && baseline >= min && baseline <= max ? py(baseline) : null,
     };
   }, [data, w, h, baseline]);
   if (data.length < 2) return null;

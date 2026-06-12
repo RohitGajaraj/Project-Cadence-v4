@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 type EventRow = {
   id: string;
@@ -144,7 +145,47 @@ export const getTrace = createServerFn({ method: "POST" })
     const rows = (events ?? []) as EventRow[];
     const ids = rows.map((r) => r.id);
 
-    const [hitsRes, evalRes] = await Promise.all([
+    // Mission reverse-lookup (additive — screen 7 trace drill). The agent loop
+    // stamps state.traceId on agent_run_checkpoints (canonical join precedent:
+    // missions.functions.ts / studio.functions.ts); run → agent_runs.mission_id
+    // → missions.title. Fallback: agent_messages.source_trace_id. Returns null
+    // for chat/prd/seeded traces — the UI then keeps the surface/trace-id title.
+    // Note: state->>traceId is an unindexed JSONB expression — fine at current
+    // volume with .limit(1); revisit with an index if checkpoints grow.
+    const resolveMission = async (): Promise<{ id: string; title: string } | null> => {
+      let missionId: string | null = null;
+      const { data: cps } = await supabase
+        .from("agent_run_checkpoints")
+        .select("run_id")
+        .filter("state->>traceId", "eq", data.traceId)
+        .limit(1);
+      const runId = (cps?.[0] as { run_id?: string } | undefined)?.run_id;
+      if (runId) {
+        const { data: run } = await supabase
+          .from("agent_runs")
+          .select("mission_id")
+          .eq("id", runId)
+          .maybeSingle();
+        missionId = (run as { mission_id?: string | null } | null)?.mission_id ?? null;
+      }
+      if (!missionId) {
+        const { data: msgs } = await supabase
+          .from("agent_messages")
+          .select("mission_id")
+          .eq("source_trace_id", data.traceId)
+          .limit(1);
+        missionId = (msgs?.[0] as { mission_id?: string | null } | undefined)?.mission_id ?? null;
+      }
+      if (!missionId) return null;
+      const { data: mission } = await supabase
+        .from("missions")
+        .select("id,title")
+        .eq("id", missionId)
+        .maybeSingle();
+      return (mission as { id: string; title: string } | null) ?? null;
+    };
+
+    const [hitsRes, evalRes, toolRes, mission] = await Promise.all([
       ids.length
         ? supabase
             .from("guardrail_hits")
@@ -159,6 +200,18 @@ export const getTrace = createServerFn({ method: "POST" })
             )
             .in("event_id", ids)
         : Promise.resolve({ data: [] as never[] }),
+      // Tool-call hops (additive — screen 7 trace drill). CRITICAL: the agent
+      // loop never populates tool_calls.event_id, so tools join to the trace
+      // by trace_id and interleave with LLM spans by created_at only.
+      supabase
+        .from("tool_calls")
+        .select(
+          "id,event_id,trace_id,agent_id,tool_name,args,result,ok,error,latency_ms,created_at",
+        )
+        .eq("user_id", userId)
+        .eq("trace_id", data.traceId)
+        .order("created_at", { ascending: true }),
+      resolveMission(),
     ]);
 
     return {
@@ -184,5 +237,20 @@ export const getTrace = createServerFn({ method: "POST" })
         pii_risk: number | null;
         judge_rationale: string | null;
       }[],
+      toolCalls: (toolRes.data ?? []) as {
+        id: string;
+        event_id: string | null;
+        trace_id: string;
+        agent_id: string | null;
+        tool_name: string;
+        // Json (not unknown) so server-fn return types stay serializable.
+        args: Json;
+        result: Json;
+        ok: boolean;
+        error: string | null;
+        latency_ms: number;
+        created_at: string;
+      }[],
+      mission,
     };
   });
