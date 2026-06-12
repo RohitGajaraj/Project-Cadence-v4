@@ -1003,57 +1003,113 @@ function YearGrid({ buckets }: { buckets: Record<string, DayItem[]> }) {
           like a contribution graph — but for your time
         </span>
       </div>
-      <div className="scrollbar-thin" style={{ overflowX: "auto", paddingBottom: 4 }}>
-        <div style={{ display: "flex", gap: 3, marginBottom: 4, paddingLeft: 30 }}>
-          {MO.slice(0, today.getMonth() + 1).map((m) => (
-            <span key={m} className="mono-label" style={{ fontSize: 7, width: 4.33 * 13 - 3 }}>
-              {m}
-            </span>
-          ))}
+      {/* The grid FILLS the card width — cell size derives from the weeks
+          elapsed (founder 2026-06-12: no dead space on the right while the
+          year is young). Capped so January doesn't render comedy-sized cells;
+          by mid-year the quilt runs edge to edge. */}
+      <div style={{ paddingBottom: 4, maxWidth: weeksToShow * 37 + 30 }}>
+        <div style={{ display: "flex", gap: 3, marginBottom: 4 }}>
+          <span style={{ width: 27, flexShrink: 0 }}></span>
+          <div
+            style={{
+              flex: 1,
+              display: "grid",
+              gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
+              gap: 3,
+            }}
+          >
+            {MO.slice(0, today.getMonth() + 1).map((m, mi) => {
+              const firstOfMonth = new Date(year, mi, 1);
+              const col = Math.floor(
+                (offset +
+                  Math.floor(
+                    (firstOfMonth.getTime() - new Date(year, 0, 1).getTime()) /
+                      (24 * 60 * 60 * 1000),
+                  )) /
+                  7,
+              );
+              return (
+                <span
+                  key={m}
+                  className="mono-label"
+                  style={{
+                    fontSize: 7,
+                    gridRow: 1,
+                    gridColumnStart: col + 1,
+                    gridColumnEnd: `span ${Math.min(3, weeksToShow - col)}`,
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {m}
+                </span>
+              );
+            })}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 3 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 3, width: 27 }}>
+        <div style={{ display: "flex", gap: 3, alignItems: "stretch" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: 3, width: 27, flexShrink: 0 }}
+          >
             {WD.map((d, i) => (
               <span
                 key={d}
                 className="mono-label"
-                style={{ fontSize: 6.5, height: 10, lineHeight: "10px", opacity: i > 4 ? 0.5 : 1 }}
+                style={{
+                  fontSize: 6.5,
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  opacity: i > 4 ? 0.5 : 1,
+                }}
               >
                 {i % 2 === 0 ? d : ""}
               </span>
             ))}
           </div>
-          {Array.from({ length: weeksToShow }, (_, w) => (
-            <div key={w} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {Array.from({ length: 7 }, (_, d) => {
-                const b = busy(w, d);
-                const dt = dateAt(w, d);
-                const isToday = isTodayCell(w, d);
-                // Days before Jan 1 or after today don't exist on this grid —
-                // invisible spacers keep the week lattice aligned.
-                if (!inRange(dt)) {
+          <div
+            style={{
+              flex: 1,
+              display: "grid",
+              gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
+              gap: 3,
+            }}
+          >
+            {Array.from({ length: weeksToShow }, (_, w) => (
+              <div key={w} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {Array.from({ length: 7 }, (_, d) => {
+                  const b = busy(w, d);
+                  const dt = dateAt(w, d);
+                  const isToday = isTodayCell(w, d);
+                  // Days before Jan 1 or after today don't exist on this grid —
+                  // invisible spacers keep the week lattice aligned.
+                  if (!inRange(dt)) {
+                    return (
+                      <span
+                        key={d}
+                        style={{ width: "100%", aspectRatio: "1", visibility: "hidden" }}
+                      ></span>
+                    );
+                  }
                   return (
-                    <span key={d} style={{ width: 10, height: 10, visibility: "hidden" }}></span>
+                    <span
+                      key={d}
+                      title={`${MO[dt.getMonth()]} ${dt.getDate()} · ${WD[d]} · ${b <= 0 ? "free" : `${b} event${b > 1 ? "s" : ""}`}`}
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1",
+                        borderRadius: "22%",
+                        background: b < 0 ? "transparent" : SHADES[b],
+                        border: isToday ? "1.5px solid var(--ember)" : "1px solid var(--hairline)",
+                        opacity: d > 4 ? 0.55 : 1,
+                        display: "block",
+                      }}
+                    ></span>
                   );
-                }
-                return (
-                  <span
-                    key={d}
-                    title={`${MO[dt.getMonth()]} ${dt.getDate()} · ${WD[d]} · ${b <= 0 ? "free" : `${b} event${b > 1 ? "s" : ""}`}`}
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 2.5,
-                      background: b < 0 ? "transparent" : SHADES[b],
-                      border: isToday ? "1.5px solid var(--ember)" : "1px solid var(--hairline)",
-                      opacity: d > 4 ? 0.55 : 1,
-                      display: "block",
-                    }}
-                  ></span>
-                );
-              })}
-            </div>
-          ))}
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div
