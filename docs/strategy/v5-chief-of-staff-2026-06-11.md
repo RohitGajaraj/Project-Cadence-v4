@@ -16,7 +16,7 @@ Founder verdict on the post-F-IA-V4 build: "overwhelming, disconnected, does not
 
 > **Circuit is the senior PM's Chief of Staff: it runs the evidence-to-decision loop every day.** Agents read everything that came in, surface the 2–3 calls that need the PM's judgment — each with cited evidence and a Critic challenge — draft the artifacts that follow from the call, and remember every decision and outcome so the next call is sharper. Agents execute behind approval gates; the human judges. The org-cockpit (multi-seat, build/launch/support stations, MCP/A2A) is the expansion path — sold later, hidden now.
 
-**The daily ritual is the product.** Felt surface = **Today (the Calls queue) · Product (the work) · Knowledge (the memory) · Chat (the command line)** + a **Trust drawer** (kill-switch, budgets, approvals policy, Engine Room link). Everything else is engine room — intact, reachable, not navigation.
+**The daily ritual is the product.** Felt surface = **Today (the Calls queue) · Product (the work) · Knowledge (the contents) · Brain (the intelligence you talk to — see [`../features/brain.md`](../features/brain.md))** + a **Trust drawer** (kill-switch, budgets, approvals policy, Engine Room link). Everything else is engine room — intact, reachable, not navigation.
 
 **UI vocabulary — five agents:** Scout (senses) · Strategist (ranks) · Critic (challenges) · Scribe (drafts) · **Chief of Staff** (orchestrates; UI rename of Orchestrator). The 19-agent mesh stays here in strategy as the expansion map. This realizes the constitution's "AI PM Chief of Staff" orchestrator and its smallest-viable-category mandate ([`../../Ai_Cofounder.md`](../../Ai_Cofounder.md)).
 

@@ -32,7 +32,7 @@
 
 **Tradeoffs considered:** Keeping "Research" (activity-framing; Perplexity owns it) — rejected for the stronger asset-framing category claim. "Company Brain" (two words, heavier rail) — rejected for the rail; available as enterprise positioning language. IA confusion with the Knowledge surface — resolved: the Brain is the intelligence you talk to; Knowledge is where its contents live.
 
-**Impact:** F-BRAIN build (rename + retention + actions + status); `docs/features/research.md` retitled to Brain; README/demo positioning line available. Embeddings dependency: retention indexes via the Lovable embed API (cloud) — locally findings save unindexed/skip gracefully.
+**Impact:** F-BRAIN build (rename + retention + actions + status); `docs/features/brain.md` retitled to Brain; README/demo positioning line available. Embeddings dependency: retention indexes via the Lovable embed API (cloud) — locally findings save unindexed/skip gracefully.
 
 
 ### 2026-06-12 — Connectors are OAuth-only for end users: one Connect button, no API-key paste
