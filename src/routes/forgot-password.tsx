@@ -10,6 +10,7 @@ import { DotPattern } from "@/components/ui/dot-pattern";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/forgot-password")({
+  ssr: false,
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
