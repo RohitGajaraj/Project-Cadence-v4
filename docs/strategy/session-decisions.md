@@ -566,4 +566,8 @@ _This log is maintained as part of the closed documentation loop. Every session 
 
 **Companion ruling — the year occupancy grid ends at today:** the Knowledge calendar's year view renders January → today only, GitHub-contribution style (the latest date closes the grid; pending future months never render). Founder rationale: engagement — "the year fills in as it happens."
 
-**Status:** shipped `ecd9aebbb9` (with the escaped-card-padding fix across Govern/Knowledge panels — root cause: reference `.bento`/`.band-stone` carry default padding, production's don't).
+**Amplitude ruling (founder, same session):** the shipped tuning — "calm amplitude: clearly hand-drawn, never cartoon-loose" — is approved as canonical (SketchLine wobble 1.7/1.1 double-pass, SketchBar outline 1.2 + 0.38-opacity hatch; full metric table in DESIGN.md). Do not roughen or retune without a founder ruling; new mark types reuse these numbers.
+
+**Follow-up rulings (same review):** (1) the clamped year grid must FILL the card — fluid 1fr week columns with aspect-ratio cells, month labels anchored to their starting week, growth capped early-year (shipped `fc4779b8aa`); (2) sketch marks apply RETROACTIVELY to all existing screens, not just new work — audit confirmed the three converted charts are the only data-series graphs in production (all other bars are meters, kept clean by the scope rule).
+
+**Status:** shipped `ecd9aebbb9` + `fc4779b8aa` (with the escaped-card-padding fix across Govern/Knowledge panels — root cause: reference `.bento`/`.band-stone` carry default padding, production's don't).

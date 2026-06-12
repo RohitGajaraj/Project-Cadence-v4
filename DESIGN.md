@@ -221,6 +221,25 @@ Rules that keep it honest and calm:
   Analytics daily activity (SketchBar), Missions · Agents telemetry HUD
   buckets (SketchBar).
 
+**Canonical tuning (founder-approved 2026-06-12 — "calm amplitude: clearly
+hand-drawn, never cartoon-loose"). These numbers ARE the law; do not retune
+without a founder ruling, and reuse them for any new mark type:**
+
+| Metric | SketchLine | SketchBar |
+|---|---|---|
+| Wobble amplitude (px, y) | pass A **1.7** · pass B **1.1** | outline **1.2** |
+| Subdivision step (px) | ~7 | ~9 (corners overshoot like crossed strokes) |
+| Stroke width / opacity | 1.3 @ 0.85 over 0.9 @ 0.45 (graphite double-pass) | outline 1.4 @ 0.85 · hatch 1.0 @ 0.38 |
+| Hatch | — | diagonal ↗, ~8.5u spacing, jitter ±0.8 |
+| Endpoints | pinned exact (first/last point never jittered); hand-set end dot r 2.4 | bar baseline/top from the exact value |
+| Determinism | seed = hash(data series) | seed = bar index |
+
+Anatomy notes: x-jitter is half the y-amplitude (pencil drifts more vertically
+along a stroke than across it); two passes use different seeds so the strokes
+shadow each other like a line gone over twice. Bars stretch via a fixed-unit
+viewBox + `vector-effect: non-scaling-stroke`, so geometry scales but graphite
+weight never does.
+
 ## How to plan and build (instructions for any AI builder)
 
 1. **Read before designing:** this file, then `cadence/tokens.css`, then the

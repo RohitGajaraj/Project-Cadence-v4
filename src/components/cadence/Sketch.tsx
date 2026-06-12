@@ -4,6 +4,11 @@
 // jittered outline with diagonal hatch shading. Jitter is DETERMINISTIC —
 // seeded from the data itself — so a chart never wobbles between renders,
 // and it collapses to honest geometry: the underlying points are exact.
+//
+// TUNING IS LAW: the amplitudes/steps/opacities here are founder-approved
+// ("calm amplitude: clearly hand-drawn, never cartoon-loose") and documented
+// in DESIGN.md "Hand-sketched data marks". Do not retune without a founder
+// ruling; new mark types extend this file and reuse these metrics.
 import { useMemo } from "react";
 
 /* Tiny seeded PRNG (mulberry32) — stable jitter per data series. */
