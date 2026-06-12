@@ -26,6 +26,12 @@ import {
 } from "@/components/chat/MessageMeta";
 import { ModelSwitcher } from "@/components/chat/ModelSwitcher";
 import {
+  parseResearchStatus,
+  ResearchActivityLine,
+  ResearchSummaryRow,
+  type ResearchStatus,
+} from "@/components/chat/ResearchActivity";
+import {
   listConversations,
   getConversation,
   createConversation,
@@ -40,7 +46,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
-  head: () => ({ meta: [{ title: "Chat · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Research · Cadence" }] }),
 });
 
 type Msg = {
@@ -73,6 +79,8 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [liveMessages, setLiveMessages] = useState<Msg[]>([]);
+  // Research-progress events for the in-flight reply (protocol v2 status events).
+  const [liveStatuses, setLiveStatuses] = useState<ResearchStatus[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -155,6 +163,7 @@ function ChatPage() {
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setStreaming(true);
+    setLiveStatuses([]);
     pinnedRef.current = true;
 
     const ctrl = new AbortController();
@@ -215,6 +224,12 @@ function ChatPage() {
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
+            // Protocol v2: research-progress events stream before token chunks.
+            const status = parseResearchStatus((parsed as { status?: unknown }).status);
+            if (status) {
+              setLiveStatuses((prev) => [...prev, status]);
+              continue;
+            }
             // Shared contract: one `{"meta": …}` event arrives just before [DONE].
             const meta = parseChatMeta((parsed as { meta?: unknown }).meta);
             if (meta) {
@@ -275,12 +290,6 @@ function ChatPage() {
   }
 
   const isEmpty = liveMessages.length === 0;
-  const firstName =
-    (
-      profile.data?.profile as { display_name?: string; full_name?: string } | null
-    )?.display_name?.split(" ")[0] ||
-    (profile.data?.profile as { full_name?: string } | null)?.full_name?.split(" ")[0] ||
-    "there";
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -299,8 +308,11 @@ function ChatPage() {
                   "var(--gradient-primary, linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, #a78bfa)))",
               }}
             >
-              <Plus className="h-3.5 w-3.5" /> New chat
+              <Plus className="h-3.5 w-3.5" /> New thread
             </button>
+          </div>
+          <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+            Threads
           </div>
           <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
             {convs.isLoading && <div className="text-xs text-muted-foreground p-3">Loading…</div>}
@@ -331,7 +343,7 @@ function ChatPage() {
               </div>
             ))}
             {convs.data?.conversations.length === 0 && (
-              <div className="text-xs text-muted-foreground p-3">No chats yet.</div>
+              <div className="text-xs text-muted-foreground p-3">No threads yet.</div>
             )}
           </div>
         </aside>
@@ -339,8 +351,13 @@ function ChatPage() {
         {/* Conversation pane */}
         <section className="flex flex-col min-h-0 h-[100dvh] relative">
           <header className="flex items-center justify-between gap-4 px-6 h-14 border-b hairline glass shrink-0">
-            <div className="text-sm text-muted-foreground truncate">
-              {active.data?.conversation?.title ?? "New conversation"}
+            <div className="flex min-w-0 items-baseline gap-2.5">
+              <h1 className="font-display text-sm font-semibold tracking-tight shrink-0">
+                Research
+              </h1>
+              <span className="text-sm text-muted-foreground truncate">
+                {active.data?.conversation?.title ?? "New thread"}
+              </span>
             </div>
           </header>
 
@@ -360,18 +377,17 @@ function ChatPage() {
                     <div className="absolute inset-0 neural-gradient animate-aurora" />
                   </div>
                   <h1 className="mt-8 font-display text-4xl md:text-5xl tracking-tight leading-tight">
-                    Hi <span className="neural-text">{firstName}</span>. How can I help?
+                    <span className="neural-text">Research</span>
                   </h1>
                   <p className="mt-3 text-sm md:text-base text-muted-foreground">
-                    Ask anything — answers can draw on the live web and stay grounded in your
-                    workspace.
+                    Ask the web, your workspace, or both — answers come with receipts.
                   </p>
                   <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                     {[
-                      "What's the weather in Munich?",
-                      "Summarize this week's signals",
-                      "Draft a status update for stakeholders",
-                      "What should I focus on today?",
+                      "What is the weather in Munich?",
+                      "What am I building next — how does the roadmap look?",
+                      "Compare our opportunity queue against what competitors shipped this month",
+                      "Draft a stakeholder update from this week's decisions",
                     ].map((s) => (
                       <button
                         key={s}
@@ -396,6 +412,7 @@ function ChatPage() {
                     error={m.error}
                     feedbackId={pickFeedbackId(m.id, activeId)}
                     streaming={streaming && m === liveMessages[liveMessages.length - 1]}
+                    statuses={liveStatuses}
                   />
                 ))}
               </div>
@@ -780,6 +797,7 @@ function MessageBubble({
   error,
   feedbackId,
   streaming,
+  statuses,
 }: {
   role: string;
   content: string;
@@ -788,6 +806,8 @@ function MessageBubble({
   error?: boolean;
   feedbackId?: string | null;
   streaming?: boolean;
+  /** Live research-progress events — only rendered on the streaming bubble. */
+  statuses?: ResearchStatus[];
 }) {
   if (role === "user") {
     return (
@@ -800,7 +820,7 @@ function MessageBubble({
   }
 
   return (
-    <div className="flex gap-3 animate-in fade-in duration-200">
+    <div data-message-root className="flex gap-3 animate-in fade-in duration-200">
       <div className="h-7 w-7 rounded-lg relative overflow-hidden shrink-0 ring-glow-violet">
         <div className="absolute inset-0 neural-gradient" />
       </div>
@@ -812,13 +832,17 @@ function MessageBubble({
           </div>
         ) : (
           <>
+            {streaming && statuses && statuses.length > 0 && (
+              <ResearchActivityLine statuses={statuses} />
+            )}
+            {meta && !streaming && <ResearchSummaryRow meta={meta} />}
             {content && (
               <div>
-                <ChatMarkdown content={content} />
+                <ChatMarkdown content={content} citations={meta?.sources.map((s) => s.n)} />
                 {streaming && <StreamingCaret />}
               </div>
             )}
-            {!content && streaming && <StreamingCaret />}
+            {!content && streaming && (!statuses || statuses.length === 0) && <StreamingCaret />}
             {missionId && <InlineMissionProgress missionId={missionId} />}
             {meta && !streaming && <MessageMetaFooter meta={meta} feedbackId={feedbackId} />}
           </>

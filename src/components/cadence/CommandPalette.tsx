@@ -5,7 +5,6 @@ import {
   Home,
   Bot,
   ListTodo,
-  MessageSquare,
   Settings,
   Sparkles,
   Search,
@@ -62,7 +61,7 @@ export function CommandPalette() {
             </div>
             <Command.List className="max-h-[360px] overflow-y-auto p-2 scrollbar-thin">
               <Command.Empty className="px-3 py-6 text-center text-xs text-muted-foreground">
-                No matches. Try "today", "tasks", "chat"…
+                No matches. Try "today", "tasks", "research"…
               </Command.Empty>
               <Command.Group
                 heading="Navigate"
@@ -74,7 +73,7 @@ export function CommandPalette() {
                   hint="G D"
                   onSelect={() => go("/")}
                 />
-                <Item icon={MessageSquare} label="Chat" hint="G C" onSelect={() => go("/chat")} />
+                <Item icon={Sparkles} label="Research" hint="G C" onSelect={() => go("/chat")} />
                 <Item
                   icon={Bot}
                   label="Agents · roster & telemetry"

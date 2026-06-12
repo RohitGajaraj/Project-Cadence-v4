@@ -1,14 +1,58 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { Database, Globe, ThumbsDown, ThumbsUp } from "lucide-react";
+import {
+  Activity,
+  BookOpen,
+  Calendar,
+  Database,
+  FileText,
+  Gavel,
+  Globe,
+  Map as MapIcon,
+  Radio,
+  Target,
+  ThumbsDown,
+  ThumbsUp,
+  type LucideIcon,
+} from "lucide-react";
 import { MODELS } from "@/lib/ai/models";
 import { submitFeedback } from "@/lib/feedback.functions";
 
 /**
- * Shared SSE meta contract — the server streams one `{"meta": …}` event
- * immediately before [DONE]; old messages may carry it in messages.metadata.
+ * Shared SSE meta contract (protocol v2) — the server streams one `{"meta": …}`
+ * event immediately before [DONE]; old messages may carry it in messages.metadata.
+ * Sources can be web pages (url) or internal workspace records (href deep link).
+ * All v2 fields are additive — the old `{n,url,title}` source shape still parses.
  */
+export type SourceKind =
+  | "web"
+  | "signal"
+  | "prd"
+  | "doc"
+  | "meeting"
+  | "opportunity"
+  | "roadmap"
+  | "decision"
+  | "mission";
+
+export type ChatSource = {
+  n: number;
+  kind: SourceKind;
+  title: string;
+  /** External page (web sources only). */
+  url?: string;
+  /** Internal app path, e.g. "/prds/<id>" or "/product?tab=opportunities". */
+  href?: string;
+  /** Domain for web sources; kind label for internal ones. */
+  sub?: string;
+};
+
+export type ResearchMeta = {
+  mode: "chat" | "web" | "internal" | "both";
+  sub_queries: string[];
+};
+
 export type ChatMeta = {
   model: string;
   via: "gateway" | "byo";
@@ -16,10 +60,23 @@ export type ChatMeta = {
   tokens_in: number;
   tokens_out: number;
   cost_usd: number;
-  sources: { n: number; url: string; title: string }[];
+  sources: ChatSource[];
   web_used: boolean;
   workspace_chunks: number;
+  research?: ResearchMeta;
 };
+
+const SOURCE_KINDS: ReadonlySet<string> = new Set([
+  "web",
+  "signal",
+  "prd",
+  "doc",
+  "meeting",
+  "opportunity",
+  "roadmap",
+  "decision",
+  "mission",
+]);
 
 /** Tolerant parser — returns null for anything that isn't a meta payload. */
 export function parseChatMeta(input: unknown): ChatMeta | null {
@@ -27,18 +84,41 @@ export function parseChatMeta(input: unknown): ChatMeta | null {
   const o = input as Record<string, unknown>;
   if (typeof o.model !== "string" || (o.via !== "gateway" && o.via !== "byo")) return null;
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-  const sources = Array.isArray(o.sources)
-    ? o.sources
-        .filter(
-          (s): s is { n?: unknown; url: string; title?: unknown } =>
-            !!s && typeof s === "object" && typeof (s as { url?: unknown }).url === "string",
-        )
-        .map((s, i) => ({
-          n: typeof s.n === "number" ? s.n : i + 1,
-          url: s.url,
-          title: typeof s.title === "string" ? s.title : "",
-        }))
+  const sources: ChatSource[] = Array.isArray(o.sources)
+    ? o.sources.flatMap((raw, i): ChatSource[] => {
+        if (!raw || typeof raw !== "object") return [];
+        const s = raw as Record<string, unknown>;
+        const url = typeof s.url === "string" ? s.url : undefined;
+        const href = typeof s.href === "string" ? s.href : undefined;
+        const title = typeof s.title === "string" ? s.title : "";
+        if (!url && !href && !title) return [];
+        return [
+          {
+            n: typeof s.n === "number" ? s.n : i + 1,
+            kind:
+              typeof s.kind === "string" && SOURCE_KINDS.has(s.kind)
+                ? (s.kind as SourceKind)
+                : "web",
+            title,
+            url,
+            href,
+            sub: typeof s.sub === "string" ? s.sub : undefined,
+          },
+        ];
+      })
     : [];
+  let research: ResearchMeta | undefined;
+  if (o.research && typeof o.research === "object") {
+    const r = o.research as Record<string, unknown>;
+    if (r.mode === "chat" || r.mode === "web" || r.mode === "internal" || r.mode === "both") {
+      research = {
+        mode: r.mode,
+        sub_queries: Array.isArray(r.sub_queries)
+          ? r.sub_queries.filter((q): q is string => typeof q === "string")
+          : [],
+      };
+    }
+  }
   return {
     model: o.model,
     via: o.via,
@@ -49,6 +129,7 @@ export function parseChatMeta(input: unknown): ChatMeta | null {
     sources,
     web_used: o.web_used === true,
     workspace_chunks: num(o.workspace_chunks),
+    research,
   };
 }
 
@@ -62,6 +143,69 @@ function domainOf(url: string): string {
   } catch {
     return url;
   }
+}
+
+const KIND_ICONS: Record<Exclude<SourceKind, "web">, LucideIcon> = {
+  signal: Radio,
+  prd: FileText,
+  doc: BookOpen,
+  meeting: Calendar,
+  opportunity: Target,
+  roadmap: MapIcon,
+  decision: Gavel,
+  mission: Activity,
+};
+
+const chipClass =
+  "inline-flex max-w-[200px] items-center gap-1 rounded-full border hairline bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground transition-colors duration-150 hover:border-primary/40 hover:text-foreground";
+
+/**
+ * One numbered source chip. Web sources open the page in a new tab; internal
+ * sources deep-link into the app (plain anchor — internal paths are static
+ * strings from the server, so the typed router Link adds no safety here).
+ * `data-source-n` is the scroll target for inline [n] citation badges.
+ */
+function SourceChip({ s }: { s: ChatSource }) {
+  if (s.kind === "web" && s.url) {
+    return (
+      <a
+        data-source-n={s.n}
+        href={s.url}
+        target="_blank"
+        rel="noreferrer"
+        title={s.title || s.url}
+        className={chipClass}
+      >
+        <span className="font-mono text-[9px] text-muted-foreground/70">{s.n}</span>
+        <span className="truncate">{s.sub || domainOf(s.url)}</span>
+      </a>
+    );
+  }
+  const Icon = s.kind === "web" ? FileText : KIND_ICONS[s.kind];
+  const inner = (
+    <>
+      <span className="font-mono text-[9px] text-muted-foreground/70">{s.n}</span>
+      <Icon className="h-2.5 w-2.5 shrink-0" />
+      <span className="truncate">{s.title || s.sub || s.kind}</span>
+    </>
+  );
+  if (s.href) {
+    return (
+      <a
+        data-source-n={s.n}
+        href={s.href}
+        title={s.sub ? `${s.sub} — ${s.title}` : s.title}
+        className={chipClass}
+      >
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <span data-source-n={s.n} title={s.title} className={chipClass}>
+      {inner}
+    </span>
+  );
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -134,17 +278,7 @@ export function MessageMetaFooter({
             Sources
           </span>
           {meta.sources.map((s) => (
-            <a
-              key={`${s.n}-${s.url}`}
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
-              title={s.title || s.url}
-              className="inline-flex max-w-[180px] items-center gap-1 rounded-full border hairline bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground transition-colors duration-150 hover:border-primary/40 hover:text-foreground"
-            >
-              <span className="font-mono text-[9px] text-muted-foreground/70">{s.n}</span>
-              <span className="truncate">{domainOf(s.url)}</span>
-            </a>
+            <SourceChip key={`${s.n}-${s.url ?? s.href ?? s.title}`} s={s} />
           ))}
         </div>
       )}
