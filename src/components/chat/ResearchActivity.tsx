@@ -1,4 +1,3 @@
-import { Loader2 } from "lucide-react";
 import type { ChatMeta } from "@/components/chat/MessageMeta";
 
 /**
@@ -43,11 +42,33 @@ export function ResearchActivityLine({ statuses }: { statuses: ResearchStatus[] 
     done.some((s) => s.phase === "workspace"),
   );
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground animate-in fade-in duration-150">
-      <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-      <span className="max-w-[420px] truncate">{latest.label}</span>
+    <div
+      className="fade-up"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        columnGap: 8,
+        rowGap: 4,
+        fontSize: 12.5,
+        color: "var(--ink-subtle)",
+      }}
+    >
+      <span className="spinner" />
+      <span
+        style={{
+          maxWidth: 420,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {latest.label}
+      </span>
       {segments.length > 0 && (
-        <span className="text-[10px] text-muted-foreground/60">{segments.join(" · ")}</span>
+        <span className="mono-label" style={{ fontSize: 9 }}>
+          {segments.join(" · ")}
+        </span>
       )}
     </div>
   );
@@ -75,7 +96,15 @@ export function ResearchSummaryRow({ meta }: { meta: ChatMeta }) {
       {segments.map((seg) => (
         <span
           key={seg}
-          className="inline-flex items-center rounded-full border hairline bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground/80"
+          className="inline-flex items-center rounded-full border hairline"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 9.5,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "var(--ink-subtle)",
+            padding: "2px 8px",
+          }}
         >
           {seg}
         </span>

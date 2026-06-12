@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -12,6 +13,7 @@ import {
   Globe,
   Map as MapIcon,
   Radio,
+  RotateCcw,
   Target,
   ThumbsDown,
   ThumbsUp,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import { MODELS } from "@/lib/ai/models";
 import { submitFeedback } from "@/lib/feedback.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /**
  * Shared SSE meta contract (protocol v2) — the server streams one `{"meta": …}`
@@ -66,6 +69,8 @@ export type ChatMeta = {
   web_used: boolean;
   workspace_chunks: number;
   research?: ResearchMeta;
+  /** LLM-as-judge composite 0–100, scored post-completion (absent = not judged). */
+  judge?: number;
 };
 
 const SOURCE_KINDS: ReadonlySet<string> = new Set([
@@ -133,6 +138,9 @@ export function parseChatMeta(input: unknown): ChatMeta | null {
     web_used: o.web_used === true,
     workspace_chunks: num(o.workspace_chunks),
     research,
+    ...(typeof o.judge === "number" && Number.isFinite(o.judge)
+      ? { judge: Math.round(o.judge) }
+      : {}),
   };
 }
 
@@ -241,55 +249,68 @@ function FeedbackButtons({ refId }: { refId: string }) {
   });
 
   return (
-    <span className="ml-1 inline-flex items-center gap-0.5">
+    <>
       <button
         type="button"
         aria-label="Good response"
         disabled={vote !== null || m.isPending}
         onClick={() => m.mutate(1)}
-        className={`grid h-5 w-5 place-items-center rounded transition-colors duration-150 hover:bg-secondary/80 disabled:pointer-events-none ${
-          vote === 1 ? "text-foreground" : "text-muted-foreground/60 hover:text-foreground"
-        } ${vote === -1 ? "opacity-30" : ""}`}
+        className="inline-flex items-center disabled:pointer-events-none"
+        style={{ color: vote === 1 ? "var(--deep-green)" : "var(--ink-faint)" }}
       >
-        <ThumbsUp className="h-3 w-3" />
+        <ThumbsUp size={11} />
       </button>
       <button
         type="button"
         aria-label="Bad response"
         disabled={vote !== null || m.isPending}
         onClick={() => m.mutate(-1)}
-        className={`grid h-5 w-5 place-items-center rounded transition-colors duration-150 hover:bg-secondary/80 disabled:pointer-events-none ${
-          vote === -1 ? "text-foreground" : "text-muted-foreground/60 hover:text-foreground"
-        } ${vote === 1 ? "opacity-30" : ""}`}
+        className="inline-flex items-center disabled:pointer-events-none"
+        style={{ color: vote === -1 ? "var(--rose)" : "var(--ink-faint)" }}
       >
-        <ThumbsDown className="h-3 w-3" />
+        <ThumbsDown size={11} />
       </button>
-    </span>
+    </>
   );
 }
 
+/** "1.2k" token formatting per the reference aiMeta ("1.2k in / 410 out"). */
+function fmtTokens(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${n}`;
+}
+
 /**
- * Quiet assistant-message footer: sources row, then
- * `{model} · {via} · {latency}s · {cost}` + glyphs + feedback + message actions
- * (F-BRAIN: "Remember this" / "Capture as decision" slot in via `actions`).
+ * The AI message UI contract — ported 1:1 from design-reference/cadence/
+ * chat.jsx AiContract: judge pill · model · latency · tokens · cost ·
+ * feedback · view-trace · replay-with. Production additions slot in without
+ * changing the contract: sources row above (the citation infra), web/db
+ * glyphs, brain actions (Remember / Capture as decision) via `actions`.
  */
 export function MessageMetaFooter({
   meta,
   feedbackId,
   actions,
+  ttftMs,
+  onReplay,
 }: {
   meta: ChatMeta;
   feedbackId?: string | null;
   actions?: React.ReactNode;
+  /** Client-measured time to first token, if this reply streamed live. */
+  ttftMs?: number | null;
+  /** Re-asks the preceding question with the chosen model, in this thread. */
+  onReplay?: (modelId: string) => void;
 }) {
   const label = MODELS.find((m) => m.id === meta.model)?.label ?? meta.model;
   const canVote = !!feedbackId && UUID_RE.test(feedbackId);
+  const [replayOpen, setReplayOpen] = useState(false);
+  const item = { display: "inline-flex", alignItems: "center", gap: 4 } as const;
 
   return (
-    <div className="space-y-1.5 pt-1">
+    <div>
       {meta.sources.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+        <div className="flex flex-wrap items-center gap-1.5" style={{ marginTop: 10 }}>
+          <span className="mono-label" style={{ fontSize: 9 }}>
             Sources
           </span>
           {meta.sources.map((s) => (
@@ -297,26 +318,116 @@ export function MessageMetaFooter({
           ))}
         </div>
       )}
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-        <span title={`${meta.tokens_in} tokens in · ${meta.tokens_out} tokens out`}>
-          {label} · {meta.via} · {(meta.latency_ms / 1000).toFixed(1)}s ·{" "}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 14,
+          marginTop: 10,
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          color: "var(--ink-faint)",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {typeof meta.judge === "number" && (
+          <span
+            title="LLM-as-judge composite"
+            style={{
+              ...item,
+              color: "var(--emerald)",
+              border: "1px solid color-mix(in oklab, var(--emerald) 40%, transparent)",
+              borderRadius: 99,
+              padding: "1px 8px",
+              fontWeight: 600,
+            }}
+          >
+            {meta.judge}
+          </span>
+        )}
+        <span style={item}>
+          {label} · {meta.via}
+        </span>
+        <span style={item}>
+          {(meta.latency_ms / 1000).toFixed(1)}s
+          {typeof ttftMs === "number"
+            ? ` · ${ttftMs < 1000 ? `${Math.round(ttftMs)}ms` : `${(ttftMs / 1000).toFixed(1)}s`} ttft`
+            : ""}
+        </span>
+        <span style={item} className="tabular-nums">
+          {fmtTokens(meta.tokens_in)} in / {fmtTokens(meta.tokens_out)} out
+        </span>
+        <span style={item} className="tabular-nums">
           {formatCost(meta.cost_usd)}
         </span>
         {meta.web_used && (
-          <span title="Searched the web" className="inline-flex">
-            <Globe className="h-3 w-3" />
+          <span title="Searched the web" style={item}>
+            <Globe size={11} />
           </span>
         )}
         {meta.workspace_chunks > 0 && (
           <span
             title={`Grounded in ${meta.workspace_chunks} workspace ${meta.workspace_chunks === 1 ? "item" : "items"}`}
-            className="inline-flex"
+            style={item}
           >
-            <Database className="h-3 w-3" />
+            <Database size={11} />
           </span>
         )}
+        <span style={{ flex: 1 }} />
         {canVote && <FeedbackButtons refId={feedbackId!} />}
         {actions}
+        <Link to="/traces" style={{ ...item, color: "var(--action-blue)" }}>
+          View trace
+        </Link>
+        {onReplay && (
+          <Popover open={replayOpen} onOpenChange={setReplayOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-expanded={replayOpen}
+                style={{ ...item, color: "var(--ink-subtle)" }}
+              >
+                <RotateCcw size={11} />
+                Replay with…
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="top"
+              sideOffset={6}
+              className="border-hairline"
+              style={{
+                width: 190,
+                background: "var(--canvas)",
+                borderRadius: 10,
+                padding: 5,
+                boxShadow: "0 12px 32px -16px oklch(0 0 0 / 30%)",
+              }}
+            >
+              <span
+                className="mono-label"
+                style={{ fontSize: 8.5, display: "block", padding: "3px 8px 5px" }}
+              >
+                Replay · the reply lands in this thread
+              </span>
+              {MODELS.filter((m) => m.live).map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="cmdk-item"
+                  style={{ fontSize: 11.5, padding: "6px 8px", fontFamily: "var(--font-mono)" }}
+                  onClick={() => {
+                    setReplayOpen(false);
+                    onReplay(m.id);
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
     </div>
   );

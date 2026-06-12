@@ -43,10 +43,11 @@ export function ModelSwitcher({
         <button
           type="button"
           aria-label="Switch model"
-          className="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg border hairline bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-secondary/60 hover:text-foreground"
+          className="mono-label inline-flex max-w-[220px] items-center gap-1 text-ink-faint transition hover:text-ink-muted"
+          style={{ fontSize: 9.5, padding: "6px 4px" }}
         >
-          <span className="truncate">{current?.label ?? value}</span>
-          <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+          <span className="truncate normal-case tracking-normal">{current?.label ?? value}</span>
+          <ChevronDown size={11} className="shrink-0 opacity-60" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" sideOffset={8} className="w-80 p-1.5">

@@ -648,13 +648,52 @@ ${grounding}`,
               // else the same chars/4 estimate the runtime telemetry uses.
               const tokens_in = tokensIn || Math.ceil(promptChars / 4);
               const tokens_out = tokensOut || Math.ceil(assistantText.length / 4);
+              // Latency freezes here — the judge below must not inflate it.
+              const latency_ms = Date.now() - t0;
+              // AI footer contract (DESIGN.md): every utterance carries a judge
+              // score. Fast model, guardrails off, time-capped; any failure or
+              // timeout simply omits the score — never blocks the reply.
+              let judge: number | undefined;
+              if (assistantText.trim()) {
+                try {
+                  const judged = await Promise.race([
+                    callModel(supabase, userId, {
+                      surface: "judge",
+                      surface_ref: body.conversationId,
+                      model: "google/gemini-2.5-flash-lite",
+                      guardrails: false,
+                      responseFormat: "json_object",
+                      messages: [
+                        {
+                          role: "system",
+                          content:
+                            'You are an LLM-as-judge grading an assistant reply for accuracy, grounding, and usefulness to the question. Return JSON: {"score": <integer 0-100>}',
+                        },
+                        {
+                          role: "user",
+                          content: `QUESTION:\n${body.content.slice(0, 2000)}\n\nREPLY:\n${assistantText.slice(0, 6000)}`,
+                        },
+                      ],
+                    }),
+                    // The reply has fully streamed by now — only the footer
+                    // waits on this, so the judge gets real room to answer.
+                    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+                  ]);
+                  const s = judged ? (judged.json as { score?: unknown } | null)?.score : undefined;
+                  if (typeof s === "number" && Number.isFinite(s))
+                    judge = Math.max(0, Math.min(100, Math.round(s)));
+                } catch (e) {
+                  console.error("[chat] judge scoring failed (omitting score):", e);
+                }
+              }
               const meta: ChatMeta = baseMeta({
                 model: result.model,
                 via: result.via,
-                latency_ms: Date.now() - t0,
+                latency_ms,
                 tokens_in,
                 tokens_out,
                 cost_usd: estimateCostUsd(result.model, tokens_in, tokens_out),
+                ...(judge !== undefined ? { judge } : {}),
               });
               try {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ meta })}\n\n`));
@@ -663,16 +702,23 @@ ${grounding}`,
               } catch {
                 // Controller already errored/closed — nothing more to send.
               }
-              // Persist assistant message (best-effort). No metadata column on
-              // messages (checked migrations), so meta stays stream-only.
+              // Persist assistant message (best-effort), WITH meta so the AI
+              // footer contract survives reloads (migration
+              // 20260612120000_f_design_ember_chat_meta adds messages.metadata).
+              // Pre-migration tolerance: if the column is missing the insert
+              // errors, so retry without metadata — never lose the message.
               if (assistantText.trim()) {
-                await supabase.from("messages").insert({
+                const row = {
                   conversation_id: body.conversationId,
                   user_id: userId,
                   role: "assistant",
                   content: assistantText,
                   model: result.model,
-                });
+                };
+                const { error: metaErr } = await supabase
+                  .from("messages")
+                  .insert({ ...row, metadata: meta } as typeof row);
+                if (metaErr) await supabase.from("messages").insert(row);
                 // F-BRAIN auto-retention: distill research answers + sources
                 // into the brain (rag_chunks kind 'finding') so future
                 // questions recall them. Fire-and-forget — never blocks or

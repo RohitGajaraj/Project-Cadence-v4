@@ -811,7 +811,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
 
       <main className="flex-1 min-w-0 flex flex-col min-h-screen">
         <CookingBanner runningCount={runningCount} />
-        <div className="flex-1 min-w-0">{children}</div>
+        {/* Flex column so full-height screens (Chat) can pin to the viewport
+            with internal scroll, per the reference app.jsx main wrapper.
+            Block screens are unaffected — they stretch and scroll the page. */}
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
       </main>
       <ConstructionPill />
       <QuickAccessDock path={path} searchTab={searchTab} />

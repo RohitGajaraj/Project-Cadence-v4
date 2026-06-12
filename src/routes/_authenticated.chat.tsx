@@ -1,13 +1,17 @@
+// Brain (Chat) — screen 3/10 of the Ember Editorial migration, ported 1:1 from
+// design-reference/cadence/chat.jsx: threads rail (224px), the shared AI
+// message contract (Bubble + AiContract footer), the Inline Mission Cockpit,
+// and the consequence-first governance gate. Production functionality rides
+// the reference layout: SSE streaming, model switching, research activity,
+// brain actions, live approvals.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  Send,
+  ArrowUp,
   Plus,
   Trash2,
-  MessageSquare,
-  Loader2,
   ExternalLink,
   ChevronDown,
   ChevronUp,
@@ -16,9 +20,13 @@ import {
   Gavel,
   ShieldAlert,
   Square,
+  Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
+import { TopBar } from "@/components/cadence/TopBar";
+import { CadenceMark, MonoLabel, StepDot, StatusBadge } from "@/components/cadence/Primitives";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import {
   MessageMetaFooter,
@@ -27,6 +35,7 @@ import {
   type ChatMeta,
 } from "@/components/chat/MessageMeta";
 import { ModelSwitcher } from "@/components/chat/ModelSwitcher";
+import { MODELS } from "@/lib/ai/models";
 import {
   parseResearchStatus,
   ResearchActivityLine,
@@ -47,6 +56,7 @@ import { getProfile } from "@/lib/profile.functions";
 import { getMission } from "@/lib/missions.functions";
 import { listMissionSteps } from "@/lib/orchestrator.functions";
 import { decideApproval } from "@/lib/agent_loop.functions";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -61,6 +71,8 @@ type Msg = {
   mission_id?: string | null;
   meta?: ChatMeta | null;
   error?: boolean;
+  /** Client-measured time to first token (live-streamed replies only). */
+  ttftMs?: number | null;
 };
 
 /** Errors safe to show in the thread verbatim — anything else gets a generic line. */
@@ -74,6 +86,7 @@ function ChatPage() {
   const fGet = useServerFn(getConversation);
   const fCreate = useServerFn(createConversation);
   const fDelete = useServerFn(deleteConversation);
+  const { activeWorkspace } = useWorkspace();
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
@@ -91,6 +104,25 @@ function ChatPage() {
   const abortRef = useRef<AbortController | null>(null);
   // Autoscroll only while the user is pinned to the bottom; scrolling up detaches.
   const pinnedRef = useRef(true);
+
+  // Chat authorship contract: user = ember-ringed initials chip (right).
+  const [userName, setUserName] = useState("Account");
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      const name =
+        (u?.user_metadata as { display_name?: string } | undefined)?.display_name ??
+        u?.email?.split("@")[0] ??
+        "Account";
+      setUserName(name);
+    });
+  }, []);
+  const userInitials = userName
+    .split(/[\s._-]+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   // Auto-pick first or auto-create
   useEffect(() => {
@@ -162,11 +194,9 @@ function ChatPage() {
     abortRef.current?.abort();
   }
 
-  async function send() {
-    const content = input.trim();
+  /** Sends `content`; `modelOverride` powers "Replay with…" without switching the picker. */
+  async function sendMessage(content: string, modelOverride?: string) {
     if (!content || streaming) return;
-    setInput("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setStreaming(true);
     setLiveStatuses([]);
     pinnedRef.current = true;
@@ -177,6 +207,9 @@ function ChatPage() {
     const userMsg: Msg = { id: `u-${Date.now()}`, role: "user", content };
     const assistantMsg: Msg = { id: `a-${Date.now()}`, role: "assistant", content: "" };
     setLiveMessages((prev) => [...prev, userMsg, assistantMsg]);
+
+    const tStart = performance.now();
+    let ttft: number | null = null;
 
     try {
       let convId: string;
@@ -197,7 +230,11 @@ function ChatPage() {
           "Content-Type": "application/json",
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ conversationId: convId, content, model }),
+        body: JSON.stringify({
+          conversationId: convId,
+          content,
+          model: modelOverride ?? model,
+        }),
         signal: ctrl.signal,
       });
       if (res.status === 401)
@@ -240,7 +277,7 @@ function ChatPage() {
             if (meta) {
               setLiveMessages((prev) => {
                 const next = [...prev];
-                next[next.length - 1] = { ...next[next.length - 1], meta };
+                next[next.length - 1] = { ...next[next.length - 1], meta, ttftMs: ttft };
                 return next;
               });
               continue;
@@ -248,7 +285,10 @@ function ChatPage() {
             const piece: string | undefined = parsed.choices?.[0]?.delta?.content;
             const missionId: string | undefined = parsed.choices?.[0]?.delta?.mission_id;
             if (piece || missionId) {
-              if (piece) acc += piece;
+              if (piece) {
+                if (ttft === null) ttft = performance.now() - tStart;
+                acc += piece;
+              }
               setLiveMessages((prev) => {
                 const next = [...prev];
                 next[next.length - 1] = {
@@ -294,77 +334,147 @@ function ChatPage() {
     }
   }
 
+  function send() {
+    const content = input.trim();
+    if (!content || streaming) return;
+    setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    void sendMessage(content);
+  }
+
+  /** "Replay with…" — re-asks the question with the chosen model in this thread. */
+  function replayWith(modelId: string, question: string) {
+    const label = MODELS.find((m) => m.id === modelId)?.label ?? modelId;
+    toast(`Replaying with ${label}. The reply lands in this thread.`);
+    void sendMessage(question, modelId);
+  }
+
   const isEmpty = liveMessages.length === 0;
+  const activeTitle = active.data?.conversation?.title ?? null;
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <div className="grid grid-cols-[260px,1fr] h-[100dvh] max-h-[100dvh] overflow-hidden">
-        {/* Conversation rail */}
-        <aside className="border-r hairline bg-background/40 backdrop-blur-xl flex flex-col min-h-0">
-          <div className="p-3 border-b hairline">
+      <TopBar
+        crumbs={[
+          activeWorkspace?.name ?? "Workspace",
+          "Brain",
+          ...(activeTitle ? [activeTitle] : []),
+        ]}
+        actions={<BrainStatusButton />}
+      />
+      <div data-screen-label="Chat" style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Threads rail — reference: 224px, hairline right, mono header + ghost plus. */}
+        <div
+          className="scrollbar-thin"
+          style={{
+            width: 224,
+            flexShrink: 0,
+            borderRight: "1px solid var(--hairline)",
+            padding: "18px 12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            minHeight: 0,
+            overflowY: "auto",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "0 8px 10px",
+            }}
+          >
+            <MonoLabel>Threads</MonoLabel>
             <button
+              aria-label="New thread"
+              className="btn btn-ghost"
+              style={{ padding: "3px 7px" }}
               onClick={() => {
                 abortRef.current?.abort();
                 mNew.mutate();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
-              style={{
-                background:
-                  "var(--gradient-primary, linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, var(--agent))))",
-              }}
             >
-              <Plus className="h-3.5 w-3.5" /> New thread
+              <Plus size={12} />
             </button>
           </div>
-          <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/60">
-            Threads
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
-            {convs.isLoading && <div className="text-xs text-muted-foreground p-3">Loading…</div>}
-            {(convs.data?.conversations ?? []).map((c) => (
+          {convs.isLoading && (
+            <div style={{ padding: "8px 10px", fontSize: 12.5, color: "var(--ink-faint)" }}>
+              Loading…
+            </div>
+          )}
+          {(convs.data?.conversations ?? []).map((c) => {
+            const isActive = activeId === c.id;
+            const when = (c as { updated_at?: string }).updated_at;
+            return (
               <div
                 key={c.id}
-                className={`group flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm cursor-pointer transition ${
-                  activeId === c.id
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                }`}
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   abortRef.current?.abort();
                   setActiveId(c.id);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    abortRef.current?.abort();
+                    setActiveId(c.id);
+                  }
+                }}
+                className="group cursor-pointer"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  textAlign: "left",
+                  background: isActive ? "var(--surface-2)" : "transparent",
+                }}
               >
-                <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                <span className="flex-1 truncate">{c.title}</span>
-                <button
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    mDel.mutate(c.id);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontSize: 13,
+                      fontWeight: isActive ? 550 : 400,
+                      color: isActive ? "var(--ink)" : "var(--ink-muted)",
+                    }}
+                  >
+                    {c.title}
+                  </span>
+                  <button
+                    aria-label="Delete thread"
+                    className="opacity-0 group-hover:opacity-100 transition"
+                    style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      mDel.mutate(c.id);
+                    }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </span>
+                <span className="mono-label" style={{ fontSize: 9 }}>
+                  {when ? relativeAgo(when) : ""}
+                </span>
               </div>
-            ))}
-            {convs.data?.conversations.length === 0 && (
-              <div className="text-xs text-muted-foreground p-3">No threads yet.</div>
-            )}
-          </div>
-        </aside>
-
-        {/* Conversation pane */}
-        <section className="flex flex-col min-h-0 h-[100dvh] relative">
-          <header className="flex items-center justify-between gap-4 px-6 h-14 border-b hairline glass shrink-0">
-            <div className="flex min-w-0 items-baseline gap-2.5">
-              <h1 className="font-display text-sm font-semibold tracking-tight shrink-0">Brain</h1>
-              <span className="text-sm text-muted-foreground truncate">
-                {active.data?.conversation?.title ?? "New thread"}
-              </span>
+            );
+          })}
+          {convs.data?.conversations.length === 0 && (
+            <div style={{ padding: "8px 10px", fontSize: 12.5, color: "var(--ink-faint)" }}>
+              No threads yet.
             </div>
-            <BrainStatusButton />
-          </header>
+          )}
+        </div>
 
+        {/* Conversation */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
           <div
             ref={scrollRef}
             onScroll={() => {
@@ -372,21 +482,42 @@ function ChatPage() {
               if (!el) return;
               pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
             }}
-            className="flex-1 min-h-0 overflow-y-auto scrollbar-thin"
+            className="scrollbar-thin"
+            style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}
           >
-            {isEmpty ? (
-              <div className="h-full grid place-items-center px-6 py-10">
-                <div className="max-w-2xl text-center">
-                  <div className="mx-auto h-16 w-16 rounded-2xl ring-glow-violet relative overflow-hidden">
-                    <div className="absolute inset-0 neural-gradient animate-aurora" />
+            <div
+              style={{
+                maxWidth: 720,
+                margin: "0 auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 22,
+              }}
+            >
+              {isEmpty ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: "var(--ink-faint)" }}>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      marginBottom: 12,
+                      color: "var(--ink-subtle)",
+                    }}
+                  >
+                    <CadenceMark size={34} />
                   </div>
-                  <h1 className="mt-8 font-display text-4xl md:text-5xl tracking-tight leading-tight">
-                    <span className="neural-text">Brain</span>
-                  </h1>
-                  <p className="mt-3 text-sm md:text-base text-muted-foreground">
-                    Everything inward and outward — captured, cited, compounding.
+                  <p style={{ fontSize: 13 }}>
+                    Fresh thread. Hand me a goal and I'll dispatch a mission.
                   </p>
-                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+                  {/* Production addition: seeded prompts (quiet, hairline). */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 8,
+                      marginTop: 24,
+                      textAlign: "left",
+                    }}
+                  >
                     {[
                       "What is the weather in Munich?",
                       "What am I building next — how does the roadmap look?",
@@ -396,17 +527,24 @@ function ChatPage() {
                       <button
                         key={s}
                         onClick={() => setInput(s)}
-                        className="bento p-4 text-sm text-left text-muted-foreground hover:text-foreground hover:ring-1 hover:ring-primary/30 transition"
+                        className="lift"
+                        style={{
+                          border: "1px solid var(--hairline)",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          fontSize: 12.5,
+                          color: "var(--ink-muted)",
+                          textAlign: "left",
+                          background: "transparent",
+                        }}
                       >
                         {s}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="max-w-3xl mx-auto px-6 py-10 space-y-7">
-                {liveMessages.map((m, i) => (
+              ) : (
+                liveMessages.map((m, i) => (
                   <MessageBubble
                     key={m.id}
                     role={m.role}
@@ -414,9 +552,12 @@ function ChatPage() {
                     missionId={m.mission_id}
                     meta={m.meta}
                     error={m.error}
+                    ttftMs={m.ttftMs}
                     feedbackId={pickFeedbackId(m.id, activeId)}
                     streaming={streaming && m === liveMessages[liveMessages.length - 1]}
                     statuses={liveStatuses}
+                    userInitials={userInitials}
+                    userName={userName}
                     question={
                       liveMessages
                         .slice(0, i)
@@ -424,135 +565,128 @@ function ChatPage() {
                         .find((p) => p.role === "user")?.content ?? null
                     }
                     conversationId={activeId}
+                    onReplay={replayWith}
                   />
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </div>
 
-          {/* Composer */}
-          <div className="border-t hairline glass shrink-0">
+          {/* Composer — reference: hairline 14px ring on canvas, ArrowUp send. */}
+          <div style={{ padding: "0 32px 22px" }}>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 send();
               }}
-              className="max-w-3xl mx-auto px-6 py-4"
+              style={{ maxWidth: 720, margin: "0 auto" }}
             >
               <div
-                className="relative rounded-2xl p-[1px] transition"
                 style={{
-                  background:
-                    "linear-gradient(135deg, color-mix(in oklab, var(--primary) 55%, transparent), color-mix(in oklab, var(--agent) 45%, transparent), color-mix(in oklab, var(--action-blue) 35%, transparent))",
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: 8,
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 14,
+                  background: "var(--canvas)",
+                  padding: "10px 10px 10px 16px",
+                  boxShadow: "0 1px 3px oklch(0.2 0.02 60 / 6%)",
                 }}
               >
-                <div className="rounded-2xl bg-background/80 backdrop-blur-xl">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      const el = e.currentTarget;
-                      el.style.height = "auto";
-                      el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        send();
-                      }
-                    }}
-                    rows={1}
-                    placeholder="Message Cadence…"
-                    className="block w-full bg-transparent px-4 pt-3.5 pb-1 text-sm outline-none resize-none min-h-[44px] placeholder:text-muted-foreground/70"
-                  />
-                  <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1">
-                    <ModelSwitcher value={model} onChange={setModel} />
-                    {streaming ? (
-                      <button
-                        type="button"
-                        onClick={stopStreaming}
-                        aria-label="Stop generating"
-                        className="h-9 w-9 grid place-items-center rounded-xl border hairline bg-background/60 text-foreground transition hover:bg-secondary/60 active:scale-[0.97]"
-                      >
-                        <Square className="h-3 w-3 fill-current" />
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={!input.trim()}
-                        aria-label="Send message"
-                        className="h-9 w-9 grid place-items-center rounded-xl text-white shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] disabled:opacity-40 transition active:scale-[0.97]"
-                        style={{
-                          background: "linear-gradient(135deg, var(--primary), var(--agent))",
-                        }}
-                      >
-                        <Send className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={input}
+                  placeholder="Message Cadence…"
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    const el = e.currentTarget;
+                    el.style.height = "auto";
+                    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    border: 0,
+                    outline: "none",
+                    background: "transparent",
+                    resize: "none",
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    maxHeight: 120,
+                  }}
+                />
+                {/* Production addition: model switching lives in the composer. */}
+                <ModelSwitcher value={model} onChange={setModel} />
+                {streaming ? (
+                  <button
+                    type="button"
+                    onClick={stopStreaming}
+                    aria-label="Stop generating"
+                    className="btn btn-ghost"
+                    style={{ borderRadius: 10, padding: "7px 9px" }}
+                  >
+                    <Square size={14} fill="currentColor" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={!input.trim()}
+                    aria-label="Send"
+                    className="btn btn-primary"
+                    style={{ borderRadius: 10, padding: "7px 9px" }}
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                )}
               </div>
-              <div className="mt-2.5 text-[10px] text-muted-foreground text-center tracking-wide">
-                Enter to send · Shift+Enter for newline · Answers can use your workspace and the web
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, marginTop: 6, textAlign: "center" }}
+              >
+                Enter to send · goals become missions · gates always come back to you
               </div>
             </form>
           </div>
-        </section>
+        </div>
       </div>
     </AppShell>
   );
 }
 
-function statusTone(status?: string) {
-  switch (status) {
-    case "completed":
-    case "done":
-      return "bg-pale-green/60 text-deep-green border-deep-green/20";
-    case "failed":
-      return "bg-rose/10 text-rose border-rose/20";
-    case "running":
-    case "dispatched":
-      return "bg-pale-blue/60 text-action-blue border-action-blue/20 animate-pulse";
-    case "queued":
-    case "planned":
-      return "bg-soft-stone text-ink-muted border-hairline";
-    case "skipped":
-      return "bg-soft-stone/40 text-ink-subtle border-hairline/60";
-    default:
-      return "bg-soft-stone text-ink-muted border-hairline";
-  }
+/** Production step statuses → the reference's StepDot vocabulary. */
+function stepDotStatus(s?: string): string {
+  if (s === "dispatched" || s === "running") return "running";
+  if (s === "completed" || s === "done") return "completed";
+  if (s === "failed") return "failed";
+  return "planned";
 }
 
-function dotColor(status?: string) {
-  switch (status) {
-    case "completed":
-    case "done":
-      return "bg-deep-green";
-    case "failed":
-      return "bg-rose";
-    case "running":
-    case "dispatched":
-      return "bg-action-blue animate-ping";
-    case "queued":
-    case "planned":
-      return "bg-ink-muted";
-    case "skipped":
-      return "bg-ink-subtle/50";
-    default:
-      return "bg-ink-muted";
-  }
+/** Production hop/mission statuses → the reference's StatusBadge vocabulary. */
+function badgeStatus(s?: string): string {
+  if (s === "dispatched") return "running";
+  if (s === "done") return "completed";
+  return s ?? "planned";
 }
 
+/* Inline governance gate — consequence-first controls, ported from the
+   reference GatePanel. Production approvals carry tool_name + rationale (no
+   per-approval consequence copy), so the labels state the generic consequence. */
 function InlineApprovalsPanel({
   traceId,
+  agentName,
   onResolved,
 }: {
   traceId: string;
+  agentName?: string | null;
   onResolved: () => void;
 }) {
   const fDecide = useServerFn(decideApproval);
-  const qc = useQueryClient();
 
   // Query pending approvals for this trace
   const { data: pendingApprovals, refetch } = useQuery({
@@ -574,9 +708,9 @@ function InlineApprovalsPanel({
       toast.success(
         vars.decision === "approve"
           ? r.executed
-            ? "Approved & executed tool call"
-            : "Approved tool call"
-          : "Rejected tool call",
+            ? "Approved. The tool ran and the mission resumed."
+            : "Approved. The mission resumes."
+          : "Rejected. Nothing ran.",
       );
       refetch();
       onResolved();
@@ -587,36 +721,61 @@ function InlineApprovalsPanel({
   if (!pendingApprovals || pendingApprovals.length === 0) return null;
 
   return (
-    <div className="p-3 bg-coral/10 border border-coral-soft rounded-lg space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="text-[10px] mono-label text-coral font-bold uppercase flex items-center gap-1.5">
-        <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
-        Action Required: Governance Gate
+    <div
+      className="fade-up"
+      style={{
+        padding: "14px 16px",
+        borderRadius: 10,
+        background: "color-mix(in oklab, var(--ember) 9%, transparent)",
+        border: "1px solid color-mix(in oklab, var(--ember) 35%, transparent)",
+      }}
+    >
+      <div
+        className="mono-label"
+        style={{
+          color: "var(--ember)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontWeight: 700,
+        }}
+      >
+        <ShieldAlert size={13} /> Action required · governance gate
       </div>
       {pendingApprovals.map((appr) => (
-        <div
-          key={appr.id}
-          className="space-y-2 border-t border-coral-soft/20 pt-2 first:border-0 first:pt-0"
-        >
-          <div className="text-xs text-ink">
-            <strong>Tool:</strong>{" "}
-            <code className="bg-canvas px-1 rounded border hairline font-mono text-[11px]">
-              {appr.tool_name}
-            </code>
-          </div>
-          {appr.rationale && <p className="text-xs text-ink-muted italic">"{appr.rationale}"</p>}
-          <div className="flex gap-2">
-            <button
-              onClick={() => decide.mutate({ id: appr.id, decision: "approve" })}
-              disabled={decide.isPending}
-              className="px-2.5 py-1 text-xs font-semibold text-white bg-deep-green rounded hover:bg-opacity-95 transition-opacity disabled:opacity-50"
+        <div key={appr.id}>
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--ink-muted)",
+              margin: "6px 0 12px",
+              lineHeight: 1.5,
+            }}
+          >
+            {agentName ?? "The agent"} wants{" "}
+            <span
+              className="mono-label"
+              style={{ color: "var(--agent)", fontSize: 10.5, display: "inline-flex" }}
             >
-              {decide.isPending ? "Processing..." : "Approve · run"}
+              {appr.tool_name}
+            </span>
+            {appr.rationale ? `. ${appr.rationale}` : "."}
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              className="btn btn-approve"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ id: appr.id, decision: "approve" })}
+            >
+              <Check size={12} />
+              Approve · runs the tool
             </button>
             <button
-              onClick={() => decide.mutate({ id: appr.id, decision: "reject" })}
+              className="btn btn-reject"
               disabled={decide.isPending}
-              className="px-2.5 py-1 text-xs font-semibold text-coral border border-coral-soft rounded hover:bg-coral/5 transition-colors disabled:opacity-50"
+              onClick={() => decide.mutate({ id: appr.id, decision: "reject" })}
             >
+              <X size={12} />
               Reject · nothing runs
             </button>
           </div>
@@ -626,6 +785,9 @@ function InlineApprovalsPanel({
   );
 }
 
+/* Inline Mission Cockpit — the contract from the reference MissionCockpit:
+   header, numbered specialist steps with live dots, inline gate when pending,
+   raw trace toggle, mission link. `.ai-glow` while the mission is working. */
 function InlineMissionProgress({ missionId }: { missionId: string }) {
   const fGet = useServerFn(getMission);
   const fSteps = useServerFn(listMissionSteps);
@@ -651,17 +813,26 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
     },
   });
 
-  const [showRawDetails, setShowRawDetails] = useState(false);
+  const [showTrace, setShowTrace] = useState(false);
 
   if (m.isLoading || steps.isLoading) {
     return (
-      <div className="rounded-xl border hairline bg-soft-stone/40 p-4 max-w-2xl space-y-3">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-xs text-muted-foreground font-mono">
-            Initializing mission cockpit...
-          </span>
-        </div>
+      <div
+        style={{
+          borderRadius: 12,
+          border: "1px solid var(--hairline)",
+          background: "color-mix(in oklab, var(--soft-stone) 45%, transparent)",
+          padding: 16,
+          maxWidth: 620,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+        }}
+      >
+        <span className="spinner" />
+        Initializing mission cockpit…
       </div>
     );
   }
@@ -670,42 +841,85 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
   const planSteps = steps.data?.steps ?? [];
   const activeHop = m.data?.hops.find((h) => ["running", "queued"].includes(h.status));
   const activeTraceId = activeHop?.trace_id;
+  const working = mission?.status === "running" || mission?.status === "awaiting_review";
 
   return (
-    <div className="rounded-xl border hairline bg-soft-stone/40 p-4 space-y-4 max-w-2xl transition-all duration-300">
-      <div className="flex items-center justify-between gap-3 border-b hairline pb-2">
-        <div className="min-w-0">
-          <span className="text-[10px] mono-label text-muted-foreground">Mission Cockpit</span>
-          <h4 className="font-display text-sm font-semibold text-ink mt-0.5 truncate">
+    <div
+      className={working ? "ai-glow" : undefined}
+      style={{
+        borderRadius: 12,
+        border: "1px solid var(--hairline)",
+        background: "color-mix(in oklab, var(--soft-stone) 45%, transparent)",
+        padding: 16,
+        maxWidth: 620,
+        transition: "box-shadow var(--dur-slow)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          borderBottom: "1px solid var(--hairline)",
+          paddingBottom: 10,
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <span className="mono-label" style={{ fontSize: 9.5 }}>
+            Mission cockpit
+          </span>
+          <h4
+            className="font-display"
+            style={{
+              fontSize: 16,
+              marginTop: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {mission?.title}
           </h4>
         </div>
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${statusTone(mission?.status)}`}
-        >
-          {mission?.status}
-        </span>
+        <StatusBadge status={badgeStatus(mission?.status)} />
       </div>
 
-      <div className="space-y-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 0" }}>
         {planSteps.length === 0 ? (
-          <div className="text-xs text-muted-foreground italic pl-1">Planning stages...</div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-faint)", fontStyle: "italic" }}>
+            Planning stages…
+          </div>
         ) : (
           planSteps.map((s, i) => (
             <div
               key={s.id}
-              className="flex items-start gap-2.5 text-xs animate-in fade-in slide-in-from-top-1 duration-150"
+              className="fade-up"
+              style={{ display: "flex", alignItems: "baseline", gap: 9, fontSize: 12.5 }}
             >
-              <span className="mt-0.5 text-[10px] text-muted-foreground font-mono w-4 shrink-0 text-right">
+              <span
+                className="mono-label tabular-nums"
+                style={{ fontSize: 10, width: 14, textAlign: "right", flexShrink: 0 }}
+              >
                 {i + 1}.
               </span>
-              <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dotColor(s.status)}`} />
-              <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
-                <span className="font-mono text-ink text-[11px] uppercase shrink-0">
-                  {s.agent_slug}
-                </span>
-                <span className="text-ink-muted text-xs truncate max-w-md">{s.sub_goal}</span>
-              </div>
+              <StepDot status={stepDotStatus(s.status)} />
+              <span
+                className="mono-label"
+                style={{ color: "var(--agent)", fontSize: 10.5, flexShrink: 0 }}
+              >
+                {s.agent_slug}
+              </span>
+              <span
+                style={{
+                  color: "var(--ink-subtle)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {s.sub_goal}
+              </span>
             </div>
           ))
         )}
@@ -714,6 +928,7 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
       {activeTraceId && (
         <InlineApprovalsPanel
           traceId={activeTraceId}
+          agentName={activeHop?.agent_name}
           onResolved={() => {
             qc.invalidateQueries({ queryKey: ["chat-mission", missionId] });
             qc.invalidateQueries({ queryKey: ["chat-mission-steps", missionId] });
@@ -721,62 +936,96 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
         />
       )}
 
-      <div className="flex items-center justify-between pt-2.5 text-[11px] text-muted-foreground border-t border-muted">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: 10,
+          marginTop: 10,
+          borderTop: "1px solid var(--hairline)",
+        }}
+      >
         <button
-          onClick={() => setShowRawDetails(!showRawDetails)}
-          className="text-action-blue hover:text-focus-blue hover:underline font-mono flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer"
+          onClick={() => setShowTrace(!showTrace)}
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            color: "var(--action-blue)",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
         >
-          {showRawDetails ? (
-            <>
-              <ChevronUp className="h-3 w-3" />
-              Hide raw trace
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3 w-3" />
-              Show raw trace
-            </>
-          )}
+          {showTrace ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+          {showTrace ? "Hide raw trace" : "Show raw trace"}
         </button>
         <Link
           to="/missions/$missionId"
           params={{ missionId }}
-          className="text-action-blue hover:text-focus-blue hover:underline font-mono flex items-center gap-1"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            color: "var(--action-blue)",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
         >
           Open mission page
-          <ExternalLink className="h-3 w-3" />
+          <ExternalLink size={11} />
         </Link>
       </div>
 
-      {showRawDetails && (
-        <div className="mt-3 p-3 bg-canvas border hairline rounded-lg space-y-3 max-h-60 overflow-y-auto scrollbar-thin animate-in slide-in-from-top-2 duration-200">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono border-b hairline pb-1 flex items-center justify-between">
-            <span>Execution Hops Trace</span>
+      {showTrace && (
+        <div
+          className="fade-up scrollbar-thin"
+          style={{
+            marginTop: 10,
+            padding: 12,
+            background: "var(--canvas)",
+            border: "1px solid var(--hairline)",
+            borderRadius: 10,
+            maxHeight: 200,
+            overflowY: "auto",
+          }}
+        >
+          <div
+            className="mono-label"
+            style={{
+              fontSize: 9.5,
+              display: "flex",
+              justifyContent: "space-between",
+              borderBottom: "1px solid var(--hairline)",
+              paddingBottom: 5,
+              marginBottom: 8,
+            }}
+          >
+            <span>Execution hops</span>
             <span>{m.data?.hops.length ?? 0} hops</span>
           </div>
-          {m.data?.hops.map((h, i) => (
+          {m.data?.hops.map((h) => (
             <div
               key={h.run_id}
-              className="text-[11px] font-mono border-b border-muted/50 pb-2 last:border-0 last:pb-0"
+              style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, marginBottom: 10 }}
             >
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-ink">
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                <span style={{ color: "var(--agent)", fontWeight: 600 }}>
                   {h.agent_name} ({h.agent_slug})
                 </span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded border ${statusTone(h.status)}`}
-                >
-                  {h.status}
-                </span>
+                <StatusBadge status={badgeStatus(h.status)} />
               </div>
               {h.steps.length === 0 ? (
-                <div className="pl-3 text-muted-foreground text-[10px] italic">
+                <div style={{ paddingLeft: 12, color: "var(--ink-faint)", fontStyle: "italic" }}>
                   No active steps logged
                 </div>
               ) : (
-                h.steps.map((st, idx) => (
-                  <div key={idx} className="pl-3 text-muted-foreground text-[10px] leading-relaxed">
-                    -{" "}
+                h.steps.map((st, j) => (
+                  <div
+                    key={j}
+                    style={{ paddingLeft: 12, color: "var(--ink-subtle)", lineHeight: 1.7 }}
+                  >
+                    ·{" "}
                     {st.kind === "thought"
                       ? st.text
                       : st.kind === "tool_call"
@@ -793,19 +1042,10 @@ function InlineMissionProgress({ missionId }: { missionId: string }) {
   );
 }
 
-function StreamingCaret() {
-  return (
-    <span
-      aria-hidden
-      className="ml-0.5 inline-block h-4 w-[3px] translate-y-[2px] rounded-full bg-foreground/50 animate-pulse"
-    />
-  );
-}
-
-/** Compact relative-time label for the brain freshness line, e.g. "2h". */
+/** Compact relative-time label, e.g. "2h". */
 function relativeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < 60_000) return "moments";
+  if (!Number.isFinite(ms) || ms < 60_000) return "now";
   const mins = Math.floor(ms / 60_000);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
@@ -815,7 +1055,7 @@ function relativeAgo(iso: string): string {
 
 /**
  * F-BRAIN status — "what the brain knows": counts by kind + freshness, in a
- * quiet popover off the thread header. Errors render nothing (best-effort).
+ * quiet popover off the topbar. Errors render nothing (best-effort).
  */
 function BrainStatusButton() {
   const fStatus = useServerFn(getBrainStatus);
@@ -829,20 +1069,26 @@ function BrainStatusButton() {
           type="button"
           title="What the brain knows"
           aria-label="What the brain knows"
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground/70 transition hover:bg-secondary/60 hover:text-foreground"
+          className="btn btn-ghost"
+          style={{ padding: "4px 7px" }}
         >
-          <Brain className="h-3.5 w-3.5" />
+          <Brain size={13} strokeWidth={1.75} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} className="w-auto max-w-xs px-3 py-2">
+      <PopoverContent
+        align="end"
+        sideOffset={6}
+        className="w-auto max-w-xs border-hairline"
+        style={{ background: "var(--canvas)", borderRadius: 10, padding: "10px 14px" }}
+      >
         {s ? (
-          <div className="space-y-1 text-xs text-muted-foreground">
+          <div style={{ fontSize: 12, color: "var(--ink-muted)", lineHeight: 1.6 }}>
             <div>
               The brain knows · {s.counts.signals} signals · {s.counts.docs} docs ·{" "}
               {s.counts.meetings} meetings · {s.counts.decisions} decisions · {s.counts.prds} PRDs ·{" "}
               {s.counts.findings} findings
             </div>
-            <div className="text-[10px] text-muted-foreground/60">
+            <div className="mono-label" style={{ fontSize: 9, marginTop: 4 }}>
               {s.latest ? `updated ${relativeAgo(s.latest)} ago` : "nothing captured yet"}
             </div>
           </div>
@@ -853,7 +1099,7 @@ function BrainStatusButton() {
 }
 
 /**
- * F-BRAIN message actions — quiet ghost icon buttons in the assistant footer:
+ * F-BRAIN message actions — quiet mono icon buttons in the assistant footer:
  * "Remember this" distills the answer into indexed memory; "Capture as
  * decision" files it in the decision log. Both are best-effort one-taps.
  */
@@ -896,20 +1142,18 @@ function BrainMessageActions({
     onError: () => toast.error("Couldn't capture that just now."),
   });
 
-  const btnClass =
-    "grid h-5 w-5 place-items-center rounded text-xs text-muted-foreground/60 transition-colors duration-150 hover:bg-secondary/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
-
   return (
-    <span className="ml-1 inline-flex items-center gap-0.5">
+    <>
       <button
         type="button"
         title="Remember this"
         aria-label="Remember this"
         disabled={mRemember.isPending || mRemember.isSuccess}
         onClick={() => mRemember.mutate()}
-        className={btnClass}
+        className="inline-flex items-center disabled:pointer-events-none disabled:opacity-40"
+        style={{ color: "var(--ink-faint)" }}
       >
-        <Brain className="h-3 w-3" />
+        <Brain size={11} />
       </button>
       <button
         type="button"
@@ -917,78 +1161,172 @@ function BrainMessageActions({
         aria-label="Capture as decision"
         disabled={mDecide.isPending || mDecide.isSuccess}
         onClick={() => mDecide.mutate()}
-        className={btnClass}
+        className="inline-flex items-center disabled:pointer-events-none disabled:opacity-40"
+        style={{ color: "var(--ink-faint)" }}
       >
-        <Gavel className="h-3 w-3" />
+        <Gavel size={11} />
       </button>
-    </span>
+    </>
   );
 }
 
+/* Bubble — the reference chat authorship contract: user = ember-ringed
+   initials chip on the right; AI = the Butterfly. Legible at a glance. */
 function MessageBubble({
   role,
   content,
   missionId,
   meta,
   error,
+  ttftMs,
   feedbackId,
   streaming,
   statuses,
+  userInitials,
+  userName,
   question,
   conversationId,
+  onReplay,
 }: {
   role: string;
   content: string;
   missionId?: string | null;
   meta?: ChatMeta | null;
   error?: boolean;
+  ttftMs?: number | null;
   feedbackId?: string | null;
   streaming?: boolean;
   /** Live research-progress events — only rendered on the streaming bubble. */
   statuses?: ResearchStatus[];
+  userInitials: string;
+  userName: string;
   /** Preceding user question — becomes the title for the brain actions. */
   question?: string | null;
   conversationId?: string | null;
+  onReplay?: (modelId: string, question: string) => void;
 }) {
   if (role === "user") {
     return (
-      <div className="flex justify-end animate-in fade-in slide-in-from-bottom-1 duration-200">
-        <div className="max-w-[75%] rounded-2xl bg-secondary/60 px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <div
+          style={{
+            background: "var(--soft-stone)",
+            borderRadius: "14px 14px 4px 14px",
+            padding: "10px 16px",
+            fontSize: 13.5,
+            maxWidth: 480,
+            lineHeight: 1.55,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
           {content}
         </div>
+        <span
+          aria-hidden="true"
+          title={userName}
+          className="fade-up"
+          style={{
+            width: 26,
+            height: 26,
+            flexShrink: 0,
+            marginTop: 2,
+            borderRadius: "50% 50% 4px 50%",
+            background: "var(--primary-ink)",
+            color: "var(--canvas)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--font-mono)",
+            fontSize: 8.5,
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            boxShadow: "0 0 0 2px color-mix(in oklab, var(--ember) 30%, transparent)",
+          }}
+        >
+          {userInitials}
+        </span>
       </div>
     );
   }
 
   return (
-    <div data-message-root className="flex gap-3 animate-in fade-in duration-200">
-      <div className="h-7 w-7 rounded-lg relative overflow-hidden shrink-0 ring-glow-violet">
-        <div className="absolute inset-0 neural-gradient" />
-      </div>
-      <div className="flex-1 min-w-0 space-y-3 pt-0.5">
+    <div data-message-root style={{ display: "flex", gap: 12 }}>
+      <span
+        aria-hidden="true"
+        style={{
+          width: 28,
+          height: 28,
+          flexShrink: 0,
+          marginTop: 2,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CadenceMark size={24} />
+      </span>
+      <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 1.65, color: "var(--ink)" }}>
         {error ? (
-          <div className="flex items-start gap-2 rounded-xl border border-coral-soft bg-coral/5 px-3.5 py-2.5 text-sm text-ink-muted">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-coral" />
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-start",
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "color-mix(in oklab, var(--rose) 7%, transparent)",
+              border: "1px solid color-mix(in oklab, var(--rose) 30%, transparent)",
+              fontSize: 12.5,
+              color: "var(--ink-muted)",
+            }}
+          >
+            <AlertCircle size={14} style={{ color: "var(--rose)", flexShrink: 0, marginTop: 1 }} />
             <span>{content}</span>
           </div>
         ) : (
           <>
             {streaming && statuses && statuses.length > 0 && (
-              <ResearchActivityLine statuses={statuses} />
+              <div style={{ marginBottom: 10 }}>
+                <ResearchActivityLine statuses={statuses} />
+              </div>
             )}
-            {meta && !streaming && <ResearchSummaryRow meta={meta} />}
+            {meta && !streaming && (
+              <div style={{ marginBottom: 8 }}>
+                <ResearchSummaryRow meta={meta} />
+              </div>
+            )}
             {content && (
               <div>
                 <ChatMarkdown content={content} citations={meta?.sources.map((s) => s.n)} />
-                {streaming && <StreamingCaret />}
+                {streaming && <span className="stream-caret">▍</span>}
               </div>
             )}
-            {!content && streaming && (!statuses || statuses.length === 0) && <StreamingCaret />}
-            {missionId && <InlineMissionProgress missionId={missionId} />}
+            {!content && streaming && (!statuses || statuses.length === 0) && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "var(--ink-faint)",
+                  fontSize: 12.5,
+                }}
+              >
+                <span className="spinner" />
+                thinking
+              </span>
+            )}
+            {missionId && (
+              <div style={{ margin: "12px 0" }} className="fade-up">
+                <InlineMissionProgress missionId={missionId} />
+              </div>
+            )}
             {meta && !streaming && (
               <MessageMetaFooter
                 meta={meta}
                 feedbackId={feedbackId}
+                ttftMs={ttftMs}
+                onReplay={question && onReplay ? (id) => onReplay(id, question) : undefined}
                 actions={
                   <BrainMessageActions
                     question={question}

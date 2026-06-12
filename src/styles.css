@@ -1126,6 +1126,40 @@
     animation: fadeUp var(--dur-slow) var(--ease-out);
   }
 
+  /* Spinner — reference tokens.css; quiet hairline ring, ink-muted sweep. */
+  @keyframes cad-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .spinner {
+    width: 13px;
+    height: 13px;
+    border-radius: 99px;
+    border: 1.5px solid var(--hairline-strong);
+    border-top-color: var(--ink-muted);
+    animation: cad-spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* Menu row — reference tokens.css (.cmdk-item); shared by ⌘K + popover menus. */
+  .cmdk-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    width: 100%;
+    text-align: left;
+    border-radius: 8px;
+  }
+  .cmdk-item:hover,
+  .cmdk-item.sel {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
   /* Subtle lift on interactive rows/cards — motion as affordance. */
   .lift {
     transition:
