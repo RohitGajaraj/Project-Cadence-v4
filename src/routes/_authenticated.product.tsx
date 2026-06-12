@@ -40,14 +40,15 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "releases", label: "Releases" },
 ];
 
-// PRODUCT_DESC from the reference; Builder → Studio per the 2026-06-12 rename.
+// PRODUCT_DESC from the reference; Builder → Studio → Build per the
+// 2026-06-12 renames (user-facing name only).
 const PRODUCT_DESC: Record<Tab, string> = {
   signals: "Capture customer signals from anywhere; cluster them into actionable themes.",
   opportunities: "Ranked by ICE. Generate a PRD with one click when you're ready to build.",
-  specs: "Product requirement docs. Draft from a brief, hand off to GitHub or Studio.",
+  specs: "Product requirement docs. Draft from a brief, hand off to GitHub or Build.",
   roadmap: "Now / Next / Later lanes. Let AI plan the next two weeks or rebalance for you.",
   tasks: "Per-task kanban for humans and agents. Import from Linear.",
-  releases: "Studio missions that completed end-to-end, with duration and cost.",
+  releases: "Build sessions that completed end-to-end, with duration and cost.",
 };
 
 export const Route = createFileRoute("/_authenticated/product")({

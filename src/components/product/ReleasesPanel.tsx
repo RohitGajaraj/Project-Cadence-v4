@@ -61,8 +61,8 @@ export function ReleasesPanel() {
       <EmptyState
         icon={Rocket}
         title="Releases will land here"
-        body="When a Studio mission completes end-to-end (PR merged, deploy webhook lands), it appears here with duration and cost."
-        cta="Go to Specs · hand one to Studio"
+        body="When a Build session completes end-to-end (PR merged, deploy webhook lands), it appears here with duration and cost."
+        cta="Go to Specs · hand one to Build"
         onCta={() => navigate({ to: "/product", search: { tab: "specs" } })}
       />
     );

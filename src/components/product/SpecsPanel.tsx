@@ -103,8 +103,8 @@ export function SpecsPanel() {
   const sendToStudio = useMutation({
     mutationFn: (prdId: string) => mDispatch({ data: { prdId } }),
     onSuccess: (r) => {
-      toast.success("Handed to Studio. Mission dispatched.");
-      navigate({ to: "/studio/$missionId", params: { missionId: r.missionId } });
+      toast.success("Handed to Build. Mission dispatched.");
+      navigate({ to: "/build/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -320,14 +320,14 @@ export function SpecsPanel() {
                       disabled={isDispatching}
                       onClick={() => sendToStudio.mutate(p.id)}
                     >
-                      {isDispatching ? "Dispatching…" : "Hand to Studio"}
+                      {isDispatching ? "Dispatching…" : "Hand to Build"}
                     </button>
                   ) : (
                     <button
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: 11 }}
                       disabled={isCreating}
-                      title="Studio builds from the linked GitHub issue"
+                      title="Build works from the linked GitHub issue"
                       onClick={() => createIssue.mutate(p.id)}
                     >
                       {isCreating ? "Creating…" : "Create GitHub issue"}

@@ -101,9 +101,9 @@ export function CommandPalette() {
                 />
                 <Item
                   icon={Hammer}
-                  label="Studio · sessions, changesets, gates"
+                  label="Build · sessions, changesets, gates"
                   hint="G B"
-                  onSelect={() => go("/studio")}
+                  onSelect={() => go("/build")}
                 />
                 <Item
                   icon={BookOpen}
@@ -196,7 +196,7 @@ export function GotoShortcuts() {
           d: "/",
           c: "/chat",
           a: "/missions",
-          b: "/studio",
+          b: "/build",
           t: "/tasks",
           s: "/settings",
           p: "/product",

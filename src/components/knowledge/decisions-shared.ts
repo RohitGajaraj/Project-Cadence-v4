@@ -34,9 +34,9 @@ export function hasSource(d: DecisionRow): boolean {
   return !!(d.mission_id || d.prd_id || d.meeting_id);
 }
 
-/** Who decided, user-facing. The legacy `builder` agent slug reads as Studio
- *  (rename disclaimer 2026-06-12 — internal identifiers stay, names don't). */
+/** Who decided, user-facing. The legacy `builder` agent slug reads as Build
+ *  (renames 2026-06-12: Builder → Studio → Build; internal identifiers stay). */
 export function displayWho(slug: string | null): string {
   if (!slug) return "You";
-  return slug === "builder" ? "Studio" : slug;
+  return slug === "builder" ? "Build" : slug;
 }

@@ -256,7 +256,7 @@ You must output a JSON object EXACTLY in this format:
                   .neq("slug", "orchestrator");
                 if ((specialists ?? 0) === 0) {
                   preflightError =
-                    "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Studio) in the Agents roster before starting a mission.";
+                    "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Build) in the Agents roster before starting a mission.";
                 }
               }
             }

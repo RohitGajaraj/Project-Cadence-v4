@@ -76,8 +76,8 @@ function PrdEditor() {
   const sendToStudio = useMutation({
     mutationFn: () => mDispatchStudio({ data: { prdId: id } }),
     onSuccess: (r) => {
-      toast.success("Studio session dispatched");
-      navigate({ to: "/studio/$missionId", params: { missionId: r.missionId } });
+      toast.success("Build session dispatched");
+      navigate({ to: "/build/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -252,17 +252,17 @@ function PrdEditor() {
               onClick={() => sendToStudio.mutate()}
               disabled={sendToStudio.isPending}
               className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
-              title="Dispatch a Studio session to plan, stage, and PR the changes for this issue"
+              title="Dispatch a Build session to plan, stage, and PR the changes for this issue"
             >
               <Hammer className="h-3 w-3" />
-              {sendToStudio.isPending ? "Dispatching…" : "Send to Studio"}
+              {sendToStudio.isPending ? "Dispatching…" : "Send to Build"}
             </button>
           ) : (
             <button
               onClick={() => createIssue.mutate()}
               disabled={createIssue.isPending}
               className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
-              title="Create a GitHub issue from this PRD, then unlock Send to Studio."
+              title="Create a GitHub issue from this PRD, then unlock Send to Build."
             >
               <Github className="h-3 w-3" />
               {createIssue.isPending ? "Creating…" : "Create GitHub issue"}

@@ -83,9 +83,10 @@ const groups: NavGroup[] = [
     label: "Product",
     items: [
       { to: "/product", label: "Product", icon: Telescope },
-      // F-STUDIO: the development engine is a first-class destination, not a
-      // palette-only surface (founder ruling 2026-06-12).
-      { to: "/studio", label: "Studio", icon: Hammer },
+      // F-STUDIO engine; surface renamed Studio → Build with the screen-9
+      // Ember port (founder ruling 2026-06-12 late — user-facing name + URL
+      // only, internal studio.* identifiers stay).
+      { to: "/build", label: "Build", icon: Hammer },
     ],
   },
   {
