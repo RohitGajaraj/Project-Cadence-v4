@@ -33,17 +33,19 @@ import {
   startCalendarConnect,
 } from "@/lib/calendar-connections.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
+import { MonoLabel } from "@/components/cadence/Primitives";
 import { ConnectionRow } from "./ConnectionRow";
 
 // F-CONN Phase 2 — Settings → "Connected accounts": one quiet list row per
-// CONNECTOR_REGISTRY provider in a single bordered group. OAuth-only: GitHub
-// uses the App install redirect; everything else goes through the Lovable
-// connector gateway popup (tokens stay in the gateway, we persist only the
-// connection id). The two calendar providers are real rows here too, wired to
-// the existing calendar connection layer (listMyCalendarConnections /
-// startCalendarConnect / saveCalendarConnection / disconnectCalendar — same
-// popup driver as the old CalendarAccountsSection). Workspace-level resource
-// bindings live on /sync. Anchorable via /settings?section=connections.
+// CONNECTOR_REGISTRY provider in a single bento group (restyled quiet-Ember
+// for screen 5 wave B). OAuth-only: GitHub uses the App install redirect;
+// everything else goes through the Lovable connector gateway popup (tokens
+// stay in the gateway, we persist only the connection id). The two calendar
+// providers are real rows here too, wired to the existing calendar connection
+// layer (listMyCalendarConnections / startCalendarConnect /
+// saveCalendarConnection / disconnectCalendar — same popup driver as the old
+// CalendarAccountsSection). Workspace-level resource bindings live on /sync.
+// Anchorable via /settings?section=connections.
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 
@@ -239,20 +241,22 @@ export function AccountConnectionsSection() {
   const anySetupRequired = visibleProviders.some((spec) => !configuredFor(spec));
 
   return (
-    <section id="connections" className="bento p-5 space-y-3">
-      <div>
-        <h2 className="text-sm font-medium">Connected accounts</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Connect tools once; pick what each workspace uses on Connectors.
-        </p>
-      </div>
+    <section id="connections" className="bento" style={{ padding: "var(--card-pad)" }}>
+      <MonoLabel style={{ marginBottom: 4 }}>Connected accounts</MonoLabel>
+      <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 8 }}>
+        Connect tools once; pick what each workspace uses on Connectors.
+      </p>
 
       {list.isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading connections…</div>
+        <div className="mono-label" style={{ color: "var(--ink-faint)", padding: "16px 0" }}>
+          loading…
+        </div>
       ) : (
         <>
-          <div className="rounded-lg border hairline divide-y divide-[var(--hairline)] overflow-hidden">
-            {visibleProviders.map((spec) => {
+          <div>
+            {visibleProviders.map((spec, i) => {
+              const rowBorder =
+                i < visibleProviders.length - 1 ? "1px solid var(--hairline)" : "none";
               const calProvider = CALENDAR_PROVIDERS[spec.id];
               const common = {
                 icon: PROVIDER_ICONS[spec.id] ?? Plug,
@@ -264,63 +268,65 @@ export function AccountConnectionsSection() {
               };
               if (calProvider) {
                 return (
-                  <ConnectionRow
-                    key={spec.id}
-                    {...common}
-                    onConnect={() => mCalConnect.mutate(calProvider)}
-                    accounts={calendarAccounts
-                      .filter((c) => c.provider === calProvider)
-                      .map((c) => ({
-                        id: c.id,
-                        label: c.account_email ?? c.display_name ?? "Connected account",
-                      }))}
-                    onDisconnectAccount={async (id) => {
-                      const ok = await confirm({
-                        title: "Disconnect this calendar?",
-                        body: "Stored events stay but no further sync will happen.",
-                        confirmLabel: "Disconnect",
-                        destructive: true,
-                      });
-                      if (ok) mCalDisconnect.mutate(id);
-                    }}
-                  />
+                  <div key={spec.id} style={{ borderBottom: rowBorder }}>
+                    <ConnectionRow
+                      {...common}
+                      onConnect={() => mCalConnect.mutate(calProvider)}
+                      accounts={calendarAccounts
+                        .filter((c) => c.provider === calProvider)
+                        .map((c) => ({
+                          id: c.id,
+                          label: c.account_email ?? c.display_name ?? "Connected account",
+                        }))}
+                      onDisconnectAccount={async (id) => {
+                        const ok = await confirm({
+                          title: "Disconnect this calendar?",
+                          body: "Stored events stay but no further sync will happen.",
+                          confirmLabel: "Disconnect",
+                          destructive: true,
+                        });
+                        if (ok) mCalDisconnect.mutate(id);
+                      }}
+                    />
+                  </div>
                 );
               }
               return (
-                <ConnectionRow
-                  key={spec.id}
-                  {...common}
-                  onConnect={() =>
-                    spec.authMethods.some((m) => m.kind === "github_app")
-                      ? mGithub.mutate()
-                      : mGateway.mutate(spec)
-                  }
-                  connections={byProvider.get(spec.id) ?? []}
-                  onVerify={(c) => mVerify.mutate(c.id)}
-                  onDisconnect={async (c) => {
-                    const ok = await confirm({
-                      title: "Disconnect this account?",
-                      body: "The stored credential is deleted. Workspace bindings stay visible but stop working until you reconnect.",
-                      confirmLabel: "Disconnect",
-                      destructive: true,
-                    });
-                    if (ok) mDisconnect.mutate(c.id);
-                  }}
-                  onRemove={async (c) => {
-                    const ok = await confirm({
-                      title: "Remove this connection?",
-                      body: "Deletes the connection and every workspace binding that uses it. This cannot be undone.",
-                      confirmLabel: "Remove",
-                      destructive: true,
-                    });
-                    if (ok) mDelete.mutate(c.id);
-                  }}
-                />
+                <div key={spec.id} style={{ borderBottom: rowBorder }}>
+                  <ConnectionRow
+                    {...common}
+                    onConnect={() =>
+                      spec.authMethods.some((m) => m.kind === "github_app")
+                        ? mGithub.mutate()
+                        : mGateway.mutate(spec)
+                    }
+                    connections={byProvider.get(spec.id) ?? []}
+                    onVerify={(c) => mVerify.mutate(c.id)}
+                    onDisconnect={async (c) => {
+                      const ok = await confirm({
+                        title: "Disconnect this account?",
+                        body: "The stored credential is deleted. Workspace bindings stay visible but stop working until you reconnect.",
+                        confirmLabel: "Disconnect",
+                        destructive: true,
+                      });
+                      if (ok) mDisconnect.mutate(c.id);
+                    }}
+                    onRemove={async (c) => {
+                      const ok = await confirm({
+                        title: "Remove this connection?",
+                        body: "Deletes the connection and every workspace binding that uses it. This cannot be undone.",
+                        confirmLabel: "Remove",
+                        destructive: true,
+                      });
+                      if (ok) mDelete.mutate(c.id);
+                    }}
+                  />
+                </div>
               );
             })}
           </div>
           {anySetupRequired && (
-            <p className="text-xs text-muted-foreground">
+            <p style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 8 }}>
               Greyed providers need a one-time admin OAuth app registration — checklist in
               active-task.md.
             </p>

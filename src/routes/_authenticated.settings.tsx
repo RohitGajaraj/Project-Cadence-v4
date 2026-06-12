@@ -1,11 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+// Settings — screen 5 wave B of the Ember Editorial migration, ported from
+// design-reference/cadence/loop.jsx (SettingsScreen, lines 966–1071): mono
+// kicker "Workspace", serif h1, hairline TabRow. Production functionality
+// rides the reference layout: the ?section= search-param contract (legacy
+// brief→workspace, calendar→connections deep links keep landing), the
+// OAuth-only AccountConnectionsSection (founder law 2026-06-12 — Connect-
+// button OAuth only, no key paste for connectors), profile/brief/voice-anchor
+// saves, and BYO AI keys (not connectors — they stay under Models).
+// Reference Digest tab omitted: no digest-routing backend (no-filler law).
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Compass, SlidersHorizontal, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
+import { TopBar } from "@/components/cadence/TopBar";
+import { MonoLabel, StepDot, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
+import { listAgents } from "@/lib/agents.functions";
 import { MODELS } from "@/lib/ai/models";
 import {
   listIntegrations,
@@ -13,7 +26,6 @@ import {
   disconnectIntegration,
   PROVIDERS,
 } from "@/lib/integrations.functions";
-import { Trash2, Compass, Save } from "lucide-react";
 import {
   listApiKeys,
   saveApiKey,
@@ -25,28 +37,33 @@ import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.f
 import { useWorkspace } from "@/hooks/use-workspace";
 import { AccountConnectionsSection } from "@/components/connections/AccountConnectionsSection";
 
-const SETTINGS_SECTIONS = [
-  { id: "profile", label: "Profile" },
-  { id: "workspace", label: "Workspace" },
-  { id: "connections", label: "Connections" },
-  { id: "ai", label: "AI & models" },
-] as const;
+type SectionId = "connections" | "ai" | "staff" | "workspace" | "profile";
 
-type SectionId = (typeof SETTINGS_SECTIONS)[number]["id"];
+// Tab order from the reference (Connectors · Models · Staff · … · Profile);
+// "Connections" is the reference's "Connectors" (the /sync surface owns that
+// word in production), "ai" stays the id behind the Models label so existing
+// deep links (?section=ai) keep working, and Workspace is production-only.
+const TABS: { id: SectionId; label: string }[] = [
+  { id: "connections", label: "Connections" },
+  { id: "ai", label: "Models" },
+  { id: "staff", label: "Staff" },
+  { id: "workspace", label: "Workspace" },
+  { id: "profile", label: "Profile" },
+];
 
 // Legacy deep links still arrive with the old section values. Map them so
 // /settings?section=brief and /settings?section=calendar keep landing on the
-// right content (calendar accounts now live inside AccountConnectionsSection).
+// right content (calendar accounts live inside AccountConnectionsSection).
 const LEGACY_SECTION_MAP: Record<string, SectionId> = {
   brief: "workspace",
   calendar: "connections",
 };
 
 function normalizeSection(raw: string | undefined): SectionId {
-  if (!raw) return "profile";
+  if (!raw) return "connections";
   const mapped = LEGACY_SECTION_MAP[raw];
   if (mapped) return mapped;
-  return SETTINGS_SECTIONS.some((s) => s.id === raw) ? (raw as SectionId) : "profile";
+  return TABS.some((s) => s.id === raw) ? (raw as SectionId) : "connections";
 }
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -55,33 +72,287 @@ export const Route = createFileRoute("/_authenticated/settings")({
   }),
   component: SettingsPage,
   head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
+  errorComponent: ({ error, reset }) => (
+    <AppShell>
+      <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
+        <div className="bento" style={{ padding: 24 }}>
+          <div className="mono-label" style={{ color: "var(--rose)" }}>
+            Couldn't load Settings
+          </div>
+          <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8, maxWidth: 480 }}>
+            {(error as Error)?.message ?? "Unknown error"}
+          </p>
+          <button className="btn btn-ghost btn-sm" style={{ marginTop: 14 }} onClick={reset}>
+            Retry · reloads the surface
+          </button>
+        </div>
+      </div>
+    </AppShell>
+  ),
 });
 
 function SettingsPage() {
   const { section } = Route.useSearch();
   const active = normalizeSection(section);
-  const briefRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (section === "brief" && briefRef.current) {
-      briefRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [section]);
-  const qc = useQueryClient();
-  const fProfile = useServerFn(getProfile);
+  const navigate = useNavigate({ from: "/settings" });
+  const { activeWorkspace, activeProduct } = useWorkspace();
+
   const fProjects = useServerFn(listProjects);
-  const mUpdate = useServerFn(updateProfile);
-  const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
 
+  const setTab = (id: string) => navigate({ search: { section: id } });
+
+  const workspaceName = activeWorkspace?.name;
+  const sub = workspaceName
+    ? `${workspaceName}${activeProduct?.name ? ` · ${activeProduct.name}` : ""}. Connectors, models, and staff config.`
+    : "Connectors, models, and staff config.";
+
+  return (
+    <AppShell projects={projects.data?.projects ?? []}>
+      <TopBar crumbs={[workspaceName ?? "Workspace", "Settings"]} />
+      <div
+        data-screen-label="Settings"
+        style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}
+      >
+        <SurfaceHeader kicker="Workspace" icon={SlidersHorizontal} title="Settings" sub={sub} />
+        <TabRow tabs={TABS} active={active} onSet={setTab} />
+
+        {active === "connections" && <ConnectionsTab />}
+        {active === "ai" && <ModelsTab />}
+        {active === "staff" && <StaffTab />}
+        {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
+        {active === "profile" && <ProfileTab />}
+      </div>
+    </AppShell>
+  );
+}
+
+/* ---- Connections — Connected accounts (OAuth-only) + workspace tool sync,
+   the reference's 3-col connector card grid (serif 16 name · StepDot ·
+   12 ink-subtle desc · Connect/Disconnect). ConnectorDetail drill-down is
+   the next migration screen — no "details →" link yet. ---- */
+
+function ConnectionsTab() {
+  const qc = useQueryClient();
   const fIntegrations = useServerFn(listIntegrations);
   const fUpsertInt = useServerFn(upsertIntegration);
   const fDisconnect = useServerFn(disconnectIntegration);
   const integrations = useQuery({ queryKey: ["integrations"], queryFn: () => fIntegrations() });
+
+  const intMap = new Map(
+    (integrations.data?.integrations ?? []).map(
+      (i: { provider: string; status: string; account_label: string | null }) => [i.provider, i],
+    ),
+  );
+
+  const mConnect = useMutation({
+    mutationFn: (provider: string) =>
+      fUpsertInt({
+        data: { provider, status: "connected", account_label: "Connected via Lovable" },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Connected");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const mDisconnect = useMutation({
+    mutationFn: (provider: string) => fDisconnect({ data: { provider } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Disconnected");
+    },
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <AccountConnectionsSection />
+
+      <div>
+        <MonoLabel style={{ marginBottom: 4 }}>Workspace tool sync</MonoLabel>
+        <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
+          Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.
+        </p>
+        {integrations.isLoading ? (
+          <div
+            className="mono-label"
+            style={{ padding: "24px 0", textAlign: "center", color: "var(--ink-faint)" }}
+          >
+            loading…
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            {PROVIDERS.map((p) => {
+              const conn = intMap.get(p.id) as
+                | { status: string; account_label: string | null }
+                | undefined;
+              const connected = conn?.status === "connected";
+              const comingSoon = p.desc.startsWith("Coming");
+              return (
+                <div
+                  key={p.id}
+                  className="bento"
+                  style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span className="font-display" style={{ fontSize: 16 }}>
+                      {p.label}
+                    </span>
+                    <StepDot status={connected ? "completed" : "planned"} />
+                  </div>
+                  <span style={{ fontSize: 12, color: "var(--ink-subtle)", flex: 1 }}>
+                    {p.desc}
+                    {connected && conn?.account_label ? ` · ${conn.account_label}` : ""}
+                  </span>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {connected ? (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={mDisconnect.isPending}
+                        onClick={() => mDisconnect.mutate(p.id)}
+                      >
+                        Disconnect · unlinks the tool
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        disabled={comingSoon || mConnect.isPending}
+                        onClick={() => mConnect.mutate(p.id)}
+                      >
+                        {comingSoon ? "Coming soon" : "Connect"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Models — the reference table anatomy (role · model mono · via mono ·
+   Change ghost) rendered from REAL data: the profile's default model.
+   "Change" is real here — it reveals the model select. BYO AI keys stay
+   (they are not connectors), restyled quiet-Ember. ---- */
+
+function ModelsTab() {
+  const qc = useQueryClient();
+  const fProfile = useServerFn(getProfile);
+  const mUpdate = useServerFn(updateProfile);
+  const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
+
+  const [defaultModel, setDefaultModel] = useState("google/gemini-3-flash-preview");
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    const p = profile.data?.profile as { default_model?: string } | null;
+    if (p) setDefaultModel(p.default_model ?? "google/gemini-3-flash-preview");
+  }, [profile.data]);
+
+  const saveModel = useMutation({
+    mutationFn: () => mUpdate({ data: { default_model: defaultModel } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      setEditing(false);
+      toast.success("Default model saved");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const current = MODELS.find((m) => m.id === defaultModel);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+        {profile.isLoading ? (
+          <div
+            className="mono-label"
+            style={{ padding: "24px 0", textAlign: "center", color: "var(--ink-faint)" }}
+          >
+            loading…
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "13px 18px",
+              borderBottom: editing ? "1px solid var(--hairline)" : "none",
+              fontSize: 13,
+            }}
+          >
+            <span style={{ flex: 1, color: "var(--ink-muted)" }}>
+              Default · chat and agent runs
+            </span>
+            <span className="mono-label" style={{ color: "var(--ink)" }}>
+              {current?.label ?? defaultModel}
+            </span>
+            <span className="mono-label" style={{ fontSize: 9 }}>
+              {current ? (current.live ? "gateway" : "byo") : "unknown"}
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setEditing((v) => !v)}>
+              Change
+            </button>
+          </div>
+        )}
+        {editing ? (
+          <div className="fade-up" style={{ display: "flex", gap: 8, padding: "13px 18px" }}>
+            <select
+              className="input"
+              value={defaultModel}
+              onChange={(e) => setDefaultModel(e.target.value)}
+              aria-label="Default AI model"
+            >
+              <optgroup label="Live (Lovable AI Gateway)">
+                {MODELS.filter((m) => m.live).map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} — {m.desc}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Bring your own key (coming soon)">
+                {MODELS.filter((m) => !m.live).map((m) => (
+                  <option key={m.id} value={m.id} disabled>
+                    {m.label} — {m.desc}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <button
+              className="btn btn-primary btn-sm"
+              style={{ flexShrink: 0 }}
+              disabled={saveModel.isPending}
+              onClick={() => saveModel.mutate()}
+            >
+              {saveModel.isPending ? "Saving…" : "Save · chat and agent runs use it"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <ByoKeysSection />
+    </div>
+  );
+}
+
+function ByoKeysSection() {
+  const qc = useQueryClient();
   const fKeys = useServerFn(listApiKeys);
   const fSaveKey = useServerFn(saveApiKey);
   const fDelKey = useServerFn(deleteApiKey);
   const fTestKey = useServerFn(testApiKey);
   const keys = useQuery({ queryKey: ["api-keys"], queryFn: () => fKeys() });
+
   const [keyProv, setKeyProv] = useState<string>(BYO_PROVIDERS[0].id);
   const [keyLabel, setKeyLabel] = useState<string>("");
   const [keyValue, setKeyValue] = useState<string>("");
@@ -92,6 +363,7 @@ function SettingsPage() {
     error?: string;
     sample?: string;
   } | null>(null);
+
   const mTestKey = useMutation({
     mutationFn: () =>
       fTestKey({ data: { provider: keyProv, api_key: keyValue, base_url: keyBase || null } }),
@@ -132,492 +404,334 @@ function SettingsPage() {
       toast.success("Removed");
     },
   });
-  const intMap = new Map(
-    (integrations.data?.integrations ?? []).map(
-      (i: { provider: string; status: string; account_label: string | null }) => [i.provider, i],
-    ),
-  );
 
-  const mConnect = useMutation({
-    mutationFn: (provider: string) =>
-      fUpsertInt({
-        data: { provider, status: "connected", account_label: "Connected via Lovable" },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Connected");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const mDisconnect = useMutation({
-    mutationFn: (provider: string) => fDisconnect({ data: { provider } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Disconnected");
-    },
-  });
-
-  const [fullName, setFullName] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState("");
-  const [timezone, setTimezone] = useState("");
-  const [defaultModel, setDefaultModel] = useState("google/gemini-3-flash-preview");
-  const [whStart, setWhStart] = useState(9);
-  const [whEnd, setWhEnd] = useState(18);
-  const [voiceAnchor, setVoiceAnchor] = useState("");
-
-  useEffect(() => {
-    const p = profile.data?.profile as {
-      full_name?: string;
-      display_name?: string;
-      role?: string;
-      timezone?: string;
-      default_model?: string;
-      working_hours_start?: number;
-      working_hours_end?: number;
-      voice_anchor_text?: string | null;
-    } | null;
-    if (!p) return;
-    setFullName(p.full_name ?? "");
-    setDisplayName(p.display_name ?? "");
-    setRole(p.role ?? "AI Product Manager");
-    setTimezone(p.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
-    setDefaultModel(p.default_model ?? "google/gemini-3-flash-preview");
-    setWhStart(p.working_hours_start ?? 9);
-    setWhEnd(p.working_hours_end ?? 18);
-    setVoiceAnchor(p.voice_anchor_text ?? "");
-  }, [profile.data]);
-
-  const save = useMutation({
-    mutationFn: () =>
-      mUpdate({
-        data: {
-          full_name: fullName || undefined,
-          display_name: displayName || undefined,
-          role: role || undefined,
-          timezone: timezone || undefined,
-          default_model: defaultModel,
-          working_hours_start: whStart,
-          working_hours_end: whEnd,
-          voice_anchor_text: voiceAnchor,
-          onboarded: true,
-        },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["profile"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Profile saved");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const saveButtonClass =
-    "shrink-0 text-xs font-medium rounded-md bg-foreground text-background px-3 py-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed";
+  const keyList = keys.data?.keys ?? [];
 
   return (
-    <AppShell projects={projects.data?.projects ?? []}>
-      <div className="px-6 lg:px-10 py-8">
-        <div className="mx-auto max-w-5xl">
-          <header className="mb-6">
-            <h1 className="text-xl font-medium tracking-tight">Settings</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Profile, workspace context, connections, and AI configuration.
-            </p>
-          </header>
+    <div className="bento" style={{ padding: "var(--card-pad)" }}>
+      <MonoLabel style={{ marginBottom: 4 }}>Bring your own AI keys</MonoLabel>
+      <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
+        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT. Stored encrypted per
+        user.
+      </p>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
-            <nav
-              aria-label="Settings sections"
-              className="lg:w-40 lg:shrink-0 lg:sticky lg:top-8 lg:self-start"
-            >
-              <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
-                {SETTINGS_SECTIONS.map((s) => (
-                  <li key={s.id} className="shrink-0">
-                    <Link
-                      to="/settings"
-                      search={{ section: s.id }}
-                      className={`block whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm transition-colors ${
-                        active === s.id
-                          ? "bg-secondary/60 font-medium text-foreground"
-                          : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                      }`}
-                    >
-                      {s.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <div className="min-w-0 max-w-3xl flex-1 space-y-6">
-              {active === "profile" && (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    save.mutate();
-                  }}
-                  className="space-y-6"
-                >
-                  <section className="bento p-5 space-y-4">
-                    <h2 className="mono-label">Identity</h2>
-                    <Field
-                      label="Full name"
-                      hint="Used on documents, briefs, and stakeholder updates."
-                    >
-                      <input
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Jane Q. Doe"
-                        className="input"
-                      />
-                    </Field>
-                    <Field
-                      label="Preferred display name"
-                      hint="How Cadence and your agents will greet you."
-                    >
-                      <input
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Jane"
-                        className="input"
-                      />
-                    </Field>
-                    <Field label="Role">
-                      <input
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        placeholder="AI Product Manager"
-                        className="input"
-                      />
-                    </Field>
-                    <Field label="Timezone">
-                      <input
-                        value={timezone}
-                        onChange={(e) => setTimezone(e.target.value)}
-                        placeholder="America/New_York"
-                        className="input"
-                      />
-                    </Field>
-                  </section>
-
-                  <section className="bento p-5 space-y-4">
-                    <h2 className="mono-label">Working hours</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Field label="Start (24h)">
-                        <input
-                          type="number"
-                          min={0}
-                          max={23}
-                          value={whStart}
-                          onChange={(e) => setWhStart(Number(e.target.value))}
-                          className="input"
-                        />
-                      </Field>
-                      <Field label="End (24h)">
-                        <input
-                          type="number"
-                          min={1}
-                          max={24}
-                          value={whEnd}
-                          onChange={(e) => setWhEnd(Number(e.target.value))}
-                          className="input"
-                        />
-                      </Field>
-                    </div>
-                  </section>
-
-                  <div className="flex justify-end">
-                    <button type="submit" disabled={save.isPending} className={saveButtonClass}>
-                      {save.isPending ? "Saving…" : "Save changes"}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {active === "workspace" && (
-                <>
-                  <WorkspaceBriefSection scrollRef={briefRef} highlight={section === "brief"} />
-
-                  <section className="bento p-5 space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="mono-label">Voice anchor</h2>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Operator-set tone and stance, injected into every agent mission's system
-                          prompt. Leave empty to skip.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={save.isPending}
-                        onClick={() => save.mutate()}
-                        className={saveButtonClass}
-                      >
-                        {save.isPending ? "Saving…" : "Save"}
-                      </button>
-                    </div>
-                    <Field
-                      label="Voice anchor"
-                      hint="How your agents should sound and what stance they should take."
-                    >
-                      <textarea
-                        value={voiceAnchor}
-                        onChange={(e) => setVoiceAnchor(e.target.value)}
-                        rows={4}
-                        maxLength={2000}
-                        placeholder="Direct, evidence-first, no hype. Challenge weak assumptions. Prefer short declarative sentences."
-                        className="input resize-y"
-                      />
-                    </Field>
-                  </section>
-                </>
-              )}
-
-              {active === "connections" && (
-                <>
-                  <AccountConnectionsSection />
-
-                  <section className="bento p-5 space-y-3">
-                    <div>
-                      <h2 className="mono-label">Workspace tool sync</h2>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Bring your other PM tools into Cadence. Two-way sync ships in 5.2b.
-                      </p>
-                    </div>
-                    <div>
-                      {PROVIDERS.map((p) => {
-                        const conn = intMap.get(p.id) as
-                          | { status: string; account_label: string | null }
-                          | undefined;
-                        const connected = conn?.status === "connected";
-                        const comingSoon = p.desc.startsWith("Coming");
-                        return (
-                          <div
-                            key={p.id}
-                            className="flex items-center gap-3 border-b hairline py-2.5 last:border-b-0 last:pb-0 first:pt-0"
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                connected ? "bg-emerald" : "bg-muted-foreground/30"
-                              }`}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm">{p.label}</div>
-                              <div className="truncate text-xs text-muted-foreground">
-                                {p.desc}
-                                {connected && conn?.account_label ? ` · ${conn.account_label}` : ""}
-                              </div>
-                            </div>
-                            {connected ? (
-                              <button
-                                onClick={() => mDisconnect.mutate(p.id)}
-                                className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60"
-                              >
-                                Disconnect
-                              </button>
-                            ) : (
-                              <button
-                                disabled={comingSoon || mConnect.isPending}
-                                onClick={() => mConnect.mutate(p.id)}
-                                className="text-xs rounded-md border hairline px-2.5 py-1 hover:bg-secondary/60 disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                {comingSoon ? "Coming soon" : "Connect"}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {active === "ai" && (
-                <>
-                  <section className="bento p-5 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="mono-label">Default AI model</h2>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Used for chat and agent runs unless you override.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={save.isPending}
-                        onClick={() => save.mutate()}
-                        className={saveButtonClass}
-                      >
-                        {save.isPending ? "Saving…" : "Save"}
-                      </button>
-                    </div>
-                    <select
-                      value={defaultModel}
-                      onChange={(e) => setDefaultModel(e.target.value)}
-                      className="input"
-                    >
-                      <optgroup label="Live (Lovable AI Gateway)">
-                        {MODELS.filter((m) => m.live).map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.label} — {m.desc}
-                          </option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Bring your own key (coming soon)">
-                        {MODELS.filter((m) => !m.live).map((m) => (
-                          <option key={m.id} value={m.id} disabled>
-                            {m.label} — {m.desc}
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
-                  </section>
-
-                  <section className="bento p-5 space-y-4">
-                    <div>
-                      <h2 className="mono-label">Bring your own AI keys</h2>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT.
-                        Stored encrypted per user.
-                      </p>
-                    </div>
-
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (keyValue.trim()) mSaveKey.mutate();
-                      }}
-                      className="grid grid-cols-1 sm:grid-cols-12 gap-2"
-                    >
-                      <select
-                        value={keyProv}
-                        onChange={(e) => setKeyProv(e.target.value)}
-                        className="input sm:col-span-3"
-                      >
-                        {BYO_PROVIDERS.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.label}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        value={keyLabel}
-                        onChange={(e) => setKeyLabel(e.target.value)}
-                        placeholder="Label (optional)"
-                        className="input sm:col-span-3"
-                      />
-                      <input
-                        value={keyValue}
-                        onChange={(e) => setKeyValue(e.target.value)}
-                        type="password"
-                        placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder}
-                        className="input sm:col-span-4"
-                      />
-                      <input
-                        value={keyBase}
-                        onChange={(e) => setKeyBase(e.target.value)}
-                        placeholder="Base URL (Ollama only)"
-                        className="input sm:col-span-2"
-                      />
-                      <div className="sm:col-span-12 flex items-center justify-end gap-2">
-                        {testResult && (
-                          <span
-                            className={`text-xs ${testResult.ok ? "text-emerald" : "text-rose"}`}
-                          >
-                            {testResult.ok
-                              ? `✓ ${testResult.latency_ms}ms`
-                              : `✗ ${testResult.error?.slice(0, 80)}`}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          disabled={mTestKey.isPending || !keyValue.trim()}
-                          onClick={() => mTestKey.mutate()}
-                          className="text-xs rounded-md border hairline px-3 py-1.5 hover:bg-secondary/60 disabled:opacity-50"
-                        >
-                          {mTestKey.isPending ? "Testing…" : "Test key"}
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={mSaveKey.isPending || !keyValue.trim()}
-                          className="text-xs rounded-md bg-foreground text-background px-3 py-1.5 disabled:opacity-50"
-                        >
-                          {mSaveKey.isPending ? "Saving…" : "Add key"}
-                        </button>
-                      </div>
-                    </form>
-
-                    <div>
-                      {(keys.data?.keys ?? []).length === 0 && (
-                        <div className="text-xs text-muted-foreground">No BYO keys saved yet.</div>
-                      )}
-                      {(keys.data?.keys ?? []).map((k) => (
-                        <div
-                          key={k.id}
-                          className="flex items-center gap-3 border-b hairline py-2.5 last:border-b-0 last:pb-0 first:pt-0"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm">
-                              {BYO_PROVIDERS.find((p) => p.id === k.provider)?.label ?? k.provider}
-                              {k.label && (
-                                <span className="text-muted-foreground"> · {k.label}</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground font-mono">
-                              {k.preview}
-                              {k.base_url ? ` · ${k.base_url}` : ""}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => mDelKey.mutate(k.id)}
-                            aria-label="Remove key"
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </>
-              )}
-            </div>
-          </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (keyValue.trim()) mSaveKey.mutate();
+        }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 3fr 4fr 2fr", gap: 8 }}>
+          <select
+            className="input"
+            value={keyProv}
+            onChange={(e) => setKeyProv(e.target.value)}
+            aria-label="Key provider"
+          >
+            {BYO_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <input
+            className="input"
+            value={keyLabel}
+            onChange={(e) => setKeyLabel(e.target.value)}
+            placeholder="Label (optional)"
+          />
+          <input
+            className="input"
+            value={keyValue}
+            onChange={(e) => setKeyValue(e.target.value)}
+            type="password"
+            placeholder={BYO_PROVIDERS.find((p) => p.id === keyProv)?.placeholder}
+          />
+          <input
+            className="input"
+            value={keyBase}
+            onChange={(e) => setKeyBase(e.target.value)}
+            placeholder="Base URL (Ollama only)"
+          />
         </div>
-      </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginTop: 8,
+          }}
+        >
+          {testResult ? (
+            <span
+              className="mono-label"
+              style={{
+                fontSize: 8.5,
+                color: testResult.ok ? "var(--emerald)" : "var(--rose)",
+              }}
+            >
+              {testResult.ok ? `ok · ${testResult.latency_ms}ms` : testResult.error?.slice(0, 80)}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={mTestKey.isPending || !keyValue.trim()}
+            onClick={() => mTestKey.mutate()}
+          >
+            {mTestKey.isPending ? (
+              <>
+                <span className="spinner" style={{ width: 11, height: 11 }} />
+                Testing…
+              </>
+            ) : (
+              "Test · calls the provider"
+            )}
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm"
+            disabled={mSaveKey.isPending || !keyValue.trim()}
+          >
+            {mSaveKey.isPending ? "Saving…" : "Add key · stored encrypted"}
+          </button>
+        </div>
+      </form>
 
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.625rem;
-          border: 1px solid var(--color-hairline);
-          background: color-mix(in oklab, var(--color-paper) 60%, transparent);
-          padding: 0.55rem 0.75rem;
-          font-size: 0.875rem;
-          outline: none;
-          color: var(--color-foreground);
-        }
-        .input:focus { box-shadow: 0 0 0 1px var(--color-ring); }
-      `}</style>
-    </AppShell>
+      <div style={{ marginTop: 12 }}>
+        {keys.isLoading ? (
+          <div className="mono-label" style={{ color: "var(--ink-faint)" }}>
+            loading…
+          </div>
+        ) : keyList.length === 0 ? (
+          <div style={{ fontSize: 12, color: "var(--ink-faint)" }}>No BYO keys saved yet.</div>
+        ) : (
+          keyList.map((k, i) => (
+            <div
+              key={k.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 0",
+                borderTop: i === 0 ? "1px solid var(--hairline)" : undefined,
+                borderBottom: "1px solid var(--hairline)",
+                fontSize: 13,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div>
+                  {BYO_PROVIDERS.find((p) => p.id === k.provider)?.label ?? k.provider}
+                  {k.label ? (
+                    <span style={{ color: "var(--ink-subtle)" }}> · {k.label}</span>
+                  ) : null}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--ink-subtle)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {k.preview}
+                  {k.base_url ? ` · ${k.base_url}` : ""}
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                aria-label="Remove key"
+                style={{ color: "var(--rose)" }}
+                disabled={mDelKey.isPending && mDelKey.variables === k.id}
+                onClick={() => mDelKey.mutate(k.id)}
+              >
+                <Trash2 size={13} strokeWidth={1.75} />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+/* ---- Staff — the real agent registry (agents table via listAgents):
+   4-col bento cards, serif 15 name + mono 8.5 role, 30×17 switch.
+   Production has no disable-agent capability — the toggle states the truth
+   (gated in Govern), exactly the reference's honest toast. ---- */
+
+type AgentRow = { id: string; slug: string; name: string; role: string; enabled: boolean };
+
+function StaffTab() {
+  const fAgents = useServerFn(listAgents);
+  const agentsQ = useQuery({ queryKey: ["agents"], queryFn: () => fAgents() });
+
+  if (agentsQ.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load agents
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(agentsQ.error as Error)?.message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => agentsQ.refetch()}
+        >
+          Retry · reloads agents
+        </button>
+      </div>
+    );
+  }
+
+  if (agentsQ.isLoading) {
+    return (
+      <div
+        className="mono-label"
+        style={{ padding: "32px 0", textAlign: "center", color: "var(--ink-faint)" }}
+      >
+        loading…
+      </div>
+    );
+  }
+
+  const agents = (agentsQ.data?.agents ?? []) as AgentRow[];
+  if (agents.length === 0) {
+    return (
+      <p style={{ fontSize: 12.5, color: "var(--ink-faint)", padding: "24px 0" }}>
+        No agents in this workspace yet.
+      </p>
+    );
+  }
+
   return (
-    <label className="block">
-      <div className="text-xs text-muted-foreground mb-1.5">{label}</div>
-      {children}
-      {hint && <div className="mt-1 text-[11px] text-muted-foreground/70">{hint}</div>}
-    </label>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      {agents.map((a) => (
+        <div
+          key={a.slug}
+          className="bento"
+          style={{ padding: 14, display: "flex", alignItems: "center", gap: 10 }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="font-display" style={{ fontSize: 15 }}>
+              {a.name}
+            </div>
+            <div className="mono-label" style={{ fontSize: 8.5 }}>
+              {a.role}
+            </div>
+          </div>
+          <button
+            role="switch"
+            aria-checked={a.enabled}
+            title={`${a.name} ${a.enabled ? "enabled" : "disabled"}`}
+            onClick={() =>
+              toast(
+                a.enabled
+                  ? `${a.name} stays on. Disabling agents is gated in Govern.`
+                  : `${a.name} stays off. Enabling agents is gated in Govern.`,
+              )
+            }
+            style={{
+              width: 30,
+              height: 17,
+              borderRadius: 99,
+              background: a.enabled ? "var(--deep-green)" : "var(--surface-2)",
+              position: "relative",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                ...(a.enabled ? { right: 2 } : { left: 2 }),
+                top: 2,
+                width: 13,
+                height: 13,
+                borderRadius: 99,
+                background: "var(--canvas)",
+              }}
+            ></span>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---- Workspace (production-only tab) — strategic brief + voice anchor,
+   restyled quiet-Ember. ---- */
+
+function WorkspaceTab({ scrollToBrief }: { scrollToBrief: boolean }) {
+  const qc = useQueryClient();
+  const briefRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (scrollToBrief && briefRef.current) {
+      briefRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [scrollToBrief]);
+
+  const fProfile = useServerFn(getProfile);
+  const mUpdate = useServerFn(updateProfile);
+  const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
+
+  const [voiceAnchor, setVoiceAnchor] = useState("");
+  useEffect(() => {
+    const p = profile.data?.profile as { voice_anchor_text?: string | null } | null;
+    if (p) setVoiceAnchor(p.voice_anchor_text ?? "");
+  }, [profile.data]);
+
+  const saveVoice = useMutation({
+    mutationFn: () => mUpdate({ data: { voice_anchor_text: voiceAnchor } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Voice anchor saved");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <WorkspaceBriefSection scrollRef={briefRef} highlight={scrollToBrief} />
+
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+          <div style={{ flex: 1 }}>
+            <MonoLabel style={{ marginBottom: 4 }}>Voice anchor</MonoLabel>
+            <p style={{ fontSize: 12, color: "var(--ink-subtle)", maxWidth: 520 }}>
+              Operator-set tone and stance, injected into every agent mission's system prompt. Leave
+              empty to skip.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            style={{ flexShrink: 0 }}
+            disabled={saveVoice.isPending || profile.isLoading}
+            onClick={() => saveVoice.mutate()}
+          >
+            {saveVoice.isPending ? "Saving…" : "Save · every mission hears it"}
+          </button>
+        </div>
+        <textarea
+          className="input"
+          value={voiceAnchor}
+          onChange={(e) => setVoiceAnchor(e.target.value)}
+          rows={4}
+          maxLength={2000}
+          aria-label="Voice anchor"
+          placeholder="Direct, evidence-first, no hype. Challenge weak assumptions. Prefer short declarative sentences."
+          style={{ resize: "vertical" }}
+        />
+        <p style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 6 }}>
+          How your agents should sound and what stance they should take.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -728,63 +842,284 @@ function WorkspaceBriefSection({
   }
 
   return (
-    <section
+    <div
       ref={scrollRef}
-      className={`bento p-5 space-y-4 ${highlight ? "ring-1 ring-foreground/30" : ""}`}
+      className="bento"
+      style={{
+        padding: "var(--card-pad)",
+        boxShadow: highlight
+          ? "0 0 0 1px color-mix(in oklab, var(--ember) 35%, transparent)"
+          : undefined,
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="mono-label inline-flex items-center gap-2">
-            <Compass className="h-3 w-3" /> Strategic brief
-            {activeWorkspace?.name && (
-              <span className="normal-case tracking-normal text-muted-foreground/70">
-                · {activeWorkspace.name}
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <MonoLabel icon={Compass} style={{ marginBottom: 4 }}>
+            Strategic brief
+            {activeWorkspace?.name ? ` · ${activeWorkspace.name}` : ""}
+          </MonoLabel>
+          <p style={{ fontSize: 12, color: "var(--ink-subtle)", maxWidth: 520 }}>
             This brief is injected into every agent mission's system prompt. Changing it visibly
             changes what Discovery surfaces and what the Strategist writes. Keep it tight.
           </p>
         </div>
         <button
           type="button"
+          className="btn btn-primary btn-sm"
+          style={{ flexShrink: 0 }}
           disabled={!dirty || save.isPending || isLoading}
           onClick={() => save.mutate()}
-          className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium rounded-md bg-foreground text-background px-3 py-1.5 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Save className="h-3 w-3" />
-          {save.isPending ? "Saving…" : dirty ? "Save brief" : "Saved"}
+          {save.isPending ? "Saving…" : dirty ? "Save brief · next mission uses it" : "Saved"}
         </button>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading brief…</div>
+        <div className="mono-label" style={{ color: "var(--ink-faint)", padding: "16px 0" }}>
+          loading…
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {BRIEF_FIELDS.map((f) => (
             <div key={f.key}>
-              <label htmlFor={`brief-${f.key}`} className="block">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-xs text-foreground">{f.label}</span>
-                  <span className="text-[10px] text-muted-foreground/70">
+              <label htmlFor={`brief-${f.key}`} style={{ display: "block" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, fontWeight: 500 }}>{f.label}</span>
+                  <span
+                    className="mono-label tabular-nums"
+                    style={{ fontSize: 8.5, color: "var(--ink-faint)" }}
+                  >
                     {form[f.key].length} chars
                   </span>
                 </div>
-                <p className="mt-0.5 text-[11px] text-muted-foreground/70">{f.hint}</p>
+                <p style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 2 }}>{f.hint}</p>
               </label>
               <textarea
                 id={`brief-${f.key}`}
+                className="input"
                 value={form[f.key]}
                 onChange={(e) => update(f.key, e.target.value)}
                 rows={f.rows}
                 placeholder={f.placeholder}
-                className="input mt-2 resize-y"
+                style={{ marginTop: 8, resize: "vertical" }}
               />
             </div>
           ))}
         </div>
       )}
-    </section>
+    </div>
+  );
+}
+
+/* ---- Profile — the reference avatar header (initials chip + name +
+   role · workspace) from real profile data, then the production identity
+   form + working hours. The reference's notification-pref rows (gate
+   alerts / daily brief / quiet hours / weekends) have no backend — omitted
+   per the no-filler law. ---- */
+
+function ProfileTab() {
+  const qc = useQueryClient();
+  const { activeWorkspace } = useWorkspace();
+  const fProfile = useServerFn(getProfile);
+  const mUpdate = useServerFn(updateProfile);
+  const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
+
+  const [fullName, setFullName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [whStart, setWhStart] = useState(9);
+  const [whEnd, setWhEnd] = useState(18);
+
+  useEffect(() => {
+    const p = profile.data?.profile as {
+      full_name?: string;
+      display_name?: string;
+      role?: string;
+      timezone?: string;
+      working_hours_start?: number;
+      working_hours_end?: number;
+    } | null;
+    if (!p) return;
+    setFullName(p.full_name ?? "");
+    setDisplayName(p.display_name ?? "");
+    setRole(p.role ?? "AI Product Manager");
+    setTimezone(p.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setWhStart(p.working_hours_start ?? 9);
+    setWhEnd(p.working_hours_end ?? 18);
+  }, [profile.data]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      mUpdate({
+        data: {
+          full_name: fullName || undefined,
+          display_name: displayName || undefined,
+          role: role || undefined,
+          timezone: timezone || undefined,
+          working_hours_start: whStart,
+          working_hours_end: whEnd,
+          onboarded: true,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Profile saved");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const name = displayName || fullName;
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+
+  if (profile.isLoading) {
+    return (
+      <div
+        className="mono-label"
+        style={{ padding: "32px 0", textAlign: "center", color: "var(--ink-faint)" }}
+      >
+        loading…
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+      style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 }}
+    >
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        {name ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+            <span
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 99,
+                background: "var(--soft-stone)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              {initials}
+            </span>
+            <div>
+              <div style={{ fontWeight: 550 }}>{name}</div>
+              <div style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
+                {role || "Member"}
+                {activeWorkspace?.name ? ` · ${activeWorkspace.name}` : ""}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <MonoLabel style={{ marginBottom: 12 }}>Identity</MonoLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Full name" hint="Used on documents, briefs, and stakeholder updates.">
+            <input
+              className="input"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Jane Q. Doe"
+            />
+          </Field>
+          <Field label="Preferred display name" hint="How Cadence and your agents will greet you.">
+            <input
+              className="input"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Jane"
+            />
+          </Field>
+          <Field label="Role">
+            <input
+              className="input"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder="AI Product Manager"
+            />
+          </Field>
+          <Field label="Timezone">
+            <input
+              className="input"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              placeholder="America/New_York"
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        <MonoLabel style={{ marginBottom: 12 }}>Working hours</MonoLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Start (24h)">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              max={23}
+              value={whStart}
+              onChange={(e) => setWhStart(Number(e.target.value))}
+            />
+          </Field>
+          <Field label="End (24h)">
+            <input
+              className="input"
+              type="number"
+              min={1}
+              max={24}
+              value={whEnd}
+              onChange={(e) => setWhEnd(Number(e.target.value))}
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={save.isPending}>
+          {save.isPending ? "Saving…" : "Save · agents greet you by it"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label style={{ display: "block" }}>
+      <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      {children}
+      {hint ? (
+        <div style={{ marginTop: 4, fontSize: 11, color: "var(--ink-faint)" }}>{hint}</div>
+      ) : null}
+    </label>
   );
 }
