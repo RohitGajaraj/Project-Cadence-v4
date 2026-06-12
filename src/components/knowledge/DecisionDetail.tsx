@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { listDecisions, updateDecision, type DecisionSource } from "@/lib/decisions.functions";
 import { DrillHeader, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
 import { SourceLink } from "@/components/knowledge/DecisionsPanel";
-import { ageOf, hasSource, SOURCE_LABEL, STATUS_TONE } from "./decisions-shared";
+import { ageOf, displayWho, hasSource, SOURCE_LABEL, STATUS_TONE } from "./decisions-shared";
 
 export function DecisionDetail({ id }: { id: string }) {
   const navigate = useNavigate();
@@ -79,7 +79,7 @@ export function DecisionDetail({ id }: { id: string }) {
       <DrillHeader
         onBack={onBack}
         backLabel="All decisions"
-        kicker={`Decision · ${ageOf(d.created_at)} · ${d.decided_by_agent_slug ?? "You"}`}
+        kicker={`Decision · ${ageOf(d.created_at)} · ${displayWho(d.decided_by_agent_slug)}`}
         title={d.title}
         right={
           hasSource(d) && sourceNoun ? (

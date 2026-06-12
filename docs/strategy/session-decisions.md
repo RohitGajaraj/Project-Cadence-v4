@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — Onboarding is frictionless: connecting sources is never a gate
+
+**Decision:** Founder ruling (mid-session, screen 8): the first-run flow must never require connecting a source to proceed. Every step is skippable; at zero connections the step-1 primary action IS the skip — "Skip for now · connect anytime in Settings" — and the sub copy promises nothing is required. The three steps form one connected journey: whatever the user keeps (connections, staff toggles, the chosen goal) persists as real data into the next phase and into the workspace.
+
+**Why:** A connect-or-stop wall at the first screen is a churn point — the founder called the turn-rate risk explicitly. Cadence works on seeded/demo signals out of the box, so an unconnected workspace is still a working workspace; Settings keeps every connector one click away.
+
+**Tradeoffs considered:** The reference design disables Continue at 0 connections (rejected — production connectors are OAuth-only and env-dependent; a dev or unconfigured workspace would hard-trap). Two side-by-side buttons (ghost skip + primary continue) at 0 connections (rejected — redundant actions, and "Continue · Scout starts listening" would be dishonest with nothing connected).
+
+**Impact:** `src/components/onboarding/OnboardingFlow.tsx` (step-1 footer + sub), first-run gate design in `src/lib/onboarding-gate.ts` already errs open (only an explicit `onboarded === false` redirects; failures never trap).
+
 ### 2026-06-12 — Verdict chips: the inline annotation pattern is a platform-wide design law
 
 **Decision:** Founder ruling (mid-session, reference image of design-review annotations — `KEEP` / `CORRECT` / `ADD NEXT`): whenever content carries a judgment, Cadence leads with an inline **verdict chip** — a mono-caps outline pill in the role color — instead of burying the verdict in prose. Codified as a standing section in root `DESIGN.md` ("Inline verdict chips — annotate, don't bury"), canonical primitive `VerdictChip` in `src/components/cadence/Primitives.tsx`. Applies to every current and future screen.

@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
-import { ageOf, SOURCE_LABEL, STATUS_TONE } from "./decisions-shared";
+import { ageOf, displayWho, SOURCE_LABEL, STATUS_TONE } from "./decisions-shared";
 
 type SourceFilter = "all" | DecisionSource;
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
@@ -336,7 +336,7 @@ export function DecisionsPanel() {
                   color: d.decided_by_agent_slug ? "var(--agent)" : "var(--ink-muted)",
                 }}
               >
-                {d.decided_by_agent_slug ?? "You"}
+                {displayWho(d.decided_by_agent_slug)}
               </span>
               <span className="mono-label tabular-nums">{ageOf(d.created_at)}</span>
               <span
