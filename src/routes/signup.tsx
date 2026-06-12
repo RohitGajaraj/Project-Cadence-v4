@@ -1,14 +1,16 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DotPattern } from "@/components/ui/dot-pattern";
-import { cn } from "@/lib/utils";
+import { CadenceMark } from "@/components/cadence/Primitives";
+
+// Screen 8 (F-DESIGN-EMBER) — signup on the login stage from
+// design-reference/cadence/onboard.jsx. Creates the account with
+// onboarded:false so the first-run flow (/onboarding) greets the new user —
+// the handle_new_user trigger has already seeded their workspace, staff,
+// and demo content by the time they land there.
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
@@ -47,13 +49,15 @@ function SignupPage() {
       return toast.error(error.message);
     }
     // Auto-confirm is on; session should be present. Upsert profile.
+    // onboarded stays false — the _authenticated gate routes the new user
+    // through /onboarding on first landing.
     if (data.user) {
       await supabase.from("profiles").upsert({
         id: data.user.id,
         full_name: fullName.trim(),
         display_name: fullName.trim().split(" ")[0],
         role,
-        onboarded: true,
+        onboarded: false,
       });
     }
     setLoading(false);
@@ -75,106 +79,149 @@ function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground relative overflow-hidden p-4">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 animate-aurora">
-        <div className="absolute inset-0 neural-gradient" />
+    <div
+      data-screen-label="Sign up"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper)",
+        color: "var(--ink)",
+        overflow: "hidden",
+        padding: 24,
+      }}
+    >
+      {/* giant mono butterfly watermark */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: -120,
+          bottom: -130,
+          color: "var(--ink)",
+          opacity: 0.05,
+          transform: "rotate(-12deg)",
+        }}
+      >
+        <CadenceMark size={520} tile={false} />
       </div>
-      <DotPattern
-        className={cn(
-          "-z-10 opacity-40",
-          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_75%)]",
-        )}
-      />
-      <div className="w-full max-w-md p-8 rounded-2xl border hairline bg-card/70 backdrop-blur-xl space-y-5">
-        <div className="text-center">
-          <h1 className="font-display text-2xl tracking-tight">Create your workspace</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Cadence is built for AI Product Managers.
-          </p>
-        </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={signupGoogle}
-          disabled={loadingGoogle}
+      <div
+        className="fade-up"
+        style={{ width: 360, maxWidth: "calc(100vw - 48px)", position: "relative", zIndex: 1 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            marginBottom: 26,
+          }}
         >
-          {loadingGoogle ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue with Google</>}
-        </Button>
-
-        <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          <div className="flex-1 h-px bg-border" /> or <div className="flex-1 h-px bg-border" />
+          <CadenceMark size={52} />
+          <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, marginTop: 14 }}>
+            Create your workspace
+          </h1>
+          <div className="mono-label" style={{ marginTop: 6 }}>
+            agents execute · you govern
+          </div>
         </div>
 
-        <form onSubmit={signup} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs">
-              Full name
-            </Label>
-            <Input
-              id="name"
+        <div className="bento" style={{ padding: 22 }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ width: "100%", justifyContent: "center" }}
+            onClick={signupGoogle}
+            disabled={loadingGoogle}
+          >
+            {loadingGoogle ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              "Continue with Google"
+            )}
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+            <span style={{ flex: 1, height: 1, background: "var(--hairline)" }}></span>
+            <span className="mono-label" style={{ fontSize: 8.5 }}>
+              or
+            </span>
+            <span style={{ flex: 1, height: 1, background: "var(--hairline)" }}></span>
+          </div>
+          <form onSubmit={signup}>
+            <input
+              className="input"
               required
+              placeholder="full name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Ada Lovelace"
+              style={{ marginBottom: 8, width: "100%" }}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="role" className="text-xs">
-              Role
-            </Label>
-            <Input
-              id="role"
+            <input
+              className="input"
+              placeholder="role — e.g. AI Product Manager"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              placeholder="AI Product Manager"
+              style={{ marginBottom: 8, width: "100%" }}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs">
-              Email
-            </Label>
-            <Input
-              id="email"
+            <input
+              className="input"
               type="email"
               required
+              placeholder="work email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              style={{ marginBottom: 8, width: "100%" }}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs">
-              Password
-            </Label>
-            <Input
-              id="password"
+            <input
+              className="input"
               type="password"
               required
               minLength={6}
+              placeholder="password — at least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              style={{ marginBottom: 8, width: "100%" }}
             />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-1.5" /> Create account
-              </>
-            )}
-          </Button>
-        </form>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loading}
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              {loading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                "Create account · setup starts"
+              )}
+            </button>
+          </form>
+        </div>
 
-        <div className="text-xs text-center text-muted-foreground">
+        <p
+          style={{
+            fontSize: 11.5,
+            color: "var(--ink-faint)",
+            textAlign: "center",
+            marginTop: 16,
+            lineHeight: 1.5,
+          }}
+        >
           Already have an account?{" "}
-          <Link to="/login" className="text-foreground underline-offset-4 hover:underline">
+          <Link
+            to="/login"
+            style={{
+              color: "var(--ink-subtle)",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
             Sign in
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );

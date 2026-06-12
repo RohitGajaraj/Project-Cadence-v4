@@ -1,14 +1,17 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { Sparkles, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DotPattern } from "@/components/ui/dot-pattern";
-import { cn } from "@/lib/utils";
+import { CadenceMark } from "@/components/cadence/Primitives";
+
+// Screen 8 (F-DESIGN-EMBER) — login ported from design-reference/cadence/
+// onboard.jsx LoginScreen onto the REAL auth flow (Supabase password +
+// Lovable Google OAuth). Reference deviations, both honest-data calls:
+// SAML SSO button omitted (no SAML in production); "magic link" copy
+// replaced (production signs in with a password, so the consequence-first
+// label says what actually happens).
 
 export const Route = createFileRoute("/login")({
   ssr: false,
@@ -53,123 +56,163 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 animate-aurora">
-        <div className="absolute inset-0 neural-gradient" />
+    <div
+      data-screen-label="Login"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper)",
+        color: "var(--ink)",
+        overflow: "hidden",
+      }}
+    >
+      {/* giant mono butterfly watermark */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: -120,
+          bottom: -130,
+          color: "var(--ink)",
+          opacity: 0.05,
+          transform: "rotate(-12deg)",
+        }}
+      >
+        <CadenceMark size={520} tile={false} />
       </div>
-      <DotPattern
-        className={cn(
-          "-z-10 opacity-40",
-          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_75%)]",
-        )}
-      />
-      <div className="w-full max-w-md p-8 rounded-2xl border hairline bg-card/70 backdrop-blur-xl space-y-6">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 rounded-xl overflow-hidden ring-glow-violet relative">
-            <div className="absolute inset-0 neural-gradient" />
-          </div>
-          <h1 className="mt-4 font-display text-2xl tracking-tight">Welcome to Cadence</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Your product org, run by a swarm of agents.
-          </p>
-        </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={signInGoogle}
-          disabled={loadingGoogle}
+      <div
+        className="fade-up"
+        style={{ width: 360, maxWidth: "calc(100vw - 48px)", position: "relative", zIndex: 1 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            marginBottom: 26,
+          }}
         >
-          {loadingGoogle ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>
-              <GoogleIcon /> Continue with Google
-            </>
-          )}
-        </Button>
-
-        <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          <div className="flex-1 h-px bg-border" /> or email{" "}
-          <div className="flex-1 h-px bg-border" />
+          <CadenceMark size={52} />
+          <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, marginTop: 14 }}>
+            Cadence
+          </h1>
+          <div className="mono-label" style={{ marginTop: 6 }}>
+            agents execute · you govern
+          </div>
         </div>
 
-        <form onSubmit={signInEmail} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs">
-              Email
-            </Label>
-            <Input
-              id="email"
+        <div className="bento" style={{ padding: 22 }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ width: "100%", justifyContent: "center" }}
+            onClick={signInGoogle}
+            disabled={loadingGoogle}
+          >
+            {loadingGoogle ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              "Continue with Google"
+            )}
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+            <span style={{ flex: 1, height: 1, background: "var(--hairline)" }}></span>
+            <span className="mono-label" style={{ fontSize: 8.5 }}>
+              or
+            </span>
+            <span style={{ flex: 1, height: 1, background: "var(--hairline)" }}></span>
+          </div>
+          <form onSubmit={signInEmail}>
+            <input
+              className="input"
               type="email"
               required
+              placeholder="work email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              style={{ marginBottom: 8, width: "100%" }}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs">
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              <input
+                className="input"
                 type={showPassword ? "text" : "password"}
                 required
+                placeholder="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="pr-10"
+                style={{ width: "100%", paddingRight: 34 }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "var(--ink-faint)",
+                  display: "flex",
+                }}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
-          </div>
-          <div className="flex items-center justify-end">
-            <Link
-              to="/forgot-password"
-              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loadingEmail}
+              style={{ width: "100%", justifyContent: "center" }}
             >
-              Forgot password?
-            </Link>
-          </div>
-          <Button type="submit" className="w-full" disabled={loadingEmail}>
-            {loadingEmail ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-1.5" /> Sign in
-              </>
-            )}
-          </Button>
-        </form>
-
-        <div className="text-xs text-center text-muted-foreground">
-          New here?{" "}
-          <Link to="/signup" className="text-foreground underline-offset-4 hover:underline">
-            Create an account
-          </Link>
+              {loadingEmail ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                "Sign in · opens your workspace"
+              )}
+            </button>
+          </form>
         </div>
+
+        <p
+          style={{
+            fontSize: 11.5,
+            color: "var(--ink-faint)",
+            textAlign: "center",
+            marginTop: 16,
+            lineHeight: 1.5,
+          }}
+        >
+          New here?{" "}
+          <Link
+            to="/signup"
+            style={{
+              color: "var(--ink-subtle)",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            Create an account
+          </Link>{" "}
+          ·{" "}
+          <Link
+            to="/forgot-password"
+            style={{
+              color: "var(--ink-subtle)",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            Forgot password?
+          </Link>
+          <br />
+          Trouble signing in? Ask your workspace admin, or email founders@cadence.dev.
+        </p>
       </div>
     </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="#EA4335"
-        d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4.2-5.5 4.2-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.3 14.7 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.5 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"
-      />
-    </svg>
   );
 }
