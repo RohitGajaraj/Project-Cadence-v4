@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import {
   Activity,
   BookOpen,
+  Brain,
   Calendar,
   Database,
   FileText,
@@ -34,7 +35,8 @@ export type SourceKind =
   | "opportunity"
   | "roadmap"
   | "decision"
-  | "mission";
+  | "mission"
+  | "finding";
 
 export type ChatSource = {
   n: number;
@@ -76,6 +78,7 @@ const SOURCE_KINDS: ReadonlySet<string> = new Set([
   "roadmap",
   "decision",
   "mission",
+  "finding",
 ]);
 
 /** Tolerant parser — returns null for anything that isn't a meta payload. */
@@ -154,6 +157,8 @@ const KIND_ICONS: Record<Exclude<SourceKind, "web">, LucideIcon> = {
   roadmap: MapIcon,
   decision: Gavel,
   mission: Activity,
+  // F-BRAIN: distilled research findings live in the brain — href is "/chat".
+  finding: Brain,
 };
 
 const chipClass =
@@ -166,18 +171,25 @@ const chipClass =
  * `data-source-n` is the scroll target for inline [n] citation badges.
  */
 function SourceChip({ s }: { s: ChatSource }) {
-  if (s.kind === "web" && s.url) {
+  // XSS guard: source urls/hrefs originate from web search results (attacker-
+  // influenced) and streamed metadata — only http(s) external urls and
+  // root-relative internal paths may render as anchors; anything else
+  // (javascript:, data:, protocol-relative //) degrades to a plain chip.
+  const safeUrl = s.url && /^https?:\/\//i.test(s.url) ? s.url : undefined;
+  const safeHref =
+    s.href && s.href.startsWith("/") && !s.href.startsWith("//") ? s.href : undefined;
+  if (s.kind === "web" && safeUrl) {
     return (
       <a
         data-source-n={s.n}
-        href={s.url}
+        href={safeUrl}
         target="_blank"
         rel="noreferrer"
-        title={s.title || s.url}
+        title={s.title || safeUrl}
         className={chipClass}
       >
         <span className="font-mono text-[9px] text-muted-foreground/70">{s.n}</span>
-        <span className="truncate">{s.sub || domainOf(s.url)}</span>
+        <span className="truncate">{s.sub || domainOf(safeUrl)}</span>
       </a>
     );
   }
@@ -189,11 +201,11 @@ function SourceChip({ s }: { s: ChatSource }) {
       <span className="truncate">{s.title || s.sub || s.kind}</span>
     </>
   );
-  if (s.href) {
+  if (safeHref) {
     return (
       <a
         data-source-n={s.n}
-        href={s.href}
+        href={safeHref}
         title={s.sub ? `${s.sub} — ${s.title}` : s.title}
         className={chipClass}
       >
@@ -258,14 +270,17 @@ function FeedbackButtons({ refId }: { refId: string }) {
 
 /**
  * Quiet assistant-message footer: sources row, then
- * `{model} · {via} · {latency}s · {cost}` + glyphs + feedback.
+ * `{model} · {via} · {latency}s · {cost}` + glyphs + feedback + message actions
+ * (F-BRAIN: "Remember this" / "Capture as decision" slot in via `actions`).
  */
 export function MessageMetaFooter({
   meta,
   feedbackId,
+  actions,
 }: {
   meta: ChatMeta;
   feedbackId?: string | null;
+  actions?: React.ReactNode;
 }) {
   const label = MODELS.find((m) => m.id === meta.model)?.label ?? meta.model;
   const canVote = !!feedbackId && UUID_RE.test(feedbackId);
@@ -301,6 +316,7 @@ export function MessageMetaFooter({
           </span>
         )}
         {canVote && <FeedbackButtons refId={feedbackId!} />}
+        {actions}
       </div>
     </div>
   );

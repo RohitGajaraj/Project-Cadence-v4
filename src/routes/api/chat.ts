@@ -5,6 +5,7 @@ import { callModelStream, callModel } from "@/lib/ai/runtime.server";
 import { createMission } from "@/lib/ai/handoff.server";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { retrieve } from "@/lib/rag/retriever.server";
+import { indexFinding } from "@/lib/rag/findings.server";
 import { estimateCostUsd } from "@/lib/ai/pricing";
 import { runResearch, type ResearchMode, type ResearchSource } from "@/lib/ai/research.server";
 
@@ -672,6 +673,29 @@ ${grounding}`,
                   content: assistantText,
                   model: result.model,
                 });
+                // F-BRAIN auto-retention: distill research answers + sources
+                // into the brain (rag_chunks kind 'finding') so future
+                // questions recall them. Fire-and-forget — never blocks or
+                // fails the response; indexFinding itself never throws.
+                if (researchMode !== "chat" && assistantText.trim().length > 300) {
+                  try {
+                    const sourcesLine = researchSources
+                      .map(
+                        (s) =>
+                          `[${s.n}] ${s.title}${s.url ? ` — ${s.url}` : s.href ? ` — ${s.href}` : ""}`,
+                      )
+                      .join("\n");
+                    void indexFinding(supabase, userId, {
+                      title: body.content.trim().slice(0, 160),
+                      content:
+                        assistantText.trim().slice(0, 1200) +
+                        (sourcesLine ? `\n\nSOURCES: ${sourcesLine}` : ""),
+                      conversationId: body.conversationId,
+                    }).catch((e) => console.error("[chat] auto-retention failed:", e));
+                  } catch (e) {
+                    console.error("[chat] auto-retention failed:", e);
+                  }
+                }
                 // Auto-title from first user prompt if still "New conversation"
                 if (conv.title === "New conversation") {
                   const title = body.content.slice(0, 60).trim();

@@ -31,7 +31,8 @@ export type ResearchSourceKind =
   | "opportunity"
   | "roadmap"
   | "decision"
-  | "mission";
+  | "mission"
+  | "finding";
 
 export type ResearchSource = {
   n: number;
@@ -154,6 +155,8 @@ const RAG_KIND_MAP: Record<
   note: { kind: "doc", href: () => "/knowledge?tab=memory" },
   meeting: { kind: "meeting", href: () => "/knowledge?tab=calendar" },
   prd: { kind: "prd", href: (id) => (id ? `/prds/${id}` : "/prds") },
+  // F-BRAIN: distilled research findings live in the brain — recall cites /chat.
+  finding: { kind: "finding", href: () => "/chat" },
 };
 
 async function gatherInternal(
@@ -217,7 +220,11 @@ async function gatherInternal(
     }
     bySource.set(key, {
       kind: map.kind,
-      title: c.title || c.source_kind,
+      // F-BRAIN: recalled findings cite visibly as past brain memory.
+      title:
+        map.kind === "finding"
+          ? `Past finding: ${c.title || "research answer"}`
+          : c.title || c.source_kind,
       href: map.href(c.source_id),
       sub: c.source_kind,
       content: c.content.slice(0, 450),

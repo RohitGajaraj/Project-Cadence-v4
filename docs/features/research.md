@@ -1,6 +1,6 @@
-# Research — the Perplexity-grade chat surface (`F-CHAT-V2` + `F-RESEARCH`)
+# Brain — the Perplexity-grade chat surface (`F-CHAT-V2` + `F-RESEARCH` + `F-BRAIN`)
 
-> **What this is.** The surface formerly labeled "Chat" (route stays `/chat`; rail label **Research**) is a research assistant over two worlds: the live web and your workspace. It decomposes questions, retrieves in parallel, and answers Perplexity-style — direct answer first, every claim carrying a numbered `[n]` citation whose chip either opens the web source or **deep-links into the app**. Past conversations are **Threads**. Mission dispatch ("run a mission to…") still routes through the same box, unchanged.
+> **What this is.** The surface formerly labeled "Chat", then "Research" (route stays `/chat`; rail label **Brain** as of `F-BRAIN`) is a research assistant over two worlds: the live web and your workspace. It decomposes questions, retrieves in parallel, and answers Perplexity-style — direct answer first, every claim carrying a numbered `[n]` citation whose chip either opens the web source or **deep-links into the app**. Past conversations are **Threads**. Mission dispatch ("run a mission to…") still routes through the same box, unchanged.
 
 ## How a question is routed
 
@@ -22,6 +22,7 @@ While researching, the thread shows live progress ("Searching: … · Read 6 sou
 - **Web sources**: domain chip, opens in a new tab.
 - **Workspace sources** deep-link by kind: signal → Product·Signals · prd → `/prds/<id>` · doc → Knowledge·Docs · meeting → Knowledge·Calendar · opportunity → Product·Opportunities · roadmap → Product·Roadmap · decision → Knowledge·Decisions · mission → Missions.
 - Every answer footer: `model · via · latency · cost` + 👍/👎 (writes `ai_feedback`).
+- **Safety:** chips render as links only for `https?://` web URLs and root-relative internal paths (`/...`, never `//...`); anything else (e.g. `javascript:`) degrades to a plain unlinked chip — web titles/URLs are attacker-influenced content.
 
 ## Models
 

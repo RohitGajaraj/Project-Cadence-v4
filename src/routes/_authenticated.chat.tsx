@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  Brain,
+  Gavel,
   ShieldAlert,
   Square,
 } from "lucide-react";
@@ -31,12 +33,15 @@ import {
   ResearchSummaryRow,
   type ResearchStatus,
 } from "@/components/chat/ResearchActivity";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   listConversations,
   getConversation,
   createConversation,
   deleteConversation,
 } from "@/lib/conversations.functions";
+import { getBrainStatus, rememberMessage } from "@/lib/brain.functions";
+import { createDecision } from "@/lib/decisions.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { getProfile } from "@/lib/profile.functions";
 import { getMission } from "@/lib/missions.functions";
@@ -46,7 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
-  head: () => ({ meta: [{ title: "Research · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Brain · Cadence" }] }),
 });
 
 type Msg = {
@@ -352,13 +357,12 @@ function ChatPage() {
         <section className="flex flex-col min-h-0 h-[100dvh] relative">
           <header className="flex items-center justify-between gap-4 px-6 h-14 border-b hairline glass shrink-0">
             <div className="flex min-w-0 items-baseline gap-2.5">
-              <h1 className="font-display text-sm font-semibold tracking-tight shrink-0">
-                Research
-              </h1>
+              <h1 className="font-display text-sm font-semibold tracking-tight shrink-0">Brain</h1>
               <span className="text-sm text-muted-foreground truncate">
                 {active.data?.conversation?.title ?? "New thread"}
               </span>
             </div>
+            <BrainStatusButton />
           </header>
 
           <div
@@ -377,10 +381,10 @@ function ChatPage() {
                     <div className="absolute inset-0 neural-gradient animate-aurora" />
                   </div>
                   <h1 className="mt-8 font-display text-4xl md:text-5xl tracking-tight leading-tight">
-                    <span className="neural-text">Research</span>
+                    <span className="neural-text">Brain</span>
                   </h1>
                   <p className="mt-3 text-sm md:text-base text-muted-foreground">
-                    Ask the web, your workspace, or both — answers come with receipts.
+                    Everything inward and outward — captured, cited, compounding.
                   </p>
                   <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                     {[
@@ -402,7 +406,7 @@ function ChatPage() {
               </div>
             ) : (
               <div className="max-w-3xl mx-auto px-6 py-10 space-y-7">
-                {liveMessages.map((m) => (
+                {liveMessages.map((m, i) => (
                   <MessageBubble
                     key={m.id}
                     role={m.role}
@@ -413,6 +417,13 @@ function ChatPage() {
                     feedbackId={pickFeedbackId(m.id, activeId)}
                     streaming={streaming && m === liveMessages[liveMessages.length - 1]}
                     statuses={liveStatuses}
+                    question={
+                      liveMessages
+                        .slice(0, i)
+                        .reverse()
+                        .find((p) => p.role === "user")?.content ?? null
+                    }
+                    conversationId={activeId}
                   />
                 ))}
               </div>
@@ -789,6 +800,129 @@ function StreamingCaret() {
   );
 }
 
+/** Compact relative-time label for the brain freshness line, e.g. "2h". */
+function relativeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 60_000) return "moments";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
+/**
+ * F-BRAIN status — "what the brain knows": counts by kind + freshness, in a
+ * quiet popover off the thread header. Errors render nothing (best-effort).
+ */
+function BrainStatusButton() {
+  const fStatus = useServerFn(getBrainStatus);
+  const status = useQuery({ queryKey: ["brain-status"], queryFn: () => fStatus() });
+  const s = status.data;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="What the brain knows"
+          aria-label="What the brain knows"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground/70 transition hover:bg-secondary/60 hover:text-foreground"
+        >
+          <Brain className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={6} className="w-auto max-w-xs px-3 py-2">
+        {s ? (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div>
+              The brain knows · {s.counts.signals} signals · {s.counts.docs} docs ·{" "}
+              {s.counts.meetings} meetings · {s.counts.decisions} decisions · {s.counts.prds} PRDs ·{" "}
+              {s.counts.findings} findings
+            </div>
+            <div className="text-[10px] text-muted-foreground/60">
+              {s.latest ? `updated ${relativeAgo(s.latest)} ago` : "nothing captured yet"}
+            </div>
+          </div>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * F-BRAIN message actions — quiet ghost icon buttons in the assistant footer:
+ * "Remember this" distills the answer into indexed memory; "Capture as
+ * decision" files it in the decision log. Both are best-effort one-taps.
+ */
+function BrainMessageActions({
+  question,
+  answer,
+  conversationId,
+}: {
+  question?: string | null;
+  answer: string;
+  conversationId?: string | null;
+}) {
+  const fRemember = useServerFn(rememberMessage);
+  const fDecide = useServerFn(createDecision);
+  // Title = the user question; fall back to the start of the answer.
+  const baseTitle = question?.trim() || answer.trim().slice(0, 80);
+
+  const mRemember = useMutation({
+    mutationFn: () =>
+      fRemember({
+        data: {
+          ...(conversationId ? { conversationId } : {}),
+          title: baseTitle.slice(0, 160),
+          content: answer.trim().slice(0, 4000),
+        },
+      }),
+    onSuccess: (r) =>
+      toast.success(
+        r.indexed ? "Saved to the brain" : "Saved — will index when embeddings are available",
+      ),
+    onError: () => toast.error("Couldn't save that just now."),
+  });
+
+  const mDecide = useMutation({
+    mutationFn: () =>
+      fDecide({
+        data: { title: baseTitle.slice(0, 280), rationale: answer.trim().slice(0, 500) },
+      }),
+    onSuccess: () => toast.success("Captured as decision"),
+    onError: () => toast.error("Couldn't capture that just now."),
+  });
+
+  const btnClass =
+    "grid h-5 w-5 place-items-center rounded text-xs text-muted-foreground/60 transition-colors duration-150 hover:bg-secondary/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
+
+  return (
+    <span className="ml-1 inline-flex items-center gap-0.5">
+      <button
+        type="button"
+        title="Remember this"
+        aria-label="Remember this"
+        disabled={mRemember.isPending || mRemember.isSuccess}
+        onClick={() => mRemember.mutate()}
+        className={btnClass}
+      >
+        <Brain className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        title="Capture as decision"
+        aria-label="Capture as decision"
+        disabled={mDecide.isPending || mDecide.isSuccess}
+        onClick={() => mDecide.mutate()}
+        className={btnClass}
+      >
+        <Gavel className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
 function MessageBubble({
   role,
   content,
@@ -798,6 +932,8 @@ function MessageBubble({
   feedbackId,
   streaming,
   statuses,
+  question,
+  conversationId,
 }: {
   role: string;
   content: string;
@@ -808,6 +944,9 @@ function MessageBubble({
   streaming?: boolean;
   /** Live research-progress events — only rendered on the streaming bubble. */
   statuses?: ResearchStatus[];
+  /** Preceding user question — becomes the title for the brain actions. */
+  question?: string | null;
+  conversationId?: string | null;
 }) {
   if (role === "user") {
     return (
@@ -844,7 +983,19 @@ function MessageBubble({
             )}
             {!content && streaming && (!statuses || statuses.length === 0) && <StreamingCaret />}
             {missionId && <InlineMissionProgress missionId={missionId} />}
-            {meta && !streaming && <MessageMetaFooter meta={meta} feedbackId={feedbackId} />}
+            {meta && !streaming && (
+              <MessageMetaFooter
+                meta={meta}
+                feedbackId={feedbackId}
+                actions={
+                  <BrainMessageActions
+                    question={question}
+                    answer={content}
+                    conversationId={conversationId}
+                  />
+                }
+              />
+            )}
           </>
         )}
       </div>

@@ -3,6 +3,7 @@ import {
   Home,
   ListTodo,
   Bot,
+  Brain,
   Compass,
   Settings,
   Telescope,
@@ -53,13 +54,13 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail: Today · Approvals · Research (the v5 felt product).
+// Workspace — your daily rail: Today · Approvals · Brain (the v5 felt product).
 // Missions lives in its own group; Calendar reaches via the quick-access dock.
-// F-RESEARCH: the chat surface is now "Research" — route stays /chat.
+// F-BRAIN: the chat surface is now "Brain" — route stays /chat.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/chat", label: "Research", icon: Sparkles },
+  { to: "/chat", label: "Brain", icon: Brain },
 ];
 
 // Floating quick-access dock — Calendar only (Approvals is pinned in the

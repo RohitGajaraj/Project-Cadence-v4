@@ -4,6 +4,7 @@ import { Command } from "cmdk";
 import {
   Home,
   Bot,
+  Brain,
   ListTodo,
   Settings,
   Sparkles,
@@ -61,7 +62,7 @@ export function CommandPalette() {
             </div>
             <Command.List className="max-h-[360px] overflow-y-auto p-2 scrollbar-thin">
               <Command.Empty className="px-3 py-6 text-center text-xs text-muted-foreground">
-                No matches. Try "today", "tasks", "research"…
+                No matches. Try "today", "tasks", "brain"…
               </Command.Empty>
               <Command.Group
                 heading="Navigate"
@@ -73,7 +74,7 @@ export function CommandPalette() {
                   hint="G D"
                   onSelect={() => go("/")}
                 />
-                <Item icon={Sparkles} label="Research" hint="G C" onSelect={() => go("/chat")} />
+                <Item icon={Brain} label="Brain" hint="G C" onSelect={() => go("/chat")} />
                 <Item
                   icon={Bot}
                   label="Agents · roster & telemetry"
