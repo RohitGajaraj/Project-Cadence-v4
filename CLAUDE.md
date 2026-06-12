@@ -9,8 +9,8 @@
 > _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
 
 > [!IMPORTANT]
-> **BUILDER ➔ STUDIO RENAME DISCLAIMER (2026-06-12):**
-> _The Builder agent/surface is now **Studio** (`docs/features/studio.md`). User-facing name is Studio everywhere; legacy internal identifiers are intentionally NOT migrated — `agent_slug='builder'`, `builder_file_claims`, `build.functions.ts`, and `/build` (redirects to `/studio`) are to be read as equivalent to Studio. New code uses `studio.*` naming natively. The `CallSurface 'studio'` literal (Prompt Studio cost bucket) predates this and is unrelated._
+> **BUILDER ➔ STUDIO ➔ BUILD RENAME DISCLAIMER (2026-06-12, twice):**
+> _The Builder agent/surface became **Studio** (morning), then **Build** (night, screen-9 Ember port — founder ruling). User-facing name is **Build** everywhere and the canonical routes are `/build` + `/build/$missionId` (`/studio/*` now redirects to `/build/*`, reversing the morning's mothball redirect). Legacy internal identifiers are intentionally NOT migrated across EITHER rename — `agent_slug='builder'`, `builder_file_claims`, `studio.functions.ts`, `src/components/studio/`, the `studio.*` engine tools, and `studio_changesets` are all to be read as equivalent to Build. The `CallSurface 'studio'` literal (Prompt Studio cost bucket) predates both and is unrelated. Spec: `docs/features/studio.md`._
 
 ---
 

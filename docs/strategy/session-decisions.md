@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-12 — The development surface is named **Build**, and it must read as a station in the pipeline
+
+**Decision:** Founder ruling (voice, screen-9 session): the surface formerly Builder → Studio is now **Build** — user-facing name AND URL (`/build`, `/build/$missionId`; `/studio/*` redirects, reversing the morning's mothball direction). Internal identifiers stay `studio.*` per the standing disclaimer pattern (now BUILDER ➔ STUDIO ➔ BUILD in CLAUDE.md). Two companion mandates: (1) the surface should feel as user-friendly and powerful as a first-class AI coding tool (Cursor / Windsurf / Claude Code / Antigravity) — implemented as UX qualities, not new engine features: full transparency (timeline, diff, CI, cost always visible), mid-flight steering, explicit consequence-labeled gates, keyboard affordances, zero dead ends; (2) the pipeline must be legible on the surface — approved specs come in, the build happens under gates, merged work moves on to Releases and the outcome loop re-scores ("the pipeline continues"). Shipped as the detail's journey strip (build → PR → CI → shipped → "lands in Releases"), every stage derived from a real field.
+
+**Why:** "Studio" read as a place; "Build" reads as the station's job and matches the Loop kicker family (Sense / Learn / Ship). The founder's pipeline framing makes the platform's core loop — signals → specs → build → outcomes — visible at the exact point where work becomes code.
+
+**Tradeoffs considered:** Keeping /studio URLs with Build labels only (rejected — the morning rename moved URLs too; half-renames read as drift); porting a spec stage into the journey strip from the session payload (rejected for now — `getStudioSession` returns no prd field; no-filler law. If the payload grows one, add the stage).
+
+**Impact:** routes, AppShell/CommandPalette (frozen-exception commit), cross-surface copy sweep, CLAUDE.md disclaimer, `docs/features/studio.md`. Second rename in one day — if a third is ever proposed, consolidate the disclaimer chain first.
+
 ### 2026-06-12 — Drill-downs ride search params; one detail surface per artifact; a richer production detail outranks the reference's
 
 **Decision:** Screen 6 (loop-detail drill-downs, Session A) establishes the platform's list→detail contract, which screen 7 (govern-detail) inherits: (1) drill state rides **optional search params** on the existing route (`?signal=` / `?opp=` / `?decision=` / `?learning=` / `?connector=`), never component state — every detail is linkable and back-button-friendly; (2) the detail replaces **only the tab body** (SurfaceHeader + TabRow stay; switching tabs clears the drill because setTab navigates with a fresh search object); (3) **one detail surface per artifact** — the Decisions side sheet retired in favor of the reference DrillHeader layout, production mutations riding along; (4) when production already has a **richer real detail** than the reference mock, production wins — Releases keeps its `/missions/$missionId` deep-link (full cockpit: steps, gates, trace, cost) instead of gaining the reference's semver ReleaseDetail, whose shipped-list/closed-signals/before→after metrics have no production source.

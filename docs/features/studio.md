@@ -1,4 +1,6 @@
-# Studio — the in-platform development engine (F-STUDIO)
+# Studio → **Build** — the in-platform development engine (F-STUDIO)
+
+> **NAMING (2026-06-12 night):** the user-facing surface is now **Build** (`/build`, `/build/$missionId`; `/studio/*` redirects) — screen 9 of the Ember Editorial migration, founder ruling. Everything internal in this doc (`studio.*` tools, functions, tables, the F-STUDIO feature id) keeps its name per the CLAUDE.md rename disclaimer. Read "Studio" below as the engine, "Build" as what users see.
 
 > **Status:** ✅ code landed + verified lint/tsc/build (2026-06-12) · **runtime gate:** migration `20260612100000_f_studio_engine` applies via Lovable sync (KI-08 pattern) — golden-path QA + demo inclusion follow the apply · **Decision log:** see `docs/strategy/session-decisions.md` 2026-06-12 entries
 > **Supersedes:** the "Builder" handoff UX (Bundle 9, `docs/features/bundle-9-builder.md`). The Builder *agent* and its tables remain as legacy internals — see "Naming & legacy equivalence" below.
