@@ -4,66 +4,32 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Sparkles,
-  Brain,
-  Users,
-  MessageSquare,
   Target,
   Plus,
-  Send,
   RefreshCw,
   Calendar,
   Bot,
-  Zap,
   Activity,
-  CheckCircle2,
-  XCircle,
   Clock,
-  ArrowRight,
   Coins,
   Rocket,
   ShieldAlert,
+  Check,
+  X,
+  ExternalLink,
+  Gauge,
+  Focus,
+  ChevronRight,
 } from "lucide-react";
-const DASHBOARD_TABS: Array<{
-  id: "overview" | "work" | "agents" | "pulse";
-  label: string;
-  description: string;
-}> = [
-  {
-    id: "overview",
-    label: "Overview",
-    description: "Today at a glance: priorities, brief, and what needs your call.",
-  },
-  {
-    id: "work",
-    label: "Work",
-    description: "Tasks, projects, and meetings moving through the swarm.",
-  },
-  {
-    id: "agents",
-    label: "Agents",
-    description: "Who's running, what they shipped, and recent agent runs.",
-  },
-  {
-    id: "pulse",
-    label: "Pulse",
-    description: "Signal flow, decisions, and momentum across the product.",
-  },
-];
 import { AppShell } from "@/components/cadence/AppShell";
+import { CadenceMark, MonoLabel, StepDot } from "@/components/cadence/Primitives";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
-import { listProjects, createProject } from "@/lib/projects.functions";
-import { createMeeting } from "@/lib/meetings.functions";
-import {
-  listCopilotMessages,
-  sendCopilotMessage,
-  generateDailyBrief,
-} from "@/lib/copilot.functions";
+import { listProjects } from "@/lib/projects.functions";
+import { generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
-import { listDecisions, createDecision, updateDecision } from "@/lib/decisions.functions";
 import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
@@ -72,53 +38,44 @@ import { CriticBadge } from "@/components/governance/CriticBadge";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Mission Control · Cadence" }] }),
+  head: () => ({ meta: [{ title: "Today · Cadence" }] }),
 });
 
-// Editorial agent accent — single coral-ink ribbon, no per-agent palette.
-// All agent chips share the same Cohere-style stone+coral treatment for visual
-// coherence; differentiation is via the agent name + role, not color.
-const AGENT_ACCENT = "bg-[var(--soft-stone)]";
+// Home · Today — ported 1:1 from design-reference/cadence/home.jsx (the
+// design of record): hero band with the calls-cleared ring, the calls queue,
+// brief, agent rail, Overview/Agent-activity tabs, footer stamp. Layout,
+// spacing, and copy follow the reference; data is live (see the port notes
+// in plan.md §4 for where reference mock panels had no production source).
 
 function Dashboard() {
   const qc = useQueryClient();
   const fetchDashboard = useServerFn(getDashboard);
   const fetchTasks = useServerFn(listTasks);
   const fetchProjects = useServerFn(listProjects);
-  const fetchMessages = useServerFn(listCopilotMessages);
   const fetchAgents = useServerFn(listAgents);
   const fetchRuns = useServerFn(listAgentRuns);
-  const fetchDecisions = useServerFn(listDecisions);
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
   const mDeleteTask = useServerFn(deleteTask);
-  const mCreateProject = useServerFn(createProject);
-  const mCreateMeeting = useServerFn(createMeeting);
-  const mSend = useServerFn(sendCopilotMessage);
   const mBrief = useServerFn(generateDailyBrief);
-  const [dashTab, setDashTab] = useState<"overview" | "work" | "agents" | "pulse">("overview");
-  const activeDashTab = DASHBOARD_TABS.find((t) => t.id === dashTab) ?? DASHBOARD_TABS[0];
   const mRunAgent = useServerFn(runAgent);
-  const mCreateDecision = useServerFn(createDecision);
-  const mUpdateDecision = useServerFn(updateDecision);
   const mResolveApproval = useServerFn(resolveApproval);
   const mStartMission = useServerFn(startOrchestratedMission);
+
+  const [tab, setTab] = useState<"overview" | "agents">("overview");
 
   const dash = useQuery({ queryKey: ["dashboard"], queryFn: () => fetchDashboard() });
   const tasks = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
-  const messages = useQuery({ queryKey: ["copilot"], queryFn: () => fetchMessages() });
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
-  const decisions = useQuery({ queryKey: ["decisions"], queryFn: () => fetchDecisions() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
-  // bucket matches their wall clock, not the server's UTC. Country comes
-  // from the request headers (Cloudflare edge).
+  // bucket matches their wall clock, not the server's UTC.
   const [localHour, setLocalHour] = useState<number | null>(null);
   useEffect(() => {
     setLocalHour(new Date().getHours());
@@ -152,29 +109,6 @@ function Dashboard() {
     mutationFn: (id: string) => mDeleteTask({ data: { id } }),
     onSuccess: () => invalidate("tasks"),
   });
-  const addProject = useMutation({
-    mutationFn: (data: { name: string }) => mCreateProject({ data }),
-    onSuccess: () => {
-      invalidate("projects");
-      invalidate("dashboard");
-      toast.success("Product added");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const addMeeting = useMutation({
-    mutationFn: (data: { title: string; start_at: string; end_at: string; stakeholder?: string }) =>
-      mCreateMeeting({ data }),
-    onSuccess: () => {
-      invalidate("dashboard");
-      toast.success("Meeting added");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const sendMsg = useMutation({
-    mutationFn: (prompt: string) => mSend({ data: { prompt } }),
-    onSuccess: () => invalidate("copilot"),
-    onError: (e: Error) => toast.error(e.message),
-  });
   const regenBrief = useMutation({
     mutationFn: () => mBrief(),
     onSuccess: () => {
@@ -191,24 +125,15 @@ function Dashboard() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const addDecision = useMutation({
-    mutationFn: (data: { title: string; rationale?: string }) => mCreateDecision({ data }),
-    onSuccess: () => {
-      invalidate("decisions");
-      toast.success("Decision queued");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const setDecisionStatus = useMutation({
-    mutationFn: (data: { id: string; status: "approved" | "rejected" | "pending" }) =>
-      mUpdateDecision({ data }),
-    onSuccess: () => invalidate("decisions"),
-  });
+  // The ring fills as calls are cleared this session — same behavior as the
+  // reference prototype (cleared/total, not an abstract score).
+  const [clearedSession, setClearedSession] = useState(0);
   const decideApproval = useMutation({
     mutationFn: (data: { approvalId: string; decision: "approved" | "rejected" }) =>
       mResolveApproval({ data }),
     onSuccess: (_res, vars) => {
       invalidate("needs-you");
+      setClearedSession((c) => c + 1);
       toast.success(vars.decision === "approved" ? "Approved — agent unblocked" : "Rejected");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -227,20 +152,36 @@ function Dashboard() {
       new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
     );
   }, []);
-  const focusScore = d?.focusScore ?? 0;
   const profileName =
     d?.profile?.display_name?.split(" ")[0] ??
     (d?.profile as { email?: string } | undefined)?.email?.split("@")[0] ??
     "there";
   const greetText = greeting.data?.greeting ?? "Hello";
-  const activeAgents = (runs.data?.runs ?? []).filter((r) => r.status === "running").length;
+  const runRows = runs.data?.runs ?? [];
+  const activeAgents = runRows.filter((r) => r.status === "running").length;
   const ny = needsYou.data;
   const callCount =
     (ny?.approvals.length ?? 0) + (ny?.prdCalls.length ?? 0) + (ny?.oppCalls.length ?? 0);
 
+  // Reference call-word formula: "One call is / Two calls are / N calls are".
+  const callWord =
+    callCount === 0
+      ? null
+      : ["", "One call is", "Two calls are", "Three calls are"][callCount] ||
+        `${callCount} calls are`;
+  const spend = ny?.spendTodayUsd ?? 0;
+  const spendLabel = spend > 0 && spend < 0.01 ? "<$0.01" : `$${spend.toFixed(2)}`;
+  const totalCalls = callCount + clearedSession;
+  const briefRow = d?.brief as { summary?: string | null; created_at?: string } | null | undefined;
+
+  const agentRows = agents.data?.agents ?? [];
+  const taskRows = tasks.data?.tasks ?? [];
+  const deepQueued = taskRows.filter((t) => t.is_deep_work && t.status !== "done").length;
+  const deepBlocksWeek = (d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0);
+
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      {/* TopBar */}
+      {/* TopBar — the shell's breadcrumb bar; ported with the shell screen. */}
       <header className="sticky top-0 z-30 glass border-b hairline">
         <div className="flex items-center gap-4 px-6 lg:px-10 h-14">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -255,12 +196,7 @@ function Dashboard() {
           </div>
           <div className="flex-1" />
           <span className="mono-label inline-flex items-center gap-1.5 mr-1">
-            <Coins className="h-3 w-3" />{" "}
-            {(() => {
-              const s = ny?.spendTodayUsd ?? 0;
-              return s > 0 && s < 0.01 ? "<$0.01" : `$${s.toFixed(2)}`;
-            })()}{" "}
-            today
+            <Coins className="h-3 w-3" /> {spendLabel} today
           </span>
           <StartMissionButton
             pending={startMission.isPending}
@@ -269,7 +205,7 @@ function Dashboard() {
           <button
             onClick={() => regenBrief.mutate()}
             disabled={regenBrief.isPending}
-            className="btn-pill px-4 py-2 text-sm disabled:opacity-60"
+            className="btn btn-primary disabled:opacity-60"
           >
             <Sparkles className="h-3.5 w-3.5" />
             {regenBrief.isPending ? "Thinking…" : "Refresh brief"}
@@ -277,137 +213,312 @@ function Dashboard() {
         </div>
       </header>
 
-      <div className="px-6 lg:px-10 py-8 max-w-[1500px] mx-auto">
-        {/* HERO — refined editorial ink band with warm radial accent */}
-        <section className="hero-editorial relative overflow-hidden rounded-2xl p-8 md:p-12 mb-6">
-          <div className="relative z-10 grid md:grid-cols-[1fr,auto] gap-8 items-end">
-            <div className="max-w-3xl">
-              <div className="mono-label text-[color:var(--canvas)]/70 flex items-center gap-2">
-                <Sparkles className="h-3 w-3" /> Workspace · Today
-                {greeting.data?.country && (
-                  <span className="ml-1 opacity-70">· {greeting.data.country}</span>
-                )}
-              </div>
-              <h1 className="mt-5 font-display text-4xl md:text-6xl leading-[1.02] tracking-tight text-balance text-[color:var(--canvas)]">
-                {greetText},{" "}
-                <em className="italic font-normal text-[color:var(--coral-soft)]">{profileName}</em>
-                .
-              </h1>
-              <p className="mt-4 text-base text-[color:var(--canvas)]/75 leading-relaxed">
-                {callCount > 0 ? (
+      <div style={{ padding: "30px 44px 56px", maxWidth: 1120, margin: "0 auto" }}>
+        {/* HERO — plum-umber band, ghost butterfly, calls-cleared ring */}
+        <section className="hero-editorial rise" style={{ padding: "26px 30px", marginBottom: 24 }}>
+          <div className="hero-ghost-mark" aria-hidden="true">
+            <CadenceMark size={230} tile={false} />
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: 32,
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <MonoLabel
+                icon={Sparkles}
+                style={{
+                  color: "color-mix(in oklab, var(--hero-ink) 65%, transparent)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Workspace · Today
+              </MonoLabel>
+              <h1
+                style={{
+                  fontSize: "clamp(21px, 2.2vw, 27px)",
+                  lineHeight: 1.18,
+                  margin: "8px 0 6px",
+                }}
+              >
+                {callWord ? (
                   <>
-                    <em className="not-italic text-[color:var(--canvas)]">
-                      {callCount} call{callCount === 1 ? "" : "s"}
-                    </em>{" "}
-                    need{callCount === 1 ? "s" : ""} your judgment below. Agents handle the rest.
+                    {greetText}, {profileName}. <em>{callWord.split(" ").slice(0, 2).join(" ")}</em>{" "}
+                    {callWord.split(" ").slice(2).join(" ")} waiting on you.
                   </>
                 ) : (
-                  <>All clear — no calls waiting. Agents keep watch.</>
+                  <>
+                    {greetText}, {profileName}. <em>All clear.</em> The loop is running itself.
+                  </>
                 )}
+              </h1>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: "color-mix(in oklab, var(--hero-ink) 70%, transparent)",
+                  maxWidth: 520,
+                }}
+              >
+                {callCount > 0
+                  ? `${callCount} call${callCount === 1 ? " needs" : "s need"} your judgment below. Agents handle the rest.`
+                  : "No calls waiting. Agents keep watch and the next call lands here."}
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <Pill
-                  icon={Brain}
-                  label={`${(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)} deep blocks`}
-                />
-                <Pill
-                  icon={Calendar}
-                  label={`${Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}h meetings`}
-                />
-                <Pill icon={Target} label={`${(d?.projects ?? []).length} products`} />
-                <Pill icon={Bot} label={`${(agents.data?.agents ?? []).length} agents online`} />
+              <div style={{ display: "flex", gap: 18, marginTop: 14, flexWrap: "wrap" }}>
+                {(
+                  [
+                    [`${callCount} calls`, "waiting on you"],
+                    [`${activeAgents} missions`, "running now"],
+                    [spendLabel, "spent today"],
+                  ] as [string, string][]
+                ).map(([v, s]) => (
+                  <span
+                    key={s}
+                    className="mono-label"
+                    style={{
+                      color: "color-mix(in oklab, var(--hero-ink) 60%, transparent)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <strong style={{ color: "var(--hero-ink)", fontWeight: 600 }}>{v}</strong> {s}
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              <div className="text-right">
-                <div className="font-display text-7xl tracking-tight tabular-nums text-[color:var(--canvas)]">
-                  {focusScore}
-                </div>
-                <div className="mono-label text-[color:var(--canvas)]/70 mt-1">Focus score</div>
-              </div>
-              <div className="h-1 w-40 rounded-full bg-[color:var(--canvas)]/20 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[color:var(--canvas)]"
-                  style={{ width: `${focusScore}%` }}
-                />
+            <div
+              style={{ textAlign: "center", flexShrink: 0 }}
+              title="Approve or reject the calls in the queue below — this ring fills as you clear them."
+            >
+              {(() => {
+                const R = 30,
+                  C = 2 * Math.PI * R;
+                const frac = totalCalls ? clearedSession / totalCalls : 1;
+                return (
+                  <svg
+                    width="84"
+                    height="84"
+                    viewBox="0 0 84 84"
+                    aria-label={`${clearedSession} of ${totalCalls} calls cleared`}
+                  >
+                    <circle
+                      cx="42"
+                      cy="42"
+                      r={R}
+                      fill="none"
+                      stroke="color-mix(in oklab, var(--hero-ink) 16%, transparent)"
+                      strokeWidth="5"
+                    />
+                    <circle
+                      cx="42"
+                      cy="42"
+                      r={R}
+                      fill="none"
+                      stroke="var(--ember)"
+                      strokeWidth="5"
+                      strokeLinecap="round"
+                      strokeDasharray={C}
+                      strokeDashoffset={C * (1 - frac)}
+                      transform="rotate(-90 42 42)"
+                      style={{ transition: "stroke-dashoffset var(--dur-slow) var(--ease-out)" }}
+                    />
+                    <text
+                      x="42"
+                      y="40"
+                      textAnchor="middle"
+                      className="tabular-nums"
+                      style={{
+                        fill: "var(--hero-ink)",
+                        fontFamily: "var(--font-display)",
+                        fontSize: 20,
+                      }}
+                    >
+                      {clearedSession}/{totalCalls}
+                    </text>
+                    <text
+                      x="42"
+                      y="54"
+                      textAnchor="middle"
+                      style={{
+                        fill: "color-mix(in oklab, var(--hero-ink) 55%, transparent)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 6.5,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      cleared
+                    </text>
+                  </svg>
+                );
+              })()}
+              <div
+                className="mono-label"
+                style={{
+                  fontSize: 8.5,
+                  color: "color-mix(in oklab, var(--hero-ink) 50%, transparent)",
+                  marginTop: 2,
+                }}
+              >
+                {callCount === 0
+                  ? "queue clear · day is yours"
+                  : "clear the queue to free your day"}
               </div>
             </div>
           </div>
         </section>
 
-        {/* NEEDS YOU — the calls queue (F-V5-RITUAL) */}
-        <section className="rounded-lg border hairline bg-card p-6 md:p-8 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="mono-label flex items-center gap-1.5">
-              <ShieldAlert className="h-3 w-3" /> Needs you · {callCount} call
-              {callCount === 1 ? "" : "s"}
-            </div>
+        {/* NEEDS YOU — the calls queue */}
+        <section
+          className="bento rise-2"
+          style={{ padding: "14px var(--card-pad)", marginBottom: 24 }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <MonoLabel icon={ShieldAlert}>
+              Needs you · {callCount} call{callCount === 1 ? "" : "s"}
+            </MonoLabel>
             <Link
               to="/govern"
               search={{ tab: "approvals" }}
-              className="link-action text-xs inline-flex items-center gap-1"
+              className="mono-label"
+              style={{ color: "var(--action-blue)" }}
             >
-              All approvals <ArrowRight className="h-3 w-3" />
+              All approvals →
             </Link>
           </div>
           {callCount === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
               All clear. Agents are working; the next call lands here.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {(ny?.approvals ?? []).map((a) => (
-                <li key={a.id} className="rounded-md border hairline bg-background p-3">
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <span className="font-medium">{a.agent_slug}</span>
-                    <span className="text-muted-foreground">wants to run</span>
-                    <span className="font-medium">{a.tool_name}</span>
-                    {a.expires_at && (
-                      <span className="ml-auto mono-label text-muted-foreground inline-flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {a.escalation_state === "expired"
-                          ? "expired"
-                          : `expires ${new Date(a.expires_at).toLocaleTimeString([], {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}`}
+                <div
+                  key={a.id}
+                  title={a.rationale ?? undefined}
+                  className="fade-up lift"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 14px",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 8,
+                    background: "var(--canvas)",
+                  }}
+                >
+                  <StepDot status="gate" />
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: 8,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <span className="mono-label" style={{ color: "var(--ink)" }}>
+                      {a.agent_slug}
+                    </span>
+                    <span className="mono-label" style={{ color: "var(--agent)", fontSize: 10 }}>
+                      {a.tool_name}
+                    </span>
+                    {a.rationale && (
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          color: "var(--ink-muted)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {a.rationale}
                       </span>
                     )}
                   </div>
-                  {a.rationale && (
-                    <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-                      {a.rationale}
-                    </p>
+                  {a.expires_at && (
+                    <span
+                      className="mono-label"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 9.5,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Clock size={10} strokeWidth={1.75} />
+                      {a.escalation_state === "expired"
+                        ? "expired"
+                        : new Date(a.expires_at).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                    </span>
                   )}
-                  <div className="mt-2.5 flex gap-2">
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
                     <button
+                      className="btn btn-approve btn-sm disabled:opacity-60"
+                      disabled={decideApproval.isPending}
                       onClick={() =>
                         decideApproval.mutate({ approvalId: a.id, decision: "approved" })
                       }
-                      disabled={decideApproval.isPending}
-                      className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
                     >
+                      <Check size={11} strokeWidth={1.75} />
                       Approve · run {a.tool_name}
                     </button>
                     <button
+                      className="btn btn-reject btn-sm disabled:opacity-60"
+                      disabled={decideApproval.isPending}
                       onClick={() =>
                         decideApproval.mutate({ approvalId: a.id, decision: "rejected" })
                       }
-                      disabled={decideApproval.isPending}
-                      className="btn-pill-outline px-3 py-1 text-[11px] disabled:opacity-60"
                     >
-                      Reject
+                      <X size={11} strokeWidth={1.75} />
+                      Reject · nothing runs
                     </button>
                   </div>
-                </li>
+                </div>
               ))}
               {(ny?.prdCalls ?? []).map((p) => (
-                <li
+                <div
                   key={p.id}
-                  className="flex items-center gap-3 rounded-md border hairline bg-background px-3 py-2.5"
+                  className="fade-up lift"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 14px",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 8,
+                    background: "var(--canvas)",
+                  }}
                 >
-                  <span className="flex-1 text-sm truncate">
-                    Spec awaiting your call: <span className="font-medium">{p.title}</span>
+                  <StepDot status="gate" />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 12.5,
+                      color: "var(--ink-muted)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    Spec awaiting your call:{" "}
+                    <span style={{ color: "var(--ink)", fontWeight: 500 }}>{p.title}</span>
                   </span>
                   <CriticBadge
                     review={p.critic_review}
@@ -417,19 +528,42 @@ function Dashboard() {
                   <Link
                     to="/prds/$id"
                     params={{ id: p.id }}
-                    className="link-action text-xs inline-flex items-center gap-1"
+                    className="btn btn-sm"
+                    style={{ color: "var(--action-blue)", padding: "4px 6px" }}
+                    aria-label="Open spec"
                   >
-                    Open <ArrowRight className="h-3 w-3" />
+                    <ExternalLink size={12} strokeWidth={1.75} />
                   </Link>
-                </li>
+                </div>
               ))}
               {(ny?.oppCalls ?? []).map((o) => (
-                <li
+                <div
                   key={o.id}
-                  className="flex items-center gap-3 rounded-md border hairline bg-background px-3 py-2.5"
+                  className="fade-up lift"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 14px",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 8,
+                    background: "var(--canvas)",
+                  }}
                 >
-                  <span className="flex-1 text-sm truncate">
-                    Critic challenged: <span className="font-medium">{o.title}</span>
+                  <StepDot status="gate" />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 12.5,
+                      color: "var(--ink-muted)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    Critic challenged:{" "}
+                    <span style={{ color: "var(--ink)", fontWeight: 500 }}>{o.title}</span>
                   </span>
                   <CriticBadge
                     review={o.critic_review}
@@ -439,319 +573,365 @@ function Dashboard() {
                   <Link
                     to="/product"
                     search={{ tab: "opportunities" }}
-                    className="link-action text-xs inline-flex items-center gap-1"
+                    className="btn btn-sm"
+                    style={{ color: "var(--action-blue)", padding: "4px 6px" }}
+                    aria-label="Open opportunity"
                   >
-                    Open <ArrowRight className="h-3 w-3" />
+                    <ExternalLink size={12} strokeWidth={1.75} />
                   </Link>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </section>
 
-        {/* TODAY'S BRIEF — clean bullets */}
-        <section className="rounded-lg border hairline bg-card p-6 md:p-8 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="mono-label flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3" /> Today's brief
-            </div>
-            <button
-              onClick={() => regenBrief.mutate()}
-              disabled={regenBrief.isPending}
-              className="link-action text-xs inline-flex items-center gap-1 disabled:opacity-60"
-            >
-              <RefreshCw className={`h-3 w-3 ${regenBrief.isPending ? "animate-spin" : ""}`} />{" "}
-              refresh
-            </button>
+        {/* BRIEF */}
+        <section className="bento rise-3" style={{ padding: "var(--card-pad)", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <MonoLabel icon={Sparkles}>Today's brief</MonoLabel>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {briefRow?.created_at && (
+                <span className="mono-label">
+                  drafted{" "}
+                  {new Date(briefRow.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  by Historian
+                </span>
+              )}
+              <button
+                onClick={() => regenBrief.mutate()}
+                disabled={regenBrief.isPending}
+                className="mono-label disabled:opacity-60"
+                style={{ color: "var(--action-blue)", display: "inline-flex", gap: 4 }}
+              >
+                <RefreshCw
+                  size={10}
+                  strokeWidth={1.75}
+                  className={regenBrief.isPending ? "animate-spin" : ""}
+                />
+                refresh
+              </button>
+            </span>
           </div>
-          {d?.brief?.summary ? (
-            <div className="prose prose-sm prose-neutral max-w-none prose-ul:my-2 prose-li:my-0.5 prose-p:my-2 text-[15px] leading-relaxed">
-              <ReactMarkdown>{normalizeBrief(d.brief.summary)}</ReactMarkdown>
+          {briefRow?.summary ? (
+            <div className="prose prose-sm max-w-none text-[13.5px] leading-[1.55] text-ink-muted [&_li]:my-0.5 [&_ul]:my-2 [&_p]:my-2 [&_li::marker]:text-coral">
+              <ReactMarkdown>{normalizeBrief(briefRow.summary)}</ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
               Drafting your brief from this workspace.
             </p>
           )}
         </section>
 
-        {/* AGENT RAIL — always visible */}
-        <section className="mb-6">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-baseline gap-3">
-              <div className="mono-label flex items-center gap-1.5">
-                <Bot className="h-3 w-3" /> AI agents
-              </div>
-              <span className="text-xs text-muted-foreground">
-                Tap to dispatch · grounded in your workspace
-              </span>
-            </div>
-            <Link
-              to="/missions"
-              search={{ tab: "agents" }}
-              className="link-action text-xs inline-flex items-center gap-1"
-            >
-              Manage <ArrowRight className="h-3 w-3" />
-            </Link>
+        {/* AGENT RAIL */}
+        <section style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "0 2px",
+              marginBottom: 10,
+            }}
+          >
+            <MonoLabel icon={Bot}>AI agents</MonoLabel>
+            <span className="mono-label">
+              {agentRows.length} on staff · {activeAgents} running
+            </span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
-            {(agents.data?.agents ?? []).map((a) => (
+          <div
+            className="scrollbar-thin"
+            style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}
+          >
+            {agentRows.map((a) => (
               <AgentChip
                 key={a.id}
                 agent={a}
+                running={runRows.some((r) => r.status === "running" && r.agent_name === a.name)}
                 onRun={(input) => dispatchAgent.mutate({ agentId: a.id, input })}
                 pending={dispatchAgent.isPending && dispatchAgent.variables?.agentId === a.id}
               />
             ))}
+            {agentRows.length === 0 && (
+              <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+                No agents yet — set one up in Missions.
+              </p>
+            )}
           </div>
         </section>
 
-        {/* TABBED SECTIONS — keep dashboard organized */}
-        <Tabs
-          value={dashTab}
-          onValueChange={(v) => setDashTab(v as typeof dashTab)}
-          className="w-full"
+        {/* TABS — Overview absorbs Pulse, per the blueprint */}
+        <div
+          style={{
+            display: "flex",
+            gap: 2,
+            borderBottom: "1px solid var(--hairline)",
+            marginBottom: 18,
+          }}
         >
-          <TabsList className="mb-2">
-            {DASHBOARD_TABS.map((t) => (
-              <TabsTrigger key={t.id} value={t.id}>
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <p className="text-sm text-muted-foreground mb-4 mt-2 max-w-2xl">
-            {activeDashTab.description}
-          </p>
+          {(
+            [
+              ["overview", "Overview"],
+              ["agents", "Agent activity"],
+            ] as ["overview" | "agents", string][]
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              style={{
+                padding: "7px 13px",
+                fontSize: 12.5,
+                marginBottom: -1,
+                color: tab === id ? "var(--ink)" : "var(--ink-subtle)",
+                borderBottom: `2px solid ${tab === id ? "var(--ink)" : "transparent"}`,
+                fontWeight: tab === id ? 500 : 400,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 md:gap-5">
-              <section className="bento p-5 col-span-12 lg:col-span-6">
-                <div className="mono-label flex items-center gap-1.5 mb-4">
-                  <Target className="h-3 w-3" /> Priority alignment
-                </div>
-                <div className="space-y-3">
-                  {(d?.projects ?? []).map((p) => (
-                    <div key={p.id}>
-                      <div className="flex justify-between text-xs">
-                        <span className="truncate pr-2">{p.name}</span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {p.done}/{p.total}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 h-1 rounded-full bg-[var(--soft-stone)] overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-[var(--deep-green)]"
-                          style={{ width: `${p.pct}%` }}
-                        />
-                      </div>
+        {tab === "overview" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
+            <section
+              className="bento"
+              style={{ gridColumn: "span 5", padding: "var(--bento-pad)" }}
+            >
+              <MonoLabel icon={Target} style={{ marginBottom: 14 }}>
+                Priority alignment
+              </MonoLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {(d?.projects ?? []).map((p) => (
+                  <div key={p.id}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 12.5,
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span style={{ color: "var(--ink-muted)" }}>{p.name}</span>
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ color: "var(--ink-subtle)" }}
+                      >
+                        {p.done}/{p.total}
+                      </span>
                     </div>
-                  ))}
-                  {(d?.projects ?? []).length === 0 && (
-                    <p className="text-xs text-muted-foreground">Add your first product below.</p>
-                  )}
-                  <QuickProjectForm onAdd={(name) => addProject.mutate({ name })} />
-                </div>
-              </section>
-
-              <section className="bento p-5 col-span-6 lg:col-span-3">
-                <div className="mono-label flex items-center gap-1.5">
-                  <Brain className="h-3 w-3" /> Deep work
-                </div>
-                <div className="mt-4 font-display text-5xl tabular-nums">
-                  {(d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0)}
-                  <span className="text-sm text-muted-foreground"> /wk</span>
-                </div>
-                <div className="mt-4 flex items-end gap-1 h-14">
-                  {(d?.deepWorkSeries ?? []).map((b, i) => {
-                    const max = Math.max(1, ...(d?.deepWorkSeries ?? []).map((s) => s.count));
-                    return (
+                    <div
+                      style={{
+                        height: 4,
+                        borderRadius: 99,
+                        background: "var(--surface-2)",
+                        overflow: "hidden",
+                      }}
+                    >
                       <div
-                        key={i}
-                        className="flex-1 rounded-sm bg-foreground"
-                        style={{ height: `${(b.count / max) * 100}%`, minHeight: 4 }}
+                        style={{
+                          height: "100%",
+                          width: `${p.pct}%`,
+                          borderRadius: 99,
+                          background: p.pct > 75 ? "var(--coral)" : "var(--ink-subtle)",
+                          transition: "width var(--dur-slow)",
+                        }}
                       />
-                    );
-                  })}
-                </div>
-                <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-                  {(d?.deepWorkSeries ?? []).map((b, i) => (
-                    <span key={i}>{b.day}</span>
-                  ))}
-                </div>
-              </section>
+                    </div>
+                  </div>
+                ))}
+                {(d?.projects ?? []).length === 0 && (
+                  <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+                    Products appear here as the swarm files work against them.
+                  </p>
+                )}
+              </div>
+            </section>
 
-              <section className="bento p-5 col-span-6 lg:col-span-3">
-                <div className="mono-label flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3" /> Today's meetings
-                </div>
-                <div className="mt-4 font-display text-5xl tabular-nums">
-                  {Math.round(((d?.meetingMinutes ?? 0) / 60) * 10) / 10}
-                  <span className="text-lg text-muted-foreground">h</span>
-                </div>
-                <ul className="mt-4 space-y-2 text-xs">
-                  {(d?.todayMeetings ?? []).slice(0, 4).map((m) => (
-                    <li key={m.id} className="flex justify-between gap-2">
-                      <span className="truncate">{m.title}</span>
-                      <span className="text-muted-foreground tabular-nums">
+            <TasksPanel
+              tasks={taskRows}
+              onAdd={(t, deep) => addTask.mutate({ title: t, is_deep_work: deep })}
+              onToggle={(id, done) => toggleTask.mutate({ id, status: done ? "done" : "todo" })}
+              onDelete={(id) => removeTask.mutate(id)}
+            />
+
+            <section
+              className="bento"
+              style={{
+                gridColumn: "span 5",
+                padding: "var(--bento-pad)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              <div>
+                <MonoLabel icon={Focus} style={{ marginBottom: 6 }}>
+                  Deep work
+                </MonoLabel>
+                <span className="font-display tabular-nums" style={{ fontSize: 24 }}>
+                  {deepBlocksWeek} blocks
+                </span>
+                <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
+                  {" "}
+                  this week · {deepQueued} deep task{deepQueued === 1 ? "" : "s"} queued
+                </span>
+              </div>
+              <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: 10 }}>
+                <MonoLabel icon={Calendar} style={{ marginBottom: 8 }}>
+                  Today's meetings
+                </MonoLabel>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(d?.todayMeetings ?? []).slice(0, 5).map((m) => (
+                    <div
+                      key={m.id}
+                      style={{ fontSize: 12.5, display: "flex", gap: 10, alignItems: "baseline" }}
+                    >
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ color: "var(--ink)", flexShrink: 0 }}
+                      >
                         {new Date(m.start_at).toLocaleTimeString([], {
                           hour: "numeric",
                           minute: "2-digit",
                         })}
                       </span>
-                    </li>
+                      <span style={{ color: "var(--ink-muted)" }}>
+                        {m.title}
+                        {m.stakeholder && (
+                          <span style={{ color: "var(--ink-faint)", fontSize: 11 }}>
+                            {" "}
+                            · {m.stakeholder}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   ))}
                   {(d?.todayMeetings ?? []).length === 0 && (
-                    <li className="text-muted-foreground">No meetings today.</li>
+                    <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>No meetings today.</p>
                   )}
-                </ul>
-                <QuickMeetingForm onAdd={(data) => addMeeting.mutate(data)} />
-              </section>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="work" className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 md:gap-5">
-              <TaskPanel
-                tasks={tasks.data?.tasks ?? []}
-                onAdd={(t, deep) => addTask.mutate({ title: t, is_deep_work: deep })}
-                onToggle={(id, done) => toggleTask.mutate({ id, status: done ? "done" : "todo" })}
-                onDelete={(id) => removeTask.mutate(id)}
-              />
-              <section className="bento p-5 col-span-12 lg:col-span-4 flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="mono-label flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3" /> Copilot
-                  </div>
-                  <button
-                    onClick={() => invalidate("copilot")}
-                    className="link-action text-xs inline-flex items-center gap-1"
-                  >
-                    <RefreshCw className="h-3 w-3" /> refresh
-                  </button>
                 </div>
-                <CopilotChat
-                  messages={messages.data?.messages ?? []}
-                  onSend={(t) => sendMsg.mutate(t)}
-                  pending={sendMsg.isPending}
-                />
-              </section>
-            </div>
-          </TabsContent>
+              </div>
+              <Link
+                to="/chat"
+                className="btn btn-ghost btn-sm"
+                style={{ alignSelf: "flex-start", marginTop: "auto" }}
+              >
+                Hand me a goal
+                <ChevronRight size={12} strokeWidth={1.75} />
+              </Link>
+            </section>
+          </div>
+        )}
 
-          <TabsContent value="agents" className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 md:gap-5">
-              <section className="bento p-5 col-span-12 lg:col-span-7">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="mono-label flex items-center gap-1.5">
-                    <Activity className="h-3 w-3" /> Agent activity
-                  </div>
-                  <span className="mono-label">{runs.data?.runs?.length ?? 0} recent</span>
-                </div>
-                <ul className="space-y-2.5 max-h-[420px] overflow-y-auto scrollbar-thin pr-1">
-                  {(runs.data?.runs ?? []).length === 0 && (
-                    <li className="text-xs text-muted-foreground py-6 text-center border hairline rounded-md">
-                      No agent runs yet — dispatch one above.
-                    </li>
-                  )}
-                  {(runs.data?.runs ?? []).map((r) => (
-                    <li key={r.id} className="rounded-md border hairline p-3 bg-background">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-foreground">{r.agent_name}</span>
-                        <StatusBadge status={r.status} />
-                        <span className="ml-auto text-muted-foreground tabular-nums">
-                          {r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground italic line-clamp-1">
-                        {r.input}
-                      </div>
-                      {r.output && (
-                        <div className="mt-2 text-sm whitespace-pre-wrap line-clamp-3">
-                          {r.output}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-              <DecisionPanel
-                decisions={decisions.data?.decisions ?? []}
-                onAdd={(title) => addDecision.mutate({ title })}
-                onSet={(id, status) => setDecisionStatus.mutate({ id, status })}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="pulse" className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 md:gap-5">
-              <section className="bento p-5 col-span-12 lg:col-span-6">
-                <div className="mono-label flex items-center gap-1.5 mb-4">
-                  <Users className="h-3 w-3" /> Stakeholder pulse
-                </div>
-                {(d?.stakeholders ?? []).length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Add meetings with a stakeholder to populate this.
+        {tab === "agents" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
+            <section
+              className="bento"
+              style={{ gridColumn: "span 8", padding: "var(--bento-pad)" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                <MonoLabel icon={Activity}>Agent activity</MonoLabel>
+                <span className="mono-label">{runRows.length} recent</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {runRows.length === 0 && (
+                  <p style={{ fontSize: 12.5, color: "var(--ink-muted)", padding: "8px 0" }}>
+                    No agent runs yet — dispatch one from the rail above.
                   </p>
-                ) : (
-                  <div className="divide-y divide-[var(--hairline)]">
-                    {d!.stakeholders.map((p) => (
-                      <div key={p.name} className="flex items-center justify-between py-2.5">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-[var(--soft-stone)] border hairline grid place-items-center text-[11px] font-medium text-foreground">
-                            {p.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .slice(0, 2)}
-                          </div>
-                          <div>
-                            <div className="text-sm">{p.name}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {p.count} meeting{p.count > 1 ? "s" : ""} · last{" "}
-                              {new Date(p.last).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="h-1 w-16 rounded-full bg-[var(--soft-stone)] overflow-hidden">
-                          <div
-                            className="h-full bg-[var(--coral)]"
-                            style={{ width: `${Math.min(100, p.count * 20)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 )}
-              </section>
-              <section className="band-stone rounded-lg p-6 col-span-12 lg:col-span-6">
-                <div className="mono-label flex items-center gap-1.5 mb-4">
-                  <Zap className="h-3 w-3" /> Product health
+                {runRows.slice(0, 8).map((r, i, arr) => (
+                  <div
+                    key={r.id}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "baseline",
+                      padding: "8px 0",
+                      borderBottom: i < arr.length - 1 ? "1px solid var(--hairline)" : "none",
+                      fontSize: 13,
+                    }}
+                  >
+                    <span className="mono-label tabular-nums" style={{ width: 42, flexShrink: 0 }}>
+                      {new Date(r.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                    </span>
+                    <StepDot
+                      status={
+                        r.status === "running"
+                          ? "running"
+                          : r.status === "failed"
+                            ? "failed"
+                            : "completed"
+                      }
+                    />
+                    <span
+                      className="mono-label"
+                      style={{ color: "var(--agent)", width: 78, flexShrink: 0 }}
+                    >
+                      {r.agent_name}
+                    </span>
+                    <span
+                      style={{
+                        color: "var(--ink-muted)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {r.input}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section
+              className="bento"
+              style={{ gridColumn: "span 4", padding: "var(--bento-pad)" }}
+            >
+              <MonoLabel icon={Gauge} style={{ marginBottom: 12 }}>
+                Throughput
+              </MonoLabel>
+              {(
+                [
+                  [
+                    "Runs completed",
+                    `${runRows.filter((r) => r.status === "complete").length}`,
+                    "recent window",
+                  ],
+                  ["Median run time", medianRunSeconds(runRows), "dispatch to done"],
+                  ["Open calls", `${callCount}`, "waiting on you"],
+                ] as [string, string, string][]
+              ).map(([l, v, s]) => (
+                <div key={l} style={{ marginBottom: 14 }}>
+                  <div className="mono-label">{l}</div>
+                  <div className="font-display tabular-nums" style={{ fontSize: 26, marginTop: 2 }}>
+                    {v}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>{s}</div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <Metric
-                    label="Velocity"
-                    value={`${(tasks.data?.tasks ?? []).filter((t) => t.status === "done").length}`}
-                    sub="tasks shipped"
-                  />
-                  <Metric
-                    label="In flight"
-                    value={`${(tasks.data?.tasks ?? []).filter((t) => t.status !== "done").length}`}
-                    sub="open"
-                  />
-                  <Metric
-                    label="Agent runs"
-                    value={`${runs.data?.runs?.length ?? 0}`}
-                    sub="last 24h"
-                  />
-                </div>
-              </section>
-            </div>
-          </TabsContent>
-        </Tabs>
+              ))}
+            </section>
+          </div>
+        )}
 
-        <footer className="mt-12 pt-6 border-t hairline flex items-center justify-between mono-label">
-          <span>Cadence · the operating system for AI Product Managers</span>
-          <span>Editorial · v0.2</span>
+        <footer
+          className="mono-label"
+          style={{
+            marginTop: 44,
+            paddingTop: 18,
+            borderTop: "1px solid var(--hairline)",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <span>Cadence · agents execute, you govern</span>
+          <LastBuildStamp />
         </footer>
       </div>
     </AppShell>
@@ -772,43 +952,34 @@ function normalizeBrief(text: string): string {
   return parts.map((s) => `- ${s}`).join("\n");
 }
 
-function Pill({
-  icon: Icon,
-  label,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--canvas)]/30 bg-[color:var(--canvas)]/10 px-3 py-1 text-[11px] text-[color:var(--canvas)]/85">
-      <Icon className="h-3 w-3" /> {label}
-    </span>
-  );
+function medianRunSeconds(runs: { duration_ms?: number | null }[]): string {
+  const ds = runs
+    .map((r) => r.duration_ms)
+    .filter((v): v is number => typeof v === "number" && v > 0)
+    .sort((a, b) => a - b);
+  if (ds.length === 0) return "—";
+  const mid = ds[Math.floor(ds.length / 2)];
+  return mid >= 60_000 ? `${Math.round(mid / 60_000)}m` : `${(mid / 1000).toFixed(0)}s`;
 }
 
-function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
+/* Footer build stamp — "Last build · date time" from document.lastModified,
+   per the reference. Client-only (document is unavailable during SSR). */
+function LastBuildStamp() {
+  const [stamp, setStamp] = useState<string | null>(null);
+  useEffect(() => {
+    setStamp(
+      new Date(document.lastModified).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    );
+  }, []);
   return (
-    <div>
-      <div className="mono-label">{label}</div>
-      <div className="font-display text-3xl tabular-nums mt-1">{value}</div>
-      <div className="text-[11px] text-muted-foreground">{sub}</div>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<
-    string,
-    { icon: React.ComponentType<{ className?: string }>; cls: string; label: string }
-  > = {
-    running: { icon: Clock, cls: "text-foreground", label: "running" },
-    complete: { icon: CheckCircle2, cls: "text-[var(--deep-green)]", label: "complete" },
-    failed: { icon: XCircle, cls: "text-[var(--coral)]", label: "failed" },
-  };
-  const v = map[status] ?? map.complete;
-  return (
-    <span className={`mono-label inline-flex items-center gap-1 ${v.cls}`}>
-      <v.icon className="h-3 w-3" /> {v.label}
+    <span title="Continuously built — this stamp updates with every build">
+      {stamp ? `Last build · ${stamp}` : ""}
     </span>
   );
 }
@@ -828,7 +999,7 @@ function StartMissionButton({
     <div className="relative">
       <button
         onClick={() => setOpen((s) => !s)}
-        className="btn-pill-outline px-4 py-2 text-sm disabled:opacity-60"
+        className="btn btn-ghost disabled:opacity-60"
         disabled={pending}
       >
         <Rocket className="h-3.5 w-3.5" />
@@ -852,7 +1023,7 @@ function StartMissionButton({
             onChange={(e) => setGoal(e.target.value)}
             rows={3}
             placeholder="What should the swarm pursue?"
-            className="w-full rounded-md border hairline bg-background px-2.5 py-2 text-xs outline-none focus:border-foreground resize-none"
+            className="input resize-none text-xs"
           />
           <div className="mt-2 flex justify-end gap-2">
             <button
@@ -862,11 +1033,8 @@ function StartMissionButton({
             >
               Cancel
             </button>
-            <button
-              disabled={pending}
-              className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
-            >
-              {pending ? "Dispatching…" : "Dispatch"}
+            <button disabled={pending} className="btn btn-primary btn-sm disabled:opacity-60">
+              {pending ? "Dispatching…" : "Dispatch · agents start now"}
             </button>
           </div>
         </form>
@@ -875,12 +1043,16 @@ function StartMissionButton({
   );
 }
 
+/* Agent chip — reference visual (soft-stone card, role kicker, display name,
+   status dot + note); production behavior (tap to open the dispatch form). */
 function AgentChip({
   agent,
+  running,
   onRun,
   pending,
 }: {
-  agent: { id: string; name: string; role: string; color: string };
+  agent: { id: string; name: string; role: string };
+  running: boolean;
   onRun: (input: string) => void;
   pending: boolean;
 }) {
@@ -888,20 +1060,39 @@ function AgentChip({
   const [text, setText] = useState("");
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ minWidth: 148, flex: "0 0 auto" }}>
       <button
         onClick={() => setOpen((s) => !s)}
-        className="w-full text-left rounded-md border hairline bg-card p-3 hover:border-foreground transition-colors relative overflow-hidden"
+        className="lift"
+        style={{
+          width: "100%",
+          textAlign: "left",
+          borderRadius: 8,
+          border: "1px solid var(--hairline)",
+          background: "var(--soft-stone)",
+          padding: "10px 12px",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
+        <div className="mono-label" style={{ fontSize: 9 }}>
+          {agent.role.replace("AI ", "")}
+        </div>
+        <div className="font-display" style={{ fontSize: 15, marginTop: 2 }}>
+          {agent.name}
+        </div>
         <div
-          className={`absolute -right-3 -top-3 h-12 w-12 rounded-full ${AGENT_ACCENT} opacity-70`}
-        />
-        <div className="relative">
-          <div className="mono-label">{agent.role.replace("AI ", "")}</div>
-          <div className="font-display text-base mt-1 truncate text-foreground">{agent.name}</div>
-          <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Bot className="h-2.5 w-2.5" /> dispatch
-          </div>
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 7,
+            fontSize: 10.5,
+            color: "var(--ink-subtle)",
+          }}
+        >
+          <StepDot status={running ? "running" : "planned"} />
+          {running ? "running now" : "idle · ready"}
         </div>
       </button>
       {open && (
@@ -913,7 +1104,7 @@ function AgentChip({
             setText("");
             setOpen(false);
           }}
-          className="absolute z-20 top-full mt-2 left-0 right-0 rounded-md border hairline bg-card p-3 shadow-elevated"
+          className="absolute z-20 top-full mt-2 left-0 w-64 rounded-md border hairline bg-card p-3 shadow-elevated"
         >
           <textarea
             autoFocus
@@ -921,7 +1112,7 @@ function AgentChip({
             onChange={(e) => setText(e.target.value)}
             rows={3}
             placeholder={`Brief ${agent.name}…`}
-            className="w-full rounded-md border hairline bg-background px-2.5 py-2 text-xs outline-none focus:border-foreground resize-none"
+            className="input resize-none text-xs"
           />
           <div className="mt-2 flex justify-end gap-2">
             <button
@@ -931,11 +1122,8 @@ function AgentChip({
             >
               Cancel
             </button>
-            <button
-              disabled={pending}
-              className="btn-pill px-3 py-1 text-[11px] disabled:opacity-60"
-            >
-              {pending ? "Running…" : "Dispatch"}
+            <button disabled={pending} className="btn btn-primary btn-sm disabled:opacity-60">
+              {pending ? "Running…" : "Dispatch · runs once"}
             </button>
           </div>
         </form>
@@ -944,7 +1132,9 @@ function AgentChip({
   );
 }
 
-function TaskPanel({
+/* Tasks panel — reference layout (span 7, input row, checkbox list, deep
+   pill); production CRUD (add/toggle/delete persist to the workspace). */
+function TasksPanel({
   tasks,
   onAdd,
   onToggle,
@@ -958,10 +1148,12 @@ function TaskPanel({
   const [title, setTitle] = useState("");
   const [deep, setDeep] = useState(false);
   return (
-    <section className="bento p-5 col-span-12 lg:col-span-8">
-      <div className="flex items-center justify-between mb-4">
-        <div className="mono-label">Today's tasks</div>
-        <span className="mono-label">{tasks.filter((t) => t.status !== "done").length} open</span>
+    <section className="bento" style={{ gridColumn: "span 7", padding: "var(--bento-pad)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+        <MonoLabel icon={Check}>Today's tasks</MonoLabel>
+        <span className="mono-label tabular-nums">
+          {tasks.filter((t) => t.status !== "done").length} open
+        </span>
       </div>
       <form
         onSubmit={(e) => {
@@ -971,266 +1163,91 @@ function TaskPanel({
           setTitle("");
           setDeep(false);
         }}
-        className="flex items-center gap-2 mb-4"
+        style={{ display: "flex", gap: 8, marginBottom: 12 }}
       >
         <input
+          className="input"
           value={title}
+          placeholder="Add a task…"
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="What needs to happen today?"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
         />
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            color: "var(--ink-muted)",
+            whiteSpace: "nowrap",
+          }}
+        >
           <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} /> deep
         </label>
-        <button className="btn-pill px-3 py-2 text-sm">
-          <Plus className="h-3.5 w-3.5" />
+        <button className="btn btn-ghost" type="submit" aria-label="Add task">
+          <Plus size={13} strokeWidth={1.75} />
         </button>
       </form>
-      <ul className="divide-y divide-[var(--hairline)] max-h-72 overflow-y-auto scrollbar-thin">
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {tasks.length === 0 && (
-          <li className="py-3 text-xs text-muted-foreground">Nothing planned yet.</li>
+          <p style={{ fontSize: 12.5, color: "var(--ink-muted)", padding: "6px 4px" }}>
+            Nothing planned yet.
+          </p>
         )}
         {tasks.map((t) => (
-          <li key={t.id} className="flex items-center gap-3 py-2.5">
+          <label
+            key={t.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "6px 4px",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 13.5,
+            }}
+          >
             <input
               type="checkbox"
               checked={t.status === "done"}
               onChange={(e) => onToggle(t.id, e.target.checked)}
-              className="h-4 w-4"
+              style={{ accentColor: "var(--deep-green)" }}
             />
             <span
-              className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}
+              style={{
+                flex: 1,
+                color: t.status === "done" ? "var(--ink-faint)" : "var(--ink)",
+                textDecoration: t.status === "done" ? "line-through" : "none",
+              }}
             >
               {t.title}
             </span>
             {t.is_deep_work && (
-              <span className="mono-label rounded-full border border-[var(--coral)] text-[var(--coral)] px-2 py-0.5">
+              <span
+                className="mono-label"
+                style={{
+                  fontSize: 9,
+                  color: "var(--coral)",
+                  border: "1px solid color-mix(in oklab, var(--coral) 50%, transparent)",
+                  borderRadius: 99,
+                  padding: "1px 7px",
+                }}
+              >
                 deep
               </span>
             )}
             <button
-              onClick={() => onDelete(t.id)}
-              className="text-xs text-muted-foreground hover:text-destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                onDelete(t.id);
+              }}
+              aria-label="Delete task"
+              style={{ fontSize: 12, color: "var(--ink-faint)" }}
             >
               ×
             </button>
-          </li>
+          </label>
         ))}
-      </ul>
+      </div>
     </section>
-  );
-}
-
-function QuickProjectForm({ onAdd }: { onAdd: (name: string) => void }) {
-  const [name, setName] = useState("");
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        onAdd(name.trim());
-        setName("");
-      }}
-      className="pt-3 flex items-center gap-2"
-    >
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="New product"
-        className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
-      />
-      <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
-    </form>
-  );
-}
-
-function QuickMeetingForm({
-  onAdd,
-}: {
-  onAdd: (data: { title: string; start_at: string; end_at: string; stakeholder?: string }) => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [stakeholder, setStakeholder] = useState("");
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!title.trim()) return;
-        const start = new Date();
-        start.setMinutes(0, 0, 0);
-        start.setHours(start.getHours() + 1);
-        const end = new Date(start);
-        end.setMinutes(end.getMinutes() + 30);
-        onAdd({
-          title: title.trim(),
-          start_at: start.toISOString(),
-          end_at: end.toISOString(),
-          stakeholder: stakeholder.trim() || undefined,
-        });
-        setTitle("");
-        setStakeholder("");
-      }}
-      className="mt-4 flex flex-col gap-2"
-    >
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="New meeting"
-        className="rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
-      />
-      <div className="flex gap-2">
-        <input
-          value={stakeholder}
-          onChange={(e) => setStakeholder(e.target.value)}
-          placeholder="With…"
-          className="flex-1 rounded-md border hairline bg-background px-2.5 py-1.5 text-xs outline-none focus:border-foreground"
-        />
-        <button className="btn-pill px-3 py-1.5 text-xs">Add</button>
-      </div>
-    </form>
-  );
-}
-
-function DecisionPanel({
-  decisions,
-  onAdd,
-  onSet,
-}: {
-  decisions: {
-    id: string;
-    title: string;
-    status: string;
-    rationale: string | null;
-    created_at: string;
-  }[];
-  onAdd: (title: string) => void;
-  onSet: (id: string, status: "approved" | "rejected" | "pending") => void;
-}) {
-  const [title, setTitle] = useState("");
-  return (
-    <section className="bento p-5 col-span-12 lg:col-span-8">
-      <div className="flex items-center justify-between mb-3">
-        <div className="mono-label flex items-center gap-1.5">
-          <MessageSquare className="h-3 w-3" /> Decisions awaiting you
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="mono-label">
-            {decisions.filter((d) => d.status === "pending").length} pending
-          </span>
-          <Link
-            to="/knowledge"
-            search={{ tab: "decisions" }}
-            className="text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            View all →
-          </Link>
-        </div>
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!title.trim()) return;
-          onAdd(title.trim());
-          setTitle("");
-        }}
-        className="flex items-center gap-2 mb-3"
-      >
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Log a decision the AI surfaced…"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
-        />
-        <button className="btn-pill px-3 py-2 text-xs">Log</button>
-      </form>
-      <ul className="space-y-2">
-        {decisions.length === 0 && (
-          <li className="text-xs text-muted-foreground py-4">No decisions logged yet.</li>
-        )}
-        {decisions.map((d) => (
-          <li
-            key={d.id}
-            className="flex items-center gap-3 rounded-md border hairline px-3 py-2.5 bg-card"
-          >
-            <span className="flex-1 text-sm">{d.title}</span>
-            <span
-              className={`mono-label ${d.status === "approved" ? "text-[var(--deep-green)]" : d.status === "rejected" ? "text-[var(--coral)]" : "text-foreground"}`}
-            >
-              {d.status}
-            </span>
-            {d.status === "pending" && (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => onSet(d.id, "approved")}
-                  className="btn-pill px-3 py-1 text-[11px]"
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => onSet(d.id, "rejected")}
-                  className="btn-pill-outline px-3 py-1 text-[11px]"
-                >
-                  Reject
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function CopilotChat({
-  messages,
-  onSend,
-  pending,
-}: {
-  messages: { id: string; role: string; content: string }[];
-  onSend: (prompt: string) => void;
-  pending: boolean;
-}) {
-  const [text, setText] = useState("");
-  return (
-    <div className="flex flex-col gap-3 min-h-[300px]">
-      <div className="flex-1 space-y-3 max-h-80 overflow-y-auto scrollbar-thin pr-1">
-        {messages.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            Ask Cadence — "What should I focus on?", "Draft a launch update", "Plan my afternoon".
-          </p>
-        )}
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`rounded-md px-3 py-2 text-sm ${m.role === "user" ? "bg-[var(--soft-stone)] ml-6" : "bg-card border hairline mr-6"}`}
-          >
-            <div className="mono-label mb-1">{m.role === "user" ? "you" : "cadence"}</div>
-            <div className="whitespace-pre-wrap">{m.content}</div>
-          </div>
-        ))}
-        {pending && (
-          <div className="text-xs text-muted-foreground italic">Cadence is thinking…</div>
-        )}
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!text.trim() || pending) return;
-          onSend(text.trim());
-          setText("");
-        }}
-        className="flex items-center gap-2"
-      >
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Ask anything…"
-          className="flex-1 rounded-md border hairline bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
-        />
-        <button disabled={pending} className="btn-pill px-3 py-2.5 text-sm disabled:opacity-60">
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </form>
-    </div>
   );
 }

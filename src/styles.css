@@ -481,6 +481,119 @@
 
   /* === Ember editorial utilities === */
 
+  /* Buttons — base + sizes + variants, per cadence/tokens.css. Compose as
+   * `btn btn-primary`, `btn btn-ghost btn-sm`, `btn btn-approve btn-sm`. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition:
+      background var(--dur-fast),
+      border-color var(--dur-fast),
+      color var(--dur-fast),
+      opacity var(--dur-fast);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+  .btn-primary {
+    background: var(--ember);
+    color: var(--primary-foreground);
+  }
+  .btn-primary:hover {
+    background: var(--ember-active);
+  }
+  .btn-ghost {
+    color: var(--ink-muted);
+    border-color: var(--hairline);
+    background: var(--canvas);
+  }
+  .btn-ghost:hover {
+    color: var(--ink);
+    border-color: var(--hairline-strong);
+  }
+
+  /* Input — parchment field with ember focus ring. */
+  .input {
+    width: 100%;
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition:
+      border-color var(--dur-fast),
+      box-shadow var(--dur-fast);
+  }
+  .input::placeholder {
+    color: var(--ink-faint);
+  }
+  .input:focus {
+    border-color: var(--ember);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ember) 15%, transparent);
+  }
+  .dark .input {
+    background: var(--surface-1);
+  }
+
+  /* Staggered entrance tiers (transform only). */
+  .rise-2 {
+    animation: fadeUp 340ms var(--ease-out);
+  }
+  .rise-3 {
+    animation: fadeUp 420ms var(--ease-out);
+  }
+
+  /* Ghost butterfly watermark inside the hero band. */
+  .hero-ghost-mark {
+    position: absolute;
+    right: -48px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hero-ink);
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  /* Brand mark — butterfly wings breathe in a slow flutter. */
+  .cad-flutter {
+    transform-origin: 12px 12px;
+    animation: cadFlutter 3.2s ease-in-out infinite alternate;
+  }
+  .cad-flutter-l {
+    transform-origin: 12px 12px;
+    animation: cadFlutterL 3.2s ease-in-out infinite alternate;
+  }
+  @keyframes cadFlutter {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0.86);
+    }
+  }
+  @keyframes cadFlutterL {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0.86);
+    }
+  }
+
   /* Uppercase mono technical label — metadata, counts, section kickers.
    * 10px / 0.12em tracking per the design contract. */
   .mono-label {
@@ -712,10 +825,6 @@
     -webkit-mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
     mask-image: radial-gradient(56% 110% at 84% 36%, oklch(0 0 0) 0%, transparent 72%);
     pointer-events: none;
-  }
-  .hero-editorial > * {
-    position: relative;
-    z-index: 1;
   }
   .hero-editorial h1 {
     font-family: var(--font-display);
@@ -1107,6 +1216,33 @@
   .cite:hover {
     background: var(--hairline);
     color: var(--ink);
+  }
+  .cite {
+    position: relative;
+  }
+  .cite .cite-pop {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 230px;
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 9px 11px;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--ink-muted);
+    text-align: left;
+    box-shadow: 0 8px 24px -12px oklch(0.2 0.02 60 / 30%);
+    z-index: 40;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .cite:hover .cite-pop {
+    display: block;
   }
 
   /* Cooking-banner sweep — something is always running. */
