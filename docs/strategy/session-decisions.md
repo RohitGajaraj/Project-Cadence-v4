@@ -24,6 +24,26 @@
 
 ## Decision log
 
+### 2026-06-12 — Verdict chips: the inline annotation pattern is a platform-wide design law
+
+**Decision:** Founder ruling (mid-session, reference image of design-review annotations — `KEEP` / `CORRECT` / `ADD NEXT`): whenever content carries a judgment, Cadence leads with an inline **verdict chip** — a mono-caps outline pill in the role color — instead of burying the verdict in prose. Codified as a standing section in root `DESIGN.md` ("Inline verdict chips — annotate, don't bury"), canonical primitive `VerdictChip` in `src/components/cadence/Primitives.tsx`. Applies to every current and future screen.
+
+**Why:** The founder wants the platform to feel prominent, premium, and edited — information highlighted, judgments legible at a glance, for the end consumer. A chip vocabulary (moss keep · ember correct · indigo next · orchid agent · saffron highlight · madder kill) extends the existing color-role law from live status to rendered judgments without inventing new colors.
+
+**Tradeoffs considered:** Reusing StatusBadge (rejected — dot+pulse means LIVE state; conflating judgment with state would erode the trust mechanism). Applying chips everywhere immediately (rejected — the no-filler rule holds; chips only render real, data-backed verdicts; remaining surfaces adopt on touch: evals, drift, rescore deltas, brief callouts).
+
+**Impact:** `DESIGN.md` (new section + production-mapping row; sync-back to the design project flagged), `Primitives.tsx` (`VerdictChip`), `CriticBadge` (ship/revise/kill), `OutcomeCard` (validated/mixed/missed). Commit `0cd80cabe3`.
+
+### 2026-06-12 — Every chat reply gets a judge score; meta is persisted (screen 3 hand-in-hand builds)
+
+**Decision:** While porting Ember screen 3 (Brain/Chat), the AI-footer contract ("judge score · model · latency · tokens · cost · feedback · view-trace · replay-with", DESIGN.md non-negotiable) was made real rather than painted: (1) a post-completion LLM-as-judge call (surface `judge`, fast model, 8s cap, failure-tolerant) scores every chat reply 0–100 and rides the existing SSE meta event; (2) "Replay with…" re-asks the preceding question with the chosen model in-thread — with truthful copy ("the reply lands in this thread"; the prototype's "diff lands in thread" promised a diff that doesn't exist); (3) migration `20260612120000` adds `messages.metadata` so footers/citations survive reloads — a pre-migration-tolerant insert keeps the app working until it applies.
+
+**Why:** Founder rule 2 of the migration methodology — never drop a design element because functionality is missing; build the functionality. The judge pill and replay menu were mock-data-only in the prototype.
+
+**Tradeoffs considered:** Omitting the judge pill until a full evals integration (rejected — the contract is non-negotiable and a tolerant cheap-model call suffices); judging inline before the reply streams (rejected — user-visible latency; post-completion only delays the footer); persisting meta in a side table (rejected — one nullable jsonb column on `messages` is the minimal honest shape).
+
+**Impact:** `src/routes/api/chat.ts`, `src/components/chat/MessageMeta.tsx`, migration `20260612120000` (NOT yet applied — supabase MCP read-only/unauthorized this session; applies via the usual sync path). Commit `cc34fee8c2`.
+
 ### 2026-06-12 — The chat surface is the Brain: company-brain positioning, retention makes it real
 
 **Decision:** The conversational surface (just rebuilt as Perplexity-grade "Research", F-RESEARCH) is renamed and positioned as **Brain** — the company/product brain that captures everything inward (signals, meetings, decisions, specs, learnings, missions) and outward (web research findings), cited and compounding. Founder-ratified alongside the build call: ship the **retention slice** immediately (F-BRAIN) — auto-retain research answers + sources into indexed memory so future questions recall past findings; "Remember this" / "Capture as decision" actions on any message; a "what the brain knows" status. Tagline: "Everything inward and outward — captured, cited, compounding."
