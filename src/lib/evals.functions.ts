@@ -26,8 +26,8 @@ export const listEvalSuites = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const ids = (suites ?? []).map((s) => s.id);
-    let caseCounts = new Map<string, number>();
-    let lastRuns = new Map<
+    const caseCounts = new Map<string, number>();
+    const lastRuns = new Map<
       string,
       {
         status: string;
@@ -237,6 +237,36 @@ export const runEvalSuiteNow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     return await runEvalSuite(supabase, userId, data.suite_id, "manual");
+  });
+
+/**
+ * F-DESIGN-EMBER (screen 5, Govern · Evals) — score trend per suite for the
+ * list-level cards: latest vs previous completed run, so the "↑ improving /
+ * → steady / ↓ falling" mono label renders from real run history, never an
+ * invented trend. Additive only — listEvalSuites is untouched.
+ */
+export const getEvalScoreTrends = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: runs, error } = await supabase
+      .from("eval_runs")
+      .select("suite_id,avg_score,created_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .not("avg_score", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    const trends: Record<string, { latest: number; previous: number | null }> = {};
+    const seen = new Map<string, number>();
+    for (const r of runs ?? []) {
+      const n = seen.get(r.suite_id) ?? 0;
+      if (n === 0) trends[r.suite_id] = { latest: Number(r.avg_score), previous: null };
+      else if (n === 1) trends[r.suite_id].previous = Number(r.avg_score);
+      seen.set(r.suite_id, n + 1);
+    }
+    return { trends };
   });
 
 export const getEvalRun = createServerFn({ method: "POST" })

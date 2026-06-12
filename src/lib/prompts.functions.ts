@@ -273,6 +273,47 @@ export const setAssignment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * F-DESIGN-EMBER (screen 5, Govern · Prompts) — the list-level "Roll back"
+ * action from the reference: set the template's active version to the most
+ * recent published version BELOW the current active one. Errors honestly when
+ * there is nothing earlier to roll back to. Additive only.
+ */
+export const rollbackPromptVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { template_id: string }) =>
+    z.object({ template_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: tpl, error } = await supabase
+      .from("prompt_templates")
+      .select("id,active_version_id")
+      .eq("id", data.template_id)
+      .eq("user_id", userId)
+      .single();
+    if (error) throw new Error(error.message);
+    const { data: versions, error: vErr } = await supabase
+      .from("prompt_versions")
+      .select("id,version,status")
+      .eq("template_id", data.template_id)
+      .eq("user_id", userId)
+      .order("version", { ascending: false });
+    if (vErr) throw new Error(vErr.message);
+    const all = versions ?? [];
+    const active = all.find((v) => v.id === tpl.active_version_id);
+    if (!active) throw new Error("No active version to roll back from.");
+    const prev = all.find((v) => v.version < active.version && v.status === "published");
+    if (!prev) throw new Error("No earlier published version to roll back to.");
+    const { error: uErr } = await supabase
+      .from("prompt_templates")
+      .update({ active_version_id: prev.id })
+      .eq("id", data.template_id)
+      .eq("user_id", userId);
+    if (uErr) throw new Error(uErr.message);
+    return { ok: true, version: prev.version as number };
+  });
+
 export const getPromptAnalytics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { template_id: string }) =>

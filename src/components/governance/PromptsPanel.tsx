@@ -1,7 +1,19 @@
+// Prompts tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (GovernScreen, tab "Prompts"): a bento table (Surface 1fr / Version 70px /
+// Note 1fr / Status 90px / actions 150px) with the surface at 500 weight, the
+// version mono ink, the note at 12px ink-subtle, the status mono 8.5
+// (testing → indigo, live → emerald), and Diff + Roll back ghost buttons.
+// Both actions are REAL here: Diff opens production's existing Prompt Studio
+// drill-down (version compare, line diff, draft editing, publish, A/B
+// assignment, usage) restyled quiet-Ember; Roll back calls the
+// rollbackPromptVersion mutation (previous published version becomes active).
+// Status derives from the active version's real state — draft-active reads
+// "testing", published-active reads "live"; nothing is invented.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
+import { FileCode } from "lucide-react";
 import {
   listPromptTemplates,
   getPromptTemplate,
@@ -11,12 +23,11 @@ import {
   setActiveVersion,
   setAssignment,
   getPromptAnalytics,
+  rollbackPromptVersion,
 } from "@/lib/prompts.functions";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { GitBranch, GitFork, Rocket, Check, AlertTriangle } from "lucide-react";
+import { EmptyState, MonoLabel } from "@/components/cadence/Primitives";
+
+const GRID = "1fr 70px 1fr 90px 150px";
 
 type TemplateRow = {
   id: string;
@@ -46,93 +57,180 @@ type Version = {
 export function PromptsPanel() {
   const qc = useQueryClient();
   const fList = useServerFn(listPromptTemplates);
+  const fRollback = useServerFn(rollbackPromptVersion);
   const templates = useQuery({ queryKey: ["prompt-templates"], queryFn: () => fList() });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!selectedId && templates.data?.[0]) setSelectedId(templates.data[0].id);
-  }, [templates.data, selectedId]);
 
-  return (
-    <div className="grid grid-cols-12 gap-6">
-      <aside className="col-span-4">
-        <TemplateList
-          templates={(templates.data as TemplateRow[] | undefined) ?? []}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-      </aside>
-      <section className="col-span-8">
-        {selectedId ? (
-          <TemplateDetail
-            templateId={selectedId}
-            onMutated={() => qc.invalidateQueries({ queryKey: ["prompt-templates"] })}
-          />
-        ) : (
-          <div className="text-sm text-muted-foreground">Pick a template.</div>
-        )}
-      </section>
-    </div>
-  );
-}
+  const rollback = useMutation({
+    mutationFn: (v: { id: string; name: string }) => fRollback({ data: { template_id: v.id } }),
+    onSuccess: (r, v) => {
+      toast.success(`${v.name} rolled back to v${r.version}. It's live now.`);
+      qc.invalidateQueries({ queryKey: ["prompt-templates"] });
+      qc.invalidateQueries({ queryKey: ["prompt-template", v.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
-function TemplateList({
-  templates,
-  selectedId,
-  onSelect,
-}: {
-  templates: TemplateRow[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  const grouped = useMemo(() => {
-    const out = new Map<string, TemplateRow[]>();
-    for (const t of templates) {
-      const k = t.surface;
-      if (!out.has(k)) out.set(k, []);
-      out.get(k)!.push(t);
-    }
-    return Array.from(out.entries());
-  }, [templates]);
+  const rows = (templates.data as TemplateRow[] | undefined) ?? [];
 
-  return (
-    <div className="rounded-xl border border-border bg-card p-2">
-      {grouped.length === 0 && (
-        <p className="p-3 text-xs text-muted-foreground">No templates yet.</p>
-      )}
-      {grouped.map(([surface, items]) => (
-        <div key={surface} className="mb-2">
-          <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-            {surface}
-          </div>
-          {items.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onSelect(t.id)}
-              className={`w-full text-left rounded-md px-3 py-2 text-sm transition ${
-                selectedId === t.id ? "bg-accent text-accent-foreground" : "hover:bg-muted/50"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium truncate">{t.name}</span>
-                {t.active_version ? (
-                  <Badge variant="outline" className="text-[10px]">
-                    v{t.active_version.version}
-                  </Badge>
-                ) : null}
-              </div>
-              {t.description && (
-                <div className="text-xs text-muted-foreground truncate mt-0.5">{t.description}</div>
-              )}
-            </button>
-          ))}
+  if (templates.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load prompts
         </div>
-      ))}
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(templates.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => templates.refetch()}
+        >
+          Retry · reloads prompts
+        </button>
+      </div>
+    );
+  }
+
+  if (templates.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading prompts…
+      </div>
+    );
+  }
+
+  if (selectedId) {
+    return (
+      <TemplateDetail
+        templateId={selectedId}
+        onBack={() => setSelectedId(null)}
+        onMutated={() => qc.invalidateQueries({ queryKey: ["prompt-templates"] })}
+      />
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon={FileCode}
+        title="No prompt templates yet"
+        body="Every AI surface runs on a versioned system prompt. Templates land here when a surface first calls the runtime."
+        cta="Refresh · checks again"
+        onCta={() => templates.refetch()}
+      />
+    );
+  }
+
+  return (
+    <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+      <div
+        className="mono-label"
+        style={{
+          display: "grid",
+          gridTemplateColumns: GRID,
+          gap: 12,
+          padding: "10px 18px",
+          borderBottom: "1px solid var(--hairline)",
+        }}
+      >
+        <span>Surface</span>
+        <span>Version</span>
+        <span>Note</span>
+        <span>Status</span>
+        <span></span>
+      </div>
+      {rows.map((p, i) => {
+        const status = !p.active_version
+          ? null
+          : p.active_version.status === "draft"
+            ? "testing"
+            : "live";
+        const rolling = rollback.isPending && rollback.variables?.id === p.id;
+        return (
+          <div
+            key={p.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID,
+              gap: 12,
+              padding: "12px 18px",
+              alignItems: "center",
+              borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
+              fontSize: 13,
+            }}
+          >
+            <button
+              style={{ fontWeight: 500, textAlign: "left" }}
+              onClick={() => setSelectedId(p.id)}
+            >
+              {p.name}
+            </button>
+            <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
+              {p.active_version ? `v${p.active_version.version}` : "—"}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
+              {p.description ?? `${p.surface} · ${p.key}`}
+            </span>
+            <span
+              className="mono-label"
+              style={{
+                fontSize: 8.5,
+                color:
+                  status === "testing"
+                    ? "var(--action-blue)"
+                    : status === "live"
+                      ? "var(--emerald)"
+                      : "var(--ink-faint)",
+              }}
+            >
+              {status ?? "unset"}
+            </span>
+            <span style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11 }}
+                onClick={() => setSelectedId(p.id)}
+              >
+                Diff
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11 }}
+                disabled={rolling || !p.active_version || p.active_version.version <= 1}
+                onClick={() => rollback.mutate({ id: p.id, name: p.name })}
+              >
+                {rolling ? "Rolling back…" : "Roll back"}
+              </button>
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutated: () => void }) {
+/* Prompt Studio drill-down — production's existing detail (version compare,
+   line diff, draft editing, publish, A/B assignment, usage), restyled
+   quiet-Ember. The drill-down contract: the list row opens this screen. */
+function TemplateDetail({
+  templateId,
+  onBack,
+  onMutated,
+}: {
+  templateId: string;
+  onBack: () => void;
+  onMutated: () => void;
+}) {
   const qc = useQueryClient();
   const fGet = useServerFn(getPromptTemplate);
   const fFork = useServerFn(createPromptVersion);
@@ -151,7 +249,10 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
     queryFn: () => fAnalytics({ data: { template_id: templateId } }),
   });
 
-  const versions = (detail.data?.versions ?? []) as Version[];
+  const versions = useMemo(
+    () => (detail.data?.versions ?? []) as Version[],
+    [detail.data?.versions],
+  );
   const template = detail.data?.template as TemplateRow | undefined;
   const assignment = detail.data?.assignment ?? null;
 
@@ -171,9 +272,11 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
   const right = versions.find((v) => v.id === rightId);
 
   const [draftText, setDraftText] = useState<string>("");
+  const rightVersionId = right?.id;
+  const rightPrompt = right?.system_prompt;
   useEffect(() => {
-    if (right) setDraftText(right.system_prompt);
-  }, [right?.id]);
+    if (rightVersionId != null && rightPrompt != null) setDraftText(rightPrompt);
+  }, [rightVersionId, rightPrompt]);
   const editable = right?.status === "draft";
 
   const invalidate = () => {
@@ -185,7 +288,7 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
   const mFork = useMutation({
     mutationFn: () => fFork({ data: { template_id: templateId, base_version_id: right?.id } }),
     onSuccess: (v) => {
-      toast.success(`Forked v${v.version}`);
+      toast.success(`Forked v${v.version}. Drafts don't run until published.`);
       setRightId(v.id);
       invalidate();
     },
@@ -194,7 +297,7 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
   const mSave = useMutation({
     mutationFn: () => fUpdate({ data: { version_id: right!.id, system_prompt: draftText } }),
     onSuccess: () => {
-      toast.success("Draft saved");
+      toast.success("Draft saved. Still not live.");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -202,85 +305,148 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
   const mPublish = useMutation({
     mutationFn: () => fPublish({ data: { version_id: right!.id, template_id: templateId } }),
     onSuccess: () => {
-      toast.success("Published & activated");
+      toast.success("Published. This version now serves the surface.");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const mRollback = useMutation({
+  const mSetActive = useMutation({
     mutationFn: (id: string) => fSetActive({ data: { template_id: templateId, version_id: id } }),
     onSuccess: () => {
-      toast.success("Active version updated");
+      toast.success("Active version updated. Traffic routes to it now.");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (detail.isLoading) return <div className="text-sm text-muted-foreground">Loading…</div>;
-  if (!template) return <div className="text-sm text-muted-foreground">Template not found.</div>;
+  if (detail.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading template…
+      </div>
+    );
+  }
+  if (!template) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>Template not found.</p>
+        <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={onBack}>
+          ← Back to prompts
+        </button>
+      </div>
+    );
+  }
+
+  const activeVersion = versions.find((v) => v.id === template.active_version_id);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
+    <div className="fade-up">
+      <div style={{ marginBottom: 16 }}>
+        <button
+          className="mono-label"
+          style={{ color: "var(--action-blue)", marginBottom: 10 }}
+          onClick={onBack}
+        >
+          ← All prompts
+        </button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
           <div>
-            <h2 className="text-lg font-semibold">{template.name}</h2>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {template.surface} · {template.key}
-              {template.active_version_id &&
-              versions.find((v) => v.id === template.active_version_id) ? (
-                <>
-                  {" "}
-                  · active{" "}
-                  <Badge variant="outline" className="text-[10px] ml-1">
-                    v{versions.find((v) => v.id === template.active_version_id)!.version}
-                  </Badge>
-                </>
-              ) : null}
+            <MonoLabel>
+              Prompt · {template.surface} · {template.key}
+              {activeVersion ? ` · active v${activeVersion.version}` : ""}
+            </MonoLabel>
+            <div className="font-display" style={{ fontSize: 21, marginTop: 2 }}>
+              {template.name}
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => mFork.mutate()}
+          <button
+            className="btn btn-ghost btn-sm"
             disabled={mFork.isPending}
+            onClick={() => mFork.mutate()}
           >
-            <GitFork className="h-3.5 w-3.5 mr-1" /> Fork new draft
-          </Button>
+            {mFork.isPending ? "Forking…" : "Fork new draft · copies this version"}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <VersionColumn
-          label="Compare (left)"
+          label="Compare · left"
           versions={versions}
           selectedId={leftId}
           onSelect={setLeftId}
           activeId={template.active_version_id}
-          onRollback={(id) => mRollback.mutate(id)}
+          onSetActive={(id) => mSetActive.mutate(id)}
         />
         <VersionColumn
-          label="Edit / Publish (right)"
+          label="Edit / publish · right"
           versions={versions}
           selectedId={rightId}
           onSelect={setRightId}
           activeId={template.active_version_id}
-          onRollback={(id) => mRollback.mutate(id)}
+          onSetActive={(id) => mSetActive.mutate(id)}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <pre className="rounded-xl border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap max-h-[420px] overflow-auto">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <pre
+          className="bento"
+          style={{
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            whiteSpace: "pre-wrap",
+            maxHeight: 420,
+            overflow: "auto",
+            color: "var(--ink-muted)",
+            lineHeight: 1.55,
+            margin: 0,
+          }}
+        >
           {left?.system_prompt || "(empty)"}
         </pre>
         {editable ? (
-          <Textarea
+          <textarea
+            className="input"
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
-            className="font-mono text-xs min-h-[420px]"
+            aria-label="Draft system prompt"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              minHeight: 420,
+              resize: "vertical",
+              lineHeight: 1.55,
+            }}
           />
         ) : (
-          <pre className="rounded-xl border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap max-h-[420px] overflow-auto">
+          <pre
+            className="bento"
+            style={{
+              fontSize: 11,
+              fontFamily: "var(--font-mono)",
+              whiteSpace: "pre-wrap",
+              maxHeight: 420,
+              overflow: "auto",
+              color: "var(--ink)",
+              lineHeight: 1.55,
+              margin: 0,
+            }}
+          >
             {right?.system_prompt || "(empty)"}
           </pre>
         )}
@@ -291,39 +457,39 @@ function TemplateDetail({ templateId, onMutated }: { templateId: string; onMutat
         right={(editable ? draftText : right?.system_prompt) ?? ""}
       />
 
-      <div className="flex items-center gap-2">
-        {editable && (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0" }}>
+        {editable ? (
           <>
-            <Button size="sm" onClick={() => mSave.mutate()} disabled={mSave.isPending}>
-              <Check className="h-3.5 w-3.5 mr-1" /> Save draft
-            </Button>
-            <Button
-              size="sm"
-              variant="default"
-              onClick={() => mPublish.mutate()}
-              disabled={mPublish.isPending}
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={mSave.isPending}
+              onClick={() => mSave.mutate()}
             >
-              <Rocket className="h-3.5 w-3.5 mr-1" /> Publish & make active
-            </Button>
+              {mSave.isPending ? "Saving…" : "Save draft · not yet live"}
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={mPublish.isPending}
+              onClick={() => mPublish.mutate()}
+            >
+              {mPublish.isPending ? "Publishing…" : "Publish · becomes active"}
+            </button>
           </>
-        )}
-        {!editable && right && (
-          <div className="text-xs text-muted-foreground flex items-center gap-1">
-            <AlertTriangle className="h-3.5 w-3.5" /> Published versions are immutable. Fork to
-            edit.
-          </div>
-        )}
+        ) : right ? (
+          <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
+            Published versions are immutable — fork a new draft to edit.
+          </span>
+        ) : null}
       </div>
 
       <AssignmentPanel
-        templateId={templateId}
         assignment={assignment}
         versions={versions}
         onSave={(p) =>
           fAssign({ data: { template_id: templateId, ...p } })
             .then(() => {
               invalidate();
-              toast.success("Assignment saved");
+              toast.success("Assignment saved. The split applies to new calls.");
             })
             .catch((e: Error) => toast.error(e.message))
         }
@@ -343,82 +509,122 @@ function VersionColumn({
   selectedId,
   onSelect,
   activeId,
-  onRollback,
+  onSetActive,
 }: {
   label: string;
   versions: Version[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   activeId: string | null;
-  onRollback: (id: string) => void;
+  onSetActive: (id: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-        {selectedId && selectedId !== activeId && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-[11px]"
-            onClick={() => onRollback(selectedId)}
-          >
-            Set active
-          </Button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-auto">
-        {versions.map((v) => (
+    <div className="bento" style={{ padding: "12px 14px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
+        <MonoLabel style={{ fontSize: 8.5 }}>{label}</MonoLabel>
+        {selectedId && selectedId !== activeId ? (
           <button
-            key={v.id}
-            onClick={() => onSelect(v.id)}
-            className={`text-[11px] px-2 py-1 rounded-md border transition ${
-              selectedId === v.id
-                ? "border-primary bg-primary/10"
-                : "border-border hover:bg-muted/50"
-            }`}
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: 10.5 }}
+            onClick={() => onSetActive(selectedId)}
           >
-            v{v.version}
-            <span
-              className={`ml-1 ${v.status === "draft" ? "text-amber-500" : v.status === "published" ? "text-emerald-500" : "text-muted-foreground"}`}
-            >
-              · {v.status}
-            </span>
-            {activeId === v.id && <span className="ml-1 text-primary">●</span>}
+            Set active · routes traffic
           </button>
-        ))}
+        ) : null}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 120, overflow: "auto" }}>
+        {versions.map((v) => {
+          const selected = selectedId === v.id;
+          return (
+            <button
+              key={v.id}
+              onClick={() => onSelect(v.id)}
+              className="mono-label"
+              style={{
+                padding: "4px 10px",
+                borderRadius: 99,
+                fontSize: 9,
+                color: selected ? "var(--canvas)" : "var(--ink-subtle)",
+                background: selected ? "var(--primary-ink)" : "transparent",
+                border: `1px solid ${selected ? "transparent" : "var(--hairline)"}`,
+                transition: "background var(--dur-fast), color var(--dur-fast)",
+              }}
+            >
+              v{v.version}
+              <span
+                style={{
+                  marginLeft: 5,
+                  color: selected
+                    ? "var(--canvas)"
+                    : v.status === "draft"
+                      ? "var(--action-blue)"
+                      : v.status === "published"
+                        ? "var(--emerald)"
+                        : "var(--ink-faint)",
+                }}
+              >
+                {v.status}
+              </span>
+              {activeId === v.id ? <span style={{ marginLeft: 5 }}>●</span> : null}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/** Minimal line-level diff: green = added, red = removed, dim = unchanged. */
+/** Minimal line-level diff: moss = added, madder = removed, dim = unchanged. */
 function DiffPanel({ left, right }: { left: string; right: string }) {
   const diff = useMemo(() => computeLineDiff(left, right), [left, right]);
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-        <GitBranch className="h-3.5 w-3.5" /> Diff
-      </div>
-      <pre className="text-xs font-mono whitespace-pre-wrap max-h-[260px] overflow-auto">
-        {diff.map((d, i) => (
-          <div
-            key={i}
-            className={
-              d.t === "add"
-                ? "bg-emerald-500/10 text-emerald-300"
-                : d.t === "del"
-                  ? "bg-rose-500/10 text-rose-300"
-                  : "text-muted-foreground"
-            }
-          >
-            <span className="opacity-50 mr-2">
-              {d.t === "add" ? "+" : d.t === "del" ? "-" : " "}
-            </span>
-            {d.line || " "}
-          </div>
-        ))}
-        {diff.length === 0 && <div className="text-muted-foreground">No differences.</div>}
+    <div className="bento" style={{ padding: "12px 14px" }}>
+      <MonoLabel style={{ fontSize: 8.5, marginBottom: 8 }}>Diff · left vs right</MonoLabel>
+      <pre
+        style={{
+          fontSize: 11,
+          fontFamily: "var(--font-mono)",
+          whiteSpace: "pre-wrap",
+          maxHeight: 260,
+          overflow: "auto",
+          margin: 0,
+          lineHeight: 1.55,
+        }}
+      >
+        {diff.length === 0 ? (
+          <div style={{ color: "var(--ink-subtle)" }}>No differences.</div>
+        ) : (
+          diff.map((d, i) => (
+            <div
+              key={i}
+              style={
+                d.t === "add"
+                  ? {
+                      background: "color-mix(in oklab, var(--emerald) 10%, transparent)",
+                      color: "var(--emerald)",
+                    }
+                  : d.t === "del"
+                    ? {
+                        background: "color-mix(in oklab, var(--rose) 10%, transparent)",
+                        color: "var(--rose)",
+                      }
+                    : { color: "var(--ink-faint)" }
+              }
+            >
+              <span style={{ opacity: 0.6, marginRight: 8 }}>
+                {d.t === "add" ? "+" : d.t === "del" ? "-" : " "}
+              </span>
+              {d.line || " "}
+            </div>
+          ))
+        )}
       </pre>
     </div>
   );
@@ -465,7 +671,6 @@ function AssignmentPanel({
   versions,
   onSave,
 }: {
-  templateId: string;
   assignment: {
     variant_a_version_id: string | null;
     variant_b_version_id: string | null;
@@ -497,16 +702,32 @@ function AssignmentPanel({
   ]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <h3 className="text-sm font-semibold mb-3">A/B assignment</h3>
-      <div className="grid grid-cols-2 gap-3">
-        <label className="text-xs">
-          <div className="text-muted-foreground mb-1">Variant A</div>
-          <select
-            className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
-            value={aId}
-            onChange={(e) => setAId(e.target.value)}
-          >
+    <div className="bento" style={{ padding: "var(--card-pad)", marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 10,
+        }}
+      >
+        <MonoLabel>A/B assignment</MonoLabel>
+        <button
+          role="switch"
+          aria-checked={enabled}
+          className="mono-label"
+          style={{ fontSize: 8.5, color: enabled ? "var(--emerald)" : "var(--ink-faint)" }}
+          onClick={() => setEnabled((v) => !v)}
+        >
+          {enabled ? "on" : "off"}
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Variant A
+          </div>
+          <select className="input" value={aId} onChange={(e) => setAId(e.target.value)}>
             <option value="">— none —</option>
             {versions.map((v) => (
               <option key={v.id} value={v.id}>
@@ -515,13 +736,11 @@ function AssignmentPanel({
             ))}
           </select>
         </label>
-        <label className="text-xs">
-          <div className="text-muted-foreground mb-1">Variant B (optional)</div>
-          <select
-            className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
-            value={bId}
-            onChange={(e) => setBId(e.target.value)}
-          >
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Variant B · optional
+          </div>
+          <select className="input" value={bId} onChange={(e) => setBId(e.target.value)}>
             <option value="">— none —</option>
             {versions.map((v) => (
               <option key={v.id} value={v.id}>
@@ -530,24 +749,23 @@ function AssignmentPanel({
             ))}
           </select>
         </label>
-        <label className="text-xs">
-          <div className="text-muted-foreground mb-1">% traffic to A: {split}%</div>
-          <Input
+        <label style={{ fontSize: 12, gridColumn: "span 2" }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Traffic to A · {split}%
+          </div>
+          <input
             type="range"
             min={0}
             max={100}
             value={split}
             onChange={(e) => setSplit(Number(e.target.value))}
+            style={{ width: "100%", accentColor: "var(--ember)" }}
           />
         </label>
-        <label className="text-xs flex items-center gap-2 mt-5">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          Enabled
-        </label>
       </div>
-      <div className="mt-3">
-        <Button
-          size="sm"
+      <div style={{ marginTop: 10 }}>
+        <button
+          className="btn btn-ghost btn-sm"
           onClick={() =>
             onSave({
               variant_a_version_id: aId || null,
@@ -557,8 +775,8 @@ function AssignmentPanel({
             })
           }
         >
-          Save assignment
-        </Button>
+          Save assignment · splits new calls
+        </button>
       </div>
     </div>
   );
@@ -578,27 +796,49 @@ function PromptUsagePanel({
   }, [runs]);
   const total = runs.length;
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <h3 className="text-sm font-semibold mb-3">Usage (last 30 days · {total} runs)</h3>
+    <div className="bento" style={{ padding: "var(--card-pad)" }}>
+      <MonoLabel style={{ marginBottom: 10 }}>Usage · last 30 days · {total} runs</MonoLabel>
       {total === 0 ? (
-        <div className="text-xs text-muted-foreground">No runs recorded yet.</div>
+        <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>No runs recorded yet.</p>
       ) : (
-        <div className="space-y-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {versions.map((v) => {
             const n = totals.get(v.id) ?? 0;
             const pct = total ? Math.round((n / total) * 100) : 0;
             return (
-              <div key={v.id} className="text-xs">
-                <div className="flex items-center justify-between">
-                  <span>
-                    v{v.version} <span className="text-muted-foreground">· {v.status}</span>
+              <div key={v.id}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    fontSize: 12,
+                  }}
+                >
+                  <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
+                    v{v.version} · {v.status}
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="mono-label tabular-nums" style={{ color: "var(--ink-subtle)" }}>
                     {n} · {pct}%
                   </span>
                 </div>
-                <div className="h-1.5 mt-1 bg-muted rounded">
-                  <div className="h-1.5 bg-primary rounded" style={{ width: `${pct}%` }} />
+                <div
+                  style={{
+                    height: 4,
+                    borderRadius: 99,
+                    background: "var(--surface-2)",
+                    overflow: "hidden",
+                    marginTop: 4,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${pct}%`,
+                      background: "var(--ember)",
+                      opacity: 0.85,
+                    }}
+                  />
                 </div>
               </div>
             );

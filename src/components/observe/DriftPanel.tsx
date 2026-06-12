@@ -1,6 +1,17 @@
+// Drift tab — ported 1:1 from design-reference/cadence/loop.jsx (GovernScreen,
+// tab "Drift"): a bento table (AI surface 1fr / Δ baseline 80px / Status 90px /
+// Note 1fr / chevron 20px), surface at 500 weight, the delta mono tabular
+// (ember on watch), the status as a VerdictChip (watch → ember, stable → moss —
+// a drift status is a rendered judgment, never a StatusBadge), the note at
+// 12px ink-subtle, and rows opening the surface's drift detail (incidents with
+// resolve/reopen — production's existing drill-down, expanded inline).
+// Production functionality kept, restyled quiet-Ember: getDriftOverview /
+// runDriftNow / updateDriftBaseline / resolveDriftIncident /
+// reopenDriftIncident, the metric trend sparklines, and the baseline config.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
+import { ChevronDown, ChevronRight, Waves } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDriftOverview,
@@ -9,21 +20,10 @@ import {
   resolveDriftIncident,
   reopenDriftIncident,
 } from "@/lib/drift.functions";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  RefreshCw,
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { relTime } from "@/components/product/format";
+
+const GRID = "1fr 80px 90px 1fr 20px";
 
 const DEFAULT_CFG = {
   window_days: 7,
@@ -44,13 +44,41 @@ const METRIC_LABELS: Record<string, string> = {
   error_rate: "Error rate",
 };
 
-function fmt(metric: string, v: number) {
+function fmtMetric(metric: string, v: number) {
   if (metric === "avg_cost_usd") return `$${v.toFixed(4)}`;
   if (metric === "avg_latency_ms") return `${Math.round(v)}ms`;
   if (metric === "error_rate") return `${v.toFixed(1)}%`;
   if (metric === "avg_eval_score") return v.toFixed(2);
   return v.toFixed(1);
 }
+
+function fmtDelta(pct: number) {
+  return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+type Incident = {
+  id: string;
+  status: string;
+  surface: string;
+  model: string;
+  metric: string;
+  baseline_value: number | string;
+  current_value: number | string;
+  delta_pct: number | string;
+  severity: string;
+  detected_at: string;
+};
+
+type Snapshot = {
+  bucket_date: string;
+  surface: string;
+  avg_latency_ms: number | string;
+  avg_total_tokens: number | string;
+  avg_cost_usd: number | string;
+  avg_eval_score: number | string | null;
+  error_count: number | string;
+  request_count: number | string;
+};
 
 export function DriftPanel() {
   const qc = useQueryClient();
@@ -60,12 +88,14 @@ export function DriftPanel() {
   const resolveFn = useServerFn(resolveDriftIncident);
   const reopenFn = useServerFn(reopenDriftIncident);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["drift_overview"],
     queryFn: () => fetchOverview(),
   });
 
   const [cfg, setCfg] = useState(DEFAULT_CFG);
+  const [cfgOpen, setCfgOpen] = useState(false);
+  const [openSurface, setOpenSurface] = useState<string | null>(null);
   useEffect(() => {
     if (data?.baseline) setCfg({ ...DEFAULT_CFG, ...data.baseline });
   }, [data?.baseline]);
@@ -78,16 +108,17 @@ export function DriftPanel() {
       );
       qc.invalidateQueries({ queryKey: ["drift_overview"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Failed"),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const saveMut = useMutation({
     mutationFn: () => saveCfg({ data: cfg }),
     onSuccess: () => {
-      toast.success("Baseline updated");
+      toast.success("Baseline updated. The next check uses it.");
+      setCfgOpen(false);
       qc.invalidateQueries({ queryKey: ["drift_overview"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Failed"),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const decideMut = useMutation({
@@ -96,41 +127,57 @@ export function DriftPanel() {
       return reopenFn({ data: { id } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["drift_overview"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
-  const snapshots = data?.snapshots ?? [];
-  const openIncidents = data?.openIncidents ?? [];
-  const recentIncidents = data?.recentIncidents ?? [];
+  const snapshots = useMemo(() => (data?.snapshots ?? []) as Snapshot[], [data?.snapshots]);
+  const openIncidents = useMemo(
+    () => (data?.openIncidents ?? []) as Incident[],
+    [data?.openIncidents],
+  );
+  const recentIncidents = useMemo(
+    () => (data?.recentIncidents ?? []) as Incident[],
+    [data?.recentIncidents],
+  );
+
+  // One row per AI surface — watch when an open incident exists, else stable.
+  // Δ baseline comes from the worst open incident; stable surfaces carry no
+  // delta number (the detector found none — never invent one).
+  const rows = useMemo(() => {
+    const surfaces = new Set<string>();
+    for (const s of snapshots) surfaces.add(s.surface);
+    for (const i of openIncidents) surfaces.add(i.surface);
+    for (const i of recentIncidents) surfaces.add(i.surface);
+    return Array.from(surfaces)
+      .map((surface) => {
+        const open = openIncidents
+          .filter((i) => i.surface === surface)
+          .sort((a, b) => Math.abs(Number(b.delta_pct)) - Math.abs(Number(a.delta_pct)));
+        const worst = open[0];
+        return {
+          surface,
+          watch: open.length > 0,
+          delta: worst ? fmtDelta(Number(worst.delta_pct)) : "—",
+          note: worst
+            ? `${METRIC_LABELS[worst.metric] ?? worst.metric} ${fmtMetric(worst.metric, Number(worst.baseline_value))} → ${fmtMetric(worst.metric, Number(worst.current_value))}${open.length > 1 ? ` · +${open.length - 1} more` : ""}`
+            : "within baseline band",
+          openCount: open.length,
+        };
+      })
+      .sort((a, b) => Number(b.watch) - Number(a.watch) || a.surface.localeCompare(b.surface));
+  }, [snapshots, openIncidents, recentIncidents]);
 
   const trendByDay = useMemo(() => {
     const map = new Map<
       string,
-      {
-        date: string;
-        latency: number;
-        tokens: number;
-        cost: number;
-        reqs: number;
-        errs: number;
-        score: number;
-        scoreCount: number;
-      }
+      { date: string; latency: number; tokens: number; cost: number; reqs: number; errs: number }
     >();
-    for (const s of snapshots as any[]) {
+    for (const s of snapshots) {
       const k = s.bucket_date;
       const reqs = Number(s.request_count) || 0;
       let row = map.get(k);
       if (!row) {
-        row = {
-          date: k,
-          latency: 0,
-          tokens: 0,
-          cost: 0,
-          reqs: 0,
-          errs: 0,
-          score: 0,
-          scoreCount: 0,
-        };
+        row = { date: k, latency: 0, tokens: 0, cost: 0, reqs: 0, errs: 0 };
         map.set(k, row);
       }
       row.latency += Number(s.avg_latency_ms) * reqs;
@@ -138,10 +185,6 @@ export function DriftPanel() {
       row.cost += Number(s.avg_cost_usd) * reqs;
       row.reqs += reqs;
       row.errs += Number(s.error_count) || 0;
-      if (s.avg_eval_score != null) {
-        row.score += Number(s.avg_eval_score);
-        row.scoreCount += 1;
-      }
     }
     return Array.from(map.values())
       .map((r) => ({
@@ -149,310 +192,372 @@ export function DriftPanel() {
         latency: r.reqs ? r.latency / r.reqs : 0,
         tokens: r.reqs ? r.tokens / r.reqs : 0,
         cost: r.reqs ? r.cost / r.reqs : 0,
-        reqs: r.reqs,
         errorRate: r.reqs ? (r.errs / r.reqs) * 100 : 0,
-        score: r.scoreCount ? r.score / r.scoreCount : null,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [snapshots]);
 
+  if (error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load drift
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => refetch()}
+        >
+          Retry · reloads drift
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading drift…
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => runMut.mutate()} disabled={runMut.isPending}>
+    <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setCfgOpen((v) => !v)}>
+          Baseline · thresholds and windows
+        </button>
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={runMut.isPending}
+          onClick={() => runMut.mutate()}
+        >
           {runMut.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <>
+              <span className="spinner" style={{ width: 11, height: 11 }} />
+              Checking…
+            </>
           ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
+            "Run drift check · rolls up today"
           )}
-          Run drift check
-        </Button>
+        </button>
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="incidents">
-            Incidents{" "}
-            {openIncidents.length > 0 && (
-              <Badge variant="destructive" className="ml-2">
-                {openIncidents.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="config">Baseline</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          ) : trendByDay.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-sm text-muted-foreground text-center">
-                No AI events yet. Make some calls and click <strong>Run drift check</strong>.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              <TrendCard
-                title="Avg latency (ms)"
-                series={trendByDay.map((d) => ({ date: d.date, value: d.latency }))}
-                format={(v) => `${Math.round(v)}ms`}
-                accent="violet"
-              />
-              <TrendCard
-                title="Avg tokens / call"
-                series={trendByDay.map((d) => ({ date: d.date, value: d.tokens }))}
-                format={(v) => v.toFixed(0)}
-                accent="cyan"
-              />
-              <TrendCard
-                title="Avg cost (USD)"
-                series={trendByDay.map((d) => ({ date: d.date, value: d.cost }))}
-                format={(v) => `$${v.toFixed(4)}`}
-                accent="emerald"
-              />
-              <TrendCard
-                title="Error rate (%)"
-                series={trendByDay.map((d) => ({ date: d.date, value: d.errorRate }))}
-                format={(v) => `${v.toFixed(1)}%`}
-                accent="rose"
-              />
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="incidents" className="space-y-3">
-          {openIncidents.length === 0 && recentIncidents.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-sm text-muted-foreground text-center">
-                No incidents detected.
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {openIncidents.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Open</h3>
-                  {openIncidents.map((i: any) => (
-                    <IncidentRow
-                      key={i.id}
-                      incident={i}
-                      onAction={(action) => decideMut.mutate({ id: i.id, action })}
-                    />
-                  ))}
+      {cfgOpen ? (
+        <div className="bento fade-up" style={{ padding: "14px 16px", marginBottom: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <MonoLabel>Drift baseline</MonoLabel>
+            <button
+              role="switch"
+              aria-checked={cfg.enabled}
+              className="mono-label"
+              style={{ fontSize: 8.5, color: cfg.enabled ? "var(--emerald)" : "var(--ink-faint)" }}
+              onClick={() => setCfg({ ...cfg, enabled: !cfg.enabled })}
+            >
+              detection {cfg.enabled ? "on" : "off"}
+            </button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {(
+              [
+                ["Recent window (days)", "window_days"],
+                ["Baseline window (days)", "baseline_days"],
+                ["Latency % threshold", "latency_pct_threshold"],
+                ["Tokens % threshold", "tokens_pct_threshold"],
+                ["Cost % threshold", "cost_pct_threshold"],
+                ["Eval score % drop", "score_pct_threshold"],
+                ["Error rate % threshold", "error_rate_pct_threshold"],
+              ] as [string, keyof typeof DEFAULT_CFG][]
+            ).map(([label, key]) => (
+              <label key={key} style={{ fontSize: 12 }}>
+                <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+                  {label}
                 </div>
-              )}
-              {recentIncidents.length > 0 && (
-                <div className="space-y-2 mt-6">
-                  <h3 className="text-sm font-medium text-muted-foreground">Recently resolved</h3>
-                  {recentIncidents.map((i: any) => (
-                    <IncidentRow
-                      key={i.id}
-                      incident={i}
-                      onAction={(action) => decideMut.mutate({ id: i.id, action })}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </TabsContent>
+                <input
+                  className="input"
+                  type="number"
+                  value={Number(cfg[key])}
+                  onChange={(e) => setCfg({ ...cfg, [key]: Number(e.target.value) })}
+                  style={{ fontSize: 12, padding: "4px 8px" }}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setCfgOpen(false)}>
+              Dismiss
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={saveMut.isPending}
+              onClick={() => saveMut.mutate()}
+            >
+              {saveMut.isPending ? "Saving…" : "Save baseline · applies on the next check"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
-        <TabsContent value="config">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Drift baseline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Detection enabled</Label>
-                <Switch
-                  checked={cfg.enabled}
-                  onCheckedChange={(v) => setCfg({ ...cfg, enabled: v })}
-                />
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={Waves}
+          title="No drift data yet"
+          body="Once AI calls accumulate, Cadence rolls daily snapshots and flags any surface that moves against its baseline."
+          cta="Run drift check · rolls up today"
+          onCta={() => runMut.mutate()}
+        />
+      ) : (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            className="mono-label"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID,
+              gap: 12,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span>AI surface</span>
+            <span>Δ baseline</span>
+            <span>Status</span>
+            <span>Note</span>
+            <span></span>
+          </div>
+          {rows.map((d, i) => {
+            const open = openSurface === d.surface;
+            const surfaceIncidents = {
+              open: openIncidents.filter((x) => x.surface === d.surface),
+              recent: recentIncidents.filter((x) => x.surface === d.surface),
+            };
+            return (
+              <div key={d.surface}>
+                <button
+                  onClick={() => setOpenSurface(open ? null : d.surface)}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: GRID,
+                    gap: 12,
+                    padding: "12px 18px",
+                    alignItems: "baseline",
+                    borderBottom:
+                      open || i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
+                    fontSize: 13,
+                    width: "100%",
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ fontWeight: 500 }}>{d.surface}</span>
+                  <span
+                    className="mono-label tabular-nums"
+                    style={{ color: d.watch ? "var(--ember)" : "var(--ink)" }}
+                  >
+                    {d.delta}
+                  </span>
+                  <span>
+                    <VerdictChip tone={d.watch ? "ember" : "moss"}>
+                      {d.watch ? "watch" : "stable"}
+                    </VerdictChip>
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>{d.note}</span>
+                  <span style={{ color: "var(--ink-faint)", alignSelf: "center", display: "flex" }}>
+                    {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                  </span>
+                </button>
+                {open ? (
+                  <div
+                    className="fade-up"
+                    style={{
+                      padding: "12px 18px 14px",
+                      background: "var(--surface-1)",
+                      borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
+                    }}
+                  >
+                    {surfaceIncidents.open.length === 0 && surfaceIncidents.recent.length === 0 ? (
+                      <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+                        No incidents on this surface. The detector compares the last{" "}
+                        {cfg.window_days}d against a {cfg.baseline_days}d baseline.
+                      </p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {[...surfaceIncidents.open, ...surfaceIncidents.recent].map((inc) => {
+                          const isOpen = inc.status === "open";
+                          return (
+                            <div
+                              key={inc.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                fontSize: 12.5,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <VerdictChip
+                                tone={
+                                  isOpen
+                                    ? inc.severity === "critical"
+                                      ? "madder"
+                                      : "ember"
+                                    : "moss"
+                                }
+                              >
+                                {isOpen
+                                  ? inc.severity === "critical"
+                                    ? "critical"
+                                    : "watch"
+                                  : "resolved"}
+                              </VerdictChip>
+                              <span style={{ color: "var(--ink-muted)" }}>
+                                {METRIC_LABELS[inc.metric] ?? inc.metric}{" "}
+                                {fmtMetric(inc.metric, Number(inc.baseline_value))} →{" "}
+                                {fmtMetric(inc.metric, Number(inc.current_value))}
+                              </span>
+                              <span className="mono-label tabular-nums">
+                                {fmtDelta(Number(inc.delta_pct))}
+                              </span>
+                              <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                                {inc.model} · {relTime(inc.detected_at)}
+                              </span>
+                              <span style={{ flex: 1 }}></span>
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ fontSize: 11 }}
+                                disabled={decideMut.isPending && decideMut.variables?.id === inc.id}
+                                onClick={() =>
+                                  decideMut.mutate({
+                                    id: inc.id,
+                                    action: isOpen ? "resolve" : "reopen",
+                                  })
+                                }
+                              >
+                                {isOpen ? "Resolve · clears the watch" : "Reopen · back on watch"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <NumField
-                  label="Recent window (days)"
-                  value={cfg.window_days}
-                  onChange={(v) => setCfg({ ...cfg, window_days: v })}
-                />
-                <NumField
-                  label="Baseline window (days)"
-                  value={cfg.baseline_days}
-                  onChange={(v) => setCfg({ ...cfg, baseline_days: v })}
-                />
-                <NumField
-                  label="Latency % threshold"
-                  value={cfg.latency_pct_threshold}
-                  onChange={(v) => setCfg({ ...cfg, latency_pct_threshold: v })}
-                />
-                <NumField
-                  label="Tokens % threshold"
-                  value={cfg.tokens_pct_threshold}
-                  onChange={(v) => setCfg({ ...cfg, tokens_pct_threshold: v })}
-                />
-                <NumField
-                  label="Cost % threshold"
-                  value={cfg.cost_pct_threshold}
-                  onChange={(v) => setCfg({ ...cfg, cost_pct_threshold: v })}
-                />
-                <NumField
-                  label="Eval score % drop"
-                  value={cfg.score_pct_threshold}
-                  onChange={(v) => setCfg({ ...cfg, score_pct_threshold: v })}
-                />
-                <NumField
-                  label="Error rate % threshold"
-                  value={cfg.error_rate_pct_threshold}
-                  onChange={(v) => setCfg({ ...cfg, error_rate_pct_threshold: v })}
-                />
-              </div>
-              <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-                Save baseline
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            );
+          })}
+        </div>
+      )}
+
+      {trendByDay.length > 1 ? (
+        <div style={{ marginTop: 14 }}>
+          <MonoLabel style={{ marginBottom: 10 }}>Metric trend · last 30 days</MonoLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <TrendBento
+              label="Avg latency"
+              series={trendByDay.map((d) => d.latency)}
+              last={`${Math.round(trendByDay[trendByDay.length - 1].latency)}ms`}
+            />
+            <TrendBento
+              label="Avg tokens / call"
+              series={trendByDay.map((d) => d.tokens)}
+              last={trendByDay[trendByDay.length - 1].tokens.toFixed(0)}
+            />
+            <TrendBento
+              label="Avg cost"
+              series={trendByDay.map((d) => d.cost)}
+              last={`$${trendByDay[trendByDay.length - 1].cost.toFixed(4)}`}
+            />
+            <TrendBento
+              label="Error rate"
+              series={trendByDay.map((d) => d.errorRate)}
+              last={`${trendByDay[trendByDay.length - 1].errorRate.toFixed(1)}%`}
+              color="var(--rose)"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function NumField({
+/* Tiny inline trend chart — no axes, indigo line, dot on the last point.
+   Ported from design-reference/cadence/govern-detail.jsx (Sparkline). */
+function Sparkline({
+  data,
+  color = "var(--action-blue)",
+  w = 210,
+  h = 42,
+}: {
+  data: number[];
+  color?: string;
+  w?: number;
+  h?: number;
+}) {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const px = (i: number) => 4 + i * ((w - 8) / (data.length - 1));
+  const py = (v: number) => h - 5 - ((v - min) / span) * (h - 10);
+  const pts = data.map((v, i) => `${px(i)},${py(v)}`).join(" ");
+  return (
+    <svg width={w} height={h} aria-hidden="true" style={{ display: "block", maxWidth: "100%" }}>
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <circle cx={px(data.length - 1)} cy={py(data[data.length - 1])} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
+function TrendBento({
   label,
-  value,
-  onChange,
+  series,
+  last,
+  color,
 }: {
   label: string;
-  value: number;
-  onChange: (v: number) => void;
+  series: number[];
+  last: string;
+  color?: string;
 }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      <Input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    <div className="bento">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 8,
+        }}
+      >
+        <MonoLabel>{label}</MonoLabel>
+        <span className="font-display tabular-nums" style={{ fontSize: 16 }}>
+          {last}
+        </span>
+      </div>
+      <Sparkline data={series} color={color} />
     </div>
-  );
-}
-
-function IncidentRow({
-  incident,
-  onAction,
-}: {
-  incident: any;
-  onAction: (a: "resolve" | "reopen") => void;
-}) {
-  const isOpen = incident.status === "open";
-  const delta = Number(incident.delta_pct);
-  const up = delta > 0;
-  return (
-    <Card>
-      <CardContent className="py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          {isOpen ? (
-            <AlertTriangle
-              className={`h-5 w-5 shrink-0 ${incident.severity === "critical" ? "text-destructive" : "text-amber-500"}`}
-            />
-          ) : (
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
-          )}
-          <div className="min-w-0">
-            <div className="text-sm font-medium truncate">
-              {METRIC_LABELS[incident.metric] ?? incident.metric} drift. {incident.surface} /{" "}
-              {incident.model}
-            </div>
-            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-              <span>Baseline {fmt(incident.metric, Number(incident.baseline_value))}</span>
-              <span>→</span>
-              <span>Now {fmt(incident.metric, Number(incident.current_value))}</span>
-              <Badge
-                variant={incident.severity === "critical" ? "destructive" : "secondary"}
-                className="ml-1"
-              >
-                {up ? (
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 mr-1" />
-                )}
-                {delta > 0 ? "+" : ""}
-                {delta.toFixed(1)}%
-              </Badge>
-            </div>
-          </div>
-        </div>
-        {isOpen ? (
-          <Button variant="outline" size="sm" onClick={() => onAction("resolve")}>
-            Resolve
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={() => onAction("reopen")}>
-            Reopen
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-const ACCENT_STROKE: Record<string, string> = {
-  violet: "var(--violet)",
-  cyan: "var(--cyan)",
-  emerald: "var(--emerald)",
-  rose: "var(--rose)",
-};
-
-function TrendCard({
-  title,
-  series,
-  format,
-  accent,
-}: {
-  title: string;
-  series: { date: string; value: number }[];
-  format: (v: number) => string;
-  accent: string;
-}) {
-  const max = Math.max(1, ...series.map((s) => s.value));
-  const min = Math.min(0, ...series.map((s) => s.value));
-  const range = max - min || 1;
-  const w = 100,
-    h = 40;
-  const step = series.length > 1 ? w / (series.length - 1) : 0;
-  const points = series.map((s, i) => `${i * step},${h - ((s.value - min) / range) * h}`).join(" ");
-  const last = series[series.length - 1]?.value ?? 0;
-  const first = series[0]?.value ?? 0;
-  const pct = first ? ((last - first) / first) * 100 : 0;
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-          <div
-            className={`text-xs flex items-center gap-1 ${Math.abs(pct) < 5 ? "text-muted-foreground" : pct > 0 ? "text-amber-500" : "text-emerald-500"}`}
-          >
-            {pct > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {pct > 0 ? "+" : ""}
-            {pct.toFixed(1)}%
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-2xl font-semibold tracking-tight">{format(last)}</div>
-        {series.length > 1 && (
-          <svg
-            viewBox={`0 0 ${w} ${h}`}
-            className="w-full h-12"
-            style={{ stroke: ACCENT_STROKE[accent] ?? "currentColor" }}
-            fill="none"
-            strokeWidth="1.5"
-          >
-            <polyline points={points} />
-          </svg>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 

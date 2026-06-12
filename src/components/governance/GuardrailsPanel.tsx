@@ -1,16 +1,15 @@
+// Guardrails tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (GovernScreen tab "Guardrails"): the bento table — Guardrail 160px /
+// Rule 1fr / Last fired 210px — name at weight 550, rule ink-muted, fired
+// mono (ember when fired, ink-faint "never"). Production functionality
+// kept: rule CRUD (row click opens the editor), enable switches (extra
+// 40px column), seed built-ins, the dry-run test harness, and the recent
+// hits log — all restyled quiet-Ember. "Last fired" derives from the real
+// guardrail_hits log; rule prose derives from kind/action/applies_to.
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Shield,
-  Plus,
-  Trash2,
-  FlaskConical,
-  Sparkles,
-  AlertTriangle,
-  EyeOff,
-  Ban,
-} from "lucide-react";
+import { Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
 import {
@@ -21,6 +20,8 @@ import {
   seedBuiltInGuardrails,
   testGuardrailRule,
 } from "@/lib/guardrails.functions";
+import { EmptyState, MonoLabel } from "@/components/cadence/Primitives";
+import { relTime } from "@/components/product/format";
 
 type Kind = "regex" | "keyword" | "pii" | "injection" | "secret";
 type Action = "block" | "warn" | "redact";
@@ -36,27 +37,32 @@ type RuleForm = {
   enabled: boolean;
 };
 
-const ACTION_META: Record<Action, { Icon: typeof Ban; cls: string; label: string }> = {
-  block: { Icon: Ban, cls: "bg-rose-500/10 text-rose-300 border-rose-500/30", label: "Block" },
-  warn: {
-    Icon: AlertTriangle,
-    cls: "bg-amber-500/10 text-amber-300 border-amber-500/30",
-    label: "Warn",
-  },
-  redact: { Icon: EyeOff, cls: "bg-sky-500/10 text-sky-300 border-sky-500/30", label: "Redact" },
+const GRID = "160px 1fr 210px 40px";
+const HITS_GRID = "90px 150px 70px 70px 1fr";
+
+const ACTION_PHRASE: Record<Action, string> = {
+  block: "Blocks",
+  warn: "Warns on",
+  redact: "Redacts",
+};
+const KIND_PHRASE: Record<Kind, string> = {
+  regex: "pattern matches",
+  keyword: "keyword matches",
+  pii: "PII matches",
+  injection: "prompt-injection matches",
+  secret: "secret matches",
+};
+const APPLIES_PHRASE: Record<Applies, string> = {
+  both: "in input + output",
+  input: "in input",
+  output: "in output",
 };
 
-function ActionBadge({ action }: { action: string }) {
-  const m = ACTION_META[action as Action] ?? ACTION_META.warn;
-  const { Icon } = m;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] ${m.cls}`}
-    >
-      <Icon className="h-3 w-3" /> {m.label}
-    </span>
-  );
-}
+const ACTION_COLOR: Record<string, string> = {
+  block: "var(--rose)",
+  warn: "var(--ember)",
+  redact: "var(--ink-muted)",
+};
 
 function emptyRule(): RuleForm {
   return {
@@ -92,8 +98,9 @@ export function GuardrailsPanel() {
   const upsert = useMutation({
     mutationFn: (r: RuleForm) => fUpsert({ data: r }),
     onSuccess: () => {
-      toast.success("Rule saved");
+      toast.success("Rule saved. It applies on the next AI call.");
       setEditing(null);
+      setTestResult(null);
       qc.invalidateQueries({ queryKey: ["guardrails"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -101,19 +108,29 @@ export function GuardrailsPanel() {
   const del = useMutation({
     mutationFn: (id: string) => fDelete({ data: { id } }),
     onSuccess: () => {
-      toast.success("Rule deleted");
+      toast.success("Rule deleted. It stops applying immediately.");
+      setEditing(null);
       qc.invalidateQueries({ queryKey: ["guardrails"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const tog = useMutation({
-    mutationFn: (v: { id: string; enabled: boolean }) => fToggle({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["guardrails"] }),
+    mutationFn: (v: { id: string; enabled: boolean; name: string }) =>
+      fToggle({ data: { id: v.id, enabled: v.enabled } }),
+    onSuccess: (_d, v) => {
+      toast.success(`${v.name} ${v.enabled ? "on" : "off"}.`);
+      qc.invalidateQueries({ queryKey: ["guardrails"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
   const seed = useMutation({
     mutationFn: () => fSeed(),
     onSuccess: (r) => {
-      toast.success(`Seeded ${r.inserted} rule(s)`);
+      toast.success(
+        r.inserted > 0
+          ? `Seeded ${r.inserted} built-ins. Live on the next AI call.`
+          : "Built-ins already present.",
+      );
       qc.invalidateQueries({ queryKey: ["guardrails"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -127,181 +144,338 @@ export function GuardrailsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (overview.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load guardrails
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(overview.error as Error)?.message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => overview.refetch()}
+        >
+          Retry · reloads guardrails
+        </button>
+      </div>
+    );
+  }
+
+  if (overview.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading guardrails…
+      </div>
+    );
+  }
+
   const rules = overview.data?.rules ?? [];
   const hits = overview.data?.hits ?? [];
 
+  // Last fired per rule, from the real hits log (hits arrive newest-first).
+  const lastFired = new Map<string, string>();
+  for (const h of hits) {
+    if (!lastFired.has(h.rule_name)) lastFired.set(h.rule_name, h.created_at);
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Shield className="h-4 w-4 text-violet-400" /> Filter sensitive data, secrets, and
-          prompt-injection on every AI call.
-        </div>
-        <div className="flex gap-2">
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
+        <MonoLabel icon={Shield}>{rules.length} rules</MonoLabel>
+        <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => seed.mutate()}
+            className="btn btn-ghost btn-sm"
             disabled={seed.isPending}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+            onClick={() => seed.mutate()}
           >
-            <Sparkles className="h-3.5 w-3.5" /> Seed built-ins
+            Seed built-ins · PII, secrets, injection
           </button>
-          <button
-            onClick={() => setEditing(emptyRule())}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90"
-          >
-            <Plus className="h-3.5 w-3.5" /> New rule
+          <button className="btn btn-primary btn-sm" onClick={() => setEditing(emptyRule())}>
+            New rule · applies on the next call
           </button>
         </div>
       </div>
 
-      <section className="rounded-xl border border-border bg-background/40">
-        <div className="border-b border-border px-4 py-3 text-xs uppercase tracking-wider text-muted-foreground">
-          Rules ({rules.length})
-        </div>
-        {rules.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">
-            No rules yet. Click <strong>Seed built-ins</strong> to start with PII / secret /
-            injection coverage.
+      {rules.length === 0 ? (
+        <EmptyState
+          icon={Shield}
+          title="No guardrails yet"
+          body="Seed the built-in set — PII redaction, secret blocking, prompt-injection flags — or write your own rule."
+          cta="Seed built-ins · PII, secrets, injection"
+          onCta={() => seed.mutate()}
+        />
+      ) : (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            className="mono-label"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID,
+              gap: 12,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span>Guardrail</span>
+            <span>Rule</span>
+            <span>Last fired</span>
+            <span></span>
           </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {rules.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={r.enabled}
-                  onChange={(e) => tog.mutate({ id: r.id, enabled: e.target.checked })}
-                  className="h-4 w-4"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{r.name}</span>
-                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 uppercase tracking-wider text-muted-foreground">
-                      {r.kind}
-                    </span>
-                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-                      {r.applies_to}
-                    </span>
-                    <ActionBadge action={r.action} />
-                    {r.built_in && (
-                      <span className="text-[10px] text-muted-foreground">built-in</span>
-                    )}
-                  </div>
-                  <code className="mt-1 block text-[11px] text-muted-foreground truncate font-mono">
-                    {r.pattern}
-                  </code>
-                </div>
+          {rules.map((g, i) => {
+            const fired = lastFired.get(g.name) ?? null;
+            const ruleText = `${ACTION_PHRASE[g.action as Action] ?? g.action} ${
+              KIND_PHRASE[g.kind as Kind] ?? g.kind
+            } ${APPLIES_PHRASE[g.applies_to as Applies] ?? g.applies_to}`;
+            return (
+              <div
+                key={g.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: GRID,
+                  gap: 12,
+                  padding: "13px 18px",
+                  alignItems: "baseline",
+                  borderBottom: i < rules.length - 1 ? "1px solid var(--hairline)" : "none",
+                  fontSize: 13,
+                  opacity: g.enabled ? 1 : 0.45,
+                }}
+              >
                 <button
                   onClick={() =>
                     setEditing({
-                      id: r.id,
-                      name: r.name,
-                      kind: r.kind as Kind,
-                      pattern: r.pattern,
-                      action: r.action as Action,
-                      applies_to: r.applies_to as Applies,
-                      enabled: r.enabled,
+                      id: g.id,
+                      name: g.name,
+                      kind: g.kind as Kind,
+                      pattern: g.pattern,
+                      action: g.action as Action,
+                      applies_to: g.applies_to as Applies,
+                      enabled: g.enabled,
                     })
                   }
-                  className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                  style={{ fontWeight: 550, textAlign: "left", cursor: "pointer", minWidth: 0 }}
+                  title="Edit · changes apply on the next call"
                 >
-                  Edit
+                  {g.name}
+                  {g.built_in ? (
+                    <span
+                      className="mono-label"
+                      style={{ display: "block", fontSize: 8.5, color: "var(--ink-faint)" }}
+                    >
+                      built-in
+                    </span>
+                  ) : null}
                 </button>
-                <button
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: `Delete "${r.name}"?`,
-                      body: "The rule stops applying immediately.",
-                      destructive: true,
-                      confirmLabel: "Delete rule",
-                    });
-                    if (ok) del.mutate(r.id);
-                  }}
-                  className="rounded-md border border-border p-1.5 text-muted-foreground hover:text-rose-300"
+                <span style={{ color: "var(--ink-muted)", minWidth: 0 }}>
+                  {ruleText}
+                  <span
+                    style={{
+                      display: "block",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11,
+                      color: "var(--ink-faint)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {g.pattern}
+                  </span>
+                </span>
+                <span
+                  className="mono-label"
+                  style={{ color: fired ? "var(--ember)" : "var(--ink-faint)" }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  {fired ? relTime(fired) : "never"}
+                </span>
+                <span style={{ alignSelf: "center" }}>
+                  <button
+                    role="switch"
+                    aria-checked={g.enabled}
+                    aria-label={`${g.name} guardrail`}
+                    disabled={tog.isPending}
+                    onClick={() => tog.mutate({ id: g.id, enabled: !g.enabled, name: g.name })}
+                    style={{
+                      width: 34,
+                      height: 19,
+                      borderRadius: 99,
+                      background: g.enabled ? "var(--deep-green)" : "var(--surface-2)",
+                      border: "1px solid var(--hairline)",
+                      position: "relative",
+                      flexShrink: 0,
+                      transition: "background var(--dur-base)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        left: g.enabled ? 16 : 2,
+                        width: 13,
+                        height: 13,
+                        borderRadius: 99,
+                        background: "var(--canvas)",
+                        transition: "left var(--dur-base)",
+                      }}
+                    />
+                  </button>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      <section className="rounded-xl border border-border bg-background/40">
-        <div className="border-b border-border px-4 py-3 text-xs uppercase tracking-wider text-muted-foreground">
-          Recent hits ({hits.length})
+      {/* Recent fires — production hits log (no reference equivalent), quiet. */}
+      <div className="bento" style={{ padding: 0, overflow: "hidden", marginTop: 12 }}>
+        <div
+          className="mono-label"
+          style={{
+            display: "grid",
+            gridTemplateColumns: HITS_GRID,
+            gap: 12,
+            padding: "10px 18px",
+            borderBottom: "1px solid var(--hairline)",
+          }}
+        >
+          <span>When</span>
+          <span>Rule</span>
+          <span>Side</span>
+          <span>Action</span>
+          <span>Matched</span>
         </div>
         {hits.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">
+          <div
+            style={{
+              fontSize: 12.5,
+              color: "var(--ink-faint)",
+              padding: "20px 18px",
+              textAlign: "center",
+            }}
+          >
             No guardrail activity yet.
           </div>
         ) : (
-          <div className="max-h-96 overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2 text-left">When</th>
-                  <th className="px-4 py-2 text-left">Rule</th>
-                  <th className="px-4 py-2 text-left">Side</th>
-                  <th className="px-4 py-2 text-left">Action</th>
-                  <th className="px-4 py-2 text-left">Matched</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hits.map((h) => (
-                  <tr key={h.id} className="border-b border-border/50">
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
-                      {new Date(h.created_at).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2">{h.rule_name}</td>
-                    <td className="px-4 py-2 text-xs">{h.side}</td>
-                    <td className="px-4 py-2">
-                      <ActionBadge action={h.action} />
-                    </td>
-                    <td className="px-4 py-2 font-mono text-[11px] truncate max-w-xs">
-                      {h.matched}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          hits.map((h, i) => (
+            <div
+              key={h.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: HITS_GRID,
+                gap: 12,
+                padding: "11px 18px",
+                alignItems: "baseline",
+                borderBottom: i < hits.length - 1 ? "1px solid var(--hairline)" : "none",
+                fontSize: 12.5,
+              }}
+            >
+              <span className="mono-label tabular-nums">{relTime(h.created_at)}</span>
+              <span
+                style={{
+                  fontWeight: 500,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {h.rule_name}
+              </span>
+              <span className="mono-label">{h.side}</span>
+              <span
+                className="mono-label"
+                style={{ color: ACTION_COLOR[h.action] ?? "var(--ink-muted)" }}
+              >
+                {h.action}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "var(--ink-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {h.matched}
+              </span>
+            </div>
+          ))
         )}
-      </section>
+      </div>
 
-      {editing && (
+      {/* Rule editor — production CRUD + dry-run test, restyled quiet-Ember. */}
+      {editing ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            background: "color-mix(in oklab, var(--ink) 35%, transparent)",
+          }}
           onClick={() => setEditing(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-xl border border-border bg-background p-6 space-y-4"
+            className="bento fade-up"
+            style={{ width: "100%", maxWidth: 620, padding: 20, background: "var(--canvas)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl">{editing.id ? "Edit rule" : "New rule"}</h2>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 14,
+              }}
+            >
+              <h2 className="font-display" style={{ fontSize: 19 }}>
+                {editing.id ? "Edit rule" : "New rule"}
+              </h2>
               <button
+                className="mono-label"
+                style={{ color: "var(--ink-faint)" }}
                 onClick={() => setEditing(null)}
-                className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Close
+                dismiss
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="col-span-2 text-xs">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <label className="mono-label" style={{ gridColumn: "span 2", display: "block" }}>
                 Name
                 <input
+                  className="input"
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  style={{ marginTop: 5, fontSize: 13 }}
                 />
               </label>
-              <label className="text-xs">
+              <label className="mono-label" style={{ display: "block" }}>
                 Kind
                 <select
+                  className="input"
                   value={editing.kind}
                   onChange={(e) => setEditing({ ...editing, kind: e.target.value as Kind })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  style={{ marginTop: 5, fontSize: 13 }}
                 >
                   <option value="keyword">Keyword (literal substring)</option>
                   <option value="regex">Regex</option>
@@ -310,42 +484,59 @@ export function GuardrailsPanel() {
                   <option value="secret">Secret (regex)</option>
                 </select>
               </label>
-              <label className="text-xs">
+              <label className="mono-label" style={{ display: "block" }}>
                 Applies to
                 <select
+                  className="input"
                   value={editing.applies_to}
                   onChange={(e) =>
                     setEditing({ ...editing, applies_to: e.target.value as Applies })
                   }
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  style={{ marginTop: 5, fontSize: 13 }}
                 >
                   <option value="both">Both</option>
                   <option value="input">Input only</option>
                   <option value="output">Output only</option>
                 </select>
               </label>
-              <label className="col-span-2 text-xs">
+              <label className="mono-label" style={{ gridColumn: "span 2", display: "block" }}>
                 Pattern
                 <textarea
+                  className="input"
                   value={editing.pattern}
                   onChange={(e) => setEditing({ ...editing, pattern: e.target.value })}
                   rows={2}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono"
+                  style={{
+                    marginTop: 5,
+                    resize: "none",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 12,
+                  }}
                 />
               </label>
-              <label className="text-xs">
+              <label className="mono-label" style={{ display: "block" }}>
                 Action
                 <select
+                  className="input"
                   value={editing.action}
                   onChange={(e) => setEditing({ ...editing, action: e.target.value as Action })}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  style={{ marginTop: 5, fontSize: 13 }}
                 >
                   <option value="warn">Warn (log only)</option>
                   <option value="redact">Redact</option>
                   <option value="block">Block</option>
                 </select>
               </label>
-              <label className="text-xs flex items-center gap-2 pt-5">
+              <label
+                className="mono-label"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  alignSelf: "end",
+                  paddingBottom: 8,
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={editing.enabled}
@@ -355,56 +546,103 @@ export function GuardrailsPanel() {
               </label>
             </div>
 
-            <div className="rounded-md border border-border p-3 space-y-2">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <FlaskConical className="h-3 w-3" /> Test
+            <div
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 8,
+                padding: 12,
+                marginTop: 12,
+              }}
+            >
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Test · dry run, nothing is saved
               </div>
               <textarea
+                className="input"
                 value={testText}
                 onChange={(e) => setTestText(e.target.value)}
                 placeholder="Paste sample text to test this rule against…"
                 rows={2}
-                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono"
+                style={{ resize: "none", fontFamily: "var(--font-mono)", fontSize: 12 }}
               />
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
                 <button
-                  onClick={() => test.mutate(editing)}
+                  className="btn btn-ghost btn-sm"
                   disabled={!testText.trim() || test.isPending}
-                  className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted"
+                  onClick={() => test.mutate(editing)}
                 >
-                  Run test
+                  {test.isPending ? (
+                    <>
+                      <span className="spinner" style={{ width: 11, height: 11 }} />
+                      Testing…
+                    </>
+                  ) : (
+                    "Run test · nothing is saved"
+                  )}
                 </button>
-                {testResult && (
-                  <span className="text-xs text-muted-foreground">
-                    {testResult.hits.length} hit(s) · {testResult.blocked ? "BLOCKED" : "allowed"}
+                {testResult ? (
+                  <span
+                    className="mono-label"
+                    style={{ color: testResult.blocked ? "var(--rose)" : "var(--ink-subtle)" }}
+                  >
+                    {testResult.hits.length} hit{testResult.hits.length === 1 ? "" : "s"} ·{" "}
+                    {testResult.blocked ? "blocked" : "allowed"}
                   </span>
-                )}
+                ) : null}
               </div>
-              {testResult && testResult.hits.length > 0 && (
-                <pre className="rounded bg-muted/40 p-2 text-[11px] overflow-auto max-h-32">
+              {testResult && testResult.hits.length > 0 ? (
+                <pre
+                  className="scrollbar-thin"
+                  style={{
+                    marginTop: 8,
+                    maxHeight: 120,
+                    overflow: "auto",
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 8,
+                    padding: 8,
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                  }}
+                >
                   {testResult.text}
                 </pre>
-              )}
+              ) : null}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setEditing(null)}
-                className="rounded-md border border-border px-3 py-1.5 text-xs"
-              >
-                Cancel
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+              {editing.id ? (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: "var(--rose)", marginRight: "auto" }}
+                  disabled={del.isPending}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: `Delete "${editing.name}"?`,
+                      body: "The rule stops applying immediately.",
+                      destructive: true,
+                      confirmLabel: "Delete rule",
+                    });
+                    if (ok && editing.id) del.mutate(editing.id);
+                  }}
+                >
+                  Delete · stops applying immediately
+                </button>
+              ) : null}
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>
+                Dismiss
               </button>
               <button
-                onClick={() => upsert.mutate(editing)}
+                className="btn btn-primary btn-sm"
                 disabled={!editing.name.trim() || !editing.pattern.trim() || upsert.isPending}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90"
+                onClick={() => upsert.mutate(editing)}
               >
-                Save
+                Save · applies on the next call
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

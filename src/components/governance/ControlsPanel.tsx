@@ -1,25 +1,22 @@
+// Controls tab — ported 1:1 from design-reference/cadence/loop.jsx
+// (GovernScreen, tab "Controls"): the 2-col bento grid — Kill switch span-2
+// with the 44×24 rose-track pill, Mission cap (serif 28 + "concurrent"),
+// Stuck approvals (ember when >0, "open the queue →"), and Auto-pipelines
+// span-2 with 34×19 deep-green switches. Production functionality kept:
+// setWorkspacePause (with audit reason + system-pause lock), the reactor
+// subscription CRUD (toggle / add / remove), the recent-runs usage table
+// (token + spend caps, halted reasons) and the reactor activity queue with
+// confirm-mode dispatch/skip — all restyled quiet-Ember.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  PauseCircle,
-  PlayCircle,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  Zap,
-  Trash2,
-  Plus,
-} from "lucide-react";
+import { Clock, Gauge, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/use-workspace";
 import {
   getGovernanceOverview,
   setWorkspacePause,
-  extendApprovalTtl,
-  resolveApproval,
+  MISSION_CONCURRENCY_CAP,
 } from "@/lib/governance.functions";
 import {
   listEventSubscriptions,
@@ -28,37 +25,83 @@ import {
   listEventQueue,
   decideEventDispatch,
 } from "@/lib/reactor.functions";
+import { MonoLabel } from "@/components/cadence/Primitives";
+import { relTime, fmtUsd } from "@/components/product/format";
 
-function formatRelative(iso: string | null): string {
-  if (!iso) return "—";
-  const ms = new Date(iso).getTime() - Date.now();
-  const abs = Math.abs(ms);
-  const m = Math.round(abs / 60_000);
-  const h = Math.round(abs / 3_600_000);
-  const d = Math.round(abs / 86_400_000);
-  const v = d >= 1 ? `${d}d` : h >= 1 ? `${h}h` : `${m}m`;
-  return ms >= 0 ? `in ${v}` : `${v} ago`;
+type EventType = "signal.created" | "opportunity.scored" | "prd.approved";
+
+/* The reference pill toggle — 44×24 for the kill switch, 34×19 for
+   pipeline rows. Track turns `onColor` when on; knob slides. */
+function PillSwitch({
+  on,
+  onToggle,
+  disabled,
+  size = "sm",
+  onColor,
+  label,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  size?: "lg" | "sm";
+  onColor: string;
+  label: string;
+}) {
+  const [w, h, knob, slide] = size === "lg" ? [44, 24, 18, 22] : [34, 19, 13, 16];
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onToggle}
+      style={{
+        width: w,
+        height: h,
+        borderRadius: 99,
+        background: on ? onColor : "var(--surface-2)",
+        border: "1px solid var(--hairline)",
+        position: "relative",
+        flexShrink: 0,
+        transition: "background var(--dur-base)",
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 2,
+          left: on ? slide : 2,
+          width: knob,
+          height: knob,
+          borderRadius: 99,
+          background: "var(--canvas)",
+          transition: "left var(--dur-base)",
+          boxShadow: "var(--shadow-glass)",
+        }}
+      />
+    </button>
+  );
 }
 
-export function ControlsPanel() {
-  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
+const RUNS_GRID = "1fr 100px 130px 140px 70px";
+
+export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
+  const { activeWorkspaceId } = useWorkspace();
   const qc = useQueryClient();
   const overviewFn = useServerFn(getGovernanceOverview);
   const pauseFn = useServerFn(setWorkspacePause);
-  const extendFn = useServerFn(extendApprovalTtl);
-  const resolveFn = useServerFn(resolveApproval);
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["governance", "overview", activeWorkspaceId],
-    queryFn: () => overviewFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
-  });
-
   const listSubsFn = useServerFn(listEventSubscriptions);
   const upsertSubFn = useServerFn(upsertEventSubscription);
   const deleteSubFn = useServerFn(deleteEventSubscription);
   const listQueueFn = useServerFn(listEventQueue);
   const decideEvtFn = useServerFn(decideEventDispatch);
 
+  const overview = useQuery({
+    queryKey: ["governance", "overview", activeWorkspaceId],
+    queryFn: () => overviewFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
+  });
   const subsQ = useQuery({
     queryKey: ["reactor", "subs", activeWorkspaceId],
     queryFn: () => listSubsFn({ data: { workspaceId: activeWorkspaceId ?? null } }),
@@ -69,19 +112,48 @@ export function ControlsPanel() {
     refetchInterval: 5000,
   });
 
+  const [reason, setReason] = useState("");
+  const pauseMut = useMutation({
+    mutationFn: (next: boolean) =>
+      pauseFn({ data: { workspaceId: activeWorkspaceId!, paused: next, reason: reason || null } }),
+    onSuccess: (_d, next) => {
+      // Pause copy is the reference contract; resume copy corrected — halted
+      // runs do not auto-resume in production, agents simply may run again.
+      toast.success(
+        next
+          ? "Swarm paused. Every agent is holding, nothing was lost."
+          : "Swarm resumed. Agents can run again.",
+      );
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["governance"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   type UpsertSubInput = {
     id?: string;
-    workspaceId?: string;
-    event_type: "signal.created" | "opportunity.scored" | "prd.approved";
+    event_type: EventType;
     target_agent_slug: string;
     approval_mode: "auto" | "confirm";
     enabled?: boolean;
     filter?: Record<string, unknown>;
   };
-  const upsertSubMut = useMutation({
+  const pipeName = (s: { event_type: string; target_agent_slug: string }) =>
+    `${s.event_type} → ${s.target_agent_slug}`;
+
+  const toggleSubMut = useMutation({
+    mutationFn: (v: UpsertSubInput & { name: string }) => upsertSubFn({ data: v }),
+    onSuccess: (_d, v) => {
+      toast.success(`${v.name} ${v.enabled ? "on" : "off"}.`);
+      qc.invalidateQueries({ queryKey: ["reactor", "subs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const addSubMut = useMutation({
     mutationFn: (v: UpsertSubInput) => upsertSubFn({ data: v }),
     onSuccess: () => {
-      toast.success("Subscription saved");
+      toast.success("Rule added. It fires on the next event.");
+      setAddOpen(false);
       qc.invalidateQueries({ queryKey: ["reactor", "subs"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -89,7 +161,7 @@ export function ControlsPanel() {
   const deleteSubMut = useMutation({
     mutationFn: (id: string) => deleteSubFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("Subscription removed");
+      toast.success("Rule removed. It stops firing.");
       qc.invalidateQueries({ queryKey: ["reactor", "subs"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -98,524 +170,480 @@ export function ControlsPanel() {
     mutationFn: (v: { eventId: string; decision: "approve" | "reject" }) =>
       decideEvtFn({ data: v }),
     onSuccess: (_d, v) => {
-      toast.success(v.decision === "approve" ? "Dispatching…" : "Skipped");
+      toast.success(
+        v.decision === "approve" ? "Dispatching · the agent runs now." : "Skipped · nothing ran.",
+      );
       qc.invalidateQueries({ queryKey: ["reactor"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [newEvent, setNewEvent] = useState<
-    "signal.created" | "opportunity.scored" | "prd.approved"
-  >("signal.created");
+  const [addOpen, setAddOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState<EventType>("signal.created");
   const [newAgent, setNewAgent] = useState("discovery");
   const [newMode, setNewMode] = useState<"auto" | "confirm">("confirm");
   const [newMinScore, setNewMinScore] = useState("8");
 
-  const [reason, setReason] = useState("");
-
-  const pauseMut = useMutation({
-    mutationFn: (next: boolean) =>
-      pauseFn({ data: { workspaceId: activeWorkspaceId!, paused: next, reason: reason || null } }),
-    onSuccess: (_d, next) => {
-      toast.success(next ? "Workspace paused" : "Workspace resumed");
-      setReason("");
-      qc.invalidateQueries({ queryKey: ["governance"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const extendMut = useMutation({
-    mutationFn: (approvalId: string) => extendFn({ data: { approvalId, additionalHours: 24 } }),
-    onSuccess: () => {
-      toast.success("Extended by 24h");
-      qc.invalidateQueries({ queryKey: ["governance"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const resolveMut = useMutation({
-    mutationFn: (v: { approvalId: string; decision: "approved" | "rejected" }) =>
-      resolveFn({ data: v }),
-    onSuccess: (_d, v) => {
-      toast.success(v.decision === "approved" ? "Approved" : "Rejected");
-      qc.invalidateQueries({ queryKey: ["governance"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
+  const data = overview.data;
   const ks = data?.killState;
-  const paused = !!(ks?.system_paused || ks?.workspace_paused);
-  const inflight = (data?.runs ?? []).filter(
-    (r) => r.status === "running" || r.status === "halted",
-  );
-  const expiringApprovals = data?.approvals ?? [];
+  const killed = !!(ks?.system_paused || ks?.workspace_paused);
+  const killDisabled = pauseMut.isPending || !!ks?.system_paused || !activeWorkspaceId;
+  const stuck = (data?.approvals ?? []).filter((a) => a.escalation_state === "expired").length;
+  const subs = subsQ.data?.subscriptions ?? [];
+  const runs = data?.runs ?? [];
+  const events = queueQ.data?.events ?? [];
+
+  if (overview.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load controls
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(overview.error as Error)?.message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => overview.refetch()}
+        >
+          Retry · reloads controls
+        </button>
+      </div>
+    );
+  }
+
+  if (overview.isLoading) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading controls…
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-end">
-        <button
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-1.5 rounded-lg border hairline px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition"
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      {/* Kill switch — span 2 */}
+      <div
+        className="bento"
+        style={{
+          gridColumn: "span 2",
+          padding: "16px 18px",
+          borderColor: killed ? "color-mix(in oklab, var(--rose) 45%, transparent)" : undefined,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>Kill switch</div>
+            <div style={{ fontSize: 12, color: "var(--ink-subtle)", marginTop: 2 }}>
+              {killed
+                ? "All agents paused. Nothing runs until you resume."
+                : "Swarm is live. Flipping this pauses every agent mid-step, reversibly."}
+            </div>
+          </div>
+          <PillSwitch
+            on={killed}
+            disabled={killDisabled}
+            size="lg"
+            onColor="var(--rose)"
+            label="Kill switch"
+            onToggle={() => pauseMut.mutate(!ks?.workspace_paused)}
+          />
+        </div>
+        <input
+          className="input"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          disabled={killDisabled}
+          placeholder={
+            killed
+              ? "Why resume? · optional, lands in the audit log"
+              : "Why pause? · optional, lands in the audit log"
+          }
+          style={{ marginTop: 10, fontSize: 12 }}
+        />
+        {ks?.reason ? (
+          <div className="mono-label" style={{ marginTop: 8, color: "var(--ink-faint)" }}>
+            reason on record · {ks.reason}
+          </div>
+        ) : null}
+        {ks?.system_paused ? (
+          <div style={{ fontSize: 11.5, color: "var(--rose)", marginTop: 6 }}>
+            System-wide pause is active. The workspace switch unlocks when the system resumes.
+          </div>
+        ) : null}
+      </div>
+
+      {/* Mission cap */}
+      <div className="bento">
+        <MonoLabel icon={Gauge} style={{ marginBottom: 8 }}>
+          Mission cap
+        </MonoLabel>
+        <div className="font-display tabular-nums" style={{ fontSize: 28 }}>
+          {MISSION_CONCURRENCY_CAP}{" "}
+          <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>concurrent</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 4 }}>
+          New goals queue when the mesh is at capacity.
+        </div>
+      </div>
+
+      {/* Stuck approvals */}
+      <div className="bento">
+        <MonoLabel icon={Clock} style={{ marginBottom: 8 }}>
+          Stuck approvals
+        </MonoLabel>
+        <div
+          className="font-display tabular-nums"
+          style={{ fontSize: 28, color: stuck ? "var(--ember)" : undefined }}
         >
-          <RefreshCw className="h-3 w-3" /> Refresh
+          {stuck}
+        </div>
+        <button
+          className="mono-label"
+          style={{ color: "var(--action-blue)", marginTop: 4 }}
+          onClick={onOpenQueue}
+        >
+          open the queue →
         </button>
       </div>
 
-      <section
-        className={`rounded-2xl border p-6 ${paused ? "border-rose-500/40 bg-rose-500/5" : "hairline bg-secondary/20"}`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            {paused ? (
-              <PauseCircle className="h-6 w-6 text-rose-300 mt-0.5" />
-            ) : (
-              <PlayCircle className="h-6 w-6 text-emerald-300 mt-0.5" />
-            )}
-            <div>
-              <div className="text-sm font-semibold">
-                {ks?.system_paused
-                  ? "System is paused (admin)"
-                  : ks?.workspace_paused
-                    ? `Workspace "${activeWorkspace?.name ?? ""}" is paused`
-                    : "All systems go"}
-              </div>
-              {ks?.reason && (
-                <div className="text-xs text-muted-foreground mt-1">Reason: {ks.reason}</div>
-              )}
-              {!paused && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Agents in this workspace can make AI calls and run missions.
-                </div>
-              )}
+      {/* Auto-pipelines — span 2 */}
+      <div className="bento" style={{ gridColumn: "span 2" }}>
+        <MonoLabel icon={Zap} style={{ marginBottom: 10 }}>
+          Auto-pipelines
+        </MonoLabel>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {subs.length === 0 ? (
+            <div style={{ fontSize: 12.5, color: "var(--ink-faint)", padding: "8px 0" }}>
+              No pipeline rules yet.
             </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={
-              paused
-                ? "(Optional) note when resuming"
-                : "Why are you pausing? (visible in audit log)"
-            }
-            className="flex-1 rounded-lg border hairline bg-background/60 px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-violet-400"
-            disabled={pauseMut.isPending || ks?.system_paused || !activeWorkspaceId}
-          />
-          <button
-            type="button"
-            disabled={pauseMut.isPending || ks?.system_paused || !activeWorkspaceId}
-            onClick={() => pauseMut.mutate(!ks?.workspace_paused)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              ks?.workspace_paused
-                ? "bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-500/40"
-                : "bg-rose-500/20 text-rose-200 hover:bg-rose-500/30 border border-rose-500/40"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {ks?.workspace_paused ? "Resume workspace" : "Pause workspace"}
-          </button>
-        </div>
-        {ks?.system_paused && (
-          <div className="mt-3 text-xs text-rose-200/70">
-            System-wide pause is active. Workspace toggle is disabled until system is resumed.
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-2xl border hairline p-6 bg-secondary/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold">Recent missions</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Per-mission token and spend usage. Halted missions show the governance reason.
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground">{inflight.length} active or halted</span>
-        </div>
-        <div className="mt-4 divide-y hairline">
-          {(data?.runs ?? []).length === 0 && !isLoading && (
-            <div className="text-sm text-muted-foreground py-6 text-center">
-              No mission runs yet.
-            </div>
-          )}
-          {(data?.runs ?? []).map((r) => {
-            const tokPct = r.mission_token_cap
-              ? Math.min(100, ((r.tokens_used ?? 0) / r.mission_token_cap) * 100)
-              : null;
-            const spendPct = r.mission_spend_cap_usd
-              ? Math.min(100, ((r.spend_used_usd ?? 0) / Number(r.mission_spend_cap_usd)) * 100)
-              : null;
-            const halted = r.status === "halted" || !!r.halted_reason;
-            return (
-              <div key={r.id} className="py-3 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium truncate">{r.agent_name}</span>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 border ${
-                        halted
-                          ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
-                          : r.status === "running"
-                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                            : "border-muted-foreground/30 bg-secondary/40 text-muted-foreground"
-                      }`}
-                    >
-                      {halted ? "halted" : r.status}
-                    </span>
-                  </div>
-                  {halted && r.halted_reason && (
-                    <div className="text-xs text-rose-300/80 mt-1 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" /> {r.halted_reason}
-                    </div>
-                  )}
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    {new Date(r.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <div className="text-right text-xs text-muted-foreground space-y-1 w-56">
-                  <div>
-                    Tokens: <span className="text-foreground font-mono">{r.tokens_used ?? 0}</span>
-                    {r.mission_token_cap ? (
-                      <span> / {r.mission_token_cap}</span>
-                    ) : (
-                      <span className="text-muted-foreground/60"> (no cap)</span>
-                    )}
-                    {tokPct !== null && (
-                      <div className="h-1 rounded bg-secondary/60 mt-0.5 overflow-hidden">
-                        <div
-                          className={`h-full ${tokPct >= 90 ? "bg-rose-400" : tokPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`}
-                          style={{ width: `${tokPct}%` }}
-                        ></div>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    Spend:{" "}
-                    <span className="text-foreground font-mono">
-                      ${Number(r.spend_used_usd ?? 0).toFixed(4)}
-                    </span>
-                    {r.mission_spend_cap_usd ? (
-                      <span> / ${Number(r.mission_spend_cap_usd).toFixed(4)}</span>
-                    ) : (
-                      <span className="text-muted-foreground/60"> (no cap)</span>
-                    )}
-                    {spendPct !== null && (
-                      <div className="h-1 rounded bg-secondary/60 mt-0.5 overflow-hidden">
-                        <div
-                          className={`h-full ${spendPct >= 90 ? "bg-rose-400" : spendPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`}
-                          style={{ width: `${spendPct}%` }}
-                        ></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border hairline p-6 bg-secondary/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold">Pending & expired approvals</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Approvals auto-expire 24h after creation. Extend or decide each one.
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground">{expiringApprovals.length} shown</span>
-        </div>
-        <div className="mt-4 divide-y hairline">
-          {expiringApprovals.length === 0 && !isLoading && (
-            <div className="text-sm text-muted-foreground py-6 text-center">
-              No approvals waiting.
-            </div>
-          )}
-          {expiringApprovals.map((a) => {
-            const isExpired = a.escalation_state === "expired";
-            return (
-              <div key={a.id} className="py-3 flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-mono text-xs">{a.tool_name}</span>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground text-xs">{a.agent_slug ?? "—"}</span>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 border ${
-                        isExpired
-                          ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
-                          : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                      }`}
-                    >
-                      {a.escalation_state}
-                    </span>
-                  </div>
-                  {a.rationale && (
-                    <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {a.rationale}
-                    </div>
-                  )}
-                  <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Expires {formatRelative(a.expires_at)}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={extendMut.isPending && extendMut.variables === a.id}
-                    onClick={() => extendMut.mutate(a.id)}
-                    className="rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition"
-                    title="Extend TTL 24h"
-                  >
-                    +24h
-                  </button>
-                  <button
-                    type="button"
-                    disabled={resolveMut.isPending && resolveMut.variables?.approvalId === a.id}
-                    onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "approved" })}
-                    className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
-                    title="Approve — runs the tool call. Reject keeps it paused."
-                  >
-                    <CheckCircle2 className="h-3 w-3" /> Approve
-                  </button>
-                  <button
-                    type="button"
-                    disabled={resolveMut.isPending && resolveMut.variables?.approvalId === a.id}
-                    onClick={() => resolveMut.mutate({ approvalId: a.id, decision: "rejected" })}
-                    className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 transition inline-flex items-center gap-1"
-                    title="Reject — nothing runs. The mission stays paused on this step."
-                  >
-                    <XCircle className="h-3 w-3" /> Reject
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border hairline p-6 bg-secondary/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-300" /> Auto-pipelines
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              When a signal, opportunity, or PRD event fires, route it to an agent.{" "}
-              <span className="text-foreground">auto</span> dispatches immediately;{" "}
-              <span className="text-foreground">confirm</span> waits for you to approve below.
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {(subsQ.data?.subscriptions ?? []).length} rules
-          </span>
-        </div>
-
-        <div className="mt-4 divide-y hairline">
-          {(subsQ.data?.subscriptions ?? []).map((s) => (
-            <div key={s.id} className="py-3 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-mono text-xs">{s.event_type}</span>
-                  <span className="text-muted-foreground">→</span>
-                  <span className="font-medium">{s.target_agent_slug}</span>
-                  <span
-                    className={`text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 border ${
-                      s.approval_mode === "auto"
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                        : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                    }`}
-                  >
-                    {s.approval_mode}
-                  </span>
-                  {!s.enabled && (
-                    <span className="text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 border border-muted-foreground/30 bg-secondary/40 text-muted-foreground">
-                      disabled
-                    </span>
-                  )}
-                  {s.is_default && (
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      default
-                    </span>
-                  )}
-                </div>
-                {Object.keys((s.filter as Record<string, unknown>) ?? {}).length > 0 && (
-                  <div className="text-[11px] text-muted-foreground mt-1 font-mono">
-                    filter: {JSON.stringify(s.filter)}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    upsertSubMut.mutate({
-                      id: s.id,
-                      event_type: s.event_type as UpsertSubInput["event_type"],
-                      target_agent_slug: s.target_agent_slug,
-                      approval_mode: s.approval_mode as "auto" | "confirm",
-                      enabled: !s.enabled,
-                      filter: (s.filter as Record<string, unknown>) ?? {},
-                    })
-                  }
-                  className="rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition"
+          ) : (
+            subs.map((s, i) => {
+              const filter = (s.filter as Record<string, unknown>) ?? {};
+              const minScore = typeof filter.min_score === "number" ? filter.min_score : null;
+              const desc =
+                (s.approval_mode === "auto"
+                  ? "Dispatches the agent immediately when the event fires"
+                  : "Waits for your confirm before dispatching") +
+                (minScore != null ? ` · min ICE ${minScore}` : "") +
+                (s.is_default ? " · default" : "");
+              return (
+                <div
+                  key={s.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 0",
+                    borderBottom: i < subs.length - 1 ? "1px solid var(--hairline)" : "none",
+                    opacity: s.enabled ? 1 : 0.55,
+                  }}
                 >
-                  {s.enabled ? "Disable" : "Enable"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => deleteSubMut.mutate(s.id)}
-                  className="rounded-md border hairline px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10 transition inline-flex items-center gap-1"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-          ))}
-          {(subsQ.data?.subscriptions ?? []).length === 0 && (
-            <div className="text-sm text-muted-foreground py-6 text-center">
-              No reactor rules yet.
-            </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{pipeName(s)}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--ink-subtle)" }}>{desc}</div>
+                  </div>
+                  <button
+                    className="mono-label"
+                    style={{ fontSize: 8.5, color: "var(--ink-faint)" }}
+                    disabled={deleteSubMut.isPending}
+                    onClick={() => deleteSubMut.mutate(s.id)}
+                  >
+                    remove · stops firing
+                  </button>
+                  <PillSwitch
+                    on={s.enabled}
+                    onColor="var(--deep-green)"
+                    label={`${pipeName(s)} pipeline`}
+                    disabled={toggleSubMut.isPending}
+                    onToggle={() =>
+                      toggleSubMut.mutate({
+                        id: s.id,
+                        event_type: s.event_type as EventType,
+                        target_agent_slug: s.target_agent_slug,
+                        approval_mode: s.approval_mode as "auto" | "confirm",
+                        enabled: !s.enabled,
+                        filter,
+                        name: pipeName(s),
+                      })
+                    }
+                  />
+                </div>
+              );
+            })
           )}
         </div>
+        <div style={{ borderTop: "1px solid var(--hairline)", marginTop: 4, paddingTop: 10 }}>
+          {addOpen ? (
+            <form
+              style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const filter: Record<string, unknown> = {};
+                if (newEvent === "opportunity.scored" && newMinScore.trim()) {
+                  const n = Number(newMinScore);
+                  if (Number.isFinite(n)) filter.min_score = n;
+                }
+                addSubMut.mutate({
+                  event_type: newEvent,
+                  target_agent_slug: newAgent.trim(),
+                  approval_mode: newMode,
+                  enabled: true,
+                  filter,
+                });
+              }}
+            >
+              <select
+                className="input"
+                value={newEvent}
+                onChange={(e) => setNewEvent(e.target.value as EventType)}
+                aria-label="Event"
+                style={{ width: 170, fontSize: 12 }}
+              >
+                <option value="signal.created">signal.created</option>
+                <option value="opportunity.scored">opportunity.scored</option>
+                <option value="prd.approved">prd.approved</option>
+              </select>
+              <input
+                className="input"
+                value={newAgent}
+                onChange={(e) => setNewAgent(e.target.value)}
+                placeholder="agent slug"
+                aria-label="Agent slug"
+                style={{ width: 120, fontSize: 12 }}
+              />
+              <select
+                className="input"
+                value={newMode}
+                onChange={(e) => setNewMode(e.target.value as "auto" | "confirm")}
+                aria-label="Approval mode"
+                style={{ width: 96, fontSize: 12 }}
+              >
+                <option value="confirm">confirm</option>
+                <option value="auto">auto</option>
+              </select>
+              {newEvent === "opportunity.scored" ? (
+                <input
+                  className="input"
+                  value={newMinScore}
+                  onChange={(e) => setNewMinScore(e.target.value)}
+                  placeholder="min ICE"
+                  aria-label="Minimum ICE score"
+                  inputMode="decimal"
+                  style={{ width: 76, fontSize: 12 }}
+                />
+              ) : null}
+              <button
+                className="btn btn-primary btn-sm"
+                type="submit"
+                disabled={addSubMut.isPending || !newAgent.trim()}
+                style={{ fontSize: 10.5 }}
+              >
+                Add rule · fires on the next event
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                type="button"
+                onClick={() => setAddOpen(false)}
+              >
+                Dismiss
+              </button>
+            </form>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setAddOpen(true)}>
+              Add rule · routes an event to an agent
+            </button>
+          )}
+        </div>
+      </div>
 
-        <div className="mt-4 pt-4 border-t hairline grid grid-cols-1 sm:grid-cols-5 gap-2">
-          <select
-            value={newEvent}
-            onChange={(e) => setNewEvent(e.target.value as typeof newEvent)}
-            className="rounded-lg border hairline bg-background/60 px-2 py-1.5 text-xs"
-          >
-            <option value="signal.created">signal.created</option>
-            <option value="opportunity.scored">opportunity.scored</option>
-            <option value="prd.approved">prd.approved</option>
-          </select>
-          <input
-            type="text"
-            value={newAgent}
-            onChange={(e) => setNewAgent(e.target.value)}
-            placeholder="agent slug (e.g. discovery)"
-            className="rounded-lg border hairline bg-background/60 px-2 py-1.5 text-xs"
-          />
-          <select
-            value={newMode}
-            onChange={(e) => setNewMode(e.target.value as typeof newMode)}
-            className="rounded-lg border hairline bg-background/60 px-2 py-1.5 text-xs"
-          >
-            <option value="confirm">confirm</option>
-            <option value="auto">auto</option>
-          </select>
-          <input
-            type="text"
-            value={newMinScore}
-            onChange={(e) => setNewMinScore(e.target.value)}
-            placeholder="min ICE (opp only)"
-            className="rounded-lg border hairline bg-background/60 px-2 py-1.5 text-xs"
-          />
-          <button
-            type="button"
-            disabled={upsertSubMut.isPending}
-            onClick={() => {
-              const filter: Record<string, unknown> = {};
-              if (newEvent === "opportunity.scored" && newMinScore.trim()) {
-                const n = Number(newMinScore);
-                if (Number.isFinite(n)) filter.min_score = n;
-              }
-              upsertSubMut.mutate({
-                event_type: newEvent,
-                target_agent_slug: newAgent.trim(),
-                approval_mode: newMode,
-                enabled: true,
-                filter,
-              });
+      {/* Recent runs — production usage-vs-caps table (the reference has no
+          equivalent); kept and restyled quiet. Halted runs carry the reason. */}
+      <div className="bento" style={{ gridColumn: "span 2", padding: 0, overflow: "hidden" }}>
+        <div
+          className="mono-label"
+          style={{
+            display: "grid",
+            gridTemplateColumns: RUNS_GRID,
+            gap: 12,
+            padding: "10px 18px",
+            borderBottom: "1px solid var(--hairline)",
+          }}
+        >
+          <span>Recent runs</span>
+          <span>Status</span>
+          <span>Tokens</span>
+          <span>Spend</span>
+          <span>When</span>
+        </div>
+        {runs.length === 0 ? (
+          <div
+            style={{
+              fontSize: 12.5,
+              color: "var(--ink-faint)",
+              padding: "20px 18px",
+              textAlign: "center",
             }}
-            className="rounded-lg border hairline px-3 py-1.5 text-xs hover:bg-secondary inline-flex items-center justify-center gap-1"
           >
-            <Plus className="h-3 w-3" /> Add rule
-          </button>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border hairline p-6 bg-secondary/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold">Reactor activity</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Events the reactor has caught. Confirm-mode rows wait for your decision.
-            </p>
+            No mission runs yet.
           </div>
-          <span className="text-xs text-muted-foreground">
-            {(queueQ.data?.events ?? []).length} shown
-          </span>
-        </div>
-        <div className="mt-4 divide-y hairline">
-          {(queueQ.data?.events ?? []).map((e) => {
-            const title =
-              ((e.payload as Record<string, unknown>)?.title as string) ?? e.source_id.slice(0, 8);
-            const isPending = e.status === "pending";
+        ) : (
+          runs.map((r, i) => {
+            const halted = r.status === "halted" || !!r.halted_reason;
+            const tokCap = r.mission_token_cap;
+            const spendCap = r.mission_spend_cap_usd ? Number(r.mission_spend_cap_usd) : null;
+            const tokHot = tokCap ? (r.tokens_used ?? 0) / tokCap >= 0.8 : false;
+            const spendHot = spendCap ? Number(r.spend_used_usd ?? 0) / spendCap >= 0.8 : false;
+            const statusColor = halted
+              ? "var(--rose)"
+              : r.status === "running"
+                ? "var(--action-blue)"
+                : r.status === "completed"
+                  ? "var(--emerald)"
+                  : r.status === "failed"
+                    ? "var(--rose)"
+                    : "var(--ink-subtle)";
             return (
-              <div key={e.id} className="py-3 flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-mono text-xs">{e.event_type}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <span className="font-medium">{e.target_agent_slug}</span>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider rounded px-1.5 py-0.5 border ${
-                        e.status === "dispatched"
-                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                          : e.status === "failed"
-                            ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
-                            : e.status === "skipped"
-                              ? "border-muted-foreground/30 bg-secondary/40 text-muted-foreground"
-                              : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                      }`}
-                    >
-                      {e.status}
+              <div
+                key={r.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: RUNS_GRID,
+                  gap: 12,
+                  padding: "12px 18px",
+                  alignItems: "baseline",
+                  borderBottom: i < runs.length - 1 ? "1px solid var(--hairline)" : "none",
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ fontWeight: 500 }}>{r.agent_name}</span>
+                  {halted && r.halted_reason ? (
+                    <span style={{ display: "block", fontSize: 11.5, color: "var(--rose)" }}>
+                      {r.halted_reason}
                     </span>
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {e.approval_mode}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1 truncate">{title}</div>
-                  {e.error && <div className="text-xs text-rose-300/80 mt-1">{e.error}</div>}
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    {new Date(e.created_at).toLocaleString()}
-                  </div>
-                </div>
-                {isPending && e.approval_mode === "confirm" && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id}
-                      onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "approve" })}
-                      className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="h-3 w-3" /> Dispatch
-                    </button>
-                    <button
-                      type="button"
-                      disabled={decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id}
-                      onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "reject" })}
-                      className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 transition inline-flex items-center gap-1"
-                    >
-                      <XCircle className="h-3 w-3" /> Skip
-                    </button>
-                  </div>
-                )}
+                  ) : null}
+                </span>
+                <span className="mono-label" style={{ color: statusColor }}>
+                  {halted ? "halted" : r.status}
+                </span>
+                <span
+                  className="mono-label tabular-nums"
+                  style={{ color: tokHot ? "var(--ember)" : undefined }}
+                >
+                  {r.tokens_used ?? 0}
+                  {tokCap ? ` of ${tokCap}` : ""}
+                </span>
+                <span
+                  className="mono-label tabular-nums"
+                  style={{ color: spendHot ? "var(--ember)" : undefined }}
+                >
+                  {fmtUsd(r.spend_used_usd ?? 0)}
+                  {spendCap ? ` of ${fmtUsd(spendCap)}` : ""}
+                </span>
+                <span className="mono-label tabular-nums">{relTime(r.created_at)}</span>
               </div>
             );
-          })}
-          {(queueQ.data?.events ?? []).length === 0 && (
-            <div className="text-sm text-muted-foreground py-6 text-center">
+          })
+        )}
+      </div>
+
+      {/* Reactor activity — production confirm-mode dispatch queue (no
+          reference equivalent); kept and restyled quiet. */}
+      <div className="bento" style={{ gridColumn: "span 2" }}>
+        <MonoLabel icon={Zap} style={{ marginBottom: 10 }}>
+          Reactor activity · confirm-mode rows wait on you
+        </MonoLabel>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {events.length === 0 ? (
+            <div style={{ fontSize: 12.5, color: "var(--ink-faint)", padding: "8px 0" }}>
               No reactor events yet.
             </div>
+          ) : (
+            events.map((e, i) => {
+              const title =
+                ((e.payload as Record<string, unknown>)?.title as string) ??
+                e.source_id.slice(0, 8);
+              const statusColor =
+                e.status === "dispatched"
+                  ? "var(--emerald)"
+                  : e.status === "failed"
+                    ? "var(--rose)"
+                    : e.status === "skipped"
+                      ? "var(--ink-faint)"
+                      : "var(--ember)";
+              const isPending = e.status === "pending" && e.approval_mode === "confirm";
+              return (
+                <div
+                  key={e.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 0",
+                    borderBottom: i < events.length - 1 ? "1px solid var(--hairline)" : "none",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>
+                      {e.event_type} → {e.target_agent_slug}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: "var(--ink-subtle)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {title}
+                    </div>
+                    {e.error ? (
+                      <div style={{ fontSize: 11.5, color: "var(--rose)" }}>{e.error}</div>
+                    ) : null}
+                  </div>
+                  <span className="mono-label tabular-nums">{relTime(e.created_at)}</span>
+                  {isPending ? (
+                    <span style={{ display: "flex", gap: 6 }}>
+                      <button
+                        className="btn btn-approve btn-sm"
+                        disabled={
+                          decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id
+                        }
+                        onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "approve" })}
+                      >
+                        Dispatch · runs the agent
+                      </button>
+                      <button
+                        className="btn btn-reject btn-sm"
+                        disabled={
+                          decideEvtMut.isPending && decideEvtMut.variables?.eventId === e.id
+                        }
+                        onClick={() => decideEvtMut.mutate({ eventId: e.id, decision: "reject" })}
+                      >
+                        Skip · nothing runs
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="mono-label" style={{ color: statusColor }}>
+                      {e.status}
+                    </span>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
-      </section>
-
-      {isLoading && <div className="text-xs text-muted-foreground">Loading governance state…</div>}
+      </div>
     </div>
   );
 }

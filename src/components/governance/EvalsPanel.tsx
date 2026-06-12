@@ -1,7 +1,20 @@
+// Evals tab — ported 1:1 from design-reference/cadence/loop.jsx (GovernScreen,
+// tab "Evals"): a 2-col grid of bento .lift cards — mono suite name + case
+// count on the top row, the serif 30 score with a trend mono label
+// ("↑ improving" moss / "→ steady" ink-subtle, plus an honest "↓ falling"
+// madder for real regressions), a right-aligned blue "runs · cases · config →"
+// mono, and a 4px progress bar (moss at/above the suite's own pass gate, ember
+// below — production's real threshold, not the reference's hardcoded 90).
+// Cards open production's EXISTING suite drill-down (drill-down contract),
+// restyled quiet-Ember with Runs / Cases / Config sub-tabs. VerdictChip law:
+// per-case pass/fail judgments lead with chips (moss PASS / madder FAIL).
+// Production functionality kept: create suite, run now, enable/disable,
+// delete (confirmed), case CRUD, run history with judge reasoning.
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ChevronDown, ChevronRight, FlaskConical } from "lucide-react";
 import {
   listEvalSuites,
   getEvalSuite,
@@ -13,41 +26,10 @@ import {
   deleteEvalCase,
   runEvalSuiteNow,
   getEvalRun,
+  getEvalScoreTrends,
 } from "@/lib/evals.functions";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Play,
-  Plus,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-  FlaskConical,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { relTime } from "@/components/product/format";
 import { useConfirm } from "@/hooks/use-confirm";
 
 const SURFACE_KEYS: Array<{ surface: string; key: string; label: string }> = [
@@ -60,105 +42,192 @@ const SURFACE_KEYS: Array<{ surface: string; key: string; label: string }> = [
   { surface: "agent", key: "planner_executor", label: "Agent — planner" },
 ];
 
+type SuiteRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  surface: string;
+  prompt_key: string;
+  judge_model: string;
+  pass_threshold: number;
+  enabled: boolean;
+  case_count: number;
+  last_run: {
+    status: string;
+    avg_score: number | null;
+    pass_count: number;
+    fail_count: number;
+    created_at: string;
+  } | null;
+};
+
 export function EvalsPanel() {
   const listFn = useServerFn(listEvalSuites);
-  const { data: suites = [], isLoading } = useQuery({
-    queryKey: ["eval_suites"],
-    queryFn: () => listFn(),
-  });
+  const trendsFn = useServerFn(getEvalScoreTrends);
+  const suitesQ = useQuery({ queryKey: ["eval_suites"], queryFn: () => listFn() });
+  const trendsQ = useQuery({ queryKey: ["eval_suite_trends"], queryFn: () => trendsFn() });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const suites = (suitesQ.data ?? []) as SuiteRow[];
+  const trends = trendsQ.data?.trends ?? {};
+
+  if (suitesQ.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load eval suites
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(suitesQ.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => suitesQ.refetch()}
+        >
+          Retry · reloads suites
+        </button>
+      </div>
+    );
+  }
+
+  if (selectedId) {
+    return <SuiteDetail suiteId={selectedId} onBack={() => setSelectedId(null)} />;
+  }
 
   return (
-    <div className="flex min-h-[70vh] rounded-xl border border-border bg-card overflow-hidden">
-      <aside className="w-80 border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold flex items-center gap-2">
-              <FlaskConical className="h-4 w-4" /> Eval Suites
-            </h2>
-            <p className="text-xs text-muted-foreground">Prompt regression tests</p>
-          </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setShowCreate(true)}
-            aria-label="New suite"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+    <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setCreateOpen((v) => !v)}>
+          New suite · targets a prompt
+        </button>
+      </div>
+
+      {createOpen ? (
+        <CreateSuiteForm
+          onClose={() => setCreateOpen(false)}
+          onCreated={(id) => {
+            setCreateOpen(false);
+            setSelectedId(id);
+          }}
+        />
+      ) : null}
+
+      {suitesQ.isLoading ? (
+        <div
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "32px 0",
+            textAlign: "center",
+          }}
+        >
+          Loading eval suites…
         </div>
-        <div className="flex-1 overflow-auto p-2 space-y-1">
-          {isLoading && <div className="p-3 text-sm text-muted-foreground">Loading…</div>}
-          {!isLoading && suites.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">
-              No suites yet. Create one to start.
-            </div>
-          )}
-          {suites.map((s: any) => (
-            <button
-              key={s.id}
-              onClick={() => setSelectedId(s.id)}
-              className={`w-full text-left rounded-md p-2 hover:bg-accent transition ${selectedId === s.id ? "bg-accent" : ""}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="font-medium text-sm truncate">{s.name}</div>
-                {!s.enabled && (
-                  <Badge variant="outline" className="text-[10px]">
-                    off
-                  </Badge>
-                )}
-              </div>
-              <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                <span>
-                  {s.surface}/{s.prompt_key}
-                </span>
-                <span>•</span>
-                <span>{s.case_count} cases</span>
-              </div>
-              {s.last_run && (
-                <div className="text-[11px] mt-1 flex items-center gap-1">
-                  {s.last_run.status === "completed" ? (
-                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3 text-amber-500" />
-                  )}
-                  <span className="text-muted-foreground">
-                    {s.last_run.pass_count}✓ {s.last_run.fail_count}✗
-                    {s.last_run.avg_score != null && ` · ${Math.round(s.last_run.avg_score)}`}
+      ) : suites.length === 0 ? (
+        <EmptyState
+          icon={FlaskConical}
+          title="No eval suites yet"
+          body="An eval suite is a regression test on a prompt — golden cases, an LLM judge, and a pass gate. Quality drops get caught before they ship."
+          cta="New suite · targets a prompt"
+          onCta={() => setCreateOpen(true)}
+        />
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          {suites.map((s) => {
+            const score = s.last_run?.avg_score != null ? Math.round(s.last_run.avg_score) : null;
+            const t = trends[s.id];
+            const diff = t && t.previous != null ? t.latest - t.previous : null;
+            return (
+              <button
+                key={s.id}
+                className="bento lift"
+                onClick={() => setSelectedId(s.id)}
+                style={{ textAlign: "left", display: "block" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <MonoLabel>{s.name}</MonoLabel>
+                  <span className="mono-label" style={{ fontSize: 9 }}>
+                    {s.case_count} cases
+                    {!s.enabled ? <span style={{ color: "var(--ink-faint)" }}> · off</span> : null}
                   </span>
                 </div>
-              )}
-            </button>
-          ))}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                  {score == null ? (
+                    <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                      not run yet
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-display tabular-nums" style={{ fontSize: 30 }}>
+                        {score}
+                      </span>
+                      {diff != null ? (
+                        <span
+                          className="mono-label"
+                          style={{
+                            color:
+                              diff > 0.5
+                                ? "var(--emerald)"
+                                : diff < -0.5
+                                  ? "var(--rose)"
+                                  : "var(--ink-subtle)",
+                          }}
+                        >
+                          {diff > 0.5 ? "↑ improving" : diff < -0.5 ? "↓ falling" : "→ steady"}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                  <span style={{ flex: 1 }}></span>
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 8.5, color: "var(--action-blue)" }}
+                  >
+                    runs · cases · config →
+                  </span>
+                </div>
+                {score != null ? (
+                  <div
+                    style={{
+                      height: 4,
+                      borderRadius: 99,
+                      background: "var(--surface-2)",
+                      overflow: "hidden",
+                      marginTop: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${score}%`,
+                        background: score >= s.pass_threshold ? "var(--emerald)" : "var(--ember)",
+                      }}
+                    ></div>
+                  </div>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
-      </aside>
-      <main className="flex-1 overflow-auto">
-        {selectedId ? (
-          <SuiteDetail suiteId={selectedId} onDeleted={() => setSelectedId(null)} />
-        ) : (
-          <div className="h-full flex items-center justify-center text-muted-foreground text-sm p-8 text-center">
-            Select a suite to view cases & runs, or create your first suite.
-          </div>
-        )}
-      </main>
-      <CreateSuiteDialog
-        open={showCreate}
-        onOpenChange={setShowCreate}
-        onCreated={(id) => setSelectedId(id)}
-      />
+      )}
     </div>
   );
 }
 
-function CreateSuiteDialog({
-  open,
-  onOpenChange,
+function CreateSuiteForm({
+  onClose,
   onCreated,
 }: {
-  open: boolean;
-  onOpenChange: (b: boolean) => void;
+  onClose: () => void;
   onCreated: (id: string) => void;
 }) {
   const qc = useQueryClient();
@@ -182,180 +251,308 @@ function CreateSuiteDialog({
         },
       });
     },
-    onSuccess: (row: any) => {
+    onSuccess: (row: { id: string }) => {
       qc.invalidateQueries({ queryKey: ["eval_suites"] });
-      onOpenChange(false);
-      setForm({ name: "", description: "", target: "chat/default", pass_threshold: 70 });
+      toast.success("Suite created. Add cases to start evaluating.");
       onCreated(row.id);
-      toast.success("Suite created");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New eval suite</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Name</Label>
-            <Input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Chat tone regression"
-            />
+    <div className="bento fade-up" style={{ padding: "14px 16px", marginBottom: 12 }}>
+      <MonoLabel style={{ marginBottom: 10 }}>New eval suite</MonoLabel>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Name
           </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={2}
-            />
+          <input
+            className="input"
+            value={form.name}
+            placeholder="Chat tone regression"
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </label>
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Target prompt
           </div>
-          <div>
-            <Label>Target prompt</Label>
-            <Select value={form.target} onValueChange={(v) => setForm({ ...form, target: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SURFACE_KEYS.map((s) => (
-                  <SelectItem key={`${s.surface}/${s.key}`} value={`${s.surface}/${s.key}`}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <select
+            className="input"
+            value={form.target}
+            onChange={(e) => setForm({ ...form, target: e.target.value })}
+          >
+            {SURFACE_KEYS.map((s) => (
+              <option key={`${s.surface}/${s.key}`} value={`${s.surface}/${s.key}`}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Description
           </div>
-          <div>
-            <Label>Pass threshold (0-100)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={form.pass_threshold}
-              onChange={(e) => setForm({ ...form, pass_threshold: Number(e.target.value) })}
-            />
+          <input
+            className="input"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </label>
+        <label style={{ fontSize: 12 }}>
+          <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+            Pass gate (0–100)
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={() => m.mutate()} disabled={!form.name || m.isPending}>
-            {m.isPending ? "Creating…" : "Create"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            max={100}
+            value={form.pass_threshold}
+            onChange={(e) => setForm({ ...form, pass_threshold: Number(e.target.value) })}
+          />
+        </label>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>
+          Dismiss
+        </button>
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!form.name || m.isPending}
+          onClick={() => m.mutate()}
+        >
+          {m.isPending ? "Creating…" : "Create suite · add cases next"}
+        </button>
+      </div>
+    </div>
   );
 }
 
-function SuiteDetail({ suiteId, onDeleted }: { suiteId: string; onDeleted: () => void }) {
+/* Suite drill-down — production's existing detail (cases, runs, config),
+   restyled quiet-Ember with the Runs / Cases / Config sub-tab contract. */
+function SuiteDetail({ suiteId, onBack }: { suiteId: string; onBack: () => void }) {
   const qc = useQueryClient();
   const getFn = useServerFn(getEvalSuite);
   const runFn = useServerFn(runEvalSuiteNow);
   const updateFn = useServerFn(updateEvalSuite);
   const deleteFn = useServerFn(deleteEvalSuite);
   const confirm = useConfirm();
+  const [sub, setSub] = useState<"Runs" | "Cases" | "Config">("Runs");
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["eval_suite", suiteId],
     queryFn: () => getFn({ data: { suite_id: suiteId } }),
   });
 
+  const inv = () => {
+    refetch();
+    qc.invalidateQueries({ queryKey: ["eval_suites"] });
+    qc.invalidateQueries({ queryKey: ["eval_suite_trends"] });
+  };
+
   const run = useMutation({
     mutationFn: () => runFn({ data: { suite_id: suiteId } }),
-    onSuccess: (r: any) => {
+    onSuccess: (r: { passed: number; failed: number; errored?: number }) => {
       toast.success(
-        `Run complete: ${r.passed}✓ ${r.failed}✗ ${r.errored ? r.errored + " errors" : ""}`,
+        `Run complete: ${r.passed} passed, ${r.failed} failed${r.errored ? `, ${r.errored} errored` : ""}.`,
       );
-      refetch();
-      qc.invalidateQueries({ queryKey: ["eval_suites"] });
+      inv();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Run failed"),
+    onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading || !data) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
-  const { suite, cases, runs } = data as any;
+  if (isLoading || !data) {
+    return (
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "32px 0",
+          textAlign: "center",
+        }}
+      >
+        Loading suite…
+      </div>
+    );
+  }
+
+  const suite = data.suite as Omit<SuiteRow, "case_count" | "last_run">;
+  const cases = data.cases as EvalCase[];
+  const runs = data.runs as EvalRunRow[];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">{suite.name}</h2>
-          {suite.description && (
-            <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-2 text-xs">
-            <Badge variant="outline">
-              {suite.surface}/{suite.prompt_key}
-            </Badge>
-            <Badge variant="outline">judge: {suite.judge_model}</Badge>
-            <Badge variant="outline">pass ≥ {suite.pass_threshold}</Badge>
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Switch
-                checked={suite.enabled}
-                onCheckedChange={async (v) => {
-                  await updateFn({ data: { suite_id: suiteId, enabled: v } });
-                  refetch();
-                }}
-              />
-              {suite.enabled ? "enabled" : "disabled"}
-            </span>
+    <div className="fade-up">
+      <div style={{ marginBottom: 16 }}>
+        <button
+          className="mono-label"
+          style={{ color: "var(--action-blue)", marginBottom: 10 }}
+          onClick={onBack}
+        >
+          ← All eval suites
+        </button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <MonoLabel>
+              Eval suite · {suite.surface}/{suite.prompt_key}
+            </MonoLabel>
+            <div className="font-display" style={{ fontSize: 21, marginTop: 2 }}>
+              {suite.name}
+            </div>
+            {suite.description ? (
+              <p
+                style={{ fontSize: 12.5, color: "var(--ink-subtle)", marginTop: 3, maxWidth: 480 }}
+              >
+                {suite.description}
+              </p>
+            ) : null}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => run.mutate()} disabled={run.isPending || cases.length === 0}>
-            {run.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            <span className="ml-1.5">Run now</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={async () => {
-              const ok = await confirm({
-                title: "Delete this suite?",
-                body: "Removes the suite and every case and run inside it. Can't be undone.",
-                destructive: true,
-                confirmLabel: "Delete suite",
-              });
-              if (!ok) return;
-              await deleteFn({ data: { suite_id: suiteId } });
-              qc.invalidateQueries({ queryKey: ["eval_suites"] });
-              onDeleted();
-            }}
-            aria-label="Delete"
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={run.isPending || cases.length === 0}
+              onClick={() => run.mutate()}
+            >
+              {run.isPending ? (
+                <>
+                  <span className="spinner" style={{ width: 11, height: 11 }} />
+                  Running…
+                </>
+              ) : (
+                `Run now · ${cases.filter((c) => c.enabled).length} cases`
+              )}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ color: "var(--rose)" }}
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Delete this suite?",
+                  body: "Removes the suite and every case and run inside it. Can't be undone.",
+                  destructive: true,
+                  confirmLabel: "Delete suite",
+                });
+                if (!ok) return;
+                await deleteFn({ data: { suite_id: suiteId } });
+                qc.invalidateQueries({ queryKey: ["eval_suites"] });
+                onBack();
+              }}
+            >
+              Delete · removes runs too
+            </button>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="cases">
-        <TabsList>
-          <TabsTrigger value="cases">Cases ({cases.length})</TabsTrigger>
-          <TabsTrigger value="runs">Runs ({runs.length})</TabsTrigger>
-        </TabsList>
-        <TabsContent value="cases" className="space-y-3 mt-4">
-          <CaseList suiteId={suiteId} cases={cases} onChange={refetch} />
-        </TabsContent>
-        <TabsContent value="runs" className="space-y-3 mt-4">
-          {runs.length === 0 && <p className="text-sm text-muted-foreground">No runs yet.</p>}
-          {runs.map((r: any) => (
-            <RunRow key={r.id} run={r} />
+      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+        {(["Runs", "Cases", "Config"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setSub(t)}
+            className="mono-label"
+            style={{
+              padding: "5px 11px",
+              borderRadius: 99,
+              fontSize: 9.5,
+              color: t === sub ? "var(--canvas)" : "var(--ink-subtle)",
+              background: t === sub ? "var(--primary-ink)" : "transparent",
+              border: `1px solid ${t === sub ? "transparent" : "var(--hairline)"}`,
+              transition: "background var(--dur-fast), color var(--dur-fast)",
+            }}
+          >
+            {t === "Runs" ? `Runs · ${runs.length}` : t === "Cases" ? `Cases · ${cases.length}` : t}
+          </button>
+        ))}
+      </div>
+
+      {sub === "Runs" ? (
+        runs.length === 0 ? (
+          <div className="bento" style={{ padding: 32, textAlign: "center" }}>
+            <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+              No runs yet. Run now · {cases.length} cases against the live prompt.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {runs.map((r) => (
+              <RunRow key={r.id} run={r} threshold={suite.pass_threshold} />
+            ))}
+          </div>
+        )
+      ) : sub === "Cases" ? (
+        <CaseList suiteId={suiteId} cases={cases} onChange={inv} />
+      ) : (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          {(
+            [
+              ["Target prompt", `${suite.surface}/${suite.prompt_key}`],
+              ["Judge", suite.judge_model],
+              ["Pass gate", `≥ ${suite.pass_threshold} — below this, a case fails the run`],
+            ] as [string, string][]
+          ).map(([l, v], i) => (
+            <div
+              key={l}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "150px 1fr",
+                gap: 12,
+                padding: "12px 18px",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <span className="mono-label">{l}</span>
+              <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>{v}</span>
+            </div>
           ))}
-        </TabsContent>
-      </Tabs>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "150px 1fr",
+              gap: 12,
+              padding: "12px 18px",
+            }}
+          >
+            <span className="mono-label">Suite</span>
+            <span style={{ fontSize: 12.5 }}>
+              <button
+                role="switch"
+                aria-checked={suite.enabled}
+                className="mono-label"
+                style={{
+                  fontSize: 8.5,
+                  color: suite.enabled ? "var(--emerald)" : "var(--ink-faint)",
+                }}
+                onClick={async () => {
+                  await updateFn({ data: { suite_id: suiteId, enabled: !suite.enabled } });
+                  inv();
+                }}
+              >
+                {suite.enabled ? "enabled · runs count" : "disabled · paused"}
+              </button>
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+type EvalCase = {
+  id: string;
+  name: string;
+  input: string;
+  expected: string | null;
+  rubric: string | null;
+  enabled: boolean;
+};
 
 function CaseList({
   suiteId,
@@ -363,129 +560,63 @@ function CaseList({
   onChange,
 }: {
   suiteId: string;
-  cases: any[];
+  cases: EvalCase[];
   onChange: () => void;
 }) {
   const createFn = useServerFn(createEvalCase);
   const updateFn = useServerFn(updateEvalCase);
   const deleteFn = useServerFn(deleteEvalCase);
   const confirm = useConfirm();
-  const [showNew, setShowNew] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ name: "", input: "", expected: "", rubric: "" });
 
   return (
-    <>
-      <div className="flex justify-end">
-        <Button size="sm" variant="outline" onClick={() => setShowNew(true)}>
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          Add case
-        </Button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setFormOpen((v) => !v)}>
+          Add case · joins the suite
+        </button>
       </div>
-      {cases.length === 0 && (
-        <p className="text-sm text-muted-foreground">No cases yet. Add one to start evaluating.</p>
-      )}
-      {cases.map((c) => (
-        <Card key={c.id}>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              {c.name}
-              {!c.enabled && (
-                <Badge variant="outline" className="text-[10px]">
-                  disabled
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <Switch
-                checked={c.enabled}
-                onCheckedChange={async (v) => {
-                  await updateFn({ data: { case_id: c.id, enabled: v } });
-                  onChange();
-                }}
-              />
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: "Delete this case?",
-                    destructive: true,
-                    confirmLabel: "Delete",
-                  });
-                  if (!ok) return;
-                  await deleteFn({ data: { case_id: c.id } });
-                  onChange();
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="text-xs space-y-2">
-            <div>
-              <span className="text-muted-foreground">Input:</span>{" "}
-              <span className="whitespace-pre-wrap">{c.input}</span>
-            </div>
-            {c.expected && (
-              <div>
-                <span className="text-muted-foreground">Expected:</span>{" "}
-                <span className="whitespace-pre-wrap">{c.expected}</span>
-              </div>
-            )}
-            {c.rubric && (
-              <div>
-                <span className="text-muted-foreground">Rubric:</span>{" "}
-                <span className="whitespace-pre-wrap">{c.rubric}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
 
-      <Dialog open={showNew} onOpenChange={setShowNew}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New eval case</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Name</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Input (user message)</Label>
-              <Textarea
-                rows={4}
-                value={form.input}
-                onChange={(e) => setForm({ ...form, input: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Expected output (optional)</Label>
-              <Textarea
-                rows={3}
-                value={form.expected}
-                onChange={(e) => setForm({ ...form, expected: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Rubric (optional)</Label>
-              <Textarea
-                rows={2}
-                value={form.rubric}
-                onChange={(e) => setForm({ ...form, rubric: e.target.value })}
-                placeholder="e.g. Must be ≤ 5 lines, no emojis, mentions OKRs"
-              />
-            </div>
+      {formOpen ? (
+        <div className="bento fade-up" style={{ padding: "14px 16px" }}>
+          <MonoLabel style={{ marginBottom: 10 }}>New eval case</MonoLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <input
+              className="input"
+              value={form.name}
+              placeholder="Case name"
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <textarea
+              className="input"
+              rows={3}
+              value={form.input}
+              placeholder="Input — the user message to test"
+              onChange={(e) => setForm({ ...form, input: e.target.value })}
+              style={{ resize: "none" }}
+            />
+            <textarea
+              className="input"
+              rows={2}
+              value={form.expected}
+              placeholder="Expected output (optional)"
+              onChange={(e) => setForm({ ...form, expected: e.target.value })}
+              style={{ resize: "none" }}
+            />
+            <input
+              className="input"
+              value={form.rubric}
+              placeholder="Rubric (optional) — e.g. ≤ 5 lines, no emojis, mentions OKRs"
+              onChange={(e) => setForm({ ...form, rubric: e.target.value })}
+            />
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowNew(false)}>
-              Cancel
-            </Button>
-            <Button
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setFormOpen(false)}>
+              Dismiss
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
               disabled={!form.name || !form.input}
               onClick={async () => {
                 await createFn({
@@ -497,112 +628,250 @@ function CaseList({
                     rubric: form.rubric || null,
                   },
                 });
-                setShowNew(false);
+                setFormOpen(false);
                 setForm({ name: "", input: "", expected: "", rubric: "" });
                 onChange();
               }}
             >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              Add case · joins the suite
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {cases.length === 0 && !formOpen ? (
+        <div className="bento" style={{ padding: 32, textAlign: "center" }}>
+          <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+            No cases yet. Add one — each case is an input, an optional expected output, and a rubric
+            the judge scores against.
+          </p>
+        </div>
+      ) : (
+        cases.map((c) => (
+          <div key={c.id} className="bento">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span>
+              <span style={{ flex: 1 }}></span>
+              <button
+                role="switch"
+                aria-checked={c.enabled}
+                className="mono-label"
+                style={{
+                  fontSize: 8.5,
+                  color: c.enabled ? "var(--emerald)" : "var(--ink-faint)",
+                }}
+                onClick={async () => {
+                  await updateFn({ data: { case_id: c.id, enabled: !c.enabled } });
+                  onChange();
+                }}
+              >
+                {c.enabled ? "on" : "off"}
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, color: "var(--rose)" }}
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Delete this case?",
+                    destructive: true,
+                    confirmLabel: "Delete",
+                  });
+                  if (!ok) return;
+                  await deleteFn({ data: { case_id: c.id } });
+                  onChange();
+                }}
+              >
+                Delete · leaves past runs
+              </button>
+            </div>
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span className="mono-label" style={{ fontSize: 8.5, flexShrink: 0 }}>
+                  input
+                </span>
+                <span style={{ fontSize: 12.5, color: "var(--ink-muted)", whiteSpace: "pre-wrap" }}>
+                  {c.input}
+                </span>
+              </div>
+              {c.expected ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <span className="mono-label" style={{ fontSize: 8.5, flexShrink: 0 }}>
+                    expected
+                  </span>
+                  <span
+                    style={{ fontSize: 12.5, color: "var(--ink-muted)", whiteSpace: "pre-wrap" }}
+                  >
+                    {c.expected}
+                  </span>
+                </div>
+              ) : null}
+              {c.rubric ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <span className="mono-label" style={{ fontSize: 8.5, flexShrink: 0 }}>
+                    rubric
+                  </span>
+                  <span
+                    style={{ fontSize: 12.5, color: "var(--ink-muted)", whiteSpace: "pre-wrap" }}
+                  >
+                    {c.rubric}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
   );
 }
 
-function RunRow({ run }: { run: any }) {
+type EvalRunRow = {
+  id: string;
+  status: string;
+  trigger: string;
+  model: string | null;
+  pass_count: number;
+  fail_count: number;
+  errored: number | null;
+  avg_score: number | null;
+  created_at: string;
+};
+
+type EvalResult = {
+  id: string;
+  case_id: string;
+  status: string;
+  actual: string | null;
+  score: number | null;
+  judge_reasoning: string | null;
+  latency_ms: number | null;
+  cost_usd: number | string | null;
+  error: string | null;
+  case: { name: string; input: string; expected: string | null } | null;
+};
+
+function RunRow({ run, threshold }: { run: EvalRunRow; threshold: number }) {
   const [open, setOpen] = useState(false);
   const getRun = useServerFn(getEvalRun);
-  const { data: detail } = useQuery({
+  const { data: detail, isLoading } = useQuery({
     queryKey: ["eval_run", run.id],
     queryFn: () => getRun({ data: { run_id: run.id } }),
     enabled: open,
   });
-  const total = run.pass_count + run.fail_count + (run.errored ?? 0);
-  const pct = total > 0 ? Math.round((run.pass_count / total) * 100) : 0;
+  const score = run.avg_score != null ? Math.round(run.avg_score) : null;
+  const results = (detail?.results ?? []) as EvalResult[];
 
   return (
-    <Card>
-      <button className="w-full text-left" onClick={() => setOpen(!open)}>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2">
-            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            <div>
-              <div className="text-sm font-medium">{new Date(run.created_at).toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">
-                {run.trigger} · {run.model} · {run.status}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-              {run.pass_count}
-            </span>
-            <span className="flex items-center gap-1">
-              <XCircle className="h-3 w-3 text-destructive" />
-              {run.fail_count}
-            </span>
-            {(run.errored ?? 0) > 0 && (
-              <span className="flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 text-amber-500" />
-                {run.errored}
-              </span>
-            )}
-            <Badge variant={pct >= 80 ? "default" : pct >= 50 ? "outline" : "destructive"}>
-              {pct}%
-            </Badge>
-            {run.avg_score != null && (
-              <span className="text-muted-foreground">avg {Math.round(run.avg_score)}</span>
-            )}
-          </div>
-        </CardHeader>
+    <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+      <button
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "12px 18px",
+          width: "100%",
+          textAlign: "left",
+          fontSize: 12.5,
+        }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span style={{ color: "var(--ink-faint)", display: "inline-flex" }}>
+          {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        </span>
+        <span
+          className="font-display tabular-nums"
+          style={{
+            fontSize: 16,
+            width: 34,
+            color: score != null && score < threshold ? "var(--ember)" : "var(--ink)",
+          }}
+        >
+          {score ?? "—"}
+        </span>
+        <span className="mono-label tabular-nums">
+          <span style={{ color: "var(--emerald)" }}>{run.pass_count} ✓</span> ·{" "}
+          <span style={{ color: run.fail_count ? "var(--rose)" : "var(--ink-faint)" }}>
+            {run.fail_count} ✕
+          </span>
+          {(run.errored ?? 0) > 0 ? (
+            <span style={{ color: "var(--rose)" }}> · {run.errored} err</span>
+          ) : null}
+        </span>
+        <span style={{ flex: 1 }}></span>
+        <span className="mono-label" style={{ color: "var(--ink-subtle)" }}>
+          {run.trigger}
+          {run.model ? ` · ${run.model}` : ""}
+        </span>
+        <span className="mono-label tabular-nums" style={{ color: "var(--ink-faint)" }}>
+          {relTime(run.created_at)}
+        </span>
       </button>
-      {open && detail && (
-        <CardContent className="space-y-2 border-t pt-3">
-          {(detail as any).results.length === 0 && (
-            <p className="text-xs text-muted-foreground">No results.</p>
-          )}
-          {(detail as any).results.map((r: any) => (
-            <div key={r.id} className="rounded-md border border-border p-3 text-xs space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="font-medium flex items-center gap-2">
-                  {r.status === "passed" ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  ) : r.status === "failed" ? (
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                  ) : (
-                    <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                  )}
-                  {r.case?.name ?? r.case_id}
+      {open ? (
+        <div
+          className="fade-up"
+          style={{
+            padding: "12px 18px 14px",
+            background: "var(--surface-1)",
+            borderTop: "1px solid var(--hairline)",
+          }}
+        >
+          {isLoading ? (
+            <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>Loading results…</p>
+          ) : results.length === 0 ? (
+            <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>No results.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {results.map((r) => (
+                <div key={r.id}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <VerdictChip tone={r.status === "passed" ? "moss" : "madder"}>
+                      {r.status === "passed" ? "pass" : r.status === "failed" ? "fail" : "error"}
+                    </VerdictChip>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {r.case?.name ?? r.case_id}
+                    </span>
+                    <span style={{ flex: 1 }}></span>
+                    <span
+                      className="mono-label tabular-nums"
+                      style={{ color: "var(--ink-subtle)" }}
+                    >
+                      {r.score != null ? `scored ${r.score}` : ""}
+                      {r.latency_ms != null ? ` · ${r.latency_ms}ms` : ""}
+                      {r.cost_usd != null ? ` · $${Number(r.cost_usd).toFixed(4)}` : ""}
+                    </span>
+                  </div>
+                  {r.actual ? (
+                    <p
+                      style={{
+                        fontSize: 12.5,
+                        color: "var(--ink-muted)",
+                        margin: "6px 0 0",
+                        lineHeight: 1.5,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {r.actual}
+                    </p>
+                  ) : null}
+                  {r.judge_reasoning ? (
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+                      <span className="mono-label" style={{ fontSize: 8.5, flexShrink: 0 }}>
+                        judge
+                      </span>
+                      <span style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+                        {r.judge_reasoning}
+                      </span>
+                    </div>
+                  ) : null}
+                  {r.error ? (
+                    <p style={{ fontSize: 12.5, color: "var(--rose)", marginTop: 6 }}>{r.error}</p>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  {r.score != null && <span>score {r.score}</span>}
-                  {r.latency_ms != null && <span>{r.latency_ms}ms</span>}
-                  {r.cost_usd != null && <span>${Number(r.cost_usd).toFixed(4)}</span>}
-                </div>
-              </div>
-              {r.case?.input && (
-                <div className="text-muted-foreground">
-                  <span className="font-medium text-foreground">Input:</span>{" "}
-                  <span className="whitespace-pre-wrap">{r.case.input}</span>
-                </div>
-              )}
-              {r.actual && (
-                <div>
-                  <span className="font-medium">Actual:</span>{" "}
-                  <span className="whitespace-pre-wrap">{r.actual}</span>
-                </div>
-              )}
-              {r.judge_reasoning && (
-                <div className="text-muted-foreground italic">Judge: {r.judge_reasoning}</div>
-              )}
-              {r.error && <div className="text-destructive">Error: {r.error}</div>}
+              ))}
             </div>
-          ))}
-        </CardContent>
-      )}
-    </Card>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

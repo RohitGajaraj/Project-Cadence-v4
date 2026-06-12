@@ -1,35 +1,80 @@
+// Analytics tab — ported from design-reference/cadence/govern-detail.jsx
+// (AnalyticsTab, list level only): range sub-tab pills, three stat bentos
+// (serif 26 tabular values, 11px faint sub-line), and the span-3 "Spend by …"
+// bento with per-row ember share bars and right-aligned mono spend. The
+// reference rolls spend up per AGENT; production rolls AI events up per
+// SURFACE — the rows render real surfaces in ink (orchid stays reserved for
+// agent names) and don't navigate: no per-agent analytics screen exists yet.
+// Production functionality kept, restyled quiet-Ember: by-model rollup, the
+// recent-runs list with its event-detail drawer (existing drill-down), the
+// guardrail-hit stats, and the daily activity bars.
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  Clock,
-  DollarSign,
-  Gauge,
-  Shield,
-  Zap,
-  ChevronRight,
-  X,
-} from "lucide-react";
+import { X } from "lucide-react";
 import {
   getAnalyticsOverview,
   listAiEvents,
   getEventDetail,
   getGuardrailStats,
 } from "@/lib/analytics.functions";
+import { MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { relTime } from "@/components/product/format";
 
 function fmtUsd(n: number) {
-  return `$${n.toFixed(n < 0.01 ? 5 : 4)}`;
+  if (n === 0) return "$0";
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(2)}`;
 }
 function fmtNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
-function scoreColor(s: number | null | undefined) {
-  if (s == null) return "text-muted-foreground";
-  if (s >= 0.8) return "text-emerald-400";
-  if (s >= 0.5) return "text-amber-300";
-  return "text-rose-400";
+function fmtMs(ms: number) {
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+const RANGES: { id: string; days: number }[] = [
+  { id: "24h", days: 1 },
+  { id: "7d", days: 7 },
+  { id: "30d", days: 30 },
+  { id: "90d", days: 90 },
+];
+
+/* Pill-row sub-navigation — ported 1:1 from
+   design-reference/cadence/govern-detail.jsx (SubTabs). */
+function SubTabs({
+  tabs,
+  active,
+  onSet,
+}: {
+  tabs: string[];
+  active: string;
+  onSet: (t: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+      {tabs.map((t) => (
+        <button
+          key={t}
+          onClick={() => onSet(t)}
+          className="mono-label"
+          style={{
+            padding: "5px 11px",
+            borderRadius: 99,
+            fontSize: 9.5,
+            color: t === active ? "var(--canvas)" : "var(--ink-subtle)",
+            background: t === active ? "var(--primary-ink)" : "transparent",
+            border: `1px solid ${t === active ? "transparent" : "var(--hairline)"}`,
+            transition: "background var(--dur-fast), color var(--dur-fast)",
+          }}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function AnalyticsPanel() {
@@ -38,11 +83,10 @@ export function AnalyticsPanel() {
   const fDetail = useServerFn(getEventDetail);
   const fGuards = useServerFn(getGuardrailStats);
 
-  const [days, setDays] = useState(7);
-  const [tab, setTab] = useState<"overview" | "surface" | "model" | "runs" | "guardrails">(
-    "overview",
-  );
+  const [range, setRange] = useState("7d");
+  const [section, setSection] = useState("Models");
   const [openId, setOpenId] = useState<string | null>(null);
+  const days = RANGES.find((r) => r.id === range)?.days ?? 7;
 
   const overview = useQuery({
     queryKey: ["analytics-overview", days],
@@ -51,12 +95,12 @@ export function AnalyticsPanel() {
   const events = useQuery({
     queryKey: ["analytics-events"],
     queryFn: () => fEvents({ data: { limit: 100 } }),
-    enabled: tab === "runs",
+    enabled: section === "Runs",
   });
   const guards = useQuery({
     queryKey: ["analytics-guards"],
     queryFn: () => fGuards(),
-    enabled: tab === "guardrails",
+    enabled: section === "Guardrails",
   });
   const detail = useQuery({
     queryKey: ["event-detail", openId],
@@ -64,180 +108,349 @@ export function AnalyticsPanel() {
     enabled: !!openId,
   });
 
+  if (overview.error) {
+    return (
+      <div className="bento" style={{ padding: 24 }}>
+        <div className="mono-label" style={{ color: "var(--rose)" }}>
+          Couldn't load analytics
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
+          {(overview.error as Error).message}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => overview.refetch()}
+        >
+          Retry · reloads analytics
+        </button>
+      </div>
+    );
+  }
+
   const s = overview.data?.summary;
+  const bySurface = overview.data?.bySurface ?? [];
+  const byModel = overview.data?.byModel ?? [];
+  const daily = overview.data?.daily ?? [];
+  const totalCost = s?.totalCost ?? 0;
+  const maxRuns = Math.max(...daily.map((d) => d.runs), 1);
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
-        <select
-          value={days}
-          onChange={(e) => setDays(Number(e.target.value))}
-          className="rounded-lg border hairline bg-background/60 text-sm px-3 py-2"
+      <SubTabs tabs={RANGES.map((r) => r.id)} active={range} onSet={setRange} />
+
+      {overview.isLoading ? (
+        <div
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "32px 0",
+            textAlign: "center",
+          }}
         >
-          <option value={1}>24 hours</option>
-          <option value={7}>7 days</option>
-          <option value={30}>30 days</option>
-          <option value={90}>90 days</option>
-        </select>
-      </div>
-
-      <div className="flex gap-1 mb-6 border-b hairline">
-        {[
-          { id: "overview", label: "Overview" },
-          { id: "surface", label: "By surface" },
-          { id: "model", label: "By model" },
-          { id: "runs", label: "Runs" },
-          { id: "guardrails", label: "Guardrails" },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id as never)}
-            className={`px-3 py-2 text-xs border-b-2 -mb-px ${tab === t.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "overview" && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Kpi icon={Zap} label="Runs" value={fmtNum(s?.totalRuns ?? 0)} />
-          <Kpi
-            icon={AlertTriangle}
-            label="Errors"
-            value={String(s?.errors ?? 0)}
-            tone={(s?.errors ?? 0) > 0 ? "warn" : "ok"}
-          />
-          <Kpi icon={Gauge} label="Avg latency" value={`${s?.avgLatency ?? 0} ms`} />
-          <Kpi icon={Clock} label="p95 latency" value={`${s?.p95Latency ?? 0} ms`} />
-          <Kpi icon={DollarSign} label="Spend" value={fmtUsd(s?.totalCost ?? 0)} />
-          <Kpi icon={Activity} label="Tokens" value={fmtNum(s?.totalTokens ?? 0)} />
-
-          <section className="bento p-5 col-span-full">
-            <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">
-              Daily activity
+          Loading analytics…
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div className="bento">
+            <MonoLabel style={{ marginBottom: 6 }}>Spend · {range}</MonoLabel>
+            <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
+              {fmtUsd(totalCost)}
             </div>
-            <DailyBars data={overview.data?.daily ?? []} />
-          </section>
-        </div>
-      )}
-
-      {tab === "surface" && (
-        <div className="bento p-4">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="text-left">
-                <th className="py-2 pr-4">Surface</th>
-                <th>Runs</th>
-                <th>Errors</th>
-                <th>Tokens</th>
-                <th>Spend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(overview.data?.bySurface ?? []).map((r) => (
-                <tr key={r.surface} className="border-t hairline">
-                  <td className="py-2 pr-4 font-medium">{r.surface}</td>
-                  <td>{r.runs}</td>
-                  <td className={r.errors > 0 ? "text-amber-300" : ""}>{r.errors}</td>
-                  <td>{fmtNum(r.tokens)}</td>
-                  <td>{fmtUsd(r.cost)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === "model" && (
-        <div className="bento p-4">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="text-left">
-                <th className="py-2 pr-4">Model</th>
-                <th>Runs</th>
-                <th>Tokens</th>
-                <th>Spend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(overview.data?.byModel ?? []).map((r) => (
-                <tr key={r.model} className="border-t hairline">
-                  <td className="py-2 pr-4 font-mono text-xs">{r.model}</td>
-                  <td>{r.runs}</td>
-                  <td>{fmtNum(r.tokens)}</td>
-                  <td>{fmtUsd(r.cost)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === "runs" && (
-        <div className="bento divide-y divide-border">
-          {(events.data?.events ?? []).map((e) => (
-            <button
-              key={e.id}
-              onClick={() => setOpenId(e.id)}
-              className="w-full text-left p-3 flex items-center gap-3 hover:bg-secondary/30"
-            >
-              <span
-                className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${e.status === "ok" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-300"}`}
-              >
-                {e.status}
-              </span>
-              <span className="text-[11px] text-muted-foreground w-20 shrink-0">{e.surface}</span>
-              <span className="font-mono text-[11px] text-muted-foreground truncate flex-1">
-                {(e.input_preview ?? "").slice(0, 100)}
-              </span>
-              <span className="text-[11px] text-muted-foreground">{e.total_tokens}t</span>
-              <span className="text-[11px] text-muted-foreground">{e.latency_ms}ms</span>
-              <span className="text-[11px]">{fmtUsd(Number(e.est_cost_usd))}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          ))}
-          {events.isLoading && <div className="p-4 text-sm text-muted-foreground">Loading…</div>}
-          {!events.isLoading && (events.data?.events ?? []).length === 0 && (
-            <div className="p-6 text-sm text-muted-foreground text-center">
-              No AI events yet. Run an agent or chat first.
+            <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
+              {s?.totalRuns ?? 0} runs
+              {(s?.errors ?? 0) > 0 ? (
+                <span style={{ color: "var(--rose)" }}> · {s!.errors} errors</span>
+              ) : null}
             </div>
-          )}
-        </div>
-      )}
-
-      {tab === "guardrails" && (
-        <div className="bento p-4">
-          <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3 flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5" /> Last 30 days
           </div>
-          {(guards.data?.hits ?? []).length === 0 && (
-            <div className="text-sm text-muted-foreground">
-              No guardrail hits. Inputs and outputs have been clean.
+          <div className="bento">
+            <MonoLabel style={{ marginBottom: 6 }}>Tokens · {range}</MonoLabel>
+            <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
+              {fmtNum(s?.totalTokens ?? 0)}
             </div>
-          )}
-          <ul className="space-y-2">
-            {(guards.data?.hits ?? []).map((h, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm">
-                <span
-                  className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${h.action === "block" ? "bg-rose-500/10 text-rose-300" : h.action === "redact" ? "bg-amber-500/10 text-amber-300" : "bg-cyan-500/10 text-cyan-300"}`}
-                >
-                  {h.action}
-                </span>
-                <span className="flex-1">{h.name}</span>
-                <span className="text-muted-foreground">{h.count}×</span>
-              </li>
-            ))}
-          </ul>
+            <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>in + out</div>
+          </div>
+          <div className="bento">
+            <MonoLabel style={{ marginBottom: 6 }}>Avg latency</MonoLabel>
+            <div className="font-display tabular-nums" style={{ fontSize: 26 }}>
+              {fmtMs(s?.avgLatency ?? 0)}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
+              p95 {fmtMs(s?.p95Latency ?? 0)}
+            </div>
+          </div>
+
+          <div className="bento" style={{ gridColumn: "span 3" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 12,
+              }}
+            >
+              <MonoLabel>Spend by surface · {range}</MonoLabel>
+              <span className="mono-label" style={{ fontSize: 8.5 }}>
+                every AI call rolls up here
+              </span>
+            </div>
+            {bySurface.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+                No AI calls in this window yet.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {bySurface.map((x) => {
+                  const pct = totalCost > 0 ? (x.cost / totalCost) * 100 : 0;
+                  return (
+                    <div
+                      key={x.surface}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "6px 8px",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <span className="mono-label" style={{ width: 90, color: "var(--ink)" }}>
+                        {x.surface}
+                      </span>
+                      <span
+                        style={{
+                          flex: 1,
+                          height: 5,
+                          borderRadius: 99,
+                          background: "var(--surface-2)",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "block",
+                            height: "100%",
+                            width: `${pct}%`,
+                            background: "var(--ember)",
+                            opacity: 0.85,
+                          }}
+                        ></span>
+                      </span>
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ width: 56, textAlign: "right", color: "var(--ink)" }}
+                      >
+                        {fmtUsd(x.cost)}
+                      </span>
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ width: 64, textAlign: "right", color: "var(--ink-faint)" }}
+                      >
+                        {x.runs} runs
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {daily.length > 0 ? (
+            <div className="bento" style={{ gridColumn: "span 3" }}>
+              <MonoLabel style={{ marginBottom: 12 }}>Daily activity · runs</MonoLabel>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 96 }}>
+                {daily.map((d) => (
+                  <div
+                    key={d.day}
+                    title={`${d.runs} runs · ${fmtUsd(d.cost)}`}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                      height: "100%",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        borderRadius: "3px 3px 0 0",
+                        background: "var(--ember)",
+                        opacity: 0.85,
+                        height: `${Math.max(2, (d.runs / maxRuns) * 100)}%`,
+                      }}
+                    />
+                    <span className="mono-label tabular-nums" style={{ fontSize: 8 }}>
+                      {d.day.slice(5)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
+
+      <div style={{ marginTop: 18 }}>
+        <SubTabs tabs={["Models", "Runs", "Guardrails"]} active={section} onSet={setSection} />
+
+        {section === "Models" ? (
+          <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+            <div
+              className="mono-label"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 70px 80px 80px",
+                gap: 12,
+                padding: "10px 18px",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <span>Model</span>
+              <span>Runs</span>
+              <span>Tokens</span>
+              <span>Spend</span>
+            </div>
+            {byModel.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)", padding: "14px 18px" }}>
+                No AI calls in this window yet.
+              </p>
+            ) : (
+              byModel.map((r, i) => (
+                <div
+                  key={r.model}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 70px 80px 80px",
+                    gap: 12,
+                    padding: "12px 18px",
+                    alignItems: "baseline",
+                    borderBottom: i < byModel.length - 1 ? "1px solid var(--hairline)" : "none",
+                    fontSize: 13,
+                  }}
+                >
+                  <span className="mono-label" style={{ color: "var(--ink)" }}>
+                    {r.model}
+                  </span>
+                  <span className="tabular-nums" style={{ color: "var(--ink-muted)" }}>
+                    {r.runs}
+                  </span>
+                  <span className="mono-label tabular-nums">{fmtNum(r.tokens)}</span>
+                  <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
+                    {fmtUsd(r.cost)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        ) : section === "Runs" ? (
+          <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+            {events.isLoading ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-faint)", padding: "14px 18px" }}>
+                Loading runs…
+              </p>
+            ) : (events.data?.events ?? []).length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)", padding: "14px 18px" }}>
+                No AI events yet. Run an agent or a chat first.
+              </p>
+            ) : (
+              (events.data?.events ?? []).map((e, i, arr) => (
+                <button
+                  key={e.id}
+                  onClick={() => setOpenId(e.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "11px 18px",
+                    width: "100%",
+                    textAlign: "left",
+                    borderBottom: i < arr.length - 1 ? "1px solid var(--hairline)" : "none",
+                    fontSize: 12.5,
+                  }}
+                >
+                  <VerdictChip tone={e.status === "ok" ? "moss" : "madder"}>
+                    {e.status === "ok" ? "ok" : "failed"}
+                  </VerdictChip>
+                  <span className="mono-label" style={{ width: 80, flexShrink: 0 }}>
+                    {e.surface}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      color: "var(--ink-muted)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {(e.input_preview ?? "").slice(0, 100)}
+                  </span>
+                  <span className="mono-label tabular-nums">{fmtNum(e.total_tokens)}</span>
+                  <span className="mono-label tabular-nums">{fmtMs(e.latency_ms)}</span>
+                  <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
+                    {fmtUsd(Number(e.est_cost_usd))}
+                  </span>
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 8.5, color: "var(--action-blue)" }}
+                  >
+                    detail →
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="bento" style={{ padding: "var(--card-pad)" }}>
+            <MonoLabel style={{ marginBottom: 10 }}>Guardrail hits · last 30 days</MonoLabel>
+            {guards.isLoading ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>Loading guardrail hits…</p>
+            ) : (guards.data?.hits ?? []).length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>
+                No guardrail hits. Inputs and outputs have been clean.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {(guards.data?.hits ?? []).map((h, i, arr) => (
+                  <div
+                    key={`${h.name}-${h.action}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "8px 0",
+                      borderBottom: i < arr.length - 1 ? "1px solid var(--hairline)" : "none",
+                      fontSize: 13,
+                    }}
+                  >
+                    <span
+                      className="mono-label"
+                      style={{
+                        fontSize: 8.5,
+                        color: h.action === "block" ? "var(--rose)" : "var(--ember)",
+                      }}
+                    >
+                      {h.action}
+                    </span>
+                    <span style={{ flex: 1, color: "var(--ink-muted)" }}>{h.name}</span>
+                    <span className="mono-label tabular-nums">{h.count}×</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {openId && (
         <Drawer onClose={() => setOpenId(null)}>
           {detail.isLoading || !detail.data ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>Loading event…</div>
           ) : (
-            <EventDetail data={detail.data} />
+            <EventDetail data={detail.data as EventDetailData} />
           )}
         </Drawer>
       )}
@@ -245,62 +458,37 @@ export function AnalyticsPanel() {
   );
 }
 
-function Kpi({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-  tone?: "ok" | "warn";
-}) {
-  return (
-    <div className="bento p-4">
-      <div className="flex items-center justify-between text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        <div className="text-[10px] uppercase tracking-[0.14em]">{label}</div>
-      </div>
-      <div className={`mt-2 font-display text-2xl ${tone === "warn" ? "text-amber-300" : ""}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function DailyBars({ data }: { data: { day: string; runs: number; cost: number }[] }) {
-  if (data.length === 0)
-    return <div className="text-sm text-muted-foreground">No activity yet.</div>;
-  const max = Math.max(...data.map((d) => d.runs), 1);
-  return (
-    <div className="flex items-end gap-2 h-32">
-      {data.map((d) => (
-        <div key={d.day} className="flex-1 flex flex-col items-center gap-1 group">
-          <div className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
-            {d.runs}
-          </div>
-          <div
-            className="w-full rounded-t bg-gradient-to-t from-violet-500/40 to-cyan-400/60"
-            style={{ height: `${(d.runs / max) * 100}%` }}
-          />
-          <div className="text-[10px] text-muted-foreground">{d.day.slice(5)}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
+/* Event-detail drawer — production's existing AI-event drill-down, restyled
+   quiet-Ember (canvas panel, hairline edge). */
 function Drawer({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
-      <aside className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-background border-l hairline z-50 overflow-auto p-6">
+      <div
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 40 }}
+        onClick={onClose}
+      />
+      <aside
+        className="fade-up"
+        style={{
+          position: "fixed",
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: "100%",
+          maxWidth: 560,
+          background: "var(--canvas)",
+          borderLeft: "1px solid var(--hairline)",
+          zIndex: 50,
+          overflow: "auto",
+          padding: 24,
+        }}
+      >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          aria-label="Close"
+          style={{ position: "absolute", right: 16, top: 16, color: "var(--ink-subtle)" }}
         >
-          <X className="h-4 w-4" />
+          <X size={14} />
         </button>
         {children}
       </aside>
@@ -340,100 +528,156 @@ type EventDetailData = {
 
 function EventDetail({ data }: { data: EventDetailData }) {
   const e = data.event;
-  if (!e) return <div>Event not found.</div>;
+  if (!e) return <div style={{ fontSize: 12.5, color: "var(--ink-subtle)" }}>Event not found.</div>;
   const ev = data.eval;
   return (
-    <div className="space-y-5">
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">AI event</div>
-        <div className="mt-1 font-display text-lg">
-          {e.surface} · <span className="font-mono text-sm">{e.model}</span>
+        <MonoLabel>AI event · via {e.via}</MonoLabel>
+        <div className="font-display" style={{ fontSize: 19, marginTop: 4 }}>
+          {e.surface}
         </div>
-        <div className="text-xs text-muted-foreground mt-1">
-          {new Date(e.created_at).toLocaleString()} · via {e.via}
+        <div className="mono-label" style={{ marginTop: 4, color: "var(--ink-subtle)" }}>
+          {e.model} · {relTime(e.created_at)}
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 text-xs">
-        <Stat label="Tokens" value={`${e.prompt_tokens}/${e.completion_tokens}`} />
-        <Stat label="Latency" value={`${e.latency_ms}ms`} />
-        <Stat label="Cost" value={fmtUsd(Number(e.est_cost_usd))} />
-        <Stat label="Status" value={e.status} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+        {(
+          [
+            ["Tokens", `${e.prompt_tokens}/${e.completion_tokens}`],
+            ["Latency", fmtMs(e.latency_ms)],
+            ["Cost", fmtUsd(Number(e.est_cost_usd))],
+            ["Status", e.status],
+          ] as [string, string][]
+        ).map(([l, v]) => (
+          <div key={l} className="bento" style={{ padding: "10px 12px", textAlign: "center" }}>
+            <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 4 }}>
+              {l}
+            </div>
+            <div className="tabular-nums" style={{ fontSize: 13 }}>
+              {v}
+            </div>
+          </div>
+        ))}
       </div>
 
       {ev && (
-        <div className="bento p-4 space-y-2">
-          <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-            Quality scores
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <Score label="Hallucination" v={ev.hallucination_score} invert />
-            <Score label="Groundedness" v={ev.groundedness} />
-            <Score label="Relevance" v={ev.relevance} />
-            <Score label="Coherence" v={ev.coherence} />
-            <Score label="Toxicity" v={ev.toxicity} invert />
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 10 }}>Judge scores</MonoLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {(
+              [
+                ["Hallucination", ev.hallucination_score],
+                ["Groundedness", ev.groundedness],
+                ["Relevance", ev.relevance],
+                ["Coherence", ev.coherence],
+                ["Toxicity", ev.toxicity],
+              ] as [string, number | null][]
+            ).map(([l, v]) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div className="mono-label" style={{ fontSize: 8.5 }}>
+                  {l}
+                </div>
+                <div className="font-display tabular-nums" style={{ fontSize: 16, marginTop: 2 }}>
+                  {v == null ? "—" : `${(v * 100).toFixed(0)}%`}
+                </div>
+              </div>
+            ))}
           </div>
           {ev.judge_rationale && (
-            <div className="text-xs text-muted-foreground italic pt-2 border-t hairline">
+            <p
+              style={{
+                fontSize: 12.5,
+                color: "var(--ink-subtle)",
+                marginTop: 10,
+                paddingTop: 10,
+                borderTop: "1px solid var(--hairline)",
+                lineHeight: 1.5,
+              }}
+            >
               {ev.judge_rationale}
-            </div>
+            </p>
           )}
         </div>
       )}
 
       {data.guardrailHits.length > 0 && (
-        <div className="bento p-4 space-y-2">
-          <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-            Guardrails
-          </div>
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 8 }}>Guardrails</MonoLabel>
           {data.guardrailHits.map((h, i) => (
-            <div key={i} className="text-xs flex gap-2">
-              <span className="uppercase">{h.action}</span>
-              <span>{h.rule_name}</span>
-              <span className="text-muted-foreground">({h.side})</span>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: 8,
+                fontSize: 12.5,
+                padding: "3px 0",
+                alignItems: "baseline",
+              }}
+            >
+              <span
+                className="mono-label"
+                style={{
+                  fontSize: 8.5,
+                  color: h.action === "block" ? "var(--rose)" : "var(--ember)",
+                }}
+              >
+                {h.action}
+              </span>
+              <span style={{ color: "var(--ink-muted)" }}>{h.rule_name}</span>
+              <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                {h.side}
+              </span>
             </div>
           ))}
         </div>
       )}
 
-      <div className="bento p-4">
-        <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Input</div>
-        <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        <MonoLabel style={{ marginBottom: 8 }}>Input</MonoLabel>
+        <pre
+          style={{
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            whiteSpace: "pre-wrap",
+            color: "var(--ink-muted)",
+            lineHeight: 1.5,
+          }}
+        >
           {e.input_preview ?? "(empty)"}
         </pre>
       </div>
-      <div className="bento p-4">
-        <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Output</div>
-        <pre className="text-xs whitespace-pre-wrap font-mono">{e.output_preview ?? "(empty)"}</pre>
+      <div className="bento" style={{ padding: "var(--card-pad)" }}>
+        <MonoLabel style={{ marginBottom: 8 }}>Output</MonoLabel>
+        <pre
+          style={{
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            whiteSpace: "pre-wrap",
+            color: "var(--ink)",
+            lineHeight: 1.5,
+          }}
+        >
+          {e.output_preview ?? "(empty)"}
+        </pre>
       </div>
       {e.error_message && (
-        <div className="bento p-4 border border-rose-500/30">
-          <div className="text-xs uppercase tracking-[0.14em] text-rose-300 mb-2">Error</div>
-          <pre className="text-xs whitespace-pre-wrap font-mono text-rose-200">
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 8, color: "var(--rose)" }}>Error</MonoLabel>
+          <pre
+            style={{
+              fontSize: 11,
+              fontFamily: "var(--font-mono)",
+              whiteSpace: "pre-wrap",
+              color: "var(--rose)",
+              lineHeight: 1.5,
+            }}
+          >
             {e.error_message}
           </pre>
         </div>
       )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bento p-2 text-center">
-      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className="text-sm mt-1">{value}</div>
-    </div>
-  );
-}
-function Score({ label, v, invert }: { label: string; v: number | null; invert?: boolean }) {
-  const display = invert && v != null ? 1 - v : v;
-  return (
-    <div className="text-center">
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
-      <div className={`text-sm mt-1 ${scoreColor(display)}`}>
-        {v == null ? "—" : (v * 100).toFixed(0) + "%"}
-      </div>
     </div>
   );
 }

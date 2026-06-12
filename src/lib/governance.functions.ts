@@ -4,6 +4,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { executeApproval, type Json } from "@/lib/ai/loop.server";
 
@@ -166,6 +167,116 @@ const ResolveApprovalSchema = z.object({
   approvalId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
 });
+
+/* ————— Ember Editorial (screen 5 · Govern) — additive exports only ————— */
+
+/**
+ * Mission concurrency cap. Mirrors MAX_RUNNING_PER_WORKSPACE in
+ * src/lib/ai/loop.server.ts (not exported there — keep the two in sync).
+ * When the workspace is at capacity, new goals land as status 'queued'.
+ */
+export const MISSION_CONCURRENCY_CAP = 5;
+
+/**
+ * Approvals queue for the Govern surface, enriched for the reference
+ * ApprovalCard: mission title (for "in {mission}" + the Mission ↗ link),
+ * a risk grade, and the real median human response time.
+ *
+ * Risk grade = the oversight mode the user configured for the tool in
+ * agent_tools — production's own vocabulary (loop.server.ts names its
+ * force-review set "HIGH_RISK"): review → high · confirm → medium ·
+ * auto → low. No invented numbers; absent tools default to medium, the
+ * loop's own default mode.
+ */
+export const listGovernApprovals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    // mission_id postdates the generated Supabase types — untyped client +
+    // explicit row casts, the studio.functions.ts precedent.
+    const db = supabase as unknown as SupabaseClient;
+    type ApprovalRow = {
+      id: string;
+      agent_slug: string | null;
+      tool_name: string;
+      args: Json;
+      rationale: string | null;
+      status: string;
+      escalation_state: string | null;
+      expires_at: string | null;
+      created_at: string;
+      decided_at: string | null;
+      error: string | null;
+      mission_id: string | null;
+    };
+    // Pre-migration tolerant (the api/chat.ts precedent): mission_id lands
+    // with 20260612100000 via the Lovable sync; until it applies, retry the
+    // select without the column so the queue still renders.
+    const baseColumns =
+      "id,agent_slug,tool_name,args,rationale,status,escalation_state,expires_at,created_at,decided_at,error";
+    let rows: Partial<ApprovalRow>[] | null = null;
+    let error: { message: string } | null = null;
+    ({ data: rows, error } = await db
+      .from("agent_approvals")
+      .select(`${baseColumns},mission_id`)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50));
+    if (error && /mission_id/.test(error.message)) {
+      ({ data: rows, error } = await db
+        .from("agent_approvals")
+        .select(baseColumns)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50));
+    }
+    if (error) throw new Error(error.message);
+    const approvals = (rows ?? []).map((a) => ({
+      ...a,
+      mission_id: a.mission_id ?? null,
+    })) as ApprovalRow[];
+
+    const missionIds = [
+      ...new Set(approvals.map((a) => a.mission_id).filter((id): id is string => Boolean(id))),
+    ];
+    const toolNames = [...new Set(approvals.map((a) => a.tool_name))];
+    const [missions, tools] = await Promise.all([
+      missionIds.length
+        ? supabase.from("missions").select("id,title").in("id", missionIds)
+        : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+      toolNames.length
+        ? supabase
+            .from("agent_tools")
+            .select("tool_name,mode")
+            .eq("user_id", userId)
+            .in("tool_name", toolNames)
+        : Promise.resolve({ data: [] as { tool_name: string; mode: string }[] }),
+    ]);
+    const titleOf = new Map((missions.data ?? []).map((m) => [m.id, m.title]));
+    const riskOf = new Map(
+      (tools.data ?? []).map((t) => [
+        t.tool_name,
+        t.mode === "review" ? "high" : t.mode === "auto" ? "low" : "medium",
+      ]),
+    );
+
+    // Median human response time across decided approvals — real timestamps only.
+    const waits = approvals
+      .filter((a) => a.decided_at)
+      .map((a) => new Date(a.decided_at as string).getTime() - new Date(a.created_at).getTime())
+      .filter((ms) => Number.isFinite(ms) && ms >= 0)
+      .sort((x, y) => x - y);
+    const medianResponseMs = waits.length ? waits[Math.floor(waits.length / 2)] : null;
+
+    return {
+      approvals: approvals.map((a) => ({
+        ...a,
+        mission_title: a.mission_id ? (titleOf.get(a.mission_id) ?? null) : null,
+        risk: riskOf.get(a.tool_name) ?? "medium",
+      })),
+      medianResponseMs,
+    };
+  });
 
 /**
  * Resolve a pending approval. Approving also EXECUTES the tool — same
