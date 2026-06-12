@@ -1,239 +1,212 @@
-import { Bot, CheckCircle2, Loader2, AlertTriangle, GitBranch } from "lucide-react";
+// MissionGraph — the agent mesh as a live DAG, ported 1:1 from
+// design-reference/cadence/missions.jsx MissionGraphView (Ember Editorial,
+// screen 4b). The orchestrator hub dispatches to specialist nodes (dashed
+// curves); sequential edges show the handoff chain. This replaces the old
+// depth-bucketed DAG; the export name stays stable for its single call site
+// (_authenticated.missions.$missionId.tsx), but the contract is now the
+// reference's: a flat list of plan steps in the reference status vocabulary.
+import { useState } from "react";
+import { StatusBadge } from "@/components/cadence/Primitives";
 
-type Hop = {
-  run_id: string;
-  agent_slug: string;
-  agent_name: string;
+export type MissionGraphStep = {
+  agent: string;
+  goal: string;
+  /** Reference vocabulary: completed | running | gate | failed | planned. */
   status: string;
-  created_at: string;
-  last_checkpoint_at: string | null;
+  note?: string | null;
 };
 
-type Message = {
-  id: string;
-  from_agent_slug: string | null;
-  to_agent_slug: string;
-  kind: string;
-  source_run_id: string | null;
-  consumed_by_run_id: string | null;
-  payload: unknown;
-};
-
-type Props = {
-  hops: Hop[];
-  messages: Message[];
-  onSelectHop: (runId: string) => void;
-};
-
-function nodeTone(s: string): string {
-  if (s === "completed") return "fill-emerald-500/15 stroke-emerald-400/50 text-emerald-200";
-  if (s === "running") return "fill-cyan-500/15 stroke-cyan-400/60 text-cyan-200";
-  if (s === "queued") return "fill-amber-500/15 stroke-amber-400/50 text-amber-200";
-  if (s === "failed" || s === "halted") return "fill-rose-500/15 stroke-rose-400/60 text-rose-200";
-  return "fill-muted stroke-border text-muted-foreground";
-}
-
-function StatusGlyph({ s, x, y }: { s: string; x: number; y: number }) {
-  const props = { x: x - 7, y: y - 7, width: 14, height: 14 } as const;
-  if (s === "completed") return <CheckCircle2 {...props} className="text-emerald-300" />;
-  if (s === "running") return <Loader2 {...props} className="text-cyan-300 animate-spin" />;
-  if (s === "queued") return <Loader2 {...props} className="text-amber-300" />;
-  if (s === "failed" || s === "halted")
-    return <AlertTriangle {...props} className="text-rose-300" />;
-  return <Bot {...props} className="text-muted-foreground" />;
-}
-
-/**
- * Lightweight in-house DAG. Layout:
- *  - Column = depth from a root hop (a hop with no inbound consumed handoff).
- *  - Row within column = chronological order (created_at).
- *  - Edges = agent_messages, source_run → consumed_by_run (fallback: next hop targeting `to_agent_slug`).
- */
-export function MissionGraph({ hops, messages, onSelectHop }: Props) {
-  if (hops.length === 0) return null;
-
-  // Resolve target run for each message (fallback: earliest later hop matching to_agent_slug).
-  const sortedHops = [...hops].sort((a, b) => a.created_at.localeCompare(b.created_at));
-  const hopIndex = new Map(sortedHops.map((h, i) => [h.run_id, i]));
-  const resolvedEdges: { from: string; to: string; kind: string; id: string }[] = [];
-  for (const m of messages) {
-    if (!m.source_run_id) continue;
-    let targetId = m.consumed_by_run_id;
-    if (!targetId) {
-      const srcIdx = hopIndex.get(m.source_run_id) ?? -1;
-      const next = sortedHops.find((h, i) => i > srcIdx && h.agent_slug === m.to_agent_slug);
-      targetId = next?.run_id ?? null;
-    }
-    if (targetId && hopIndex.has(targetId)) {
-      resolvedEdges.push({ from: m.source_run_id, to: targetId, kind: m.kind, id: m.id });
-    }
-  }
-
-  // Compute depth per node (BFS from roots).
-  const parents = new Map<string, string>();
-  for (const e of resolvedEdges) parents.set(e.to, e.from);
-  const depth = new Map<string, number>();
-  function computeDepth(runId: string): number {
-    if (depth.has(runId)) return depth.get(runId)!;
-    const p = parents.get(runId);
-    const d = p ? computeDepth(p) + 1 : 0;
-    depth.set(runId, d);
-    return d;
-  }
-  for (const h of sortedHops) computeDepth(h.run_id);
-
-  // Bucket by column, then sort each column by created_at for stable row index.
-  const columns = new Map<number, Hop[]>();
-  for (const h of sortedHops) {
-    const c = depth.get(h.run_id) ?? 0;
-    const bucket = columns.get(c) ?? [];
-    bucket.push(h);
-    columns.set(c, bucket);
-  }
-  for (const arr of columns.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
-
-  const colCount = Math.max(...columns.keys()) + 1;
-  const rowCount = Math.max(...[...columns.values()].map((c) => c.length));
-  const COL_W = 200;
-  const ROW_H = 90;
-  const PAD_X = 24;
-  const PAD_Y = 24;
-  const NODE_W = 160;
-  const NODE_H = 56;
-  const width = colCount * COL_W + PAD_X * 2;
-  const height = rowCount * ROW_H + PAD_Y * 2;
-
-  const pos = new Map<string, { x: number; y: number }>();
-  for (const [col, arr] of columns) {
-    arr.forEach((h, row) => {
-      pos.set(h.run_id, {
-        x: PAD_X + col * COL_W + NODE_W / 2,
-        y: PAD_Y + row * ROW_H + NODE_H / 2,
-      });
-    });
-  }
-
+export function MissionGraph({ steps }: { steps: MissionGraphStep[] }) {
+  const [selStep, setSelStep] = useState<number | null>(null);
+  const onSelect = (i: number | null) => setSelStep(i);
+  const NW = 138,
+    NH = 54,
+    GAP = 26;
+  const width = Math.max(560, steps.length * (NW + GAP) + 20);
+  const hubX = width / 2,
+    hubY = 34;
+  const nodeY = 118;
+  const color = (st: string) =>
+    st === "completed"
+      ? "var(--emerald)"
+      : st === "running"
+        ? "var(--action-blue)"
+        : st === "gate"
+          ? "var(--ember)"
+          : st === "failed"
+            ? "var(--rose)"
+            : "var(--ink-faint)";
+  const sel = selStep == null ? null : steps[selStep];
   return (
-    <div className="bento p-4">
-      <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-3 flex items-center gap-2">
-        <GitBranch className="h-3 w-3 text-violet-300" /> Mission graph
-        <span className="text-muted-foreground/70 normal-case tracking-normal">
-          · {hops.length} node{hops.length === 1 ? "" : "s"} · {resolvedEdges.length} edge
-          {resolvedEdges.length === 1 ? "" : "s"}
-        </span>
-      </div>
-      <div className="overflow-x-auto">
+    <div>
+      <div className="scrollbar-thin" style={{ overflowX: "auto" }}>
         <svg
           width={width}
-          height={height}
-          className="block"
-          role="img"
-          aria-label="Mission agent graph"
+          height={200}
+          style={{ display: "block", minWidth: "100%" }}
+          role="group"
+          aria-label="Mission execution graph"
         >
-          {/* Edges */}
-          {resolvedEdges.map((e) => {
-            const a = pos.get(e.from);
-            const b = pos.get(e.to);
-            if (!a || !b) return null;
-            const x1 = a.x + NODE_W / 2;
-            const y1 = a.y;
-            const x2 = b.x - NODE_W / 2;
-            const y2 = b.y;
-            const mx = (x1 + x2) / 2;
-            const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+          {/* dispatch edges (hub → node), dashed */}
+          {steps.map((s, i) => {
+            const nx = 10 + i * (NW + GAP) + NW / 2;
             return (
-              <g key={e.id} aria-label={`handoff ${e.kind}`}>
+              <path
+                key={"d" + i}
+                d={`M ${hubX} ${hubY + 16} C ${hubX} ${hubY + 50}, ${nx} ${nodeY - 40}, ${nx} ${nodeY - 6}`}
+                fill="none"
+                stroke="var(--hairline-strong)"
+                strokeWidth="1"
+                strokeDasharray="3 4"
+                opacity="0.7"
+              ></path>
+            );
+          })}
+          {/* sequential edges */}
+          {steps.slice(0, -1).map((s, i) => {
+            const x1 = 10 + i * (NW + GAP) + NW,
+              x2 = x1 + GAP;
+            const done = s.status === "completed";
+            return (
+              <g key={"e" + i}>
+                <line
+                  x1={x1}
+                  y1={nodeY + NH / 2}
+                  x2={x2}
+                  y2={nodeY + NH / 2}
+                  stroke={done ? "var(--emerald)" : "var(--hairline-strong)"}
+                  strokeWidth="1.4"
+                ></line>
                 <path
-                  d={d}
-                  className="fill-none stroke-violet-400/50"
-                  strokeWidth={1.5}
-                  markerEnd="url(#arrow)"
-                />
-                <text
-                  x={(x1 + x2) / 2}
-                  y={(y1 + y2) / 2 - 4}
-                  textAnchor="middle"
-                  className="fill-muted-foreground text-[9px] font-mono"
-                >
-                  {e.kind}
-                </text>
+                  d={`M ${x2 - 5} ${nodeY + NH / 2 - 3.5} L ${x2} ${nodeY + NH / 2} L ${x2 - 5} ${nodeY + NH / 2 + 3.5}`}
+                  fill="none"
+                  stroke={done ? "var(--emerald)" : "var(--hairline-strong)"}
+                  strokeWidth="1.4"
+                ></path>
               </g>
             );
           })}
-          <defs>
-            <marker
-              id="arrow"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
+          {/* orchestrator hub */}
+          <g>
+            <circle cx={hubX} cy={hubY} r="15" fill="var(--hero-bg)"></circle>
+            <circle cx={hubX} cy={hubY} r="4" fill="var(--ember)" className="gnode-live"></circle>
+            <text
+              x={hubX}
+              y={hubY - 22}
+              textAnchor="middle"
+              style={{
+                fill: "var(--ink-subtle)",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 8.5,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
             >
-              <path d="M 0 0 L 10 5 L 0 10 z" className="fill-violet-400/60" />
-            </marker>
-          </defs>
-
-          {/* Nodes */}
-          {sortedHops.map((h) => {
-            const p = pos.get(h.run_id);
-            if (!p) return null;
-            const tone = nodeTone(h.status);
+              orchestrator
+            </text>
+          </g>
+          {/* specialist nodes */}
+          {steps.map((s, i) => {
+            const x = 10 + i * (NW + GAP);
+            const active = selStep === i;
+            const c = color(s.status);
+            const liveNode = s.status === "running" || s.status === "gate";
             return (
               <g
-                key={h.run_id}
+                key={"n" + i}
                 role="button"
                 tabIndex={0}
-                aria-label={`${h.agent_name} — ${h.status}`}
-                className="cursor-pointer focus:outline-none"
-                onClick={() => onSelectHop(h.run_id)}
+                aria-label={`${s.agent} · ${s.status}`}
+                style={{ cursor: "pointer" }}
+                onClick={() => onSelect(active ? null : i)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onSelectHop(h.run_id);
+                    onSelect(active ? null : i);
                   }
                 }}
               >
                 <rect
-                  x={p.x - NODE_W / 2}
-                  y={p.y - NODE_H / 2}
-                  width={NODE_W}
-                  height={NODE_H}
-                  rx={10}
-                  className={`${tone} hover:stroke-2`}
-                  strokeWidth={1}
-                />
-                <StatusGlyph s={h.status} x={p.x - NODE_W / 2 + 14} y={p.y - NODE_H / 2 + 14} />
+                  x={x}
+                  y={nodeY}
+                  width={NW}
+                  height={NH}
+                  rx="10"
+                  fill={active ? "var(--surface-2)" : "var(--canvas)"}
+                  stroke={active ? "var(--hairline-strong)" : "var(--hairline)"}
+                  strokeWidth="1"
+                ></rect>
+                <rect x={x} y={nodeY} width="3" height={NH} rx="1.5" fill={c} opacity="0.9"></rect>
+                <circle
+                  cx={x + 16}
+                  cy={nodeY + 17}
+                  r="3.5"
+                  fill={c}
+                  className={liveNode ? "gnode-live" : undefined}
+                ></circle>
                 <text
-                  x={p.x - NODE_W / 2 + 28}
-                  y={p.y - NODE_H / 2 + 18}
-                  className="fill-foreground text-[11px] font-semibold"
+                  x={x + 26}
+                  y={nodeY + 21}
+                  style={{
+                    fill: "var(--agent)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    fontWeight: 600,
+                  }}
                 >
-                  {h.agent_name.length > 18 ? h.agent_name.slice(0, 17) + "…" : h.agent_name}
+                  {s.agent.length > 15 ? s.agent.slice(0, 14) + "…" : s.agent}
                 </text>
                 <text
-                  x={p.x - NODE_W / 2 + 12}
-                  y={p.y + NODE_H / 2 - 10}
-                  className="fill-muted-foreground text-[9px] font-mono"
+                  x={x + 13}
+                  y={nodeY + 40}
+                  style={{
+                    fill: "var(--ink-subtle)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 8,
+                  }}
                 >
-                  {h.agent_slug}
-                </text>
-                <text
-                  x={p.x + NODE_W / 2 - 12}
-                  y={p.y + NODE_H / 2 - 10}
-                  textAnchor="end"
-                  className="fill-muted-foreground text-[9px] tabular-nums"
-                >
-                  {h.status}
+                  {s.status}
                 </text>
               </g>
             );
           })}
         </svg>
       </div>
-      <div className="mt-2 text-[10px] text-muted-foreground">
-        Click a node to jump to that hop's card below.
-      </div>
+      {sel ? (
+        <div
+          className="fade-up"
+          style={{
+            marginTop: 10,
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "var(--surface-1)",
+            border: "1px solid var(--hairline)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className="mono-label" style={{ color: "var(--agent)" }}>
+              {sel.agent}
+            </span>
+            <StatusBadge status={sel.status} />
+            <span style={{ flex: 1 }}></span>
+            <button
+              className="mono-label"
+              style={{ fontSize: 8.5, color: "var(--ink-faint)" }}
+              onClick={() => onSelect(null)}
+            >
+              close
+            </button>
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-muted)", marginTop: 5 }}>{sel.goal}</div>
+          {sel.note ? (
+            <div style={{ fontSize: 11.5, color: "var(--rose)", marginTop: 3 }}>{sel.note}</div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mono-label" style={{ fontSize: 8.5, marginTop: 8 }}>
+          click a node for details · dashed = dispatch · solid = handoff
+        </div>
+      )}
     </div>
   );
 }

@@ -1214,6 +1214,15 @@
     animation: pulse-dot 1.6s ease-in-out infinite;
   }
 
+  /* Mission-graph live node — SVG status circles that are running/at-gate
+   * (screen 4b MissionGraphView). Reuses the dot pulse; fill-box keeps the
+   * scale transform centered on the circle instead of the SVG origin. */
+  .gnode-live {
+    animation: pulse-dot 1.6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
   /* AI-at-work glow — breathing orchid/ember halo on containers actively
    * thinking/executing. Never overpowering. */
   @keyframes aiGlow {

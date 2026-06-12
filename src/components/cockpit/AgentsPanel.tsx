@@ -1,9 +1,16 @@
-import { Link } from "@tanstack/react-router";
+// Agents tab — screen 4a of the Ember Editorial migration. Leads with the
+// reference agent card grid from design-reference/cadence/missions.jsx
+// (4-up bento: mono role kicker, serif name, StepDot, note line). Production
+// telemetry panels kept below per the hand-in-hand rule (the reference has
+// no equivalent): throughput strip, attention queue, missions table, handoff
+// feed, reactor firings — swept to Ember tokens, layout unchanged.
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Activity, ArrowRight, Bot, GitBranch, Inbox, ShieldAlert, Zap } from "lucide-react";
+import { ArrowRight, GitBranch, Inbox, ShieldAlert, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { MonoLabel, StatusBadge, StepDot } from "@/components/cadence/Primitives";
 import { getSwarmHud, type SwarmHud } from "@/lib/swarm.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { decideEventDispatch } from "@/lib/reactor.functions";
@@ -21,31 +28,47 @@ function relative(iso: string | null | undefined): string {
   return `${Math.round(abs / 86_400_000)}d ago`;
 }
 
-function runStatusTone(s: string | null): string {
-  if (!s) return "bg-muted text-muted-foreground border-border";
-  if (s === "running") return "bg-cyan-500/15 text-cyan-300 border-cyan-400/30";
-  if (s === "completed") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
-  if (s === "failed" || s === "halted") return "bg-rose-500/15 text-rose-300 border-rose-400/30";
-  if (s === "paused" || s === "queued") return "bg-amber-500/15 text-amber-300 border-amber-400/30";
-  return "bg-muted text-muted-foreground border-border";
+/** Production run/mission statuses → the reference's StatusBadge vocabulary. */
+function badgeStatus(s?: string | null): string {
+  if (s === "dispatched") return "running";
+  if (s === "done") return "completed";
+  if (s === "skipped") return "planned";
+  if (s === "halted" || s === "completed_with_failures") return "failed";
+  if (s === "paused") return "waiting";
+  return s ?? "idle";
 }
 
-function eventStatusTone(s: string): string {
-  if (s === "dispatched") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
-  if (s === "failed") return "bg-rose-500/15 text-rose-300 border-rose-400/30";
-  if (s === "skipped") return "bg-muted text-muted-foreground border-border";
-  return "bg-amber-500/15 text-amber-300 border-amber-400/30"; // pending
-}
-
-function arcLabel(arc: string | null): string {
-  if (!arc) return "—";
-  return arc.charAt(0).toUpperCase() + arc.slice(1);
-}
-
-function MonoLabel({ children }: { children: React.ReactNode }) {
+/* Quiet mono outline pill for production status vocab StatusBadge doesn't
+   carry (reactor: dispatched/pending/skipped). Same anatomy, token colors. */
+function QuietPill({ label, fg }: { label: string; fg: string }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{children}</div>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        fontFamily: "var(--font-mono)",
+        fontSize: 10,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        fontWeight: 600,
+        color: fg,
+        border: `1px solid color-mix(in oklab, ${fg} 35%, transparent)`,
+        borderRadius: 99,
+        padding: "2px 8px",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      {label}
+    </span>
   );
+}
+
+function eventToneColor(s: string): string {
+  if (s === "dispatched") return "var(--emerald)";
+  if (s === "failed") return "var(--rose)";
+  if (s === "skipped") return "var(--ink-faint)";
+  return "var(--saffron)"; // pending
 }
 
 export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string | null }) {
@@ -89,7 +112,14 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
 
   if (isLoading && !hud) {
     return (
-      <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-faint)",
+          padding: "48px 0",
+          textAlign: "center",
+        }}
+      >
         Loading swarm…
       </div>
     );
@@ -97,7 +127,16 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
 
   if (error) {
     return (
-      <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-sm text-destructive">
+      <div
+        style={{
+          padding: "14px 16px",
+          borderRadius: 10,
+          fontSize: 12.5,
+          color: "var(--rose)",
+          background: "color-mix(in oklab, var(--rose) 7%, transparent)",
+          border: "1px solid color-mix(in oklab, var(--rose) 35%, transparent)",
+        }}
+      >
         {(error as Error).message}
       </div>
     );
@@ -106,16 +145,28 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
   if (!hud) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between text-right text-[11px] text-muted-foreground tabular-nums">
-        <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* LEAD: the reference agent card grid. */}
+      <AgentCardGrid hud={hud} />
+
+      <div
+        className="tabular-nums"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          fontSize: 11.5,
+          color: "var(--ink-subtle)",
+        }}
+      >
+        <span>
           {liveAgents} agent{liveAgents === 1 ? "" : "s"} running · {hud.missions.length} mission
           {hud.missions.length === 1 ? "" : "s"} in flight
-        </div>
-        <div>Refreshed {relative(hud.generated_at)}</div>
+        </span>
+        <span>Refreshed {relative(hud.generated_at)}</span>
       </div>
 
-      {/* TOP STRIP: throughput · agents · attention */}
+      {/* TOP STRIP: throughput · attention */}
       <div className="grid grid-cols-12 gap-4">
         <ThroughputStrip hud={hud} />
         <AttentionQueue
@@ -128,8 +179,6 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
         />
       </div>
 
-      <AgentsGrid hud={hud} />
-
       <MissionsTable hud={hud} />
 
       <div className="grid grid-cols-12 gap-4">
@@ -140,45 +189,135 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
   );
 }
 
+/* The reference grid (missions.jsx Agents tab): repeat(4, 1fr), gap 12;
+   card = bento p16, role kicker + serif name left, StepDot right, note line.
+   Production: cards derive from the swarm HUD; a card with a live mission
+   navigates to it (the old grid's "Open mission" link, kept without chrome). */
+function AgentCardGrid({ hud }: { hud: SwarmHud }) {
+  const navigate = useNavigate();
+  if (hud.agents.length === 0) {
+    return <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>No agents configured yet.</p>;
+  }
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      {hud.agents.map((a) => {
+        const r = a.latest_run;
+        const dot =
+          r?.status === "running"
+            ? "running"
+            : r?.status === "awaiting_review" || r?.status === "paused"
+              ? "gate"
+              : "planned";
+        const note =
+          r?.status === "running"
+            ? r.input
+            : r
+              ? `idle · last run ${relative(r.last_checkpoint_at ?? r.created_at)}`
+              : "idle · ready";
+        const missionId = r?.mission_id ?? null;
+        const open = missionId
+          ? () => navigate({ to: "/missions/$missionId", params: { missionId } })
+          : undefined;
+        return (
+          <div
+            key={a.agent_id}
+            className="bento"
+            style={{ padding: 16, cursor: open ? "pointer" : undefined, minWidth: 0 }}
+            role={open ? "button" : undefined}
+            tabIndex={open ? 0 : undefined}
+            onClick={open}
+            onKeyDown={open ? (e) => e.key === "Enter" && open() : undefined}
+          >
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+            >
+              <div style={{ minWidth: 0 }}>
+                {/* Production roles can be sentence-long — truncate so the
+                    grid track never blows past the 980px container. */}
+                <div
+                  className="mono-label"
+                  title={a.role}
+                  style={{
+                    fontSize: 9,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {a.role}
+                  {a.trust_arc ? ` · ${a.trust_arc}` : ""}
+                </div>
+                <div className="font-display" style={{ fontSize: 17, marginTop: 2 }}>
+                  {a.name}
+                </div>
+              </div>
+              <StepDot status={dot} />
+            </div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "var(--ink-subtle)",
+                marginTop: 10,
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+              }}
+            >
+              {note}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ThroughputStrip({ hud }: { hud: SwarmHud }) {
   const t = hud.throughput;
   const max = Math.max(1, ...t.buckets.map((b) => b.runs));
   return (
-    <section className="col-span-12 lg:col-span-7 rounded-xl border border-border bg-background/40 p-4 space-y-3">
-      <div className="flex items-center justify-between">
+    <section
+      className="bento col-span-12 lg:col-span-7"
+      style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <MonoLabel>Throughput · last hour</MonoLabel>
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <ShieldAlert className="h-3 w-3" /> {hud.guardrail_hits_last_hour} guardrail hit
+        <span
+          className="mono-label"
+          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 9 }}
+        >
+          <ShieldAlert size={11} strokeWidth={1.75} /> {hud.guardrail_hits_last_hour} guardrail hit
           {hud.guardrail_hits_last_hour === 1 ? "" : "s"}
-        </div>
+        </span>
       </div>
-      <div className="flex items-end gap-6 tabular-nums">
-        <div>
-          <div className="text-2xl font-display">{t.total_runs}</div>
-          <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-1">
-            AI calls
+      <div className="tabular-nums" style={{ display: "flex", alignItems: "flex-end", gap: 24 }}>
+        {(
+          [
+            [String(t.total_runs), "AI calls"],
+            [`$${t.total_cost_usd.toFixed(4)}`, "Cost"],
+            [`${t.p50_latency_ms}ms`, "p50 latency"],
+          ] as const
+        ).map(([value, label]) => (
+          <div key={label}>
+            <div className="font-display" style={{ fontSize: 22 }}>
+              {value}
+            </div>
+            <div className="mono-label" style={{ fontSize: 9, marginTop: 4 }}>
+              {label}
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="text-2xl font-display">${t.total_cost_usd.toFixed(4)}</div>
-          <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-1">
-            Cost
-          </div>
-        </div>
-        <div>
-          <div className="text-2xl font-display">{t.p50_latency_ms}ms</div>
-          <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-1">
-            p50 latency
-          </div>
-        </div>
+        ))}
       </div>
-      <div className="flex items-end gap-[2px] h-12">
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 48 }}>
         {t.buckets.map((b, i) => (
           <div
             key={b.bucket_start}
             title={`${new Date(b.bucket_start).toLocaleTimeString()} · ${b.runs} runs · $${b.cost_usd.toFixed(4)} · ${b.p50_latency_ms}ms p50`}
-            className="flex-1 bg-foreground/70 rounded-sm"
             style={{
+              flex: 1,
+              borderRadius: 2,
+              background: "var(--ink-muted)",
               height: `${Math.max(2, (b.runs / max) * 100)}%`,
               opacity: 0.4 + 0.6 * (i / Math.max(1, t.buckets.length - 1)),
             }}
@@ -209,132 +348,145 @@ function AttentionQueue({
   );
   const empty = hud.approvals.length === 0 && pendingReactor.length === 0;
   return (
-    <section className="col-span-12 lg:col-span-5 rounded-xl border border-border bg-background/40 p-4 space-y-3">
+    <section
+      className="bento col-span-12 lg:col-span-5"
+      style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
+    >
       <MonoLabel>Attention queue</MonoLabel>
       {empty ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "32px 0",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
           Nothing waiting on you. Agents are at work.
         </p>
       ) : (
-        <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+        <div
+          className="scrollbar-thin"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            maxHeight: 260,
+            overflowY: "auto",
+            paddingRight: 4,
+          }}
+        >
           {hud.approvals.map((a) => (
-            <div key={a.id} className="border border-border rounded-md p-3 space-y-2">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                <span>
+            <div
+              key={a.id}
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 10,
+                padding: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <span className="mono-label" style={{ fontSize: 9, color: "var(--agent)" }}>
                   {a.agent_slug ?? "—"} · {a.tool_name}
                 </span>
-                <span>{relative(a.created_at)}</span>
+                <span className="mono-label" style={{ fontSize: 9 }}>
+                  {relative(a.created_at)}
+                </span>
               </div>
               {a.rationale ? (
-                <p className="text-xs leading-relaxed text-foreground/85">{a.rationale}</p>
+                <p style={{ fontSize: 12, lineHeight: 1.55, color: "var(--ink-muted)", margin: 0 }}>
+                  {a.rationale}
+                </p>
               ) : null}
-              <div className="flex items-center justify-end gap-2">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                }}
+              >
                 <button
                   onClick={() => onReject(a.id)}
                   disabled={actionPending}
-                  className="rounded-md border border-border px-2.5 py-1 text-[11px] hover:bg-secondary disabled:opacity-50"
+                  className="btn btn-reject btn-sm"
+                  style={{ opacity: actionPending ? 0.5 : 1 }}
                 >
-                  Reject
+                  Reject · nothing runs
                 </button>
                 <button
                   onClick={() => onApprove(a.id)}
                   disabled={actionPending}
-                  className="rounded-md bg-primary px-2.5 py-1 text-[11px] text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="btn btn-approve btn-sm"
+                  style={{ opacity: actionPending ? 0.5 : 1 }}
                 >
-                  Approve
+                  Approve · runs the tool
                 </button>
               </div>
             </div>
           ))}
           {pendingReactor.map((e) => (
-            <div key={e.id} className="border border-border rounded-md p-3 space-y-2">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Zap className="h-3 w-3" /> {e.event_type} → {e.target_agent_slug}
+            <div
+              key={e.id}
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 10,
+                padding: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <span
+                  className="mono-label"
+                  style={{ fontSize: 9, display: "flex", alignItems: "center", gap: 5 }}
+                >
+                  <Zap size={11} strokeWidth={1.75} /> {e.event_type} →{" "}
+                  <span style={{ color: "var(--agent)" }}>{e.target_agent_slug}</span>
                 </span>
-                <span>{relative(e.created_at)}</span>
+                <span className="mono-label" style={{ fontSize: 9 }}>
+                  {relative(e.created_at)}
+                </span>
               </div>
-              <p className="text-xs text-foreground/85">
+              <p style={{ fontSize: 12, color: "var(--ink-muted)", margin: 0 }}>
                 {(e.payload?.title as string) ?? "(no title)"}
               </p>
-              <div className="flex items-center justify-end gap-2">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                }}
+              >
                 <button
                   onClick={() => onSkip(e.id)}
                   disabled={actionPending}
-                  className="rounded-md border border-border px-2.5 py-1 text-[11px] hover:bg-secondary disabled:opacity-50"
+                  className="btn btn-reject btn-sm"
+                  style={{ opacity: actionPending ? 0.5 : 1 }}
                 >
-                  Skip
+                  Skip · nothing fires
                 </button>
                 <button
                   onClick={() => onDispatch(e.id)}
                   disabled={actionPending}
-                  className="rounded-md bg-primary px-2.5 py-1 text-[11px] text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="btn btn-approve btn-sm"
+                  style={{ opacity: actionPending ? 0.5 : 1 }}
                 >
-                  Dispatch
+                  Dispatch · agent takes the task
                 </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function AgentsGrid({ hud }: { hud: SwarmHud }) {
-  return (
-    <section className="space-y-3">
-      <MonoLabel>Agents</MonoLabel>
-      {hud.agents.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No agents configured yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {hud.agents.map((a) => {
-            const r = a.latest_run;
-            return (
-              <div
-                key={a.agent_id}
-                className="rounded-xl border border-border bg-background/40 p-3 space-y-2"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 text-sm font-medium truncate">
-                      <Bot className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      {a.name}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground truncate">
-                      {a.slug} · {arcLabel(a.trust_arc)}
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] ${runStatusTone(r?.status ?? null)}`}
-                  >
-                    {r?.status ?? "idle"}
-                  </span>
-                </div>
-                {r ? (
-                  <>
-                    <p className="text-[12px] text-foreground/80 line-clamp-2">{r.input}</p>
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      <span>step {r.step_index}</span>
-                      <span>{relative(r.last_checkpoint_at ?? r.created_at)}</span>
-                    </div>
-                    {r.mission_id ? (
-                      <Link
-                        to="/missions/$missionId"
-                        params={{ missionId: r.mission_id }}
-                        className="text-[11px] inline-flex items-center gap-1 text-foreground/80 hover:text-foreground"
-                      >
-                        Open mission <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-[12px] text-muted-foreground italic">Idle · no recent run</p>
-                )}
-              </div>
-            );
-          })}
         </div>
       )}
     </section>
@@ -343,40 +495,98 @@ function AgentsGrid({ hud }: { hud: SwarmHud }) {
 
 function MissionsTable({ hud }: { hud: SwarmHud }) {
   return (
-    <section className="space-y-3">
+    <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <MonoLabel>Missions in flight</MonoLabel>
       {hud.missions.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-xl">
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "24px 0",
+            textAlign: "center",
+            border: "1px dashed var(--hairline)",
+            borderRadius: 12,
+            margin: 0,
+          }}
+        >
           No missions in flight. The Chief of Staff is idle.
         </p>
       ) : (
-        <div className="rounded-xl border border-border bg-background/40 divide-y divide-border">
-          {hud.missions.map((m) => {
+        <div className="bento" style={{ overflow: "hidden" }}>
+          {hud.missions.map((m, i) => {
             const pct = m.steps_total > 0 ? Math.round((m.steps_done / m.steps_total) * 100) : 0;
             return (
               <Link
                 key={m.id}
                 to="/missions/$missionId"
                 params={{ missionId: m.id }}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/40 animate-fade-in"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderBottom: i < hud.missions.length - 1 ? "1px solid var(--hairline)" : "none",
+                }}
               >
-                <GitBranch className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{m.title}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{m.goal}</div>
-                </div>
-                <div className="text-[11px] text-muted-foreground tabular-nums shrink-0 w-20 text-right">
-                  {m.steps_done}/{m.steps_total} steps
-                </div>
-                <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden shrink-0">
-                  <div className="h-full bg-foreground/70" style={{ width: `${pct}%` }} />
+                <GitBranch
+                  size={14}
+                  strokeWidth={1.75}
+                  style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {m.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: "var(--ink-subtle)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {m.goal}
+                  </div>
                 </div>
                 <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${runStatusTone(m.status)}`}
+                  className="mono-label tabular-nums"
+                  style={{ fontSize: 9, width: 80, textAlign: "right", flexShrink: 0 }}
                 >
-                  {m.status}
+                  {m.steps_done}/{m.steps_total} steps
                 </span>
-                <span className="text-[11px] text-muted-foreground tabular-nums w-16 text-right shrink-0">
+                <span
+                  style={{
+                    width: 96,
+                    height: 4,
+                    borderRadius: 99,
+                    background: "var(--surface-2)",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "block",
+                      height: "100%",
+                      width: `${pct}%`,
+                      background: m.status === "running" ? "var(--action-blue)" : "var(--emerald)",
+                    }}
+                  />
+                </span>
+                <StatusBadge status={badgeStatus(m.status)} />
+                <span
+                  className="mono-label tabular-nums"
+                  style={{ fontSize: 9, width: 64, textAlign: "right", flexShrink: 0 }}
+                >
                   {relative(m.updated_at)}
                 </span>
               </Link>
@@ -390,32 +600,87 @@ function MissionsTable({ hud }: { hud: SwarmHud }) {
 
 function HandoffFeed({ hud }: { hud: SwarmHud }) {
   return (
-    <section className="col-span-12 lg:col-span-7 rounded-xl border border-border bg-background/40 p-4 space-y-3">
+    <section
+      className="bento col-span-12 lg:col-span-7"
+      style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
+    >
       <MonoLabel>Handoff feed</MonoLabel>
       {hud.handoffs.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center">
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "24px 0",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
           No agent-to-agent handoffs yet.
         </p>
       ) : (
-        <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+        <div
+          className="scrollbar-thin"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            maxHeight: 360,
+            overflowY: "auto",
+            paddingRight: 4,
+          }}
+        >
           {hud.handoffs.map((h) => (
             <Link
               key={h.id}
               to="/missions/$missionId"
               params={{ missionId: h.mission_id }}
-              className="block border-l-2 border-border pl-3 py-1 hover:border-foreground/70"
+              style={{
+                display: "block",
+                borderLeft: "2px solid var(--hairline)",
+                paddingLeft: 12,
+                paddingTop: 4,
+                paddingBottom: 4,
+                transition: "border-color var(--dur-fast)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--hairline-strong)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--hairline)";
+              }}
             >
-              <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "var(--ink-subtle)",
+                }}
+              >
                 <span>{relative(h.created_at)}</span>
                 <span>·</span>
                 <span>{h.from_agent_slug ?? "operator"}</span>
-                <ArrowRight className="h-3 w-3" />
-                <span className="text-foreground/85">{h.to_agent_slug}</span>
+                <ArrowRight size={11} strokeWidth={1.75} />
+                <span style={{ color: "var(--agent)" }}>{h.to_agent_slug}</span>
                 <span>·</span>
                 <span>{h.kind}</span>
               </div>
               {h.task ? (
-                <p className="text-[12px] text-foreground/80 line-clamp-2 mt-0.5">{h.task}</p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--ink-muted)",
+                    margin: "2px 0 0",
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {h.task}
+                </p>
               ) : null}
             </Link>
           ))}
@@ -427,47 +692,124 @@ function HandoffFeed({ hud }: { hud: SwarmHud }) {
 
 function ReactorFirings({ hud }: { hud: SwarmHud }) {
   return (
-    <section className="col-span-12 lg:col-span-5 rounded-xl border border-border bg-background/40 p-4 space-y-3">
+    <section
+      className="bento col-span-12 lg:col-span-5"
+      style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
+    >
       <MonoLabel>Reactor firings</MonoLabel>
       {hud.reactor_events.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center">Reactor has been quiet.</p>
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "var(--ink-faint)",
+            padding: "24px 0",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
+          Reactor has been quiet.
+        </p>
       ) : (
-        <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+        <div
+          className="scrollbar-thin"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            maxHeight: 360,
+            overflowY: "auto",
+            paddingRight: 4,
+          }}
+        >
           {hud.reactor_events.map((e) => (
-            <div key={e.id} className="border border-border rounded-md p-2.5 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-foreground/85 truncate">
-                  <Zap className="h-3 w-3 text-muted-foreground" />
-                  <span>{e.event_type}</span>
-                  <ArrowRight className="h-3 w-3" />
-                  <span>{e.target_agent_slug}</span>
-                </div>
-                <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${eventStatusTone(e.status)}`}
+            <div
+              key={e.id}
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 10,
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--ink-muted)",
+                    minWidth: 0,
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  {e.status}
+                  <Zap
+                    size={11}
+                    strokeWidth={1.75}
+                    style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                  />
+                  <span>{e.event_type}</span>
+                  <ArrowRight size={11} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                  <span style={{ color: "var(--agent)" }}>{e.target_agent_slug}</span>
+                </div>
+                <QuietPill label={e.status} fg={eventToneColor(e.status)} />
+              </div>
+              <div
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <span className="mono-label" style={{ fontSize: 9 }}>
+                  {e.approval_mode}
+                </span>
+                <span className="mono-label" style={{ fontSize: 9 }}>
+                  {relative(e.created_at)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                <span>{e.approval_mode}</span>
-                <span>{relative(e.created_at)}</span>
-              </div>
-              {e.error ? <p className="text-[11px] text-destructive">{e.error}</p> : null}
+              {e.error ? (
+                <p style={{ fontSize: 11, color: "var(--rose)", margin: 0 }}>{e.error}</p>
+              ) : null}
               {e.mission_id ? (
                 <Link
                   to="/missions/$missionId"
                   params={{ missionId: e.mission_id }}
-                  className="text-[11px] inline-flex items-center gap-1 hover:text-foreground"
+                  style={{
+                    fontSize: 11,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    color: "var(--action-blue)",
+                  }}
                 >
-                  Open mission <ArrowRight className="h-3 w-3" />
+                  Open mission <ArrowRight size={11} strokeWidth={1.75} />
                 </Link>
               ) : null}
             </div>
           ))}
         </div>
       )}
-      <p className="text-[10px] text-muted-foreground flex items-center gap-1 pt-2">
-        <Inbox className="h-3 w-3" /> Pending confirm rows appear in the Attention queue above.
+      <p
+        style={{
+          fontSize: 10.5,
+          color: "var(--ink-faint)",
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          margin: 0,
+          paddingTop: 4,
+        }}
+      >
+        <Inbox size={11} strokeWidth={1.75} /> Pending confirm rows appear in the Attention queue
+        above.
       </p>
     </section>
   );

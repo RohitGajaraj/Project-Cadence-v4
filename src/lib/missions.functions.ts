@@ -23,6 +23,15 @@ export type MissionDetail = {
     updated_at: string;
     completed_at: string | null;
   };
+  /** Aggregated from ai_events over the mission's run traces (F-DESIGN-EMBER
+   * screen 4: the detail hero's started/cost/tokens/trace stat row). */
+  usage: {
+    cost_usd: number;
+    tokens_in: number;
+    tokens_out: number;
+    /** First hop's trace id — the mission's entry point into /traces. */
+    trace_id: string | null;
+  };
   hops: {
     run_id: string;
     agent_slug: string;
@@ -75,9 +84,27 @@ export type HopToolCall = {
   created_at: string;
 };
 
+export type MissionListRow = {
+  id: string;
+  title: string;
+  goal: string;
+  status: string;
+  hop_count: number;
+  current_agent_id: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  /** Ordered step statuses for the row's StepDot strip — mission_steps when
+   * orchestrated, else the run statuses. Empty for queued missions. */
+  steps: { status: string }[];
+  /** Summed ai_events est_cost_usd over the mission's traces; null = unknown
+   * (no checkpointed traces yet) — render "—", never a fake $0.00. */
+  cost_usd: number | null;
+};
+
 export const listMissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<{ missions: MissionListRow[] }> => {
     const { supabase } = context;
     const { data, error } = await supabase
       .from("missions")
@@ -85,7 +112,86 @@ export const listMissions = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return { missions: data ?? [] };
+    const missions = data ?? [];
+    if (missions.length === 0) return { missions: [] };
+    const ids = missions.map((m) => m.id);
+
+    // Batched enrichment (3 queries across ALL rows, never per-mission):
+    // step dots from mission_steps; run fallback + trace ids from agent_runs +
+    // latest checkpoints; cost from ai_events over those traces. Best-effort —
+    // any failure degrades to empty dots / unknown cost.
+    const stepsByMission = new Map<string, { status: string }[]>();
+    const runsByMission = new Map<string, { status: string }[]>();
+    const costByMission = new Map<string, number>();
+    try {
+      const [{ data: planSteps }, { data: runs }] = await Promise.all([
+        supabase
+          .from("mission_steps")
+          .select("mission_id,idx,status")
+          .in("mission_id", ids)
+          .order("idx", { ascending: true }),
+        supabase
+          .from("agent_runs")
+          .select("id,mission_id,status,created_at")
+          .in("mission_id", ids)
+          .order("created_at", { ascending: true }),
+      ]);
+      for (const s of planSteps ?? []) {
+        const arr = stepsByMission.get(s.mission_id) ?? [];
+        arr.push({ status: s.status });
+        stepsByMission.set(s.mission_id, arr);
+      }
+      const missionByRun = new Map<string, string>();
+      for (const r of runs ?? []) {
+        if (!r.mission_id) continue;
+        missionByRun.set(r.id, r.mission_id);
+        const arr = runsByMission.get(r.mission_id) ?? [];
+        arr.push({ status: r.status });
+        runsByMission.set(r.mission_id, arr);
+      }
+      const runIds = [...missionByRun.keys()];
+      if (runIds.length) {
+        const { data: cps } = await supabase
+          .from("agent_run_checkpoints")
+          .select("run_id,step_index,state")
+          .in("run_id", runIds)
+          .order("step_index", { ascending: false });
+        const missionByTrace = new Map<string, string>();
+        const seenRun = new Set<string>();
+        for (const cp of cps ?? []) {
+          if (seenRun.has(cp.run_id)) continue;
+          seenRun.add(cp.run_id);
+          const traceId = (cp.state as { traceId?: string } | null)?.traceId;
+          const missionId = missionByRun.get(cp.run_id);
+          if (traceId && missionId) missionByTrace.set(traceId, missionId);
+        }
+        const traceIds = [...missionByTrace.keys()];
+        if (traceIds.length) {
+          const { data: events } = await supabase
+            .from("ai_events")
+            .select("trace_id,est_cost_usd")
+            .in("trace_id", traceIds);
+          for (const e of events ?? []) {
+            const missionId = e.trace_id ? missionByTrace.get(e.trace_id) : undefined;
+            if (!missionId) continue;
+            costByMission.set(
+              missionId,
+              (costByMission.get(missionId) ?? 0) + Number(e.est_cost_usd ?? 0),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[missions] list enrichment failed (degrading):", e);
+    }
+
+    return {
+      missions: missions.map((m) => ({
+        ...m,
+        steps: stepsByMission.get(m.id) ?? runsByMission.get(m.id) ?? [],
+        cost_usd: costByMission.has(m.id) ? costByMission.get(m.id)! : null,
+      })),
+    };
   });
 
 export const getMission = createServerFn({ method: "POST" })
@@ -183,8 +289,34 @@ export const getMission = createServerFn({ method: "POST" })
       tcByTrace.set(t.trace_id, arr);
     }
 
+    // Hero stat row (screen 4): cost + tokens summed from ai_events over the
+    // mission's traces; trace_id = the FIRST hop's trace (runs are ordered
+    // created_at asc; traceIds order follows the checkpoint query, not hops).
+    const firstHopTrace =
+      (runs ?? [])
+        .map((r) => (latestByRun.get(r.id)?.state as { traceId?: string } | undefined)?.traceId)
+        .find((t): t is string => typeof t === "string" && t.length > 0) ?? null;
+    const usage: MissionDetail["usage"] = {
+      cost_usd: 0,
+      tokens_in: 0,
+      tokens_out: 0,
+      trace_id: firstHopTrace,
+    };
+    if (traceIds.length) {
+      const { data: events } = await supabase
+        .from("ai_events")
+        .select("est_cost_usd,prompt_tokens,completion_tokens")
+        .in("trace_id", traceIds);
+      for (const e of events ?? []) {
+        usage.cost_usd += Number(e.est_cost_usd ?? 0);
+        usage.tokens_in += e.prompt_tokens ?? 0;
+        usage.tokens_out += e.completion_tokens ?? 0;
+      }
+    }
+
     return {
       mission: mission as MissionDetail["mission"],
+      usage,
       hops: (runs ?? []).map((r) => {
         const cp = latestByRun.get(r.id);
         const state = (cp?.state ?? {}) as {
