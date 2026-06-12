@@ -1,13 +1,14 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DotPattern } from "@/components/ui/dot-pattern";
-import { cn } from "@/lib/utils";
+import { CadenceMark } from "@/components/cadence/Primitives";
+
+// Screen 8 completion (F-DESIGN-EMBER) — the recovery-link landing page on
+// the login stage. Real flow unchanged: a valid recovery hash carries a
+// session, updateUser({ password }) sets the new one and leaves the user
+// signed in (the done state continues into the workspace). ssr:false kept.
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -47,94 +48,150 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 animate-aurora">
-        <div className="absolute inset-0 neural-gradient" />
+    <div
+      data-screen-label="New password"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper)",
+        color: "var(--ink)",
+        overflow: "hidden",
+      }}
+    >
+      {/* giant mono butterfly watermark */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: -120,
+          bottom: -130,
+          color: "var(--ink)",
+          opacity: 0.05,
+          transform: "rotate(-12deg)",
+        }}
+      >
+        <CadenceMark size={520} tile={false} />
       </div>
-      <DotPattern
-        className={cn(
-          "-z-10 opacity-40",
-          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_75%)]",
-        )}
-      />
-      <div className="w-full max-w-md p-8 rounded-2xl border hairline bg-card/70 backdrop-blur-xl space-y-6">
-        <div className="text-center">
-          <h1 className="font-display text-2xl tracking-tight">Choose a new password</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Make it strong — you’ll use it to sign in to Cadence.
-          </p>
+
+      <div
+        className="fade-up"
+        style={{ width: 360, maxWidth: "calc(100vw - 48px)", position: "relative", zIndex: 1 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            marginBottom: 26,
+          }}
+        >
+          <CadenceMark size={52} />
+          <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, marginTop: 14 }}>
+            Choose a new password
+          </h1>
+          <div className="mono-label" style={{ marginTop: 6 }}>
+            agents execute · you govern
+          </div>
         </div>
 
-        {done ? (
-          <div className="text-center space-y-4">
-            <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-primary" />
+        <div className="bento" style={{ padding: 22 }}>
+          {done ? (
+            <div style={{ textAlign: "center" }}>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: "var(--ink-muted)",
+                  margin: "4px 0 14px",
+                  lineHeight: 1.55,
+                }}
+              >
+                Your password is updated — you're signed in with it now.
+              </p>
+              <Link
+                to="/"
+                className="btn btn-primary"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Continue · opens your workspace
+              </Link>
             </div>
-            <p className="text-sm text-muted-foreground">Your password has been updated.</p>
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign in
-            </Link>
-          </div>
-        ) : !validHash ? (
-          <div className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This reset link is invalid or has expired.
-            </p>
-            <Link
-              to="/forgot-password"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Request a new link
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={updatePassword} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs">
-                New password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
+          ) : !validHash ? (
+            <div style={{ textAlign: "center" }}>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: "var(--ink-muted)",
+                  margin: "4px 0 14px",
+                  lineHeight: 1.55,
+                }}
+              >
+                This reset link is invalid or has expired.
+              </p>
+              <Link
+                to="/forgot-password"
+                className="btn btn-ghost"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Request a new link · takes a minute
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={updatePassword}>
+              <div style={{ position: "relative", marginBottom: 8 }}>
+                <input
+                  className="input"
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
+                  placeholder="new password — at least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="pr-10"
+                  style={{ width: "100%", paddingRight: 34 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--ink-faint)",
+                    display: "flex",
+                  }}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm" className="text-xs">
-                Confirm password
-              </Label>
-              <Input
-                id="confirm"
+              <input
+                className="input"
                 type="password"
                 required
+                placeholder="retype it"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Retype your password"
+                style={{ marginBottom: 8, width: "100%" }}
               />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update password"}
-            </Button>
-          </form>
-        )}
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={loading}
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                {loading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  "Update password · takes effect now"
+                )}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

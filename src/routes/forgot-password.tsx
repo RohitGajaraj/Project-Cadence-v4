@@ -1,13 +1,14 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DotPattern } from "@/components/ui/dot-pattern";
-import { cn } from "@/lib/utils";
+import { CadenceMark } from "@/components/cadence/Primitives";
+
+// Screen 8 completion (F-DESIGN-EMBER) — the auth family's reset-request
+// page on the login stage (login.tsx is the pattern source). Real flow
+// unchanged: supabase resetPasswordForEmail → /reset-password recovery link.
+// ssr:false kept — the auth pages hydrate browser-only (preview-blank fix).
 
 export const Route = createFileRoute("/forgot-password")({
   ssr: false,
@@ -38,66 +39,127 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 animate-aurora">
-        <div className="absolute inset-0 neural-gradient" />
+    <div
+      data-screen-label="Reset password"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper)",
+        color: "var(--ink)",
+        overflow: "hidden",
+      }}
+    >
+      {/* giant mono butterfly watermark */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: -120,
+          bottom: -130,
+          color: "var(--ink)",
+          opacity: 0.05,
+          transform: "rotate(-12deg)",
+        }}
+      >
+        <CadenceMark size={520} tile={false} />
       </div>
-      <DotPattern
-        className={cn(
-          "-z-10 opacity-40",
-          "[mask-image:radial-gradient(ellipse_at_center,white,transparent_75%)]",
-        )}
-      />
-      <div className="w-full max-w-md p-8 rounded-2xl border hairline bg-card/70 backdrop-blur-xl space-y-6">
-        <div className="text-center">
-          <h1 className="font-display text-2xl tracking-tight">Reset your password</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Enter your email and we’ll send you a link to choose a new password.
-          </p>
+
+      <div
+        className="fade-up"
+        style={{ width: 360, maxWidth: "calc(100vw - 48px)", position: "relative", zIndex: 1 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            marginBottom: 26,
+          }}
+        >
+          <CadenceMark size={52} />
+          <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, marginTop: 14 }}>
+            Reset your password
+          </h1>
+          <div className="mono-label" style={{ marginTop: 6 }}>
+            agents execute · you govern
+          </div>
         </div>
 
-        {sent ? (
-          <div className="text-center space-y-4">
-            <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="h-5 w-5 text-primary" />
+        <div className="bento" style={{ padding: 22 }}>
+          {sent ? (
+            <div style={{ textAlign: "center" }}>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: "var(--ink-muted)",
+                  margin: "4px 0 14px",
+                  lineHeight: 1.55,
+                }}
+              >
+                If an account exists for <strong style={{ color: "var(--ink)" }}>{email}</strong>,
+                the reset link is on its way.
+              </p>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ width: "100%", justifyContent: "center" }}
+                onClick={() => setSent(false)}
+              >
+                Send again · same address
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              If an account exists for <strong className="text-foreground">{email}</strong>, you’ll
-              receive a reset link shortly.
-            </p>
-            <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
-              Send again
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={sendResetLink} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs">
-                Email
-              </Label>
-              <Input
-                id="email"
+          ) : (
+            <form onSubmit={sendResetLink}>
+              <input
+                className="input"
                 type="email"
                 required
+                placeholder="work email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                style={{ marginBottom: 8, width: "100%" }}
               />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
-            </Button>
-          </form>
-        )}
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={loading}
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                {loading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  "Send reset link · lands in your inbox"
+                )}
+              </button>
+            </form>
+          )}
+        </div>
 
-        <div className="text-xs text-center">
+        <p
+          style={{
+            fontSize: 11.5,
+            color: "var(--ink-faint)",
+            textAlign: "center",
+            marginTop: 16,
+            lineHeight: 1.5,
+          }}
+        >
+          Remembered it?{" "}
           <Link
             to="/login"
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            style={{
+              color: "var(--ink-subtle)",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
           >
-            <ArrowLeft className="h-3 w-3" /> Back to sign in
+            Back to sign in
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );
