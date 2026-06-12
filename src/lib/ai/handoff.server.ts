@@ -171,6 +171,9 @@ export async function consumeInboundHandoff(
     .select("id,from_agent_slug,payload,consumed_by_run_id")
     .eq("mission_id", args.mission_id)
     .eq("to_agent_id", args.to_agent_id)
+    // F-STUDIO: 'steer' messages are consumed by the loop mid-session — they
+    // must never be swallowed here as a handoff payload.
+    .eq("kind", "handoff")
     .is("consumed_by_run_id", null)
     .order("created_at", { ascending: false })
     .limit(1)

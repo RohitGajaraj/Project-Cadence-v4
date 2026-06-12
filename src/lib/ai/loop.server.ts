@@ -23,12 +23,28 @@ const MAX_RUNNING_PER_WORKSPACE = 5;
 /**
  * Per-agent step cap. The orchestrator needs more headroom (plan +
  * dispatch + observe + finalize, often multiple dispatch/observe cycles
- * as child runs settle). Specialists keep the conservative 6-step cap.
+ * as child runs settle). Studio (slug 'builder') needs the most: explore →
+ * plan → stage → commit → PR → CI → self-correct → merge. Specialists keep
+ * the conservative 6-step cap.
  */
 function maxStepsFor(agentSlug: string): number {
   if (agentSlug === "orchestrator") return 14;
+  if (agentSlug === "builder") return 24;
   return 6;
 }
+
+/**
+ * F-STUDIO gate semantics. Studio's shipping tools are sequential — the PR
+ * needs the commit's branch, the merge needs the PR — so queuing an approval
+ * and "continuing to plan" (the default) is meaningless. For these tools the
+ * run PAUSES (status 'waiting_approval'); the resume-runs sweeper re-enters
+ * it once the operator decides, injecting the outcome.
+ */
+const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "studio.pr.merge"]);
+/** Safety floor (not overridable by the autonomy dial): at least `confirm`. */
+const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
+/** Safety floor: always `review`. */
+const HIGH_RISK_FORCE_REVIEW = new Set(["studio.pr.merge"]);
 
 export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 
@@ -196,6 +212,8 @@ export async function runAgentLoop(
           input: input.goal,
           status: "queued",
           workspace_id: workspaceId,
+          mission_id: input.missionId ?? null,
+          model: input.model ?? null,
           mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
           mission_token_cap: input.missionTokenCap ?? null,
         })
@@ -226,6 +244,7 @@ export async function runAgentLoop(
       status: "running",
       workspace_id: workspaceId,
       mission_id: input.missionId ?? null,
+      model: input.model ?? null,
       mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
       mission_token_cap: input.missionTokenCap ?? null,
     })
@@ -386,6 +405,7 @@ export async function runAgentLoop(
     startStep: 0,
     goal: input.goal,
     recalledMemories: memories,
+    injectedApprovalIds: [],
     finalize,
   });
 }
@@ -409,6 +429,8 @@ type LoopState = {
   goal: string;
   /** Memories recalled at prompt-build time — persisted into checkpoint state for UI surfacing. */
   recalledMemories: string[];
+  /** Approval ids whose outcomes were already injected into conv (survives via checkpoint state). */
+  injectedApprovalIds: string[];
   finalize: (m: string) => Promise<LoopResult>;
 };
 
@@ -431,42 +453,77 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
   let halted: { kind: string; reason: string } | null = null;
   const maxSteps = maxStepsFor(agent.slug);
 
+  const checkpoint = async (stepIndex: number) => {
+    if (!runId) return;
+    try {
+      await supabase.from("agent_run_checkpoints").upsert(
+        {
+          run_id: runId,
+          user_id: userId,
+          workspace_id: workspaceId,
+          step_index: stepIndex,
+          state: {
+            agent,
+            workspaceId,
+            model,
+            traceId,
+            goal: s.goal,
+            conv,
+            steps,
+            approvalsQueued,
+            recalledMemories: s.recalledMemories,
+            injectedApprovalIds: s.injectedApprovalIds,
+          } as unknown as Record<string, unknown>,
+        },
+        { onConflict: "run_id,step_index" },
+      );
+      await supabase
+        .from("agent_runs")
+        .update({
+          step_index: stepIndex,
+          last_checkpoint_at: new Date().toISOString(),
+        })
+        .eq("id", runId);
+    } catch (e) {
+      console.error("checkpoint failed:", e);
+    }
+  };
+
   for (let i = s.startStep; i < maxSteps; i++) {
-    // Checkpoint BEFORE the provider call so a governance halt or worker
-    // eviction mid-stream doesn't double-bill on resume.
-    if (runId) {
+    // F-STUDIO: mid-session operator steering. Unconsumed steer messages on
+    // the mission are appended as operator guidance before this step's model
+    // call (so they land inside the checkpoint too), then marked consumed.
+    if (ctx.missionId && runId) {
       try {
-        await supabase.from("agent_run_checkpoints").upsert(
-          {
-            run_id: runId,
-            user_id: userId,
-            workspace_id: workspaceId,
-            step_index: i,
-            state: {
-              agent,
-              workspaceId,
-              model,
-              traceId,
-              goal: s.goal,
-              conv,
-              steps,
-              approvalsQueued,
-              recalledMemories: s.recalledMemories,
-            } as unknown as Record<string, unknown>,
-          },
-          { onConflict: "run_id,step_index" },
-        );
-        await supabase
-          .from("agent_runs")
-          .update({
-            step_index: i,
-            last_checkpoint_at: new Date().toISOString(),
-          })
-          .eq("id", runId);
+        const { data: steers } = await supabase
+          .from("agent_messages")
+          .select("id,payload")
+          .eq("mission_id", ctx.missionId)
+          .eq("kind", "steer")
+          .is("consumed_by_run_id", null)
+          .order("created_at", { ascending: true })
+          .limit(5);
+        for (const m of (steers ?? []) as { id: string; payload: { message?: string } }[]) {
+          const text = m.payload?.message?.trim();
+          if (text) {
+            conv.push({
+              role: "user",
+              content: `Operator steering (mid-session guidance — follow it): ${text.slice(0, 2000)}`,
+            });
+          }
+          await supabase
+            .from("agent_messages")
+            .update({ consumed_by_run_id: runId, consumed_at: new Date().toISOString() })
+            .eq("id", m.id);
+        }
       } catch (e) {
-        console.error("checkpoint failed:", e);
+        console.error("steer read failed:", e);
       }
     }
+
+    // Checkpoint BEFORE the provider call so a governance halt or worker
+    // eviction mid-stream doesn't double-bill on resume.
+    await checkpoint(i);
 
     ctx.runId = runId;
     ctx.stepIndex = i;
@@ -575,14 +632,14 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
       continue;
     }
 
-    // Force approval gate for high-risk tools like calendar.create (safety floor,
-    // not overridable by the dial).
-    const isHighRisk = call.name === "calendar.create";
+    // Safety floors (not overridable by the dial): high-risk tools force at
+    // least `confirm`; Studio's merge gate is always `review` (v4 HITL canon).
     const rawToolMode = (modeOf.get(call.name) ?? "confirm") as ToolMode;
-    // The autonomy dial composes with the tool's own mode. `review` is sticky,
-    // and high-risk tools force at least `confirm`.
+    // The autonomy dial composes with the tool's own mode. `review` is sticky.
     const dialedMode = resolveApprovalMode(rawToolMode, arc);
-    const mode: ToolMode = isHighRisk && dialedMode === "auto" ? "confirm" : dialedMode;
+    let mode: ToolMode = dialedMode;
+    if (HIGH_RISK_FORCE_REVIEW.has(call.name)) mode = "review";
+    else if (HIGH_RISK_MIN_CONFIRM.has(call.name) && mode === "auto") mode = "confirm";
     const isWrite = def.category === "write" || def.category === "planning";
 
     if (isWrite && (mode === "confirm" || mode === "review")) {
@@ -597,6 +654,11 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
           args: parseRes.data,
           rationale: call.reason ?? null,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          // F-STUDIO: mission context so gated tools can execute post-approval
+          // (outside the live loop) and the sweeper can resume the paused run.
+          run_id: runId,
+          mission_id: ctx.missionId ?? null,
+          workspace_id: workspaceId,
         })
         .select("id")
         .single();
@@ -611,6 +673,36 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
         approval_id: (appr as { id: string } | null)?.id,
       });
       conv.push({ role: "assistant", content: r.output });
+
+      // F-STUDIO: shipping gates pause the run. Checkpoint the post-queue
+      // conversation at i+1, flip the run to waiting_approval, and stop —
+      // the resume-runs sweeper re-enters once the operator decides.
+      if (PAUSE_ON_APPROVAL_TOOLS.has(call.name) && runId) {
+        conv.push({
+          role: "user",
+          content: `Tool "${call.name}" was queued for ${mode}. The session is paused until the operator decides; when it resumes you will receive the outcome. Do not re-call this tool.`,
+        });
+        await checkpoint(i + 1);
+        const pauseMsg = `Paused — waiting on operator ${mode} for ${call.name}.`;
+        try {
+          await supabase
+            .from("agent_runs")
+            .update({ status: "waiting_approval", output: pauseMsg })
+            .eq("id", runId);
+        } catch (e) {
+          console.error("waiting_approval mark failed:", e);
+        }
+        return {
+          trace_id: traceId,
+          agent_slug: agent.slug,
+          steps,
+          final: pauseMsg,
+          approvals_queued: approvalsQueued,
+          run_id: runId,
+          halted: null,
+        };
+      }
+
       conv.push({
         role: "user",
         content: `Tool "${call.name}" was queued for ${mode}. Do not retry. Continue planning or finalize.`,
@@ -706,7 +798,7 @@ export async function resumeAgentLoop(
   const { data: run } = await supabase
     .from("agent_runs")
     .select(
-      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,mission_spend_cap_usd,mission_token_cap",
+      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,model,mission_spend_cap_usd,mission_token_cap",
     )
     .eq("id", runId)
     .maybeSingle();
@@ -719,8 +811,30 @@ export async function resumeAgentLoop(
     .maybeSingle();
   if (!agent) throw new Error(`agent not found for run ${runId}`);
 
-  // Promote queued → running.
-  if (run.status === "queued") {
+  // F-STUDIO: a run paused on a shipping gate only resumes once every queued
+  // approval is decided AND executed (approved-but-unexecuted still blocks —
+  // the tool's outcome is what the agent needs next).
+  if (run.status === "waiting_approval") {
+    const { count: blocking } = await supabase
+      .from("agent_approvals")
+      .select("id", { count: "exact", head: true })
+      .eq("run_id", runId)
+      .in("status", ["pending", "approved"]);
+    if ((blocking ?? 0) > 0) {
+      return {
+        trace_id: "",
+        agent_slug: run.agent_slug,
+        steps: [],
+        final: "Still waiting on operator approval.",
+        approvals_queued: 0,
+        run_id: runId,
+        halted: null,
+      };
+    }
+  }
+
+  // Promote queued / approval-resolved → running.
+  if (run.status === "queued" || run.status === "waiting_approval") {
     await supabase.from("agent_runs").update({ status: "running" }).eq("id", runId);
   }
 
@@ -733,7 +847,10 @@ export async function resumeAgentLoop(
     .maybeSingle();
 
   const traceId = (cp?.state as { traceId?: string } | undefined)?.traceId ?? crypto.randomUUID();
-  const model = (cp?.state as { model?: string } | undefined)?.model ?? "google/gemini-2.5-flash";
+  const model =
+    (run as { model?: string | null }).model ??
+    (cp?.state as { model?: string } | undefined)?.model ??
+    "google/gemini-2.5-flash";
   const startStep = cp ? cp.step_index : 0;
 
   const { data: toolRows } = await supabase
@@ -751,17 +868,20 @@ export async function resumeAgentLoop(
   let steps: LoopStep[];
   let approvalsQueued = 0;
   let recalledMemories: string[] = [];
+  let injectedApprovalIds: string[] = [];
   if (cp?.state && (cp.state as { conv?: unknown }).conv) {
     const st = cp.state as {
       conv: { role: string; content: string }[];
       steps: LoopStep[];
       approvalsQueued?: number;
       recalledMemories?: string[];
+      injectedApprovalIds?: string[];
     };
     conv = st.conv;
     steps = st.steps;
     approvalsQueued = st.approvalsQueued ?? 0;
     recalledMemories = Array.isArray(st.recalledMemories) ? st.recalledMemories : [];
+    injectedApprovalIds = Array.isArray(st.injectedApprovalIds) ? st.injectedApprovalIds : [];
   } else {
     const memories = await recallMemory(supabase, run.user_id, agent.slug, run.input);
     recalledMemories = memories;
@@ -815,6 +935,45 @@ export async function resumeAgentLoop(
       { role: "user", content: run.input },
     ];
     steps = [];
+  }
+
+  // F-STUDIO: feed decided approval outcomes back into the conversation so a
+  // resumed run knows what its gated tool did (or why it was denied). Tracked
+  // by id (in checkpoint state) so re-resumes never double-inject.
+  try {
+    const { data: decided } = await supabase
+      .from("agent_approvals")
+      .select("id,tool_name,status,result,error")
+      .eq("run_id", runId)
+      .neq("status", "pending")
+      .order("created_at", { ascending: true });
+    for (const a of (decided ?? []) as {
+      id: string;
+      tool_name: string;
+      status: string;
+      result: unknown;
+      error: string | null;
+    }[]) {
+      if (injectedApprovalIds.includes(a.id)) continue;
+      injectedApprovalIds.push(a.id);
+      if (a.status === "executed") {
+        const payload = JSON.stringify(a.result ?? {})
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        conv.push({
+          role: "user",
+          content: `Operator approved "${a.tool_name}" and it executed. Result:\n<untrusted_tool_output tool_name="${a.tool_name}">\n${payload.slice(0, 2000)}\n</untrusted_tool_output>\nContinue from here. Do not re-call it.`,
+        });
+      } else {
+        conv.push({
+          role: "user",
+          content: `Tool "${a.tool_name}" was NOT executed (approval ${a.status}${a.error ? `: ${a.error.slice(0, 300)}` : ""}). Adjust your plan or finalize with what the operator should know.`,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("approval outcome injection failed:", e);
   }
 
   const ctx: ToolCtx = {
@@ -889,6 +1048,7 @@ export async function resumeAgentLoop(
     startStep,
     goal: run.input,
     recalledMemories,
+    injectedApprovalIds,
     finalize,
   });
 }
@@ -901,7 +1061,7 @@ export async function executeApproval(
 ): Promise<unknown> {
   const { data: appr, error } = await supabase
     .from("agent_approvals")
-    .select("id,tool_name,args,agent_id,agent_slug,trace_id,status")
+    .select("id,tool_name,args,agent_id,agent_slug,trace_id,status,run_id,mission_id,workspace_id")
     .eq("id", approvalId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -918,6 +1078,11 @@ export async function executeApproval(
       agentSlug: appr.agent_slug ?? undefined,
       agentId: appr.agent_id ?? null,
       traceId: appr.trace_id ?? null,
+      // F-STUDIO: mission context — Studio's gated tools resolve their
+      // changeset through the mission they were queued from.
+      runId: (appr as { run_id?: string | null }).run_id ?? null,
+      missionId: (appr as { mission_id?: string | null }).mission_id ?? null,
+      workspaceId: (appr as { workspace_id?: string | null }).workspace_id ?? null,
     });
     await supabase
       .from("agent_approvals")

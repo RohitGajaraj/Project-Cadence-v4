@@ -1,6 +1,18 @@
 # Active tasks
 
+> **2026-06-12 — `F-STUDIO` CODE COMPLETE ✅ (lint/tsc/build green) — runtime gates below.** Spec: [`docs/features/studio.md`](docs/features/studio.md) · build-log entry in `plan.md` §4. All five workstreams landed: engine tools+migration · studio.functions · `/studio` surface · rename sweep+docs · tick hardening (KI-02 fixed: NULL-checkpoint pickup + waiting_approval resume).
+
 > **2026-06-11 — v5 Chief-of-Staff rebuild.** Spec: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](docs/strategy/v5-chief-of-staff-2026-06-11.md). Phases A (`F-V5-RITUAL`) + B (`F-V5-MOTHBALL`) ✅ shipped + walkthrough-verified (incl. AI brief via the Gemini local fallback). Phase D (`F-V5-LOOP-CLOSE`) **code landed, one gate open — see below**.
+
+---
+
+## `F-STUDIO` — runtime gates (founder + next session)
+
+- [x] Engine: migration `20260612100000_f_studio_engine.sql` · 7 registry tools (`repo.*`, `studio.*`) · loop pause-on-gate + steer injection + 24 steps · `studio.functions.ts` (6 fns) · `/studio` surface (Monaco diffs, inline gates, live timeline) · `/build`→`/studio` · rename sweep · KI-02 sweeper fixes — lint ✓ tsc ✓ build:dev ✓
+- [ ] **GATE (KI-08 pattern, founder):** open the Lovable project so it syncs main — applies `20260612100000` (studio tables + approval ctx columns + `agent_runs.model` + Studio rename/prompt/tool seeds) and deploys the frontend. **Until apply, hosted/local-against-hosted agent-approval inserts and `/studio` queries will error on the missing columns/tables — expected, same window as F-V5-LOOP-CLOSE.** Probe: REST `/rest/v1/studio_changesets` returns []/rows instead of PGRST205.
+- [ ] After apply: regenerate Supabase types (removes the `as unknown as SupabaseClient` casts in `studio.functions.ts`, `outcome.functions.ts`, `resume-runs.ts`).
+- [ ] **Golden-path QA (gates demo inclusion per 2026-06-12 ruling):** agent door — approve a PRD → Send to Studio → watch `/studio/$missionId`: plan → repo reads → `studio.stage` → commit gate (confirm) → PR gate (confirm) → CI read → merge gate (review) → merged + lineage edge. Human door — NL-prompt a session from `/studio`, steer mid-session, review a Monaco diff, clear a gate. Playwright walkthrough with the demo login (`docs/operations/demo-credentials.md`).
+- [ ] Hosted tick cadence check: `resume-runs` pg_cron is the session heartbeat (queued start ≤1 min; gate-resume ≤1 min after approve+execute). If sessions feel slow in the demo, consider a 30s cadence.
 
 ---
 

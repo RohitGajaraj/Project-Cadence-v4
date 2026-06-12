@@ -5,6 +5,7 @@ import {
   Home,
   Bot,
   Brain,
+  Hammer,
   ListTodo,
   Settings,
   Sparkles,
@@ -91,6 +92,12 @@ export function CommandPalette() {
                   label="Product · signals, opportunities, specs"
                   hint="G I"
                   onSelect={() => go("/product")}
+                />
+                <Item
+                  icon={Hammer}
+                  label="Studio · sessions, changesets, gates"
+                  hint="G B"
+                  onSelect={() => go("/studio")}
                 />
                 <Item
                   icon={BookOpen}
@@ -183,6 +190,7 @@ export function GotoShortcuts() {
           d: "/",
           c: "/chat",
           a: "/missions",
+          b: "/studio",
           t: "/tasks",
           s: "/settings",
           p: "/product",

@@ -91,7 +91,7 @@ function ProductPage() {
     {
       id: "specs",
       label: "Specs",
-      description: "Product requirement docs. Draft from a brief, hand off to GitHub or Builder.",
+      description: "Product requirement docs. Draft from a brief, hand off to GitHub or Studio.",
       Icon: FileText,
       tone: "sky",
     },
@@ -112,7 +112,7 @@ function ProductPage() {
     {
       id: "releases",
       label: "Releases",
-      description: "Builder missions that completed end-to-end, with duration and cost.",
+      description: "Studio missions that completed end-to-end, with duration and cost.",
       Icon: Rocket,
       tone: "amber",
     },

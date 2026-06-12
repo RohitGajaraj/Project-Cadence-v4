@@ -489,4 +489,25 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 
 ---
 
-_This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-11._
+### 2026-06-12 — F-STUDIO: the in-platform development engine, named **Studio**
+
+**Decision:** Build the in-platform agentic development engine now (full two-door v1), named **Studio** (founder pick over Fab/Foundry/Forge). It replaces the "Send to Builder" human seam: reads the bound GitHub repo, plans, stages **multi-file** changesets, commits to isolated `studio/*` branches, opens PRs, reads CI, self-corrects, and merges behind a `review` gate — model-agnostic via the chokepoint. Spec: [`docs/features/studio.md`](../features/studio.md).
+
+**Sub-decisions:**
+
+1. **Two doors, both first-class.** Usage forecast ~80% agents / ~20% humans is an expectation, not a design hierarchy (founder clarification). Agent door = `dispatchStudioSession` contract + structured outcomes; human door = `/studio` (live timeline, NL steering mid-session, Monaco diffs, inline gates).
+2. **Demo posture:** build now; included in the June 22 demo **only if golden-path QA passes** — supersedes the v5 mothball ruling for this surface only.
+3. **Rename depth:** display + docs + new code rename to Studio; legacy internals (`agent_slug='builder'`, `builder_file_claims`, `build.functions.ts`) stay and are documented as ≡ Studio (the Cadence→Circuit disclaimer pattern). Full DB migration rejected — demo risk 10 days out.
+4. **Naming collision resolved:** internal `CallSurface 'studio'` (Prompt Studio cost bucket) is unrelated and unchanged; the engine adds no new surface literal (loop calls run under `'agent'`).
+5. **Design work merged, not separate:** Studio treats UI code as code (design-token-aware prompt, PR preview links in the PR tab). A v0-style visual playground stays deferred to M3.
+6. **Tick hardening (KI-02) pulled into scope** — long Studio sessions depend on checkpoint→tick→resume reliability.
+
+**Why:** The founding intent is everything unified in-platform; with Research + Brain shipped, the build seam is the last human-shaped gap in the loop. Recon showed the runtime (chokepoint, loop, approvals, missions, A2A) plus Bundle 9 already carry half the engine — the gaps are repo reads (the agent codes blind today), multi-file commits, in-platform merge, and a human viewport.
+
+**Tradeoffs considered:** _Fab/Foundry_ (silicon tape-out metaphor, strongest Circuit fit) — founder ruled Studio for Lovable-grade approachability. _Defer until after June 22_ (the standing v5 ruling) — rejected by founder, with the QA gate as the demo-risk control. _Sandboxed execution_ — rejected for v1; CI is the test runner (Workers constraints).
+
+**Impact:** new `docs/features/studio.md`, `studio_changesets`/`studio_changes` migration + Studio agent prompt, 7 new registry tools, `src/lib/studio.functions.ts`, `/studio` surface (first Monaco use), Send-to-Studio rename sweep, builder≡studio equivalence note in CLAUDE.md, tick fix, plan.md §4 entry.
+
+---
+
+_This log is maintained as part of the closed documentation loop. Every session that produces a strategic decision adds an entry here. Reference: `docs/strategy/README.md`. Last updated: 2026-06-12._

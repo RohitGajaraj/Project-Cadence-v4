@@ -1,6 +1,9 @@
 # Bundle 9 — Builder agent: PR, CI, conflict guard
 
-> **Status:** ✅ Shipped (Slice 1 2026-06-04 · Slice 2 + 3 2026-06-06) · **Route:** `/build` · **Owner agent:** `builder`
+> [!IMPORTANT]
+> **SUPERSEDED by F-STUDIO (2026-06-12).** The Builder handoff UX described here is replaced by **Studio**, the in-platform development engine — multi-file changesets, isolated `studio/*` branches, in-platform merge, live human surface at `/studio`. Canonical doc: [`studio.md`](./studio.md). The Builder *agent* internals referenced below (`agent_slug='builder'`, `builder_file_claims`, the single-file `github.pr.open`/`github.commit.append` tools) remain in the codebase as legacy equivalents — read `builder` ≡ `studio`. `/build` now redirects to `/studio`.
+
+> **Status:** ✅ Shipped (Slice 1 2026-06-04 · Slice 2 + 3 2026-06-06) · superseded 2026-06-12 · **Route:** ~~`/build`~~ → `/studio` · **Owner agent:** `builder` (display name **Studio**)
 
 ## What it does
 

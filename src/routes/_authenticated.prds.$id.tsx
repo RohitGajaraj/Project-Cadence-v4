@@ -30,7 +30,7 @@ import { CitationsCard, type Citation } from "@/components/product/CitationsCard
 import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
 import { listTasks } from "@/lib/tasks.functions";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
-import { runAgent } from "@/lib/agent_loop.functions";
+import { dispatchStudioSession } from "@/lib/studio.functions";
 import { createDecision } from "@/lib/decisions.functions";
 
 export const Route = createFileRoute("/_authenticated/prds/$id")({
@@ -46,7 +46,7 @@ function PrdEditor() {
   const fGet = useServerFn(getPrd);
   const mSave = useServerFn(savePrd);
   const mAssist = useServerFn(prdAssist);
-  const fRunAgent = useServerFn(runAgent);
+  const mDispatchStudio = useServerFn(dispatchStudioSession);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
   const mCaptureDecision = useServerFn(createDecision);
 
@@ -73,27 +73,11 @@ function PrdEditor() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const sendToBuilder = useMutation({
-    mutationFn: () => {
-      const url = prdQ.data?.prd?.github_issue_url ?? "";
-      const m = url.match(/\/issues\/(\d+)/);
-      if (!m) throw new Error("PRD has no linked GitHub issue yet");
-      const issueNumber = Number(m[1]);
-      const prdTitle = prdQ.data?.prd?.title ?? "PRD";
-      return fRunAgent({
-        data: {
-          agentSlug: "builder",
-          goal: `Pick up GitHub issue #${issueNumber} ("${prdTitle}") on the connected repo. Read the issue body, then ship a single-file scoped PR via github.pr.open with idempotency_key="issue-${issueNumber}". Closes #${issueNumber}.`,
-          asMission: true,
-          missionTitle: `Build · ${prdTitle.slice(0, 60)} (#${issueNumber})`,
-        },
-      });
-    },
+  const sendToStudio = useMutation({
+    mutationFn: () => mDispatchStudio({ data: { prdId: id } }),
     onSuccess: (r) => {
-      toast.success("Builder mission dispatched");
-      const missionId = (r as { mission_id?: string | null }).mission_id;
-      if (missionId) navigate({ to: "/missions/$missionId", params: { missionId } });
-      else navigate({ to: "/build" });
+      toast.success("Studio session dispatched");
+      navigate({ to: "/studio/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -265,20 +249,20 @@ function PrdEditor() {
 
           {prdQ.data.prd.github_issue_url ? (
             <button
-              onClick={() => sendToBuilder.mutate()}
-              disabled={sendToBuilder.isPending}
+              onClick={() => sendToStudio.mutate()}
+              disabled={sendToStudio.isPending}
               className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
-              title="Dispatch the Builder agent to open a scoped PR for this issue"
+              title="Dispatch a Studio session to plan, stage, and PR the changes for this issue"
             >
               <Hammer className="h-3 w-3" />
-              {sendToBuilder.isPending ? "Dispatching…" : "Send to Builder"}
+              {sendToStudio.isPending ? "Dispatching…" : "Send to Studio"}
             </button>
           ) : (
             <button
               onClick={() => createIssue.mutate()}
               disabled={createIssue.isPending}
               className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
-              title="Create a GitHub issue from this PRD, then unlock Send to Builder."
+              title="Create a GitHub issue from this PRD, then unlock Send to Studio."
             >
               <Github className="h-3 w-3" />
               {createIssue.isPending ? "Creating…" : "Create GitHub issue"}

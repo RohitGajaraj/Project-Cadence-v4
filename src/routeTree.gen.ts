@@ -49,10 +49,12 @@ import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated.agents'
+import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenticated.studio.index'
 import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
+import { Route as AuthenticatedStudioMissionIdRouteImport } from './routes/_authenticated.studio.$missionId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
@@ -270,6 +272,12 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedStudioIndexRoute =
+  AuthenticatedStudioIndexRouteImport.update({
+    id: '/studio/',
+    path: '/studio/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPrdsIndexRoute = AuthenticatedPrdsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -291,6 +299,12 @@ const AuthenticatedTracesTraceIdRoute =
     id: '/$traceId',
     path: '/$traceId',
     getParentRoute: () => AuthenticatedTracesRoute,
+  } as any)
+const AuthenticatedStudioMissionIdRoute =
+  AuthenticatedStudioMissionIdRouteImport.update({
+    id: '/studio/$missionId',
+    path: '/studio/$missionId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPrdsIdRoute = AuthenticatedPrdsIdRouteImport.update({
   id: '/$id',
@@ -421,10 +435,12 @@ export interface FileRoutesByFullPath {
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
+  '/studio/': typeof AuthenticatedStudioIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -480,10 +496,12 @@ export interface FileRoutesByTo {
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
+  '/studio': typeof AuthenticatedStudioIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -542,10 +560,12 @@ export interface FileRoutesById {
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
+  '/_authenticated/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
+  '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -604,10 +624,12 @@ export interface FileRouteTypes {
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
+    | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
     | '/missions/'
     | '/prds/'
+    | '/studio/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -663,10 +685,12 @@ export interface FileRouteTypes {
     | '/meetings/$id'
     | '/missions/$missionId'
     | '/prds/$id'
+    | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
     | '/missions'
     | '/prds'
+    | '/studio'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -724,10 +748,12 @@ export interface FileRouteTypes {
     | '/_authenticated/meetings/$id'
     | '/_authenticated/missions/$missionId'
     | '/_authenticated/prds/$id'
+    | '/_authenticated/studio/$missionId'
     | '/_authenticated/traces/$traceId'
     | '/api/public/ingest-signals'
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
+    | '/_authenticated/studio/'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/drift-tick'
@@ -1047,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/studio/': {
+      id: '/_authenticated/studio/'
+      path: '/studio'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof AuthenticatedStudioIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/prds/': {
       id: '/_authenticated/prds/'
       path: '/'
@@ -1074,6 +1107,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/traces/$traceId'
       preLoaderRoute: typeof AuthenticatedTracesTraceIdRouteImport
       parentRoute: typeof AuthenticatedTracesRoute
+    }
+    '/_authenticated/studio/$missionId': {
+      id: '/_authenticated/studio/$missionId'
+      path: '/studio/$missionId'
+      fullPath: '/studio/$missionId'
+      preLoaderRoute: typeof AuthenticatedStudioMissionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/prds/$id': {
       id: '/_authenticated/prds/$id'
@@ -1255,7 +1295,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
+  AuthenticatedStudioMissionIdRoute: typeof AuthenticatedStudioMissionIdRoute
   AuthenticatedMissionsIndexRoute: typeof AuthenticatedMissionsIndexRoute
+  AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1293,7 +1335,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
+  AuthenticatedStudioMissionIdRoute: AuthenticatedStudioMissionIdRoute,
   AuthenticatedMissionsIndexRoute: AuthenticatedMissionsIndexRoute,
+  AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

@@ -38,8 +38,9 @@ One canonical page per shipped, user-facing feature. The **single place** to ope
 | F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | [`features/f-agent-2-memory-reflection.md`](./features/f-agent-2-memory-reflection.md) |
 | F-AGENT-3 | Event reactor + auto-pipelines                           | [`features/f-agent-3-event-reactor.md`](./features/f-agent-3-event-reactor.md)         |
 | F-AGENT-4 | Swarm HUD                                                | [`features/f-agent-4-swarm-hud.md`](./features/f-agent-4-swarm-hud.md)                 |
-| Bundle 9  | Builder agent · PR · CI loop · file-claim conflict guard | [`features/bundle-9-builder.md`](./features/bundle-9-builder.md)                       |
+| Bundle 9  | Builder agent · PR · CI loop · file-claim conflict guard — **superseded by F-STUDIO** | [`features/bundle-9-builder.md`](./features/bundle-9-builder.md)                       |
 | F-BRAIN | **Brain** — Perplexity-grade research over web+workspace AND the company brain (auto-retention, remember/capture actions, brain status); deep-linked citations, model switcher | [`features/brain.md`](./features/brain.md)                                       |
+| F-STUDIO | **Studio** — the in-platform development engine: repo reads, multi-file DB-staged changesets, `studio/*` branches, PR + CI self-correct, in-platform merge behind gates; two doors (agent contract + `/studio` human surface with Monaco diffs and mid-session steering) | [`features/studio.md`](./features/studio.md)                                       |
 
 ## Strategy (versioned positioning)
 

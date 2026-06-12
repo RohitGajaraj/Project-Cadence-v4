@@ -22,6 +22,7 @@ const ROUTES: Partial<
   meeting: (id) => ({ to: "/meetings/$id", params: { id } }),
   roadmap_item: () => ({ to: "/roadmap" }),
   decision: () => ({ to: "/meetings" }),
+  mission: (id) => ({ to: "/missions/$missionId", params: { missionId: id } }),
 };
 
 const KIND_LABEL: Record<ArtifactKind, string> = {
@@ -33,6 +34,7 @@ const KIND_LABEL: Record<ArtifactKind, string> = {
   task: "Task",
   meeting: "Meeting",
   decision: "Decision",
+  mission: "Studio session",
 };
 
 function PeerLink({ kind, id, title }: { kind: ArtifactKind; id: string; title: string | null }) {

@@ -24,7 +24,7 @@ import {
   savePrd,
 } from "@/lib/discovery.functions";
 import { promotePrdToTasks } from "@/lib/lineage.functions";
-import { dispatchBuilderMission } from "@/lib/build.functions";
+import { dispatchStudioSession } from "@/lib/studio.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +42,7 @@ export function SpecsPanel() {
   const mGen = useServerFn(generatePrd);
   const mTasks = useServerFn(promotePrdToTasks);
   const mCreateIssue = useServerFn(createGithubIssueForPrd);
-  const mDispatch = useServerFn(dispatchBuilderMission);
+  const mDispatch = useServerFn(dispatchStudioSession);
   const mSave = useServerFn(savePrd);
   const rename = useMutation({
     mutationFn: (v: { id: string; title: string }) => mSave({ data: { id: v.id, title: v.title } }),
@@ -76,20 +76,11 @@ export function SpecsPanel() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const sendToBuilder = useMutation({
-    mutationFn: (p: { id: string; title: string }) =>
-      mDispatch({
-        data: {
-          prdId: p.id,
-          goal: `Ship the changes described in PRD "${p.title}".`,
-          missionTitle: `Build · ${p.title.slice(0, 60)}`,
-        },
-      }),
+  const sendToStudio = useMutation({
+    mutationFn: (prdId: string) => mDispatch({ data: { prdId } }),
     onSuccess: (r) => {
-      toast.success("Builder mission dispatched");
-      const missionId = (r as { mission_id?: string | null }).mission_id;
-      if (missionId) navigate({ to: "/missions/$missionId", params: { missionId } });
-      else navigate({ to: "/build" });
+      toast.success("Studio session dispatched");
+      navigate({ to: "/studio/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -243,13 +234,13 @@ export function SpecsPanel() {
                           <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onSelect={() => sendToBuilder.mutate({ id: p.id, title: p.title })}
-                          disabled={sendToBuilder.isPending}
+                          onSelect={() => sendToStudio.mutate(p.id)}
+                          disabled={sendToStudio.isPending}
                         >
                           <Hammer className="h-3.5 w-3.5 mr-2" />
-                          {sendToBuilder.isPending && sendToBuilder.variables?.id === p.id
+                          {sendToStudio.isPending && sendToStudio.variables === p.id
                             ? "Dispatching…"
-                            : "Send to Builder"}
+                            : "Send to Studio"}
                         </DropdownMenuItem>
                       </>
                     ) : (

@@ -8,6 +8,10 @@
 > **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
 > _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
 
+> [!IMPORTANT]
+> **BUILDER ➔ STUDIO RENAME DISCLAIMER (2026-06-12):**
+> _The Builder agent/surface is now **Studio** (`docs/features/studio.md`). User-facing name is Studio everywhere; legacy internal identifiers are intentionally NOT migrated — `agent_slug='builder'`, `builder_file_claims`, `build.functions.ts`, and `/build` (redirects to `/studio`) are to be read as equivalent to Studio. New code uses `studio.*` naming natively. The `CallSurface 'studio'` literal (Prompt Studio cost bucket) predates this and is unrelated._
+
 ---
 
 ## MANDATORY: Scan skills, agents, plugins, and MCPs before every task (non-negotiable)

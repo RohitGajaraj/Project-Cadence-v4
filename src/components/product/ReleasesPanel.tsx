@@ -35,8 +35,8 @@ export function ReleasesPanel() {
           <Rocket className="h-6 w-6 mx-auto text-violet-300/70" />
           <h3 className="font-display text-base mt-3">Releases will land here</h3>
           <p className="text-xs text-muted-foreground mt-2 max-w-sm mx-auto">
-            When a Builder mission completes (PR merged, deploy webhook lands), it will appear
-            here with the agent, duration, and cost.
+            When a Studio mission completes (PR merged, deploy webhook lands), it will appear here
+            with the agent, duration, and cost.
           </p>
         </div>
       ) : (

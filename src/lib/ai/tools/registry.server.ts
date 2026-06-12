@@ -982,6 +982,652 @@ const githubCommitAppend = def({
   },
 });
 
+// ── Studio engine tools (F-STUDIO) ────────────────────────────────────
+// Studio = the in-platform development engine. Reads the bound repo, stages
+// multi-file changes in a DB changeset (NO GitHub write), then ships through
+// gated commit → PR → merge. Display name "Studio"; agent slug stays
+// 'builder' (legacy equivalence). See docs/features/studio.md.
+
+const STUDIO_FORBIDDEN_PREFIXES = [
+  ".github/",
+  "supabase/migrations/",
+  ".env",
+  "bun.lock",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+];
+
+function assertStudioPathAllowed(path: string) {
+  if (STUDIO_FORBIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p))) {
+    throw new Error(
+      `Studio is not allowed to modify ${path} (CI / migrations / env / lockfiles are out of scope).`,
+    );
+  }
+}
+
+function ghHeaders(token: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "circuit-studio",
+    "Content-Type": "application/json",
+  };
+}
+
+async function ghJson<T>(url: string, headers: Record<string, string>, init?: RequestInit) {
+  const res = await fetch(url, { ...init, headers });
+  if (!res.ok) {
+    throw new Error(
+      `GitHub ${res.status} on ${url.split("github.com")[1]}: ${(await res.text()).slice(0, 300)}`,
+    );
+  }
+  return (await res.json()) as T;
+}
+
+async function getDefaultBranch(repo: string, headers: Record<string, string>) {
+  const j = await ghJson<{ default_branch: string }>(
+    `https://api.github.com/repos/${repo}`,
+    headers,
+  );
+  return j.default_branch;
+}
+
+const STUDIO_PATH_REGEX = /^[^\s/][\w\-./]*[^\s/]$/;
+
+type ChangesetRow = {
+  id: string;
+  mission_id: string | null;
+  repo: string;
+  branch: string | null;
+  base_sha: string | null;
+  status: string;
+  title: string;
+  pr_url: string | null;
+  pr_number: number | null;
+};
+
+/** Latest non-abandoned changeset for the mission — the "active" one tools upsert into. */
+async function getActiveChangeset(
+  supabase: SupabaseClient,
+  missionId: string,
+): Promise<ChangesetRow | null> {
+  const { data } = await supabase
+    .from("studio_changesets")
+    .select("id,mission_id,repo,branch,base_sha,status,title,pr_url,pr_number")
+    .eq("mission_id", missionId)
+    .neq("status", "abandoned")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as ChangesetRow | null) ?? null;
+}
+
+const repoTree = def({
+  name: "repo.tree",
+  description:
+    "Studio: list the connected repo's file tree (paths, types, sizes). Optionally scope to a path prefix or a ref. Read-only. Use FIRST to map the project before reading or editing anything.",
+  category: "read",
+  argsSchema: z.object({
+    path: z.string().max(400).optional(),
+    ref: z.string().max(200).optional(),
+  }),
+  preview: (a) => `Read repo tree${a.path ? ` · ${a.path}` : ""}${a.ref ? ` @ ${a.ref}` : ""}`,
+  run: async (a, ctx) => {
+    const { token, repo } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+    const ref = a.ref ?? (await getDefaultBranch(repo, headers));
+    const j = await ghJson<{
+      tree?: Array<{ path: string; type: string; size?: number }>;
+      truncated?: boolean;
+    }>(
+      `https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+      headers,
+    );
+    let entries = (j.tree ?? []).map((e) => ({
+      path: e.path,
+      type: e.type === "tree" ? "dir" : "file",
+      size: e.size ?? null,
+    }));
+    if (a.path) {
+      const prefix = a.path.replace(/\/+$/, "");
+      entries = entries.filter((e) => e.path === prefix || e.path.startsWith(prefix + "/"));
+    }
+    const CAP = 400;
+    const truncated = Boolean(j.truncated) || entries.length > CAP;
+    return {
+      repo,
+      ref,
+      total: entries.length,
+      truncated,
+      ...(truncated
+        ? { note: `Listing capped at ${CAP} entries — narrow with the path arg.` }
+        : {}),
+      entries: entries.slice(0, CAP),
+    };
+  },
+});
+
+const repoRead = def({
+  name: "repo.read",
+  description:
+    "Studio: read up to 8 files from the connected repo (decoded contents). Read-only. NEVER stage an edit to a file you have not read in this session.",
+  category: "read",
+  argsSchema: z.object({
+    paths: z.array(z.string().min(1).max(400).regex(STUDIO_PATH_REGEX)).min(1).max(8),
+    ref: z.string().max(200).optional(),
+  }),
+  preview: (a) =>
+    `Read ${a.paths.length} file(s): ${a.paths.slice(0, 3).join(", ")}${a.paths.length > 3 ? "…" : ""}`,
+  run: async (a, ctx) => {
+    const { token, repo } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+    const MAX_BYTES = 120_000;
+    const files = await Promise.all(
+      a.paths.map(async (path) => {
+        try {
+          const refQ = a.ref ? `?ref=${encodeURIComponent(a.ref)}` : "";
+          const res = await fetch(
+            `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path)}${refQ}`,
+            { headers },
+          );
+          if (res.status === 404) return { path, error: "not found" };
+          if (!res.ok) return { path, error: `GitHub ${res.status}` };
+          const j = (await res.json()) as {
+            content?: string;
+            sha?: string;
+            size?: number;
+            type?: string;
+          };
+          if (j.type !== "file") return { path, error: `not a file (${j.type})` };
+          if ((j.size ?? 0) > MAX_BYTES)
+            return { path, sha: j.sha, size: j.size, error: "too large to read inline" };
+          const content = Buffer.from(j.content ?? "", "base64").toString("utf8");
+          if (content.includes("\u0000"))
+            return { path, sha: j.sha, size: j.size, error: "binary file" };
+          return { path, sha: j.sha, size: j.size, content };
+        } catch (e) {
+          return { path, error: e instanceof Error ? e.message : String(e) };
+        }
+      }),
+    );
+    return { repo, ref: a.ref ?? "(default branch)", files };
+  },
+});
+
+const repoSearch = def({
+  name: "repo.search",
+  description:
+    "Studio: GitHub code search scoped to the connected repo. Returns matching paths with text fragments. Read-only. Use to locate the code relevant to the work order.",
+  category: "read",
+  argsSchema: z.object({
+    query: z.string().min(1).max(200),
+  }),
+  preview: (a) => `Search repo code: "${a.query}"`,
+  run: async (a, ctx) => {
+    const { token, repo } = await requireGithub(ctx);
+    const headers = {
+      ...ghHeaders(token),
+      Accept: "application/vnd.github.text-match+json",
+    };
+    const q = encodeURIComponent(`${a.query} repo:${repo}`);
+    const j = await ghJson<{
+      total_count: number;
+      items?: Array<{
+        path: string;
+        text_matches?: Array<{ fragment?: string }>;
+      }>;
+    }>(`https://api.github.com/search/code?q=${q}&per_page=10`, headers);
+    return {
+      repo,
+      total: j.total_count,
+      hits: (j.items ?? []).map((it) => ({
+        path: it.path,
+        fragments: (it.text_matches ?? [])
+          .map((m) => (m.fragment ?? "").slice(0, 300))
+          .filter(Boolean)
+          .slice(0, 3),
+      })),
+    };
+  },
+});
+
+const studioStage = def({
+  name: "studio.stage",
+  description:
+    "Studio: stage multi-file edits into the mission's changeset. Pass the FULL new file contents per path (not a diff). Edits land in the platform DB — nothing touches GitHub until studio.commit. Re-stage a path to replace its staged contents.",
+  category: "write",
+  argsSchema: z.object({
+    changes: z
+      .array(
+        z.object({
+          path: z.string().min(1).max(400).regex(STUDIO_PATH_REGEX),
+          op: z.enum(["create", "update", "delete"]),
+          content: z.string().max(150_000).optional(),
+        }),
+      )
+      .min(1)
+      .max(20),
+    title: z.string().max(200).optional(),
+    summary: z.string().max(2000).optional(),
+  }),
+  preview: (a) =>
+    `Stage ${a.changes.length} change(s): ${a.changes
+      .slice(0, 3)
+      .map((c) => `${c.op} ${c.path}`)
+      .join(", ")}${a.changes.length > 3 ? "…" : ""}`,
+  run: async (a, ctx) => {
+    const { supabase, userId, missionId, workspaceId } = ctx;
+    if (!missionId) throw new Error("studio.stage requires a mission (dispatch via Studio)");
+    if (!workspaceId) throw new Error("studio.stage requires a workspace");
+    for (const c of a.changes) {
+      assertStudioPathAllowed(c.path);
+      if (c.op !== "delete" && typeof c.content !== "string")
+        throw new Error(`change for ${c.path}: op '${c.op}' requires content`);
+    }
+    const { token, repo } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+
+    let changeset = await getActiveChangeset(supabase, missionId);
+    if (!changeset) {
+      const { data: created, error } = await supabase
+        .from("studio_changesets")
+        .insert({
+          user_id: userId,
+          workspace_id: workspaceId,
+          mission_id: missionId,
+          repo,
+          title: a.title ?? "",
+          summary: a.summary ?? null,
+        })
+        .select("id,mission_id,repo,branch,base_sha,status,title,pr_url,pr_number")
+        .single();
+      if (error) throw new Error(`changeset create failed: ${error.message}`);
+      changeset = created as ChangesetRow;
+    }
+
+    // Snapshot base from the branch the commit will build on: the changeset's
+    // own branch once it exists (it carries earlier Studio commits), else the
+    // default branch head.
+    const baseRef = changeset.branch ?? (await getDefaultBranch(repo, headers));
+
+    const { data: existingRows } = await supabase
+      .from("studio_changes")
+      .select("path")
+      .eq("changeset_id", changeset.id)
+      .in(
+        "path",
+        a.changes.map((c) => c.path),
+      );
+    const alreadyStaged = new Set((existingRows ?? []).map((r: { path: string }) => r.path));
+
+    const staged: { path: string; op: string }[] = [];
+    for (const c of a.changes) {
+      let baseContent: string | null = null;
+      let baseSha: string | null = null;
+      let op = c.op;
+      if (!alreadyStaged.has(c.path)) {
+        const res = await fetch(
+          `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(c.path)}?ref=${encodeURIComponent(baseRef)}`,
+          { headers },
+        );
+        if (res.ok) {
+          const j = (await res.json()) as { content?: string; sha?: string; type?: string };
+          if (j.type === "file") {
+            baseSha = j.sha ?? null;
+            const decoded = Buffer.from(j.content ?? "", "base64").toString("utf8");
+            baseContent = decoded.includes("\u0000") ? null : decoded;
+          }
+        } else if (res.status !== 404) {
+          throw new Error(`GitHub base read ${res.status} for ${c.path}`);
+        }
+        // Normalize op against reality so the commit step never lies.
+        if (op === "create" && baseSha) op = "update";
+        if (op === "update" && !baseSha) op = "create";
+        if (op === "delete" && !baseSha)
+          throw new Error(`cannot delete ${c.path}: it does not exist on ${baseRef}`);
+      }
+      const row: Record<string, unknown> = {
+        changeset_id: changeset.id,
+        user_id: userId,
+        path: c.path,
+        op,
+        new_content: op === "delete" ? null : (c.content ?? null),
+        updated_at: new Date().toISOString(),
+      };
+      // Only set base_* on first stage of a path — re-stages keep the original snapshot.
+      if (!alreadyStaged.has(c.path)) {
+        row.base_content = baseContent;
+        row.base_sha = baseSha;
+      }
+      const { error } = await supabase
+        .from("studio_changes")
+        .upsert(row, { onConflict: "changeset_id,path" });
+      if (error) throw new Error(`stage failed for ${c.path}: ${error.message}`);
+      staged.push({ path: c.path, op });
+    }
+
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (a.title) patch.title = a.title;
+    if (a.summary) patch.summary = a.summary;
+    await supabase.from("studio_changesets").update(patch).eq("id", changeset.id);
+
+    const { count } = await supabase
+      .from("studio_changes")
+      .select("id", { count: "exact", head: true })
+      .eq("changeset_id", changeset.id);
+    return {
+      changeset_id: changeset.id,
+      repo,
+      staged,
+      total_staged_paths: count ?? staged.length,
+      note:
+        changeset.status === "staged"
+          ? "Staged in the platform only — call studio.commit to push to a studio/* branch."
+          : "Changeset already has commits — studio.commit again to push these changes to the same branch.",
+    };
+  },
+});
+
+const studioCommit = def({
+  name: "studio.commit",
+  description:
+    "Studio: commit ALL staged changes to an isolated studio/* branch via the Git Data API (creates the branch off the default-branch head on first commit). Operator-gated. Call again after staging CI fixes to append to the same branch.",
+  category: "write",
+  argsSchema: z.object({
+    message: z.string().min(4).max(280),
+  }),
+  preview: (a) => `Commit staged changes: "${a.message.slice(0, 80)}"`,
+  run: async (a, ctx) => {
+    const { supabase, userId, missionId, workspaceId, runId } = ctx;
+    if (!missionId) throw new Error("studio.commit requires a mission");
+    const changeset = await getActiveChangeset(supabase, missionId);
+    if (!changeset) throw new Error("no active changeset — call studio.stage first");
+    const { data: changes } = await supabase
+      .from("studio_changes")
+      .select("path,op,new_content")
+      .eq("changeset_id", changeset.id)
+      .order("path");
+    if (!changes?.length) throw new Error("changeset has no staged changes");
+    for (const c of changes as { path: string }[]) assertStudioPathAllowed(c.path);
+
+    const { token, repo } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+    const branch = changeset.branch ?? `studio/${missionId.slice(0, 8)}`;
+    const paths = (changes as { path: string }[]).map((c) => c.path);
+
+    // Claim every path (Bundle 9 Slice 3 semantics) — a parallel mission
+    // holding any of these paths is a typed conflict, not a silent race.
+    const { data: held } = await supabase
+      .from("builder_file_claims")
+      .select("path,mission_id,mission_title")
+      .eq("repo", repo)
+      .eq("status", "held")
+      .in("path", paths);
+    const foreign = (held ?? []).find(
+      (h: { mission_id: string | null }) => h.mission_id && h.mission_id !== missionId,
+    );
+    if (foreign) {
+      throw new Error(
+        `BuilderFileConflict: path "${(foreign as { path: string }).path}" is claimed by another Studio mission${(foreign as { mission_title?: string }).mission_title ? ` ("${(foreign as { mission_title: string }).mission_title}")` : ""}. Wait or release the claim.`,
+      );
+    }
+    const ours = new Set(
+      (held ?? [])
+        .filter((h: { mission_id: string | null }) => h.mission_id === missionId)
+        .map((h: { path: string }) => h.path),
+    );
+    let missionTitle: string | null = null;
+    {
+      const { data: m } = await supabase
+        .from("missions")
+        .select("title")
+        .eq("id", missionId)
+        .maybeSingle();
+      missionTitle = (m as { title?: string } | null)?.title ?? null;
+    }
+    for (const path of paths) {
+      if (ours.has(path)) continue;
+      const { error } = await supabase.from("builder_file_claims").insert({
+        user_id: userId,
+        workspace_id: workspaceId ?? null,
+        run_id: runId ?? null,
+        mission_id: missionId,
+        mission_title: missionTitle,
+        repo,
+        path,
+        status: "held",
+      });
+      if (error && !/unique|duplicate/i.test(error.message)) {
+        console.error("[studio.commit] claim insert failed:", error.message);
+      }
+    }
+
+    const outcome = await withIdempotency(
+      supabase,
+      "studio_commit",
+      `${changeset.id}:${a.message.slice(0, 80)}`,
+      userId,
+      runId ?? null,
+      async () => {
+        const defaultBranch = await getDefaultBranch(repo, headers);
+        // Parent = the studio branch head if it exists, else default-branch head
+        // (and we create the branch from it).
+        let parentSha: string;
+        const refRes = await fetch(
+          `https://api.github.com/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`,
+          { headers },
+        );
+        if (refRes.ok) {
+          parentSha = ((await refRes.json()) as { object: { sha: string } }).object.sha;
+        } else {
+          const baseRef = await ghJson<{ object: { sha: string } }>(
+            `https://api.github.com/repos/${repo}/git/ref/heads/${encodeURIComponent(defaultBranch)}`,
+            headers,
+          );
+          parentSha = baseRef.object.sha;
+          await ghJson(`https://api.github.com/repos/${repo}/git/refs`, headers, {
+            method: "POST",
+            body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: parentSha }),
+          });
+        }
+        const parentCommit = await ghJson<{ tree: { sha: string } }>(
+          `https://api.github.com/repos/${repo}/git/commits/${parentSha}`,
+          headers,
+        );
+        const tree = (changes as { path: string; op: string; new_content: string | null }[]).map(
+          (c) =>
+            c.op === "delete"
+              ? { path: c.path, mode: "100644", type: "blob", sha: null }
+              : { path: c.path, mode: "100644", type: "blob", content: c.new_content ?? "" },
+        );
+        const newTree = await ghJson<{ sha: string }>(
+          `https://api.github.com/repos/${repo}/git/trees`,
+          headers,
+          {
+            method: "POST",
+            body: JSON.stringify({ base_tree: parentCommit.tree.sha, tree }),
+          },
+        );
+        const commit = await ghJson<{ sha: string; html_url: string }>(
+          `https://api.github.com/repos/${repo}/git/commits`,
+          headers,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              message: `${a.message}\n\nShipped by Circuit Studio (mission ${missionId.slice(0, 8)})`,
+              tree: newTree.sha,
+              parents: [parentSha],
+            }),
+          },
+        );
+        await ghJson(
+          `https://api.github.com/repos/${repo}/git/refs/heads/${encodeURIComponent(branch)}`,
+          headers,
+          { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) },
+        );
+        await supabase
+          .from("studio_changesets")
+          .update({
+            branch,
+            base_sha: parentSha,
+            status: changeset.status === "pr_open" ? "pr_open" : "committed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", changeset.id);
+        return {
+          changeset_id: changeset.id,
+          repo,
+          branch,
+          commit_sha: commit.sha,
+          commit_url: commit.html_url,
+          files: paths,
+        };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
+const studioPrOpen = def({
+  name: "studio.pr.open",
+  description:
+    "Studio: open a multi-file pull request from the changeset's studio/* branch. Operator-gated. Distinct from the legacy single-file github.pr.open. Call AFTER studio.commit.",
+  category: "write",
+  argsSchema: z.object({
+    title: z.string().min(4).max(280),
+    body: z.string().min(4).max(60_000),
+  }),
+  preview: (a) => `Open Studio PR: "${a.title.slice(0, 80)}"`,
+  run: async (a, ctx) => {
+    const { supabase, userId, missionId, runId } = ctx;
+    if (!missionId) throw new Error("studio.pr.open requires a mission");
+    const changeset = await getActiveChangeset(supabase, missionId);
+    if (!changeset) throw new Error("no active changeset — stage and commit first");
+    if (!changeset.branch) throw new Error("changeset has no branch — call studio.commit first");
+    if (changeset.pr_number && changeset.pr_url) {
+      return {
+        changeset_id: changeset.id,
+        pr_number: changeset.pr_number,
+        pr_url: changeset.pr_url,
+        cached: true,
+      };
+    }
+    const { token, repo, actorLabel } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+    const outcome = await withIdempotency(
+      supabase,
+      "studio_pr",
+      changeset.id,
+      userId,
+      runId ?? null,
+      async () => {
+        const defaultBranch = await getDefaultBranch(repo, headers);
+        const { count } = await supabase
+          .from("studio_changes")
+          .select("id", { count: "exact", head: true })
+          .eq("changeset_id", changeset.id);
+        const body = `${a.body.trim()}\n\n_Opened by Circuit Studio — multi-file changeset (${count ?? "?"} file${(count ?? 0) === 1 ? "" : "s"}), approval-gated · acting as ${actorLabel}._`;
+        const pr = await ghJson<{ number: number; html_url: string }>(
+          `https://api.github.com/repos/${repo}/pulls`,
+          headers,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title: a.title,
+              body,
+              head: changeset.branch,
+              base: defaultBranch,
+              maintainer_can_modify: true,
+            }),
+          },
+        );
+        await supabase
+          .from("studio_changesets")
+          .update({
+            status: "pr_open",
+            pr_url: pr.html_url,
+            pr_number: pr.number,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", changeset.id);
+        return {
+          changeset_id: changeset.id,
+          repo,
+          branch: changeset.branch,
+          pr_number: pr.number,
+          pr_url: pr.html_url,
+        };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
+const studioPrMerge = def({
+  name: "studio.pr.merge",
+  description:
+    "Studio: merge the changeset's pull request (squash by default) — closes the loop in-platform. Review-gated; request it ONLY after github.ci.read reports success (or the repo has no CI). Releases the mission's file claims.",
+  category: "write",
+  argsSchema: z.object({
+    method: z.enum(["squash", "merge", "rebase"]).optional(),
+  }),
+  preview: (a) => `Merge Studio PR (${a.method ?? "squash"})`,
+  run: async (a, ctx) => {
+    const { supabase, userId, missionId, runId } = ctx;
+    if (!missionId) throw new Error("studio.pr.merge requires a mission");
+    const changeset = await getActiveChangeset(supabase, missionId);
+    if (!changeset?.pr_number) throw new Error("no open Studio PR on this mission");
+    const { token, repo } = await requireGithub(ctx);
+    const headers = ghHeaders(token);
+    const outcome = await withIdempotency(
+      supabase,
+      "studio_merge",
+      changeset.id,
+      userId,
+      runId ?? null,
+      async () => {
+        const res = await fetch(
+          `https://api.github.com/repos/${repo}/pulls/${changeset.pr_number}/merge`,
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({ merge_method: a.method ?? "squash" }),
+          },
+        );
+        if (!res.ok) {
+          throw new Error(
+            `GitHub merge ${res.status}: ${(await res.text()).slice(0, 300)} — the PR may have conflicts or pending required checks.`,
+          );
+        }
+        const j = (await res.json()) as { sha: string; merged: boolean };
+        await supabase
+          .from("studio_changesets")
+          .update({ status: "merged", updated_at: new Date().toISOString() })
+          .eq("id", changeset.id);
+        await supabase
+          .from("builder_file_claims")
+          .update({
+            status: "released",
+            released_at: new Date().toISOString(),
+            released_reason: "studio_merge",
+          })
+          .eq("mission_id", missionId)
+          .eq("status", "held");
+        return {
+          changeset_id: changeset.id,
+          pr_number: changeset.pr_number,
+          pr_url: changeset.pr_url,
+          merged: j.merged,
+          merge_sha: j.sha,
+        };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
 // ── PM lifecycle tools ────────────────────────────────────────────────
 const DRAFT_MODEL = "google/gemini-2.5-flash";
 
@@ -1502,6 +2148,13 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     githubPrOpen,
     githubCiRead,
     githubCommitAppend,
+    repoTree,
+    repoRead,
+    repoSearch,
+    studioStage,
+    studioCommit,
+    studioPrOpen,
+    studioPrMerge,
     prdLinkIssue,
     researchSynthesize,
     prdDraft,
