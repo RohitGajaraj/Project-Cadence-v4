@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { executeApproval, type Json } from "@/lib/ai/loop.server";
 
 /** Returns the current pause state for a workspace + recent in-flight missions + stale approvals. */
 export const getGovernanceOverview = createServerFn({ method: "POST" })
@@ -166,7 +167,13 @@ const ResolveApprovalSchema = z.object({
   decision: z.enum(["approved", "rejected"]),
 });
 
-/** Resolve a pending approval (approve / reject without executing). */
+/**
+ * Resolve a pending approval. Approving also EXECUTES the tool — same
+ * semantics as agent_loop's decideApproval, so every approval surface (Today
+ * calls queue, governance, Studio) behaves identically. Audit finding: an
+ * approve-without-execute left F-STUDIO's paused runs blocked forever
+ * (status 'approved' never reaches 'executed', so the sweeper never resumes).
+ */
 export const resolveApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.infer<typeof ResolveApprovalSchema>) => ResolveApprovalSchema.parse(d))
@@ -183,5 +190,11 @@ export const resolveApproval = createServerFn({ method: "POST" })
       .eq("id", data.approvalId)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    if (data.decision === "approved") {
+      // executeApproval flips the row to executed/failed itself; its failure
+      // is surfaced to the caller but the decision stays recorded.
+      const result = await executeApproval(supabase, userId, data.approvalId);
+      return { ok: true, executed: true, result: result as Json };
+    }
+    return { ok: true, executed: false };
   });

@@ -173,3 +173,26 @@ BEGIN
     PERFORM public.seed_studio_tools(r.id);
   END LOOP;
 END $$;
+
+-- 7. New signups get Studio tools too (audit finding: the backfill above only
+--    covers existing users). Exact replica of the latest handle_new_user
+--    (20260606150319) plus the seed_studio_tools call.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  is_demo boolean := COALESCE(NEW.email LIKE 'demo%@redcadence.app', false);
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name)
+  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email))
+  ON CONFLICT (id) DO NOTHING;
+
+  IF NOT is_demo THEN
+    PERFORM public.ensure_default_workspace(NEW.id);
+  END IF;
+
+  PERFORM public.seed_default_agent_tools(NEW.id);
+  PERFORM public.seed_default_event_subscriptions(NEW.id);
+  PERFORM public.seed_studio_tools(NEW.id);
+  RETURN NEW;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;

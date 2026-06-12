@@ -1048,6 +1048,28 @@ type ChangesetRow = {
   pr_number: number | null;
 };
 
+/**
+ * Deterministic FNV-1a fingerprint of staged contents. Part of the
+ * studio.commit idempotency key so re-committing with a reused message but
+ * DIFFERENT staged files is a new commit, while a true retry (same files,
+ * same message) still dedups (audit finding: a message-only key swallowed
+ * CI-fix commits).
+ */
+function fingerprintChanges(
+  changes: Array<{ path: string; op: string; new_content: string | null }>,
+): string {
+  const serialized = changes
+    .map((c) => `${c.path}${c.op}${c.new_content ?? ""}`)
+    .sort()
+    .join("");
+  let h = 0x811c9dc5;
+  for (let i = 0; i < serialized.length; i++) {
+    h ^= serialized.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
 /** Latest non-abandoned changeset for the mission — the "active" one tools upsert into. */
 async function getActiveChangeset(
   supabase: SupabaseClient,
@@ -1407,7 +1429,7 @@ const studioCommit = def({
     const outcome = await withIdempotency(
       supabase,
       "studio_commit",
-      `${changeset.id}:${a.message.slice(0, 80)}`,
+      `${changeset.id}:${fingerprintChanges(changes as Array<{ path: string; op: string; new_content: string | null }>)}:${a.message.slice(0, 64)}`,
       userId,
       runId ?? null,
       async () => {

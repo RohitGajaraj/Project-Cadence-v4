@@ -244,6 +244,18 @@ function StudioPage() {
           <div className="flex items-center justify-center py-16 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
+        ) : sessions.isError ? (
+          <div className="rounded-xl border hairline px-4 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Sessions could not load. {(sessions.error as Error)?.message?.slice(0, 160)}
+            </p>
+            <button
+              onClick={() => sessions.refetch()}
+              className="btn-pill-outline mt-3 px-3 py-1 text-xs"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           rows.length > 0 && (
             <div>

@@ -254,7 +254,19 @@ function StudioSessionPage() {
           )}
         </div>
 
-        {session.isLoading || !data ? (
+        {session.isError ? (
+          <div className="rounded-xl border hairline px-4 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              This session could not load. {(session.error as Error)?.message?.slice(0, 160)}
+            </p>
+            <button
+              onClick={() => session.refetch()}
+              className="btn-pill-outline mt-3 px-3 py-1 text-xs"
+            >
+              Retry
+            </button>
+          </div>
+        ) : session.isLoading || !data ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>

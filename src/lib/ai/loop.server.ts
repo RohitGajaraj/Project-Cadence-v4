@@ -492,7 +492,10 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
   for (let i = s.startStep; i < maxSteps; i++) {
     // F-STUDIO: mid-session operator steering. Unconsumed steer messages on
     // the mission are appended as operator guidance before this step's model
-    // call (so they land inside the checkpoint too), then marked consumed.
+    // call (so they land inside the checkpoint), and marked consumed only
+    // AFTER the checkpoint persists them — a steer must never be both
+    // consumed and unpersisted (audit finding: lost on eviction otherwise).
+    const steerIds: string[] = [];
     if (ctx.missionId && runId) {
       try {
         const { data: steers } = await supabase
@@ -511,10 +514,7 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
               content: `Operator steering (mid-session guidance — follow it): ${text.slice(0, 2000)}`,
             });
           }
-          await supabase
-            .from("agent_messages")
-            .update({ consumed_by_run_id: runId, consumed_at: new Date().toISOString() })
-            .eq("id", m.id);
+          steerIds.push(m.id);
         }
       } catch (e) {
         console.error("steer read failed:", e);
@@ -524,6 +524,19 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
     // Checkpoint BEFORE the provider call so a governance halt or worker
     // eviction mid-stream doesn't double-bill on resume.
     await checkpoint(i);
+
+    if (steerIds.length && runId) {
+      try {
+        await supabase
+          .from("agent_messages")
+          .update({ consumed_by_run_id: runId, consumed_at: new Date().toISOString() })
+          .in("id", steerIds);
+      } catch (e) {
+        // Non-fatal: an unconsumed steer re-injects next step (duplicate
+        // guidance is safe; a vanished one is not).
+        console.error("steer mark-consumed failed:", e);
+      }
+    }
 
     ctx.runId = runId;
     ctx.stepIndex = i;
@@ -675,14 +688,16 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
       conv.push({ role: "assistant", content: r.output });
 
       // F-STUDIO: shipping gates pause the run. Checkpoint the post-queue
-      // conversation at i+1, flip the run to waiting_approval, and stop —
-      // the resume-runs sweeper re-enters once the operator decides.
+      // conversation AT step i (not i+1: a gate hit on the final step would
+      // resume with startStep === maxSteps and falsely finalize as
+      // step-limited — audit finding). Resuming re-enters at i; the queued
+      // step executed no tool, so there is no idempotency-cache collision.
       if (PAUSE_ON_APPROVAL_TOOLS.has(call.name) && runId) {
         conv.push({
           role: "user",
           content: `Tool "${call.name}" was queued for ${mode}. The session is paused until the operator decides; when it resumes you will receive the outcome. Do not re-call this tool.`,
         });
-        await checkpoint(i + 1);
+        await checkpoint(i);
         const pauseMsg = `Paused — waiting on operator ${mode} for ${call.name}.`;
         try {
           await supabase
@@ -833,9 +848,28 @@ export async function resumeAgentLoop(
     }
   }
 
-  // Promote queued / approval-resolved → running.
+  // Promote queued / approval-resolved → running. Compare-and-swap on the
+  // status we read: if another resumer (overlapping sweeper ticks) already
+  // promoted this run, zero rows match and we bow out instead of running the
+  // same checkpoint twice (audit finding: duplicate model calls).
   if (run.status === "queued" || run.status === "waiting_approval") {
-    await supabase.from("agent_runs").update({ status: "running" }).eq("id", runId);
+    const { data: promoted } = await supabase
+      .from("agent_runs")
+      .update({ status: "running" })
+      .eq("id", runId)
+      .eq("status", run.status)
+      .select("id");
+    if (!promoted?.length) {
+      return {
+        trace_id: "",
+        agent_slug: run.agent_slug,
+        steps: [],
+        final: "Already being resumed by another worker.",
+        approvals_queued: 0,
+        run_id: runId,
+        halted: null,
+      };
+    }
   }
 
   const { data: cp } = await supabase
