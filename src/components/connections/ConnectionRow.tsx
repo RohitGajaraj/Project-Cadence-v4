@@ -11,8 +11,12 @@ import type { ConnectionRow as AccountConnection } from "@/lib/connections.funct
 // explainer panels: the admin-setup detail rides in a title tooltip; the
 // shared footnote lives in AccountConnectionsSection. Calendar providers pass
 // `accounts` (multi-account) and render each account as a sub-row; everything
-// else passes `connections` from the connections table. Presentational only —
-// all mutations stay in the section component.
+// else passes `connections` from the connections table. Screen 6 adds the
+// optional onDetails prop — a blue mono "details →" link leading the actions
+// cluster that opens the ConnectorDetail drill-down (rendered for every
+// provider row; the detail has a state for configured, unconfigured, and
+// connected alike). Presentational only — all mutations stay in the section
+// component.
 
 function stepStatusFor(status: AccountConnection["status"]): string {
   if (status === "connected") return "completed";
@@ -179,6 +183,7 @@ export function ConnectionRow({
   onRemove,
   accounts,
   onDisconnectAccount,
+  onDetails,
 }: {
   icon: LucideIcon;
   label: string;
@@ -195,6 +200,8 @@ export function ConnectionRow({
   /** Calendar providers only: connected accounts, each rendered as a sub-row. */
   accounts?: { id: string; label: string }[];
   onDisconnectAccount?: (id: string) => void;
+  /** Opens the ConnectorDetail drill-down for this provider. */
+  onDetails?: () => void;
 }) {
   const primary = connections[0];
   const extras = connections.slice(1);
@@ -233,6 +240,16 @@ export function ConnectionRow({
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {onDetails ? (
+            <button
+              type="button"
+              className="mono-label"
+              style={{ fontSize: 8.5, color: "var(--action-blue)", flexShrink: 0 }}
+              onClick={onDetails}
+            >
+              details →
+            </button>
+          ) : null}
           {accounts !== undefined ? (
             // Calendar: multi-account — Connect stays available to add another.
             configured ? (

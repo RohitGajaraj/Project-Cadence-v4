@@ -35,7 +35,11 @@ import {
 } from "@/lib/byokeys.functions";
 import { getActiveBrief, upsertBrief, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { AccountConnectionsSection } from "@/components/connections/AccountConnectionsSection";
+import {
+  AccountConnectionsSection,
+  ConnectorDetail,
+} from "@/components/connections/AccountConnectionsSection";
+import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/connectors/registry";
 
 type SectionId = "connections" | "ai" | "staff" | "workspace" | "profile";
 
@@ -66,9 +70,18 @@ function normalizeSection(raw: string | undefined): SectionId {
   return TABS.some((s) => s.id === raw) ? (raw as SectionId) : "connections";
 }
 
+// ?connector= drill param (screen 6) — only registry keys for user-facing
+// providers open the detail; anything else falls back to the normal list.
+function normalizeConnector(raw: string | undefined): ProviderId | undefined {
+  if (!raw) return undefined;
+  const spec = (CONNECTOR_REGISTRY as Record<string, ProviderSpec | undefined>)[raw];
+  return spec && spec.userFacing !== false ? spec.id : undefined;
+}
+
 export const Route = createFileRoute("/_authenticated/settings")({
-  validateSearch: (search: Record<string, unknown>): { section?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { section?: string; connector?: string } => ({
     section: typeof search.section === "string" ? search.section : undefined,
+    connector: typeof search.connector === "string" ? search.connector : undefined,
   }),
   component: SettingsPage,
   head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
@@ -92,8 +105,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 function SettingsPage() {
-  const { section } = Route.useSearch();
+  const { section, connector } = Route.useSearch();
   const active = normalizeSection(section);
+  const activeConnector = active === "connections" ? normalizeConnector(connector) : undefined;
   const navigate = useNavigate({ from: "/settings" });
   const { activeWorkspace, activeProduct } = useWorkspace();
 
@@ -117,7 +131,13 @@ function SettingsPage() {
         <SurfaceHeader kicker="Workspace" icon={SlidersHorizontal} title="Settings" sub={sub} />
         <TabRow tabs={TABS} active={active} onSet={setTab} />
 
-        {active === "connections" && <ConnectionsTab />}
+        {active === "connections" && (
+          <ConnectionsTab
+            connector={activeConnector}
+            onOpenDetail={(p) => navigate({ search: { section: "connections", connector: p } })}
+            onCloseDetail={() => navigate({ search: { section: "connections" } })}
+          />
+        )}
         {active === "ai" && <ModelsTab />}
         {active === "staff" && <StaffTab />}
         {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
@@ -129,10 +149,20 @@ function SettingsPage() {
 
 /* ---- Connections — Connected accounts (OAuth-only) + workspace tool sync,
    the reference's 3-col connector card grid (serif 16 name · StepDot ·
-   12 ink-subtle desc · Connect/Disconnect). ConnectorDetail drill-down is
-   the next migration screen — no "details →" link yet. ---- */
+   12 ink-subtle desc · Connect/Disconnect). Screen 6 ships the ConnectorDetail
+   drill-down: ?connector= (optional search param) replaces this whole tab body
+   with the per-provider detail; "details →" on every account row opens it,
+   DrillHeader's back link and any tab switch clear it (fresh search object). ---- */
 
-function ConnectionsTab() {
+function ConnectionsTab({
+  connector,
+  onOpenDetail,
+  onCloseDetail,
+}: {
+  connector?: ProviderId;
+  onOpenDetail: (provider: ProviderId) => void;
+  onCloseDetail: () => void;
+}) {
   const qc = useQueryClient();
   const fIntegrations = useServerFn(listIntegrations);
   const fUpsertInt = useServerFn(upsertIntegration);
@@ -164,9 +194,15 @@ function ConnectionsTab() {
     },
   });
 
+  // Drill-down: the detail replaces the entire tab body (SurfaceHeader +
+  // TabRow stay above us in SettingsPage).
+  if (connector) {
+    return <ConnectorDetail provider={connector} onBack={onCloseDetail} />;
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <AccountConnectionsSection />
+      <AccountConnectionsSection onOpenDetail={onOpenDetail} />
 
       <div>
         <MonoLabel style={{ marginBottom: 4 }}>Workspace tool sync</MonoLabel>
