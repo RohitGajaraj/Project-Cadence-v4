@@ -25,6 +25,10 @@ import { TracesPanel } from "@/components/observe/TracesPanel";
 import { DriftPanel } from "@/components/observe/DriftPanel";
 import { EvalsPanel } from "@/components/governance/EvalsPanel";
 import { PromptsPanel } from "@/components/governance/PromptsPanel";
+import { EvalSuiteDetail } from "@/components/governance/EvalSuiteDetail";
+import { AgentSpendDetail } from "@/components/observe/AgentSpendDetail";
+import { TraceDetail } from "@/components/observe/TraceDetail";
+import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 
 // Govern surface — v4 IA. Absorbs /governance + /observe + thin redirects
 // (/guardrails, /budgets, /traces, /drift) and, in Phase 1b-2, /evals + /prompts.
@@ -66,9 +70,21 @@ const GOVERN_DESC: Record<Tab, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/govern")({
-  validateSearch: (search: Record<string, unknown>): { tab: Tab } => {
+  // Screen-7 drill contract (inherited verbatim from screen 6): optional
+  // search params open a detail in the tab body only — SurfaceHeader +
+  // TabRow stay; setTab navigates with a fresh search object so switching
+  // tabs clears any open drill; DrillHeader back returns to the bare tab.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab: Tab; suite?: string; agent?: string; trace?: string; surface?: string } => {
     const t = search.tab;
-    return { tab: TABS.some((x) => x.id === t) ? (t as Tab) : "controls" };
+    return {
+      tab: TABS.some((x) => x.id === t) ? (t as Tab) : "controls",
+      suite: typeof search.suite === "string" ? search.suite : undefined,
+      agent: typeof search.agent === "string" ? search.agent : undefined,
+      trace: typeof search.trace === "string" ? search.trace : undefined,
+      surface: typeof search.surface === "string" ? search.surface : undefined,
+    };
   },
   component: GovernPage,
   head: () => ({ meta: [{ title: "Govern · Cadence" }] }),
@@ -99,7 +115,7 @@ export const Route = createFileRoute("/_authenticated/govern")({
 });
 
 function GovernPage() {
-  const { tab } = Route.useSearch();
+  const { tab, suite, agent, trace, surface } = Route.useSearch();
   const navigate = useNavigate({ from: "/govern" });
   const { activeWorkspace } = useWorkspace();
 
@@ -156,10 +172,10 @@ function GovernPage() {
         {tab === "guardrails" && <GuardrailsPanel />}
         {tab === "budgets" && <BudgetsPanel />}
         {tab === "prompts" && <PromptsPanel />}
-        {tab === "evals" && <EvalsPanel />}
-        {tab === "analytics" && <AnalyticsPanel />}
-        {tab === "traces" && <TracesPanel />}
-        {tab === "drift" && <DriftPanel />}
+        {tab === "evals" && (suite ? <EvalSuiteDetail id={suite} /> : <EvalsPanel />)}
+        {tab === "analytics" && (agent ? <AgentSpendDetail id={agent} /> : <AnalyticsPanel />)}
+        {tab === "traces" && (trace ? <TraceDetail id={trace} /> : <TracesPanel />)}
+        {tab === "drift" && (surface ? <DriftSurfaceDetail id={surface} /> : <DriftPanel />)}
       </div>
     </AppShell>
   );

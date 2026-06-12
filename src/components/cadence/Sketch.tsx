@@ -60,13 +60,19 @@ export function SketchLine({
   color = "var(--action-blue)",
   w = 210,
   h = 42,
+  baseline,
 }: {
   data: number[];
   color?: string;
   w?: number;
   h?: number;
+  /** Optional reference line (eval gate, drift zero). Drawn as a clean
+   *  dashed hairline — an instrument, not an observation, so it is the one
+   *  mark here the sketch law leaves straight. Rendered only when it falls
+   *  inside the data's range (reference Sparkline contract). */
+  baseline?: number;
 }) {
-  const { passA, passB, endX, endY } = useMemo(() => {
+  const { passA, passB, endX, endY, baseY } = useMemo(() => {
     const min = Math.min(...data);
     const max = Math.max(...data);
     const span = max - min || 1;
@@ -78,11 +84,23 @@ export function SketchLine({
       passB: sketchPath(pts, mulberry32(seedOf(data, 2)), 1.1),
       endX: px(data.length - 1),
       endY: py(data[data.length - 1]),
+      baseY:
+        baseline != null && baseline >= min && baseline <= max ? py(baseline) : null,
     };
-  }, [data, w, h]);
+  }, [data, w, h, baseline]);
   if (data.length < 2) return null;
   return (
     <svg width={w} height={h} aria-hidden="true" style={{ display: "block", maxWidth: "100%" }}>
+      {baseY != null && (
+        <line
+          x1="5"
+          x2={w - 5}
+          y1={baseY}
+          y2={baseY}
+          stroke="var(--hairline-strong)"
+          strokeDasharray="3 3"
+        />
+      )}
       <path
         d={passA}
         fill="none"
