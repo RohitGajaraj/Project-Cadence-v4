@@ -24,6 +24,17 @@
 
 ## Decision log
 
+### 2026-06-12 — The chat surface is the Brain: company-brain positioning, retention makes it real
+
+**Decision:** The conversational surface (just rebuilt as Perplexity-grade "Research", F-RESEARCH) is renamed and positioned as **Brain** — the company/product brain that captures everything inward (signals, meetings, decisions, specs, learnings, missions) and outward (web research findings), cited and compounding. Founder-ratified alongside the build call: ship the **retention slice** immediately (F-BRAIN) — auto-retain research answers + sources into indexed memory so future questions recall past findings; "Remember this" / "Capture as decision" actions on any message; a "what the brain knows" status. Tagline: "Everything inward and outward — captured, cited, compounding."
+
+**Why:** Founder instinct, validated by YC naming knowledge/company brains a key AI area — and it is not a pivot: "Memory compounds" is platform law #6 and "Compounding Product Memory" is moat pillar #4 in the v4 canon; the constitution lists persistent organisational memory as a durable advantage. The honest gap was that the surface had a Perplexity-grade mouth but no hippocampus: findings were discarded after each answer. Retention converts the name into the asset.
+
+**Tradeoffs considered:** Keeping "Research" (activity-framing; Perplexity owns it) — rejected for the stronger asset-framing category claim. "Company Brain" (two words, heavier rail) — rejected for the rail; available as enterprise positioning language. IA confusion with the Knowledge surface — resolved: the Brain is the intelligence you talk to; Knowledge is where its contents live.
+
+**Impact:** F-BRAIN build (rename + retention + actions + status); `docs/features/research.md` retitled to Brain; README/demo positioning line available. Embeddings dependency: retention indexes via the Lovable embed API (cloud) — locally findings save unindexed/skip gracefully.
+
+
 ### 2026-06-12 — Connectors are OAuth-only for end users: one Connect button, no API-key paste
 
 **Decision:** Every user-facing connector is a single **Connect** button → provider OAuth (redirect/popup) → permissions granted → done. The API-key paste path is removed from the UI entirely; storing user-pasted provider keys is rejected. Disabled connectors must show an explanatory "Admin setup required" state naming the missing setup, never a mute disabled button. Mechanism: the Lovable connector gateway's app-user OAuth (the live calendar precedent — tokens stay in the gateway, we store only a connection handle), generalized to Linear/Notion/Google Docs/Figma/Jira; GitHub keeps its GitHub App flow. Firecrawl is removed from the user-facing connector list (platform infrastructure, not a user connector). The AES vault remains for internal/infra use only.
