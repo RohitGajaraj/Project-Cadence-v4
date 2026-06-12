@@ -77,7 +77,7 @@ function PublicPrototype() {
         title={state.name}
         sandbox="allow-scripts allow-forms allow-modals"
         srcDoc={state.src}
-        className="flex-1 w-full bg-white"
+        className="flex-1 w-full bg-canvas"
       />
     </div>
   );

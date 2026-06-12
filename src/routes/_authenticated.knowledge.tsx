@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div className="p-8">
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-6">
+        <div className="rounded-xl border border-rose/30 bg-rose/5 p-6">
           <h2 className="text-lg font-semibold text-rose-200">Couldn't load knowledge</h2>
           <p className="mt-2 text-sm text-rose-200/70">
             {(error as Error)?.message ?? "Unknown error"}
@@ -122,12 +122,12 @@ function KnowledgePage() {
             const Icon = t.Icon;
             const toneIcon =
               t.tone === "violet"
-                ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
+                ? "bg-violet/10 text-violet border-violet/30"
                 : t.tone === "emerald"
-                  ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                  ? "bg-emerald/10 text-emerald border-emerald/30"
                   : t.tone === "sky"
-                    ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
-                    : "bg-amber-500/10 text-amber-300 border-amber-500/30";
+                    ? "bg-cyan/10 text-cyan border-cyan/30"
+                    : "bg-amber/10 text-amber border-amber/30";
             return (
               <button
                 key={t.id}

@@ -62,7 +62,7 @@ function MissionsPage() {
       <div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
         <header>
           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-            <Activity className="h-3.5 w-3.5 text-violet-300" /> Build
+            <Activity className="h-3.5 w-3.5 text-agent" /> Build
           </div>
           <h1 className="mt-3 font-display text-3xl tracking-tight">Missions</h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
@@ -76,8 +76,8 @@ function MissionsPage() {
             const Icon = t.Icon;
             const toneIcon =
               t.tone === "violet"
-                ? "bg-violet-500/10 text-violet-300 border-violet-500/30"
-                : "bg-cyan-500/10 text-cyan-300 border-cyan-500/30";
+                ? "bg-violet/10 text-violet border-violet/30"
+                : "bg-cyan/10 text-cyan border-cyan/30";
             return (
               <button
                 key={t.id}

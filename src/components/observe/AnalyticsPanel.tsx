@@ -175,7 +175,7 @@ export function AnalyticsPanel() {
       )}
 
       {tab === "runs" && (
-        <div className="bento divide-y divide-white/5">
+        <div className="bento divide-y divide-border">
           {(events.data?.events ?? []).map((e) => (
             <button
               key={e.id}

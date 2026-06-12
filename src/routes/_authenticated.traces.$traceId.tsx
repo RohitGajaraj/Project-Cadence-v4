@@ -82,14 +82,14 @@ function buildSpans(events: EventRow[]): { spans: Span[]; totalMs: number; t0: n
 
 const SURFACE_COLORS: Record<string, string> = {
   agent: "bg-violet-500/80",
-  chat: "bg-sky-500/80",
-  copilot: "bg-cyan-500/80",
-  prd: "bg-emerald-500/80",
-  discovery: "bg-amber-500/80",
+  chat: "bg-action-blue/80",
+  copilot: "bg-cyan/80",
+  prd: "bg-emerald/80",
+  discovery: "bg-saffron/80",
   studio: "bg-fuchsia-500/80",
   brief: "bg-indigo-500/80",
   eval: "bg-orange-500/80",
-  judge: "bg-rose-500/80",
+  judge: "bg-rose/80",
   embed: "bg-teal-500/80",
   scheduler: "bg-lime-500/80",
   test: "bg-slate-500/80",
@@ -182,7 +182,7 @@ function TraceDetail() {
             {totals.errors > 0 && (
               <div>
                 <div className="text-muted-foreground">Errors</div>
-                <div className="font-display text-lg text-rose-300">{totals.errors}</div>
+                <div className="font-display text-lg text-rose">{totals.errors}</div>
               </div>
             )}
           </div>
@@ -239,14 +239,14 @@ function TraceDetail() {
                           {s.model}
                         </span>
                         {hits.length > 0 && (
-                          <span className="inline-flex items-center gap-0.5 text-amber-300">
+                          <span className="inline-flex items-center gap-0.5 text-saffron">
                             <Shield className="h-3 w-3" /> {hits.length}
                           </span>
                         )}
                         {s.status === "ok" ? (
-                          <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="h-3 w-3 text-emerald shrink-0" />
                         ) : (
-                          <AlertTriangle className="h-3 w-3 text-rose-400 shrink-0" />
+                          <AlertTriangle className="h-3 w-3 text-rose shrink-0" />
                         )}
                         <span className="tabular-nums text-muted-foreground w-16 text-right">
                           {fmtMs(s.latency_ms)}
@@ -313,14 +313,14 @@ function TraceDetail() {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Status</div>
-                      <div className={sel.status === "ok" ? "text-emerald-300" : "text-rose-300"}>
+                      <div className={sel.status === "ok" ? "text-emerald" : "text-rose"}>
                         {sel.status}
                       </div>
                     </div>
                   </div>
 
                   {sel.error_message && (
-                    <div className="rounded-md border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300">
+                    <div className="rounded-md border border-rose/30 bg-rose/10 p-2 text-xs text-rose">
                       {sel.error_message}
                     </div>
                   )}

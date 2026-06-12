@@ -310,7 +310,7 @@ function ChatPage() {
               className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
               style={{
                 background:
-                  "var(--gradient-primary, linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, #a78bfa)))",
+                  "var(--gradient-primary, linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 60%, var(--agent))))",
               }}
             >
               <Plus className="h-3.5 w-3.5" /> New thread
@@ -443,7 +443,7 @@ function ChatPage() {
                 className="relative rounded-2xl p-[1px] transition"
                 style={{
                   background:
-                    "linear-gradient(135deg, color-mix(in oklab, var(--primary) 55%, transparent), color-mix(in oklab, #a78bfa 45%, transparent), color-mix(in oklab, #38bdf8 35%, transparent))",
+                    "linear-gradient(135deg, color-mix(in oklab, var(--primary) 55%, transparent), color-mix(in oklab, var(--agent) 45%, transparent), color-mix(in oklab, var(--action-blue) 35%, transparent))",
                 }}
               >
                 <div className="rounded-2xl bg-background/80 backdrop-blur-xl">
@@ -483,7 +483,9 @@ function ChatPage() {
                         disabled={!input.trim()}
                         aria-label="Send message"
                         className="h-9 w-9 grid place-items-center rounded-xl text-white shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)] disabled:opacity-40 transition active:scale-[0.97]"
-                        style={{ background: "linear-gradient(135deg, var(--primary), #a78bfa)" }}
+                        style={{
+                          background: "linear-gradient(135deg, var(--primary), var(--agent))",
+                        }}
                       >
                         <Send className="h-4 w-4" />
                       </button>

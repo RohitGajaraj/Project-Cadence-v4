@@ -47,7 +47,7 @@ export function DocEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-invert max-w-none focus:outline-none min-h-[60vh] px-2 py-4 prose-headings:font-display prose-headings:tracking-tight prose-p:leading-relaxed prose-code:text-violet-300 prose-code:bg-secondary/60 prose-code:px-1 prose-code:rounded",
+          "prose max-w-none focus:outline-none min-h-[60vh] px-2 py-4 prose-headings:font-display prose-headings:tracking-tight prose-p:leading-relaxed prose-code:text-violet-300 prose-code:bg-secondary/60 prose-code:px-1 prose-code:rounded",
       },
       handleKeyDown: (_view, event) => {
         if (event.key === "/") {

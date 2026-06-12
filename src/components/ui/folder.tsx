@@ -42,7 +42,7 @@ const PAGES = [
 ];
 
 const Page = () => (
-  <div className="w-[200px] h-[230px] rounded-lg bg-white shadow-[0_4px_18px_-6px_rgba(0,0,0,0.35)] border border-black/5 p-4 flex flex-col gap-2">
+  <div className="w-[200px] h-[230px] rounded-lg bg-canvas shadow-[0_4px_18px_-6px_rgba(0,0,0,0.35)] border border-ink/10 p-4 flex flex-col gap-2">
     <div className="h-2 w-2/3 rounded-full bg-neutral-200" />
     {Array.from({ length: 7 }).map((_, i) => (
       <div

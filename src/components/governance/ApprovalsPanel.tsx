@@ -32,9 +32,9 @@ function StatusBadge({ status }: { status: string }) {
   const { Icon } = s;
   const dot =
     s.tone === "ok"
-      ? "bg-[var(--deep-green)]"
+      ? "bg-deep-green"
       : s.tone === "bad"
-        ? "bg-[var(--coral)]"
+        ? "bg-coral"
         : s.tone === "pending"
           ? "bg-foreground"
           : "bg-muted-foreground";
@@ -120,7 +120,7 @@ export function ApprovalsPanel() {
                   )}
                   <details className="mt-3">
                     <summary className="cursor-pointer link-action text-xs">View args</summary>
-                    <pre className="mt-2 max-h-60 overflow-auto rounded-md border hairline bg-[var(--soft-stone)] p-3 text-[11px] leading-relaxed text-foreground">
+                    <pre className="mt-2 max-h-60 overflow-auto rounded-md border hairline bg-soft-stone p-3 text-[11px] leading-relaxed text-foreground">
                       {JSON.stringify(a.args, null, 2)}
                     </pre>
                   </details>

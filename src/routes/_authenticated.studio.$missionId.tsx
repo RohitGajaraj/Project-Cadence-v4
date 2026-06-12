@@ -45,9 +45,9 @@ export const Route = createFileRoute("/_authenticated/studio/$missionId")({
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div className="p-8">
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-6">
-          <h2 className="text-lg font-semibold text-rose-200">Couldn't load this session</h2>
-          <p className="mt-2 text-sm text-rose-200/70">
+        <div className="rounded-xl border border-rose/30 bg-rose/5 p-6">
+          <h2 className="text-lg font-semibold text-rose">Couldn't load this session</h2>
+          <p className="mt-2 text-sm text-rose/70">
             {(error as Error)?.message ?? "Unknown error"}
           </p>
           <button
@@ -191,19 +191,19 @@ function StudioSessionPage() {
       id: "changes",
       label: "Changes",
       Icon: FileDiff,
-      tone: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+      tone: "bg-action-blue/10 text-action-blue border-action-blue/30",
     },
     {
       id: "pr",
       label: "PR & CI",
       Icon: GitPullRequest,
-      tone: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+      tone: "bg-emerald/10 text-emerald border-emerald/30",
     },
     {
       id: "cost",
       label: "Cost",
       Icon: Coins,
-      tone: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+      tone: "bg-saffron/10 text-saffron border-saffron/30",
     },
   ];
 
@@ -228,7 +228,7 @@ function StudioSessionPage() {
                 <span>·</span>
                 <span className="tabular-nums">{fmtCost(totalCost)}</span>
                 {isLive && (
-                  <span className="inline-flex items-center gap-1 text-cyan-300">
+                  <span className="inline-flex items-center gap-1 text-action-blue">
                     <Loader2 className="h-3 w-3 animate-spin" /> live · refreshing every 4s
                   </span>
                 )}

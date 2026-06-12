@@ -398,7 +398,7 @@ function SettingsPage() {
                           >
                             <span
                               className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                connected ? "bg-emerald-400" : "bg-muted-foreground/30"
+                                connected ? "bg-emerald" : "bg-muted-foreground/30"
                               }`}
                             />
                             <div className="min-w-0 flex-1">
@@ -522,7 +522,7 @@ function SettingsPage() {
                       <div className="sm:col-span-12 flex items-center justify-end gap-2">
                         {testResult && (
                           <span
-                            className={`text-xs ${testResult.ok ? "text-emerald-400" : "text-rose-400"}`}
+                            className={`text-xs ${testResult.ok ? "text-emerald" : "text-rose"}`}
                           >
                             {testResult.ok
                               ? `✓ ${testResult.latency_ms}ms`

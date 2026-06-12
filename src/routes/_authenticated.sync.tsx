@@ -103,7 +103,7 @@ function SyncInboxPage() {
 
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <AlertTriangle className="h-4 w-4 text-saffron" />
             <h2 className="font-display text-sm tracking-tight uppercase text-muted-foreground">
               Conflicts ({conflicts.length})
             </h2>
@@ -111,7 +111,7 @@ function SyncInboxPage() {
           {q.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
           {!q.isLoading && conflicts.length === 0 && (
             <div className="rounded-xl border hairline bg-secondary/20 p-8 text-center text-sm text-muted-foreground">
-              <CheckCircle2 className="h-6 w-6 mx-auto mb-2 text-emerald-400/70" />
+              <CheckCircle2 className="h-6 w-6 mx-auto mb-2 text-emerald/70" />
               No conflicts. You're in sync.
             </div>
           )}
@@ -391,7 +391,7 @@ function WebhookIngestCard() {
                 onClick={() => (rotateArmed ? mRotate.mutate() : setRotateArmed(true))}
                 className={`inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${
                   rotateArmed
-                    ? "text-amber-400 border-amber-400/40"
+                    ? "text-saffron border-saffron/40"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >

@@ -396,6 +396,13 @@ function IncidentRow({
   );
 }
 
+const ACCENT_STROKE: Record<string, string> = {
+  violet: "var(--violet)",
+  cyan: "var(--cyan)",
+  emerald: "var(--emerald)",
+  rose: "var(--rose)",
+};
+
 function TrendCard({
   title,
   series,
@@ -436,7 +443,8 @@ function TrendCard({
         {series.length > 1 && (
           <svg
             viewBox={`0 0 ${w} ${h}`}
-            className={`w-full h-12 stroke-${accent}-500`}
+            className="w-full h-12"
+            style={{ stroke: ACCENT_STROKE[accent] ?? "currentColor" }}
             fill="none"
             strokeWidth="1.5"
           >
