@@ -4,6 +4,11 @@
 // getCompanyBrainStats), TabRow Calendar | Memory | Decisions | Docs with
 // KNOWLEDGE_DESC lines. Production contracts ride the reference layout:
 // ?tab= + ?meeting= search params, panel-level server-function wiring.
+// Screen-6 drill contract: detail state rides optional search params
+// (?decision= → DecisionDetail, ?learning= → LearningDetail); the detail
+// replaces ONLY the tab body — SurfaceHeader, Company-brain strip and TabRow
+// stay. setTab navigates with a fresh search object, so drills clear on tab
+// switch; DrillHeader onBack navigates to the same tab without the param.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +21,8 @@ import { listProjects } from "@/lib/projects.functions";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
 import { MemoryPanel } from "@/components/knowledge/MemoryPanel";
 import { DecisionsPanel } from "@/components/knowledge/DecisionsPanel";
+import { DecisionDetail } from "@/components/knowledge/DecisionDetail";
+import { LearningDetail } from "@/components/knowledge/LearningDetail";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
 import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 
@@ -30,11 +37,15 @@ const KNOWLEDGE_DESC: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  validateSearch: (search: Record<string, unknown>): { tab: Tab; meeting?: string } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab: Tab; meeting?: string; decision?: string; learning?: string } => {
     const t = search.tab;
     return {
       tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "calendar",
       meeting: typeof search.meeting === "string" ? search.meeting : undefined,
+      decision: typeof search.decision === "string" ? search.decision : undefined,
+      learning: typeof search.learning === "string" ? search.learning : undefined,
     };
   },
   component: KnowledgePage,
@@ -64,7 +75,7 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
 });
 
 function KnowledgePage() {
-  const { tab, meeting } = Route.useSearch();
+  const { tab, meeting, decision, learning } = Route.useSearch();
   const navigate = useNavigate({ from: "/knowledge" });
   const { activeWorkspace } = useWorkspace();
 
@@ -156,8 +167,8 @@ function KnowledgePage() {
         />
 
         {tab === "calendar" && <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />}
-        {tab === "memory" && <MemoryPanel />}
-        {tab === "decisions" && <DecisionsPanel />}
+        {tab === "memory" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
+        {tab === "decisions" && (decision ? <DecisionDetail id={decision} /> : <DecisionsPanel />)}
         {tab === "docs" && <DocsPanel />}
       </div>
     </AppShell>

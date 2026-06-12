@@ -1,15 +1,19 @@
 // Decisions — Knowledge tab 3, ported from design-reference/cadence/loop.jsx
 // (KnowledgeScreen · Decisions): one bento table — Decision / Made by / When /
 // Why / chevron. Production functionality rides the reference table: source +
-// status filters, title search, the Log-decision dialog, approve/reject
-// mutations and the detail sheet (the reference's DecisionDetail drill-down is
-// a later migration screen). Status is a rendered judgment → VerdictChip
+// status filters, title search, the Log-decision dialog and approve/reject
+// quick actions. Screen-6 reconciliation (founder ruling: one detail surface;
+// reference layout wins, production mutations kept): the old side sheet is
+// gone — a row click drills to ?decision= on /knowledge, rendered by
+// DecisionDetail. The shared vocabulary (ageOf / SOURCE_LABEL / STATUS_TONE /
+// hasSource) lives in decisions-shared.ts; SourceLink is exported from here —
+// single source, no drift. Status is a rendered judgment → VerdictChip
 // (approved moss · rejected madder · pending ember = the human's call).
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { ChevronRight, ExternalLink, Gavel, Search } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Gavel, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   listDecisions,
@@ -26,53 +30,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  EmptyState,
-  MonoLabel,
-  VerdictChip,
-  type VerdictTone,
-} from "@/components/cadence/Primitives";
+import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
+import { ageOf, SOURCE_LABEL, STATUS_TONE } from "./decisions-shared";
 
 type SourceFilter = "all" | DecisionSource;
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
-const SOURCE_LABEL: Record<DecisionSource, string> = {
-  mission: "Mission",
-  prd: "Spec",
-  meeting: "Meeting",
-  manual: "Manual",
-};
-
-const STATUS_TONE: Record<DecisionRow["status"], VerdictTone> = {
-  approved: "moss",
-  rejected: "madder",
-  pending: "ember", // awaiting the human's call
-};
-
-function ageOf(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(ms / 60_000);
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-function hasSource(d: DecisionRow): boolean {
-  return !!(d.mission_id || d.prd_id || d.meeting_id);
-}
-
-function SourceLink({
+export function SourceLink({
   d,
   className,
   style,
@@ -132,7 +96,7 @@ export function DecisionsPanel() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<DecisionRow | null>(null);
+  const navigate = useNavigate();
 
   const qc = useQueryClient();
   const fList = useServerFn(listDecisions);
@@ -307,9 +271,12 @@ export function DecisionsPanel() {
               key={d.id}
               role="button"
               tabIndex={0}
-              onClick={() => setActive(d)}
+              onClick={() =>
+                navigate({ to: "/knowledge", search: { tab: "decisions", decision: d.id } })
+              }
               onKeyDown={(e) => {
-                if (e.key === "Enter") setActive(d);
+                if (e.key === "Enter")
+                  navigate({ to: "/knowledge", search: { tab: "decisions", decision: d.id } });
               }}
               style={{
                 display: "grid",
@@ -398,89 +365,6 @@ export function DecisionsPanel() {
         onSubmit={(t, r) => create.mutate({ title: t, rationale: r || undefined })}
         submitting={create.isPending}
       />
-
-      {/* Detail side sheet — production affordance; DecisionDetail drill-down
-          is the next migration screen. */}
-      <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          {active && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="font-display" style={{ fontSize: 19, fontWeight: 460 }}>
-                  {active.title}
-                </SheetTitle>
-                <SheetDescription asChild>
-                  <span className="mono-label" style={{ fontSize: 8.5 }}>
-                    {SOURCE_LABEL[(active.source_kind ?? "manual") as DecisionSource]}
-                    {active.source_label ? ` · ${active.source_label}` : ""}
-                    {` · ${ageOf(active.created_at)}`}
-                  </span>
-                </SheetDescription>
-              </SheetHeader>
-              <div
-                style={{
-                  marginTop: 16,
-                  padding: "0 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                }}
-              >
-                <div>
-                  <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 5 }}>
-                    rationale
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: "var(--ink-muted)",
-                      lineHeight: 1.55,
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {active.rationale || "No rationale captured."}
-                  </p>
-                </div>
-                {hasSource(active) && (
-                  <SourceLink
-                    d={active}
-                    className="mono-label"
-                    style={{
-                      fontSize: 8.5,
-                      color: "var(--action-blue)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                    }}
-                  >
-                    open source <ExternalLink size={11} />
-                  </SourceLink>
-                )}
-                <div>
-                  <div className="mono-label" style={{ fontSize: 8.5, marginBottom: 7 }}>
-                    verdict
-                  </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {(["approved", "rejected", "pending"] as const).map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          update.mutate({ id: active.id, status: s });
-                          setActive({ ...active, status: s });
-                        }}
-                      >
-                        <VerdictChip tone={STATUS_TONE[s]} selected={active.status === s}>
-                          {s}
-                        </VerdictChip>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

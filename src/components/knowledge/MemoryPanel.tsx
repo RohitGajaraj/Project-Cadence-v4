@@ -4,12 +4,15 @@
 // numbers are real head counts; learnings come from the outcome loop
 // (outcome.functions.ts listLearnings) and lead with a VerdictChip — a
 // recorded verdict (validated / mixed / missed), per the founder's
-// inline-annotation ruling. The reference's "Ask memory" bento is NOT here:
-// production has no ask-memory endpoint yet (see unported).
+// inline-annotation ruling. Screen-6 drill: each row is clickable (chevron,
+// reference loop.jsx Memory rows) and opens ?learning= → LearningDetail.
+// The reference's "Ask memory" bento is NOT here: production has no
+// ask-memory endpoint yet (see unported).
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Search } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { BookOpen, ChevronRight, Search } from "lucide-react";
 import { listLearnings } from "@/lib/outcome.functions";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
 import { MonoLabel, VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
@@ -46,6 +49,7 @@ function whenOf(iso: string): string {
 
 export function MemoryPanel() {
   const [q, setQ] = useState("");
+  const navigate = useNavigate();
 
   const fLearnings = useServerFn(listLearnings);
   const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fLearnings() });
@@ -132,12 +136,22 @@ export function MemoryPanel() {
             rows.map((l, i) => (
               <div
                 key={l.id}
+                role="button"
+                tabIndex={0}
+                onClick={() =>
+                  navigate({ to: "/knowledge", search: { tab: "memory", learning: l.id } })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter")
+                    navigate({ to: "/knowledge", search: { tab: "memory", learning: l.id } });
+                }}
                 style={{
                   display: "flex",
                   gap: 12,
                   padding: "10px 0",
                   borderBottom: i < rows.length - 1 ? "1px solid var(--hairline)" : "none",
                   fontSize: 13,
+                  cursor: "pointer",
                 }}
               >
                 <span className="mono-label tabular-nums" style={{ width: 64, flexShrink: 0 }}>
@@ -165,6 +179,10 @@ export function MemoryPanel() {
                     </span>
                   ) : null}
                 </span>
+                <ChevronRight
+                  size={11}
+                  style={{ color: "var(--ink-faint)", flexShrink: 0, alignSelf: "center" }}
+                />
               </div>
             ))
           )}
