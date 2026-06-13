@@ -11,7 +11,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { callModel, GovernanceHaltError } from "./runtime.server";
 import { TOOL_REGISTRY, describeToolsForPrompt, type ToolCtx } from "./tools/registry.server";
-import { embedOne } from "@/lib/rag/embed.server";
+import { recallMemoryRefs } from "./memory.server";
+import { adaptiveStepBudget } from "./budget";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
@@ -19,19 +20,6 @@ import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from 
 import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
-
-/**
- * Per-agent step cap. The orchestrator needs more headroom (plan +
- * dispatch + observe + finalize, often multiple dispatch/observe cycles
- * as child runs settle). Studio (slug 'builder') needs the most: explore →
- * plan → stage → commit → PR → CI → self-correct → merge. Specialists keep
- * the conservative 6-step cap.
- */
-function maxStepsFor(agentSlug: string): number {
-  if (agentSlug === "orchestrator") return 14;
-  if (agentSlug === "builder") return 24;
-  return 6;
-}
 
 /**
  * F-STUDIO gate semantics. Studio's shipping tools are sequential — the PR
@@ -100,41 +88,12 @@ async function recallMemory(
   agentSlug: string,
   query: string,
 ): Promise<string[]> {
-  // Two sources: semantic-match across all memory kinds (notes + reflections)
-  // and the top recent reflections for this agent (importance-ranked, useful
-  // when the embedding store is sparse or the goal is novel). Dedup by content.
-  const out: string[] = [];
-  const seen = new Set<string>();
-  const push = (s: unknown) => {
-    if (typeof s !== "string") return;
-    const t = s.trim();
-    if (!t || seen.has(t)) return;
-    seen.add(t);
-    out.push(t);
-  };
-  try {
-    const v = await embedOne(query);
-    const { data } = await supabase.rpc("match_agent_memory", {
-      query_embedding: v as unknown as string,
-      for_user: userId,
-      for_agent_slug: agentSlug,
-      match_count: 5,
-    });
-    (data ?? []).forEach((m: { content: string }) => push(m.content));
-  } catch {
-    /* embed/RPC failure is non-fatal */
-  }
-  try {
-    const { data } = await supabase.rpc("recent_agent_reflections", {
-      for_user: userId,
-      for_agent_slug: agentSlug,
-      match_count: 3,
-    });
-    (data ?? []).forEach((m: { content: string }) => push(m.content));
-  } catch {
-    /* non-fatal */
-  }
-  return out.slice(0, 8);
+  // Delegates to the shared recall (memory.server). `touch: true` writes
+  // last_used_at on the recalled memories — every recall is a use, feeding the
+  // decay sweep (v6 Phase 1). We keep only the lines for prompt injection;
+  // mid-loop handoffs thread the {id} refs separately at dispatch time.
+  const { lines } = await recallMemoryRefs(supabase, userId, agentSlug, query, { touch: true });
+  return lines;
 }
 
 function xmlEscape(str: string): string {
@@ -451,7 +410,22 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
   } = s;
   let approvalsQueued = s.approvalsQueued;
   let halted: { kind: string; reason: string } | null = null;
-  const maxSteps = maxStepsFor(agent.slug);
+  // Adaptive step budget (v6 Phase 1): role base + earned-trust headroom (arc) +
+  // the orchestrator scales with the size of the DAG it's shepherding. Count the
+  // mission's planned steps live (0 when not in a mission / pre-plan). Non-fatal.
+  let plannedStepCount = 0;
+  if (ctx.missionId) {
+    try {
+      const { count } = await supabase
+        .from("mission_steps")
+        .select("id", { count: "exact", head: true })
+        .eq("mission_id", ctx.missionId);
+      plannedStepCount = count ?? 0;
+    } catch (e) {
+      console.error("mission_steps count failed:", e);
+    }
+  }
+  const maxSteps = adaptiveStepBudget({ agentSlug: agent.slug, arc, plannedStepCount });
 
   const checkpoint = async (stepIndex: number) => {
     if (!runId) return;

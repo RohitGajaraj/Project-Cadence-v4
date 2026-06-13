@@ -249,11 +249,31 @@ export async function maybeCompleteMission(
     .eq("mission_id", missionId)
     .is("consumed_by_run_id", null);
   if ((count ?? 0) > 0) return;
+
+  // Orchestrated missions are governed by their step DAG, not just the message
+  // queue: never complete while a planned/dispatched/running step remains
+  // (otherwise a wave-0 child finishing would prematurely close a multi-wave
+  // mission before later steps are even dispatched — v6 Phase 1). When steps
+  // exist, the completion status reflects whether any of them failed.
+  let finalStatus = "completed";
+  const { data: stepRows } = await supabase
+    .from("mission_steps")
+    .select("status")
+    .eq("mission_id", missionId);
+  const steps = (stepRows ?? []) as { status: string }[];
+  if (steps.length > 0) {
+    const allTerminal = steps.every(
+      (s) => s.status === "done" || s.status === "failed" || s.status === "skipped",
+    );
+    if (!allTerminal) return; // still moving — the advance reflector will carry it
+    if (steps.some((s) => s.status === "failed")) finalStatus = "completed_with_failures";
+  }
+
   const { data: updated } = await supabase
     .from("missions")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({ status: finalStatus, completed_at: new Date().toISOString() })
     .eq("id", missionId)
-    .eq("status", "running")
+    .in("status", ["running", "in_progress"])
     .select("id,user_id,workspace_id,title,goal")
     .maybeSingle();
 

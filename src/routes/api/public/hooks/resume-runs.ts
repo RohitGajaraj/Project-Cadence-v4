@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resumeAgentLoop } from "@/lib/ai/loop.server";
+import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
 
 // agent_approvals.run_id is new in the f_studio_engine migration — not in the
 // generated types until they regenerate post-apply (F-V5 untyped-cast pattern).
@@ -23,6 +24,7 @@ const admin = supabaseAdmin as unknown as SupabaseClient;
  */
 const STALE_MS = 2 * 60 * 1000; // 2 minutes since last checkpoint = likely evicted
 const BATCH = 5;
+const MISSION_BATCH = 20; // running missions advanced per tick (cheap no-op when idle)
 
 export const Route = createFileRoute("/api/public/hooks/resume-runs")({
   server: {
@@ -79,7 +81,36 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
               failed.push({ id, error: e instanceof Error ? e.message : String(e) });
             }
           }
-          return new Response(JSON.stringify({ ok: true, resumed, failed }), {
+
+          // v6 Phase 1 — "the loop runs itself": auto-advance every running
+          // mission. The deterministic, model-free reflector dispatches
+          // newly-ready steps + finalizes terminal DAGs, so a multi-hop mission
+          // progresses without the operator re-invoking the orchestrator
+          // (Appendix B: the mid-loop-handoff gap). Cheap no-op when nothing is
+          // ready; claim-first dispatch makes it safe under overlapping ticks.
+          const { data: runningMissions } = await admin
+            .from("missions")
+            .select("id,user_id,workspace_id,goal,status")
+            .in("status", ["running", "in_progress"])
+            .order("updated_at", { ascending: true })
+            .limit(MISSION_BATCH);
+          const advanced: {
+            id: string;
+            dispatched: number;
+            failed: number;
+            finalized: boolean;
+          }[] = [];
+          for (const m of (runningMissions ?? []) as MissionLite[]) {
+            try {
+              const res = await advanceMissionCore(admin, m);
+              if (res.dispatched || res.failed || res.finalized)
+                advanced.push({ id: m.id, ...res });
+            } catch (e) {
+              failed.push({ id: m.id, error: e instanceof Error ? e.message : String(e) });
+            }
+          }
+
+          return new Response(JSON.stringify({ ok: true, resumed, failed, advanced }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (e) {

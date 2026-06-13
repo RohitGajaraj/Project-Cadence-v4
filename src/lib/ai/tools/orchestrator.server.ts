@@ -20,29 +20,16 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ToolDef, ToolCtx } from "./registry.server";
 import { callModel } from "@/lib/ai/runtime.server";
-import { enqueueHandoff, resolveAgent } from "@/lib/ai/handoff.server";
+import {
+  dispatchReadySteps,
+  reflectStepStatusFromRuns,
+  type MissionLite,
+} from "@/lib/ai/mission-advance.server";
 
 // Re-export the same helper signature the registry uses.
 function def<S extends z.ZodTypeAny>(d: ToolDef<S>) {
   return d as unknown as ToolDef;
 }
-
-type MissionStepRow = {
-  id: string;
-  mission_id: string;
-  idx: number;
-  agent_slug: string;
-  sub_goal: string;
-  depends_on: number[];
-  status: string;
-  run_id: string | null;
-  message_id: string | null;
-  result: Record<string, unknown> | null;
-  error: string | null;
-  rationale: string | null;
-  dispatched_at: string | null;
-  completed_at: string | null;
-};
 
 async function loadMission(supabase: SupabaseClient, missionId: string, userId: string) {
   const { data, error } = await supabase
@@ -236,72 +223,33 @@ export const missionDispatch = def({
     if (!missionId) throw new Error("mission.dispatch requires the run to be inside a mission");
     if (!workspaceId) throw new Error("mission.dispatch requires a workspace");
 
-    // First reflect any child-run completions into step status (cheap path —
-    // also done by mission.observe but dispatch needs an up-to-date view of
-    // 'done' to evaluate depends_on).
+    // First reflect any child-run completions into step status (also done by
+    // mission.observe, but dispatch needs an up-to-date view of 'done' to
+    // evaluate depends_on). Shared with the auto-advance sweeper.
     await reflectStepStatusFromRuns(supabase, missionId);
 
-    const { data: ready, error: rErr } = await supabase.rpc("next_ready_mission_steps", {
-      p_mission_id: missionId,
-    });
-    if (rErr) throw new Error(rErr.message);
-    const readyRows = (ready ?? []) as MissionStepRow[];
+    const { data: mission } = await supabase
+      .from("missions")
+      .select("id,user_id,workspace_id,goal,status")
+      .eq("id", missionId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!mission) throw new Error(`Mission not found: ${missionId}`);
 
-    if (readyRows.length === 0) {
+    // Unified, claim-first dispatcher: enqueues child runs for every ready step,
+    // threading memory into each hop. Concurrency-safe with the sweeper.
+    const { dispatched, failed } = await dispatchReadySteps(supabase, mission as MissionLite, {
+      agentId: agentId ?? null,
+      agentSlug: agentSlug ?? null,
+      runId: runId ?? null,
+      traceId: traceId ?? null,
+    });
+
+    if (dispatched.length === 0 && failed.length === 0) {
       return {
         dispatched: 0,
         message: "Nothing ready to dispatch (waiting on deps, or all steps already dispatched).",
       };
-    }
-
-    const dispatched: { idx: number; agent_slug: string; run_id: string; message_id: string }[] =
-      [];
-    const failed: { idx: number; agent_slug: string; error: string }[] = [];
-
-    for (const step of readyRows) {
-      try {
-        const to = await resolveAgent(supabase, userId, { agent_slug: step.agent_slug });
-        const handoffRes = await enqueueHandoff(supabase, userId, {
-          mission_id: missionId,
-          workspace_id: workspaceId,
-          from_agent_id: agentId ?? null,
-          from_agent_slug: agentSlug ?? null,
-          to,
-          payload: {
-            task: step.sub_goal,
-            context: {
-              mission_step_idx: step.idx,
-              orchestrator_run_id: runId ?? null,
-              orchestrator_trace_id: traceId ?? null,
-              rationale: step.rationale ?? undefined,
-            },
-          },
-          source_run_id: runId ?? null,
-          source_trace_id: traceId ?? null,
-        });
-        await supabase
-          .from("mission_steps")
-          .update({
-            status: "dispatched",
-            run_id: handoffRes.queued_run_id,
-            message_id: handoffRes.message_id,
-            dispatched_at: new Date().toISOString(),
-          })
-          .eq("id", step.id);
-        dispatched.push({
-          idx: step.idx,
-          agent_slug: step.agent_slug,
-          run_id: handoffRes.queued_run_id,
-          message_id: handoffRes.message_id,
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        await supabase
-          .from("mission_steps")
-          .update({ status: "failed", error: msg, completed_at: new Date().toISOString() })
-          .eq("id", step.id);
-        failed.push({ idx: step.idx, agent_slug: step.agent_slug, error: msg });
-      }
     }
 
     return {
@@ -424,69 +372,5 @@ export const missionFinalize = def({
   },
 });
 
-// ── helpers ───────────────────────────────────────────────────────────
-/**
- * Cross-check every mission_step.run_id against agent_runs.status and
- * reflect the terminal state back onto the step. Cheap; called by
- * dispatch, observe, and finalize so the orchestrator always sees fresh
- * progress without a separate reactor.
- */
-async function reflectStepStatusFromRuns(
-  supabase: SupabaseClient,
-  missionId: string,
-): Promise<void> {
-  const { data: pending } = await supabase
-    .from("mission_steps")
-    .select("id,run_id,status")
-    .eq("mission_id", missionId)
-    .in("status", ["dispatched", "running"]);
-  const rows = (pending ?? []) as { id: string; run_id: string | null; status: string }[];
-  if (rows.length === 0) return;
-
-  const runIds = rows.map((r) => r.run_id).filter((x): x is string => !!x);
-  if (runIds.length === 0) return;
-
-  const { data: runs } = await supabase
-    .from("agent_runs")
-    .select("id,status,output,halted_reason")
-    .in("id", runIds);
-  const byRun = new Map<
-    string,
-    { status: string; output: string | null; halted_reason: string | null }
-  >(
-    (runs ?? []).map((r) => [
-      (r as { id: string }).id,
-      r as { id: string; status: string; output: string | null; halted_reason: string | null },
-    ]),
-  );
-
-  for (const row of rows) {
-    if (!row.run_id) continue;
-    const run = byRun.get(row.run_id);
-    if (!run) continue;
-    let next: {
-      status: string;
-      error?: string | null;
-      result?: Record<string, unknown> | null;
-      completed_at?: string;
-    } | null = null;
-    if (run.status === "running" && row.status !== "running") {
-      next = { status: "running" };
-    } else if (run.status === "completed") {
-      next = {
-        status: "done",
-        result: run.output ? { output: run.output } : null,
-        completed_at: new Date().toISOString(),
-      };
-    } else if (run.status === "halted" || run.status === "failed") {
-      next = {
-        status: "failed",
-        error: run.halted_reason ?? run.output ?? `child run ${run.status}`,
-        completed_at: new Date().toISOString(),
-      };
-    }
-    if (next) {
-      await supabase.from("mission_steps").update(next).eq("id", row.id);
-    }
-  }
-}
+// reflectStepStatusFromRuns now lives in mission-advance.server.ts (shared with
+// the auto-advance sweeper) and carries the bounded-retry requeue logic.

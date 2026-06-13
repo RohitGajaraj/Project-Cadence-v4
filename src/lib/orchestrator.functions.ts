@@ -14,6 +14,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
+import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
 
 export const ensureOrchestrator = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -92,9 +93,11 @@ const AdvanceSchema = z.object({
 });
 
 /**
- * Re-invoke the orchestrator on an existing mission to dispatch newly-ready
- * steps (those whose deps just completed). Use after specialists report back.
- * Once the event reactor lands (F-AGENT-3) this is fired automatically.
+ * Advance an existing mission: dispatch newly-ready steps (deps just completed)
+ * and finalize a terminal DAG. As of v6 Phase 1 this is the manual lever for the
+ * SAME deterministic, model-free engine the resume-runs sweeper now fires
+ * automatically every tick (`advanceMissionCore`) — so a mission progresses
+ * unattended, and this fn is just an operator "push it now" affordance.
  */
 export const advanceMission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -114,13 +117,7 @@ export const advanceMission = createServerFn({ method: "POST" })
       return { skipped: true, reason: `mission already ${mission.status}` };
     }
 
-    const result = await runAgentLoop(supabase, userId, {
-      agentSlug: "orchestrator",
-      goal: `Advance mission: ${mission.goal.slice(0, 200)}`,
-      model: data.model,
-      missionId: data.missionId,
-      workspaceId: mission.workspace_id,
-    });
+    const result = await advanceMissionCore(supabase, mission as MissionLite);
     return { mission_id: data.missionId, ...result };
   });
 
