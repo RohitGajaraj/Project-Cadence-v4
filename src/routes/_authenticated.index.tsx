@@ -31,10 +31,11 @@ import { listProjects } from "@/lib/projects.functions";
 import { generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { getGreeting } from "@/lib/greeting.functions";
-import { getNeedsYou } from "@/lib/today.functions";
+import { getNeedsYou, getColdStart } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
+import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -56,6 +57,7 @@ function Dashboard() {
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
+  const fetchColdStart = useServerFn(getColdStart);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -73,6 +75,7 @@ function Dashboard() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
+  const coldStart = useQuery({ queryKey: ["cold-start"], queryFn: () => fetchColdStart() });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
   // bucket matches their wall clock, not the server's UTC.
@@ -170,6 +173,8 @@ function Dashboard() {
   const visiblePrd = (ny?.prdCalls ?? []).filter((p) => !deferred.has(p.id));
   const visibleOpp = (ny?.oppCalls ?? []).filter((o) => !deferred.has(o.id));
   const visibleCount = visibleApprovals.length + visiblePrd.length + visibleOpp.length;
+  // v6 Phase 0 / W4 — real emptiness (no signals/opps/specs) shows the on-ramp.
+  const isCold = coldStart.data?.isCold ?? false;
 
   // Reference call-word formula: "One call is / Two calls are / N calls are".
   const callWord =
@@ -408,18 +413,24 @@ function Dashboard() {
             }}
           >
             <MonoLabel icon={ShieldAlert}>
-              Needs you · {visibleCount} call{visibleCount === 1 ? "" : "s"}
+              {isCold
+                ? "Start here"
+                : `Needs you · ${visibleCount} call${visibleCount === 1 ? "" : "s"}`}
             </MonoLabel>
-            <Link
-              to="/govern"
-              search={{ tab: "approvals" }}
-              className="mono-label"
-              style={{ color: "var(--action-blue)" }}
-            >
-              All approvals →
-            </Link>
+            {!isCold && (
+              <Link
+                to="/govern"
+                search={{ tab: "approvals" }}
+                className="mono-label"
+                style={{ color: "var(--action-blue)" }}
+              >
+                All approvals →
+              </Link>
+            )}
           </div>
-          {visibleCount === 0 ? (
+          {isCold ? (
+            <ColdStartOnramp />
+          ) : visibleCount === 0 ? (
             <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
               {callCount === 0
                 ? "All clear. Agents are working; the next call lands here."

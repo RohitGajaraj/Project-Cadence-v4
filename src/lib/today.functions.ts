@@ -155,3 +155,27 @@ export const getNeedsYou = createServerFn({ method: "GET" })
       gateMedianMinutes,
     };
   });
+
+/**
+ * Cold-start gate (v6 Phase 0 / W4). A workspace is "cold" when it has no
+ * signals, opportunities, or specs yet — the agents have nothing to work from.
+ * This is REAL emptiness, distinct from an all-clear queue (data exists, no
+ * pending calls). Today shows the narrated on-ramp only when isCold is true, so
+ * the seeded demo workspace never sees it. Cheap head-count queries (no rows
+ * fetched); RLS scopes to the caller.
+ */
+export const getColdStart = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ isCold: boolean }> => {
+    const { supabase, userId } = context;
+    const [sig, opp, prd] = await Promise.all([
+      supabase.from("signals").select("id", { count: "exact", head: true }).eq("user_id", userId),
+      supabase
+        .from("opportunities")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+      supabase.from("prds").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    ]);
+    const total = (sig.count ?? 0) + (opp.count ?? 0) + (prd.count ?? 0);
+    return { isCold: total === 0 };
+  });
