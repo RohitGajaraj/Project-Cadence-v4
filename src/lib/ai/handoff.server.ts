@@ -25,6 +25,16 @@ export type HandoffPayload = {
   open_questions?: string[];
   /** Hard constraints the receiver must respect. */
   constraints?: string[];
+  /**
+   * Memory the sender relied on — `agent_memory` ids plus a short human note.
+   * The A2A contract field added in v6 Phase 0 (W5): it lets the receiver (and
+   * the trace) see what informed the handoff, and is the seam through which
+   * compounding memory threads across hops. Preserved through the payload
+   * round-trip (stored whole in `agent_messages.payload`); populated where the
+   * sender's recalled-memory context is available — claim never outruns wiring,
+   * so it stays optional until the loop fills it.
+   */
+  memory_refs?: { id: string; summary?: string }[];
 };
 
 export type MissionRow = {
@@ -214,6 +224,12 @@ export function renderHandoffBlock(
   }
   if (p.open_questions?.length) {
     sections.push("Open questions left for you:\n- " + p.open_questions.join("\n- "));
+  }
+  if (p.memory_refs?.length) {
+    sections.push(
+      "Memory the sender relied on (read with your memory tool to go deeper):\n- " +
+        p.memory_refs.map((m) => (m.summary ? `${m.summary} (${m.id})` : m.id)).join("\n- "),
+    );
   }
   return `\n--- Handoff from ${from} (mission context, authoritative) ---\n${sections.join("\n\n")}\n--- End handoff ---\n`;
 }

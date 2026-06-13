@@ -33,6 +33,7 @@ import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou, getColdStart } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
+import { listLearnings } from "@/lib/outcome.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
@@ -58,6 +59,7 @@ function Dashboard() {
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
   const fetchColdStart = useServerFn(getColdStart);
+  const fetchLearnings = useServerFn(listLearnings);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -76,6 +78,7 @@ function Dashboard() {
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
   const coldStart = useQuery({ queryKey: ["cold-start"], queryFn: () => fetchColdStart() });
+  const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fetchLearnings() });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
   // bucket matches their wall clock, not the server's UTC.
@@ -175,6 +178,14 @@ function Dashboard() {
   const visibleCount = visibleApprovals.length + visiblePrd.length + visibleOpp.length;
   // v6 Phase 0 / W4 — real emptiness (no signals/opps/specs) shows the on-ramp.
   const isCold = coldStart.data?.isCold ?? false;
+
+  // v6 Phase 0 / W5 — make the closed loop visible on Today: the outcome→memory
+  // re-score (listLearnings prior_ice → new_ice) surfaced as a line. Only counts
+  // learnings where the score actually moved.
+  const rescores = (learnings.data?.learnings ?? []).filter(
+    (l) => l.prior_ice != null && l.new_ice != null && Number(l.prior_ice) !== Number(l.new_ice),
+  );
+  const latestRescore = rescores[0];
 
   // Reference call-word formula: "One call is / Two calls are / N calls are".
   const callWord =
@@ -494,6 +505,26 @@ function Dashboard() {
             </div>
           )}
         </section>
+
+        {/* MEMORY — the closed loop made visible (v6 Phase 0 / W5) */}
+        {latestRescore && (
+          <section className="bento" style={{ padding: "12px var(--card-pad)", marginBottom: 24 }}>
+            <MonoLabel icon={RefreshCw}>Memory · the loop closed</MonoLabel>
+            <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginTop: 6, lineHeight: 1.5 }}>
+              A {latestRescore.verdict} outcome re-scored an opportunity{" "}
+              <span style={{ color: "var(--ink)", fontWeight: 600 }}>
+                ICE {Number(latestRescore.prior_ice).toFixed(1)} →{" "}
+                {Number(latestRescore.new_ice).toFixed(1)}
+              </span>
+              {latestRescore.summary ? ` — ${latestRescore.summary}` : ""}.
+              {rescores.length > 1 && (
+                <span className="mono-label" style={{ marginLeft: 6, color: "var(--ink-faint)" }}>
+                  · {rescores.length} re-scores from recent outcomes
+                </span>
+              )}
+            </p>
+          </section>
+        )}
 
         {/* BRIEF */}
         <section className="bento rise-3" style={{ padding: "var(--card-pad)", marginBottom: 24 }}>
