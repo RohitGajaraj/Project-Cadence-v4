@@ -66,7 +66,7 @@ FIRST SESSION OR WHEN CONTEXT IS STALE:
 
 3. docs/strategy/ (2 min — find latest version)
    — Open docs/strategy/README.md to find the current version
-   — Read the latest positioning file (current for the wedge/felt product: v5-chief-of-staff-2026-06-11.md — PM Chief of Staff, 4 felt surfaces + Trust drawer, F-V5 phases; expansion map: v4-feature-map-2026-06-11.md; personas in v3-positioning-circuit-2026-06-10.md)
+   — Read the latest positioning file (CURRENT: v6-agentic-product-os-2026-06-13.md — the Agentic Product OS umbrella = PM Chief of Staff felt entry + Decision-System moat, phased build, founder rulings; wedge UX detail: v5-chief-of-staff-2026-06-11.md; expansion/engine map: v4-feature-map-2026-06-11.md; personas: v3-positioning-circuit-2026-06-10.md; superseded v1/v2/v3-audit* in docs/strategy/archive/)
    — Go here when: you need the strategic USP, feature rationale, or personas
 
 4. plan.md section 1-3 (5 min read)
@@ -300,6 +300,11 @@ CANONICAL SOURCE OF TRUTH HIERARCHY:
   - README.md: product face (derived from strategy/)
   - docs/planning/feature-backlog.md: feature list and live status
   - architecture/: technical contracts
+  - docs/README.md: REPOSITORY MAP + FILE-PLACEMENT POLICY — before creating any
+    file, read it. Every new doc goes in the right subfolder and is linked from
+    that folder's index in the same commit; nothing new at repo root or docs/
+    top level; no duplicates or redirect stubs; screenshots local-only under
+    docs/screenshots/. CURRENT positioning = docs/strategy/v6-agentic-product-os-2026-06-13.md.
 
 TOOL-SPECIFIC POINTERS:
   - CLAUDE.md — Claude Code specifics (references AGENTS.md for rules)
@@ -314,7 +319,7 @@ update positioning, update the latest docs/strategy/vN file and cascade to READM
 
 FINDING THE LATEST POSITIONING:
 Always open docs/strategy/README.md first — it indexes all versions and marks
-which is current. As of writing: v5-chief-of-staff-2026-06-11.md governs the wedge/felt product; v4-feature-map-2026-06-11.md is the expansion map (personas remain in v3-positioning-circuit-2026-06-10.md).
+which is current. As of writing: v6-agentic-product-os-2026-06-13.md is the current positioning + build canon (Agentic Product OS umbrella); v5-chief-of-staff-2026-06-11.md holds wedge UX detail; v4-feature-map-2026-06-11.md is the expansion/engine map (personas in v3-positioning-circuit-2026-06-10.md; superseded iterations in docs/strategy/archive/).
 A newer version may exist by the time you read this. Always read the latest.
 
 ================================================================================

@@ -1,3 +1,6 @@
+> [!WARNING]
+> **ARCHIVED — historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
+
 # Product Positioning v2 — Strategic Session Record
 
 > **What this is.** A living record of the strategic thinking that shaped Cadence's positioning, feature set, and go-to-market direction. Written as a reference point for future decisions — not a commitment document, but a map of the reasoning so future you (or any agent) can understand _why_ the product is positioned as it is, and what would need to change to warrant a rethink.

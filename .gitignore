@@ -54,3 +54,7 @@ agentdb*.rvf*.lock
 agentdb*.lock
 *.png
 src/routeTree.gen 2.ts
+
+# Local screenshots / visual artifacts (organized under docs/screenshots, kept local)
+docs/screenshots/
+*.jpeg

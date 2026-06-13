@@ -54,4 +54,4 @@ Make one full vertical slice bulletproof before widening — proves the loop + g
 ## Notes
 
 - Positioning: independent AI-native product company; **fully autonomous super-agents**, governed; agent-first; no "40/60 split," no "wedge," no MVP-phase gating language.
-- The earlier positioning history is archived in [`docs/strategy/v1-positioning-2026-05-26.md`](./docs/strategy/v1-positioning-2026-05-26.md) (frozen).
+- The earlier positioning history is archived in [`docs/strategy/archive/v1-positioning-2026-05-26.md`](./docs/strategy/archive/v1-positioning-2026-05-26.md) (frozen).

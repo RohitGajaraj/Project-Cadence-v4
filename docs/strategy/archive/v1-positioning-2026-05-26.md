@@ -1,3 +1,6 @@
+> [!WARNING]
+> **ARCHIVED — historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
+
 > **ARCHIVE — frozen positioning history (2026-05-26).** This office-hours design doc captured the first positioning reframe. Its key inputs (discovery-first thinking, the six-thread analysis, the Cagan lens, evidence grading) are now integrated into the live docs. **For current truth, read these instead:** product → [`../../README.md`](../../README.md) · feature scope + roadmap → [`../../plan.md`](../../plan.md) · operating rules → [`../../AGENTS.md`](../../AGENTS.md) · positioning/name/stack decisions → [`../../docs/naming.md`](../naming.md) and [`../../docs/decisions/tech-stack.md`](../decisions/tech-stack.md).
 >
 > Note: this doc predates the current positioning. It still uses retired framings ("wedge," month-based milestones, "moat is data," "PM-tool" language). Those are **superseded** — kept here only as a record of how the thinking evolved. Do not act on this file; act on the live docs above.

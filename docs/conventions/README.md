@@ -30,4 +30,4 @@ On 2026-06-06 the operator caught that durable rules were being saved to Lovable
 
 - [`../../AGENTS.md`](../../AGENTS.md) §3 (engineering rules) · §5 (cross-document update protocol) · §10 (cross-tool co-development).
 - [`../../CLAUDE.md`](../../CLAUDE.md) · [`../../GEMINI.md`](../../GEMINI.md) · [`../../.lovable-config.txt`](../../.lovable-config.txt) — tool entry points.
-- [`../strategy/v3-audit-language-voice-2026-06-06.md`](../strategy/v3-audit-language-voice-2026-06-06.md) — the audit that produced the first batch of conventions here.
+- [`../strategy/archive/v3-audit-language-voice-2026-06-06.md`](../strategy/archive/v3-audit-language-voice-2026-06-06.md) — the audit that produced the first batch of conventions here.

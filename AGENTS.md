@@ -246,7 +246,7 @@ A change is not "done" until its documentation is true. An agent that ships code
 | Frontend pattern change                              | [`architecture/frontend.md`](./architecture/frontend.md)                                                                                                   |
 | Integration / connector / protocol change            | [`architecture/integrations.md`](./architecture/integrations.md) + [`plan.md`](./plan.md)                                                                  |
 | Repo layout change                                   | [`ENTRY.md`](./ENTRY.md)                                                                                                                                   |
-| New file under `docs/`                               | Add a row to [`docs/README.md`](./docs/README.md) AND a "Related" cross-link block at the bottom of the new file (siblings + relevant `architecture/*.md`) |
+| New file (any kind)                                  | Follow the **file-placement policy** in [`docs/README.md`](./docs/README.md) § "Repository map & file-placement policy": put it in the correct subfolder, add a row/link in that folder's index, and a "Related" cross-link block at the bottom — all in the same commit. Never at repo root or `docs/` top level; no duplicates or redirect stubs. |
 | Start / pause / finish / block any feature           | **Live status board** in [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) (+ rollup mark)                                          |
 | Phase / milestone completion                         | [`plan.md`](./plan.md) + [`docs/planning/strategic-tasks.md`](./docs/planning/strategic-tasks.md)                                                          |
 | Tech-stack decision                                  | [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md)                                                                                           |
@@ -268,7 +268,7 @@ Do not proceed silently. Ask first when:
 - You discover unexpected state (unfamiliar files, in-progress branches, unstaged WIP).
 - A skill or hook is blocking and you are not authorized to disable it.
 - The work has exceeded the inferred scope of the request.
-- You are about to commit something not explicitly approved. See [`commits.md`](./commits.md).
+- You are about to commit something not explicitly approved. See [`docs/operations/commits.md`](./docs/operations/commits.md).
 
 The cost of one clarification is far below the cost of one unwanted action.
 

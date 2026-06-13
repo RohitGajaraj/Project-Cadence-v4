@@ -6,7 +6,7 @@
 >
 > **Update rule.** When a session produces a strategic decision, a major tradeoff resolution, or a significant positioning or architecture change — add an entry here in the same session. This is not a one-time activity; it is a constant update obligation. Reference: `docs/strategy/README.md` (cascade rule).
 >
-> **Cross-references.** Versioned positioning: [`v2-positioning-2026-06-02.md`](./v2-positioning-2026-06-02.md). Feature backlog: [`../planning/feature-backlog.md`](../planning/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
+> **Cross-references.** Versioned positioning: [`archive/v2-positioning-2026-06-02.md`](./archive/v2-positioning-2026-06-02.md). Feature backlog: [`../planning/feature-backlog.md`](../planning/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
 
 ---
 
@@ -190,7 +190,7 @@
 - **Keep `mem://` as the source and add a hook to sync to git** — rejected. Two writeable copies is the drift trap we're trying to escape; one source (git) + thin caches (memory) is simpler and audit-able.
 - **Skip `mem://` entirely** — rejected. The auto-injected Core lines in `mem://index.md` are useful as a constant nudge inside Lovable sessions; they just need to point at the git rules, not duplicate them.
 
-**Impact:** New folder `docs/conventions/` with `README.md` + 5 rule files (`ui-chrome`, `ui-voice`, `destructive-actions`, `inline-management`, `doc-closure-checklist`). `AGENTS.md` §3 gained 5 rule one-liners (9b–9e) and §5 gained 2 matrix rows. `CLAUDE.md` and `GEMINI.md` got a read-order step 1.6 pointing at the folder. `.lovable-config.txt` got a row in SOURCE OF TRUTH HIERARCHY. `docs/README.md` got a Conventions section. `architecture/frontend.md`, `design.md`, and `docs/strategy/v3-audit-language-voice-2026-06-06.md` link to the conventions as the canonical rule. The 6 `mem://` files were reduced to ≤ 3-line pointers; `mem://index.md` Memories list now explicitly says "bodies live in git". Going forward: write the rule in `docs/conventions/` first, then wire entry points, then (optionally) mirror to memory as a pointer.
+**Impact:** New folder `docs/conventions/` with `README.md` + 5 rule files (`ui-chrome`, `ui-voice`, `destructive-actions`, `inline-management`, `doc-closure-checklist`). `AGENTS.md` §3 gained 5 rule one-liners (9b–9e) and §5 gained 2 matrix rows. `CLAUDE.md` and `GEMINI.md` got a read-order step 1.6 pointing at the folder. `.lovable-config.txt` got a row in SOURCE OF TRUTH HIERARCHY. `docs/README.md` got a Conventions section. `architecture/frontend.md`, `design.md`, and `docs/strategy/archive/v3-audit-language-voice-2026-06-06.md` link to the conventions as the canonical rule. The 6 `mem://` files were reduced to ≤ 3-line pointers; `mem://index.md` Memories list now explicitly says "bodies live in git". Going forward: write the rule in `docs/conventions/` first, then wire entry points, then (optionally) mirror to memory as a pointer.
 
 ### 2026-06-06 — Documentation closure pass for voice / popups / inline-mgmt
 
@@ -204,11 +204,11 @@
 - _Add voice rules to `CLAUDE.md` / `GEMINI.md` / Lovable Knowledge_ — rejected. Tool pointers stay thin; rules live in `design.md` once. The pointers already reference `design.md`.
 - _Skip the architecture entries, leave them in the audit only_ — rejected. Audits get archived; contracts are read every build.
 
-**Impact:** Edited `docs/strategy/v3-audit-language-voice-2026-06-06.md` (+ "How to use / verify", Phased rollout, Learnings, Related). Edited `architecture/frontend.md` (Confirmation/toasts/dialogs + Inline workspace & product management subsections). Edited `design.md` (Voice & language section with length budgets, AI-tell denylist, confirm-copy pattern). Edited `architecture/security.md` (workspace/product owner-gated server fns invariant). Edited `docs/planning/feature-backlog.md` Live status board (Last updated + Recent log). Edited `plan.md` §4 (one-liner). New memory files: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`. Updated `mem://index.md` Core with two new lines.
+**Impact:** Edited `docs/strategy/archive/v3-audit-language-voice-2026-06-06.md` (+ "How to use / verify", Phased rollout, Learnings, Related). Edited `architecture/frontend.md` (Confirmation/toasts/dialogs + Inline workspace & product management subsections). Edited `design.md` (Voice & language section with length budgets, AI-tell denylist, confirm-copy pattern). Edited `architecture/security.md` (workspace/product owner-gated server fns invariant). Edited `docs/planning/feature-backlog.md` Live status board (Last updated + Recent log). Edited `plan.md` §4 (one-liner). New memory files: `mem://constraint/no-native-browser-chrome`, `mem://constraint/no-em-en-dashes-in-ui`, `mem://preference/voice-anchor`, `mem://preference/destructive-actions`, `mem://feature/inline-workspace-product-mgmt`, `mem://preference/doc-loop-checklist`. Updated `mem://index.md` Core with two new lines.
 
 ### 2026-06-06 — Commission v3 language / naming / microcopy companion audit
 
-**Decision:** Extend the v3 product audit with a dedicated language workstream covering naming, sidebar/IA copy, page H1s, empty states, buttons, placeholders, tooltips, approval-gate prompts, agent/AI surface vocabulary, governance verbs, and marketing/public copy. Land it as a versioned companion strategy doc ([`v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md)), not as backlog tickets — recommendations graduate on operator sign-off.
+**Decision:** Extend the v3 product audit with a dedicated language workstream covering naming, sidebar/IA copy, page H1s, empty states, buttons, placeholders, tooltips, approval-gate prompts, agent/AI surface vocabulary, governance verbs, and marketing/public copy. Land it as a versioned companion strategy doc ([`archive/v3-audit-language-2026-06-06.md`](./archive/v3-audit-language-2026-06-06.md)), not as backlog tickets — recommendations graduate on operator sign-off.
 
 **Why:** The main v3 audit graded the _what_ (product, UX, IA, competitive position, thesis). It surfaced that the surface had drifted from v2 positioning — most visibly on `/login` ("AI-native product operating system" contradicting v2's "autonomous" framing). The operator asked for the _words_ graded next: naming, verbosity, tooltips, descriptions end-to-end. Doing this as a separate companion (a) keeps the main audit readable, (b) gives copy/IA fixes their own triage queue separate from feature work, and (c) most of the wins are zero-engineering-risk string edits that don't deserve to wait behind feature bundles.
 
@@ -219,11 +219,11 @@
 - **Implement the safest fixes (login tagline + empty states) immediately without an audit doc** — rejected. The whole point is to fix the discipline gap (closed-doc loop breaking at the most-seen surface), not to patch one symptom — a documented voice guide + naming matrix is what stops the next drift.
 - **Defer until after the IA rename actually ships** — rejected. The renames _are_ an output of this audit; you can't sequence them before doing it.
 
-**Impact:** New [`./v3-audit-language-2026-06-06.md`](./v3-audit-language-2026-06-06.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship — zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
+**Impact:** New [`./archive/v3-audit-language-2026-06-06.md`](./archive/v3-audit-language-2026-06-06.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship — zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
 
 ### 2026-06-06 — Commission v3 end-to-end product & platform audit
 
-**Decision:** Run a full audit of Cadence (product, UX, AI-native posture, IA, competitive position, thesis) and land it as a versioned strategy doc rather than a list of backlog tickets. Output: [`v3-audit-2026-06-06.md`](./v3-audit-2026-06-06.md) — supersedes nothing automatically; recommendations graduate to the backlog only on operator sign-off.
+**Decision:** Run a full audit of Cadence (product, UX, AI-native posture, IA, competitive position, thesis) and land it as a versioned strategy doc rather than a list of backlog tickets. Output: [`archive/v3-audit-2026-06-06.md`](./archive/v3-audit-2026-06-06.md) — supersedes nothing automatically; recommendations graduate to the backlog only on operator sign-off.
 
 **Why:** The product surface had drifted from the v2 positioning faster than the closed-doc loop was catching (login still said "AI-native"; Today still asked the operator to refresh; `/swarm` showed 18 agents on day one). The operator asked for a brutally honest audit that also challenges the thesis. Doing it as a strategy doc (not a feature spec) preserves optionality on which recommendations to action.
 
@@ -233,7 +233,7 @@
 - _Audit as in-chat reply only_ — rejected: the closed-doc loop requires the next tool/session to be able to read it without scrolling chat.
 - _Open new backlog items per recommendation_ — rejected: the operator should triage first; landing 20 raw recs into `feature-backlog.md` without triage would pollute the build queue.
 
-**Impact:** New `docs/strategy/v3-audit-2026-06-06.md` (full audit, Top-5/10/20 roadmap, investor scorecard). `docs/strategy/README.md` index extended. `docs/planning/feature-backlog.md` Live status board updated (Recent log + Last updated). No backlog items, no code changes. **Key thesis refinement proposed (not yet adopted):** "autonomous product OS" → "product-org cockpit," same substrate, sharper noun. Awaiting operator decision.
+**Impact:** New `docs/strategy/archive/v3-audit-2026-06-06.md` (full audit, Top-5/10/20 roadmap, investor scorecard). `docs/strategy/README.md` index extended. `docs/planning/feature-backlog.md` Live status board updated (Recent log + Last updated). No backlog items, no code changes. **Key thesis refinement proposed (not yet adopted):** "autonomous product OS" → "product-org cockpit," same substrate, sharper noun. Awaiting operator decision.
 
 ### 2026-06-06 — Defer UI/UX revamp; commit to F-AGENT-1→4 agent-ecosystem bundle
 
@@ -289,7 +289,7 @@
 
 **Tradeoffs considered:** Keeping the timeline as a UX guide was discussed. Rejected for product docs but the four-stage arc is kept as a UX design directive — it tells designers what states to design for, not when users reach them.
 
-**Impact:** docs/strategy/v2-positioning-2026-06-02.md §7 — explicit timeline removed, replaced with emergent trust framing. design.md — trust arc added as a UX directive with design requirements for each stage (Trust Score, Autonomy Dial, Loop Health Monitor).
+**Impact:** docs/strategy/archive/v2-positioning-2026-06-02.md §7 — explicit timeline removed, replaced with emergent trust framing. design.md — trust arc added as a UX directive with design requirements for each stage (Trust Score, Autonomy Dial, Loop Health Monitor).
 
 ---
 
@@ -301,7 +301,7 @@
 
 **Tradeoffs considered:** Positioning lock-in as a moat (like Salesforce) was discussed. Rejected at this stage — the trust required to accept lock-in comes after demonstrated value, not before it. The real switching cost is the accumulated intelligence, not a contract.
 
-**Impact:** README.md "Portability commitment" section added. Feature U6 (Full data portability / export) added to `docs/planning/feature-backlog.md`. docs/strategy/v2-positioning-2026-06-02.md §6 documents the full reasoning.
+**Impact:** README.md "Portability commitment" section added. Feature U6 (Full data portability / export) added to `docs/planning/feature-backlog.md`. docs/strategy/archive/v2-positioning-2026-06-02.md §6 documents the full reasoning.
 
 ---
 
@@ -511,7 +511,7 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 - _Sweep all 31 routes for em dashes this turn:_ deferred to P1 — would inflate the diff and slow review. Audit lists every target route.
 - _Per-action confirmation modal vs typed-name guard for destructive flows:_ picked typed-name guard for workspace/product delete (operators delete by accident; typing the name is a 2-second pause that catches the wrong-row case).
 
-**Impact:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `docs/strategy/README.md`, `docs/planning/feature-backlog.md`, `plan.md` (§4). No schema changes. RLS unchanged (workspace owner-manage + member-read policies already covered the new server fns).
+**Impact:** new `src/hooks/use-confirm.tsx`, `src/lib/workspaces.functions.ts`, `docs/strategy/archive/v3-audit-language-voice-2026-06-06.md`; edited `src/routes/__root.tsx`, `src/components/cadence/AppShell.tsx`, `src/components/cadence/DocEditor.tsx`, `src/routes/_authenticated.evals.tsx`, `src/routes/_authenticated.guardrails.tsx`, `src/routes/_authenticated.docs.tsx`, `src/lib/projects.functions.ts`, `eslint.config.js`, `docs/strategy/README.md`, `docs/planning/feature-backlog.md`, `plan.md` (§4). No schema changes. RLS unchanged (workspace owner-manage + member-read policies already covered the new server fns).
 
 ---
 
@@ -535,7 +535,7 @@ The YC application becomes a by-product of shipping the proof platform, not its 
 - _Perform destructive renaming of database tables / columns:_ rejected — would break Lovable's active build paths. Map logical namespaces at the documentation and user levels instead.
 - _Widen S6-S8 IDE build scope to replace Cursor/Devin:_ rejected — Circuit remains an orchestration cockpit that drives existing systems, not a replacement IDE.
 
-**Impact:** Updated `README.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `ENTRY.md`, `.lovable-config.txt` with the Rename Disclaimer and Circuit branding. Created a new positioning document `v3-positioning-circuit-2026-06-10.md` as current, archiving `v2-positioning-2026-06-02.md`. `plan.md` and `docs/planning/feature-backlog.md` queued for updates.
+**Impact:** Updated `README.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `ENTRY.md`, `.lovable-config.txt` with the Rename Disclaimer and Circuit branding. Created a new positioning document `v3-positioning-circuit-2026-06-10.md` as current, archiving `archive/v2-positioning-2026-06-02.md`. `plan.md` and `docs/planning/feature-backlog.md` queued for updates.
 
 ---
 

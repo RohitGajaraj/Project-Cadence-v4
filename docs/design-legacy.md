@@ -161,7 +161,7 @@ Patterns: stagger-fade (60ms) on dashboards; spring on drag (`stiffness 360, dam
 The trust arc — how the operator-agent relationship evolves from close governance to greater autonomy as agents earn trust — is a **product behavior and feature specification**, not a design system concern. It lives in:
 
 - Feature C6 (Agent Trust Score + Autonomy Dial) in [`docs/feature-backlog.md`](./docs/feature-backlog.md)
-- Strategic rationale in [`docs/strategy/v2-positioning-2026-06-02.md`](./docs/strategy/v2-positioning-2026-06-02.md) §7
+- Strategic rationale in [`docs/strategy/archive/v2-positioning-2026-06-02.md`](./docs/strategy/archive/v2-positioning-2026-06-02.md) §7
 
 The design system (this file) focuses on tokens, typography, motion, and component contracts. Feature-level behavior specifications belong in the feature backlog and strategy docs.
 
@@ -243,7 +243,7 @@ Used in traces and analytics. Starting palette (full authority to refine for a m
 
 ## Voice & language (non-negotiable)
 
-Canonical rule: [`docs/conventions/ui-voice.md`](./docs/conventions/ui-voice.md). Evidence + audit: [`docs/strategy/v3-audit-language-voice-2026-06-06.md`](./docs/strategy/v3-audit-language-voice-2026-06-06.md). This section is the contract restatement that authors hit while designing.
+Canonical rule: [`docs/conventions/ui-voice.md`](./docs/conventions/ui-voice.md). Evidence + audit: [`docs/strategy/archive/v3-audit-language-voice-2026-06-06.md`](./docs/strategy/archive/v3-audit-language-voice-2026-06-06.md). This section is the contract restatement that authors hit while designing.
 
 **Voice anchor.** Human, clear, lightly playful in safe places (empty states, success toasts). Dry in governance, errors, and destructive flows. Contractions on. Active voice. One idea per sentence. Linear-leaning, warmer in empty states.
 

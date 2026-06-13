@@ -1,3 +1,6 @@
+> [!WARNING]
+> **ARCHIVED — historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
+
 # v3 Audit — Language, Voice, Popups & Inline Workspace Management
 
 Date: 2026-06-06 · Companion to `v3-audit-2026-06-06.md` and `v3-audit-language-2026-06-06.md`.

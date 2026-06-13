@@ -12,15 +12,15 @@ echo "  Do not skip for simple tasks. Full protocol: AGENTS.md section 2."
 echo ""
 echo "Read these core docs before acting:"
 echo "  1. AGENTS.md          (operating rules, all tools)      -> file://$CLAUDE_PROJECT_DIR/AGENTS.md"
-echo "  2. docs/strategy/v2-positioning-2026-06-02.md (strategic source of truth)"
-echo "                                                          -> file://$CLAUDE_PROJECT_DIR/docs/strategy/v2-positioning-2026-06-02.md"
+echo "  2. docs/strategy/v6-agentic-product-os-2026-06-13.md (CURRENT positioning + build canon)"
+echo "                                                          -> file://$CLAUDE_PROJECT_DIR/docs/strategy/v6-agentic-product-os-2026-06-13.md"
 echo "  3. CLAUDE.md          (Claude Code specifics)           -> file://$CLAUDE_PROJECT_DIR/CLAUDE.md"
 echo "  4. README.md          (product thesis, MOAT, personas)  -> file://$CLAUDE_PROJECT_DIR/README.md"
 echo ""
 
-if [ -f "$CLAUDE_PROJECT_DIR/docs/feature-backlog.md" ]; then
+if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" ]; then
   echo "=== ACTIVE BUILD TASK ==="
-  grep -E "Now building|Next up" "$CLAUDE_PROJECT_DIR/docs/feature-backlog.md" | sed 's/|/ /g' | sed 's/^ *//' | sed 's/ *$//'
+  grep -E "Now building|Next up" "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" | sed 's/|/ /g' | sed 's/^ *//' | sed 's/ *$//'
   echo ""
 fi
 

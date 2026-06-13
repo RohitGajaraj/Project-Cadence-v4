@@ -33,5 +33,5 @@ rg -i "seamless|leverage|empower|unlock|delve|at the intersection" <changed file
 ## Related
 
 - [`../../design.md`](../../design.md) — "Voice & language" contract section (restatement that authors hit when designing).
-- [`../strategy/v3-audit-language-voice-2026-06-06.md`](../strategy/v3-audit-language-voice-2026-06-06.md) — full AI-tell audit + P1 sweep targets.
-- [`../strategy/v3-audit-language-2026-06-06.md`](../strategy/v3-audit-language-2026-06-06.md) — naming integrity matrix, tooltip audit.
+- [`../strategy/archive/v3-audit-language-voice-2026-06-06.md`](../strategy/archive/v3-audit-language-voice-2026-06-06.md) — full AI-tell audit + P1 sweep targets.
+- [`../strategy/archive/v3-audit-language-2026-06-06.md`](../strategy/archive/v3-audit-language-2026-06-06.md) — naming integrity matrix, tooltip audit.

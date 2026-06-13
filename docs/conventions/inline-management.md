@@ -43,4 +43,4 @@ If it fails any test, it lives **inside a group**, **inside a parent surface** (
 - [`../../architecture/frontend.md`](../../architecture/frontend.md) — "Inline workspace & product management" contract.
 - [`../../architecture/security.md`](../../architecture/security.md) — owner gating on workspace/product mutation server fns.
 - [`./ui-chrome.md`](./ui-chrome.md) · [`./destructive-actions.md`](./destructive-actions.md) — primitives used.
-- [`../strategy/v3-audit-language-voice-2026-06-06.md`](../strategy/v3-audit-language-voice-2026-06-06.md) §5 — the inline-management spec.
+- [`../strategy/archive/v3-audit-language-voice-2026-06-06.md`](../strategy/archive/v3-audit-language-voice-2026-06-06.md) §5 — the inline-management spec.

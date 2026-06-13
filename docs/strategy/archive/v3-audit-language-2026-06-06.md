@@ -1,3 +1,6 @@
+> [!WARNING]
+> **ARCHIVED — historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
+
 # Language, Naming & Microcopy Audit v3 — 2026-06-06
 
 > **Companion to** [`v3-audit-2026-06-06.md`](./v3-audit-2026-06-06.md). The main audit graded the _what_; this one grades the _words_. Same operator-walk method, same evidence base (all 31 authenticated routes + auth + public surfaces), same delivery contract: audit only, no code changes, recommendations graduate to backlog F-IDs on operator sign-off.

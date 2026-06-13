@@ -4,6 +4,43 @@
 >
 > Operating rules live in [`../AGENTS.md`](../AGENTS.md). Product thesis lives in [`../README.md`](../README.md). Build log + roadmap live in [`../plan.md`](../plan.md). Architecture contracts live in [`../architecture/`](../architecture/). This folder holds the _operator-facing_ and _strategic_ docs that wrap those contracts.
 
+---
+
+## 📍 Repository map & file-placement policy — READ BEFORE CREATING ANY FILE
+
+> **This is the standing anti-rot rule.** Every file has exactly one correct home and must be linked from that home's index in the same commit. This section exists so no tool (Claude Code · Antigravity · Gemini · Lovable · future me) ever re-scatters the repo. We have spent hours regrouping before — this is how we stop doing that.
+
+### Where everything lives
+
+| When you create… | Put it in… | And link it from… |
+| --- | --- | --- |
+| A strategy / positioning doc | `docs/strategy/vN-…-YYYY-MM-DD.md` (**current = v6**) | [`docs/strategy/README.md`](./strategy/README.md) |
+| A **superseded** strategy doc | `docs/strategy/archive/` | [`docs/strategy/README.md`](./strategy/README.md) (Archived) |
+| A planning / backlog / known-issue / handoff doc | `docs/planning/` | this file (§ Live status & backlog) |
+| A market / competitive / research reference | `docs/references/` | this file (§ References) |
+| An ops runbook or policy (commits · hooks · memory · skills · subagents · tools · git-discipline · demo-credentials · runbooks) | `docs/operations/` | this file (§ Operator guides) |
+| A durable cross-tool convention (UI chrome · voice · destructive · inline · checklist) | `docs/conventions/` | [`docs/conventions/README.md`](./conventions/README.md) |
+| A per-feature operator / demo spec | `docs/features/` | [`docs/features/README.md`](./features/README.md) |
+| An architecture contract (runtime · orchestration · security · data · frontend · integrations) | `architecture/` | this file (links throughout) |
+| An ADR / technical decision | `docs/decisions/` | this file (§ Decisions) |
+| A screenshot / visual artifact | `docs/screenshots/<group>/` — **gitignored, local only** | n/a (not committed) |
+
+### Repo root is reserved — do not add docs here
+
+Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `ENTRY.md`, `Ai_Cofounder.md`), build/config (`package.json`, `vite.config.ts`, `wrangler.jsonc`, `tsconfig.json`, `eslint.config.js`, `components.json`, `bun.lock`, `bunfig.toml`, `.gitignore`, `.prettier*`, `.mcp.json`, `.lovable-config.txt`, `requirements.txt`, `.env*`), and the live cursors `plan.md` + `active-task.md` + `DESIGN.md`. **Nothing else.**
+
+### Hard rules (the loop stays closed)
+
+1. **No new doc at repo root or at `docs/` top level** (except the reserved entries above). Pick a subfolder.
+2. **No redirect stubs, no duplicates.** One canonical file per topic. If a file moves, repoint its inbound links — never leave a pointer file behind.
+3. **Every new doc is linked from its folder's index in the same commit.** A doc nothing links to is an orphan — that is the open-loop defect.
+4. **Latest positioning is always v6** ([`docs/strategy/v6-agentic-product-os-2026-06-13.md`](./strategy/v6-agentic-product-os-2026-06-13.md)) until a newer `vN` supersedes it and updates [`docs/strategy/README.md`](./strategy/README.md).
+5. **Screenshots / visual artifacts are local-only** (gitignored) under `docs/screenshots/`.
+
+> Entry docs ([`../README.md`](../README.md), [`../CLAUDE.md`](../CLAUDE.md), [`../AGENTS.md`](../AGENTS.md), [`../GEMINI.md`](../GEMINI.md), [`../.lovable-config.txt`](../.lovable-config.txt)) point here as the canonical map. Keep this section true; it is the contract.
+
+---
+
 ## Live status & backlog
 
 | File                                                                     | Purpose                                                                                                                                                                                                                                         |
@@ -44,7 +81,7 @@ One canonical page per shipped, user-facing feature. The **single place** to ope
 
 ## Strategy (versioned positioning)
 
-See [`strategy/README.md`](./strategy/README.md) for the version index and the cascade rule. **Current source of truth: [`strategy/v4-feature-map-2026-06-11.md`](./strategy/v4-feature-map-2026-06-11.md)** (scope, agent mesh, IA, milestones M1–M5) with its adversarial companion [`strategy/v4-stress-test-2026-06-11.md`](./strategy/v4-stress-test-2026-06-11.md). Personas remain in [`strategy/v3-positioning-circuit-2026-06-10.md`](./strategy/v3-positioning-circuit-2026-06-10.md). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
+See [`strategy/README.md`](./strategy/README.md) for the full version index, the archive, and the cascade rule. **Current positioning source of truth: [`strategy/v6-agentic-product-os-2026-06-13.md`](./strategy/v6-agentic-product-os-2026-06-13.md)** — the Agentic Product OS umbrella (PM Chief of Staff felt entry + Decision-System moat), phased build, market evidence. Engine / expansion map: [`strategy/v4-feature-map-2026-06-11.md`](./strategy/v4-feature-map-2026-06-11.md) (+ adversarial companion [`strategy/v4-stress-test-2026-06-11.md`](./strategy/v4-stress-test-2026-06-11.md)). Wedge UX detail: [`strategy/v5-chief-of-staff-2026-06-11.md`](./strategy/v5-chief-of-staff-2026-06-11.md). Personas: [`strategy/v3-positioning-circuit-2026-06-10.md`](./strategy/v3-positioning-circuit-2026-06-10.md). Superseded iterations (v1/v2/v3-audit*) live in [`strategy/archive/`](./strategy/archive/). Cross-session decisions: [`strategy/session-decisions.md`](./strategy/session-decisions.md).
 
 ## Conventions (durable cross-tool rules)
 
