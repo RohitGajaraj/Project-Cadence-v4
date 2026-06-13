@@ -58,3 +58,13 @@ src/routeTree.gen 2.ts
 # Local screenshots / visual artifacts (organized under docs/screenshots, kept local)
 docs/screenshots/
 *.jpeg
+
+# Exception: canonical design-reference images ARE committed (file-placement
+# policy — docs/README.md §"Where everything lives"). The global *.png/*.jpeg
+# ignores above keep verification/QA captures local; these re-include only the
+# curated references a parallel build (Lovable · Gemini · Antigravity · Claude
+# Code) must match — one canonical image per screen, never a bulk dump.
+!design-reference/**/*.png
+!design-reference/**/*.jpeg
+!design-reference/**/*.jpg
+!design-reference/**/*.gif

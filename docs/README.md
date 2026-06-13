@@ -23,7 +23,8 @@
 | A per-feature operator / demo spec | `docs/features/` | [`docs/features/README.md`](./features/README.md) |
 | An architecture contract (runtime · orchestration · security · data · frontend · integrations) | `architecture/` | this file (links throughout) |
 | An ADR / technical decision | `docs/decisions/` | this file (§ Decisions) |
-| A screenshot / visual artifact | `docs/screenshots/<group>/` — **gitignored, local only** | n/a (not committed) |
+| A **verification / QA** screenshot (proof a build rendered) | `docs/screenshots/<group>/` — **gitignored, local only** | n/a (not committed) |
+| A **canonical design-reference** image a parallel build must match | `design-reference/` (next to the `*.jsx` references) — **committed, curated** | the relevant spec / [`../DESIGN.md`](../DESIGN.md) |
 
 ### Repo root is reserved — do not add docs here
 
@@ -35,7 +36,7 @@ Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMI
 2. **No redirect stubs, no duplicates.** One canonical file per topic. If a file moves, repoint its inbound links — never leave a pointer file behind.
 3. **Every new doc is linked from its folder's index in the same commit.** A doc nothing links to is an orphan — that is the open-loop defect.
 4. **Latest positioning is always v6** ([`docs/strategy/v6-agentic-product-os-2026-06-13.md`](./strategy/v6-agentic-product-os-2026-06-13.md)) until a newer `vN` supersedes it and updates [`docs/strategy/README.md`](./strategy/README.md).
-5. **Screenshots / visual artifacts are local-only** (gitignored) under `docs/screenshots/`.
+5. **Images split by purpose — input vs. artifact.** **Verification / QA screenshots** (proof a build rendered) are **local-only, gitignored** under `docs/screenshots/` — they are transient evidence and bloat git history (binaries never diff; every version is kept forever). **Canonical design-reference images** that a parallel build (Lovable · Gemini · Antigravity · Claude Code) must *match* are **committed to `design-reference/`** — those tools only see `main`, not your local folder or chat image-cache, so a load-bearing reference must be in git or they're flying blind. Curate ruthlessly: **one canonical image per screen**, linked from its spec, exactly like the `*.jsx` references already there — not a dump of every crop. (Git images don't consume session context — they're inert until an agent opens one; the only cost is repo size, so the rule is "few and durable, never bulk.") If volume ever gets heavy, escalate to **Git LFS** or keep heavy assets in the design project and reference by URL.
 
 > Entry docs ([`../README.md`](../README.md), [`../CLAUDE.md`](../CLAUDE.md), [`../AGENTS.md`](../AGENTS.md), [`../GEMINI.md`](../GEMINI.md), [`../.lovable-config.txt`](../.lovable-config.txt)) point here as the canonical map. Keep this section true; it is the contract.
 
