@@ -248,9 +248,7 @@ export const getRitualRetention = createServerFn({ method: "GET" })
     // If either probe errored we can't tell — return null rather than wrongly
     // asserting "demo" for what may be a real account.
     const realData: boolean | null =
-      connRes.error || sigRes.error
-        ? null
-        : (connRes.count ?? 0) > 0 || (sigRes.count ?? 0) > 0;
+      connRes.error || sigRes.error ? null : (connRes.count ?? 0) > 0 || (sigRes.count ?? 0) > 0;
 
     const since = new Date(Date.now() - 30 * DAY_MS).toISOString();
     const { data: rows, error } = await supabase
