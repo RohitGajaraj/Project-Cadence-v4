@@ -83,7 +83,10 @@ BEGIN
           'reviewer_model', 'google/gemini-2.5-flash',
           'reviewed_at', to_jsonb(now())
         )
-    WHERE user_id = v_user AND title ILIKE '%tone too formal%';
+    -- The canonical seed_demo_workspace (20260604214243) names this opportunity
+    -- 'Per-segment tone calibration' (its problem: "one tone fits no one — SMB
+    -- wants direct, enterprise wants formal"). Match that, not the theme title.
+    WHERE user_id = v_user AND title ILIKE '%tone calibration%';
 
     -- (4) A pending gate that EXECUTES on approval (tasks.create = pure DB write).
     SELECT id INTO v_agent FROM public.agents
