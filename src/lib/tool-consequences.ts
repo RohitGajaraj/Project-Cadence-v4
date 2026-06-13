@@ -130,6 +130,16 @@ const CONSEQUENCES: Record<string, ToolConsequence> = {
     reversible: "partial",
     undo: "Halt the mission before the receiver runs.",
   },
+  "tasks.update_status": {
+    effect: "Changes a task's status (todo / in progress / done).",
+    reversible: "reversible",
+    undo: "Set the status back.",
+  },
+  "research.synthesize": {
+    effect: "Synthesizes signals into themes / opportunities.",
+    reversible: "partial",
+    undo: "Remove the generated theme/opportunity — the source signals are untouched.",
+  },
 };
 
 const DEFAULT: ToolConsequence = {
@@ -141,6 +151,18 @@ const DEFAULT: ToolConsequence = {
 export function toolConsequence(toolName: string | null | undefined): ToolConsequence {
   if (!toolName) return DEFAULT;
   return CONSEQUENCES[toolName] ?? DEFAULT;
+}
+
+/**
+ * True for tools that change the world (have a catalogued blast radius). Used to
+ * flag a `tool_calls` row as an UNATTENDED write: every tool_calls row is an
+ * inline (auto-mode) execution — gated tools queue an approval instead — so a
+ * side-effecting one means the agent's trust arc executed it without a human
+ * gate. Read tools also execute inline but aren't delegation, so they're
+ * excluded. Keep CONSEQUENCES in sync when a side-effecting tool is added.
+ */
+export function isSideEffectingTool(toolName: string | null | undefined): boolean {
+  return !!toolName && toolName in CONSEQUENCES;
 }
 
 export const REVERSIBILITY_LABEL: Record<Reversibility, string> = {

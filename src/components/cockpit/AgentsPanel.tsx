@@ -163,6 +163,11 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
         <span>
           {liveAgents} agent{liveAgents === 1 ? "" : "s"} running · {hud.missions.length} mission
           {hud.missions.length === 1 ? "" : "s"} in flight
+          {hud.outcomes_remembered > 0
+            ? ` · ${hud.outcomes_remembered} outcome${
+                hud.outcomes_remembered === 1 ? "" : "s"
+              } in memory`
+            : ""}
         </span>
         <span>Refreshed {relative(hud.generated_at)}</span>
       </div>

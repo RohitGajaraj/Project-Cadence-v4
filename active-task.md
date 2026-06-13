@@ -1,11 +1,11 @@
-# Active task — Phase 2: "The OS / Autonomous Execution" (Agentic Product OS build)
+# Active task — Phase 3: "Proof & Launch" (Agentic Product OS build)
 
-> **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, build-green, `bun test` green (14), 2-agent adversarial review passed (4 real findings fixed, 3 verified-wrong rejected). Build-log: [`plan.md`](plan.md) §4 (top entry). Feature page: [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
+> **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
 >
-> **Next up — Phase 2** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §9): execution-delegation under governance; memory compounding proven + demoable; OS framing/IA; A2A contract hardened. This is where autonomous execution moves from "the loop dispatches + retries itself" to "it executes end-to-end, governed."
+> **Next up — Phase 3** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3): real-data design-partner hardening; instrument the proof-gauntlet metrics; pricing + the shareable-decision viral loop; public launch. **Gate on the §8 gauntlet, not a date.** This is a GTM + hardening phase, not a feature phase — likely starts by instrumenting the north-star metrics (calls-queue acceptance rate · real-data ritual retention · autonomy ratio) on real surfaces. (Detail in the "Phase 3" section below.)
 
 > **Handoff 2026-06-14.** Work directly on **main** (repo convention — all tools on main, no long-lived branches).
-> **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§9 (Phase 2)** + the runtime-reality audit in Appendix B.
+> **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§8 (gauntlet) + §9 (Phase 3)** + the runtime-reality audit in Appendix B.
 > **Session read order:** `git pull origin main` → this file → v6 doc §9 → [`docs/README.md`](docs/README.md) (file-placement policy) → [`AGENTS.md`](AGENTS.md).
 
 ## ✅ Phase 1 — DONE (2026-06-14)
@@ -25,8 +25,13 @@ The **two P1 migrations apply on the next Lovable sync**: `20260614090000_p1_mis
 
 ## Phase 2 — decomposition (grounded by a code sweep; sequenced demoable units)
 - ☑ **W1 — Close the memory-compounding loop (the moat) · DONE 2026-06-14.** `recordOutcome` now distils each outcome into a global-scope, embedded `agent_memory` row (`src/lib/ai/outcome-memory.ts` + `memory.server.ts → rememberOutcome`), so `match_agent_memory` returns it to future runs of any agent and P1 threading carries it across hops. Fixes the claim-vs-wiring gap (the `learnings` audit was written but never read by the loop). 23 `bun test` green; 1-agent review (4 fixes). Detail: `plan.md` §4.
-- ⏭️ **W2 — Execution-delegation audit trail (next).** The trust arc already executes write tools inline at `trusted`/`ambient`; the gap is (a) narrow delegatable tools and (b) **no post-hoc "what ran unattended" surface**. Add a mission-scoped "Executed unattended" audit (over `tool_calls` / executed `agent_approvals`) on `/missions/$id`; consider 1-2 more reversible product tools. Files: `src/lib/ai/tools/registry.server.ts`, missions detail. ⚠️ honesty: only claim auto-execution that the arc actually performs.
-- **W3 — A2A hardening + "Agents at Work" OS view.** Validate `memory_refs[]`/artifacts in the handoff (no phantom ids); a minimal `/system` (or Today section) integrating live missions + pending approvals + memory flow + spend. Per v6 §3/§5; keep `HandoffPayload` the config surface.
+- ☑ **W2 — Execution-delegation audit trail · DONE 2026-06-14.** `/missions/$id` now shows an "Executed unattended" card — side-effecting tools the loop ran inline with no gate (the arc had earned auto), each with its catalogued effect + reversibility. `getMission` flags `HopToolCall.is_unattended` via `isSideEffectingTool()`. Honest by construction: every `tool_calls` row is an inline auto-execution (gated tools queue approvals; `executeApproval` never writes `tool_calls`).
+- ☑ **W3 — A2A hardening + moat on the cockpit · DONE 2026-06-14.** `enqueueHandoff` validates `memory_refs[]` against real `agent_memory` ids (drops phantom refs, best-effort). `getSwarmHud` gains `outcomes_remembered`, surfaced as "N outcomes in memory" in the Agents-tab HUD. Reused the existing Swarm HUD (the `/swarm` route is mothballed → `/missions?tab=agents`) instead of a redundant new `/system`. Artifacts left free-form (validated on use).
+
+> **Phase 2 is functionally complete (W1·W2·W3 all on `main`).** The remaining v6 §9 Phase-2 framing item ("OS framing/IA") is satisfied by the enriched Swarm HUD; a deeper IA pass can fold into Phase 3 if real-data feedback asks for it.
+
+## Phase 3 — "Proof & Launch" (next, gate on the §8 gauntlet, not a date)
+Real-data design-partner hardening · proof-gauntlet instrumentation (≥10 PMs paying ≥$150/mo · the loop closes once on a partner's real data · autonomy ticks up on a real account) · pricing + the shareable-decision viral loop · public launch. Read v6 §8 + §9 (Phase 3) before starting. This is a go-to-market + hardening phase more than a feature phase — likely starts with instrumenting the gauntlet metrics (calls-queue acceptance rate · real-data ritual retention · autonomy ratio) on real surfaces.
 
 ## Standing rules (non-negotiable)
 - Work on **main**; commit small with a one-line **WHY**; push so other tools pulling main see it (and the migrations queue for the next sync).

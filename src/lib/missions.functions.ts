@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isSideEffectingTool } from "@/lib/tool-consequences";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 
@@ -82,6 +83,13 @@ export type HopToolCall = {
   error: string | null;
   latency_ms: number;
   created_at: string;
+  /**
+   * v6 Phase 2 (W2): true when this was a side-effecting tool that ran inline
+   * with no human gate (the agent's trust arc dialed it to auto). Every
+   * tool_calls row IS an inline execution — gated tools queue an approval
+   * instead of writing here — so a side-effecting one is unattended delegation.
+   */
+  is_unattended: boolean;
 };
 
 export type MissionListRow = {
@@ -285,6 +293,7 @@ export const getMission = createServerFn({ method: "POST" })
         error: t.error,
         latency_ms: t.latency_ms,
         created_at: t.created_at,
+        is_unattended: isSideEffectingTool(t.tool_name),
       });
       tcByTrace.set(t.trace_id, arr);
     }

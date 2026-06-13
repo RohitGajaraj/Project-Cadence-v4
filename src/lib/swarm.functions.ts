@@ -110,6 +110,12 @@ export type SwarmHud = {
     buckets: SwarmThroughputBucket[];
   };
   guardrail_hits_last_hour: number;
+  /**
+   * v6 Phase 2 (W3): how many recorded outcomes have become memory the agents
+   * recall (agent_memory kind='outcome') — the compounding-memory moat, made
+   * visible on the swarm surface.
+   */
+  outcomes_remembered: number;
 };
 
 function p50(arr: number[]): number {
@@ -400,6 +406,14 @@ export const getSwarmHud = createServerFn({ method: "POST" })
       p50_latency_ms: p50(b.lats),
     }));
 
+    // v6 Phase 2 (W3): the compounding-memory moat, made visible — outcomes that
+    // have become recallable agent memory (kind='outcome', written by P2-W1).
+    const { count: outcomesRemembered } = await supabase
+      .from("agent_memory")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("kind", "outcome");
+
     return {
       workspace_id: workspaceId,
       generated_at: new Date(now).toISOString(),
@@ -415,5 +429,6 @@ export const getSwarmHud = createServerFn({ method: "POST" })
         buckets,
       },
       guardrail_hits_last_hour: guardrailsRes.count ?? 0,
+      outcomes_remembered: outcomesRemembered ?? 0,
     };
   });

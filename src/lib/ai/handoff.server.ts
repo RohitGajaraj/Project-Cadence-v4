@@ -113,6 +113,32 @@ export async function enqueueHandoff(
     mission_token_cap?: number | null;
   },
 ): Promise<{ message_id: string; queued_run_id: string }> {
+  // A2A hardening (v6 Phase 2 / W3): drop phantom memory_refs before they reach
+  // the receiver's prompt. The ids must be real agent_memory rows the user owns;
+  // a bug or a hand-crafted handoff could otherwise make the receiver cite
+  // memories that don't exist. Best-effort — on a transient query error we keep
+  // the refs as-is rather than silently strip valid ones.
+  let payload = args.payload;
+  if (payload.memory_refs?.length) {
+    try {
+      const ids = payload.memory_refs.map((r) => r.id);
+      const { data: existing, error } = await supabase
+        .from("agent_memory")
+        .select("id")
+        .eq("user_id", userId)
+        .in("id", ids);
+      if (!error && existing) {
+        const valid = new Set((existing as { id: string }[]).map((e) => e.id));
+        const kept = payload.memory_refs.filter((r) => valid.has(r.id));
+        if (kept.length !== payload.memory_refs.length) {
+          payload = { ...payload, memory_refs: kept.length ? kept : undefined };
+        }
+      }
+    } catch {
+      /* non-fatal — keep refs as-is on a transient error */
+    }
+  }
+
   const { data: msg, error: mErr } = await supabase
     .from("agent_messages")
     .insert({
@@ -124,7 +150,7 @@ export async function enqueueHandoff(
       to_agent_id: args.to.id,
       to_agent_slug: args.to.slug,
       kind: "handoff",
-      payload: args.payload as unknown as Record<string, unknown>,
+      payload: payload as unknown as Record<string, unknown>,
       source_run_id: args.source_run_id,
       source_trace_id: args.source_trace_id,
     })

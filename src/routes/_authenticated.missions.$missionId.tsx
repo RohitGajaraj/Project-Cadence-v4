@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type CSSProperties } from "react";
 import {
   Activity,
+  Bot,
   Check,
   ChevronDown,
   ChevronRight,
@@ -22,7 +23,8 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { MonoLabel, StepDot, StatusBadge } from "@/components/cadence/Primitives";
+import { MonoLabel, StepDot, StatusBadge, VerdictChip } from "@/components/cadence/Primitives";
+import { toolConsequence, REVERSIBILITY_LABEL } from "@/lib/tool-consequences";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
 import { listProjects } from "@/lib/projects.functions";
@@ -622,6 +624,17 @@ function MissionDetailPage() {
 
   const maxElapsed = Math.max(1, ...hops.map((h) => hopElapsedMs(h)));
 
+  // v6 Phase 2 (W2): the honest "what ran unattended" audit — side-effecting
+  // tools the loop executed inline with no human gate (the agent's trust arc
+  // had earned auto-mode). Newest first.
+  const unattended = hops
+    .flatMap((h) =>
+      h.tool_calls
+        .filter((tc) => tc.is_unattended)
+        .map((tc) => ({ ...tc, agent_slug: h.agent_slug })),
+    )
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   return (
     <AppShell projects={projects.data?.projects ?? []}>
       <TopBar
@@ -920,6 +933,76 @@ function MissionDetailPage() {
                 qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
               }}
             />
+          ) : null}
+
+          {/* Executed unattended (W2) — side-effecting actions the loop ran with
+              no gate because the agent's arc had earned auto. The counterpart to
+              the gate above: that's what needs you; this is what already ran. */}
+          {unattended.length > 0 ? (
+            <section className="bento" style={{ padding: "var(--card-pad)", marginBottom: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <MonoLabel icon={Bot}>Executed unattended</MonoLabel>
+                <span className="mono-label tabular-nums">
+                  {unattended.length} action{unattended.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--ink-subtle)", marginBottom: 12 }}>
+                The loop ran these actions without a gate — the agents&rsquo; trust arc had earned
+                auto. You reviewed nothing in advance; each row notes whether it can be undone.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {unattended.map((tc, i) => {
+                  const c = toolConsequence(tc.tool_name);
+                  return (
+                    <div
+                      key={tc.id}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "flex-start",
+                        padding: "10px 0",
+                        borderBottom:
+                          i < unattended.length - 1 ? "1px solid var(--hairline)" : "none",
+                        fontSize: 13,
+                      }}
+                    >
+                      <span style={{ flexShrink: 0, alignSelf: "flex-start" }}>
+                        <VerdictChip tone={tc.ok ? "orchid" : "madder"}>
+                          {agentDisplayName(tc.agent_slug)}
+                        </VerdictChip>
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <code style={{ fontSize: 12 }}>{tc.tool_name}</code>
+                        <span
+                          style={{
+                            display: "block",
+                            color: "var(--ink-muted)",
+                            lineHeight: 1.5,
+                            marginTop: 2,
+                          }}
+                        >
+                          {c.effect}
+                        </span>
+                        <span
+                          className="mono-label tabular-nums"
+                          style={{ fontSize: 8.5, display: "block", marginTop: 3 }}
+                        >
+                          {REVERSIBILITY_LABEL[c.reversible]} · {tc.ok ? "ok" : "failed"} ·{" "}
+                          {tc.latency_ms}ms
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           ) : null}
 
           {/* Hops trace — per-hop expand/collapse, tinted tool calls, timing bars */}
