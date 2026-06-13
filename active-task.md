@@ -23,10 +23,10 @@ The **two P1 migrations apply on the next Lovable sync**: `20260614090000_p1_mis
 - `bun test` + `bun run build` green. ✅ (done this session)
 - After sync: on `/missions/$id`, a ≥ 2-wave orchestrated mission reaches a terminal state with **no** operator Advance press; a deliberately-failed hop shows a second child run (retry) before finalizing `completed_with_failures`; a dispatched hop's handoff payload carries non-empty `memory_refs`.
 
-## Phase 2 — first cuts (read v6 §9 before starting; this is a sketch, not the spec)
-- **Execution-delegation under governance** — extend beyond plan/dispatch/retry to agents *executing* reversible work end-to-end behind the trust arc (the North Star's "it executes, not advises"). Likely files: `src/lib/ai/loop.server.ts`, the tool registry, `trust.server.ts`.
-- **Memory compounding, demoable** — make the `learnings` (`prior_ice→new_ice`) the visible moat object end-to-end; entity-link memory→the opportunity whose score moved; prove a decision's outcome re-scores a future priority on real-ish data.
-- **OS framing / IA + A2A contract hardening** — per v6 §3/§5; keep the `HandoffPayload` contract as the config surface (now carrying `memory_refs[]`).
+## Phase 2 — decomposition (grounded by a code sweep; sequenced demoable units)
+- ☑ **W1 — Close the memory-compounding loop (the moat) · DONE 2026-06-14.** `recordOutcome` now distils each outcome into a global-scope, embedded `agent_memory` row (`src/lib/ai/outcome-memory.ts` + `memory.server.ts → rememberOutcome`), so `match_agent_memory` returns it to future runs of any agent and P1 threading carries it across hops. Fixes the claim-vs-wiring gap (the `learnings` audit was written but never read by the loop). 23 `bun test` green; 1-agent review (4 fixes). Detail: `plan.md` §4.
+- ⏭️ **W2 — Execution-delegation audit trail (next).** The trust arc already executes write tools inline at `trusted`/`ambient`; the gap is (a) narrow delegatable tools and (b) **no post-hoc "what ran unattended" surface**. Add a mission-scoped "Executed unattended" audit (over `tool_calls` / executed `agent_approvals`) on `/missions/$id`; consider 1-2 more reversible product tools. Files: `src/lib/ai/tools/registry.server.ts`, missions detail. ⚠️ honesty: only claim auto-execution that the arc actually performs.
+- **W3 — A2A hardening + "Agents at Work" OS view.** Validate `memory_refs[]`/artifacts in the handoff (no phantom ids); a minimal `/system` (or Today section) integrating live missions + pending approvals + memory flow + spend. Per v6 §3/§5; keep `HandoffPayload` the config surface.
 
 ## Standing rules (non-negotiable)
 - Work on **main**; commit small with a one-line **WHY**; push so other tools pulling main see it (and the migrations queue for the next sync).

@@ -3,6 +3,8 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
+import { buildOutcomeMemory, outcomeImportance } from "@/lib/ai/outcome-memory";
+import { rememberOutcome } from "@/lib/ai/memory.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
@@ -174,7 +176,7 @@ export const recordOutcome = createServerFn({ method: "POST" })
 
     const { data: prd, error: prdErr } = await db
       .from("prds")
-      .select("id,workspace_id,opportunity_id")
+      .select("id,workspace_id,opportunity_id,title")
       .eq("id", data.prdId)
       .single();
     if (prdErr) throw new Error(prdErr.message);
@@ -197,15 +199,17 @@ export const recordOutcome = createServerFn({ method: "POST" })
 
     let priorIce: number | null = null;
     let newIce: number | null = null;
+    let oppTitle: string | null = null;
     let opportunity: { id: string; prior_ice: number | null; new_ice: number | null } | null = null;
 
     if (prd.opportunity_id) {
       const { data: opp } = await db
         .from("opportunities")
-        .select("id,impact,confidence,ease,ice_score")
+        .select("id,impact,confidence,ease,ice_score,title")
         .eq("id", prd.opportunity_id)
         .maybeSingle();
       if (opp) {
+        oppTitle = (opp.title as string | null) ?? null;
         priorIce = opp.ice_score == null ? null : Number(opp.ice_score);
         const delta = data.verdict === "validated" ? 2 : data.verdict === "missed" ? -2 : 0;
         const newConfidence = Math.min(10, Math.max(1, (opp.confidence ?? 5) + delta));
@@ -239,7 +243,32 @@ export const recordOutcome = createServerFn({ method: "POST" })
       .single();
     if (learnErr) throw new Error(learnErr.message);
 
-    return { learning, opportunity };
+    // v6 Phase 2 (W1) — close the compounding loop: distil the outcome into a
+    // global, searchable agent_memory so future agent runs recall "we shipped
+    // this and it was {verdict}" when they re-encounter the opportunity. The
+    // re-score already moved the ICE; this makes the loop actually LEARN, not
+    // just record. Best-effort — never let a memory write break the outcome.
+    const memory = await rememberOutcome(db, {
+      userId,
+      workspaceId: (prd.workspace_id as string | null) ?? null,
+      prdId: prd.id,
+      opportunityId: (prd.opportunity_id as string | null) ?? null,
+      learningId: (learning as { id?: string } | null)?.id ?? null,
+      content: buildOutcomeMemory({
+        prdTitle: (prd.title as string | null) ?? "",
+        oppTitle,
+        verdict: data.verdict,
+        summary: data.summary,
+        priorIce,
+        newIce,
+      }),
+      importance: outcomeImportance(data.verdict),
+      verdict: data.verdict,
+      priorIce,
+      newIce,
+    });
+
+    return { learning, opportunity, memory_id: memory?.id ?? null };
   });
 
 /** Latest 50 learnings, newest first (workspace-scoped via RLS). */
