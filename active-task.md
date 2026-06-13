@@ -2,7 +2,7 @@
 
 > **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
 >
-> **Next up — Phase 3** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3): real-data design-partner hardening; instrument the proof-gauntlet metrics; pricing + the shareable-decision viral loop; public launch. **Gate on the §8 gauntlet, not a date.** This is a GTM + hardening phase, not a feature phase — likely starts by instrumenting the north-star metrics (calls-queue acceptance rate · real-data ritual retention · autonomy ratio) on real surfaces. (Detail in the "Phase 3" section below.)
+> **🔨 PHASE 3 ("Proof & Launch") IN PROGRESS** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3). **✅ Slice 1 ("Unblock + Instrument") DONE 2026-06-14** — Track 1: KI-13 signup made resilient (a real account can finally be created); Track 2: the **Gauntlet** surface (`/govern?tab=gauntlet`) instruments the three north-star metrics (acceptance rate · autonomy ratio · ritual retention) honestly on real tables. Built recon-first → parallel worktree → 12-finding adversarial review → 7 fixes; on **main**, build-green, `bun test` 32 green. **Next:** the rest of Phase 3 — KI-14 (eval-score-scale silent corruption, the next hardening), then the shareable-decision viral loop + pricing/paywall, then public launch. **Gate on the §8 gauntlet, not a date.** (Detail + open gate in the "Phase 3" section below.)
 
 > **Handoff 2026-06-14.** Work directly on **main** (repo convention — all tools on main, no long-lived branches).
 > **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§8 (gauntlet) + §9 (Phase 3)** + the runtime-reality audit in Appendix B.
@@ -30,8 +30,22 @@ The **two P1 migrations apply on the next Lovable sync**: `20260614090000_p1_mis
 
 > **Phase 2 is functionally complete (W1·W2·W3 all on `main`).** The remaining v6 §9 Phase-2 framing item ("OS framing/IA") is satisfied by the enriched Swarm HUD; a deeper IA pass can fold into Phase 3 if real-data feedback asks for it.
 
-## Phase 3 — "Proof & Launch" (next, gate on the §8 gauntlet, not a date)
-Real-data design-partner hardening · proof-gauntlet instrumentation (≥10 PMs paying ≥$150/mo · the loop closes once on a partner's real data · autonomy ticks up on a real account) · pricing + the shareable-decision viral loop · public launch. Read v6 §8 + §9 (Phase 3) before starting. This is a go-to-market + hardening phase more than a feature phase — likely starts with instrumenting the gauntlet metrics (calls-queue acceptance rate · real-data ritual retention · autonomy ratio) on real surfaces.
+## Phase 3 — "Proof & Launch" (IN PROGRESS, gate on the §8 gauntlet, not a date)
+Real-data design-partner hardening · proof-gauntlet instrumentation (≥10 PMs paying ≥$150/mo · the loop closes once on a partner's real data · autonomy ticks up on a real account) · pricing + the shareable-decision viral loop · public launch. Read v6 §8 + §9 before continuing. GTM + hardening phase, taken in slices.
+
+### ✅ Slice 1 — "Unblock + Instrument" DONE 2026-06-14 (recon-first → parallel worktree build → adversarial review → fixes)
+- ☑ **Track 1 — KI-13 signup unblock.** `20260614140000_p3_ki13_signup_resilience.sql`: each seed step in `handle_new_user` runs in its own `BEGIN..EXCEPTION` subtransaction so a fresh signup never 500s again (the app self-heals profile + workspace). Defensive-by-construction. The real-data gauntlet premise (≥8 partners on real data) needs this — it was blocked at the door. Review found Track 1 clean.
+- ☑ **Track 2 — the Gauntlet surface.** `/govern?tab=gauntlet` — three north-star metrics on real owner-scoped tables with honest "not enough data yet" empty states: **A** acceptance rate (accepted={approved,executed,failed} / decided), **C** autonomy ratio (successful unattended `tool_calls` vs gated `agent_approvals`), **B** ritual retention (`ritual_sessions`, pre-migration-tolerant, per-UTC-day idempotent). `src/lib/gauntlet.functions.ts` + `gauntlet-metrics.ts`(+tests) + `GauntletMetricsPanel.tsx`. Feature doc: [`docs/features/gauntlet-metrics.md`](docs/features/gauntlet-metrics.md).
+- **Method note:** two file-disjoint tracks — T2 built by a background worktree agent while T1 went on main, then a 3-lens adversarial-review workflow (`wf_27276120`) over both diffs → 12 confirmed findings (all Track 2) → 7 distinct fixes folded in before landing. `bun run build` green, `bun test` 32/32. Commits on **main**: `9401ae2` (KI-13) · `e6c8b5b` (Gauntlet).
+
+## ⚠️ OPEN GATE — Phase 3 slice 1 (carry forward — same pattern as every prior phase)
+Two new migrations apply on the **next Lovable sync**: `20260614140000_p3_ki13_signup_resilience` (resilient `handle_new_user` — until applied, live signup still 500s) and `20260614150000_p3_ritual_sessions` (table + per-day unique index — until applied, Metric B reads "not enough data yet" by design; A and C are live now on existing data). KI-13 can't be verified live until sync (the Supabase MCP here was unauthenticated).
+
+### ⏭️ Next (Phase 3 — gate on §8, not a date)
+- **KI-14 (next hardening, HIGH):** eval-score-scale silent corruption — seeds write 0–1, the runner writes 0–100, into a `numeric(4,3)` column. A real-data fragility on a proof surface. Pick one scale, widen the column, rescale seeds in one idempotent migration.
+- **Shareable-decision viral loop** (§7): public `/d/$slug` mirroring the `/p/$slug` prototype-share pattern; `decisions` gains `share_slug`/`is_public` + a public-select RLS policy.
+- **Pricing / paywall** (§7): Free / Pro($39) / Team; charge for memory persistence; Stripe + quota enforcement.
+- **KI-15 / KI-16** (low/rare): stale zero-step-mission completion · mission-advance 20/tick cap.
 
 ## Standing rules (non-negotiable)
 - Work on **main**; commit small with a one-line **WHY**; push so other tools pulling main see it (and the migrations queue for the next sync).
