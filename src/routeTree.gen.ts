@@ -16,6 +16,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as DSlugRouteImport } from './routes/d.$slug'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
@@ -105,6 +106,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DSlugRoute = DSlugRouteImport.update({
+  id: '/d/$slug',
+  path: '/d/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -444,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
+  '/d/$slug': typeof DSlugRoute
   '/p/$slug': typeof PSlugRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
@@ -506,6 +513,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
+  '/d/$slug': typeof DSlugRoute
   '/p/$slug': typeof PSlugRoute
   '/': typeof AuthenticatedIndexRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
@@ -572,6 +580,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
+  '/d/$slug': typeof DSlugRoute
   '/p/$slug': typeof PSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/traces'
     | '/api/chat'
+    | '/d/$slug'
     | '/p/$slug'
     | '/build/$missionId'
     | '/meetings/$id'
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/traces'
     | '/api/chat'
+    | '/d/$slug'
     | '/p/$slug'
     | '/'
     | '/build/$missionId'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks'
     | '/_authenticated/traces'
     | '/api/chat'
+    | '/d/$slug'
     | '/p/$slug'
     | '/_authenticated/'
     | '/_authenticated/build/$missionId'
@@ -800,6 +812,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  DSlugRoute: typeof DSlugRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
@@ -865,6 +878,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$slug'
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/d/$slug': {
+      id: '/d/$slug'
+      path: '/d/$slug'
+      fullPath: '/d/$slug'
+      preLoaderRoute: typeof DSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -1394,6 +1414,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  DSlugRoute: DSlugRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
