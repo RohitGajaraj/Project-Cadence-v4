@@ -2,7 +2,7 @@
 
 > **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
 >
-> **🔨 PHASE 3 ("Proof & Launch") IN PROGRESS** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3). **✅ Slice 1 ("Unblock + Instrument") DONE 2026-06-14** — Track 1: KI-13 signup made resilient (a real account can finally be created); Track 2: the **Gauntlet** surface (`/govern?tab=gauntlet`) instruments the three north-star metrics (acceptance rate · autonomy ratio · ritual retention) honestly on real tables. Built recon-first → parallel worktree → 12-finding adversarial review → 7 fixes; on **main**, build-green, `bun test` 32 green. **Next:** the rest of Phase 3 — KI-14 (eval-score-scale silent corruption, the next hardening), then the shareable-decision viral loop + pricing/paywall, then public launch. **Gate on the §8 gauntlet, not a date.** (Detail + open gate in the "Phase 3" section below.)
+> **🔨 PHASE 3 ("Proof & Launch") IN PROGRESS** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3). **✅ Slice 1 ("Unblock + Instrument") DONE 2026-06-14** — Track 1: KI-13 signup made resilient (a real account can finally be created); Track 2: the **Gauntlet** surface (`/govern?tab=gauntlet`) instruments the three north-star metrics (acceptance rate · autonomy ratio · ritual retention) honestly on real tables. Built recon-first → parallel worktree → 12-finding adversarial review → 7 fixes; on **main**, build-green, `bun test` 32 green. **✅ KI-14 also DONE 2026-06-14** — eval-score scale standardized on 0–100 (silent overflow + false "below gate" fixed; migration `20260614160000`; 12-finding adversarial review). **Next:** the shareable-decision viral loop + pricing/paywall, then public launch. **Gate on the §8 gauntlet, not a date.** (Detail + open gate in the "Phase 3" section below.)
 
 > **Handoff 2026-06-14.** Work directly on **main** (repo convention — all tools on main, no long-lived branches).
 > **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§8 (gauntlet) + §9 (Phase 3)** + the runtime-reality audit in Appendix B.
@@ -39,10 +39,9 @@ Real-data design-partner hardening · proof-gauntlet instrumentation (≥10 PMs 
 - **Method note:** two file-disjoint tracks — T2 built by a background worktree agent while T1 went on main, then a 3-lens adversarial-review workflow (`wf_27276120`) over both diffs → 12 confirmed findings (all Track 2) → 7 distinct fixes folded in before landing. `bun run build` green, `bun test` 32/32. Commits on **main**: `9401ae2` (KI-13) · `e6c8b5b` (Gauntlet).
 
 ## ⚠️ OPEN GATE — Phase 3 slice 1 (carry forward — same pattern as every prior phase)
-Two new migrations apply on the **next Lovable sync**: `20260614140000_p3_ki13_signup_resilience` (resilient `handle_new_user` — until applied, live signup still 500s) and `20260614150000_p3_ritual_sessions` (table + per-day unique index — until applied, Metric B reads "not enough data yet" by design; A and C are live now on existing data). KI-13 can't be verified live until sync (the Supabase MCP here was unauthenticated).
+**Three** new migrations apply on the **next Lovable sync**: `20260614140000_p3_ki13_signup_resilience` (resilient `handle_new_user` — until applied, live signup still 500s); `20260614150000_p3_ritual_sessions` (table + per-day unique index — until applied, Gauntlet Metric B reads "not enough data yet" by design; A and C are live now); and `20260614160000_p3_ki14_eval_score_0to100` (eval scores → 0–100 — until applied, a live eval run overflows the column and seeded eval scores read "below gate"). KI-13 + KI-14 can't be verified live until sync (the Supabase MCP here was unauthenticated).
 
 ### ⏭️ Next (Phase 3 — gate on §8, not a date)
-- **KI-14 (next hardening, HIGH):** eval-score-scale silent corruption — seeds write 0–1, the runner writes 0–100, into a `numeric(4,3)` column. A real-data fragility on a proof surface. Pick one scale, widen the column, rescale seeds in one idempotent migration.
 - **Shareable-decision viral loop** (§7): public `/d/$slug` mirroring the `/p/$slug` prototype-share pattern; `decisions` gains `share_slug`/`is_public` + a public-select RLS policy.
 - **Pricing / paywall** (§7): Free / Pro($39) / Team; charge for memory persistence; Stripe + quota enforcement.
 - **KI-15 / KI-16** (low/rare): stale zero-step-mission completion · mission-advance 20/tick cap.
@@ -56,8 +55,8 @@ Two new migrations apply on the **next Lovable sync**: `20260614140000_p3_ki13_s
 - Pure logic (policy functions) gets a `bun test` (`*.test.ts`, excluded from the build/lint surface); Supabase-coupled wiring is verified by `bun run build` + adversarial review + live e2e.
 
 ## Inherited open gates (carry forward — full tracker: `docs/planning/known-issues.md`)
-- **KI-13:** live signup 500s (`handle_new_user`) — demo creds only; no new real accounts.
+- **KI-13:** ✅ fix landed (`20260614140000`) — resilient `handle_new_user`; applies on next Lovable sync (until then signup still 500s; verify a fresh signup after sync).
 - **Migration-apply via Lovable sync:** the two P1 migrations + the W3/W6 Phase-0 migrations land when Lovable syncs `main` + deploys.
-- **KI-14:** eval score scale mixed (seeds 0–1 vs runner 0–100).
+- **KI-14:** ✅ fix landed (`20260614160000`) — eval scale → 0–100 (widen + rescale eval_runs/eval_case_results/drift_snapshots); applies on next Lovable sync.
 - **KI-15 / KI-16 (new, Phase 1 review):** zero-step-mission stale-message lingering · auto-advance 20-mission/tick cap — both minor / high-scale-only.
 - Do **not** touch `vite.config.ts`; do **not** merge the stale `lovable-sync-*` branch.

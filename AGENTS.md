@@ -140,7 +140,7 @@ Full skill-selection logic & anti-patterns: [`docs/operations/skills.md`](./docs
 16. **Budget caps are sacred.** Enforced server-side. See [`architecture/runtime.md`](./architecture/runtime.md).
 17. **Cache hits still get logged.**
 18. **Guardrails run on input and output.**
-19. **Eval failure is a deploy gate.** A ≥0.1 score regression on any "Circuit core" case blocks merge unless explicitly waived.
+19. **Eval failure is a deploy gate.** A ≥10-point score regression (on the 0–100 eval scale — KI-14) on any "Circuit core" case blocks merge unless explicitly waived.
 20. **Drift is a passive watcher, not a blocker.**
 
 ### Testing

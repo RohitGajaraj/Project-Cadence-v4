@@ -38,13 +38,20 @@ Each account also gets an empty `My Workspace` alongside the Demo workspace, whi
 
 ## Re-seeding
 
-If a demo account ever ends up empty, call the seed function manually as a database superuser:
+If a demo account ever ends up empty, call the seed function manually as a database superuser.
+
+> ⚠️ **KI-14 — run the normalization too.** `seed_demo_workspace` still writes eval/drift scores on the legacy **0–1** scale, but those columns are now **0–100** (migration `20260614160000`). Re-seeding a *fresh/emptied* demo account without normalizing makes the Evals/Drift surfaces read the false "score 1 · below gate 80". Use this exact block (seed, then normalize):
 
 ```sql
 SELECT public.seed_demo_workspace(id) FROM auth.users WHERE email = 'demo@redcadence.app';
+-- KI-14 normalization — bring the seed's 0–1 eval/drift scores onto the 0–100 scale.
+-- Guarded by `<= 1`, so it only touches freshly-seeded 0–1 rows.
+UPDATE public.eval_runs         SET avg_score      = round(avg_score * 100, 3)      WHERE avg_score IS NOT NULL AND avg_score <= 1;
+UPDATE public.eval_case_results SET score          = round(score * 100, 3)          WHERE score IS NOT NULL AND score <= 1;
+UPDATE public.drift_snapshots   SET avg_eval_score = round(avg_eval_score * 100, 3) WHERE avg_eval_score IS NOT NULL AND avg_eval_score <= 1;
 ```
 
-It's safe to call repeatedly — the function checks for an existing `Demo workspace` and bails if one is already there.
+The seed itself is safe to call repeatedly — it checks for an existing `Demo workspace` and bails if one is already there.
 
 ## Security note
 

@@ -49,7 +49,7 @@ function fmtMetric(metric: string, v: number) {
   if (metric === "avg_cost_usd") return `$${v.toFixed(4)}`;
   if (metric === "avg_latency_ms") return `${Math.round(v)}ms`;
   if (metric === "error_rate") return `${v.toFixed(1)}%`;
-  if (metric === "avg_eval_score") return v.toFixed(2);
+  if (metric === "avg_eval_score") return Math.round(v).toString(); // 0–100 scale (KI-14)
   return v.toFixed(1);
 }
 

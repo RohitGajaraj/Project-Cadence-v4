@@ -50,7 +50,7 @@ Lovable/AI gateway (default, no user key) and BYO adapters (Anthropic, DeepSeek,
 - Judge/eval/embedding calls also flow through it (`surface='judge'|'eval'|'embed'`) so they are measured too.
 - Cron-poked endpoints live under `/api/public/hooks/*` (`eval-tick`, `eval-suite-tick`, `indexer-tick`, `agent-tick`, `drift-tick`, `approvals-tick`).
 - Trace IDs are time-sortable (UUIDv7).
-- Eval failure (≥0.1 regression on a "Cadence core" case) is a deploy gate; drift is a passive watcher.
+- Eval failure (≥10-point regression on a "Cadence core" case, 0–100 scale — KI-14) is a deploy gate; drift is a passive watcher.
 - Both `callModel()` and `callModelStream()` enforce the governance halt check identically. Streaming halts emit a `status='blocked'` event before the SSE stream is ever opened.
 
 Change anything here and update this file + [`plan.md`](../plan.md) (see [`AGENTS.md`](../AGENTS.md), section 5).

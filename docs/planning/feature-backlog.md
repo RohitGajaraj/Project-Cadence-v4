@@ -488,7 +488,7 @@ _Focus: Autonomous code writing, CI status loop, test generation, test runners._
 
 **J2 — QA gate + self-correct loop** `[new]` · `P1` · `S5`
 
-- Build: failing tests feed back to the build agent until green or escalate; regression gate (≥0.1 eval regression blocks without override); ties "Cadence core" eval suite (P5).
+- Build: failing tests feed back to the build agent until green or escalate; regression gate (≥10-point eval regression on the 0–100 scale blocks without override — KI-14); ties "Cadence core" eval suite (P5).
 - States: infinite-correct guard (cap); unrecoverable → escalate to Decision Queue.
 - Done when: a failing suite loops the Engineer until green or escalates; a regression blocks Ship.
 - Depends: J1, P5, D3.
@@ -832,7 +832,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 
 **P4 — Eval harness + regression gate** `[reuse]` · `P1` · `X3`
 
-- Build: "Cadence core" eval suite; per-surface/agent coverage targets; ≥0.1 regression blocks deploy without override.
+- Build: "Cadence core" eval suite; per-surface/agent coverage targets; ≥10-point regression (0–100 scale — KI-14) blocks deploy without override.
 - Done when: a regression blocks Ship (ties J2/K1).
 
 **P5 — Drift watch** `[reuse]` · `P1` · `X3`
