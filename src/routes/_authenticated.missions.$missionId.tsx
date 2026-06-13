@@ -24,6 +24,7 @@ import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel, StepDot, StatusBadge } from "@/components/cadence/Primitives";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
+import { agentDisplayName } from "@/lib/agent-vocabulary";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, type MissionDetail } from "@/lib/missions.functions";
 import {
@@ -337,7 +338,9 @@ function TraceHop({
             style={handoffChip}
           >
             {showPayload ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
-            {inbound.from_agent_slug ?? "operator"} → {inbound.to_agent_slug} · payload
+            {inbound.from_agent_slug
+              ? agentDisplayName(inbound.from_agent_slug)
+              : "operator"} → {agentDisplayName(inbound.to_agent_slug)} · payload
           </button>
           {showPayload ? (
             <pre className="fade-up scrollbar-thin" style={preStyle}>
@@ -364,7 +367,7 @@ function TraceHop({
           <ChevronRight size={11} style={{ color: "var(--ink-faint)" }} />
         )}
         <span style={{ color: "var(--agent)", fontWeight: 600 }}>
-          {h.agent_name} ({h.agent_slug})
+          {agentDisplayName(h.agent_slug, h.agent_name)}
         </span>
         <span
           style={{
@@ -517,7 +520,7 @@ function TraceHop({
       {outbound ? (
         <div style={{ marginTop: 4 }}>
           <span className="mono-label" style={handoffChip}>
-            handoff → {outbound.to_agent_slug}
+            handoff → {agentDisplayName(outbound.to_agent_slug)}
             {outbound.consumed_by_run_id ? "" : " · queued, awaiting receiver"}
           </span>
         </div>
@@ -597,14 +600,14 @@ function MissionDetailPage() {
   const planRows =
     stepRows.length > 0
       ? stepRows.map((s) => ({
-          agent: s.agent_slug as string,
+          agent: agentDisplayName(s.agent_slug as string),
           goal: s.sub_goal as string,
           status: s.status as string,
           note: (s.error as string | null) ?? null,
           deps: (s.depends_on as number[] | null) ?? [],
         }))
       : hops.map((h) => ({
-          agent: h.agent_slug,
+          agent: agentDisplayName(h.agent_slug),
           goal: h.input.length > 200 ? `${h.input.slice(0, 200)}…` : h.input,
           status: h.status,
           note: null,
@@ -975,7 +978,7 @@ function MissionDetailPage() {
               </div>
               {failedStep ? (
                 <p style={{ fontSize: 12.5, color: "var(--ink-muted)", margin: "6px 0 10px" }}>
-                  {failedStep.agent_slug} could not finish "{failedStep.sub_goal}"
+                  {agentDisplayName(failedStep.agent_slug)} could not finish "{failedStep.sub_goal}"
                   {failedStep.error ? ` — ${failedStep.error}` : ""}.
                 </p>
               ) : (
