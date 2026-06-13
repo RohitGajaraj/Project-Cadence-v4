@@ -1,80 +1,37 @@
-# Active tasks
+# Active task — Phase 0: "Honest Wedge" (Agentic Product OS build)
 
-> **2026-06-12 — `F-STUDIO` CODE COMPLETE ✅ (lint/tsc/build green) — runtime gates below.** Spec: [`docs/features/studio.md`](docs/features/studio.md) · build-log entry in `plan.md` §4. All five workstreams landed: engine tools+migration · studio.functions · `/studio` surface · rename sweep+docs · tick hardening (KI-02 fixed: NULL-checkpoint pickup + waiting_approval resume).
+> **Handoff 2026-06-13.** Work directly on **main** (repo convention — all tools on main, no long-lived branches).
+> **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§9 (Phase 0, W1–W6)** + the ⚠️ flags in §4/§6 and Appendices B & D.
+> **Session read order:** `git pull origin main` → this file → v6 doc §9 → [`docs/README.md`](docs/README.md) (file-placement policy) → [`AGENTS.md`](AGENTS.md).
 
-> **2026-06-11 — v5 Chief-of-Staff rebuild.** Spec: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](docs/strategy/v5-chief-of-staff-2026-06-11.md). Phases A (`F-V5-RITUAL`) + B (`F-V5-MOTHBALL`) ✅ shipped + walkthrough-verified (incl. AI brief via the Gemini local fallback). Phase D (`F-V5-LOOP-CLOSE`) **code landed, one gate open — see below**.
+## State at handoff (main @ `0b721ab`)
+- ✅ Docs reorganized + fully interlinked; **v6 = current positioning** everywhere; file-placement policy live in `docs/README.md` + all entry docs.
+- ✅ Published Lovable app **verified healthy** (login renders, public env injected, no crash). `vite.config.ts` is the robust version (Lovable framework config + hardcoded public fallbacks) — **DO NOT touch it.**
+- ⏸️ `lovable-sync-1781272474` branch is stale (52 behind) / superseded — **do not merge.**
+- **Founder rulings (locked):** Agentic Product OS umbrella = PM Chief of Staff (felt entry) + Decision System (moat) · genuine autonomous end-to-end execution as North Star with **claim-never-outruns-wiring** · defer agent marketplace but keep the A2A contract · beachhead = senior/founding PM at A–C B2B SaaS · **Cadence = placeholder name** (Cadence ≡ Circuit) · **no hard date** (~45-day envelope; demoable milestone ~every 2 weeks).
 
----
+## Do this — Phase 0 (dependency order W1 → W6)
+**First (small):** add a `docs/strategy/session-decisions.md` entry recording the Agentic-Product-OS rulings above (standing obligation). Then:
 
-## `F-STUDIO` — runtime gates (founder + next session)
+- **W1 — DELETE the human-PM-legacy surfaces.** `git rm` `src/components/product/RoadmapPanel.tsx` + `src/components/product/TasksPanel.tsx` + `src/lib/roadmap.functions.ts` (all 4 roadmap server fns are used only by RoadmapPanel — the whole file is safely deletable). Strip `roadmap`/`tasks` from the `Tab` union / `TABS` / `PRODUCT_DESC` / imports / render branches in `src/routes/_authenticated.product.tsx`. Repoint `/roadmap` + `/tasks` to redirect stubs (do **not** delete the route files → avoids `routeTree.gen.ts` desync). ⚠️ **Today shares the `tasks` table** (`_authenticated.index.tsx` has its own task-capture list + "Tasks shipped" tile reading `tasks`): delete the product-tab kanban + sprint planner ONLY; **keep the `tasks` table + Today's list.** Audit `["roadmap"]`/`["tasks"]` query-key invalidations before removing.
+- **W2 — 5-agent vocabulary.** Map internal agent slugs → the 5 user-facing names (Scout · Strategist · Critic · Scribe · Chief of Staff) at the **display layer only** (`src/lib/agent-vocabulary.ts`). ⚠️ **Do NOT rename DB slugs** (rename-disclaimer pattern: internal identifiers stay).
+- **W3 — Decision-first card.** New `src/components/today/DecisionCard.tsx` per Appendix D — collapsed = `the call as a question → evidence count + Critic verdict → [Approve][Open]`; fields: question · cited/countable/click-through evidence · Critic verdict · what-happens-if-approve (blast radius) · cost · model · undo path; actions Approve / Reject(+reason) / Open / Defer. ⚠️ It **enriches the existing `getNeedsYou` queue** (`src/lib/today.functions.ts`, rendered ~`index.tsx:418-597`) — not greenfield. Reuse `CriticBadge`.
+- **W4 — Cold-start on-ramp.** Narrated empty-Today state that IS the on-ramp ("forward me your last 20 pieces of feedback and I'll surface your first calls"), gated on real emptiness. Fixes the self-serve <10-min wow that the webhook-only ingest decision broke.
+- **W5 — Memory visible + A2A field.** Surface the loop-closure re-score (Memory Context pill on trace detail + a Today line). ⚠️ **The re-score already happens** in `src/lib/outcome.functions.ts:200-253` (writes `learnings` prior_ice→new_ice) — surface it, don't rebuild. Add the missing `memory_refs[]` field to `HandoffPayload` in `src/lib/ai/handoff.server.ts` and thread it through.
+- **W6 — Demo seed @ `trusted`.** Migration inserting `agent_autonomy` rows at `arc='trusted'` for the demo account's 5 agents + seed one real overnight mission. ⚠️ `loadAgentArc` returns `observing` when no row exists (`src/lib/ai/trust.server.ts:194`) → without explicit rows the demo silently review-gates every action. Do **NOT** seed `ambient` (that auto-executes everything and removes the calls that ARE the wedge).
 
-- [x] Engine: migration `20260612100000_f_studio_engine.sql` · 7 registry tools (`repo.*`, `studio.*`) · loop pause-on-gate + steer injection + 24 steps · `studio.functions.ts` (6 fns) · `/studio` surface (Monaco diffs, inline gates, live timeline) · `/build`→`/studio` · rename sweep · KI-02 sweeper fixes — lint ✓ tsc ✓ build:dev ✓
-- [ ] **GATE (KI-08 pattern, founder):** open the Lovable project so it syncs main — applies `20260612100000` (studio tables + approval ctx columns + `agent_runs.model` + Studio rename/prompt/tool seeds) and deploys the frontend. **Until apply, hosted/local-against-hosted agent-approval inserts and `/studio` queries will error on the missing columns/tables — expected, same window as F-V5-LOOP-CLOSE.** Probe: REST `/rest/v1/studio_changesets` returns []/rows instead of PGRST205.
-- [ ] After apply: regenerate Supabase types (removes the `as unknown as SupabaseClient` casts in `studio.functions.ts`, `outcome.functions.ts`, `resume-runs.ts`).
-- [ ] **Golden-path QA (gates demo inclusion per 2026-06-12 ruling):** agent door — approve a PRD → Send to Studio → watch `/studio/$missionId`: plan → repo reads → `studio.stage` → commit gate (confirm) → PR gate (confirm) → CI read → merge gate (review) → merged + lineage edge. Human door — NL-prompt a session from `/studio`, steer mid-session, review a Monaco diff, clear a gate. Playwright walkthrough with the demo login (`docs/operations/demo-credentials.md`).
-- [ ] Hosted tick cadence check: `resume-runs` pg_cron is the session heartbeat (queued start ≤1 min; gate-resume ≤1 min after approve+execute). If sessions feel slow in the demo, consider a 30s cadence.
+## Standing rules (non-negotiable)
+- Work on **main**; commit small with a one-line **WHY**; push so other tools pulling main see it.
+- **Claim never outruns wiring** — no "fully autonomous" copy anywhere. Voice: *"the loop runs the reversible work; you make the calls."*
+- **File-placement policy** (`docs/README.md`): every new file → correct subfolder + linked from that folder's index, same commit; never repo root or `docs/` top level; no duplicates/stubs; screenshots local-only under `docs/screenshots/`.
+- Closed-doc loop: update `plan.md` §4 + the relevant doc in the **same commit**.
+- Scan skills/agents/plugins/MCP before each task (AGENTS.md §2).
 
----
+## Verify (Phase 0 done bar)
+- `bun run lint` + `bun run build` green.
+- Fresh `demo@redcadence.app` / `Cadence!Demo2026` login lands on **Today** with ≥2 real decision-first call cards (evidence + Critic verdict); approve one → executes + logs the decision without leaving Today; **no sprint button, no kanban** anywhere; an empty/new workspace shows the cold-start on-ramp.
 
-## `F-V5-LOOP-CLOSE` — Phase D status
-
-- [x] Migration written: `supabase/migrations/20260611161500_f_v5_loop_close_learnings.sql` (learnings table + prds.shipped_at/outcome + profiles.voice_anchor_text + hourly outcome-tick cron) — audited purely additive
-- [x] Server: `checkPrdShipped` (GitHub issue-state read, idempotent ship stamp) · `recordOutcome` (verdict → confidence ±2 → learning row with prior/new ICE) · `listLearnings` · `api/public/hooks/outcome-tick.ts`
-- [x] UI: `OutcomeCard` on PRD detail (3 states) · re-score delta chip beside ICE in OpportunitiesPanel
-- [x] Loop: KI-07 fixed (failed model call ⇒ run `failed`, mission `halted`) · recalled memories persisted to checkpoints + "Memory context · N" pill on mission hops · voice anchor end-to-end (settings → profiles → agent prompts)
-- [x] Verify: lint + `bun run build:dev` green on all touched files
-- [ ] **GATE (KI-08, founder-chosen Lovable path):** open the Lovable project so it syncs main + applies `20260611161500` — DB stays Lovable-operated until migrating off (decision 2026-06-11). Probe: REST `/rest/v1/learnings` returns rows/[] instead of PGRST205
-- [ ] After apply: regenerate Supabase types (removes the untyped casts), then walk the loop end-to-end: approve a PRD with an issue → close the issue → "Check ship status" → record outcome → see the re-score chip in Opportunities
-- [ ] Doc closure remainder: `architecture/orchestration.md` (halted-mission semantics) + `docs/features/` operator page for the outcome loop
-
-## `F-V5-INGEST-WEBHOOK` — Phase C universal half: CODE LANDED 2026-06-12
-
-- [x] `ingest_tokens` migration (idempotent) · `ingest.functions.ts` (get/rotate/revoke) · public `POST /api/public/ingest-signals` (Bearer token) · Webhook ingest card on `/sync` — lint + build green; reactor fan-out to Scout confirmed
-- [ ] **GATE (KI-09): founder opens Lovable → syncs → migration applies + frontend deploys**
-- [ ] Then verify: generate token on `/sync`, curl one signal, see it in Product · Signals (+ auto-discovery run)
-- [ ] Post-demo hardening queued: per-token rate cap, token hashing (KI-10)
-
-## `F-CONN` — PARKED 2026-06-12 (founder call: revisit later; build is complete, only registrations remain)
-
-All code shipped + deployed (Phase 1 base, OAuth-only correction, settings/connections redesign; proof: rows enable purely on client-ID secrets). To resume: do the registrations below — no code needed. Phase 2 (Linear/Notion/GDocs adapters, GitHub webhook) queued behind them.
-
-## `F-CONN` Phase 1 — Connector Platform base (reference)
-
-Plan: connections (account level) · connection_bindings (workspace level) · `resolveProviderAuth` chain · GitHub App exemplar · 9 call sites migrated with env fallback preserved. Decision entry in `docs/strategy/session-decisions.md`.
-
-### Open ops task — register the Circuit GitHub App (founder, ~10 min — gates the connect flow)
-
-1. [ ] github.com → Settings → Developer settings → **GitHub Apps** → New GitHub App
-   - Name: e.g. `circuit-cockpit` (the slug becomes `GITHUB_APP_SLUG`)
-   - Homepage: `https://cadence-flow-beta.lovable.app`
-   - Callback URL: `https://cadence-flow-beta.lovable.app/api/public/connect/github/callback` (add `http://localhost:8080/api/public/connect/github/callback` as a second callback for local dev)
-   - ✅ "Request user authorization (OAuth) during installation" · Webhooks: **off** for now
-   - Permissions: Issues **RW** · Pull requests **RW** · Contents **R** · Actions **R**
-2. [ ] After creating: note the **App ID**, generate a **client secret**, and generate + download a **private key** (.pem). **⚠️ Convert it to PKCS#8 before pasting** (GitHub downloads PKCS#1): `openssl pkcs8 -topk8 -nocrypt -in downloaded.pem -out github-app-pkcs8.pem` — the Worker's WebCrypto requires PKCS#8 and will throw a clear error otherwise
-3. [ ] Add backend secrets (Lovable project env): `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY` (paste PEM), and `CONNECTOR_SECRETS_KEY` (run `openssl rand -base64 32`)
-4. [ ] Until these exist, the GitHub card in Settings → Connected accounts shows "setup pending" (everything else still works; old env-var path keeps the demo alive)
-
-### Open ops task — per-provider OAuth client IDs (founder, ~5-10 min each — each unlocks that provider's Connect button)
-
-OAuth-only ruling 2026-06-12: every Connect button needs a one-time OAuth app registration. Register at each provider with redirect URI `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback`, then add the client ID as a backend secret:
-
-- [ ] **Google** (covers Calendar + Docs): Google Cloud Console → Credentials → OAuth client → `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID` (this is long-pending KI-01)
-- [ ] **Microsoft** (Outlook calendar): Entra admin → App registrations → `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID` (KI-01)
-- [ ] **Notion**: notion.so/my-integrations → public OAuth integration → `NOTION_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] **Linear**: linear.app settings → API → OAuth application → `LINEAR_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] **Figma** (optional now): figma.com/developers → `FIGMA_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] **Jira/Atlassian** (optional now): developer.atlassian.com → `ATLASSIAN_APP_USER_CONNECTOR_CLIENT_ID`
-
-Each card flips from "Admin setup required" to a live Connect button as its secret lands. No client secrets needed in our env — the gateway handles token exchange.
-
-## ~~Slack app credentials~~ — RETIRED 2026-06-12
-
-Founder decision: no Slack app. The **webhook ingest door is the ingest strategy** (`F-V5-INGEST-WEBHOOK`); anything — including Slack via its own outgoing-webhook/workflow tools — POSTs to `/api/public/ingest-signals`. `F-V5-SLACK` (native OAuth connector) removed from the queue.
-
-## Open ops task — Calendar OAuth credentials (KI-01, unchanged)
-
-**Owner:** workspace admin. **Decision doc:** [`docs/decisions/calendar-oauth-credentials.md`](docs/decisions/calendar-oauth-credentials.md)
-
-- [ ] Google OAuth Client ID → secret `GOOGLE_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] Microsoft App Registration → secret `MICROSOFT_APP_USER_CONNECTOR_CLIENT_ID`
-- [ ] Smoke test both Connect buttons on `/knowledge?tab=calendar`; then flip `F-CALENDAR-PERUSER` ✅
+## Inherited open gates (carry forward — full tracker: `docs/planning/known-issues.md`)
+- **KI-13:** live signup 500s (`handle_new_user`) — demo creds only; no new real accounts. First-run onboarding unreachable for real new users.
+- **Migration-apply via Lovable sync:** unapplied migrations (incl. W6's `agent_autonomy` seed) land when the Lovable project syncs `main` + deploys — same window as the prior F-STUDIO / F-V5-LOOP-CLOSE gates. Write reads pre-migration-tolerant where adjacent.
+- **KI-14:** eval score scale mixed (seeds 0–1 vs runner 0–100).
