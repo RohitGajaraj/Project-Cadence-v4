@@ -109,6 +109,27 @@ const CONSEQUENCES: Record<string, ToolConsequence> = {
     reversible: "reversible",
     undo: "Re-rank again — scores recompute each cycle.",
   },
+  // orchestration (the Chief of Staff runs the mission)
+  "mission.plan": {
+    effect: "Plans the mission into a small step-by-step DAG.",
+    reversible: "reversible",
+    undo: "Re-plan — the steps regenerate.",
+  },
+  "mission.dispatch": {
+    effect: "Dispatches the ready mission steps to their agents.",
+    reversible: "partial",
+    undo: "Halt the mission before the dispatched runs finish.",
+  },
+  "mission.finalize": {
+    effect: "Marks the mission complete.",
+    reversible: "reversible",
+    undo: "Reopen the mission.",
+  },
+  "agent.handoff": {
+    effect: "Hands the task to the next agent in the loop.",
+    reversible: "partial",
+    undo: "Halt the mission before the receiver runs.",
+  },
 };
 
 const DEFAULT: ToolConsequence = {
