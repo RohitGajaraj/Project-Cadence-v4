@@ -295,6 +295,9 @@ CANONICAL SOURCE OF TRUTH HIERARCHY:
   - Ai_Cofounder.md: founding constitution — posture, north star, mandates
     (its Repo Concordance maps its 13 mandated docs onto the files below)
   - docs/conventions/: durable cross-tool rules (UI chrome, voice, destructive, inline-mgmt, doc-closure). Apply automatically.
+    TOP RULE: docs/conventions/humanized-output.md. Zero AI fingerprints (no em/en dashes, no
+    invisible Unicode, no AI-cliche phrasing) in BOTH what we author AND what the platform
+    generates for users (PRDs, drafts, chat). Runtime sanitizer at the AI chokepoint is the hard gate.
   - docs/strategy/: versioned positioning history (always read the latest version)
   - docs/strategy/session-decisions.md: major strategic decisions log
   - README.md: product face (derived from strategy/)
@@ -304,7 +307,7 @@ CANONICAL SOURCE OF TRUTH HIERARCHY:
     file, read it. Every new doc goes in the right subfolder and is linked from
     that folder's index in the same commit; nothing new at repo root or docs/
     top level; no duplicates or redirect stubs; screenshots local-only under
-    docs/screenshots/. CURRENT positioning = docs/strategy/v6-agentic-product-os-2026-06-13.md.
+    docs/screenshots/. CURRENT positioning = docs/strategy/v7-agentic-product-os-2026-06-14.md (supersedes v6; v6 retained for engine/IA detail).
 
 TOOL-SPECIFIC POINTERS:
   - CLAUDE.md — Claude Code specifics (references AGENTS.md for rules)

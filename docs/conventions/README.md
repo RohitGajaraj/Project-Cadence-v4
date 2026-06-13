@@ -9,6 +9,7 @@
 | File                                                     | Rule                                                                                                                                              |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`ui-chrome.md`](./ui-chrome.md)                         | No native browser chrome (`alert/confirm/prompt/open/onbeforeunload`, native `<dialog>`). Use `useConfirm()` / `usePrompt()` + `sonner` + shadcn. |
+| [`humanized-output.md`](./humanized-output.md)           | **Master rule.** Zero AI fingerprints in BOTH what we author and what the platform generates for users (no em/en dashes, no invisible Unicode, no AI-cliché phrasing). Runtime sanitizer is the hard gate. `ui-voice.md` is its UI-string application. |
 | [`ui-voice.md`](./ui-voice.md)                           | Voice anchor, length budgets, AI-tell denylist, em/en dash ban.                                                                                   |
 | [`destructive-actions.md`](./destructive-actions.md)     | Typed-name match for irreversible deletes; `useConfirm` for other destructive flows; Undo over confirm for reversible ones.                       |
 | [`inline-management.md`](./inline-management.md)         | Workspace + product management is inline (popover / dropdown / sheet), never a dedicated route.                                                   |
