@@ -166,6 +166,9 @@ export const extendApprovalTtl = createServerFn({ method: "POST" })
 const ResolveApprovalSchema = z.object({
   approvalId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
+  // v6 Phase 0 / W3 — optional human note on the call (Appendix D: "Reject
+  // (+reason)"). Persisted best-effort to agent_approvals.decision_reason.
+  reason: z.string().max(2000).optional().nullable(),
 });
 
 /* ————— Ember Editorial (screen 5 · Govern) — additive exports only ————— */
@@ -301,6 +304,23 @@ export const resolveApproval = createServerFn({ method: "POST" })
       .eq("id", data.approvalId)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
+
+    // Record the human's note on the call (Appendix D). Best-effort: the
+    // decision_reason column lands via a Phase 0 migration — tolerate its
+    // absence so the decision is never blocked before Lovable applies it.
+    // `as never` escapes the pre-migration generated types without `any`.
+    if (data.reason && data.reason.trim()) {
+      try {
+        await supabase
+          .from("agent_approvals")
+          .update({ decision_reason: data.reason.trim().slice(0, 2000) } as never)
+          .eq("id", data.approvalId)
+          .eq("user_id", userId);
+      } catch {
+        // missing column pre-migration — the decision stands without the note
+      }
+    }
+
     if (data.decision === "approved") {
       // executeApproval flips the row to executed/failed itself; its failure
       // is surfaced to the caller but the decision stays recorded.

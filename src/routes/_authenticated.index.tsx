@@ -12,13 +12,10 @@ import {
   Calendar,
   Bot,
   Activity,
-  Clock,
   Coins,
   Rocket,
   ShieldAlert,
   Check,
-  X,
-  ExternalLink,
   Gauge,
   Focus,
   ChevronRight,
@@ -37,7 +34,7 @@ import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
-import { CriticBadge } from "@/components/governance/CriticBadge";
+import { DecisionCard } from "@/components/today/DecisionCard";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -132,8 +129,11 @@ function Dashboard() {
   // reference prototype (cleared/total, not an abstract score).
   const [clearedSession, setClearedSession] = useState(0);
   const decideApproval = useMutation({
-    mutationFn: (data: { approvalId: string; decision: "approved" | "rejected" }) =>
-      mResolveApproval({ data }),
+    mutationFn: (data: {
+      approvalId: string;
+      decision: "approved" | "rejected";
+      reason?: string | null;
+    }) => mResolveApproval({ data }),
     onSuccess: (_res, vars) => {
       invalidate("needs-you");
       setClearedSession((c) => c + 1);
@@ -160,6 +160,16 @@ function Dashboard() {
   const ny = needsYou.data;
   const callCount =
     (ny?.approvals.length ?? 0) + (ny?.prdCalls.length ?? 0) + (ny?.oppCalls.length ?? 0);
+
+  // v6 Phase 0 / W3 — session-local "Not now" defer keeps the visible queue
+  // small (Appendix D); deferred calls return on the next load/ritual. The hero
+  // ring still counts the true workload (callCount), not what you've hidden.
+  const [deferred, setDeferred] = useState<Set<string>>(new Set());
+  const deferCall = (id: string) => setDeferred((prev) => new Set(prev).add(id));
+  const visibleApprovals = (ny?.approvals ?? []).filter((a) => !deferred.has(a.id));
+  const visiblePrd = (ny?.prdCalls ?? []).filter((p) => !deferred.has(p.id));
+  const visibleOpp = (ny?.oppCalls ?? []).filter((o) => !deferred.has(o.id));
+  const visibleCount = visibleApprovals.length + visiblePrd.length + visibleOpp.length;
 
   // Reference call-word formula: "One call is / Two calls are / N calls are".
   const callWord =
@@ -398,7 +408,7 @@ function Dashboard() {
             }}
           >
             <MonoLabel icon={ShieldAlert}>
-              Needs you · {callCount} call{callCount === 1 ? "" : "s"}
+              Needs you · {visibleCount} call{visibleCount === 1 ? "" : "s"}
             </MonoLabel>
             <Link
               to="/govern"
@@ -409,191 +419,66 @@ function Dashboard() {
               All approvals →
             </Link>
           </div>
-          {callCount === 0 ? (
+          {visibleCount === 0 ? (
             <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
-              All clear. Agents are working; the next call lands here.
+              {callCount === 0
+                ? "All clear. Agents are working; the next call lands here."
+                : "Cleared for now. Deferred calls return with tomorrow's ritual."}
             </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {(ny?.approvals ?? []).map((a) => (
-                <div
+              {visibleApprovals.map((a) => (
+                <DecisionCard
                   key={a.id}
-                  title={a.rationale ?? undefined}
-                  className="fade-up lift"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "9px 14px",
-                    border: "1px solid var(--hairline)",
-                    borderRadius: 8,
-                    background: "var(--canvas)",
+                  item={{
+                    kind: "gate",
+                    id: a.id,
+                    agentSlug: a.agent_slug,
+                    toolName: a.tool_name,
+                    rationale: a.rationale,
+                    traceId: a.trace_id,
+                    model: a.model,
+                    estCostUsd: a.est_cost_usd,
+                    expiresAt: a.expires_at,
+                    escalationState: a.escalation_state,
                   }}
-                >
-                  <StepDot status="gate" />
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      display: "flex",
-                      alignItems: "baseline",
-                      gap: 8,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <span className="mono-label" style={{ color: "var(--ink)" }}>
-                      {a.agent_slug}
-                    </span>
-                    <span className="mono-label" style={{ color: "var(--agent)", fontSize: 10 }}>
-                      {a.tool_name}
-                    </span>
-                    {a.rationale && (
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          color: "var(--ink-muted)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {a.rationale}
-                      </span>
-                    )}
-                  </div>
-                  {a.expires_at && (
-                    <span
-                      className="mono-label"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 9.5,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Clock size={10} strokeWidth={1.75} />
-                      {a.escalation_state === "expired"
-                        ? "expired"
-                        : new Date(a.expires_at).toLocaleTimeString([], {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                    </span>
-                  )}
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                    <button
-                      className="btn btn-approve btn-sm disabled:opacity-60"
-                      disabled={decideApproval.isPending}
-                      onClick={() =>
-                        decideApproval.mutate({ approvalId: a.id, decision: "approved" })
-                      }
-                    >
-                      <Check size={11} strokeWidth={1.75} />
-                      Approve · run {a.tool_name}
-                    </button>
-                    <button
-                      className="btn btn-reject btn-sm disabled:opacity-60"
-                      disabled={decideApproval.isPending}
-                      onClick={() =>
-                        decideApproval.mutate({ approvalId: a.id, decision: "rejected" })
-                      }
-                    >
-                      <X size={11} strokeWidth={1.75} />
-                      Reject · nothing runs
-                    </button>
-                  </div>
-                </div>
+                  onApprove={(id) =>
+                    decideApproval.mutate({ approvalId: id, decision: "approved" })
+                  }
+                  onReject={(id, reason) =>
+                    decideApproval.mutate({ approvalId: id, decision: "rejected", reason })
+                  }
+                  onDefer={deferCall}
+                  isDeciding={decideApproval.isPending}
+                />
               ))}
-              {(ny?.prdCalls ?? []).map((p) => (
-                <div
+              {visiblePrd.map((p) => (
+                <DecisionCard
                   key={p.id}
-                  className="fade-up lift"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "9px 14px",
-                    border: "1px solid var(--hairline)",
-                    borderRadius: 8,
-                    background: "var(--canvas)",
-                  }}
-                >
-                  <StepDot status="gate" />
-                  <span
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontSize: 12.5,
-                      color: "var(--ink-muted)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    Spec awaiting your call:{" "}
-                    <span style={{ color: "var(--ink)", fontWeight: 500 }}>{p.title}</span>
-                  </span>
-                  <CriticBadge
-                    review={p.critic_review}
-                    target={{ kind: "prd", id: p.id }}
-                    invalidateKey={["needs-you"]}
-                  />
-                  <Link
-                    to="/prds/$id"
-                    params={{ id: p.id }}
-                    className="btn btn-sm"
-                    style={{ color: "var(--action-blue)", padding: "4px 6px" }}
-                    aria-label="Open spec"
-                  >
-                    <ExternalLink size={12} strokeWidth={1.75} />
-                  </Link>
-                </div>
+                  item={{ kind: "prd", id: p.id, title: p.title, critic: p.critic_review }}
+                  onApprove={(id) =>
+                    decideApproval.mutate({ approvalId: id, decision: "approved" })
+                  }
+                  onReject={(id, reason) =>
+                    decideApproval.mutate({ approvalId: id, decision: "rejected", reason })
+                  }
+                  onDefer={deferCall}
+                  isDeciding={decideApproval.isPending}
+                />
               ))}
-              {(ny?.oppCalls ?? []).map((o) => (
-                <div
+              {visibleOpp.map((o) => (
+                <DecisionCard
                   key={o.id}
-                  className="fade-up lift"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "9px 14px",
-                    border: "1px solid var(--hairline)",
-                    borderRadius: 8,
-                    background: "var(--canvas)",
-                  }}
-                >
-                  <StepDot status="gate" />
-                  <span
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontSize: 12.5,
-                      color: "var(--ink-muted)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    Critic challenged:{" "}
-                    <span style={{ color: "var(--ink)", fontWeight: 500 }}>{o.title}</span>
-                  </span>
-                  <CriticBadge
-                    review={o.critic_review}
-                    target={{ kind: "opportunity", id: o.id }}
-                    invalidateKey={["needs-you"]}
-                  />
-                  <Link
-                    to="/product"
-                    search={{ tab: "opportunities" }}
-                    className="btn btn-sm"
-                    style={{ color: "var(--action-blue)", padding: "4px 6px" }}
-                    aria-label="Open opportunity"
-                  >
-                    <ExternalLink size={12} strokeWidth={1.75} />
-                  </Link>
-                </div>
+                  item={{ kind: "opp", id: o.id, title: o.title, critic: o.critic_review }}
+                  onApprove={(id) =>
+                    decideApproval.mutate({ approvalId: id, decision: "approved" })
+                  }
+                  onReject={(id, reason) =>
+                    decideApproval.mutate({ approvalId: id, decision: "rejected", reason })
+                  }
+                  onDefer={deferCall}
+                  isDeciding={decideApproval.isPending}
+                />
               ))}
             </div>
           )}

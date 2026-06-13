@@ -19,6 +19,12 @@ export type NeedsYou = {
     escalation_state: string;
     expires_at: string | null;
     created_at: string;
+    /** The agent run trace behind the gate (for cost/model + Open). */
+    trace_id: string | null;
+    /** Model the gated call ran on (Appendix D), or null if no spend recorded. */
+    model: string | null;
+    /** Spend on this call so far in USD (Appendix D), or null if none recorded. */
+    est_cost_usd: number | null;
   }[];
   prdCalls: {
     id: string;
@@ -52,7 +58,7 @@ export const getNeedsYou = createServerFn({ method: "GET" })
     const [approvals, prds, opps, events, decided] = await Promise.all([
       supabase
         .from("agent_approvals")
-        .select("id,agent_slug,tool_name,rationale,escalation_state,expires_at,created_at")
+        .select("id,agent_slug,tool_name,rationale,escalation_state,expires_at,created_at,trace_id")
         .eq("user_id", userId)
         .in("escalation_state", ["pending", "expired"])
         .order("expires_at", { ascending: true })
@@ -97,8 +103,52 @@ export const getNeedsYou = createServerFn({ method: "GET" })
       ? Math.round(latencies[Math.floor(latencies.length / 2)])
       : null;
 
+    // Per-call cost + model (Appendix D): join each gate's trace to its
+    // ai_events. One batched query; honest nulls when a call has no recorded
+    // spend yet. RLS scopes ai_events to the caller.
+    const approvalRows = (approvals.data ?? []) as Array<{
+      id: string;
+      agent_slug: string;
+      tool_name: string;
+      rationale: string | null;
+      escalation_state: string;
+      expires_at: string | null;
+      created_at: string;
+      trace_id: string | null;
+    }>;
+    const traceIds = [
+      ...new Set(approvalRows.map((a) => a.trace_id).filter((t): t is string => !!t)),
+    ];
+    const costByTrace = new Map<string, number>();
+    const modelByTrace = new Map<string, string>();
+    if (traceIds.length > 0) {
+      const { data: ev } = await supabase
+        .from("ai_events")
+        .select("trace_id,model,est_cost_usd")
+        .in("trace_id", traceIds)
+        .limit(500);
+      for (const e of (ev ?? []) as {
+        trace_id: string | null;
+        model: string;
+        est_cost_usd: number | null;
+      }[]) {
+        if (!e.trace_id) continue;
+        costByTrace.set(
+          e.trace_id,
+          (costByTrace.get(e.trace_id) ?? 0) + Number(e.est_cost_usd || 0),
+        );
+        if (!modelByTrace.has(e.trace_id)) modelByTrace.set(e.trace_id, e.model);
+      }
+    }
+    const enrichedApprovals: NeedsYou["approvals"] = approvalRows.map((a) => ({
+      ...a,
+      model: a.trace_id ? (modelByTrace.get(a.trace_id) ?? null) : null,
+      est_cost_usd:
+        a.trace_id && costByTrace.has(a.trace_id) ? (costByTrace.get(a.trace_id) ?? null) : null,
+    }));
+
     return {
-      approvals: (approvals.data ?? []) as NeedsYou["approvals"],
+      approvals: enrichedApprovals,
       prdCalls: (prds.data ?? []) as NeedsYou["prdCalls"],
       oppCalls: (opps.data ?? []) as NeedsYou["oppCalls"],
       spendTodayUsd,
