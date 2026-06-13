@@ -25,18 +25,21 @@ import { SignalDetail } from "@/components/product/SignalDetail";
 import { OpportunitiesPanel } from "@/components/product/OpportunitiesPanel";
 import { OpportunityDetail } from "@/components/product/OpportunityDetail";
 import { SpecsPanel } from "@/components/product/SpecsPanel";
-import { RoadmapPanel } from "@/components/product/RoadmapPanel";
-import { TasksPanel } from "@/components/product/TasksPanel";
 import { ReleasesPanel } from "@/components/product/ReleasesPanel";
 
-type Tab = "signals" | "opportunities" | "specs" | "roadmap" | "tasks" | "releases";
+// v6 Phase 0 / W1: the Roadmap (sprint planner + capacity) and Tasks (To-Do/
+// Doing/Done kanban) tabs are deleted — they wear the clothes of a human-PM
+// tool and contradict the Agentic Product OS positioning (continuous agent
+// re-ranking replaces the manual sprint/kanban). Replacement = the agent-
+// decomposed dependency graph, later. The `tasks` TABLE stays (Today's capture
+// list reads it); only the product-tab kanban + sprint planner are gone.
+// /roadmap + /tasks routes now redirect away (see those route files).
+type Tab = "signals" | "opportunities" | "specs" | "releases";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "signals", label: "Signals" },
   { id: "opportunities", label: "Opportunities" },
   { id: "specs", label: "Specs" },
-  { id: "roadmap", label: "Roadmap" },
-  { id: "tasks", label: "Tasks" },
   { id: "releases", label: "Releases" },
 ];
 
@@ -46,8 +49,6 @@ const PRODUCT_DESC: Record<Tab, string> = {
   signals: "Capture customer signals from anywhere; cluster them into actionable themes.",
   opportunities: "Ranked by ICE. Generate a PRD with one click when you're ready to build.",
   specs: "Product requirement docs. Draft from a brief, hand off to GitHub or Build.",
-  roadmap: "Now / Next / Later lanes. Let AI plan the next two weeks or rebalance for you.",
-  tasks: "Per-task kanban for humans and agents. Import from Linear.",
   releases: "Build sessions that completed end-to-end, with duration and cost.",
 };
 
@@ -118,8 +119,6 @@ function ProductPage() {
         {tab === "signals" && (signal ? <SignalDetail id={signal} /> : <SignalsPanel />)}
         {tab === "opportunities" && (opp ? <OpportunityDetail id={opp} /> : <OpportunitiesPanel />)}
         {tab === "specs" && <SpecsPanel />}
-        {tab === "roadmap" && <RoadmapPanel />}
-        {tab === "tasks" && <TasksPanel />}
         {tab === "releases" && <ReleasesPanel />}
       </div>
     </AppShell>

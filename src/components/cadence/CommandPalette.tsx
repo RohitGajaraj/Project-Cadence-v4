@@ -190,14 +190,15 @@ export function GotoShortcuts() {
       if (waiting) {
         waiting = false;
         if (timer) clearTimeout(timer);
-        // /agents and /learn are mothballed (F-V5-MOTHBALL) — point at their
-        // v5 homes so shortcuts never land on a redirect.
+        // /agents and /learn are mothballed (F-V5-MOTHBALL); the Tasks surface
+        // was deleted (v6 Phase 0 / W1, task capture moved to Today) — point at
+        // their live homes so shortcuts never land on a redirect.
         const map: Record<string, string> = {
           d: "/",
           c: "/chat",
           a: "/missions",
           b: "/build",
-          t: "/tasks",
+          t: "/",
           s: "/settings",
           p: "/product",
           k: "/knowledge",

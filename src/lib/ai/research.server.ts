@@ -10,9 +10,10 @@
  * flush SSE events as they happen (shared SSE protocol v2 — see the route and
  * src/components/chat/MessageMeta.tsx, which must stay in lockstep).
  *
- * NOTE: there is no roadmap_items table — the roadmap surface is
- * opportunities grouped by status lane (see roadmap.functions.ts), so the
- * "roadmap" snapshot reads opportunities in the now/next/later/shipped lanes.
+ * NOTE: there is no roadmap_items table — the "roadmap" is just opportunities
+ * grouped by status lane, so the "roadmap" snapshot reads opportunities in the
+ * now/next/later/shipped lanes. (The RoadmapPanel UI was deleted in v6 Phase 0;
+ * this lane-grouping query lives inline here now.)
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -248,7 +249,9 @@ async function gatherInternal(
     snapshots.push({
       kind: "roadmap",
       title: "Roadmap (by lane)",
-      href: "/product?tab=roadmap",
+      // v6 Phase 0 / W1: the Roadmap tab was deleted; opportunities (ICE-ranked,
+      // lane-grouped by status) is the live successor surface for this snapshot.
+      href: "/product?tab=opportunities",
       lines: ["now", "next", "later", "shipped"]
         .filter((l) => byLane.has(l))
         .map((l) => `- ${l}: ${byLane.get(l)!.join("; ")}`),
