@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import {
@@ -35,6 +35,7 @@ import { getNeedsYou, getColdStart } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { listLearnings } from "@/lib/outcome.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
+import { recordRitualSession } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 
@@ -68,6 +69,7 @@ function Dashboard() {
   const mRunAgent = useServerFn(runAgent);
   const mResolveApproval = useServerFn(resolveApproval);
   const mStartMission = useServerFn(startOrchestratedMission);
+  const recordRitual = useServerFn(recordRitualSession);
 
   const [tab, setTab] = useState<"overview" | "agents">("overview");
 
@@ -92,6 +94,21 @@ function Dashboard() {
     enabled: localHour !== null,
     staleTime: 30 * 60 * 1000,
   });
+
+  // v6 Phase 3 / Track 2 — record ONE ritual session per Today mount so the
+  // Gauntlet's retention metric (Metric B) reads from real opens. Strictly
+  // best-effort: fire-and-forget, never blocks render, swallows every failure
+  // (incl. the table being absent pre-migration). The ref guard prevents a
+  // double-record under StrictMode; the server upserts per UTC day, so even a
+  // remount can't inflate the count. No workspace id is sent — it's unused by
+  // the metric and a client id can't be trusted (the server stores null).
+  const { activeWorkspace } = useWorkspace();
+  const ritualRecorded = useRef(false);
+  useEffect(() => {
+    if (ritualRecorded.current) return;
+    ritualRecorded.current = true;
+    void recordRitual({ data: {} }).catch(() => {});
+  }, []);
 
   const invalidate = (k: string) => qc.invalidateQueries({ queryKey: [k] });
 
@@ -155,7 +172,6 @@ function Dashboard() {
   });
 
   const d = dash.data;
-  const { activeWorkspace } = useWorkspace();
   const profileName =
     d?.profile?.display_name?.split(" ")[0] ??
     (d?.profile as { email?: string } | undefined)?.email?.split("@")[0] ??

@@ -21,6 +21,7 @@ import { ApprovalsPanel } from "@/components/governance/ApprovalsPanel";
 import { GuardrailsPanel } from "@/components/governance/GuardrailsPanel";
 import { BudgetsPanel } from "@/components/governance/BudgetsPanel";
 import { AnalyticsPanel } from "@/components/observe/AnalyticsPanel";
+import { GauntletMetricsPanel } from "@/components/observe/GauntletMetricsPanel";
 import { TracesPanel } from "@/components/observe/TracesPanel";
 import { DriftPanel } from "@/components/observe/DriftPanel";
 import { EvalsPanel } from "@/components/governance/EvalsPanel";
@@ -40,6 +41,7 @@ type Tab =
   | "prompts"
   | "evals"
   | "analytics"
+  | "gauntlet"
   | "traces"
   | "drift";
 
@@ -51,6 +53,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "prompts", label: "Prompts" },
   { id: "evals", label: "Evals" },
   { id: "analytics", label: "Analytics" },
+  { id: "gauntlet", label: "Gauntlet" },
   { id: "traces", label: "Traces" },
   { id: "drift", label: "Drift" },
 ];
@@ -64,6 +67,8 @@ const GOVERN_DESC: Record<Tab, string> = {
   prompts: "Version, A/B test, and roll back the system prompts powering every AI surface.",
   evals: "Regression tests on prompts. Catch quality drops before they ship.",
   analytics: "Spend, tokens, and latency rolled up across every agent run.",
+  gauntlet:
+    "The three proof metrics: how often you approve the loop's calls, how much it runs unattended, and your daily-ritual retention.",
   traces: "Step-by-step replay of each agent run, with timing and tool calls.",
   drift: "Quality shifts against baseline. Flags when answers start changing.",
 };
@@ -174,6 +179,7 @@ function GovernPage() {
         {tab === "prompts" && <PromptsPanel />}
         {tab === "evals" && (suite ? <EvalSuiteDetail id={suite} /> : <EvalsPanel />)}
         {tab === "analytics" && (agent ? <AgentSpendDetail id={agent} /> : <AnalyticsPanel />)}
+        {tab === "gauntlet" && <GauntletMetricsPanel />}
         {tab === "traces" && <TracesPanel />}
         {tab === "drift" && (surface ? <DriftSurfaceDetail id={surface} /> : <DriftPanel />)}
       </div>
