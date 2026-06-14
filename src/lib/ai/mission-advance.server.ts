@@ -60,6 +60,14 @@ type MissionStepRow = {
  *  treated as a lost dispatch (worker eviction between claim and enqueue). */
 const DISPATCH_LOST_MS = 3 * 60 * 1000;
 
+/** KI-15: an inbound handoff left unconsumed this long is treated as stale (its
+ *  receiver run was never started, e.g. a non-orchestrated single mission whose
+ *  one handoff was dropped). Past this window the message no longer blocks
+ *  completion, so the mission can finalize instead of sitting 'running' forever.
+ *  Conservative on purpose: a recently-unconsumed message still blocks (the
+ *  receiver may simply not have picked it up yet). */
+const UNCONSUMED_STALE_MS = 15 * 60 * 1000;
+
 type SenderCtx = {
   agentId: string | null;
   agentSlug: string | null;
@@ -315,6 +323,71 @@ export async function dispatchReadySteps(
 }
 
 /**
+ * KI-15: clear the completion block left by an orphaned handoff. maybeCompleteMission
+ * refuses to finalize while ANY agent_messages row is unconsumed, so a single
+ * non-orchestrated mission whose only handoff was never picked up sits 'running'
+ * forever. Here we mark messages older than UNCONSUMED_STALE_MS consumed, attributing
+ * them to the mission's tail run (the run that effectively absorbed the orphan) so the
+ * UI's message-to-run mapping stays honest and consumeInboundHandoff can no longer
+ * re-serve them. Recently-unconsumed messages are left alone and still block as today.
+ * Returns true when at least one stale message was cleared.
+ *
+ * Live-receiver guard (correctness): enqueueHandoff always creates a queued
+ * receiver run alongside the message, and that run is what consumeInboundHandoff
+ * later marks the message consumed by. So a message is only TRULY orphaned once
+ * no live run (queued / running / waiting_approval) remains to pick it up. Under
+ * backlog or BATCH starvation the receiver run can simply be late, and stealing
+ * its message would make it resume WITHOUT its handoff payload (lost task
+ * context). While any live run exists the mission is still moving and would not
+ * complete anyway, so we leave every message untouched and retry next tick.
+ */
+async function sweepStaleUnconsumedMessages(
+  supabase: SupabaseClient,
+  missionId: string,
+): Promise<boolean> {
+  // If any run is still live, an inbound message may yet be consumed by it, so
+  // do not steal it. (Also: a live run keeps the mission from completing, so
+  // there is nothing to unblock here yet.)
+  const { count: liveRuns } = await supabase
+    .from("agent_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("mission_id", missionId)
+    .in("status", ["queued", "running", "waiting_approval"]);
+  if ((liveRuns ?? 0) > 0) return false;
+
+  const staleCutoff = new Date(Date.now() - UNCONSUMED_STALE_MS).toISOString();
+  const { data: staleRows } = await supabase
+    .from("agent_messages")
+    .select("id")
+    .eq("mission_id", missionId)
+    .is("consumed_by_run_id", null)
+    .lt("created_at", staleCutoff);
+  const ids = (staleRows ?? []).map((r) => (r as { id: string }).id);
+  if (ids.length === 0) return false;
+
+  // Attribute the orphan to the mission's most recent run (best-effort). A
+  // running mission realistically always has one; in the rare case it does not,
+  // leave the message untouched (stay conservative) and retry next tick once a
+  // run exists, since the completion guard keys on consumed_by_run_id.
+  const { data: tailRun } = await supabase
+    .from("agent_runs")
+    .select("id")
+    .eq("mission_id", missionId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const tailRunId = (tailRun as { id: string } | null)?.id ?? null;
+  if (!tailRunId) return false;
+
+  await supabase
+    .from("agent_messages")
+    .update({ consumed_by_run_id: tailRunId, consumed_at: new Date().toISOString() })
+    .in("id", ids)
+    .is("consumed_by_run_id", null);
+  return true;
+}
+
+/**
  * Advance a single mission one tick, deterministically and model-free:
  * reflect → dispatch ready → finalize. Safe to call repeatedly and concurrently;
  * a no-op for missions with no ready work or no DAG. Returns a small summary.
@@ -342,6 +415,10 @@ export async function advanceMissionCore(
 
   // 3. Dispatch every newly-ready step.
   const { dispatched, failed } = await dispatchReadySteps(supabase, mission, from);
+
+  // 3b. KI-15: release an orphaned-handoff completion block (stale unconsumed
+  //     message) so a dropped single hop can't pin the mission 'running' forever.
+  await sweepStaleUnconsumedMessages(supabase, mission.id);
 
   // 4. Finalize when the DAG is fully terminal (failure-aware + idempotent).
   await maybeCompleteMission(supabase, mission.id);

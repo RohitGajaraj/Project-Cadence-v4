@@ -24,7 +24,10 @@ const admin = supabaseAdmin as unknown as SupabaseClient;
  */
 const STALE_MS = 2 * 60 * 1000; // 2 minutes since last checkpoint = likely evicted
 const BATCH = 5;
-const MISSION_BATCH = 20; // running missions advanced per tick (cheap no-op when idle)
+// KI-16: per-tick fairness cap on running missions advanced (oldest-updated
+// first, so no mission starves). Env-tunable for high scale; sane default 50.
+// Each advance is a cheap no-op when the mission has no ready work.
+const MISSION_BATCH = Math.max(1, Number(process.env.MISSION_ADVANCE_BATCH) || 50);
 
 export const Route = createFileRoute("/api/public/hooks/resume-runs")({
   server: {
