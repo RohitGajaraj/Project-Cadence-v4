@@ -25,7 +25,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 | --- | --- | --- | --- |
 | **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Orchestrator slug fix (Missing) · migration sync + KI-13 (Missing, owned) · one live ingest source (Partial) |
 | **M-A Real loop, real data** | Later | A real new user signs up and the loop closes once on their data, under 10 minutes | Ambient on-ramp observing to proving to trusted (Missing) · 2 or more real ingest sources (Partial) |
-| **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Partial: data wired, view missing) · instrument NDR and retention (Missing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
+| **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Built: `/memory` view shipped 2026-06-14, [`memory-view.md`](../features/memory-view.md)) · instrument NDR and retention (Missing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
 | **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) |
 | **M-D Dual-user and scale** | Later | An external agent integrates; a team lands | MCP server and public API (Missing) · team features (Missing) · governance and enterprise readiness (Partial) |
 
