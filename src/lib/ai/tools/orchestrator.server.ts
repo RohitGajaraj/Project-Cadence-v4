@@ -171,10 +171,34 @@ export const missionPlan = def({
       throw new Error("mission.plan: too many steps (>8). Re-plan smaller.");
 
     const validSlugs = new Set(roster.map((r) => r.slug));
+    // The planner sub-model frequently emits a colloquial slug — "discovery"
+    // for the seeded "discovery-scout", "prd" for "prd-writer" — and a strict
+    // exact-match check threw, which dropped the WHOLE plan and left missions
+    // completing hollow with zero steps (slug-drift regression, 2026-06-14).
+    // Resolve each planned slug against the live roster (exact, then a single
+    // unambiguous prefix/substring match) so naming drift between the model and
+    // the seeded roster can never silently kill a plan again.
+    const resolveSlug = (raw: string): string | null => {
+      const want = String(raw ?? "")
+        .trim()
+        .toLowerCase();
+      if (!want) return null;
+      const exact = roster.find((a) => a.slug.toLowerCase() === want);
+      if (exact) return exact.slug;
+      const near = roster.filter(
+        (a) =>
+          a.slug.toLowerCase().startsWith(want) ||
+          want.startsWith(a.slug.toLowerCase()) ||
+          a.slug.toLowerCase().includes(want) ||
+          want.includes(a.slug.toLowerCase()),
+      );
+      return near.length === 1 ? near[0].slug : null;
+    };
     const rows = plan.steps.map((s, i) => {
-      if (!validSlugs.has(s.agent_slug)) {
+      const resolved = resolveSlug(s.agent_slug);
+      if (!resolved) {
         throw new Error(
-          `mission.plan: step ${i} references unknown slug "${s.agent_slug}". Valid: ${[...validSlugs].join(", ")}`,
+          `mission.plan: step ${i} references unresolvable agent "${s.agent_slug}". Roster: ${[...validSlugs].join(", ")}`,
         );
       }
       const deps = (s.depends_on ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d < i);
@@ -183,7 +207,7 @@ export const missionPlan = def({
         user_id: userId,
         workspace_id: workspaceId,
         idx: i,
-        agent_slug: s.agent_slug,
+        agent_slug: resolved,
         sub_goal: String(s.sub_goal ?? "").slice(0, 4000),
         depends_on: deps,
         rationale: s.rationale ? String(s.rationale).slice(0, 1000) : null,

@@ -10,7 +10,7 @@
 
 ## Current state, in one line
 
-The autonomy and memory engine is real and verified, and as of 2026-06-14 all pending migrations are applied on the live database (founder-confirmed Lovable sync), so the engine is fully wired on real data. The active milestone is **M-0 (Unblock the loop)**. What remains is a live end-to-end verification (a real signup, then one unattended multi-agent mission) and one live ingest source. **NEXT PICK: verify the loop live (signup plus one mission), then wire one live ingest source.**
+The autonomy and memory engine is real and verified, and as of 2026-06-14 all pending migrations are applied on the live database (founder-confirmed Lovable sync), so the engine is fully wired on real data. The active milestone is **M-0 (Unblock the loop)**. Live verification on 2026-06-15 confirmed the 2026-06-14 approval-gating fix works (no stuck control-flow approvals) and surfaced plus fixed the real mission-run blocker: orchestrated missions were completing HOLLOW because `mission.plan` rejected the planner's colloquial slug (`discovery`) instead of resolving it to the seeded `discovery-scout`, dropping the whole plan (now fixed in `orchestrator.server.ts` + `handoff.server.ts`, see KI-22). **NEXT PICK: re-verify the loop live after the next Lovable deploy** (a fresh orchestrated mission should now plan and hop end to end), then a real signup and one live ingest source.
 
 ## The next pick (mechanical)
 
@@ -23,7 +23,7 @@ The autonomy and memory engine is real and verified, and as of 2026-06-14 all pe
 
 | Milestone | Status | Exit criteria | Key items and status |
 | --- | --- | --- | --- |
-| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14) · migrations synced (Done 2026-06-14, live) · live e2e verification (Next) · one live ingest source (Partial) |
+| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14) · migrations synced (Done 2026-06-14, live) · approval-gating fix verified live (2026-06-15) · orchestrated-mission hollow-completion root-caused and fixed (2026-06-15, slug drift on the planning path, KI-22), live re-verify pending the next deploy · one live ingest source (Partial) |
 | **M-A Real loop, real data** | Later | A real new user signs up and the loop closes once on their data, under 10 minutes | Ambient on-ramp observing to proving to trusted (Missing) · 2 or more real ingest sources (Partial) |
 | **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Built: `/memory` view shipped 2026-06-14, [`memory-view.md`](../features/memory-view.md)) · instrument the moat metric (Built: Memory-compounds card on the Gauntlet 2026-06-14 - reuse · growth · priorities-moved; NDR gated on M-C billing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
 | **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) · pre-launch gate: the full-product humanization sweep (deferred, see standing queue #3) |

@@ -325,6 +325,12 @@ export async function maybeCompleteMission(
       (r) => r.status === "completed" || r.status === "failed" || r.status === "halted",
     );
     if (!hasTerminalOrchRun) return;
+    // A terminal orchestrator run with ZERO persisted steps means planning
+    // produced no executable DAG (e.g. the planner could not resolve a single
+    // agent slug). That is a failure, not a success — surface it honestly so it
+    // shows as failed (and stays retryable) instead of completing hollow, which
+    // reads as "done" while nothing actually ran.
+    finalStatus = "failed";
   }
 
   const { data: updated } = await supabase
@@ -336,8 +342,9 @@ export async function maybeCompleteMission(
     .maybeSingle();
 
   // F-DECISIONS-CAPTURE: a mission completing is a captured decision.
-  // Idempotent: skip if a row already exists for this mission.
-  if (updated) {
+  // Idempotent: skip if a row already exists for this mission. A mission that
+  // failed to plan (finalStatus 'failed') is not a decision — skip capture.
+  if (updated && finalStatus !== "failed") {
     const { count: existing } = await supabase
       .from("decisions")
       .select("id", { count: "exact", head: true })
