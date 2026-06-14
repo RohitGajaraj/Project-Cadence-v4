@@ -10,12 +10,12 @@
 
 ## Current state, in one line
 
-The autonomy and memory engine is real and verified. The active milestone is **M-0 (Unblock the loop)**: a live orchestrator slug bug and the pending migration sync (KI-13) stand between the engine and the real-data thesis. **NEXT PICK: fix the orchestrator slug bug, then own the migration apply-and-verify for KI-13.**
+The autonomy and memory engine is real and verified. The active milestone is **M-0 (Unblock the loop)**. The unseeded-slug drift that killed the autonomous sensing path is now fixed (migration `20260614200000`, commit `5b0b0b93ea`); what still stands between the engine and the real-data thesis is the pending migration sync (KI-13) and one live ingest source. **NEXT PICK: own the migration apply-and-verify for KI-13, then wire one live ingest source.**
 
 ## The next pick (mechanical)
 
-1. **NEXT — Orchestrator slug fix (M-0).** The orchestrator prompt names slugs (`discovery`, `growth`, `analyst`) that are not seeded, so `mission.plan` throws and any multi-agent mission with a sensing step dies. Fix: align the prompt to the seeded slugs (`discovery-scout`, `strategist`, `prd-writer`, `builder`) or add slug aliasing. Where: `src/lib/ai/tools/orchestrator.server.ts` and the orchestrator seed migration.
-2. **THEN — Migration sync and KI-13 (M-0).** An owned apply-and-verify step for the pending 2026-06-14 migrations on the live database, KI-13 first (live signup still 500s). If the Lovable sync lags, apply manually within a week.
+1. **DONE 2026-06-14: unseeded-slug drift, sealed** (migration `20260614200000`, commit `5b0b0b93ea`). Correction worth recording, because the prior note here was wrong: a 10-agent adversarial root-cause (workflow `wf_71a7dc78`) proved `mission.plan` does not throw on stale slugs. It plans against the live enabled roster and re-validates (`orchestrator.server.ts:125,173-179`), so there is no deterministic crash. The real deterministic defect was on the event-reactor path: the default subscription seeded `signal.created` to slug `'discovery'`, but the seeded specialist is `discovery-scout`, so `dispatchEvent` (`reactor.functions.ts:222`) threw "Target agent not found" for every new account (fault-isolated, so it stayed silent while the `signal.created` SENSE fan-out was dead). Fixed in three parts: the seed function, a scoped backfill of existing rows, and the stale orchestrator prompt. Two latent gaps it surfaced are logged as KI-19.
+2. **NEXT: Migration sync and KI-13 (M-0).** An owned apply-and-verify step for the pending 2026-06-14 migrations on the live database, KI-13 first (live signup still 500s). If the Lovable sync lags, apply manually within a week.
 3. **THEN — One live ingest source (M-0).** Register one connector's OAuth client or use the webhook so SENSE produces real signals.
 4. **THEN — The humanizeText() sanitizer + the pre-commit trace hook**, so the humanized-output rule is enforced, not only written. See the TRD requirement and [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
 
@@ -23,7 +23,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 
 | Milestone | Status | Exit criteria | Key items and status |
 | --- | --- | --- | --- |
-| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Orchestrator slug fix (Missing) · migration sync + KI-13 (Missing, owned) · one live ingest source (Partial) |
+| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14, migration `20260614200000`) · migration sync + KI-13 (Missing, owned) · one live ingest source (Partial) |
 | **M-A Real loop, real data** | Later | A real new user signs up and the loop closes once on their data, under 10 minutes | Ambient on-ramp observing to proving to trusted (Missing) · 2 or more real ingest sources (Partial) |
 | **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Built: `/memory` view shipped 2026-06-14, [`memory-view.md`](../features/memory-view.md)) · instrument the moat metric (Built: Memory-compounds card on the Gauntlet 2026-06-14 - reuse · growth · priorities-moved; NDR gated on M-C billing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
 | **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) |
