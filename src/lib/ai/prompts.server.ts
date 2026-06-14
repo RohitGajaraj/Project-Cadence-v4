@@ -7,6 +7,36 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/**
+ * Soft instruction layer for humanized output (Level 2, layer 1 of
+ * docs/conventions/humanized-output.md). Prepended to the assembled system
+ * prompt on every prose call so the model is told to write like a person and
+ * avoid the banned fingerprints. This is convenience, not the gate: the hard
+ * boundary is humanizeText() in runtime.server.ts. Keep it short, the runtime
+ * sanitizer cleans up whatever drifts through.
+ */
+export const HUMANIZE_DIRECTIVE =
+  "Write like a sharp human, not a model. Vary sentence length. Use plain punctuation: commas, periods, colons, parentheses. Never use an em dash or en dash, and never emit invisible or zero-width characters. Skip filler openers, hedging, and buzzwords.";
+
+/**
+ * Ensure the message list carries the humanization directive. If a system
+ * message exists, the directive is folded into the first one; otherwise a
+ * system message is prepended. Returns a new array (the input is not mutated).
+ * Caller decides when to apply (prose only, never JSON responses).
+ */
+export function withHumanizeDirective<T extends { role: string; content: string }>(
+  messages: T[],
+): T[] {
+  const idx = messages.findIndex((m) => m.role === "system");
+  if (idx === -1) {
+    return [{ role: "system", content: HUMANIZE_DIRECTIVE } as T, ...messages];
+  }
+  if (messages[idx].content.includes(HUMANIZE_DIRECTIVE)) return messages;
+  const next = messages.slice();
+  next[idx] = { ...next[idx], content: `${HUMANIZE_DIRECTIVE}\n\n${next[idx].content}` };
+  return next;
+}
+
 export type ResolvedPrompt = {
   template_id: string;
   version_id: string;

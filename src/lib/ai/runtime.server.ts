@@ -11,7 +11,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd } from "./pricing";
 import { evaluateGuardrails, type GuardrailRule } from "./guardrails.server";
 import { retrieve, formatContextBlock, type RetrievedChunk } from "../rag/retriever.server";
-import { resolvePrompt, logPromptRun } from "./prompts.server";
+import { resolvePrompt, logPromptRun, withHumanizeDirective } from "./prompts.server";
+import { humanizeText, isFenceOpen } from "./humanize";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 // Local-dev fallback (KI-06): the cloud injects LOVABLE_API_KEY automatically,
@@ -400,6 +401,57 @@ async function callGateway(
   };
 }
 
+/**
+ * Streaming-safe wrapper around humanizeText. The sanitizer needs full context
+ * for sequences that humanizeText reasons about (a fence marker `` ``` ``, an
+ * inline `` `code` `` span, a dash with its neighbours, a partial multi-byte
+ * char). All of those, except a fenced block, live within a single line, so the
+ * safe streaming boundary is a complete line. We buffer until a newline lands,
+ * humanize the completed lines as one unit (so the line has full context), and
+ * emit that. A line that opens a fenced block (its backtick count is unbalanced)
+ * is held until the fence closes so the block is humanized whole, never split.
+ *
+ * This is consistent with the non-streamed callModel path: the streamed
+ * concatenation equals humanizeText(wholeText) because each emitted unit is a
+ * maximal run of complete lines that contains no open construct.
+ */
+function createStreamHumanizer() {
+  let done = ""; // text already consumed; always ends at a fence-closed newline
+  let emittedLen = 0; // length of humanizeText(done) already streamed
+  let tail = ""; // unconsumed text since the last consumed boundary
+
+  return {
+    /** Append a streamed piece; return humanized text for the units now complete. */
+    push(piece: string): string {
+      tail += piece;
+      let emit = "";
+      let nl: number;
+      // A safe boundary is a newline that is NOT inside an open fenced block.
+      // Every dash, inline span, and multi-byte char lives within one line, so
+      // a complete line (or a completed fenced block) carries full context.
+      while ((nl = tail.indexOf("\n")) !== -1) {
+        const candidate = tail.slice(0, nl + 1);
+        if (isFenceOpen(done + candidate)) break; // fence still open: wait
+        done += candidate;
+        tail = tail.slice(nl + 1);
+        const humanized = humanizeText(done);
+        emit += humanized.slice(emittedLen);
+        emittedLen = humanized.length;
+      }
+      return emit;
+    },
+    /** Drain the unconsumed tail at stream end, humanized. */
+    flush(): string {
+      const humanized = humanizeText(done + tail);
+      const out = humanized.slice(emittedLen);
+      done = humanized;
+      emittedLen = humanized.length;
+      tail = "";
+      return out;
+    },
+  };
+}
+
 async function loadGuardrails(supabase: SupabaseClient, userId: string): Promise<GuardrailRule[]> {
   const { data } = await supabase
     .from("guardrail_rules")
@@ -715,6 +767,12 @@ export async function callModel(
     });
   }
 
+  // 2b. Soft humanization directive (prose only; JSON calls keep their exact
+  // schema instructions). The hard gate is humanizeText() on the output below.
+  if (opts.responseFormat !== "json_object") {
+    messages = withHumanizeDirective(messages);
+  }
+
   // 3. Provider call
   const byo = byoConfig(opts.model);
   let keyRow: { api_key: string } | null = null;
@@ -800,6 +858,12 @@ export async function callModel(
     const r = evaluateGuardrails(outputText, rules, "output");
     r.hits.forEach((h) => hits.push(h));
     outputText = r.text;
+  }
+
+  // 4a. Humanize prose output (zero AI fingerprints). PROSE ONLY — JSON
+  // responses must stay byte-exact so downstream JSON.parse never breaks.
+  if (outputText && opts.responseFormat !== "json_object") {
+    outputText = humanizeText(outputText);
   }
 
   // 5. Cost
@@ -1060,6 +1124,12 @@ export async function callModelStream(
     });
   }
 
+  // 2b. Soft humanization directive (prose only). The streamed output also
+  // passes through the buffered humanizer below as the hard gate.
+  if (opts.responseFormat !== "json_object") {
+    messages = withHumanizeDirective(messages);
+  }
+
   // 3. Provider call setup
   const byo = byoConfig(opts.model);
   let keyRow: { api_key: string } | null = null;
@@ -1237,8 +1307,22 @@ export async function callModelStream(
   const tStart = Date.now();
   const messagesLength = messages.reduce((sum, m) => sum + m.content.length, 0);
 
+  // Humanize streamed PROSE on a buffered boundary so a dash, a fence marker, or
+  // a multi-byte char is never split across chunks. Skipped for JSON responses,
+  // which must stay byte-exact (the consumer parses them).
+  const humanizeStream = opts.responseFormat !== "json_object";
+  const humanizer = createStreamHumanizer();
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const emitContent = (text: string) => {
+        if (!text) return;
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`,
+          ),
+        );
+      };
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -1260,10 +1344,7 @@ export async function callModelStream(
                 if (parsed.type === "content_block_delta" && parsed.delta?.text) {
                   const piece = parsed.delta.text;
                   assistantText += piece;
-                  const openAiChunk = {
-                    choices: [{ delta: { content: piece } }],
-                  };
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
+                  emitContent(humanizeStream ? humanizer.push(piece) : piece);
                 } else if (parsed.type === "message_start" && parsed.message?.usage) {
                   promptTokens = parsed.message.usage.input_tokens ?? promptTokens;
                 } else if (parsed.type === "message_delta" && parsed.usage) {
@@ -1274,7 +1355,10 @@ export async function callModelStream(
               }
             }
           } else {
-            controller.enqueue(value);
+            // OpenAI-compatible SSE. We no longer pass raw chunks through: each
+            // content delta is re-emitted after the prose sanitizer so dashes
+            // and invisible chars never reach the user. Usage chunks are
+            // forwarded verbatim (the consumer reads token counts off them).
             buffer += decoder.decode(value, { stream: true });
             let nl: number;
             while ((nl = buffer.indexOf("\n")) !== -1) {
@@ -1286,11 +1370,20 @@ export async function callModelStream(
               try {
                 const parsed = JSON.parse(payload);
                 const piece = parsed.choices?.[0]?.delta?.content;
-                if (piece) assistantText += piece;
+                if (piece) {
+                  assistantText += piece;
+                  if (humanizeStream) emitContent(humanizer.push(piece));
+                }
                 const usage = parsed.usage;
                 if (usage) {
                   promptTokens = usage.prompt_tokens ?? promptTokens;
                   completionTokens = usage.completion_tokens ?? completionTokens;
+                  controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+                }
+                // When not humanizing (JSON), forward the original chunk so the
+                // structured payload reaches the consumer byte-exact.
+                if (!humanizeStream && !usage) {
+                  controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
                 }
               } catch {
                 // Ignore partial JSON
@@ -1298,9 +1391,9 @@ export async function callModelStream(
             }
           }
         }
-        if (provider === "anthropic") {
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        }
+        // Drain any held-back tail, then close the OpenAI-shaped stream.
+        if (humanizeStream) emitContent(humanizer.flush());
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (e) {
         console.error("[callModelStream] stream error:", e);
         controller.enqueue(encoder.encode(`data: {"error":"stream interrupted"}\n\n`));
@@ -1318,6 +1411,11 @@ export async function callModelStream(
           const r = evaluateGuardrails(outputText, rules, "output");
           r.hits.forEach((h) => hits.push(h));
           outputText = r.text;
+        }
+        // Persist the humanized text so the stored preview matches what the
+        // user actually received over the wire (prose only; JSON stays exact).
+        if (outputText && opts.responseFormat !== "json_object") {
+          outputText = humanizeText(outputText);
         }
 
         try {

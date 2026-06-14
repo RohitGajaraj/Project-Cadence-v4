@@ -192,6 +192,9 @@ Each title must be a concrete verb-led action under 80 chars. Order by build seq
       surface_ref: `prd:${prd.id}:tasks`,
       model: data.model,
       fallbackModel: "google/gemini-2.5-flash-lite",
+      // Returns strict {"tasks":[...]} JSON; declare json-mode so the runtime
+      // humanizer never rewrites task-title string values (sanitizer wiring).
+      responseFormat: "json_object",
       messages: [
         { role: "system", content: system },
         { role: "user", content: `PRD: ${prd.title}\n\n${prd.body_md}` },
