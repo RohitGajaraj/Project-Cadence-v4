@@ -46,6 +46,8 @@ The platform's generated text must clear the same bar. Two layers, both required
 
 The sanitizer is the boundary; the prompt directive is convenience. Treat the sanitizer the way `runtime.server.ts` already treats guardrails and cost: a chokepoint everything passes through.
 
+**Status (2026-06-14): wired.** The sanitizer lives in `src/lib/ai/humanize.ts` (pure `humanizeText` + `isFenceOpen`) and runs in `runtime.server.ts` on both `callModel` (output) and `callModelStream` (a line-buffered, fence-aware boundary) for prose responses. JSON responses (`responseFormat: 'json_object'`) are never sanitized, so structured output and the agent loop stay byte-exact. The soft directive is `HUMANIZE_DIRECTIVE` in `prompts.server.ts`. Still pending: the build-time pre-commit dash and invisible-character hook.
+
 ## How to apply (build time)
 
 Before shipping any text change (code, copy, docs, generated-output prompts):

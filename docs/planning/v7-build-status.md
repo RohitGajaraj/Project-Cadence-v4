@@ -17,7 +17,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 1. **DONE 2026-06-14: unseeded-slug drift, sealed** (migration `20260614200000`, commit `5b0b0b93ea`). Correction worth recording, because the prior note here was wrong: a 10-agent adversarial root-cause (workflow `wf_71a7dc78`) proved `mission.plan` does not throw on stale slugs. It plans against the live enabled roster and re-validates (`orchestrator.server.ts:125,173-179`), so there is no deterministic crash. The real deterministic defect was on the event-reactor path: the default subscription seeded `signal.created` to slug `'discovery'`, but the seeded specialist is `discovery-scout`, so `dispatchEvent` (`reactor.functions.ts:222`) threw "Target agent not found" for every new account (fault-isolated, so it stayed silent while the `signal.created` SENSE fan-out was dead). Fixed in three parts: the seed function, a scoped backfill of existing rows, and the stale orchestrator prompt. Two latent gaps it surfaced are logged as KI-19.
 2. **NEXT: Migration sync and KI-13 (M-0).** An owned apply-and-verify step for the pending 2026-06-14 migrations on the live database, KI-13 first (live signup still 500s). If the Lovable sync lags, apply manually within a week.
 3. **THEN — One live ingest source (M-0).** Register one connector's OAuth client or use the webhook so SENSE produces real signals.
-4. **THEN — The humanizeText() sanitizer + the pre-commit trace hook**, so the humanized-output rule is enforced, not only written. See the TRD requirement and [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
+4. **DONE 2026-06-14 (sanitizer): the humanizeText() runtime gate is wired** at the AI chokepoint (`src/lib/ai/humanize.ts` + `runtime.server.ts`), prose only, JSON byte-exact. Still pending: the build-time pre-commit dash/invisible-char trace hook. See [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
 
 ## Milestones (M-0 to M-D)
 
@@ -53,7 +53,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 ## Standing task queue (post-Phase-B, in order)
 
 1. M-0: orchestrator slug fix, then the migration apply-and-verify (KI-13), then one live ingest source.
-2. The `humanizeText()` runtime sanitizer plus the pre-commit trace hook.
+2. The `humanizeText()` runtime sanitizer (DONE 2026-06-14) plus the pre-commit trace hook (still pending).
 3. The codebase-wide humanization sweep of pre-rule docs (a Workflow: detect then fix per file; flagship v7 canon first).
 4. M-A: the ambient on-ramp and a second live ingest source.
 5. M-B: surface and measure the compounding memory; promote Critic to a loop step.
