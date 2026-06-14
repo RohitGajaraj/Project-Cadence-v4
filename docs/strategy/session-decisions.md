@@ -24,6 +24,18 @@
 
 ## Decision log
 
+### 2026-06-14 · v7 Phase B: the full delivery and architecture doc set, plus the doc-update cadence and the build-status tracker
+
+**Decision:** Produced the complete v7 Phase-B documentation set and two standing process rules. Docs: the feature map, functionality map, TRD, and PRD (`docs/planning/`), plus the architecture diagrams, deployment, api, observability, and threat-model (`architecture/`; Mermaid for the visuals). Process: `docs/conventions/doc-update-cadence.md` (three tiers by rate of change) and `docs/planning/v7-build-status.md` (the always-current "what next" source of truth).
+
+**Why:** The founder asked for the detailed delivery docs after the v7 canon, then expanded to the architecture diagrams and deployment topology, then asked for a documentation cadence (so living docs stay current while structure docs do not churn) and a single authoritative answer to "what are we building next."
+
+**How:** A multi-agent workflow (grounded code discovery, parallel drafting that wrote nine files, one honesty plus consistency plus mermaid plus humanized-voice review). The first run produced nothing because the session was forced back into plan mode mid-flight, so the drafters correctly refused to write; the re-run out of plan mode wrote the set. The review found 2 must-fix and 5 should-fix issues (a brittle migration count, three malformed feature-map rows, a wrong planner-DAG field name, two mermaid parallelogram nodes, a garbled link, a stale `studio-chat.ts` reference in `CLAUDE.md`), all fixed. The fingerprint detector returns zero em/en dashes and zero invisible Unicode across all eleven docs.
+
+**Tradeoffs considered:** Architecture diagrams as Mermaid (text in git) over binary images (anti-bloat). A new `architecture/threat-model.md` that complements `security.md` over editing it in place (lower clobber risk). The cadence doc as the tier registry over per-doc tier labels. Dropping brittle migration counts in favor of stable language.
+
+**Impact:** 9 new Phase-B docs plus the cadence convention plus the build-status tracker; index rows in `docs/README.md` and `docs/conventions/README.md`; `CLAUDE.md` studio-chat.ts staleness fixed. Build-log: [`../../plan.md`](../../plan.md) section 4.
+
 ### 2026-06-14 — Standing rule: humanized output, zero AI fingerprints (two levels)
 
 **Decision:** No shipped or generated text carries a machine fingerprint. Two mandatory levels: (1) everything we author (code, docs, UI copy, comments, commits, seed data); (2) everything the platform generates for a user via an AI feature (PRDs, drafts, chat, research, rationales). Banned: em/en dashes, invisible Unicode (zero-width, NBSP, BOM, soft hyphen, directional marks), AI-cliche phrasing, over-uniform rhythm. Positive bar: a distinct voice that reads as Circuit, not one in a thousand AI apps. Master convention: [`../conventions/humanized-output.md`](../conventions/humanized-output.md).

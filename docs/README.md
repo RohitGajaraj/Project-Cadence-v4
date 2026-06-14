@@ -51,9 +51,30 @@ Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMI
 | [`planning/considerations.md`](./planning/considerations.md)             | Cross-cutting concerns that don't fit a single architecture doc.                                                                                                                                                                                |
 | [`planning/known-issues.md`](./planning/known-issues.md)                 | **Live known-issues tracker** — open bugs/blockers with stable KI-IDs; doubles as the June 22 demo punch list. The constitution concordance target for `KNOWN_ISSUES.md`.                                                                       |
 | [`planning/v4-rebuild-handoff-2026-06-11.md`](./planning/v4-rebuild-handoff-2026-06-11.md) | **v4 rebuild session tracker** — what was decided/produced on 2026-06-11 and how a fresh session resumes without re-spending tokens.                                                                                                  |
+| [`planning/v7-trd-2026-06-14.md`](./planning/v7-trd-2026-06-14.md)       | **v7 Technical Requirements Document** — code-verified architecture snapshot (Part A) + the M-0 to M-D requirements as What/Why/Where/Acceptance with Built/Partial/Missing tags (Part B). The engineering contract for the v7 canon.            |
+| [`planning/v7-build-status.md`](./planning/v7-build-status.md) | **The "what next" source of truth.** Always-current build-state tracker: M-0 to M-D status, what is Built, In progress, or Blocked, and the explicit next pick. Read after `active-task.md`. Tier 1, continuous. |
+| [`planning/v7-feature-map-2026-06-14.md`](./planning/v7-feature-map-2026-06-14.md) | **v7 feature map.** The shipped-state catalog by lifecycle station and surface; each feature tagged Built, Partial, or Missing-Planned. |
+| [`planning/v7-functionality-map-2026-06-14.md`](./planning/v7-functionality-map-2026-06-14.md) | **v7 functionality map.** How each major flow behaves: inputs, steps, the four states, the human-in-the-loop gates, and the data read and written. |
+| [`planning/v7-prd-2026-06-14.md`](./planning/v7-prd-2026-06-14.md) | **v7 PRD.** Problem, personas, epics as user stories with acceptance criteria and priorities tied to M-0 to M-D, and the launch-gating success metrics. |
 | [`operations/demo-credentials.md`](./operations/demo-credentials.md)     | Pre-provisioned demo logins (two emails + shared password), what each account ships with, how they were created, and the re-seed SQL. Use for screen recordings, YC / investor demos, and anywhere a working login is needed.                   |
 | [`features/agent-ecosystem-plan.md`](./features/agent-ecosystem-plan.md) | **F-AGENT-1 → F-AGENT-4 bundle plan** — orchestrator (shipped), persistent memory + self-reflection + trust auto-advance, event reactor + auto-pipelines, Swarm HUD. The canonical, session-surviving plan for the agent-native behavior layer. |
 | [`features/auth-flows.md`](./features/auth-flows.md)                     | Authentication flows — sign-up, sign-in, password visibility toggle, forgot-password / reset-password flow, session lifecycle, demo accounts.                                                                                                   |
+
+## Architecture contracts (the `../architecture/` folder)
+
+| File | What it specifies |
+| --- | --- |
+| [`../architecture/runtime.md`](../architecture/runtime.md) | The AI chokepoint: callModel, callModelStream, guardrails, cost, BYO keys. |
+| [`../architecture/orchestration.md`](../architecture/orchestration.md) | Missions, the agent loop, auto-advance, handoff, memory. |
+| [`../architecture/data.md`](../architecture/data.md) | The data layer: tables, RLS, key RPCs. |
+| [`../architecture/security.md`](../architecture/security.md) | Auth, tenancy, governance, the kill switch. |
+| [`../architecture/integrations.md`](../architecture/integrations.md) | Connectors, BYO keys, agent interop. |
+| [`../architecture/frontend.md`](../architecture/frontend.md) | Frontend patterns and the app shell. |
+| [`../architecture/diagrams.md`](../architecture/diagrams.md) | New. The visual companion: system, deployment, ERD, sequence, and state diagrams (Mermaid). |
+| [`../architecture/deployment.md`](../architecture/deployment.md) | New. Build and deploy path, runtime topology, secrets, the cron loop, migrations, rollback. |
+| [`../architecture/api.md`](../architecture/api.md) | New. The API and interface reference: public routes, server functions, the A2A and the planned MCP surface. |
+| [`../architecture/observability.md`](../architecture/observability.md) | New. Telemetry (cost, traces, evals, drift, the gauntlet) plus the non-functional requirements. |
+| [`../architecture/threat-model.md`](../architecture/threat-model.md) | New. STRIDE analysis, the anon-read surface inventory, secrets, the agent-washing posture. |
 
 ## Operator guides (what surfaces mean and how to use them)
 
