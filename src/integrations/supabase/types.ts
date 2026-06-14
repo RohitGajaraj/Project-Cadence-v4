@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           decided_by: string | null
+          decision_reason: string | null
           error: string | null
           escalated_at: string | null
           escalated_to: string | null
@@ -43,6 +44,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_reason?: string | null
           error?: string | null
           escalated_at?: string | null
           escalated_to?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_reason?: string | null
           error?: string | null
           escalated_at?: string | null
           escalated_to?: string | null
@@ -1283,12 +1286,14 @@ export type Database = {
           created_at: string
           decided_by_agent_slug: string | null
           id: string
+          is_public: boolean
           meeting_id: string | null
           mission_id: string | null
           prd_id: string | null
           product_id: string | null
           project_id: string | null
           rationale: string | null
+          share_slug: string | null
           source_kind: string | null
           status: string
           title: string
@@ -1299,12 +1304,14 @@ export type Database = {
           created_at?: string
           decided_by_agent_slug?: string | null
           id?: string
+          is_public?: boolean
           meeting_id?: string | null
           mission_id?: string | null
           prd_id?: string | null
           product_id?: string | null
           project_id?: string | null
           rationale?: string | null
+          share_slug?: string | null
           source_kind?: string | null
           status?: string
           title: string
@@ -1315,12 +1322,14 @@ export type Database = {
           created_at?: string
           decided_by_agent_slug?: string | null
           id?: string
+          is_public?: boolean
           meeting_id?: string | null
           mission_id?: string | null
           prd_id?: string | null
           product_id?: string | null
           project_id?: string | null
           rationale?: string | null
+          share_slug?: string | null
           source_kind?: string | null
           status?: string
           title?: string
@@ -2360,6 +2369,7 @@ export type Database = {
       mission_steps: {
         Row: {
           agent_slug: string
+          attempts: number
           completed_at: string | null
           created_at: string
           depends_on: number[]
@@ -2367,8 +2377,10 @@ export type Database = {
           error: string | null
           id: string
           idx: number
+          max_attempts: number
           message_id: string | null
           mission_id: string
+          next_retry_at: string | null
           rationale: string | null
           result: Json | null
           run_id: string | null
@@ -2380,6 +2392,7 @@ export type Database = {
         }
         Insert: {
           agent_slug: string
+          attempts?: number
           completed_at?: string | null
           created_at?: string
           depends_on?: number[]
@@ -2387,8 +2400,10 @@ export type Database = {
           error?: string | null
           id?: string
           idx: number
+          max_attempts?: number
           message_id?: string | null
           mission_id: string
+          next_retry_at?: string | null
           rationale?: string | null
           result?: Json | null
           run_id?: string | null
@@ -2400,6 +2415,7 @@ export type Database = {
         }
         Update: {
           agent_slug?: string
+          attempts?: number
           completed_at?: string | null
           created_at?: string
           depends_on?: number[]
@@ -2407,8 +2423,10 @@ export type Database = {
           error?: string | null
           id?: string
           idx?: number
+          max_attempts?: number
           message_id?: string | null
           mission_id?: string
+          next_retry_at?: string | null
           rationale?: string | null
           result?: Json | null
           run_id?: string | null
@@ -3231,6 +3249,47 @@ export type Database = {
           },
         ]
       }
+      ritual_sessions: {
+        Row: {
+          calls_cleared: number | null
+          calls_shown: number | null
+          created_at: string
+          id: string
+          opened_at: string
+          opened_on: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          calls_cleared?: number | null
+          calls_shown?: number | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opened_on?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          calls_cleared?: number | null
+          calls_shown?: number | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opened_on?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ritual_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduler_proposals: {
         Row: {
           calendar_event_id: string | null
@@ -3399,6 +3458,8 @@ export type Database = {
           assignee_kind: string
           completed_at: string | null
           created_at: string
+          depends_on: Json
+          detail: string | null
           due_date: string | null
           estimate_hours: number | null
           id: string
@@ -3407,6 +3468,8 @@ export type Database = {
           priority: string
           product_id: string | null
           project_id: string | null
+          risk: string | null
+          seq: number | null
           status: string
           title: string
           updated_at: string
@@ -3418,6 +3481,8 @@ export type Database = {
           assignee_kind?: string
           completed_at?: string | null
           created_at?: string
+          depends_on?: Json
+          detail?: string | null
           due_date?: string | null
           estimate_hours?: number | null
           id?: string
@@ -3426,6 +3491,8 @@ export type Database = {
           priority?: string
           product_id?: string | null
           project_id?: string | null
+          risk?: string | null
+          seq?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -3437,6 +3504,8 @@ export type Database = {
           assignee_kind?: string
           completed_at?: string | null
           created_at?: string
+          depends_on?: Json
+          detail?: string | null
           due_date?: string | null
           estimate_hours?: number | null
           id?: string
@@ -3445,6 +3514,8 @@ export type Database = {
           priority?: string
           product_id?: string | null
           project_id?: string | null
+          risk?: string | null
+          seq?: number | null
           status?: string
           title?: string
           updated_at?: string
@@ -3903,6 +3974,7 @@ export type Database = {
         Args: { p_mission_id: string }
         Returns: {
           agent_slug: string
+          attempts: number
           completed_at: string | null
           created_at: string
           depends_on: number[]
@@ -3910,8 +3982,10 @@ export type Database = {
           error: string | null
           id: string
           idx: number
+          max_attempts: number
           message_id: string | null
           mission_id: string
+          next_retry_at: string | null
           rationale: string | null
           result: Json | null
           run_id: string | null

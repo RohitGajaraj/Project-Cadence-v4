@@ -344,7 +344,7 @@ function PrdEditor() {
                     estimate_hours?: number | null;
                     assignee_kind?: string;
                     risk?: string | null;
-                    depends_on?: number[] | null;
+                    depends_on?: unknown;
                   }) => (
                     <li
                       key={t.id}
@@ -367,7 +367,7 @@ function PrdEditor() {
                       </span>
                       {Array.isArray(t.depends_on) && t.depends_on.length > 0 ? (
                         <span className="mono-label text-[10px] text-muted-foreground">
-                          after {t.depends_on.map((n) => `#${n}`).join(", ")}
+                          after {(t.depends_on as number[]).map((n) => `#${n}`).join(", ")}
                         </span>
                       ) : null}
                       {t.risk ? (
