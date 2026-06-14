@@ -14,6 +14,14 @@ Day one:
 
 Phase two (when there is bandwidth, not day one): a podcast or YouTube, which carry high production cost; add them only once the written flywheel is consistent. Reddit (r/ProductManagement) and Hacker News for occasional high-signal cross-posts of the best pieces, never as a primary channel.
 
+## Secondary mirror channels (cheap reach, gated on evidence)
+
+Threads (Meta) is worth adding as a zero-effort mirror, not a primary channel. The honest read: the audience that matters most here (AI-native investors, recruiters at Google, DeepMind, Anthropic, and YC companies, serious builders) lives on X and LinkedIn; Threads skews more general and consumer. But the X post adapts to Threads one-to-one (text-first, about a 500-character limit), Buffer posts to Threads directly, and Meta's organic reach is currently generous, so it is a cheap wider net. Mirror the X version, watch for a few weeks, and keep it only if the right audience actually shows up. Do not write Threads-original content.
+
+Setup: a Threads account is tied to Instagram, so an Instagram account is the prerequisite (Threads is one tap from there). Then connect Threads in Buffer alongside X and LinkedIn.
+
+If we want one more, Bluesky is arguably a better fit than Threads for the AI-technical crowd (a real slice of the AI research and builder community is active there), and it mirrors the X text the same way. Same rule: cheap mirror, gated on evidence, never a content cost. The primary three (X, LinkedIn, Substack) stay primary regardless.
+
 ## The repurposing flywheel
 
 One real insight, across surfaces, within days:
@@ -97,7 +105,7 @@ One file per insight in [`drafts/`](./drafts/), named `YYYY-MM-DD-slug.md`, with
 ---
 date: 2026-06-14
 pillar: build-detail
-platforms: [x, linkedin]   # add substack on the weekly synthesis piece
+platforms: [x, linkedin]   # add substack on the weekly piece; the x post also mirrors to threads (and bluesky if added)
 status: draft              # draft | approved | posted
 source: content-well.md#reads-not-writes
 assets: code-screenshot    # code screenshot | surface screenshot | link | paper | chart | none (with a reason)
