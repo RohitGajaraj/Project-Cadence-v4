@@ -84,6 +84,11 @@ export const runAgent = createServerFn({ method: "POST" })
       .eq("id", data.agentId)
       .single();
     if (aerr || !agent) throw new Error("Agent not found");
+    // Operator-initiated "run now": refuse to run a disabled agent. Enable it
+    // first if you want it to run.
+    if (agent.enabled === false) {
+      throw new Error("This agent is disabled. Enable it before running.");
+    }
 
     // Lightweight grounding context
     const [{ data: tasks }, { data: projects }] = await Promise.all([

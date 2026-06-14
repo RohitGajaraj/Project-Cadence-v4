@@ -139,11 +139,18 @@ export async function runAgentLoop(
 
   const { data: agent } = await supabase
     .from("agents")
-    .select("id,slug,name,role,system_prompt")
+    .select("id,slug,name,role,system_prompt,enabled")
     .eq("user_id", userId)
     .eq("slug", input.agentSlug)
     .maybeSingle();
   if (!agent) throw new Error(`Unknown agent: ${input.agentSlug}`);
+  // Refuse a fresh dispatch of a disabled agent. This guards the direct entry
+  // points (chat, orchestrator, reactor, build, agent_loop) and fails cleanly
+  // before any agent_runs row is created. (Queued child runs resume via
+  // resumeAgentLoop, not here; that path re-checks separately if needed.)
+  if (agent.enabled === false) {
+    throw new Error(`Agent is disabled: ${input.agentSlug}`);
+  }
 
   // Resolve workspace (fallback to user's default) so kill-switch can scope.
   let workspaceId: string | null = input.workspaceId ?? null;
