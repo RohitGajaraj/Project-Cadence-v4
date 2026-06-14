@@ -10,12 +10,12 @@
 
 ## Current state, in one line
 
-The autonomy and memory engine is real and verified. The active milestone is **M-0 (Unblock the loop)**. The unseeded-slug drift that killed the autonomous sensing path is now fixed (migration `20260614200000`, commit `5b0b0b93ea`); what still stands between the engine and the real-data thesis is the pending migration sync (KI-13) and one live ingest source. **NEXT PICK: own the migration apply-and-verify for KI-13, then wire one live ingest source.**
+The autonomy and memory engine is real and verified, and as of 2026-06-14 all pending migrations are applied on the live database (founder-confirmed Lovable sync), so the engine is fully wired on real data. The active milestone is **M-0 (Unblock the loop)**. What remains is a live end-to-end verification (a real signup, then one unattended multi-agent mission) and one live ingest source. **NEXT PICK: verify the loop live (signup plus one mission), then wire one live ingest source.**
 
 ## The next pick (mechanical)
 
 1. **DONE 2026-06-14: unseeded-slug drift, sealed** (migration `20260614200000`, commit `5b0b0b93ea`). Correction worth recording, because the prior note here was wrong: a 10-agent adversarial root-cause (workflow `wf_71a7dc78`) proved `mission.plan` does not throw on stale slugs. It plans against the live enabled roster and re-validates (`orchestrator.server.ts:125,173-179`), so there is no deterministic crash. The real deterministic defect was on the event-reactor path: the default subscription seeded `signal.created` to slug `'discovery'`, but the seeded specialist is `discovery-scout`, so `dispatchEvent` (`reactor.functions.ts:222`) threw "Target agent not found" for every new account (fault-isolated, so it stayed silent while the `signal.created` SENSE fan-out was dead). Fixed in three parts: the seed function, a scoped backfill of existing rows, and the stale orchestrator prompt. Two latent gaps it surfaced are logged as KI-19.
-2. **NEXT: Migration sync and KI-13 (M-0).** An owned apply-and-verify step for the pending 2026-06-14 migrations on the live database, KI-13 first (live signup still 500s). If the Lovable sync lags, apply manually within a week.
+2. **DONE 2026-06-14: migrations synced (M-0).** All pending 2026-06-14 migrations are applied on the live DB (founder-confirmed Lovable sync): KI-13 signup resilience, KI-14 eval scale, KI-17 anon-hardening, the slug-drift fix, the P1 retry plus memory-recall migrations, the webhook and connector platform. **NEXT: verify live** (a real signup, then one unattended multi-agent mission closes on the now-migrated DB), then wire one live ingest source.
 3. **THEN — One live ingest source (M-0).** Register one connector's OAuth client or use the webhook so SENSE produces real signals.
 4. **DONE 2026-06-14 (sanitizer): the humanizeText() runtime gate is wired** at the AI chokepoint (`src/lib/ai/humanize.ts` + `runtime.server.ts`), prose only, JSON byte-exact. Still pending: the build-time pre-commit dash/invisible-char trace hook. See [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
 
@@ -23,7 +23,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 
 | Milestone | Status | Exit criteria | Key items and status |
 | --- | --- | --- | --- |
-| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14, migration `20260614200000`) · migration sync + KI-13 (Missing, owned) · one live ingest source (Partial) |
+| **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14) · migrations synced (Done 2026-06-14, live) · live e2e verification (Next) · one live ingest source (Partial) |
 | **M-A Real loop, real data** | Later | A real new user signs up and the loop closes once on their data, under 10 minutes | Ambient on-ramp observing to proving to trusted (Missing) · 2 or more real ingest sources (Partial) |
 | **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Built: `/memory` view shipped 2026-06-14, [`memory-view.md`](../features/memory-view.md)) · instrument the moat metric (Built: Memory-compounds card on the Gauntlet 2026-06-14 - reuse · growth · priorities-moved; NDR gated on M-C billing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
 | **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) · pre-launch gate: the full-product humanization sweep (deferred, see standing queue #3) |
@@ -45,14 +45,12 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 
 ## What is blocked or gated
 
-- **KI-13:** live signup 500s, pending the migration sync of `20260614140000_p3_ki13_signup_resilience.sql`.
-- **Autonomous-path semantic recall:** gated on the COALESCE scope migration `20260614091000`.
-- **Connectors:** OAuth-wired but not operational, pending founder OAuth-client registration.
-- **Bounded retry on the autonomous path:** off until the retry-columns migration `20260614090000` applies.
+- **Migrations:** all applied via the Lovable sync 2026-06-14. KI-13 signup resilience, autonomous-path semantic recall (`20260614091000`), and bounded hop-retry (`20260614090000`) are now live; a live end-to-end verification is the remaining confirmation.
+- **Connectors:** OAuth-wired but not operational, pending founder OAuth-client registration (the F-CONN migration is applied; only the provider app registrations remain).
 
 ## Standing task queue (post-Phase-B, in order)
 
-1. M-0: the unseeded-slug drift and KI-19 are fixed; remaining is the migration apply-and-verify (KI-13, founder-gated on the Lovable sync), then one live ingest source.
+1. M-0: the unseeded-slug drift, KI-19, and the migration sync are all done (migrations applied live 2026-06-14); remaining is a live end-to-end verification (signup plus one unattended mission), then one live ingest source.
 2. The `humanizeText()` runtime sanitizer (DONE 2026-06-14) plus the pre-commit trace hook (still pending).
 3. Humanization sweep: the docs pass is DONE 2026-06-14 (README, strategy, feature docs). The full-PRODUCT sweep (UI strings, seed data, code-level user-facing copy) is DEFERRED to a pre-launch gate, run when the product is near-final so churn in screens and features does not force a re-sweep. **Cutoff 2026-06-14:** the sweep covers only pre-2026-06-14 (pre-rule) work; anything authored on or after 2026-06-14 is built under the rule and sanitized at runtime, so it is NOT re-checked (saves time and tokens). Claude prompts the founder at that gate. Generated output is already sanitized at runtime (`humanizeText`); new authored text is built humanized and distinctive meanwhile. (Founder ruling 2026-06-14, see session-decisions.)
 4. M-A: the ambient on-ramp and a second live ingest source.
