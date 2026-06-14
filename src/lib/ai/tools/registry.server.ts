@@ -2125,6 +2125,10 @@ const agentHandoff = def({
     if (!missionId)
       throw new Error("agent.handoff requires a mission_id (start the run with a mission)");
     if (!workspaceId) throw new Error("agent.handoff requires a workspace_id");
+    // KI-19: resolveAgent filters to enabled agents only and throws a clear,
+    // slug-named error when the target is disabled or off-roster — so a model
+    // can never dispatch a child run to a disabled agent. Resolve before the
+    // self-handoff guard so the disabled/off-roster case surfaces first.
     const to = await resolveAgent(supabase, userId, { agent_slug: a.to_agent_slug });
     if (to.id === agentId) throw new Error("agent.handoff: cannot hand off to yourself");
     const payload: HandoffPayload = {

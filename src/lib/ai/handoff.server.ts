@@ -76,19 +76,33 @@ export async function createMission(
 /**
  * Resolve a target agent by slug (preferred) or id, scoped to the user's roster.
  * Returns { id, slug, name } for downstream insertion.
+ *
+ * KI-19: only resolves ENABLED agents (`enabled = true`). A disabled or
+ * off-roster agent must never be dispatched a child run, so we filter here at
+ * the single resolution chokepoint (the `agent.handoff` tool and the mission
+ * dispatcher both route through this) and throw a clear, slug-named error when
+ * nothing enabled matches. Callers in the dispatch path catch this per-step.
  */
 export async function resolveAgent(
   supabase: SupabaseClient,
   userId: string,
   ref: { agent_slug?: string; agent_id?: string },
 ): Promise<{ id: string; slug: string; name: string }> {
-  let q = supabase.from("agents").select("id,slug,name").eq("user_id", userId).limit(1);
+  let q = supabase
+    .from("agents")
+    .select("id,slug,name")
+    .eq("user_id", userId)
+    .eq("enabled", true)
+    .limit(1);
   if (ref.agent_id) q = q.eq("id", ref.agent_id);
   else if (ref.agent_slug) q = q.eq("slug", ref.agent_slug);
   else throw new Error("resolveAgent: pass agent_slug or agent_id");
   const { data, error } = await q.maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new Error(`Agent not found: ${ref.agent_slug ?? ref.agent_id}`);
+  if (!data)
+    throw new Error(
+      `Target agent '${ref.agent_slug ?? ref.agent_id}' is disabled or not in the roster.`,
+    );
   return data as { id: string; slug: string; name: string };
 }
 
