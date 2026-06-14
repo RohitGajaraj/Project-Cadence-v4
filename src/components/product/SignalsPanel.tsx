@@ -157,9 +157,10 @@ export function SignalsPanel() {
     ...themeList.map((t): Row => {
       const members = allSignals.filter((s) => s.theme_id === t.id);
       const srcs = [...new Set(members.map((s) => s.source))];
-      const newest = members.reduce<string | null>(
-        (acc, s) => (!acc || s.created_at > acc ? s.created_at : acc),
-        null,
+      const newest = members.reduce(
+        (acc: string | null, s: { created_at: string }) =>
+          !acc || s.created_at > acc ? s.created_at : acc,
+        null as string | null,
       );
       return {
         kind: "theme",
