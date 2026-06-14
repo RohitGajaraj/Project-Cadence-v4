@@ -126,7 +126,9 @@ export const listBuilderRuns = createServerFn({ method: "GET" })
     const { data: missions } = missionIds.length
       ? await supabase.from("missions").select("id,title").in("id", missionIds)
       : { data: [] as { id: string; title: string }[] };
-    const titleByMission = new Map((missions ?? []).map((m) => [m.id, m.title]));
+    const titleByMission = new Map<string, string>(
+      (missions ?? []).map((m) => [m.id as string, m.title as string]),
+    );
 
     // Pull github.pr.open results for these runs via trace_id (joined through latest checkpoint).
     const runIds = rows.map((r) => r.id);
