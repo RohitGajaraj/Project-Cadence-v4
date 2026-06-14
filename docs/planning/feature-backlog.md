@@ -114,7 +114,7 @@
 | SEN-04 | Researcher watchtower (competitor crawl briefs) | M2 | ☐ | new |
 | SEN-05 | Quant analytics inbound (PostHog/Amplitude/Mixpanel) | M2 | ☐ | Pillar 7 placeholder |
 | DEC-02 | Critic adversarial pass on opportunities | M1 | ☐ | new |
-| DEF-03 | Critic-on-spec red team | M2 | ☐ | new |
+| DEF-03 | Critic-on-spec red team (spec lens: ambiguity · untestable criteria · scope creep) | M2 | ✅ 2026-06-14 | extends DEC-02 Critic infra |
 | DEF-04 | Designer scaffolds (spec → mockup → sandbox preview, token + a11y check) | M3 | ☐ | Pillar 5 placeholder |
 | BLD-04 | Delegate-out to external coding agents under our governance (A2A/Linear-style) | M4 | ☐ | new — strategic |
 | BLD-05 | Inspector gate (agent-authored tests + preview before merge proposal) | M2 | ☐ | extends Bundle 9 CI read |

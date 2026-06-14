@@ -66,6 +66,24 @@ export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Prop
   const Icon = v.Icon;
   const riskCount = review.risks.length;
 
+  // DEF-03: a spec red-team surfaces spec-specific dimensions, so relabel the
+  // sections for PRDs (the generic "Missing evidence" is wrong for a spec).
+  const isSpec = target.kind === "prd";
+  const labels = isSpec
+    ? {
+        risks: { title: "Spec risks", empty: "No risks flagged." },
+        kill: { title: "Won't ship as written", empty: "Nothing blocks shipping as written." },
+        gaps: {
+          title: "Untestable criteria & open questions",
+          empty: "Criteria are testable; no open questions.",
+        },
+      }
+    : {
+        risks: { title: "Risks", empty: "No risks flagged." },
+        kill: { title: "Kill criteria", empty: "No kill criteria proposed." },
+        gaps: { title: "Missing evidence", empty: "No evidence gaps called out." },
+      };
+
   return (
     <>
       <button
@@ -88,7 +106,7 @@ export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Prop
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Icon className="h-4 w-4" />
-              Critic verdict: {v.label}
+              {isSpec ? "Spec red-team" : "Critic verdict"}: {v.label}
             </SheetTitle>
             <SheetDescription>
               Confidence {(review.confidence * 100).toFixed(0)}% · {review.reviewer_model} ·{" "}
@@ -99,16 +117,16 @@ export function CriticBadge({ review, target, invalidateKey, size = "sm" }: Prop
           <div className="mt-6 space-y-5 text-sm">
             <p>{review.summary || "No summary."}</p>
 
-            <Section title="Risks" items={review.risks} empty="No risks flagged." />
+            <Section title={labels.risks.title} items={review.risks} empty={labels.risks.empty} />
             <Section
-              title="Kill criteria"
+              title={labels.kill.title}
               items={review.kill_criteria}
-              empty="No kill criteria proposed."
+              empty={labels.kill.empty}
             />
             <Section
-              title="Missing evidence"
+              title={labels.gaps.title}
               items={review.missing_evidence}
-              empty="No evidence gaps called out."
+              empty={labels.gaps.empty}
             />
 
             <button

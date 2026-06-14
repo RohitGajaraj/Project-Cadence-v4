@@ -7,7 +7,7 @@ import { retrieve } from "@/lib/rag/retriever.server";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// ---------- CRITIC (M1 Golden Path: DEC-02) ----------
+// ---------- CRITIC (DEC-02 opportunities · DEF-03 specs) ----------
 
 export type CriticReview = {
   verdict: "ship" | "revise" | "kill";
@@ -50,7 +50,23 @@ Title: ${row.title}
 Body:
 ${(row.body_md ?? "").slice(0, 6000)}`;
 
-  const system = `You are the Critic agent. Red-team the proposal before a human approves it.
+  // DEF-03: specs get a SPEC-specific red-team lens (ambiguity · untestable
+  // criteria · scope creep · unstated assumptions · missing edge cases);
+  // opportunities keep the DEC-02 bet-evaluation lens. Both map onto the same
+  // CriticReview fields (the badge relabels them per kind).
+  const system =
+    target.kind === "prd"
+      ? `You are the Critic agent doing a pre-review RED TEAM of a product SPEC (PRD) before a human approves it for build. Judge it like an engineer + PM would: is it unambiguous, testable, and scoped?
+Evaluate the spec specifically for:
+- AMBIGUITY — requirements that read two ways; vague terms ("fast", "intuitive", "etc.") with no definition.
+- UNTESTABLE / UNMEASURABLE acceptance criteria — success conditions a QA engineer couldn't verify pass/fail.
+- SCOPE CREEP — work beyond the stated problem/opportunity, or that could be cut without losing the core.
+- UNSTATED ASSUMPTIONS & DEPENDENCIES — what must already be true or built first that the spec never names.
+- MISSING EDGE CASES — error / empty / loading / permission / concurrency states the spec ignores.
+Return STRICT JSON only:
+{"verdict":"ship|revise|kill","summary":"max 240 chars","risks":["ambiguity / scope / dependency / edge-case — quote the spec where useful"],"kill_criteria":["what makes this spec un-shippable AS WRITTEN"],"missing_evidence":["untestable/unmeasurable acceptance criteria, unstated assumptions, and open questions to resolve before build"],"confidence":0.0-1.0}
+Be specific and quote the spec. No filler. Only judge what the spec actually says — do not invent requirements. "ship" only when the spec is clear, testable, and scoped; "kill" when it is fundamentally unbuildable as framed; "revise" otherwise.`
+      : `You are the Critic agent. Red-team the proposal before a human approves it.
 Return STRICT JSON only:
 {"verdict":"ship|revise|kill","summary":"max 240 chars","risks":["..."],"kill_criteria":["..."],"missing_evidence":["..."],"confidence":0.0-1.0}
 Be specific. No filler. Use "ship" only when risks are bounded and evidence is strong; "kill" when the bet is unsalvageable; "revise" otherwise.`;
