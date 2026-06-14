@@ -76,13 +76,31 @@ export const startOrchestratedMission = createServerFn({ method: "POST" })
     // 5. Run the orchestrator loop. It will plan + dispatch on this call;
     //    specialists run async via the resume-runs sweeper. The operator can
     //    re-invoke advanceMission to push the next round of dispatches.
-    const result = await runAgentLoop(supabase, userId, {
-      agentSlug: "orchestrator",
-      goal: data.goal,
-      model: data.model,
-      missionId: mission.id,
-      workspaceId,
-    });
+    //    If the launch itself throws, mark the mission 'halted' before
+    //    re-throwing: the UI retry is gated on failed/halted missions, so a
+    //    failed launch must not be left 'running' (which strands it). The
+    //    missions table has no halted_reason/error column, so we record only
+    //    status + updated_at, matching the loop's own mission halt-mark.
+    let result;
+    try {
+      result = await runAgentLoop(supabase, userId, {
+        agentSlug: "orchestrator",
+        goal: data.goal,
+        model: data.model,
+        missionId: mission.id,
+        workspaceId,
+      });
+    } catch (e) {
+      try {
+        await supabase
+          .from("missions")
+          .update({ status: "halted", updated_at: new Date().toISOString() })
+          .eq("id", mission.id);
+      } catch (markErr) {
+        console.error("mission halt-mark failed (launch):", markErr);
+      }
+      throw e;
+    }
 
     return { mission_id: mission.id, ...result };
   });

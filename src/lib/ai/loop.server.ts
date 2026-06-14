@@ -33,6 +33,23 @@ const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "stu
 const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
 /** Safety floor: always `review`. */
 const HIGH_RISK_FORCE_REVIEW = new Set(["studio.pr.merge"]);
+/**
+ * Orchestrator control-flow tools that ALWAYS execute inline, exempt from
+ * arc-gating and any seeded mode. These four tools are pure internal control
+ * flow with NO external side effect: mission.plan persists a step DAG,
+ * mission.dispatch only enqueues child agent_runs, mission.observe reads
+ * status, mission.finalize records the summary. The human governs what the
+ * SPECIALISTS do to the outside world (their side-effecting tools stay gated
+ * per arc on the child runs); gating the orchestrator's own planning and
+ * bookkeeping just sends those calls to the approval queue, where they expire
+ * and strand the mission. So they bypass approval creation entirely.
+ */
+const ORCHESTRATION_CONTROL_FLOW_TOOLS = new Set([
+  "mission.plan",
+  "mission.dispatch",
+  "mission.observe",
+  "mission.finalize",
+]);
 
 export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 
@@ -199,7 +216,7 @@ export async function runAgentLoop(
   }
 
   // Create an agent_runs row so mission caps + usage can be tracked.
-  const { data: runRow } = await supabase
+  const { data: runRow, error: runInsertErr } = await supabase
     .from("agent_runs")
     .insert({
       user_id: userId,
@@ -216,6 +233,10 @@ export async function runAgentLoop(
     })
     .select("id")
     .single();
+  // Defense-in-depth: a silent insert failure here would leave the loop running
+  // with no run row (no caps, no checkpoints, no UI surface). Fail loudly so the
+  // launch error is visible instead of a mission that quietly never tracks.
+  if (runInsertErr) throw new Error(`agent_runs insert failed: ${runInsertErr.message}`);
   const runId = (runRow as { id: string } | null)?.id ?? null;
 
   const { data: toolRows } = await supabase
@@ -626,6 +647,11 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
       continue;
     }
 
+    // Orchestrator control-flow tools always run inline (no arc-gating, no
+    // seeded mode). They have no external side effect, so the human gates the
+    // specialists' real actions, not the orchestrator's planning/bookkeeping.
+    const isControlFlow = ORCHESTRATION_CONTROL_FLOW_TOOLS.has(call.name);
+
     // Safety floors (not overridable by the dial): high-risk tools force at
     // least `confirm`; Studio's merge gate is always `review` (v4 HITL canon).
     const rawToolMode = (modeOf.get(call.name) ?? "confirm") as ToolMode;
@@ -636,7 +662,7 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
     else if (HIGH_RISK_MIN_CONFIRM.has(call.name) && mode === "auto") mode = "confirm";
     const isWrite = def.category === "write" || def.category === "planning";
 
-    if (isWrite && (mode === "confirm" || mode === "review")) {
+    if (!isControlFlow && isWrite && (mode === "confirm" || mode === "review")) {
       const { data: appr } = await supabase
         .from("agent_approvals")
         .insert({

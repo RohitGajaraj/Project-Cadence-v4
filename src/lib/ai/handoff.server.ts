@@ -307,6 +307,24 @@ export async function maybeCompleteMission(
     );
     if (!allTerminal) return; // still moving — the advance reflector will carry it
     if (steps.some((s) => s.status === "failed")) finalStatus = "completed_with_failures";
+  } else {
+    // Zero steps: do NOT silently complete a never-planned mission (the cron
+    // calls this on every terminal hop). Only complete when an orchestrator run
+    // actually reached a terminal state and genuinely produced no plan. If
+    // there is no orchestrator run at all, or one is still queued/running/
+    // waiting_approval, the mission has not finished planning, so return and
+    // let it run (or, if the launch threw, fix (b) leaves it 'halted', which is
+    // retryable, never permanently stranded at 'running').
+    const { data: orchRuns } = await supabase
+      .from("agent_runs")
+      .select("status")
+      .eq("mission_id", missionId)
+      .eq("agent_slug", "orchestrator");
+    const runs = (orchRuns ?? []) as { status: string }[];
+    const hasTerminalOrchRun = runs.some(
+      (r) => r.status === "completed" || r.status === "failed" || r.status === "halted",
+    );
+    if (!hasTerminalOrchRun) return;
   }
 
   const { data: updated } = await supabase

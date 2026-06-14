@@ -58,6 +58,14 @@ export function suggestArc(score: number, samples: number): Arc {
  * - `review` is sticky — the dial never downgrades a `review` tool.
  * - `calendar.create` and any other hard-locked tool stay `confirm`.
  * The dial only ever loosens `auto`/`confirm` tools toward `auto`.
+ *
+ * NOTE: orchestrator control-flow tools (mission.plan/dispatch/observe/
+ * finalize) are exempt from gating entirely and always run inline. That
+ * exemption lives at the loop's gate (ORCHESTRATION_CONTROL_FLOW_TOOLS in
+ * loop.server.ts), not here, because this combiner is a pure name-agnostic
+ * mode function reused by read-only surfaces (the trust UI). Keeping the
+ * allowlist at the single queue-vs-execute decision point avoids leaking
+ * tool names into the dial math.
  */
 export function resolveApprovalMode(toolMode: ToolMode, arc: Arc): ToolMode {
   if (toolMode === "review") return "review";
