@@ -43,6 +43,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | Bundle 9  | Builder agent · PR · CI loop · file-claim conflict guard       | ✅ Slice 1 2026-06-04 · Slices 2 + 3 2026-06-06 | `/build`, `/prds/$id`, `/missions/$id`            | [`bundle-9-builder.md`](./bundle-9-builder.md)                       |
 | v6 P1     | The Loop Runs Itself · auto-advance · hop retry · adaptive budget · memory_refs | ✅ Shipped 2026-06-14 (migrations pending sync)  | `/missions`, `/missions/$id`, `/swarm`            | [`loop-runs-itself.md`](./loop-runs-itself.md)                       |
 | v6 P3 T2  | The Gauntlet · acceptance rate · autonomy ratio · ritual retention | ✅ Shipped 2026-06-14 (ritual_sessions migration pending sync) | `/govern?tab=gauntlet`                  | [`gauntlet-metrics.md`](./gauntlet-metrics.md)                       |
+| M-B       | Compounding-memory view (the moat made visible)               | ✅ Shipped 2026-06-14                           | `/memory`                                         | [`memory-view.md`](./memory-view.md)                                 |
 
 ## Rules
 

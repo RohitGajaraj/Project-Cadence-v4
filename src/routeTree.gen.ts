@@ -31,6 +31,7 @@ import { Route as AuthenticatedOutcomeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedObserveRouteImport } from './routes/_authenticated.observe'
+import { Route as AuthenticatedMemoryRouteImport } from './routes/_authenticated.memory'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated.learn'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated.knowledge'
@@ -182,6 +183,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedObserveRoute = AuthenticatedObserveRouteImport.update({
   id: '/observe',
   path: '/observe',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMemoryRoute = AuthenticatedMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
@@ -436,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/memory': typeof AuthenticatedMemoryRoute
   '/observe': typeof AuthenticatedObserveRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -500,6 +507,7 @@ export interface FileRoutesByTo {
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/memory': typeof AuthenticatedMemoryRoute
   '/observe': typeof AuthenticatedObserveRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -566,6 +574,7 @@ export interface FileRoutesById {
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
+  '/_authenticated/memory': typeof AuthenticatedMemoryRoute
   '/_authenticated/observe': typeof AuthenticatedObserveRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -634,6 +643,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/learn'
     | '/meetings'
+    | '/memory'
     | '/observe'
     | '/onboarding'
     | '/opportunities'
@@ -698,6 +708,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/learn'
     | '/meetings'
+    | '/memory'
     | '/observe'
     | '/onboarding'
     | '/opportunities'
@@ -763,6 +774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/knowledge'
     | '/_authenticated/learn'
     | '/_authenticated/meetings'
+    | '/_authenticated/memory'
     | '/_authenticated/observe'
     | '/_authenticated/onboarding'
     | '/_authenticated/opportunities'
@@ -983,6 +995,13 @@ declare module '@tanstack/react-router' {
       path: '/observe'
       fullPath: '/observe'
       preLoaderRoute: typeof AuthenticatedObserveRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/memory': {
+      id: '/_authenticated/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof AuthenticatedMemoryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/meetings': {
@@ -1339,6 +1358,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
+  AuthenticatedMemoryRoute: typeof AuthenticatedMemoryRoute
   AuthenticatedObserveRoute: typeof AuthenticatedObserveRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
@@ -1381,6 +1401,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
+  AuthenticatedMemoryRoute: AuthenticatedMemoryRoute,
   AuthenticatedObserveRoute: AuthenticatedObserveRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,

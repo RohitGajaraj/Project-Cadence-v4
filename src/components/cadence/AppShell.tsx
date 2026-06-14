@@ -18,6 +18,7 @@ import {
   Moon,
   Search,
   Hammer,
+  Sparkles,
   Plus,
   Trash2,
   MoreHorizontal,
@@ -97,6 +98,14 @@ const groups: NavGroup[] = [
     id: "knowledge",
     label: "Knowledge",
     items: [{ to: "/knowledge", label: "Knowledge", icon: BookOpen }],
+  },
+  // /memory - the compounding-memory view (what the loop recalls). Separate
+  // from Knowledge > Memory (the human-recorded learnings feed); this is the
+  // agent_memory store the loop reads on its next run.
+  {
+    id: "memory",
+    label: "Memory",
+    items: [{ to: "/memory", label: "Memory", icon: Sparkles }],
   },
 ];
 
