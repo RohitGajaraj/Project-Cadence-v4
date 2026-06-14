@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-14 · Defer the product-wide humanization sweep to a pre-launch gate; build humanized at every level meanwhile
+
+**Decision:** The one-time retroactive fingerprint sweep of EXISTING static product text (UI strings, seed data, components, and any code-level user-facing copy) is parked until the product is at or near a final, stable version, and is run as a pre-launch gate. **Cutoff date: 2026-06-14.** The retroactive sweep covers ONLY work authored before 2026-06-14 (the date this rule and the runtime sanitizer landed). Anything built on or after 2026-06-14 is authored under the rule and passes through `humanizeText()`, so it is treated as already clean and is NOT re-scanned or re-fixed, to save time and tokens. The documentation-level sweep done 2026-06-14 (README, strategy, feature docs) stands. Two things are NOT deferred and continue now: (1) the runtime `humanizeText()` sanitizer already humanizes all platform-GENERATED output at the AI chokepoint; (2) every NEW thing built going forward (code, functions, UI strings, seed data, generated-output prompts) is authored humanized and distinctive from the start: no em or en dashes, no ellipsis or filler-dot patterns, no invisible characters, and a unique, friendly, appealing voice rather than generic AI text. When the product nears final, Claude prompts the founder to run the full-product scan.
+
+**Why:** Screens, functions, and features will still be added and removed before the product stabilizes. Sweeping all static product text now would mean re-sweeping or discarding that work as surfaces churn. Deferring the retroactive pass to a stable version avoids the rework while losing nothing: new work is already built clean and generated output is already sanitized at runtime.
+
+**Tradeoffs considered:** Sweep everything now (rejected: rework as the UI churns) vs. defer the retroactive pass (chosen). Rely on memory alone for the reminder (insufficient) vs. bake it into the roadmap as a pre-launch gate plus a memory (chosen, so it self-surfaces near launch).
+
+**Impact:** `docs/planning/v7-build-status.md` marks the doc sweep done and the full-product sweep deferred to a pre-launch gate (standing queue and the M-C row); `docs/conventions/humanized-output.md` records the deferral and its scope; a session memory carries the reminder duty. No code or product behavior changed by this decision.
+
 ### 2026-06-14 · v7 Phase B: the full delivery and architecture doc set, plus the doc-update cadence and the build-status tracker
 
 **Decision:** Produced the complete v7 Phase-B documentation set and two standing process rules. Docs: the feature map, functionality map, TRD, and PRD (`docs/planning/`), plus the architecture diagrams, deployment, api, observability, and threat-model (`architecture/`; Mermaid for the visuals). Process: `docs/conventions/doc-update-cadence.md` (three tiers by rate of change) and `docs/planning/v7-build-status.md` (the always-current "what next" source of truth).

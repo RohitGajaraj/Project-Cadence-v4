@@ -63,7 +63,9 @@ rg -nP "[\x{200B}\x{200C}\x{200D}\x{2060}\x{FEFF}\x{00A0}\x{202F}\x{00AD}\x{200E
 rg -i "seamless|leverage|empower|unlock|delve|elevate|supercharge|cutting-edge|at the intersection" <changed files>
 ```
 
-A pre-commit / hook check enforcing 1 and 2 on staged text files is the durable backstop (see [`../operations/hooks.md`](../operations/hooks.md)). The existing backend, written before this rule, gets a one-time full sweep (tracked separately, run as a codebase-wide pass).
+A pre-commit / hook check enforcing 1 and 2 on staged text files is the durable backstop (see [`../operations/hooks.md`](../operations/hooks.md)).
+
+**The retroactive full-product sweep is deferred to a pre-launch gate (founder ruling 2026-06-14).** The docs were swept 2026-06-14 (README, strategy, feature docs), but existing static product text (UI strings, seed data, components, code-level user-facing copy) is swept once only, when the product is near-final, so churn in screens and features does not force a re-sweep. This is NOT a relaxation of the rule: all new authored text is built clean now, and generated output is already sanitized at runtime by `humanizeText()`. **Cutoff date: 2026-06-14.** The sweep covers only work authored before 2026-06-14 (the date this rule and the `humanizeText()` sanitizer landed); anything built on or after 2026-06-14 is authored under the rule and passes through the runtime sanitizer, so it is treated as already clean and is not re-scanned or re-fixed, to save time and tokens. Claude prompts the founder to run the full scan at that gate. Tracked in [`../planning/v7-build-status.md`](../planning/v7-build-status.md) (standing queue and the M-C pre-launch gate).
 
 ## Why
 

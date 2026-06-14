@@ -26,7 +26,7 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 | **M-0 Unblock the loop** | **Next (active)** | A real account is created and a multi-agent mission runs without crashing | Unseeded-slug drift (Fixed 2026-06-14, migration `20260614200000`) · migration sync + KI-13 (Missing, owned) · one live ingest source (Partial) |
 | **M-A Real loop, real data** | Later | A real new user signs up and the loop closes once on their data, under 10 minutes | Ambient on-ramp observing to proving to trusted (Missing) · 2 or more real ingest sources (Partial) |
 | **M-B Moat visible and verified** | Later | The gauntlet metrics read real, rising numbers on at least one partner | Surface compounding memory (Built: `/memory` view shipped 2026-06-14, [`memory-view.md`](../features/memory-view.md)) · instrument the moat metric (Built: Memory-compounds card on the Gauntlet 2026-06-14 - reuse · growth · priorities-moved; NDR gated on M-C billing) · Critic as a loop step (Missing) · standing truth-audit (Partial) |
-| **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) |
+| **M-C Monetize and viral** | Later (started) | First paying PMs; a shared decision link drives signups | Pricing and entitlements (Missing) · the shareable-decision link (Built: shipped by the parallel tool, commits `2c51575b` and `4d7bf70f`) · PLG funnel (Missing) · pre-launch gate: the full-product humanization sweep (deferred, see standing queue #3) |
 | **M-D Dual-user and scale** | Later | An external agent integrates; a team lands | MCP server and public API (Missing) · team features (Missing) · governance and enterprise readiness (Partial) |
 
 ## What is built (the engine, code-verified 2026-06-14)
@@ -52,9 +52,9 @@ The autonomy and memory engine is real and verified. The active milestone is **M
 
 ## Standing task queue (post-Phase-B, in order)
 
-1. M-0: orchestrator slug fix, then the migration apply-and-verify (KI-13), then one live ingest source.
+1. M-0: the unseeded-slug drift and KI-19 are fixed; remaining is the migration apply-and-verify (KI-13, founder-gated on the Lovable sync), then one live ingest source.
 2. The `humanizeText()` runtime sanitizer (DONE 2026-06-14) plus the pre-commit trace hook (still pending).
-3. The codebase-wide humanization sweep of pre-rule docs (a Workflow: detect then fix per file; flagship v7 canon first).
+3. Humanization sweep: the docs pass is DONE 2026-06-14 (README, strategy, feature docs). The full-PRODUCT sweep (UI strings, seed data, code-level user-facing copy) is DEFERRED to a pre-launch gate, run when the product is near-final so churn in screens and features does not force a re-sweep. **Cutoff 2026-06-14:** the sweep covers only pre-2026-06-14 (pre-rule) work; anything authored on or after 2026-06-14 is built under the rule and sanitized at runtime, so it is NOT re-checked (saves time and tokens). Claude prompts the founder at that gate. Generated output is already sanitized at runtime (`humanizeText`); new authored text is built humanized and distinctive meanwhile. (Founder ruling 2026-06-14, see session-decisions.)
 4. M-A: the ambient on-ramp and a second live ingest source.
 5. M-B: surface and measure the compounding memory; promote Critic to a loop step.
 
