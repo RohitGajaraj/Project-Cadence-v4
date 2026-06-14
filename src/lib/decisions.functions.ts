@@ -67,9 +67,15 @@ export const listDecisions = createServerFn({ method: "GET" })
         ? supabase.from("meetings").select("id,title").in("id", meetingIds)
         : Promise.resolve({ data: [] as { id: string; title: string }[] }),
     ]);
-    const missionMap = new Map((missions.data ?? []).map((r) => [r.id, r.title]));
-    const prdMap = new Map((prds.data ?? []).map((r) => [r.id, r.title]));
-    const meetingMap = new Map((meetings.data ?? []).map((r) => [r.id, r.title]));
+    const missionMap = new Map<string, string>(
+      (missions.data ?? []).map((r) => [r.id as string, r.title as string]),
+    );
+    const prdMap = new Map<string, string>(
+      (prds.data ?? []).map((r) => [r.id as string, r.title as string]),
+    );
+    const meetingMap = new Map<string, string>(
+      (meetings.data ?? []).map((r) => [r.id as string, r.title as string]),
+    );
 
     for (const d of decisions) {
       d.source_label =

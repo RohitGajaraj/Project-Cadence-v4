@@ -255,11 +255,16 @@ export const listGovernApprovals = createServerFn({ method: "POST" })
             .in("tool_name", toolNames)
         : Promise.resolve({ data: [] as { tool_name: string; mode: string }[] }),
     ]);
-    const titleOf = new Map((missions.data ?? []).map((m) => [m.id, m.title]));
-    const riskOf = new Map(
+    const titleOf = new Map<string, string>(
+      (missions.data ?? []).map((m) => [m.id as string, m.title as string]),
+    );
+    const riskOf = new Map<string, "high" | "medium" | "low">(
       (tools.data ?? []).map((t) => [
-        t.tool_name,
-        t.mode === "review" ? "high" : t.mode === "auto" ? "low" : "medium",
+        t.tool_name as string,
+        (t.mode === "review" ? "high" : t.mode === "auto" ? "low" : "medium") as
+          | "high"
+          | "medium"
+          | "low",
       ]),
     );
 
