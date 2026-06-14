@@ -23,6 +23,7 @@ import {
   savePrd,
   prdAssist,
   createGithubIssueForPrd,
+  generateTaskGraph,
   type CriticReview,
 } from "@/lib/discovery.functions";
 import { CriticBadge } from "@/components/governance/CriticBadge";
@@ -63,6 +64,19 @@ function PrdEditor() {
   const prdTasks = (tasksQ.data?.tasks ?? []).filter(
     (t: { prd_id: string | null }) => t.prd_id === id,
   );
+
+  // H1 — Planner: decompose the spec into a dependency-ordered task graph.
+  const fGenTasks = useServerFn(generateTaskGraph);
+  const genTasks = useMutation({
+    mutationFn: () => fGenTasks({ data: { prd_id: id } }),
+    onSuccess: (r: { count: number; graph: boolean }) => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(
+        `Planned ${r.count} task${r.count === 1 ? "" : "s"}${r.graph ? "" : " (graph fields apply after next sync)"}`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const pushLinear = useMutation({
     mutationFn: () =>
@@ -296,6 +310,81 @@ function PrdEditor() {
               {a}
             </button>
           ))}
+        </div>
+
+        {/* H1 — engineering task graph (Planner) */}
+        <div className="mb-6 rounded-lg border hairline bg-card px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="mono-label text-xs text-muted-foreground">
+              Task graph · {prdTasks.length} task{prdTasks.length === 1 ? "" : "s"}
+            </span>
+            <button
+              onClick={() => genTasks.mutate()}
+              disabled={genTasks.isPending}
+              className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
+              title="Decompose this spec into a dependency-ordered engineering task graph"
+            >
+              <Send className="h-3 w-3" />
+              {genTasks.isPending ? "Planning…" : "Generate task graph"}
+            </button>
+          </div>
+          {prdTasks.length > 0 ? (
+            <ol className="space-y-1.5">
+              {[...prdTasks]
+                .sort(
+                  (a: { seq?: number | null }, b: { seq?: number | null }) =>
+                    (a.seq ?? 999) - (b.seq ?? 999),
+                )
+                .map(
+                  (t: {
+                    id: string;
+                    seq?: number | null;
+                    title: string;
+                    detail?: string | null;
+                    estimate_hours?: number | null;
+                    assignee_kind?: string;
+                    risk?: string | null;
+                    depends_on?: number[] | null;
+                  }) => (
+                    <li
+                      key={t.id}
+                      className="text-xs leading-snug flex flex-wrap items-baseline gap-x-2"
+                    >
+                      <span className="mono-label text-muted-foreground">
+                        {t.seq != null ? `#${t.seq}` : "·"}
+                      </span>
+                      <span className="font-medium">{t.title}</span>
+                      {t.detail ? <span className="text-muted-foreground">— {t.detail}</span> : null}
+                      {t.estimate_hours ? (
+                        <span className="mono-label text-[10px] text-muted-foreground">
+                          {t.estimate_hours}h
+                        </span>
+                      ) : null}
+                      <span className="mono-label text-[10px] text-muted-foreground">
+                        {t.assignee_kind === "human" ? "you" : "agent"}
+                      </span>
+                      {Array.isArray(t.depends_on) && t.depends_on.length > 0 ? (
+                        <span className="mono-label text-[10px] text-muted-foreground">
+                          after {t.depends_on.map((n) => `#${n}`).join(", ")}
+                        </span>
+                      ) : null}
+                      {t.risk ? (
+                        <span
+                          className="mono-label text-[10px] text-[var(--ember)]"
+                          title={t.risk}
+                        >
+                          risk
+                        </span>
+                      ) : null}
+                    </li>
+                  ),
+                )}
+            </ol>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No tasks yet. Generate a graph from the approved spec.
+            </p>
+          )}
         </div>
 
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (

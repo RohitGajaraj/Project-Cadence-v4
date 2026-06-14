@@ -130,6 +130,109 @@ export const runCriticReview = createServerFn({ method: "POST" })
     return { review };
   });
 
+// ---------- TASK GRAPH (M1: H1 — PRD → engineering plan) ----------
+
+/** The Planner step: decompose an approved spec into a DEPENDENCY-ORDERED
+ *  engineering task graph an agent team can execute. Replaces any prior
+ *  generated graph for the PRD (rows with seq IS NOT NULL); manually-added
+ *  tasks (seq NULL) are untouched. Pre-migration tolerant: if the graph columns
+ *  aren't applied yet, falls back to a flat task list so the spec still yields
+ *  executable tasks. */
+export const generateTaskGraph = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ prd_id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: prd, error: pErr } = await supabase
+      .from("prds")
+      .select("id,title,body_md,workspace_id")
+      .eq("id", data.prd_id)
+      .single();
+    if (pErr || !prd) throw new Error("Spec not found");
+
+    const system = `You are the Planner agent. Turn an approved product SPEC into a DEPENDENCY-ORDERED engineering task graph an agent team can execute. Decompose into 4-12 concrete build tasks (not phases), ordered so dependencies come first. For each task give a 1-line detail, an hour estimate, an owner (agent for code/test/infra, human for decisions/design/external), any risk, and which earlier tasks it depends on (by their 1-based seq).
+Return STRICT JSON only:
+{"tasks":[{"seq":1,"title":"max 120 chars","detail":"max 200 chars","estimate_hours":<number>,"assignee":"agent|human","risk":"short or empty","depends_on":[<seq>...]}]}
+Be concrete and buildable. Only tasks the spec actually implies - do not invent scope. depends_on must reference lower seq numbers only.`;
+
+    let result;
+    try {
+      result = await callModel(supabase, userId, {
+        surface: "prd",
+        surface_ref: `taskgraph:${data.prd_id}`,
+        model: "google/gemini-2.5-pro",
+        fallbackModel: "google/gemini-2.5-flash",
+        responseFormat: "json_object",
+        messages: [
+          { role: "system", content: system },
+          {
+            role: "user",
+            content: `SPEC\nTitle: ${prd.title}\nBody:\n${(prd.body_md ?? "").slice(0, 6000)}`,
+          },
+        ],
+      });
+    } catch (e) {
+      throw new Error(e instanceof Error ? e.message : "Planner failed");
+    }
+
+    const parsed = (result.json ?? {}) as { tasks?: unknown[] };
+    const tasks = (Array.isArray(parsed.tasks) ? parsed.tasks.slice(0, 20) : []).map((t, i) => {
+      const o = (t ?? {}) as Record<string, unknown>;
+      const seq = Number.isFinite(Number(o.seq)) ? Number(o.seq) : i + 1;
+      return {
+        seq,
+        title: String(o.title ?? "Task").slice(0, 200),
+        detail: String(o.detail ?? "").slice(0, 400),
+        estimate_hours: Math.max(0, Math.min(200, Number(o.estimate_hours) || 0)),
+        assignee: o.assignee === "human" ? "human" : "agent",
+        risk: String(o.risk ?? "").slice(0, 200),
+        depends_on: Array.isArray(o.depends_on)
+          ? o.depends_on.map(Number).filter((n) => Number.isFinite(n) && n < seq)
+          : [],
+      };
+    });
+    if (tasks.length === 0) throw new Error("Planner returned no tasks");
+
+    const baseRow = (t: (typeof tasks)[number]) => ({
+      user_id: userId,
+      workspace_id: prd.workspace_id ?? null,
+      prd_id: prd.id,
+      title: t.title,
+      status: "todo",
+      priority: "medium",
+      assignee_kind: t.assignee,
+      estimate_hours: t.estimate_hours || null,
+    });
+    const graphRow = (t: (typeof tasks)[number]) => ({
+      ...baseRow(t),
+      seq: t.seq,
+      detail: t.detail || null,
+      risk: t.risk || null,
+      depends_on: t.depends_on,
+    });
+
+    try {
+      // Replace the prior generated graph; keep manual tasks (seq NULL).
+      await supabase.from("tasks").delete().eq("prd_id", prd.id).not("seq", "is", null);
+      const { error } = await supabase.from("tasks").insert(tasks.map(graphRow) as never);
+      if (error) throw error;
+      return { count: tasks.length, graph: true };
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      if (
+        err.code === "42703" ||
+        err.code === "PGRST204" ||
+        /column .* does not exist|could not find the .* column/i.test(err.message ?? "")
+      ) {
+        // Pre-migration: insert a flat task list (no graph edges) so tasks still land.
+        const { error } = await supabase.from("tasks").insert(tasks.map(baseRow) as never);
+        if (error) throw new Error(error.message);
+        return { count: tasks.length, graph: false };
+      }
+      throw new Error(err.message ?? "Task graph insert failed");
+    }
+  });
+
 // ---------- SIGNALS ----------
 
 export const listSignals = createServerFn({ method: "GET" })
