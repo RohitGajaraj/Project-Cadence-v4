@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "bun test"
+    "test": "bun test",
+    "cost:track": "bash scripts/cost-track.sh",
+    "cost:summary": "bash scripts/cost-summary.sh"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

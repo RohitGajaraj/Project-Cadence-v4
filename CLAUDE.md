@@ -49,6 +49,8 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 - `bun run dev` — Vite dev server (TanStack Start). Use this to verify UI changes — see [`AGENTS.md`](./AGENTS.md) §3 and [`architecture/frontend.md`](./architecture/frontend.md).
 - `bun run build` / `bun run build:dev` — production / dev-mode build (Vite → Cloudflare Worker). `bun run preview` — serve the built worker.
 - `bun run lint` — ESLint. `bun run format` — Prettier.
+- `bun run cost:track` — capture the current Claude Code session's token spend into the `cost-tracking` namespace (consumed by the ruflo `cost-report` / `cost-optimize` skills). Wraps the ruflo-cost-tracker plugin's `track.mjs`; [`scripts/cost-track.sh`](./scripts/cost-track.sh) works around two of its bugs — its path encoder doesn't handle the spaces in this repo's path, and its memory-store omits `--upsert` so same-session re-runs fail. Run it after a chunk of work or at session end.
+- `bun run cost:summary` — print a cost summary across all sessions in the `cost-tracking` namespace. Wraps the ruflo-cost-tracker plugin's `summary.mjs` with `CLI_CORE=1` for fast backend. Use to verify recorded spend or export as JSON (`bun run cost:summary -- --format json`). See [`scripts/cost-summary.sh`](./scripts/cost-summary.sh).
 - DB changes go in `supabase/migrations/` as timestamped SQL (RLS-aware). Migration safety is hook-enforced — see [`docs/operations/hooks.md`](./docs/operations/hooks.md).
 
 ## Stack & architecture at a glance
