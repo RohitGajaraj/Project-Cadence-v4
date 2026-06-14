@@ -5,12 +5,22 @@
 // inventing a figure (honesty rule — the claim never outruns the wiring).
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Gauge, Flame, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import {
+  CheckCircle2,
+  Gauge,
+  Flame,
+  Sparkles,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+} from "lucide-react";
 import {
   getAcceptanceRate,
   getAutonomyRatio,
   getRitualRetention,
+  getMemoryCompounding,
   type Trend,
+  type MemoryCompounding,
 } from "@/lib/gauntlet.functions";
 import { MonoLabel } from "@/components/cadence/Primitives";
 
@@ -86,10 +96,87 @@ function MetricCard({
   );
 }
 
+/** The moat metric - full width below the operational three. The honest,
+ *  scale-independent proof the decision memory compounds: how much of what the
+ *  loop stored it has recalled back, plus growth and the priorities outcomes
+ *  moved. NDR is explicitly deferred to billing (M-C), never invented. */
+function MemoryCompoundsCard({
+  data,
+  loading,
+}: {
+  data: MemoryCompounding | undefined;
+  loading: boolean;
+}) {
+  const ready = data?.tableReady ?? false;
+  const stored = data?.stored ?? 0;
+  const hasData = ready && stored > 0;
+  return (
+    <div className="bento" style={{ padding: "var(--card-pad)", marginTop: 12 }}>
+      <MonoLabel icon={Sparkles} style={{ marginBottom: 8 }}>
+        Memory compounds · the moat
+      </MonoLabel>
+      {loading ? (
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint)" }}>
+          loading…
+        </div>
+      ) : hasData ? (
+        <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ minWidth: 110 }}>
+            <div
+              className="font-display tabular-nums"
+              style={{ fontSize: 30, color: "var(--ink)" }}
+            >
+              {pct(data!.reuseRate)}
+            </div>
+            <div
+              className="mono-label"
+              style={{ fontSize: 8.5, color: "var(--ink-faint)", marginTop: 2 }}
+            >
+              recalled back
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", lineHeight: 1.45 }}>
+              Of the memories the loop stored, the share it has recalled at least once. A store the
+              loop reads back is a moat; one it never reopens is a log.
+            </p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
+              {(
+                [
+                  ["stored", String(data!.stored)],
+                  ["new this week", `+${data!.newThisWeek}`],
+                  ["moved a priority", String(data!.prioritiesMoved)],
+                ] as [string, string][]
+              ).map(([label, value]) => (
+                <span key={label} className="mono-label" style={{ fontSize: 9 }}>
+                  <strong className="tabular-nums" style={{ color: "var(--ink)", fontWeight: 600 }}>
+                    {value}
+                  </strong>{" "}
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", lineHeight: 1.45 }}>
+          {ready
+            ? "Not enough data yet, no memories stored. The loop writes one each time it records an outcome or an agent reflects on a run, then recalls them on its next pass."
+            : "Not enough data yet, memory tracking lights up on the next sync."}
+        </p>
+      )}
+      <div className="mono-label" style={{ fontSize: 8, color: "var(--ink-faint)", marginTop: 10 }}>
+        NDR and expansion land here once billing ships (pricing, M-C).
+      </div>
+    </div>
+  );
+}
+
 export function GauntletMetricsPanel() {
   const fAccept = useServerFn(getAcceptanceRate);
   const fAutonomy = useServerFn(getAutonomyRatio);
   const fRitual = useServerFn(getRitualRetention);
+  const fMem = useServerFn(getMemoryCompounding);
 
   const acceptQ = useQuery({
     queryKey: ["gauntlet-acceptance"],
@@ -102,6 +189,10 @@ export function GauntletMetricsPanel() {
   const ritualQ = useQuery({
     queryKey: ["gauntlet-ritual"],
     queryFn: () => fRitual(),
+  });
+  const memQ = useQuery({
+    queryKey: ["gauntlet-memory"],
+    queryFn: () => fMem(),
   });
 
   const a = acceptQ.data;
@@ -182,13 +273,15 @@ export function GauntletMetricsPanel() {
         />
       </div>
 
-      {(acceptQ.error || autonomyQ.error || ritualQ.error) && (
+      <MemoryCompoundsCard data={memQ.data} loading={memQ.isLoading} />
+
+      {(acceptQ.error || autonomyQ.error || ritualQ.error || memQ.error) && (
         <div className="bento" style={{ padding: 16, marginTop: 12 }}>
           <div className="mono-label" style={{ color: "var(--rose)" }}>
             Couldn't load some metrics
           </div>
           <p style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 6 }}>
-            {((acceptQ.error || autonomyQ.error || ritualQ.error) as Error).message}
+            {((acceptQ.error || autonomyQ.error || ritualQ.error || memQ.error) as Error).message}
           </p>
         </div>
       )}

@@ -23,6 +23,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isSideEffectingTool } from "@/lib/tool-consequences";
 import { trendOf, isMissingRelation, type Trend } from "@/lib/gauntlet-metrics";
+import { reuseRate, countPriorityMoves } from "@/lib/memory-compounding";
 
 export type { Trend };
 
@@ -348,4 +349,100 @@ export const recordRitualSession = createServerFn({ method: "POST" })
     } catch {
       return { recorded: false };
     }
+  });
+
+// ---------------------------------------------------------------------------
+// Memory compounds - the moat metric.
+//
+// The honest, scale-independent proof that the decision-memory moat compounds
+// (it works even at one user): reuse (of what the loop stored, how much it has
+// recalled at least once) and priorities moved (recorded outcomes that actually
+// moved an opportunity's ICE). All owner-scoped, all real head counts; a sparse
+// account reads "not enough data yet" rather than an invented figure. NDR is
+// intentionally absent - it needs recurring revenue (an M-C billing item), so
+// claiming it now would outrun the wiring.
+
+export type MemoryCompounding = {
+  /** All-time agent_memory rows for this owner. */
+  stored: number;
+  /** Of those, how many the loop has recalled at least once (last_used_at set). */
+  recalled: number;
+  /** recalled / stored, or null when nothing is stored. */
+  reuseRate: number | null;
+  /** New memories created in the last 7 days. */
+  newThisWeek: number;
+  /** Recorded outcomes that moved an opportunity's ICE (rounded compare). */
+  prioritiesMoved: number;
+  /** False only when agent_memory is not present yet (pre-migration). */
+  tableReady: boolean;
+};
+
+export const getMemoryCompounding = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MemoryCompounding> => {
+    const { supabase, userId } = context;
+    const weekAgo = new Date(Date.now() - 7 * DAY_MS).toISOString();
+
+    // agent_memory is owner-scoped (RLS auth.uid() = user_id); the explicit
+    // user_id filter is defense-in-depth and lets Postgres use the index.
+    // learnings is workspace-keyed but carries user_id, so we scope
+    // priorities-moved to the caller to stay consistent with the other three
+    // (user-scoped) Gauntlet metrics.
+    const [storedRes, recalledRes, newRes, learnRes] = await Promise.all([
+      supabase
+        .from("agent_memory")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+      supabase
+        .from("agent_memory")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .not("last_used_at", "is", null),
+      supabase
+        .from("agent_memory")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", weekAgo),
+      supabase.from("learnings").select("prior_ice,new_ice").eq("user_id", userId).limit(2000),
+    ]);
+
+    // agent_memory absent (pre-migration on a fresh env): degrade to not-ready
+    // rather than throwing. A transient/permission error still surfaces.
+    if (storedRes.error) {
+      if (isMissingRelation(storedRes.error as { code?: string; message?: string })) {
+        return {
+          stored: 0,
+          recalled: 0,
+          reuseRate: null,
+          newThisWeek: 0,
+          prioritiesMoved: 0,
+          tableReady: false,
+        };
+      }
+      throw new Error(storedRes.error.message);
+    }
+
+    const stored = storedRes.count ?? 0;
+    // The secondary probes are best-effort: if one errors we under-report (0)
+    // rather than failing the whole card. learnings may be absent on a fresh
+    // env, so a missing relation there simply yields zero priority moves.
+    const recalled = recalledRes.error ? 0 : (recalledRes.count ?? 0);
+    const newThisWeek = newRes.error ? 0 : (newRes.count ?? 0);
+    // numeric columns arrive as strings over PostgREST; countPriorityMoves
+    // coerces them (the typed-as-number generated rows lie about the wire shape).
+    const learnRows = learnRes.error
+      ? []
+      : ((learnRes.data ?? []) as {
+          prior_ice: number | string | null;
+          new_ice: number | string | null;
+        }[]);
+
+    return {
+      stored,
+      recalled,
+      reuseRate: reuseRate(recalled, stored),
+      newThisWeek,
+      prioritiesMoved: countPriorityMoves(learnRows),
+      tableReady: true,
+    };
   });
