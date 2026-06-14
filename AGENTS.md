@@ -3,7 +3,7 @@
 > **Canonical, tool-agnostic source of truth for every agent and human working in this repo.**
 > Read natively by Google Antigravity, Gemini CLI, OpenAI Codex, Cursor, and the agents behind Lovable. Claude Code reads [`CLAUDE.md`](./CLAUDE.md) (a thin pointer to this file). Antigravity/Gemini precedence notes live in [`GEMINI.md`](./GEMINI.md).
 >
-> **Rule of the repo:** this file holds the operating rules. The founding constitution — co-founder posture, north star, model-agnostic mandate — is in [`Ai_Cofounder.md`](./Ai_Cofounder.md); its **Repo Concordance** section maps its mandated documents onto this doc system (never create its 13 root files; update the mapped equivalents). Product framing is in [`README.md`](./README.md). The build log and roadmap are in [`plan.md`](./plan.md). The UI contract is in [`design.md`](./design.md). Architecture contracts are in [`architecture/`](./architecture/). Do not duplicate content between files — link instead.
+> **Rule of the repo:** this file holds the operating rules. The founding constitution — co-founder posture, north star, model-agnostic mandate — is in [`Ai_Cofounder.md`](./Ai_Cofounder.md); its **Repo Concordance** section maps its mandated documents onto this doc system (never create its 13 root files; update the mapped equivalents). Product framing is in [`README.md`](./README.md). The build log and roadmap are in [`plan.md`](./plan.md). The UI contract is in [`design.md`](./design.md). Architecture contracts are in [`architecture/`](./architecture/). The build-in-public brand system is in [`docs/brand/`](./docs/brand/) (capture build insights to its content well, draft in the founder's voice, never post without his approval). Do not duplicate content between files — link instead.
 
 ---
 

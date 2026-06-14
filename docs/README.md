@@ -20,6 +20,7 @@
 | A market / competitive / research reference | `docs/references/` | this file (§ References) |
 | An ops runbook or policy (commits · hooks · memory · skills · subagents · tools · git-discipline · demo-credentials · runbooks) | `docs/operations/` | this file (§ Operator guides) |
 | A durable cross-tool convention (UI chrome · voice · destructive · inline · checklist) | `docs/conventions/` | [`docs/conventions/README.md`](./conventions/README.md) |
+| A build-in-public / brand content doc | `docs/brand/` | [`docs/brand/README.md`](./brand/README.md) |
 | A per-feature operator / demo spec | `docs/features/` | [`docs/features/README.md`](./features/README.md) |
 | An architecture contract (runtime · orchestration · security · data · frontend · integrations) | `architecture/` | this file (links throughout) |
 | An ADR / technical decision | `docs/decisions/` | this file (§ Decisions) |
@@ -59,6 +60,12 @@ Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMI
 | [`operations/demo-credentials.md`](./operations/demo-credentials.md)     | Pre-provisioned demo logins (two emails + shared password), what each account ships with, how they were created, and the re-seed SQL. Use for screen recordings, YC / investor demos, and anywhere a working login is needed.                   |
 | [`features/agent-ecosystem-plan.md`](./features/agent-ecosystem-plan.md) | **F-AGENT-1 → F-AGENT-4 bundle plan** — orchestrator (shipped), persistent memory + self-reflection + trust auto-advance, event reactor + auto-pipelines, Swarm HUD. The canonical, session-surviving plan for the agent-native behavior layer. |
 | [`features/auth-flows.md`](./features/auth-flows.md)                     | Authentication flows — sign-up, sign-in, password visibility toggle, forgot-password / reset-password flow, session lifecycle, demo accounts.                                                                                                   |
+
+## Brand & build-in-public
+
+| File | Purpose |
+| --- | --- |
+| [`brand/README.md`](./brand/README.md) | **The build-in-public brand system.** Positioning and audience, the voice profile, the multi-platform cadence (X, LinkedIn, Substack), the content well of real build insights, the draft queue, and the automated-posting setup. Standing rule for every tool: capture non-obvious build insights to `brand/content-well.md`, draft in the founder's voice, never post to his accounts without his explicit approval. |
 
 ## Architecture contracts (the `../architecture/` folder)
 
