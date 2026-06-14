@@ -52,6 +52,7 @@ ruvector.db
 agentdb*.rvf
 agentdb*.rvf*.lock
 agentdb*.lock
+.swarm/
 *.png
 src/routeTree.gen 2.ts
 

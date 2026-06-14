@@ -2,13 +2,21 @@
 #
 # cost-summary.sh — wrapper around ruflo-cost-tracker's summary.mjs.
 #
-# Prints cost summary across all sessions in the cost-tracking namespace.
-# Uses CLI_CORE=1 for lite backend (~2s cold-cache vs ~25s).
+# Prints a cost summary across all sessions in the cost-tracking namespace.
+#
+# CLI_CORE=1 is MANDATORY here, not just a speed knob: summary.mjs reads
+# whichever memory backend CLI_CORE selects. cost-track.sh writes records with
+# CLI_CORE=1 (cli-core JSON backend), so summary must match — without the flag it
+# queries an empty SQLite store and silently reports "$0 / 0 sessions", no error.
+# (It's also faster: ~2s cold-cache vs ~25s.)
 #
 # Usage:
-#   scripts/cost-summary.sh                  # markdown format (default)
-#   scripts/cost-summary.sh --format json    # json format
+#   bun run cost:summary                      # markdown format (default)
+#   bun run cost:summary -- --format json     # stable JSON contract for consumers
+#   scripts/cost-summary.sh --format json     # same, called directly
 #
+# Extra args are forwarded to summary.mjs verbatim (SUMMARY_NAMESPACE,
+# SUMMARY_FED_NAMESPACE, SUMMARY_FORMAT env vars pass through too).
 # If summary.mjs is ever moved or versioned differently, this wrapper
 # still works; just update the glob pattern below.
 
