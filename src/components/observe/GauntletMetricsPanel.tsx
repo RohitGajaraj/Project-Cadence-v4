@@ -60,7 +60,7 @@ function MetricCard({
   substat,
   loading,
 }: {
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  icon: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
   label: string;
   value: string;
   trend?: Trend;
