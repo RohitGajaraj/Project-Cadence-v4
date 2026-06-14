@@ -67,6 +67,55 @@ Set these in `.claude/settings.json` (committed). Keep them deterministic — en
 
 Exact handler shape follows the official schema (https://code.claude.com/docs/en/hooks); the scripts are thin and live in the repo. Where a hook only needs to _remind_ (not block), it prints guidance on exit 0; where it must _enforce_, a `PreToolUse` hook blocks on exit 2.
 
+## Humanized-output guard (`scripts/check-humanized.sh`)
+
+This is the build-time half of the humanized-output convention ([`../conventions/humanized-output.md`](../conventions/humanized-output.md)). The runtime half (the `humanizeText()` sanitizer at the AI chokepoint) already ships in `src/lib/ai/humanize.ts`; this script is the author-side backstop that catches a banned character before it lands in the repo.
+
+**What it does.** It scans the staged diff (`git diff --cached`) and flags, in ADDED lines of staged TEXT files (`*.md`, `*.ts`, `*.tsx`, `*.sql`), any em dash (U+2014), en dash (U+2013), or invisible / look-alike character from the convention set (U+200B, U+200C, U+200D, U+2060, U+FEFF, U+00A0, U+202F, U+00AD, U+200E, U+200F, U+FFFD). It best-effort skips obvious code so a legitimate dash inside a sample is not flagged: fenced triple-backtick (or triple-tilde) blocks, and inline backtick code spans on the same line. Each hit prints as `file:line` with the offending codepoint named and a fix hint. The detection engine is `perl -CSD` (Unicode codepoint matching), chosen because BSD `grep` on macOS has no `-P` / PCRE option.
+
+**Warn-only by default, strict opt-in.** The script always exits 0 and prints a clear warning, so it can never block a commit or a session. Set `STRICT=1` to make it exit non-zero on any hit (for a CI gate or a blocking pre-commit hook). This is deliberate: the founder ruling deferred the full retroactive product sweep to a pre-launch gate, so a hard block now would create churn. The guard surfaces new fingerprints without stopping work.
+
+**Run it manually.**
+
+```bash
+# Scan the staged diff (warn-only). Always exits 0.
+scripts/check-humanized.sh
+
+# Same, but fail (exit 1) on any hit. Use in CI or a blocking hook.
+STRICT=1 scripts/check-humanized.sh
+
+# Scan specific files whole (not a diff), e.g. before staging them.
+scripts/check-humanized.sh README.md src/lib/ai/prompts.server.ts
+```
+
+**Ready-to-enable Claude Code hook (opt-in, not live).** We do NOT register this as a live blocking hook in `.claude/settings.json` (a hard gate now would conflict with the deferred-sweep ruling, and a warn-only check fits a reminder cadence better than a block). When we are ready to turn it on, add a `PreToolUse` matcher on `Bash(git commit *)`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "if": "Bash(git commit *)",
+        "command": "scripts/check-humanized.sh"
+      }
+    ]
+  }
+}
+```
+
+Left warn-only (no `STRICT=1`), that prints the warning on exit 0 and lets the commit proceed; to make it block, set `STRICT=1` in the command (`STRICT=1 scripts/check-humanized.sh`) so a hit returns exit 1 and the `PreToolUse` hook stops the tool.
+
+**Git pre-commit snippet (alternative, tool-agnostic).** For a plain git hook outside Claude Code, drop this in `.git/hooks/pre-commit` (warn-only shown; prefix `STRICT=1` to block):
+
+```bash
+#!/usr/bin/env bash
+scripts/check-humanized.sh
+# To block instead: STRICT=1 scripts/check-humanized.sh || exit 1
+```
+
+The buzzword / template checks from the convention are intentionally NOT in this script. Those need human judgment (a buzzword is sometimes the right word), so they stay a manual review step per the convention's "How to apply" block.
+
 ## Cross-tool note
 
 Dev-time hooks are a Claude Code mechanism. The _policies_ they enforce ([`commits.md`](./commits.md), [`AGENTS.md`](./AGENTS.md)) are tool-agnostic, so Antigravity/Gemini/Lovable honor the same rules by reading those files even without identical hook machinery — and the product runtime automation (above) is tool-independent entirely. See [`GEMINI.md`](./GEMINI.md) for the multi-tool precedence model.
