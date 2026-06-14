@@ -67,3 +67,18 @@ What I build: a `post-daily` Worker cron plus a small posting module that reads 
 ## Recommendation
 
 Start with Route 1 (Buffer) for speed: connect both accounts, give me the API token, and we are live this week on the batch-approve model. Move to Route 2 (self-hosted cron) later if we want to drop the third party. LinkedIn automation is the one genuinely fussy piece, and Buffer is the path of least resistance for it.
+
+## Live status (2026-06-15)
+
+Route 1 (Buffer) is live. The Buffer MCP is connected for the org "My Organization" (`rohit.gajaraj@gmail.com`), so I push approved drafts straight into Buffer; no weekly paste needed.
+
+Connected channels: X (`rohit_gajaraj`), LinkedIn (`rohit-gajaraj`), Threads (`rohit_gajaraj`). Free plan: 3 channels (full), 10 scheduled posts, 100 ideas. Bluesky is not connected (the 3-channel slot is taken).
+
+Two Buffer realities we hit, and how the model adapts:
+
+- **No per-post "notification" approval for X or LinkedIn.** Buffer only offers automatic publishing for these direct-publish channels, so the "ping me to confirm each" mode is not available as such. The faithful equivalent is the draft-then-approve gate: I push each item as a Buffer draft pre-set to its time; it stays a draft until the founder taps approve in the Buffer Drafts tab, then auto-posts at the set time. Nothing publishes unseen. If the founder later wants zero taps, switch the push from `saveToDraft` to a live automatic schedule.
+- **X enforces 280 characters via the API.** Long X posts are pushed as threads, split at the draft's own paragraph breaks with no word changes. LinkedIn has no such limit and goes up as single posts.
+
+Two things still need a manual hand each week: polls (Buffer's API has no poll field) and the Substack newsletter (published on its own). The Threads mirror is selective by design; mirror the strongest one or two pieces rather than the whole week, to keep the 10-post queue free.
+
+Week one (2026-06-15 to 2026-06-21) is staged: 9 feed drafts in Buffer awaiting approval. Ledger with draft ids: [`drafts/week-2026-06-15.md`](./drafts/week-2026-06-15.md) "Staged to Buffer".
