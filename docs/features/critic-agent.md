@@ -2,16 +2,16 @@
 
 The Critic is an adversarial reviewer that red-teams every new opportunity and every freshly drafted PRD before it reaches a human approval gate. It is the demo moment the Strategist → operator-approval handoff needs: instead of approving a raw ICE score, the operator approves a score plus a verdict, top risks, kill criteria, and a list of missing evidence.
 
-**Two lenses (same infra).** Opportunities get the **bet-evaluation** lens (DEC-02). Specs get a **spec-specific red-team** lens (DEF-03): ambiguity, untestable/unmeasurable acceptance criteria, scope creep, unstated assumptions, and missing edge cases — guard-railed to judge only what the spec actually says, never to invent requirements.
+**Two lenses (same infra).** Opportunities get the **bet-evaluation** lens (DEC-02). Specs get a **spec-specific red-team** lens (DEF-03): ambiguity, untestable/unmeasurable acceptance criteria, scope creep, unstated assumptions, and missing edge cases, guard-railed to judge only what the spec actually says, never to invent requirements.
 
 ## What ships
 
-- New `critic` agent seeded per user (rose-toned, role-only — no UI presence beyond the badge).
-- `runCritic(supabase, userId, target)` helper in `src/lib/discovery.functions.ts` — calls Gemini 2.5 Pro with a strict-JSON red-team prompt and writes the result to `opportunities.critic_review` / `prds.critic_review`.
+- New `critic` agent seeded per user (rose-toned, role-only, no UI presence beyond the badge).
+- `runCritic(supabase, userId, target)` helper in `src/lib/discovery.functions.ts`, calls Gemini 2.5 Pro with a strict-JSON red-team prompt and writes the result to `opportunities.critic_review` / `prds.critic_review`.
 - Auto-attached inline to `promoteThemeToOpportunity`, `promoteSignalToOpportunity`, and `generatePrd` so the verdict lands before the row is shown.
 - `runCriticReview` server fn for manual UI re-runs.
 - `CriticBadge` component (`src/components/governance/CriticBadge.tsx`) rendered in `OpportunitiesPanel` rows and the PRD detail metadata row.
-- **DEF-03 spec lens:** when `runCritic`'s target is a PRD it uses a spec red-team prompt (ambiguity · untestable criteria · scope creep · unstated assumptions · edge cases) instead of the bet prompt; the JSON shape is unchanged (reuses `critic_review`), and `CriticBadge` relabels its sections per kind — the generic "Missing evidence" becomes "Untestable criteria & open questions", and the sheet reads "Spec red-team". The opportunity path is unchanged.
+- **DEF-03 spec lens:** when `runCritic`'s target is a PRD it uses a spec red-team prompt (ambiguity · untestable criteria · scope creep · unstated assumptions · edge cases) instead of the bet prompt; the JSON shape is unchanged (reuses `critic_review`), and `CriticBadge` relabels its sections per kind: the generic "Missing evidence" becomes "Untestable criteria & open questions", and the sheet reads "Spec red-team". The opportunity path is unchanged.
 
 ## Verdict shape
 
@@ -41,6 +41,6 @@ The Critic is an adversarial reviewer that red-teams every new opportunity and e
 
 ## Related
 
-- [`prd-rag-citations.md`](./prd-rag-citations.md) — the companion slice that gives the Scribe its evidence trail.
-- [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md) — DEC-02 (opportunities) + DEF-03 (specs) entries.
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md) — live status board entry.
+- [`prd-rag-citations.md`](./prd-rag-citations.md): the companion slice that gives the Scribe its evidence trail.
+- [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md): DEC-02 (opportunities) + DEF-03 (specs) entries.
+- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): live status board entry.

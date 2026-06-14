@@ -1,4 +1,4 @@
-# Product Positioning v3 — Strategic Pivot to Circuit (B2B Enterprise)
+# Product Positioning v3: Strategic Pivot to Circuit (B2B Enterprise)
 
 > **What this is.** A record of the strategic pivot from Cadence to **Circuit**, focusing on the **B2B Enterprise Product Cockpit** positioning, target personas, pluggable multi-model substrate, and the 12-stage product development lifecycle.
 >
@@ -42,32 +42,32 @@ If any seam requires manual data transport, spreadsheets, or un-tracked updates,
 
 Rather than focusing exclusively on the solo PM, Circuit addresses the entire cross-functional B2B enterprise team:
 
-### P1 — Enterprise Director / VP of Product (The Portfolio Governor)
+### P1: Enterprise Director / VP of Product (The Portfolio Governor)
 
 - **Pain:** Swarm drift, lack of visibility into agent actions, security audits, budget overruns, and portfolio alignment.
 - **Role:** Sits at the strategic level. Controls budget caps, monitors multi-product roadmap health, and acts as the ultimate gatekeeper for the global kill-switch.
 
-### P2 — Lead / Senior PM (The Daily Cockpit Operator)
+### P2: Lead / Senior PM (The Daily Cockpit Operator)
 
 - **Pain:** Mechanical process work (spec writing, ticket updates, alert triage, release logs) eating up time needed for strategic judgment and taste.
 - **Role:** Sets the strategic brief, prompts the Swarm Chat router, reviews auto-drafted specs, and approves opportunities promoted to the backlog.
 
-### P3 — Engineering Lead / Tech Architect (The Code Gatekeeper)
+### P3: Engineering Lead / Tech Architect (The Code Gatekeeper)
 
 - **Pain:** Agent-written code drifting from internal architecture guidelines, introducing regressions, or breaking sandboxed environments.
 - **Role:** Reviews the files claimed by the Builder Agent, monitors automated CI feedback loops, and validates code diffs before merging PRs.
 
-### P4 — UX/UI Designer (The Visual Validator)
+### P4: UX/UI Designer (The Visual Validator)
 
 - **Pain:** Generated code failing to match design system tokens or looking off-brand in mockups.
 - **Role:** Reviews UI scaffolding layout previews in the visual sandbox (Lovable-style) and edits styling tokens.
 
-### P5 — GTM Lead / Product Marketer
+### P5: GTM Lead / Product Marketer
 
 - **Pain:** Generating changelogs, marketing collateral, newsletter posts, and distribution updates by hand for every release.
 - **Role:** Approves auto-drafted GTM assets and coordinates launch announcements.
 
-### P6 — Customer Success & Support Lead
+### P6: Customer Success & Support Lead
 
 - **Pain:** High ticket volumes, slow bug triage, and user signals getting lost before reaching the PM.
 - **Role:** Oversees agent-triaged support tickets, validating customer friction logs that flow back into the Signal Feed.
@@ -78,18 +78,18 @@ Rather than focusing exclusively on the solo PM, Circuit addresses the entire cr
 
 The platform offering represents the complete lifecycle, executed by specialist agents:
 
-- **S1 — Signal Capture:** Multi-source ingestion (Slack, Zendesk, Intercom, Sales logs) clustered by the **Scout Agent** into cited opportunities.
-- **S2 — Audio Sync (WhisperFlow):** High-context audio recording, transcription, and meeting extraction, fanning sync notes directly to the backlog.
-- **S3 — ICE Prioritization:** Strategist Agent evaluates strategic alignment, ICE scores, and schedules priorities.
-- **S4 — Spec Definition:** Conversational spec generation (PRD Writer) compiling acceptance criteria, data shifts, and non-goals with RAG citations.
-- **S5 — Sprint Planning:** Dependency task graphs auto-generated and synced to Linear/Jira by the Sprint Planner.
-- **S6 — Agentic Build:** Isolated branch modifications and surgical file-lock claims executed by the Builder Agent.
-- **S7 — Visual QA:** Sandbox preview environments generated for designers and PMs to visually validate code changes.
-- **S8 — Safe Release:** Merges PRs, deploys release tags, and monitors production health (auto-rollback on anomalies).
-- **S9 — GTM Launch:** Marketer Agent drafts positioning charts, blog posts, newsletter copy, and distribution announcements.
-- **S10 — Support Triage:** Customer success agents auto-reply, categorize tickets, and route bugs back to Signal Capture.
-- **S11 — Cohort Analytics:** Automates feature adoption tracking, cohort analysis, and funnel monitoring.
-- **S12 — Learn & Reflect:** Compares outcome telemetry with the original PRD specifications, writing post-mortems to the Product Memory Graph.
+- **S1. Signal Capture:** Multi-source ingestion (Slack, Zendesk, Intercom, Sales logs) clustered by the **Scout Agent** into cited opportunities.
+- **S2. Audio Sync (WhisperFlow):** High-context audio recording, transcription, and meeting extraction, fanning sync notes directly to the backlog.
+- **S3. ICE Prioritization:** Strategist Agent evaluates strategic alignment, ICE scores, and schedules priorities.
+- **S4. Spec Definition:** Conversational spec generation (PRD Writer) compiling acceptance criteria, data shifts, and non-goals with RAG citations.
+- **S5. Sprint Planning:** Dependency task graphs auto-generated and synced to Linear/Jira by the Sprint Planner.
+- **S6. Agentic Build:** Isolated branch modifications and surgical file-lock claims executed by the Builder Agent.
+- **S7. Visual QA:** Sandbox preview environments generated for designers and PMs to visually validate code changes.
+- **S8. Safe Release:** Merges PRs, deploys release tags, and monitors production health (auto-rollback on anomalies).
+- **S9. GTM Launch:** Marketer Agent drafts positioning charts, blog posts, newsletter copy, and distribution announcements.
+- **S10. Support Triage:** Customer success agents auto-reply, categorize tickets, and route bugs back to Signal Capture.
+- **S11. Cohort Analytics:** Automates feature adoption tracking, cohort analysis, and funnel monitoring.
+- **S12. Learn & Reflect:** Compares outcome telemetry with the original PRD specifications, writing post-mortems to the Product Memory Graph.
 
 ---
 

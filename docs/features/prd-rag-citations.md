@@ -14,7 +14,7 @@ The Scribe (PRD generation) now retrieves workspace evidence (signals, docs, mee
 
 ## How to use / verify
 
-- **Find it:** scroll to the bottom of `/prds/$id` after a PRD is generated — the "Cited evidence · N" card lists numbered sources.
+- **Find it:** scroll to the bottom of `/prds/$id` after a PRD is generated. The "Cited evidence · N" card lists numbered sources.
 - **Server enforcement:** retrieval is workspace-scoped via `match_rag_chunks(user_id)`; citations are read via existing `prds` RLS.
 - **Verify:**
   1. From `/product?tab=opportunities` click "Generate PRD" on any opportunity.
@@ -29,6 +29,6 @@ The Scribe (PRD generation) now retrieves workspace evidence (signals, docs, mee
 
 ## Related
 
-- [`critic-agent.md`](./critic-agent.md) — the companion slice that runs after generation.
-- [`../../architecture/runtime.md`](../../architecture/runtime.md) — RAG retrieval contract.
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md) — live status board entry.
+- [`critic-agent.md`](./critic-agent.md): the companion slice that runs after generation.
+- [`../../architecture/runtime.md`](../../architecture/runtime.md): RAG retrieval contract.
+- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): live status board entry.

@@ -1,6 +1,6 @@
-# docs/features/ — Per-feature operator & demo guides
+# docs/features/: Per-feature operator & demo guides
 
-> Every shipped, user-facing Cadence feature gets one canonical page here. This is the **single place** to open when running a demo, onboarding a new operator, or remembering what a feature actually does months later. Strategy and bundle plans live in [`../strategy/`](../strategy/) and [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md); architecture contracts live in [`../../architecture/`](../../architecture/); the build log lives in [`../../plan.md`](../../plan.md) §4. **These per-feature pages are the demo deliverable** — they consolidate, they do not invent.
+> Every shipped, user-facing Cadence feature gets one canonical page here. This is the **single place** to open when running a demo, onboarding a new operator, or remembering what a feature actually does months later. Strategy and bundle plans live in [`../strategy/`](../strategy/) and [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md); architecture contracts live in [`../../architecture/`](../../architecture/); the build log lives in [`../../plan.md`](../../plan.md) §4. **These per-feature pages are the demo deliverable**: they consolidate, they do not invent.
 
 ## When to add a file here
 
@@ -47,15 +47,15 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 
 ## Rules
 
-1. **Consolidate, don't restate.** A feature page links to its `plan.md` §4 entry and architecture bullet — it doesn't duplicate them. If you find yourself rewriting an architectural contract here, move it to `architecture/*.md` and link.
+1. **Consolidate, don't restate.** A feature page links to its `plan.md` §4 entry and architecture bullet, and it doesn't duplicate them. If you find yourself rewriting an architectural contract here, move it to `architecture/*.md` and link.
 2. **Stay demo-ready.** The Demo script section must be runnable end-to-end on the seeded demo workspace (`demo@redcadence.app`). If a step breaks, fix the page in the same commit you fix the feature.
 3. **One source of "How to use / verify".** The detailed walkthrough lives here. `docs/feature-backlog.md` rows link to this page rather than duplicating the checklist.
 4. **Update the index above** whenever you add a page. A page that isn't in the index is invisible.
 
 ## Related
 
-- [`../README.md`](../README.md) — parent docs index
-- [`../feature-backlog.md`](../feature-backlog.md) — live status board + ledger
-- [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md) — F-AGENT-1→4 bundle strategy
-- [`../../architecture/orchestration.md`](../../architecture/orchestration.md) — agent orchestration contract
-- [`../../plan.md`](../../plan.md) §4 — active build log
+- [`../README.md`](../README.md), parent docs index
+- [`../feature-backlog.md`](../feature-backlog.md), live status board + ledger
+- [`../agent-ecosystem-plan.md`](../agent-ecosystem-plan.md), F-AGENT-1→4 bundle strategy
+- [`../../architecture/orchestration.md`](../../architecture/orchestration.md), agent orchestration contract
+- [`../../plan.md`](../../plan.md) §4, active build log

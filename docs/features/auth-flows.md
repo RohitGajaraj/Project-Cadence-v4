@@ -1,4 +1,4 @@
-# docs/auth-flows.md — Authentication flows
+# docs/auth-flows.md: Authentication flows
 
 > How users sign in, sign up, recover access, and manage their session. Tightly coupled to [`architecture/security.md`](../architecture/security.md).
 
@@ -69,6 +69,6 @@ See [`demo-credentials.md`](./demo-credentials.md) for pre-provisioned accounts 
 
 ## Related
 
-- [`architecture/security.md`](../architecture/security.md) — Auth, tenancy, RLS, and governance.
-- [`architecture/frontend.md`](../architecture/frontend.md) — Route and loader patterns.
-- [`demo-credentials.md`](./demo-credentials.md) — Demo login details.
+- [`architecture/security.md`](../architecture/security.md): Auth, tenancy, RLS, and governance.
+- [`architecture/frontend.md`](../architecture/frontend.md): Route and loader patterns.
+- [`demo-credentials.md`](./demo-credentials.md): Demo login details.

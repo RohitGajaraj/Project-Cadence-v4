@@ -1,11 +1,11 @@
 > [!WARNING]
-> **ARCHIVED — historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
+> **ARCHIVED. Historical reference only.** Superseded by the current canon: positioning → [`../v6-agentic-product-os-2026-06-13.md`](../v6-agentic-product-os-2026-06-13.md); engine / expansion map → [`../v4-feature-map-2026-06-11.md`](../v4-feature-map-2026-06-11.md). Inline links below predate the 2026-06-13 docs reorganization and may point to pre-reorg paths. Strategy index: [`../README.md`](../README.md).
 
-# Language, Naming & Microcopy Audit v3 — 2026-06-06
+# Language, Naming & Microcopy Audit v3, 2026-06-06
 
 > **Companion to** [`v3-audit-2026-06-06.md`](./v3-audit-2026-06-06.md). The main audit graded the _what_; this one grades the _words_. Same operator-walk method, same evidence base (all 31 authenticated routes + auth + public surfaces), same delivery contract: audit only, no code changes, recommendations graduate to backlog F-IDs on operator sign-off.
 >
-> **Why this exists.** A product whose own login tagline contradicts its strategy ("AI-native" on `/login` vs. "autonomous" everywhere else), whose sidebar mixes user verbs ("Today") with internal nouns ("AI Ops"), and whose flagship feature is called _"BUILD · BUNDLE 9"_ in front of operators is not failing on capability — it's failing on language discipline. The substrate is ahead of the surface; the surface is ahead of the words.
+> **Why this exists.** A product whose own login tagline contradicts its strategy ("AI-native" on `/login` vs. "autonomous" everywhere else), whose sidebar mixes user verbs ("Today") with internal nouns ("AI Ops"), and whose flagship feature is called _"BUILD · BUNDLE 9"_ in front of operators is not failing on capability, it's failing on language discipline. The substrate is ahead of the surface; the surface is ahead of the words.
 >
 > **Scope.** Naming · sidebar/IA copy · page H1s · empty states · buttons & CTAs · placeholders & labels · tooltips · approval-gate prompts · agent/AI surface vocabulary · governance verbs · marketing/public copy · system voice.
 >
@@ -23,7 +23,7 @@
 4. **The naming of the work objects drifts.** The product simultaneously calls one concept _Mission_, _Run_, _Trajectory_, _Trace_, and _Steps_. Agents are _Agents_, _Specialists_, and a _Swarm_. Reviews are _Approvals_, _Inbox_, _Reactor activity_, and _Sync Inbox_. **The operator cannot form a stable mental model because the words won't hold still.**
 5. **Tooltips do too much work because labels do too little.** The trust system has tooltips a paragraph long because `Trust 72 · Proving` doesn't carry the meaning, and `Autonomy dial` is a label that requires a tooltip just to define itself. **A label that needs a tooltip to be understood is a label that has failed.** The fix is rarely a better tooltip; it's a better label.
 
-**The voice problem in one sentence:** Cadence speaks in three voices — _editorial serif_ on H1s, _enterprise SaaS_ in the nav, _engineer-debug_ in the tooltips — and no one is the operator the v2/v3 thesis says we serve.
+**The voice problem in one sentence:** Cadence speaks in three voices: _editorial serif_ on H1s, _enterprise SaaS_ in the nav, _engineer-debug_ in the tooltips, and no one is the operator the v2/v3 thesis says we serve.
 
 **The single biggest naming risk:** if Cadence does not own the words _Mission · Trace · Approval · Trust · Brief_ before competitors do (Linear+Cursor, Notion+Custom Agents, Factory/Devin all have working vocabularies; Langfuse owns _Trace_), the product becomes a glossary instead of a system of record. **Pick five canonical nouns and forbid synonyms.**
 
@@ -31,10 +31,10 @@
 
 1. Rewrite `/login` headline + subhead to the v3 thesis (`LANG-01`).
 2. Strip every "Phase N" / "Bundle N" mono-label from the operator surface (`LANG-02`).
-3. Rename `AI Ops` → `Observe`, `Govern` → `Govern` keep, `Agents` → `Agents` keep — but rename items inside them (see §3) (`LANG-03`).
+3. Rename `AI Ops` → `Observe`, `Govern` → `Govern` keep, `Agents` → `Agents` keep, but rename items inside them (see §3) (`LANG-03`).
 4. Pick one word per concept; ship a glossary; enforce it (`LANG-04`).
 5. Replace `Build Console` → `Builder`, `Eval Harness` → `Evals`, `Swarm HUD` → `Swarm`, `Sync Inbox` → `Connectors inbox` or fold into `Integrations` (`LANG-05`).
-6. Rewrite the Today empty state — no OS asks the operator to "hit refresh" (`LANG-06`).
+6. Rewrite the Today empty state, no OS asks the operator to "hit refresh" (`LANG-06`).
 7. Replace every `name?: "field"`/`window.prompt()` flow with proper dialogs + sentence-case labels (`LANG-07`, see `AppShell.tsx:195`).
 8. Sentence-case every UI string; kill `uppercase tracking-[0.16em]` mono-labels everywhere except true taxonomy chips (`LANG-08`).
 9. Approval-gate prompts must say _what will happen if I approve_ and _what gets rolled back if I reject_ (`LANG-09`).
@@ -42,9 +42,9 @@
 
 ---
 
-## 1. Voice & tone — the one-page house style
+## 1. Voice & tone: the one-page house style
 
-**Persona.** A senior product operator who already runs a swarm. Reads at speed. Doesn't need to be sold. Wants the product to _report_ and _ask_ — not _celebrate_, not _explain itself_, not _whisper marketing copy in serif_.
+**Persona.** A senior product operator who already runs a swarm. Reads at speed. Doesn't need to be sold. Wants the product to _report_ and _ask_, not _celebrate_, not _explain itself_, not _whisper marketing copy in serif_.
 
 **Reading level.** Grade 8. Sentence case. ≤14 words per UI string. No semicolons in microcopy.
 
@@ -59,18 +59,18 @@
 
 **Banned words.** `unlock`, `seamless`, `leverage`, `empower`, `revolutionize`, `magic`, `wow`, `delightful`, `humming`, `crushing it`, `let's go`, `AI-powered`, `next-gen`, exclamation marks in non-celebratory contexts.
 
-**Banned constructions.** No emoji in functional copy. No ALL CAPS shouting (mono-labels count). No "🎉" toasts. No tagline subheadings under page H1s (`Upcoming meetings`, `All tasks`, `The brief every agent reads` — these are all editorial flourish that costs density).
+**Banned constructions.** No emoji in functional copy. No ALL CAPS shouting (mono-labels count). No "🎉" toasts. No tagline subheadings under page H1s (`Upcoming meetings`, `All tasks`, `The brief every agent reads`, these are all editorial flourish that costs density).
 
 **Verbs we prefer for agent actions** (one verb per state, hold the line):
 
-- **plan** (not draft/spec/decompose) — orchestrator only
-- **draft** (not generate/produce) — content artifacts
-- **dispatch** (not run/launch/kick-off) — specialist hand-offs
-- **review** (not check/inspect/audit) — operator gate, manual
-- **approve / reject** (not accept/decline) — approval gates
-- **promote** (not graduate/escalate) — opportunity→PRD, run→mission
-- **resume** (not restart/continue) — sweeper picks up a paused run
-- **finalize** (not complete/close) — terminal state on missions
+- **plan** (not draft/spec/decompose), orchestrator only
+- **draft** (not generate/produce), content artifacts
+- **dispatch** (not run/launch/kick-off), specialist hand-offs
+- **review** (not check/inspect/audit), operator gate, manual
+- **approve / reject** (not accept/decline), approval gates
+- **promote** (not graduate/escalate), opportunity→PRD, run→mission
+- **resume** (not restart/continue), sweeper picks up a paused run
+- **finalize** (not complete/close), terminal state on missions
 
 **Sentence case everywhere.** Page H1s, section headers, nav items, buttons, chip labels. The only legitimate ALL CAPS in the product is a 2-letter taxonomy tag (e.g. `T72` for trust score), and even those should be reconsidered.
 
@@ -92,10 +92,10 @@ Each row is a concept the product uses. Drift = same concept named differently a
 
 | Concept                 | Current names (where)                                                                                                                            | What users think it means     | Proposed canonical                                                                                                                                                                                                                                                                                    | Why                                                                | Blast radius                               |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
-| The product             | `Cadence` (everywhere); `The AI-native product operating system` (`/login`); `Autonomous product OS` (docs); `Product-org cockpit` (v3 proposal) | conflicting                   | Pick one in v3 decision; **mirror it on `/login` the same hour**                                                                                                                                                                                                                                      | The most-seen surface defines the brand                            | tiny — one tagline edit                    |
-| Agent work unit         | `Mission` (`/missions`); `Run` (`/traces`); `Trajectory` (chat); `Steps` (mission DAG); `Trace` (after-the-fact)                                 | confused                      | **Mission** = the goal · **Run** = one agent's attempt at a step · **Step** = node in the mission DAG · **Trace** = the post-hoc record of one run. Forbid `Trajectory`.                                                                                                                              | One word per concept; users learn it once                          | medium — chat + traces + missions + agents |
+| The product             | `Cadence` (everywhere); `The AI-native product operating system` (`/login`); `Autonomous product OS` (docs); `Product-org cockpit` (v3 proposal) | conflicting                   | Pick one in v3 decision; **mirror it on `/login` the same hour**                                                                                                                                                                                                                                      | The most-seen surface defines the brand                            | tiny, one tagline edit                    |
+| Agent work unit         | `Mission` (`/missions`); `Run` (`/traces`); `Trajectory` (chat); `Steps` (mission DAG); `Trace` (after-the-fact)                                 | confused                      | **Mission** = the goal · **Run** = one agent's attempt at a step · **Step** = node in the mission DAG · **Trace** = the post-hoc record of one run. Forbid `Trajectory`.                                                                                                                              | One word per concept; users learn it once                          | medium, chat + traces + missions + agents |
 | Agent roster collective | `Agents` (sidebar); `Swarm` (`/swarm`); `Roster` (docs); `Specialists` (planner output)                                                          | "are these the same thing?"   | **Agents** = the page · **Swarm** = the live cockpit view · **Specialists** = ephemeral roles spawned by orchestrator (delete this word from operator UI; keep in dev docs)                                                                                                                           | "Swarm HUD" is a label; "Swarm" is a page                          | small                                      |
-| Operator decisions      | `Approvals` (`/inbox`); `Inbox` (rail); `Reactor activity` (`/governance`); `Sync Inbox` (`/sync`); `Attention queue` (`/swarm`)                 | five different places to look | **Approvals** = the page (rename `/inbox` → `Approvals` in sidebar — it already is, but the route is `inbox`). Fold `Reactor activity` _into_ `/approvals` as a tab. Rename `Sync Inbox` → `Connectors` and move under `/integrations`. Kill `Attention queue` as a label — it's just "Awaiting you." | One place to look                                                  | medium                                     |
+| Operator decisions      | `Approvals` (`/inbox`); `Inbox` (rail); `Reactor activity` (`/governance`); `Sync Inbox` (`/sync`); `Attention queue` (`/swarm`)                 | five different places to look | **Approvals** = the page (rename `/inbox` → `Approvals` in sidebar, it already is, but the route is `inbox`). Fold `Reactor activity` _into_ `/approvals` as a tab. Rename `Sync Inbox` → `Connectors` and move under `/integrations`. Kill `Attention queue` as a label, it's just "Awaiting you." | One place to look                                                  | medium                                     |
 | Telemetry surface       | `AI Ops` (sidebar group); `AI Analytics`; `Traces`; `Drift`; `Eval Harness`                                                                      | "what's the difference?"      | Rename group to **Observe**. Items: `Analytics`, `Traces`, `Evals`, `Drift`. Drop `AI`, drop `Harness`.                                                                                                                                                                                               | "AI Ops" is industry jargon; "Observe" is a verb the operator does | small                                      |
 | Builder surface         | `Build Console`                                                                                                                                  | "is this where I write code?" | **Builder** (matches the agent name `Builder`)                                                                                                                                                                                                                                                        | The page IS the Builder agent's lane                               | tiny                                       |
 | Goal-input field        | `Mission goal`; `What needs to happen today?`; `Brief…`; `What should the Builder ship?`                                                         | inconsistent                  | Always: **"What should &lt;agent&gt; do?"** for direct dispatch. **"What's the mission?"** for orchestrated work.                                                                                                                                                                                     | Two patterns, not five                                             | small                                      |
@@ -150,7 +150,7 @@ Each row is a concept the product uses. Drift = same concept named differently a
 | `/`                                  | Today         | top rail      | Today                                             |
 | `/briefing`                          | Briefing      | top rail      | Brief                                             |
 | `/inbox`                             | Approvals     | top rail      | Approvals (tab: _From agents_)                    |
-| `/governance` Reactor activity panel | —             | `/approvals`  | tab: _From events_                                |
+| `/governance` Reactor activity panel | -             | `/approvals`  | tab: _From events_                                |
 | `/sync`                              | Sync Inbox    | `/approvals`  | tab: _From connectors_                            |
 | `/chat`                              | AI Chat       | top rail      | Chat                                              |
 | `/discovery`                         | Discovery     | `/discover`   | tab: _Signals_                                    |
@@ -174,9 +174,9 @@ Each row is a concept the product uses. Drift = same concept named differently a
 | `/budgets`                           | Budgets       | `/govern`     | tab: _Budgets_                                    |
 | `/governance` rules                  | Governance    | `/govern`     | tab: _Rules & pause_                              |
 | `/integrations`                      | Integrations  | `/connectors` | tab: _Integrations_ (default)                     |
-| **NEW**                              | —             | `/outcome`    | tabs: _Releases · Launches · Support · Learnings_ |
+| **NEW**                              | -             | `/outcome`    | tabs: _Releases · Launches · Support · Learnings_ |
 
-**Dies on the operator surface (kept as URLs for back-compat redirects only):** `Build Console`, `Swarm HUD`, `Eval Harness`, `Sync Inbox`, `AI Ops`, `AI Chat`, `AI Analytics`, `Prompt Studio` (the word _Studio_ — keep as a tab named _Prompts_).
+**Dies on the operator surface (kept as URLs for back-compat redirects only):** `Build Console`, `Swarm HUD`, `Eval Harness`, `Sync Inbox`, `AI Ops`, `AI Chat`, `AI Analytics`, `Prompt Studio` (the word _Studio_, keep as a tab named _Prompts_).
 
 ---
 
@@ -184,15 +184,15 @@ Each row is a concept the product uses. Drift = same concept named differently a
 
 **Sampling method:** read every `Tooltip`, `title=`, `HoverCard`, `cursor-help` instance in `src/routes` + `src/components/cadence`. Cluster: Keep / Rewrite / Delete / Add-missing.
 
-### 4.1 Delete (label carries the meaning — tooltip is restating it)
+### 4.1 Delete (label carries the meaning, tooltip is restating it)
 
 | Where                    | Tooltip text                                                                                     | Verdict                                                                                                    |
 | ------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `/build` PR link         | `title={run.pr.url}`                                                                             | DELETE — the URL is the link target                                                                        |
-| `/discovery` row actions | `title="Promote to opportunity"` / `title="Lineage"` / `title="Delete"`                          | DELETE — replace icon-only buttons with **icon + label** at sm+ breakpoints; tooltip only at narrow widths |
-| `/docs` toolbar          | `title="New nested page"`, `title="Delete"`, `title="Change icon"`, `title="Import from Notion"` | DELETE — same as above                                                                                     |
-| `/governance` extend-TTL | `title="Extend TTL 24h"`                                                                         | DELETE — make it a labeled button `Extend 24h`                                                             |
-| Sidebar collapsed state  | tooltip = label (auto)                                                                           | KEEP — this is the canonical use of a tooltip                                                              |
+| `/build` PR link         | `title={run.pr.url}`                                                                             | DELETE. The URL is the link target                                                                        |
+| `/discovery` row actions | `title="Promote to opportunity"` / `title="Lineage"` / `title="Delete"`                          | DELETE. Replace icon-only buttons with **icon + label** at sm+ breakpoints; tooltip only at narrow widths |
+| `/docs` toolbar          | `title="New nested page"`, `title="Delete"`, `title="Change icon"`, `title="Import from Notion"` | DELETE. Same as above                                                                                     |
+| `/governance` extend-TTL | `title="Extend TTL 24h"`                                                                         | DELETE. Make it a labeled button `Extend 24h`                                                             |
+| Sidebar collapsed state  | tooltip = label (auto)                                                                           | KEEP. This is the canonical use of a tooltip                                                              |
 
 **Rule:** an icon-only control needs a label, not a tooltip. Tooltips are for _additional_ meaning, never the _primary_ meaning.
 
@@ -209,13 +209,13 @@ Each row is a concept the product uses. Drift = same concept named differently a
 
 ### 4.3 Add (missing where the operator would ask)
 
-- **`/build` BUNDLE label** — currently no tooltip and no meaning. Replace label entirely (see §6).
-- **`/discovery` "Phase 2 · Reasoning engine" mono-label** — replace, don't tooltip.
-- **`/swarm` "the swarm is humming"** — replace empty state (see §5).
-- **Approval-gate rows on `/inbox`** — every row needs a one-liner: _what will happen if I approve, what gets rolled back if I reject._ Currently the agent's rationale carries this, but the _action consequence_ is implicit.
-- **`/budgets` "Daily USD cap"** — add `Resets at midnight UTC. Hard stop, not a warning.` Operators need to know if it's a soft or hard cap.
-- **`/traces` step rows** — token/cost chips need `Cached calls still count.` to teach the chokepoint semantics.
-- **`/evals` score column** — `0–1, higher is better. Set in the eval template.` Currently the scale is implicit.
+- **`/build` BUNDLE label**, currently no tooltip and no meaning. Replace label entirely (see §6).
+- **`/discovery` "Phase 2 · Reasoning engine" mono-label**, replace, don't tooltip.
+- **`/swarm` "the swarm is humming"**, replace empty state (see §5).
+- **Approval-gate rows on `/inbox`**, every row needs a one-liner: _what will happen if I approve, what gets rolled back if I reject._ Currently the agent's rationale carries this, but the _action consequence_ is implicit.
+- **`/budgets` "Daily USD cap"**, add `Resets at midnight UTC. Hard stop, not a warning.` Operators need to know if it's a soft or hard cap.
+- **`/traces` step rows**, token/cost chips need `Cached calls still count.` to teach the chokepoint semantics.
+- **`/evals` score column**, `0–1, higher is better. Set in the eval template.` Currently the scale is implicit.
 
 ### 4.4 Tooltip discipline rule (binding if adopted)
 
@@ -229,7 +229,7 @@ Each row is a concept the product uses. Drift = same concept named differently a
 
 ## 5. Empty states, errors, and toasts
 
-### 5.1 Empty states — current vs. proposed
+### 5.1 Empty states: current vs. proposed
 
 | Where                     | Current                                                                      | Proposed                                                                                      |
 | ------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -242,16 +242,16 @@ Each row is a concept the product uses. Drift = same concept named differently a
 | `/inbox` H1               | `Approvals` ✅ keep                                                          |
 | `/discovery` H1           | (long)                                                                       | `Discover` (matches new IA)                                                                   |
 
-### 5.2 Errors — current voice is mixed
+### 5.2 Errors: current voice is mixed
 
-- **Operator-actionable**: `Couldn't load brief` ✅ (good — short, no blame)
+- **Operator-actionable**: `Couldn't load brief` ✅ (good, short, no blame)
 - **Tech-leak example**: any "supabase" / "RLS" / "PostgREST" string in toasts. None spotted in routes, but `client.ts` errors can bubble. **Rule: never show internal infra names to the operator.**
-- **Pattern to enforce:** `<What failed>. <What to do.>` — e.g. `Couldn't load brief. Retry in a moment or check connectors.`
+- **Pattern to enforce:** `<What failed>. <What to do.>`, e.g. `Couldn't load brief. Retry in a moment or check connectors.`
 
 ### 5.3 Toasts
 
 - `toast.success("Welcome back")` ✅ keep
-- Many actions toast nothing — for irreversible writes (approve, reject, dispatch, release claim) we owe a toast: `Approved · Discovery will start drafting.`
+- Many actions toast nothing, for irreversible writes (approve, reject, dispatch, release claim) we owe a toast: `Approved · Discovery will start drafting.`
 - Never toast on every keystroke or save. Only state-change confirmations.
 
 ---
@@ -270,7 +270,7 @@ Each row is a concept the product uses. Drift = same concept named differently a
 
 ## 7. Agent / AI surface vocabulary spec
 
-Canonical terms — pick once, hold the line everywhere.
+Canonical terms: pick once, hold the line everywhere.
 
 **Agent states** (live status pill):
 
@@ -281,7 +281,7 @@ Canonical terms — pick once, hold the line everywhere.
 - `Done` (not `Completed`, not `Finished`)
 - `Failed` (not `Errored`, not `Crashed`)
 
-**Trust stages** (the arc — keep, they're good):
+**Trust stages** (the arc, keep, they're good):
 
 - `Observing` · `Proving` · `Trusted` · `Ambient` ✅ keep all four
 
@@ -293,7 +293,7 @@ Canonical terms — pick once, hold the line everywhere.
 
 **Trace step labels** (in `/traces/$traceId`):
 
-- `Thought` (model reasoning step) — keep
+- `Thought` (model reasoning step), keep
 - `Tool call: <tool>` (not `Action: <tool>`)
 - `Tool result` (not `Observation`)
 - `Handoff → <agent>` (not `Transferred to`)
@@ -308,10 +308,10 @@ Canonical terms — pick once, hold the line everywhere.
 
 ## 8. Marketing / public surfaces
 
-- `/login` + `/signup` — see §6 fix #1. The signup subhead should match.
-- `__root.tsx` `<title>` — currently the route H1; **set page-specific titles** (`Today · Cadence`, `Approvals · Cadence`, `Trace abc1234 · Cadence`).
-- **Meta descriptions** — there is no per-route `head()` description for the authenticated app (correct — they're behind auth). For `/p/$slug` and any future public pages, every page needs its own `<60-char title` and `<160-char description`. Currently the published preview shows the generic Cadence title.
-- **OG image** — set per public route, not at root (per the TanStack head() rule in the stack guide).
+- `/login` + `/signup`, see §6 fix #1. The signup subhead should match.
+- `__root.tsx` `<title>`, currently the route H1; **set page-specific titles** (`Today · Cadence`, `Approvals · Cadence`, `Trace abc1234 · Cadence`).
+- **Meta descriptions**, there is no per-route `head()` description for the authenticated app (correct, they're behind auth). For `/p/$slug` and any future public pages, every page needs its own `<60-char title` and `<160-char description`. Currently the published preview shows the generic Cadence title.
+- **OG image**, set per public route, not at root (per the TanStack head() rule in the stack guide).
 
 ---
 
@@ -319,7 +319,7 @@ Canonical terms — pick once, hold the line everywhere.
 
 Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the rewrite + the rename + the redirect, not the underlying feature.
 
-### P0 — Ship in week 1 (zero engineering risk, maximum first-impression lift)
+### P0: Ship in week 1 (zero engineering risk, maximum first-impression lift)
 
 | ID        | Change                                                                                                              | I × E × H × S × B                         |
 | --------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
@@ -328,30 +328,30 @@ Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the r
 | `LANG-06` | Rewrite Today empty state (drop "hit refresh") + Swarm empty state (drop "humming")                                 | 8 × 1 × Now × 6 × Reduces "what do I do?" |
 | `LANG-08` | Sentence-case every page H1; drop the serif gradients on `Upcoming meetings` / `All tasks`                          | 6 × 2 × Now × 5 × Voice consistency       |
 
-### P1 — Ship in weeks 2–3 (renames + tooltip cleanup)
+### P1: Ship in weeks 2 to 3 (renames + tooltip cleanup)
 
 | ID            | Change                                                                                                                                                                                                | I × E × H × S × B                  |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | `LANG-05`     | Rename `Build Console`→`Builder`, `Eval Harness`→`Evals`, `Swarm HUD`→`Swarm`, `AI Ops`→`Observe`, `AI Chat`→`Chat`, `AI Analytics`→`Analytics`, `Prompt Studio`→`Prompts`, `Sync Inbox`→`Connectors` | 8 × 3 × Wk2 × 8 × IA legibility    |
 | `LANG-07`     | Replace `window.prompt()` flows in `AppShell.tsx` (workspace + product creation) with proper dialogs + sentence-case labels                                                                           | 6 × 3 × Wk2 × 5 × Professionalism  |
 | `LANG-09`     | Rewrite all approval-gate row copy to lead with consequence (`Approve · <what happens>`)                                                                                                              | 7 × 3 × Wk2 × 7 × Trust            |
-| `TOOLTIP-DEL` | Apply §4.1 (delete restating tooltips) — about 15 sites                                                                                                                                               | 5 × 2 × Wk2 × 4 × Density          |
-| `TOOLTIP-REW` | Apply §4.2 (rewrite to consequence-first) — about 8 sites, mostly `/agents`                                                                                                                           | 6 × 3 × Wk3 × 6 × Trust legibility |
+| `TOOLTIP-DEL` | Apply §4.1 (delete restating tooltips), about 15 sites                                                                                                                                               | 5 × 2 × Wk2 × 4 × Density          |
+| `TOOLTIP-REW` | Apply §4.2 (rewrite to consequence-first), about 8 sites, mostly `/agents`                                                                                                                           | 6 × 3 × Wk3 × 6 × Trust legibility |
 
-### P2 — Ship in weeks 4–6 (IA restructure)
+### P2: Ship in weeks 4 to 6 (IA restructure)
 
 | ID                 | Change                                                                                                                  | I × E × H × S × B                                  |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `LANG-IA-12`       | Apply §3 — collapse 31 routes → 12 surfaces with old→new redirects                                                      | 9 × 8 × Wk6 × 9 × Cognitive load                   |
-| `LANG-NEW-OUTCOME` | Ship `/outcome` (Releases · Launches · Support · Learnings) — empty surfaces are fine if the loop is named              | 8 × 6 × Wk6 × 9 × Closes the loop (also v3 REC-07) |
+| `LANG-IA-12`       | Apply §3, collapse 31 routes → 12 surfaces with old→new redirects                                                      | 9 × 8 × Wk6 × 9 × Cognitive load                   |
+| `LANG-NEW-OUTCOME` | Ship `/outcome` (Releases · Launches · Support · Learnings), empty surfaces are fine if the loop is named              | 8 × 6 × Wk6 × 9 × Closes the loop (also v3 REC-07) |
 | `LANG-04`          | Publish the glossary; add a CI script that flags banned synonyms (`Trajectory`, `Run` for missions, `Specialist` in UI) | 5 × 3 × Wk5 × 7 × Discipline                       |
 
-### P3 — Continuous (voice enforcement)
+### P3: Continuous (voice enforcement)
 
 | ID          | Change                                                                                                                               | I × E × H × S × B                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
 | `LANG-10`   | Publish one-page voice guide; link from `design.md`; add to onboarding for every tool (Lovable / Claude Code / Antigravity / Gemini) | 6 × 2 × Wk4 × 8 × Drift prevention |
-| `LANG-CHIP` | Enforce AI-message chip spec (§1) via component prop types — `<AiCallChip model via score latency tokens cost />`                    | 5 × 4 × Wk5 × 6 × Consistency      |
+| `LANG-CHIP` | Enforce AI-message chip spec (§1) via component prop types, `<AiCallChip model via score latency tokens cost />`                    | 5 × 4 × Wk5 × 6 × Consistency      |
 
 ---
 
@@ -382,7 +382,7 @@ Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the r
 
 - LANG-01 → folded into `F-VOICE-LOGIN` (P0, with REC-01)
 - LANG-02 → folded into `F-VOICE-VERSIONS` (P0, with REC-18)
-- LANG-03 → folded into `F-IA-RENAMES` (P1) — sidebar rename batch
+- LANG-03 → folded into `F-IA-RENAMES` (P1), sidebar rename batch
 - LANG-04 → `F-VOICE-GLOSSARY` (P1)
 - LANG-05 → `F-IA-RENAMES` (P1)
 - LANG-06 → `F-VOICE-EMPTY-TODAY` (P0)

@@ -8,17 +8,17 @@
 
 ## 1. What the number means (operator view)
 
-**Scale: 0–100.** Every agent gets one Trust score, recomputed on every read
-from the real history Cadence already records — no cached column, can't go
+**Scale: 0 to 100.** Every agent gets one Trust score, recomputed on every read
+from the real history Cadence already records. No cached column, can't go
 stale.
 
 |  Score | Qualitative label   | What it says                                                                                                     |
 | -----: | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-|   0–34 | At-risk / Observing | Brand new or recently failed. Keep on Observing — every tool call should queue for review.                       |
-|  35–54 | Observing           | Below neutral. Mistakes still likely; keep human eyes on every step.                                             |
-|  55–74 | Proving             | Earning trust. Right more often than not, but worth catching errors with a one-click confirm.                    |
-|  75–89 | Trusted             | Consistently succeeds, takes feedback well, evals look good. Day-to-day default — confirm-mode tools run inline. |
-| 90–100 | Ambient             | Exceptionally reliable. Runs inline except for hard-locked high-risk tools (e.g. `calendar.create`).             |
+| 0 to 34 | At-risk / Observing | Brand new or recently failed. Keep on Observing. Every tool call should queue for review.                       |
+| 35 to 54 | Observing           | Below neutral. Mistakes still likely; keep human eyes on every step.                                             |
+| 55 to 74 | Proving             | Earning trust. Right more often than not, but worth catching errors with a one-click confirm.                    |
+| 75 to 89 | Trusted             | Consistently succeeds, takes feedback well, evals look good. Day-to-day default; confirm-mode tools run inline. |
+| 90 to 100 | Ambient             | Exceptionally reliable. Runs inline except for hard-locked high-risk tools (e.g. `calendar.create`).             |
 
 Agents with fewer than ~10 missions are pulled toward 50 (neutral) by a
 Bayesian shrinkage prior so a single lucky run can't show 95.
@@ -42,9 +42,9 @@ shrink(r, n) = (r · n + 0.5 · 10) / (n + 10)
 |    30% | Mean eval score          | `evals.score` joined via `ai_events.agent_id`  | Automated quality scores on outputs (plan quality, code correctness, spec completeness, etc.).  |
 
 The total **samples** number (`missions + approvals + evals`) drives the
-shrinkage — until it crosses ~10, the score is conservative by design.
+shrinkage. Until it crosses ~10, the score is conservative by design.
 
-## 3. The Autonomy Dial — what each arc actually does
+## 3. The Autonomy Dial: what each arc actually does
 
 The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
 (`src/lib/ai/loop.server.ts`) composes the arc with each tool's per-tool
@@ -79,7 +79,7 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
 - **Reserve Ambient** for agents whose mistakes you'd be comfortable
   catching after the fact, not before.
 - **Demote at the first regression.** A drop in approval acceptance or a
-  failed mission is a reason to step the dial back down — the safety floor
+  failed mission is a reason to step the dial back down. The safety floor
   is there for hard limits, not for routine prudence.
 
 ## 5. Where it lives in the codebase
@@ -91,7 +91,7 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
   (`getAllAgentTrust`, `setAgentArc`).
 - Loop integration: `src/lib/ai/loop.server.ts` calls
   `resolveApprovalMode(toolMode, arc)` at every tool-call gate.
-- UI: `src/routes/_authenticated.agents.tsx` — `TrustChip` (with full
+- UI: `src/routes/_authenticated.agents.tsx`, `TrustChip` (with full
   tooltip breakdown) and `AutonomyDial` (with per-arc tooltips).
 
 ## 6. What this is _not_
@@ -101,7 +101,7 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
 - Not auto-promoted. The dial is always a human decision.
 - Not retroactive. Changing the arc affects future tool calls, not the
   current decision queue.
-- Not a substitute for evals or guardrails — it's a summary _of_ them.
+- Not a substitute for evals or guardrails. It's a summary _of_ them.
 
 ## 7. Related
 
@@ -109,5 +109,5 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
 - Orchestration contract (approval modes, sweeper, mission lifecycle): [`../architecture/orchestration.md`](../architecture/orchestration.md)
 - Governance & approval gates (kill-switch, caps, Decision Queue): [`../architecture/security.md`](../architecture/security.md)
 - AI runtime chokepoint (where the gate is enforced server-side): [`../architecture/runtime.md`](../architecture/runtime.md)
-- Feature ticket (C6 — Trust score + Autonomy dial): [`feature-backlog.md`](./feature-backlog.md)
+- Feature ticket (C6, Trust score + Autonomy dial): [`feature-backlog.md`](./feature-backlog.md)
 - Parent index: [`README.md`](./README.md)
