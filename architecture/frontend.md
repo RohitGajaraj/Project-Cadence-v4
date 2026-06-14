@@ -6,7 +6,7 @@
 
 TanStack Start v1 (React 19 + Vite 7) on Cloudflare Workers (`nodejs_compat`), TailwindCSS v4, shadcn/ui (Radix), Framer Motion, Tiptap, Lucide. Canonical runtime: Bun.
 
-`vite.config.ts` is load-bearing for published builds: it keeps the custom SSR error-wrapper entry and explicitly injects the public backend URL/key into `import.meta.env`. The config uses Vite `loadEnv(...)` at module evaluation plus checked-in public fallbacks because Lovable publish builds may not expose these values on `process.env` early enough for config-time `define` replacement. Without that public injection, protected pages hydrate into the root error boundary before the auth redirect runs.
+`vite.config.ts` is load-bearing for published builds: it keeps the custom SSR error-wrapper entry and explicitly injects the public backend URL/key into `import.meta.env`. The config uses Vite `loadEnv(...)` at module evaluation plus checked-in public fallbacks because Lovable publish builds may not expose these values on `process.env` early enough for config-time `define` replacement. Without that public injection, protected pages hydrate into the root error boundary before the auth redirect runs. It also excludes TanStack Start's isomorphic core from dev dependency optimization so the plugin can preserve the client/server split; pre-bundling that core can load server async-storage code in the browser and blank the preview.
 
 Public auth routes (`/login`, `/signup`, `/forgot-password`, `/reset-password`) are client-only (`ssr: false`) because their route gates read browser auth state and may redirect after local session inspection. Keeping them SSR-rendered can make the server tree differ from the hydrated browser tree after `/` redirects to `/login`, which blanks the preview.
 
