@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           decided_by: string | null
+          decision_reason: string | null
           error: string | null
           escalated_at: string | null
           escalated_to: string | null
@@ -43,6 +44,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_reason?: string | null
           error?: string | null
           escalated_at?: string | null
           escalated_to?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_reason?: string | null
           error?: string | null
           escalated_at?: string | null
           escalated_to?: string | null

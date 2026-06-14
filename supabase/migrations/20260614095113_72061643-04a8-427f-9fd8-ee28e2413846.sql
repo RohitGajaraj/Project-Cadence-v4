@@ -1,0 +1,1 @@
+ALTER TABLE public.agent_approvals ADD COLUMN IF NOT EXISTS decision_reason text;
