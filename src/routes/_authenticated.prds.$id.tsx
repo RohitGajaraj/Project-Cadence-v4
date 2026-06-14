@@ -354,7 +354,9 @@ function PrdEditor() {
                         {t.seq != null ? `#${t.seq}` : "·"}
                       </span>
                       <span className="font-medium">{t.title}</span>
-                      {t.detail ? <span className="text-muted-foreground">— {t.detail}</span> : null}
+                      {t.detail ? (
+                        <span className="text-muted-foreground">— {t.detail}</span>
+                      ) : null}
                       {t.estimate_hours ? (
                         <span className="mono-label text-[10px] text-muted-foreground">
                           {t.estimate_hours}h
@@ -369,10 +371,7 @@ function PrdEditor() {
                         </span>
                       ) : null}
                       {t.risk ? (
-                        <span
-                          className="mono-label text-[10px] text-[var(--ember)]"
-                          title={t.risk}
-                        >
+                        <span className="mono-label text-[10px] text-[var(--ember)]" title={t.risk}>
                           risk
                         </span>
                       ) : null}
