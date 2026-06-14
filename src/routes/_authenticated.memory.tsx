@@ -3,7 +3,7 @@
 // Knowledge > Memory tab (which shows the human-recorded `learnings` table):
 // this is what the LOOP keeps for itself. Server fn: memory.functions.ts.
 // Thin route + fat component, per the house pattern (see knowledge.tsx).
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
@@ -50,7 +50,21 @@ function MemoryPage() {
           kicker="Loop · Recall"
           icon={Sparkles}
           title="Memory"
-          sub="What the loop has learned and reaches for again. Each reflection an agent wrote and each outcome it distilled, ordered by what it recalled most recently."
+          sub={
+            <>
+              What the loop has learned and reaches for again. Each reflection an agent wrote and
+              each outcome it distilled, ordered by what it recalled most recently. Distinct from
+              the{" "}
+              <Link
+                to="/knowledge"
+                search={{ tab: "memory" } as never}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                Knowledge memory tab
+              </Link>
+              , which is the human-recorded learnings feed.
+            </>
+          }
         />
         <MemoryList />
       </div>

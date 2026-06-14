@@ -83,6 +83,13 @@ export function MemoryList() {
           </strong>{" "}
           stored
         </span>
+        {/* Caveat sits next to the total so the breakdown below reads as window-scoped,
+            not all-time, once an account passes the row cap. */}
+        {totalAll > rows.length ? (
+          <span className="mono-label" style={{ fontSize: 8.5, color: "var(--ink-subtle)" }}>
+            showing the {rows.length} most recent
+          </span>
+        ) : null}
         {summary?.byKind.map((k) => (
           <span key={k.kind} className="mono-label" style={{ fontSize: 9 }}>
             <strong className="tabular-nums" style={{ color: "var(--ink)", fontWeight: 600 }}>
@@ -100,12 +107,6 @@ export function MemoryList() {
         {summary?.lastLearnedAt ? (
           <span className="mono-label" style={{ fontSize: 9 }}>
             last learned {relativeTime(summary.lastLearnedAt, now)}
-          </span>
-        ) : null}
-        <span style={{ flex: 1 }} />
-        {totalAll > rows.length ? (
-          <span className="mono-label" style={{ fontSize: 8.5 }}>
-            showing the {rows.length} most recent
           </span>
         ) : null}
       </div>
