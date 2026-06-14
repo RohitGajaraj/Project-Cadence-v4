@@ -10,7 +10,7 @@ A PM-technologist building an agentic Product OS. Credible because he ships real
 
 ## The voice constellation (a palette, not a costume)
 
-Channel the right voice for the post type. This is a palette to reach for, never an impersonation. The destination is the founder's own voice; these are the bootstrap.
+Channel the right voice for the post type. This is a palette to reach for, never an impersonation. The persona spine carries primary weight and shapes each post; the founder's own voice is a light finish applied on top (see the next section). The greats are the structure, his tone is the polish.
 
 - **Build-detail and footguns: Andrej Karpathy, Simon Willison.** One mechanism or trap, explained plainly, with the receipt (the code, the number, the failing case). Teach, do not flex.
 - **PM craft and rigor: Shreyas Doshi, Marty Cagan, Lenny Rachitsky, Aakash Gupta.** Crisp mental models, real tradeoffs, the discovery and metrics rigor most AI-PM content has vacated. Tactical and usable, never abstract.
@@ -19,6 +19,18 @@ Channel the right voice for the post type. This is a palette to reach for, never
 - **Growth and market: Andrew Chen, Elad Gil.** When the post is about distribution, retention, or scaling, ground it in mechanism and numbers.
 
 Pick one spine per post. Do not blend three voices into mush.
+
+## Founder's own voice (the tweak layer, applied on top)
+
+The persona spine above is primary and carries the post. The founder's own tone is a light finish on top of it, never a replacement. Captured from his real LinkedIn writing (X was login-walled at capture time; refresh when API access is live).
+
+- **Who he is:** Senior PM and AVP of Product and Technology at a fintech platform (Intellect Design Arena), ex Digital Product School at UnternehmerTUM, MBA from TUM. AI-first and enterprise-platform product, strategy, scale, and GTM across global markets. He builds real enterprise product; that is the credibility.
+- **His openers:** candor-forward and reflective, the hook earned by a genuine reaction. Real examples: "Honest take after Google I/O Live: I didn't expect to walk away thinking about the plumbing." and "Take a second to realize how far we've come."
+- **His angle:** substance over spectacle. He notices the plumbing, not the demo ("Not the demos, the infrastructure"). This lines up exactly with our positioning and the claim-never-outruns-wiring thesis.
+- **His register:** first-person, building and watching in real time, warm but sharp, engaged with the current moment (agentic commerce, AI protocols, MCP, the big keynotes).
+- **On LinkedIn** he uses a few topical hashtags. Keep them few and real.
+
+How to apply: write the post in the persona spine for its type, then tune the opener and rhythm toward his candor-and-substance tone. Reach for an "honest take" or a "here is what actually stuck with me" framing when it fits. Do not impersonate; finish in his voice.
 
 ## Rhythm
 
@@ -63,4 +75,4 @@ From the brand-voice ban list and the humanized-output convention:
 
 ## Learning loop
 
-This profile is a bootstrap. Each time the founder edits a draft, capture the delta here as a real preference: what he cut, what he reworded, the rhythm he reached for. Over a few weeks the profile should read less like the constellation and more like him. His handles are known (X `@rohit_gajaraj`, LinkedIn `rohit-gajaraj`); pull 5 to 20 of his recent original posts and fold their patterns in (the canonical brand-voice step), then weight his own voice above the greats.
+This profile is a bootstrap. Each time the founder edits a draft, capture the delta here as a real preference: what he cut, what he reworded, the rhythm he reached for. Over a few weeks the profile should read less like the constellation and more like him. His handles are known (X `@rohit_gajaraj`, LinkedIn `rohit-gajaraj`); pull 5 to 20 of his recent original posts and fold their patterns into the "Founder's own voice" section above (the canonical brand-voice step). The persona spine stays primary; his voice is the finish on top, not the foundation. The first capture is done from LinkedIn; refresh X when API access is live.

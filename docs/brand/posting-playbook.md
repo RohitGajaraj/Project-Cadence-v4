@@ -39,6 +39,52 @@ Rotate them; do not run the same pillar two days straight. Each maps to an audie
 4. **Decision of the week.** An anonymized, redacted real decision via the shipped `/d/$slug` shareable-decision link. The v7-designated growth loop; use real links only.
 5. **Community pain-point prompts.** Ask PMs and builders a genuine question about a problem we are solving. Listen, do not pitch. Builds the network.
 
+## Assets and proof (a post should rarely be text only)
+
+Show, do not just tell. Most posts carry a receipt that proves real building. Reach for one on every draft; default to including an asset unless the words genuinely stand alone:
+
+- a **code-snippet screenshot** (the real before-and-after, the failing test, the guard)
+- a **screenshot of the real surface** (a metric card, a trace, a decision page; redact account specifics)
+- a **link** to a real artifact (a `/d/$slug` decision, a repo, a doc, a deployed page)
+- a **research paper or external source** the post builds on (link it, quote the one line that matters)
+- a **chart or number** from real data (never invented)
+
+Format types (rotate; not every post is a mini-essay):
+
+- **Build note:** the mechanism or footgun, with the screenshot.
+- **Take:** a short, sharp claim about the AI or PM space.
+- **Survey or poll:** a genuine question with options, to learn from the audience (an X poll, a LinkedIn poll).
+- **Query:** an open question to the community about a real problem we are solving. Listen, do not pitch.
+- **Decision of the week:** the `/d/$slug` link plus the reasoning.
+- **Thread:** when one idea earns 3 to 5 connected posts.
+
+If a draft has no asset and no reason to skip one, it is not finished.
+
+## Posting times (engagement-tuned, deliberately jittered)
+
+Times are tuned to where the audience actually is, and jittered so the feed never looks like a cron job.
+
+Audience reality: the highest-value readers (US investors, recruiters at Google, DeepMind, Anthropic, and YC companies, and global PMs) skew US and Europe, with a real India base. The founder is in IST, so two windows do the heavy lifting:
+
+- **Morning IST (about 9:00 to 11:00):** catches India and Europe waking up.
+- **Evening IST (about 18:30 to 21:30):** this is US morning (roughly 8:00 to 11:00 ET), prime for LinkedIn and professional X reach.
+
+Platform notes:
+
+- **LinkedIn** rewards Tuesday to Thursday, mid-morning for the reader. For a US-heavy professional audience the evening-IST window wins.
+- **X** does well on weekday late mornings and again in the US afternoon (IST evening for AI and tech).
+
+The jitter rule (so it never feels mechanized):
+
+- Never post at a round time. Use real minutes (9:13, 18:47), not 9:00 or 18:30.
+- Vary the slot day to day. Do not anchor every post to the same hour.
+- Stagger X and LinkedIn on the same day; do not fire both at once.
+- Skip a day when there is nothing real to say. Gaps read human; clockwork reads automated.
+
+These start as best-practice heuristics tuned to the audience, not the founder's own analytics. After a few weeks on Buffer, real per-post engagement refines them, and the recommended times then come from his data, not a generic table.
+
+To Buffer: with the API token, each post is pushed with its exact recommended time already set, so the founder opens an approval-ready queue and just says go. No manual scheduling required.
+
 ## Cross-link mechanic
 
 Lead on X. When a post earns a longer LinkedIn version, publish it and reference the X thread so cross-platform followers connect the two. The Substack piece links back to both and goes deeper. Keep the core claim identical across surfaces.
@@ -54,7 +100,9 @@ pillar: build-detail
 platforms: [x, linkedin]   # add substack on the weekly synthesis piece
 status: draft              # draft | approved | posted
 source: content-well.md#reads-not-writes
-assets: none               # or a screenshot path or link
+assets: code-screenshot    # code screenshot | surface screenshot | link | paper | chart | none (with a reason)
+time_x: "09:13 IST"        # jittered, engagement-tuned (see Posting times)
+time_linkedin: "18:47 IST"
 ---
 
 ## X
