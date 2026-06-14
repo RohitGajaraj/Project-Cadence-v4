@@ -34,5 +34,8 @@ export default defineConfig({
         publicBackendKey,
       ),
     },
+    optimizeDeps: {
+      exclude: ["@tanstack/start-client-core", "@tanstack/react-start"],
+    },
   },
 });
