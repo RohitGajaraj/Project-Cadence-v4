@@ -2,6 +2,8 @@
 
 How posts get made and shipped. Voice lives in [`voice-profile.md`](./voice-profile.md); seeds live in [`content-well.md`](./content-well.md); who we write for lives in [`positioning.md`](./positioning.md).
 
+> **Binding (2026-06-15):** the "Founder content directives" in [`voice-profile.md`](./voice-profile.md) govern everything here. In short: plain business-and-product language for a non-technical audience, first person singular only (never "we"), a hook on line one, varied length and thread count, a rotating mix that is not all product, stealth on the product, and current-job safety. Where the older pillar list below leans build-detail or technical, the directives win: de-technicalize it or pick another pillar.
+
 ## Platform strategy (multi-platform from day one)
 
 Brand-building is a system, not a feed. The strongest PM creators run a repurposing flywheel: one real idea flows across surfaces within days. We start narrow and own the channels that compound.
@@ -39,7 +41,7 @@ Same core claim everywhere; only register and length change. The shared source i
 
 ## Content pillars
 
-Rotate them; do not run the same pillar two days straight. Each maps to an audience segment (see [`positioning.md`](./positioning.md)).
+Rotate them; do not run the same pillar two days straight. Each maps to an audience segment (see [`positioning.md`](./positioning.md)). Per the 2026-06-15 directives, lead with the business, product, market, investor-thesis, and early-adopter pillars; the build-detail pillar is de-emphasized and, when used, must be translated out of all engineering language. No raw technical posts.
 
 1. **Build-detail and footguns.** One mechanism or trap, with the receipt. Pulls builders and the AI-native crowd; signals real depth to recruiters. (Karpathy spine.)
 2. **PM craft and rigor.** Growth, metrics, and discovery craft done well, the lanes most AI-PM content has vacated. Pulls PM practitioners and hiring managers. (Shreyas, Cagan, Lenny, Aakash spine.)

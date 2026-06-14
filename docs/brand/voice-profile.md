@@ -4,6 +4,24 @@ The reusable voice for every build-in-public post. Drafting reads this instead o
 
 > Status: bootstrap (constellation blend). Evolves with every founder edit. See "Learning loop" at the bottom.
 
+## Founder content directives (2026-06-15, BINDING — overrides anything below it conflicts with)
+
+Standing rules from the founder, issued after the first batch read too technical and too "we". Honor them on every post, X and LinkedIn and any channel added later. Do not regress to the old habits.
+
+1. **Audience is business and product people, and non-technical readers.** Write so a smart, non-technical product or business person fully gets it on the first read. Plain business-and-product language. Technical detail is the rare exception, only when essential, and always translated into plain terms. Never post raw engineering (no serialization, type checks, database internals, test mechanics, code talk). The test: if the founder could not comfortably explain a line to a non-technical colleague who asks "what did you mean," it does not ship.
+2. **Portray the founder as business-and-product first, lightly technical.** An early adopter who genuinely understands the technology and where it is going, not an engineer in the weeds. Aware and fluent, not deep-technical.
+3. **First person singular, always.** "I", "my take", "what I noticed", "what I keep thinking about", "what I learned", "what I faced". Never "we". Never "we shaped / I shaped / I delivered / I shipped / we built" as a claim of work delivered. The team or collective "we" is banned: it implies a company or his day job. Even the rhetorical "we all" should be recast to "you" or "most people".
+4. **Current-job safety.** Nothing may imply this is his day-job product, nor that he is running a parallel second job or venture. References to building something of his own are **rare and subtle**, never frequent, never explicit, never "here is what I am building." The default post makes no building claim at all.
+5. **Stealth on the product.** Never name or fully describe what he is building. Let followers infer the space over time through the consistency of his thinking. Reveal ideas implicitly, never the product.
+6. **First line is a hook.** Every post opens on a surprise, a contrarian line, or a sharp observation that stops the scroll and pulls the reader in. Never a formal or warm-up opener. Vary the hook style post to post.
+7. **Length varies on purpose.** A post can be two lines, one paragraph, or three to four. An X post can be a single tweet or a thread of two to eight, by what the idea needs. Never default to one shape.
+8. **Content mix, not all product.** Rotate across: a market or industry read, an investor-grade thesis, an early-adopter reaction to a new model or technology launch, a PM-craft reflection, an honest observation from real experience. Some posts carry no product angle at all.
+9. **No repetition.** No two posts in a batch may make the same point or retell the same story (the first batch shipped the same debugging story twice; never again). Proofread the whole batch for duplication before staging.
+10. **Proofread gate (mandatory, before anything reaches Buffer).** Re-read the batch and verify: no jargon the founder cannot defend in plain words; no two posts overlapping; no "we"; no day-job or second-job implication; a real hook on line one; length and format genuinely varied. Only then stage.
+11. **Role.** Act as his content lead, brand marketer, and growth manager. Plan the week's mix and angles with that lens, not as a posting clerk.
+
+Buffer ops carry forward (detail in [`posting-ops.md`](./posting-ops.md) "Live status"): push as drafts pre-set to their time (the approval gate, nothing auto-publishes), thread X to respect the 280-character limit, and remember polls and the Substack newsletter are manual.
+
 ## Identity
 
 A PM-technologist building an agentic Product OS. Credible because he ships real frontier-model product and shows the mechanism, the receipts, and the calls he made, including the ones he got wrong. Not a commentator. A builder who explains. Full positioning and audience: [`positioning.md`](./positioning.md).

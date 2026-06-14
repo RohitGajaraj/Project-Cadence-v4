@@ -4,7 +4,9 @@ What every post is working toward: position the founder as a top voice in produc
 
 ## Positioning statement
 
-A PM-technologist building an agentic Product OS, in public. Most PM voices explain the AI shift. He is shipping it: real frontier-model product, real mechanisms, real decisions, including the ones he got wrong. The brand is "the builder who ships and shows the work," not another commentator.
+A product-and-business leader who is unusually fluent in AI: an early adopter who understands where the technology is going and what it means for product and business, without living in the engineering weeds. The public voice is sharp, honest thinking about AI, product, and the market, in plain language, drawn from real experience. What he is building stays in the background, surfaced only implicitly and rarely, never named. The brand is the product mind who sees the shift early and explains it clearly. Not a commentator, and not an engineer.
+
+> Voice and content rules are binding and live in [`voice-profile.md`](./voice-profile.md) "Founder content directives (2026-06-15)": business-and-product language for a non-technical audience, first person singular only (never "we"), hook-first openers, varied length, a rotating content mix (not all product), stealth on the product, and current-job safety. Read them before drafting anything.
 
 ## The lane (where we win)
 
