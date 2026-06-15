@@ -4,7 +4,9 @@ This is the single capture point for postable insights from building Circuit. As
 
 ## What these become, and the mix (context for whoever captures here)
 
-These entries become posts in the founder's private **build-in-public** system, so capture them with that in mind. The voice there is **lived first person (never "we"), hook-first, no call to action, stealth on the product, grounded in real fact, and humanized** (the full, binding rules live in the build-in-public repo's `voice-profile.md` and `knowledge.md`). You do not draft the post here. Just capture the real insight and its angle, accurately; the engine drafts it in voice.
+**Only solid, genuinely postable insights belong here. This is a high bar, not a build log.** If it would not make a genuinely good, interesting social post on its own, it does not go in. High signal, low noise: a typical week of building yields only a few entries worth capturing. Do not dump routine work, status updates, or every change here. When in doubt, leave it out.
+
+These entries become posts in the founder's private **build-in-public** system, so capture them with that in mind. The voice there is **lived first person (never "we"), hook-first, no call to action, stealth on the product, grounded in real fact, and humanized**. (The full binding rules, `voice-profile.md` and `knowledge.md`, live in the SEPARATE private `build-in-public` repo, not in this one. The engine runs with both repos checked out, so at run time it reads those rules together with this feed; the brief cue in this sentence is all you need when capturing here.) You do not draft the post here. Just capture the real insight and its angle, accurately; the engine drafts it in voice.
 
 **Not every post comes from this feed, and that is by design.** The week is a deliberate **mix**: roughly half from real build work (this feed) and half from the wider world (market moves, model and tool launches, product-management shifts, early-adopter takes). So this feed is one input, not the only one. Capture what is genuinely notable and postable; never force a small or internal detail into a post just to fill the feed.
 
