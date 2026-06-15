@@ -20,7 +20,7 @@
 | A market / competitive / research reference | `docs/references/` | this file (§ References) |
 | An ops runbook or policy (commits · hooks · memory · skills · subagents · tools · git-discipline · demo-credentials · runbooks) | `docs/operations/` | this file (§ Operator guides) |
 | A durable cross-tool convention (UI chrome · voice · destructive · inline · checklist) | `docs/conventions/` | [`docs/conventions/README.md`](./conventions/README.md) |
-| A build-in-public / brand content doc | `docs/brand/` | [`docs/brand/README.md`](./brand/README.md) |
+| A build-in-public / brand content doc | the separate **private** `build-in-public` repo (not this repo) | n/a (moved out 2026-06-15) |
 | A per-feature operator / demo spec | `docs/features/` | [`docs/features/README.md`](./features/README.md) |
 | An architecture contract (runtime · orchestration · security · data · frontend · integrations) | `architecture/` | this file (links throughout) |
 | An ADR / technical decision | `docs/decisions/` | this file (§ Decisions) |
@@ -63,9 +63,7 @@ Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMI
 
 ## Brand & build-in-public
 
-| File | Purpose |
-| --- | --- |
-| [`brand/README.md`](./brand/README.md) | **The build-in-public brand system.** Positioning and audience, the voice profile, the multi-platform cadence (X, LinkedIn, Substack), the content well of real build insights, the draft queue, and the automated-posting setup. Standing rule for every tool: capture non-obvious build insights to `brand/content-well.md`, draft in the founder's voice, never post to his accounts without his explicit approval. |
+The build-in-public brand system was **split into a separate private repo** (`RohitGajaraj/build-in-public`) on 2026-06-15, so the founder's personal brand, voice, drafts, and social tokens stay out of this (shareable) product repo. It is no longer in `docs/brand/`. **Standing rule for every tool working in this repo:** when a non-obvious build insight surfaces, append it to that repo's `content-well.md` (the one-way insight feed) so the weekly content routine can draft from it; never post to the founder's accounts without his explicit approval. Do not recreate `docs/brand/` here.
 
 ## Architecture contracts (the `../architecture/` folder)
 
