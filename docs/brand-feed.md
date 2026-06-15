@@ -6,6 +6,15 @@ This is the single capture point for postable insights from building Circuit. As
 
 **Only solid, genuinely postable insights belong here. This is a high bar, not a build log.** If it would not make a genuinely good, interesting social post on its own, it does not go in. High signal, low noise: a typical week of building yields only a few entries worth capturing. Do not dump routine work, status updates, or every change here. When in doubt, leave it out.
 
+**What qualifies (the bar). An entry should clear most of these:**
+- It teaches a non-obvious lesson, or reveals a real mechanism, decision, tradeoff, or honest mistake — something a smart reader gains 30 to 60 seconds of genuine value from.
+- It is grounded in something that actually happened, with exact facts (real numbers, real behavior). Never invent or round for effect.
+- It is public-safe: no secrets, credentials, customer data, or anything that breaks product stealth or current-job safety.
+- It is fresh enough to be interesting and not already covered in a recent post (check the de-dup line at the bottom).
+- It stands on its own as a post, without naming the product or the audience.
+
+If it clears the bar, capture it with a **capture cue**: the specific screenshot, short screen recording, link, or account to tag that would make the eventual post stronger. The founder attaches these himself in Buffer; the cue tells him exactly what to grab. Note "none" if no proof helps.
+
 These entries become posts in the founder's private **build-in-public** system, so capture them with that in mind. The voice there is **lived first person (never "we"), hook-first, no call to action, stealth on the product, grounded in real fact, and humanized**. (The full binding rules, `voice-profile.md` and `knowledge.md`, live in the SEPARATE private `build-in-public` repo, not in this one. The engine runs with both repos checked out, so at run time it reads those rules together with this feed; the brief cue in this sentence is all you need when capturing here.) You do not draft the post here. Just capture the real insight and its angle, accurately; the engine drafts it in voice.
 
 **Not every post comes from this feed, and that is by design.** The week is a deliberate **mix**: roughly half from real build work (this feed) and half from the wider world (market moves, model and tool launches, product-management shifts, early-adopter takes). So this feed is one input, not the only one. Capture what is genuinely notable and postable; never force a small or internal detail into a post just to fill the feed.
