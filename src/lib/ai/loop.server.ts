@@ -818,7 +818,7 @@ export async function resumeAgentLoop(
   const { data: run } = await supabase
     .from("agent_runs")
     .select(
-      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,model,mission_spend_cap_usd,mission_token_cap",
+      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,mission_spend_cap_usd,mission_token_cap",
     )
     .eq("id", runId)
     .maybeSingle();

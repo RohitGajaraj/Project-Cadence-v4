@@ -429,7 +429,7 @@ export const getStudioSession = createServerFn({ method: "GET" })
 
     const { data: runs } = await db
       .from("agent_runs")
-      .select("id,status,model,created_at,last_checkpoint_at,step_index,output")
+      .select("id,status,created_at,last_checkpoint_at,step_index,output")
       .eq("mission_id", data.missionId)
       .eq("agent_slug", "builder")
       .order("created_at", { ascending: true });
