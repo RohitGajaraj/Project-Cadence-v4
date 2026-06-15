@@ -196,7 +196,6 @@ export async function runAgentLoop(
           status: "queued",
           workspace_id: workspaceId,
           mission_id: input.missionId ?? null,
-          model: input.model ?? null,
           mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
           mission_token_cap: input.missionTokenCap ?? null,
         })
@@ -227,7 +226,6 @@ export async function runAgentLoop(
       status: "running",
       workspace_id: workspaceId,
       mission_id: input.missionId ?? null,
-      model: input.model ?? null,
       mission_spend_cap_usd: input.missionSpendCapUsd ?? null,
       mission_token_cap: input.missionTokenCap ?? null,
     })
