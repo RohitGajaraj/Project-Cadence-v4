@@ -1,8 +1,8 @@
 # strategic-tasks.md
 
 > [!IMPORTANT]
-> **DOCUMENT REDIRECT & RE-ROUTING (CADENCE ➔ CIRCUIT)**
-> As part of the documentation restructuring and strategic pivot to **Circuit** (B2B Enterprise Product Cockpit), this file has been relocated to keep the repository layout clean.
+> **DOCUMENT REDIRECT & RE-ROUTING**
+> As part of the documentation restructuring and strategic pivot to **Cadence** (B2B Enterprise Product Cockpit), this file has been relocated to keep the repository layout clean.
 >
 > **New Path:** [docs/planning/strategic-tasks.md](./docs/planning/strategic-tasks.md) — the strategic P0–P3 view. The **canonical task queue** is the Build-order rollup in [docs/planning/feature-backlog.md](./docs/planning/feature-backlog.md); the in-flight cursor is [active-task.md](./active-task.md) (root, when present). Constitution mapping: [Ai_Cofounder.md → Repo Concordance](./Ai_Cofounder.md).
 >

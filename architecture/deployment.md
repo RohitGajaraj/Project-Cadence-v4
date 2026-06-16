@@ -1,6 +1,6 @@
 # architecture/deployment.md: Deployment and operations contract
 
-> **What this is.** How Circuit gets from source to a running production system, and how it is kept running. Build path, runtime topology, secrets, the per-minute cron loop, the migration model, environments, rollback, and the known operational risks. Rules: [`AGENTS.md`](../AGENTS.md). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint it deploys: [`runtime.md`](./runtime.md). The data layer it deploys: [`data.md`](./data.md). The mission engine the cron drives: [`orchestration.md`](./orchestration.md).
+> **What this is.** How Cadence gets from source to a running production system, and how it is kept running. Build path, runtime topology, secrets, the per-minute cron loop, the migration model, environments, rollback, and the known operational risks. Rules: [`AGENTS.md`](../AGENTS.md). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint it deploys: [`runtime.md`](./runtime.md). The data layer it deploys: [`data.md`](./data.md). The mission engine the cron drives: [`orchestration.md`](./orchestration.md).
 
 This doc does not restate the chokepoint or the schema. It covers the wiring around them: how the worker is built, where secrets live, what runs on a schedule, and how a migration reaches the live database. Where a claim touches an unfinished part of the system, it is marked **Built**, **Partial**, or **Missing/Planned** so the operational picture never outruns the wiring (the §13 founder ruling).
 
@@ -8,7 +8,7 @@ This doc does not restate the chokepoint or the schema. It covers the wiring aro
 
 ## 1. The shape of the system
 
-One worker, one database, one gateway. Circuit is a single Cloudflare Worker that serves SSR React and the API routes, talks to a hosted Supabase Postgres over the wire, and reaches models through the Lovable AI gateway. The cron loop that makes the agent loop run itself lives in Supabase `pg_cron`, calling back into the worker's hook routes once a minute.
+One worker, one database, one gateway. Cadence is a single Cloudflare Worker that serves SSR React and the API routes, talks to a hosted Supabase Postgres over the wire, and reaches models through the Lovable AI gateway. The cron loop that makes the agent loop run itself lives in Supabase `pg_cron`, calling back into the worker's hook routes once a minute.
 
 ```mermaid
 flowchart LR

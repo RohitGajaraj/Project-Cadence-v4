@@ -18,7 +18,7 @@ Anything reachable by prompt is reachable by contract, and vice versa.
 
 ## Naming & legacy equivalence (ruling 2026-06-12)
 
-User-facing name is **Studio** everywhere: nav, "Send to Studio", agent display name, docs. Internal legacy identifiers are **not** migrated (zero-risk, same pattern as Cadence→Circuit): `agent_slug='builder'`, `builder_file_claims`, `build.functions.ts` remain and are to be read as ≡ Studio. New code uses `studio.*` naming natively. The Prompt Studio cost bucket (`CallSurface 'studio'`) is unrelated and unchanged.
+User-facing name is **Studio** everywhere: nav, "Send to Studio", agent display name, docs. Internal legacy identifiers are **not** migrated (zero-risk, same pattern as legacy-rename): `agent_slug='builder'`, `builder_file_claims`, `build.functions.ts` remain and are to be read as ≡ Studio. New code uses `studio.*` naming natively. The Prompt Studio cost bucket (`CallSurface 'studio'`) is unrelated and unchanged.
 
 ## Architecture
 
@@ -109,7 +109,7 @@ Approvals reuse the existing `agent_approvals` resolve/execute functions. Studio
 
 - `SpecsPanel.tsx` + `_authenticated.prds.$id.tsx`: "Send to Builder" → "Send to Studio", both dispatch via `dispatchStudioSession`, success navigates to `/studio/$missionId`.
 - Any other user-visible "Builder" strings in `src/` (grep sweep; e.g. Today call cards, agents roster copy).
-- Docs: this file is canonical; `bundle-9-builder.md` gets a superseded banner pointing here; CLAUDE.md gains the builder≡studio equivalence note beside the Cadence→Circuit disclaimer; `plan.md` §4 build-log entry; `session-decisions.md` entries; v4 feature map gets a terminology note (agent #10 display name Studio).
+- Docs: this file is canonical; `bundle-9-builder.md` gets a superseded banner pointing here; CLAUDE.md gains the builder≡studio equivalence note beside the legacy-rename disclaimer; `plan.md` §4 build-log entry; `session-decisions.md` entries; v4 feature map gets a terminology note (agent #10 display name Studio).
 
 ## Tick hardening (KI-02, in scope)
 

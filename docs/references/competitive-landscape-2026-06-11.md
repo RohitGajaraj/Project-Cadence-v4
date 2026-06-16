@@ -16,7 +16,7 @@ Strongest external validation of our thesis: **airfocus-by-Lucid research (June 
 
 ## 1. AI-PM-specific tools
 
-| Player | What it is | Agenticness | Gap vs Circuit |
+| Player | What it is | Agenticness | Gap vs Cadence |
 | --- | --- | --- | --- |
 | **ChatPRD** ([chatprd.ai](https://www.chatprd.ai/)) | Category leader "AI for PMs"; PRD/spec/GTM doc generation; 100k+ PMs; bootstrapped (no VC), from ~$15/mo | Assistant → semi-agent (ships a ChatPRD agent inside Linear for Agents) | Doc-centric. No signal ingestion, no execution, no GTM/support/analytics loop, no governance |
 | **Productboard** ([/ai](https://www.productboard.com/product/ai-for-product-management/)) | VoC + prioritization + roadmap incumbent; Productboard AI + Pulse; Spark plan $15–19/maker/mo + 250 AI credits; enterprise $70k–$120k/yr | Assistant (classify/summarize) | Stops at insight + roadmap; humans do everything downstream |
@@ -50,7 +50,7 @@ Strongest external validation of our thesis: **airfocus-by-Lucid research (June 
 - **Cognition (Devin)** — raised **$1B+ at $25B pre** (May 2026); **$492M ARR run-rate** ([TechCrunch](https://techcrunch.com/2026/05/27/ai-coding-startup-cognition-raises-1b-at-25b-pre-money-valuation/)).
 - **Factory.ai** — $50M Series B (~$300M, Sept 2025); "Droids" delegable from Slack/Linear/IDE ([factory.ai](https://factory.ai/news/series-b)).
 - **Cursor** $29.3B (Nov 2025) · **Lovable** $6.6B, **$400M ARR by Mar 2026** ([Bloomberg](https://www.bloomberg.com/news/articles/2026-03-12/vibe-coding-startup-lovable-hits-400-million-recurring-revenue)) · **Replit** $3B · **Vercel/v0** $9.3B. Combined vibe-coding >$48B.
-- **Implication:** the build step is solved by others. Circuit's job: orchestrate build agents (Linear-style delegation, MCP) while owning upstream (discover→spec) and downstream (launch→learn) that nobody has claimed.
+- **Implication:** the build step is solved by others. Cadence's job: orchestrate build agents (Linear-style delegation, MCP) while owning upstream (discover→spec) and downstream (launch→learn) that nobody has claimed.
 
 ## 5. Agent infra / interop
 
@@ -75,6 +75,6 @@ Strongest external validation of our thesis: **airfocus-by-Lucid research (June 
 ## 8. Naming research (2026-06-11)
 
 - **Cadence**: Cadence Design Systems (~$80B EDA) is branding aggressively in *agentic AI* ("first fully autonomous virtual AI design engineer", Computex 2026) ([BusinessWire](https://www.businesswire.com/news/home/20260531072918/en/Cadence-Unveils-Industrys-First-Fully-Autonomous-Virtual-Engineer-for-Chip-Design-powered-by-NVIDIA)). **Hard avoid.**
-- **Circuit**: Circuit Route Planner (10M+ drivers), Circuit Mind, circuit.ai. Generic, weak ownability. **Avoid for launch; fine as interim working name.**
+- **Name search (paused 2026-06-16):** a brief rebrand to a different name was explored on 2026-06-10 and reverted; that candidate collided with existing route-planning and other products on the same word and had weak SEO ownability. **Product stays Cadence; fresh-name exploration is paused.**
 - Checked and **taken/conflicted**: Vega ($120M cyber startup), Lyra ($5.6B health), Altair (Siemens $10.6B), Quark (Alibaba 100M-MAU assistant), Flux (Black Forest Labs), Helix (helix.ml = agent control room — direct collision), Heron (YC agent automation), Kestrel (Microsoft web server), Catalyst, Pulsar (Apache), Photon, Meridian (Google), Orbit.
 - **Relatively clear** (light verification only): Rigel, Argon, Osprey. Founder reviewed Rigel/Tanager/Sittella/Perihelion on 2026-06-11 and rejected all — **naming deferred to the final activity**. Fresh directions logged in [`../decisions/naming.md`](../decisions/naming.md).

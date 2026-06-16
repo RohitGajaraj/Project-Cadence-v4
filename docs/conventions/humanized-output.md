@@ -46,7 +46,7 @@ Ship text that reads human and reads like *this* product. Two failure modes are 
 - **Vary the rhythm.** Mix short and long sentences. Let a one-word line land.
 - **Concrete over abstract.** Name the thing, the number, the effect. "This deletes 3 missions" beats "This action may affect your data."
 - **Have a point of view.** The product has a voice (see `ui-voice.md`: clear, lightly playful in safe places, dry in governance and errors). Generic neutrality is the tell.
-- **Product texture.** Use our nouns (calls queue, the loop, decision card, Chief of Staff), not stock SaaS nouns. The goal is that a screenshot reads as Circuit and nothing else.
+- **Product texture.** Use our nouns (calls queue, the loop, decision card, Chief of Staff), not stock SaaS nouns. The goal is that a screenshot reads as Cadence and nothing else.
 
 ## Level 2: enforce it on runtime AI output (spec)
 

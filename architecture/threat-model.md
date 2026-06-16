@@ -1,6 +1,6 @@
 # architecture/threat-model.md: v7 threat model (STRIDE)
 
-> **What this is.** The adversary's view of Circuit: the assets worth attacking, how each could be spoofed, tampered with, disclosed, denied, or escalated, and the control that stops it today (Built) or is owed (Partial / Planned). It is the security companion to [`security.md`](./security.md), which holds the auth, RLS, tenancy, secrets, and governance *model*. This file does not restate that model, it stress-tests it. Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). Rules: [`../AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
+> **What this is.** The adversary's view of Cadence: the assets worth attacking, how each could be spoofed, tampered with, disclosed, denied, or escalated, and the control that stops it today (Built) or is owed (Partial / Planned). It is the security companion to [`security.md`](./security.md), which holds the auth, RLS, tenancy, secrets, and governance *model*. This file does not restate that model, it stress-tests it. Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). Rules: [`../AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
 Honesty rule (claim-never-outruns-wiring): a threat model that overstates its defenses is worse than none. Every control below is tagged **Built** (wired in `main`), **Partial** (wired but with a known gap), or **Planned** (designed, not yet wired). The §13 honesty ruling in the v7 canon makes this a legal stance, not just an engineering one.
 
@@ -8,7 +8,7 @@ Honesty rule (claim-never-outruns-wiring): a threat model that overstates its de
 
 ## 1. Scope and trust boundaries
 
-Circuit is a TanStack Start app on Cloudflare Workers, fronting Supabase (Postgres + Auth + RLS), the Lovable AI gateway, and a set of OAuth-gated connectors. The agent loop runs inside the Worker process and acts on the user's behalf.
+Cadence is a TanStack Start app on Cloudflare Workers, fronting Supabase (Postgres + Auth + RLS), the Lovable AI gateway, and a set of OAuth-gated connectors. The agent loop runs inside the Worker process and acts on the user's behalf.
 
 Five trust boundaries matter:
 

@@ -6,7 +6,7 @@
 --    need mission context to find their changeset.
 -- 3. Builder agent → display name 'Studio' + dev-engine system prompt.
 --    slug stays 'builder' (legacy equivalence ruling 2026-06-12 — same
---    zero-risk pattern as Cadence→Circuit).
+--    zero-risk pattern as legacy-rename).
 -- 4. seed_studio_tools: repo.* + studio.stage = auto · studio.commit /
 --    studio.pr.open = confirm · studio.pr.merge = review (v4 HITL canon).
 

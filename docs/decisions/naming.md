@@ -1,11 +1,12 @@
 # Decision: Product name — status & candidate log
 
-> Status: **DEFERRED — FINAL ACTIVITY BEFORE LAUNCH.** Updated: 2026-06-11.
-> Founder decision (2026-06-11): none of the shortlisted names felt right; renaming is explicitly the **last activity** of the pre-launch sequence. **"Circuit" remains the interim working name** everywhere (with the existing Cadence➔Circuit disclaimer pattern). Do not block or rename anything until this file's status reads DECIDED.
+> Status: **PAUSED — working name is Cadence.** Updated: 2026-06-16.
+> Founder decision (2026-06-16): the 2026-06-10 rename experiment was **reverted**; the retired name is removed everywhere and must not be reintroduced (full reasoning in the reversal entry of [`../strategy/session-decisions.md`](../strategy/session-decisions.md)). **The working name is "Cadence"** for now, accepted with eyes open on the trademark note below. A fresh, distinctive brand is still wanted but is explicitly the **last activity before launch**, not a mid-build distraction. Do not block or rename anything until this file's status reads DECIDED.
+> Founder decision (2026-06-11, retained): none of the shortlisted names felt right; renaming is the **last activity** of the pre-launch sequence.
 
 ## Why rename (unchanged)
 
-"Cadence" — contested trademark; Cadence Design Systems ($80B EDA) now brands aggressively in *agentic AI* (announced a "fully autonomous virtual AI design engineer," Computex 2026). "Circuit" — circuit.ai conflict, Circuit Route Planner (10M+ users), generic word, weak SEO ownability. Target quality bar: Perplexity / Comet / Claude / Lovable — short, evocative, a story to hang a tagline on.
+Both names floated so far are contested. **"Cadence"** carries trademark risk: Cadence Design Systems ($80B EDA) now brands aggressively in *agentic AI* (announced a "fully autonomous virtual AI design engineer," Computex 2026). The 2026-06-10 replacement also had real collisions (a 10M-user route-planning app and others on the same word, plus weak SEO ownability), which is why it was reverted on 2026-06-16. Net: Cadence is the **accepted interim working name** despite the trademark note; the real brand is a deliberate pre-launch call. Target quality bar: Perplexity / Comet / Claude / Lovable — short, evocative, a story to hang a tagline on.
 
 ## Founder-rejected candidates (do not re-propose)
 
@@ -29,7 +30,7 @@ The strongest unexplored lane: names whose *story is the product mechanic itself
 
 ## Next step
 
-At the end of the pre-launch sequence: founder reviews the fresh directions (plus any new candidates), one web-clearance pass on the favorites, set status DECIDED, then a single find-replace sweep of user-level "Circuit" (DB/plumbing names stay, per the standing disclaimer in [`../../CLAUDE.md`](../../CLAUDE.md) / [`../../plan.md`](../../plan.md)).
+At the end of the pre-launch sequence: founder reviews the fresh directions (plus any new candidates), one web-clearance pass on the favorites, set status DECIDED, then a single find-replace sweep of user-level "Cadence" to the chosen name (DB/plumbing identifiers stay, per the standing name note in [`../../CLAUDE.md`](../../CLAUDE.md) / [`../../plan.md`](../../plan.md)).
 
 ## Product-level taglines (name-independent, keep)
 

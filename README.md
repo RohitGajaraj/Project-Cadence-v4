@@ -1,4 +1,4 @@
-# Circuit ⚡
+# Cadence ⚡
 
 > **The B2B Enterprise Product Cockpit.** An agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle, discover, definition, plan, build, test, ship, GTM launch, support, cohort analytics, and learning loop, continuously, in parallel, under your governance. You set intent. Agents run the org.
 >
@@ -7,16 +7,15 @@
 ---
 
 > [!IMPORTANT]
-> **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
-> _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
+> **PRODUCT NAME: CADENCE.** The product is **Cadence**, and that is the only name to use. A brief 2026-06-10 rename experiment to a different brand was reverted on 2026-06-16; the retired name must not be reintroduced anywhere (code, docs, DB, env, caches, APIs). Any stray legacy token from that experiment is to be read as equivalent to `cadence`/`Cadence`.
 
 ---
 
 ## What this is, in one paragraph
 
-Building software is no longer the bottleneck. The bottleneck is running the _whole_ product lifecycle as one coherent, governed, closed-loop circuit, not a dozen disconnected tools held together by a human doing manual glue work. **Circuit** is that loop. A swarm of specialist agents takes an intent ("turn this customer signal into a shipped, launched feature") and carries it end to end: ingests feedback, transcribes syncs (WhisperFlow), defines the spec, plans the issues, writes and tests the code (Cursor/Lovable sandbox), ships the release, drafts GTM copy, handles customer support, evaluates outcomes, and feeds what it learned back into the next decision cycle. Every action is cited, observable in a live trace, and reversible; the human governs only at approval gates. **Agents execute. Humans govern.** The platform runs continuously, learning and compounding with every mission.
+Building software is no longer the bottleneck. The bottleneck is running the _whole_ product lifecycle as one coherent, governed, closed loop, not a dozen disconnected tools held together by a human doing manual glue work. **Cadence** is that loop. A swarm of specialist agents takes an intent ("turn this customer signal into a shipped, launched feature") and carries it end to end: ingests feedback, transcribes syncs (WhisperFlow), defines the spec, plans the issues, writes and tests the code (Cursor/Lovable sandbox), ships the release, drafts GTM copy, handles customer support, evaluates outcomes, and feeds what it learned back into the next decision cycle. Every action is cited, observable in a live trace, and reversible; the human governs only at approval gates. **Agents execute. Humans govern.** The platform runs continuously, learning and compounding with every mission.
 
-Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENTS.md). **The felt product / wedge (v5): [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md). Circuit lands as the senior PM's Chief of Staff (the daily evidence-to-decision ritual); the cockpit below is the expansion.** Expansion scope, agent mesh, and milestones: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md). Build order + build log: [`plan.md`](./plan.md). Design contract: [`design.md`](./design.md). Architecture: [`architecture/`](./architecture/). Market evidence: [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md). Founding constitution (AI co-founder role, north star, mandates): [`Ai_Cofounder.md`](./Ai_Cofounder.md).
+Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENTS.md). **The felt product / wedge (v5): [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md). Cadence lands as the senior PM's Chief of Staff (the daily evidence-to-decision ritual); the cockpit below is the expansion.** Expansion scope, agent mesh, and milestones: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md). Build order + build log: [`plan.md`](./plan.md). Design contract: [`design.md`](./design.md). Architecture: [`architecture/`](./architecture/). Market evidence: [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md). Founding constitution (AI co-founder role, north star, mandates): [`Ai_Cofounder.md`](./Ai_Cofounder.md).
 
 > **Standing rule: humanized output, zero AI fingerprints.** No em/en dashes, no invisible Unicode, no AI-cliche phrasing in what we build OR what the platform generates for users. Applies to every co-dev tool and to every AI feature's output. Full rule: [`docs/conventions/humanized-output.md`](./docs/conventions/humanized-output.md).
 
@@ -43,22 +42,22 @@ A product operator today doesn't just do discovery and specs. They own the whole
 
 **The deeper problem:** even AI tools that claim "automation" still put the human in the middle of every step. That is not automation. That is a faster typewriter. The autonomous shift means agents carry the mission from start to finish; the human appears only at governance gates.
 
-**Circuit is that substrate.** One data model, one autonomous agent runtime, one orchestration layer, one governance/trust layer, spanning the entire lifecycle, running continuously.
+**Cadence is that substrate.** One data model, one autonomous agent runtime, one orchestration layer, one governance/trust layer, spanning the entire lifecycle, running continuously.
 
 ---
 
-## Positioning: the closed-loop product circuit
+## Positioning: the closed product loop
 
 Four statements that should never drift:
 
-1. **Agents execute. Humans govern.** Circuit agents don't suggest. They _execute_: multi-step missions across discovery, build, test, ship, and launch, in parallel, and report back. Humans set intent, approve governance gates, and make judgment calls.
-2. **The Closed-Loop Circuit.** Circuit owns the whole loop. factory.ai/Devin own autonomous _engineering_; Linear/Jira own _issue tracking_; Notion owns _docs_. None owns the closed circuit of customer signals $\rightarrow$ build $\rightarrow$ GTM $\rightarrow$ metrics $\rightarrow$ learnings.
-3. **Governed autonomy.** Every autonomous action is cited, observable in a live trace, approval-gated where it touches the outside world, and reversible. Autonomy without governance is a liability; Circuit ships both.
-4. **Continuous, not project-based.** Products never finish. Circuit is the operating cockpit that runs the product org. The platform gets more valuable the longer it runs because Product Memory compounds.
+1. **Agents execute. Humans govern.** Cadence agents don't suggest. They _execute_: multi-step missions across discovery, build, test, ship, and launch, in parallel, and report back. Humans set intent, approve governance gates, and make judgment calls.
+2. **The closed loop.** Cadence owns the whole loop. factory.ai/Devin own autonomous _engineering_; Linear/Jira own _issue tracking_; Notion owns _docs_. None owns the closed loop of customer signals $\rightarrow$ build $\rightarrow$ GTM $\rightarrow$ metrics $\rightarrow$ learnings.
+3. **Governed autonomy.** Every autonomous action is cited, observable in a live trace, approval-gated where it touches the outside world, and reversible. Autonomy without governance is a liability; Cadence ships both.
+4. **Continuous, not project-based.** Products never finish. Cadence is the operating cockpit that runs the product org. The platform gets more valuable the longer it runs because Product Memory compounds.
 
 ### The USP
 
-> **Circuit is the B2B Enterprise Product Cockpit where a swarm of specialist agents runs your entire product lifecycle, discover, spec, plan, build, test, ship, launch, support, learn, continuously and in parallel, governed by you at the calls that matter. Not a tool you use. An operating system that runs your product org.**
+> **Cadence is the B2B Enterprise Product Cockpit where a swarm of specialist agents runs your entire product lifecycle, discover, spec, plan, build, test, ship, launch, support, learn, continuously and in parallel, governed by you at the calls that matter. Not a tool you use. An operating system that runs your product org.**
 
 ### The portability commitment
 
@@ -68,19 +67,19 @@ Four statements that should never drift:
 
 ## The MOAT: why a frontier-model launch does not kill us
 
-The model is **not** the moat. Neither is raw data. Circuit is model-agnostic. When a lab ships a horizontal "PM agent", that is a _capability we plug in_. The defensibility is five things a model release cannot replicate:
+The model is **not** the moat. Neither is raw data. Cadence is model-agnostic. When a lab ships a horizontal "PM agent", that is a _capability we plug in_. The defensibility is five things a model release cannot replicate:
 
 1. **End-to-end lifecycle orchestration.** Owning and orchestrating the entire loop, discover $\rightarrow$ build $\rightarrow$ ship $\rightarrow$ launch $\rightarrow$ support $\rightarrow$ learn, as one governed system.
 2. **The trust & governance layer.** Approval gates, full audit trail, citations, evals, guardrails, budgets, and reversibility: the part enterprises require before they let agents touch real systems.
-3. **System of record _and_ system of action.** Once a product org runs its decisions, code, releases, and institutional context through Circuit, it becomes the operating layer. Ripping it out means re-gluing the lifecycle by hand.
-4. **Compounding Product Memory.** The longer Circuit runs, the better the agents know your product, your users, your decisions, and your domain. This intelligence is genuinely hard to rebuild.
-5. **Agent-native interop.** Circuit speaks MCP and A2A both ways. It is the place other agents plug in to act inside a governed product org.
+3. **System of record _and_ system of action.** Once a product org runs its decisions, code, releases, and institutional context through Cadence, it becomes the operating layer. Ripping it out means re-gluing the lifecycle by hand.
+4. **Compounding Product Memory.** The longer Cadence runs, the better the agents know your product, your users, your decisions, and your domain. This intelligence is genuinely hard to rebuild.
+5. **Agent-native interop.** Cadence speaks MCP and A2A both ways. It is the place other agents plug in to act inside a governed product org.
 
-Positioning rule: **"Circuit orchestrates the models; it does not compete with them."**
+Positioning rule: **"Cadence orchestrates the models; it does not compete with them."**
 
 ---
 
-## Who Circuit is for
+## Who Cadence is for
 
 We serve B2B Enterprise product organizations, establishing a collaborative environment for cross-functional stakeholders while onboarding individual PMs as grassroots evangelists:
 
@@ -90,7 +89,7 @@ We serve B2B Enterprise product organizations, establishing a collaborative envi
 - **P4, UX/UI Designer (The Visual Validator):** Validates generated layouts, mockups, and UI changes in the interactive preview sandbox.
 - **P5, GTM Lead / Product Marketer:** Monitors releases, refines auto-drafted changelogs, and schedules distribution announcements.
 - **P6, Customer Support Lead:** Triage feedback, loops bug signals back into the discovery system.
-- **P7, Grassroots Evangelist (Solo PM / Indie Hacker):** Individual adopters who seed Circuit in their respective orgs.
+- **P7, Grassroots Evangelist (Solo PM / Indie Hacker):** Individual adopters who seed Cadence in their respective orgs.
 
 ---
 
@@ -115,9 +114,9 @@ The user-facing app is **seven surfaces** (Home · Chat · Missions · Product �
 
 ## Pluggable Multi-Model Substrate
 
-To maintain high reasoning quality while optimizing cost, Circuit’s **AI Chokepoint** (`runtime.server.ts`) acts as a router that selects the best model for each task:
+To maintain high reasoning quality while optimizing cost, Cadence’s **AI Chokepoint** (`runtime.server.ts`) acts as a router that selects the best model for each task:
 
-| Model Category                  | Primary Models                        | In Circuit                                                                  |
+| Model Category                  | Primary Models                        | In Cadence                                                                  |
 | ------------------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
 | **High-Context Audio/Ingest**   | Gemini 1.5 Pro                        | Ingesting 1M+ token audio logs (WhisperFlow) and support dumps without loss |
 | **High-Reasoning & Spec Draft** | Claude 3.5 Sonnet / GPT-4o            | Spec drafting, roadmap dependency generation, and strategic briefs          |
@@ -171,8 +170,8 @@ Where each layer lives in detail: [`architecture/`](./architecture/). Stack rati
 
 | If you are…                                                               | Read                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Evaluating Circuit                                                        | **README.md** (here)                                                                                                                                                                                                                                |
-| Understanding positioning (CURRENT source of truth)                       | **[`docs/strategy/v7-agentic-product-os-2026-06-14.md`](./docs/strategy/v7-agentic-product-os-2026-06-14.md)**: Agentic Product OS umbrella (v7 reset; v6 retained for engine/IA) · engine/expansion: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) · wedge UX: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md) · personas: [`docs/strategy/v3-positioning-circuit-2026-06-10.md`](./docs/strategy/v3-positioning-circuit-2026-06-10.md) · index+archive: [`docs/strategy/README.md`](./docs/strategy/README.md) |
+| Evaluating Cadence                                                        | **README.md** (here)                                                                                                                                                                                                                                |
+| Understanding positioning (CURRENT source of truth)                       | **[`docs/strategy/v7-agentic-product-os-2026-06-14.md`](./docs/strategy/v7-agentic-product-os-2026-06-14.md)**: Agentic Product OS umbrella (v7 reset; v6 retained for engine/IA) · engine/expansion: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) · wedge UX: [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md) · personas: [`docs/strategy/v3-positioning-cadence-2026-06-10.md`](./docs/strategy/v3-positioning-cadence-2026-06-10.md) · index+archive: [`docs/strategy/README.md`](./docs/strategy/README.md) |
 | Founding constitution (AI co-founder posture, north star, mandates)       | [`Ai_Cofounder.md`](./Ai_Cofounder.md): its Repo Concordance maps its 13 mandated docs onto this repo's canon                                                                                                                                      |
 | Market & competitor evidence                                              | [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md)                                                                                                                                      |
 | Resuming the v4 rebuild session                                           | [`docs/planning/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/v4-rebuild-handoff-2026-06-11.md)                                                                                                                                                |
@@ -191,4 +190,4 @@ Every doc cross-references the others. **Do not let them drift.** Update protoco
 
 ## License
 
-Permissive intent. Until chosen: all rights reserved, © Circuit contributors.
+Permissive intent. Until chosen: all rights reserved, © Cadence contributors.

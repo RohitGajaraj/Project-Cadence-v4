@@ -997,7 +997,7 @@ function ghHeaders(token: string): Record<string, string> {
     Authorization: `Bearer ${token}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "circuit-studio",
+    "User-Agent": "cadence-studio",
     "Content-Type": "application/json",
   };
 }
@@ -1464,7 +1464,7 @@ const studioCommit = def({
           {
             method: "POST",
             body: JSON.stringify({
-              message: `${a.message}\n\nShipped by Circuit Studio (mission ${missionId.slice(0, 8)})`,
+              message: `${a.message}\n\nShipped by Cadence Studio (mission ${missionId.slice(0, 8)})`,
               tree: newTree.sha,
               parents: [parentSha],
             }),
@@ -1561,7 +1561,7 @@ const studioPrOpen = def({
           .from("studio_changes")
           .select("id", { count: "exact", head: true })
           .eq("changeset_id", changeset.id);
-        const body = `${a.body.trim()}\n\n_Opened by Circuit Studio — multi-file changeset (${count ?? "?"} file${(count ?? 0) === 1 ? "" : "s"}), approval-gated · acting as ${actorLabel}._`;
+        const body = `${a.body.trim()}\n\n_Opened by Cadence Studio, multi-file changeset (${count ?? "?"} file${(count ?? 0) === 1 ? "" : "s"}), approval-gated · acting as ${actorLabel}._`;
         const pr = await ghJson<{ number: number; html_url: string }>(
           `https://api.github.com/repos/${repo}/pulls`,
           headers,

@@ -9,14 +9,14 @@
 ## 0. The law and the two forks (all founder rulings, 2026-06-16)
 
 - **Law #1 — the Engine-Room Doctrine** ([`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md)): calm front, deep engine. Complexity lives in the engine, never in the experience; all machinery lives behind one "Engine Room" door, revealed on demand; user-facing labels name the outcome, not the mechanism. This outranks every surface decision below.
-- **Fork 1 — the Build engine is a HYBRID spine.** Circuit owns a real, Cursor-feeling build engine for the common 80% path (plan, diff, steer, tests, preview, CI gate, ship) and rents external coding agents (Claude Code / Cursor / Devin) for the heavy 20%. We are not rebuilding an IDE; we are the OS with a build spine. Memory stays the moat.
+- **Fork 1 — the Build engine is a HYBRID spine.** Cadence owns a real, Cursor-feeling build engine for the common 80% path (plan, diff, steer, tests, preview, CI gate, ship) and rents external coding agents (Claude Code / Cursor / Devin) for the heavy 20%. We are not rebuilding an IDE; we are the OS with a build spine. Memory stays the moat.
 - **Fork 2 — two heroes, one loop.** We SELL on the decide-ritual (Today) and BUILD toward the ship-engine (Build). Same loop, two high-value moments. Center of gravity = decide -> ship; memory compounds under both.
 
 ---
 
-## 1. Circuit on one page
+## 1. Cadence on one page
 
-**One sentence:** Circuit is where a PM decides what is worth doing and watches it get built and shipped: a calm front over a powerful engine, where every decision and outcome compounds into memory the team can trust.
+**One sentence:** Cadence is where a PM decides what is worth doing and watches it get built and shipped: a calm front over a powerful engine, where every decision and outcome compounds into memory the team can trust.
 
 ```
 ┌─────────────────────  CALM FRONT  (what the user touches)  ──────────────────────┐
@@ -89,8 +89,8 @@ The two-state rule for every machine surface:
 
 The Build engine is the most genuinely-built node today: it reads the bound repo, plans, stages multi-file diffs, isolates a `studio/<mission>` branch, opens a PR, reads CI, self-corrects, and merges behind a sticky human gate. An approved, cited PRD already flows straight into a coding mission (`dispatchStudioSession`).
 
-- **What Circuit owns (the 80% path):** plan, file tree + read + search, multi-file diff review, per-hunk accept/reject, mid-run steering, CI read + self-correct, review-gated in-platform merge, cost/model panel.
-- **What Circuit rents (the heavy 20%):** delegate-out to external coding agents (Claude Code / Cursor / Devin) under the same governance + handoff contract.
+- **What Cadence owns (the 80% path):** plan, file tree + read + search, multi-file diff review, per-hunk accept/reject, mid-run steering, CI read + self-correct, review-gated in-platform merge, cost/model panel.
+- **What Cadence rents (the heavy 20%):** delegate-out to external coding agents (Claude Code / Cursor / Devin) under the same governance + handoff contract.
 - **How the loop feeds it:** signals -> opportunities (ICE) -> Critic-checked PRD -> approval -> coding mission, with a `prd -> mission` lineage edge. Market and sales insights enter at signal intake (Phase 4).
 - **The one real new engineering this commits us to:** sandboxed test execution + a live preview environment. The Cloudflare Worker runtime cannot host on-disk worktrees or run tests, so today CI is the only test runner and there is no live preview. A sandbox service (Cloudflare Sandbox SDK / E2B / Vercel Sandbox) closes this. This is scoped, not a rebuild.
 

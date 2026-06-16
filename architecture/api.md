@@ -1,6 +1,6 @@
 # architecture/api.md: API & interface reference
 
-> **What this is.** The full map of every way something talks to Circuit: the public HTTP routes a browser or a script hits, the internal server-function surface the app calls, the agent-to-agent handoff contract the mesh runs on, and the dual-user interfaces (MCP server plus public API) that are still on the roadmap. Every entry is marked **Built**, **Partial**, or **Missing/Planned** so the claim never outruns the wiring.
+> **What this is.** The full map of every way something talks to Cadence: the public HTTP routes a browser or a script hits, the internal server-function surface the app calls, the agent-to-agent handoff contract the mesh runs on, and the dual-user interfaces (MCP server plus public API) that are still on the roadmap. Every entry is marked **Built**, **Partial**, or **Missing/Planned** so the claim never outruns the wiring.
 >
 > Canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md) (§8 dual-user, §12 M-D). Rules: [`../AGENTS.md`](../AGENTS.md). Voice: [`../docs/conventions/humanized-output.md`](../docs/conventions/humanized-output.md).
 >
@@ -46,10 +46,10 @@ CLAUDE.md and older docs reference a `src/routes/api/studio-chat.ts` route. **It
 
 ### 1.4 `GET /api/public/a2a/agents/cadence/card`, A2A agent card (Partial)
 
-`src/routes/api/public/a2a.agents.cadence.card.ts`. The discovery document that describes Circuit as an Agent-to-Agent peer, per the agent2agent.dev spec.
+`src/routes/api/public/a2a.agents.cadence.card.ts`. The discovery document that describes Cadence as an Agent-to-Agent peer, per the agent2agent.dev spec.
 
 - **Method:** `GET` (plus `OPTIONS`). Unauthenticated, cacheable (`Cache-Control: public, max-age=300`), CORS-open.
-- **Purpose:** let another agent discover what Circuit can do and where to send work.
+- **Purpose:** let another agent discover what Cadence can do and where to send work.
 - **Response:** a JSON agent card with `schema_version`, `name`, `version`, `description`, `provider`, `documentation_url`, an `endpoints` block, an `authentication` block (`schemes:["bearer"]`), a `capabilities` block (`streaming:true`, `push_notifications:false`, `multi_turn:true`), declared `skills` (search signals, draft a PRD, propose a sprint, summarize traces), and a `policies` block (`destructive_actions_require_approval:true`, `pii_egress_filtered:true`, `rate_limit_per_minute:60`).
 - **Why Partial:** the card advertises three endpoints (`message_send`, `message_stream`, `tasks`) at `/api/public/a2a/*`. **Those endpoints are not built yet** (Missing/Planned, M-D). The card is a published intent; the A2A *server* it points at does not answer. The card should also be served from `/.well-known/agent.json` once that edge route is wired (not yet done).
 
@@ -172,11 +172,11 @@ The contract is real and the loop runs on it, **but** the orchestrator prompt na
 
 ## 4. The dual-user surface: MCP server plus public API
 
-v7 §8 commits Circuit to being agent-friendly *and* human-friendly, and v7 §12 M-D scopes the build. None of this exists on `main` yet. It is the external interface that does the most for distribution, and it is pulled forward in the risk plan (v7 §14: the fast-follower window may be 6 to 12 months, so do not wait for M-D to start the MCP/API contract).
+v7 §8 commits Cadence to being agent-friendly *and* human-friendly, and v7 §12 M-D scopes the build. None of this exists on `main` yet. It is the external interface that does the most for distribution, and it is pulled forward in the risk plan (v7 §14: the fast-follower window may be 6 to 12 months, so do not wait for M-D to start the MCP/API contract).
 
 ### 4.1 MCP server (Missing/Planned, M-D)
 
-`src/routes/api/mcp.ts` (planned). Expose a curated subset of the surface, tasks, PRDs, agents, calendar, discovery, copilot, as MCP tools so an external agent (Claude Desktop, Cursor, ChatGPT) operates Circuit.
+`src/routes/api/mcp.ts` (planned). Expose a curated subset of the surface, tasks, PRDs, agents, calendar, discovery, copilot, as MCP tools so an external agent (Claude Desktop, Cursor, ChatGPT) operates Cadence.
 
 - **Auth:** per-user scoped `mcp_tokens`.
 - **Telemetry:** every invocation logs `surface='mcp_server'` through the chokepoint, so cost, guardrails, and traces apply identically to MCP calls (no second runtime). This reuses the existing `CallSurface` plumbing in [`runtime.md`](./runtime.md).
@@ -184,7 +184,7 @@ v7 §8 commits Circuit to being agent-friendly *and* human-friendly, and v7 §12
 
 ### 4.2 Public API (Missing/Planned, M-D)
 
-A documented, versioned HTTP API over the same curated subset, with stable request/response shapes and its own auth (scoped API keys, not the internal bearer model). This is the contract external developers build against, distinct from the internal server-function surface in §2, which is explicitly *not* a stable external interface. Pulling this forward also enables the B2B2B fallback in v7 §14 (embed Circuit's memory/decision layer inside Jira or Linear via MCP if the standalone window closes).
+A documented, versioned HTTP API over the same curated subset, with stable request/response shapes and its own auth (scoped API keys, not the internal bearer model). This is the contract external developers build against, distinct from the internal server-function surface in §2, which is explicitly *not* a stable external interface. Pulling this forward also enables the B2B2B fallback in v7 §14 (embed Cadence's memory/decision layer inside Jira or Linear via MCP if the standalone window closes).
 
 ### 4.3 A2A server endpoints (Missing/Planned, M-D)
 

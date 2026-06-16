@@ -1,6 +1,6 @@
 # architecture/observability.md: what we can see, and the bars we hold
 
-> **What this is.** The observability surfaces Circuit already runs (cost, traces, evals, drift, guardrails, the proof gauntlet, logging) and the non-functional requirements that govern them (latency, scale, availability, the inference-cost and margin model, rate limits, retention). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint that produces most of this telemetry: [`runtime.md`](./runtime.md). Orchestration and the loop: [`orchestration.md`](./orchestration.md). Security and the kill switch: [`security.md`](./security.md). Build history and roadmap: [`../plan.md`](../plan.md).
+> **What this is.** The observability surfaces Cadence already runs (cost, traces, evals, drift, guardrails, the proof gauntlet, logging) and the non-functional requirements that govern them (latency, scale, availability, the inference-cost and margin model, rate limits, retention). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint that produces most of this telemetry: [`runtime.md`](./runtime.md). Orchestration and the loop: [`orchestration.md`](./orchestration.md). Security and the kill switch: [`security.md`](./security.md). Build history and roadmap: [`../plan.md`](../plan.md).
 >
 > Every item is marked **Built**, **Partial**, or **Missing/Planned**. The rule is the v7 rule: claim never outruns wiring. Where a surface exists in code but cannot read real numbers yet (signup 500s, slug bug, connectors not live), it says so.
 
@@ -41,7 +41,7 @@ Two eval paths, both on the 0-to-100 mental model the team uses (stored internal
 - **Per-event LLM judge.** The `eval-tick` hook picks up to 20 recent `ai_events` (last 24h, `status='ok'`, excluding the judge's own `surface='judge'`/`'eval'` calls) that lack an `ai_evals` row, and scores them with `google/gemini-2.5-flash-lite` across seven dimensions: hallucination, groundedness, relevance, coherence, toxicity, pii_risk, prompt_injection_risk, plus a rationale and any unsupported claims. Rows land in `ai_evals`, keyed to `event_id`.
 - **Structured suites.** `eval_suites` (named case collections with a `schedule_cron`) and `eval_case_results` (per-case scored outputs). The `eval-suite-tick` hook (daily, 3am) runs enabled suites whose `last_run_at` is stale by more than an hour, via `runEvalSuite` in the eval runner.
 
-The deploy-gate intent (an eval regression of ten or more points on a Circuit-core case blocks the deploy, KI-14) is the standing policy from [`runtime.md`](./runtime.md). The judge and suites are wired. The gate's enforcement in CI is the part to verify against the live pipeline.
+The deploy-gate intent (an eval regression of ten or more points on a Cadence-core case blocks the deploy, KI-14) is the standing policy from [`runtime.md`](./runtime.md). The judge and suites are wired. The gate's enforcement in CI is the part to verify against the live pipeline.
 
 **Gap (Partial):** the judge runs on whatever `ai_events` exist, same denominator caveat as cost. Suite coverage is as deep as the cases an operator has authored.
 

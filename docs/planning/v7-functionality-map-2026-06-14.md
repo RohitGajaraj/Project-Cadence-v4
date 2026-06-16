@@ -1,4 +1,4 @@
-# v7 functionality map: how Circuit behaves, flow by flow
+# v7 functionality map: how Cadence behaves, flow by flow
 
 > **What this is.** The behavior reference, not the catalog. For each major flow it gives the inputs, the step-by-step behavior, the four states (loading, empty, error, success), the human-in-the-loop gates, and the data each step reads and writes. It answers "what happens when I click this" rather than "what tables exist." Grounded in a code read of `main` at commit `f515cfb` (2026-06-14).
 >

@@ -8,20 +8,19 @@
 ---
 
 > [!IMPORTANT]
-> **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
-> _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
+> **PRODUCT NAME: CADENCE.** The product is **Cadence**, and that is the only name to use. A brief 2026-06-10 rename experiment to a different brand was reverted on 2026-06-16; the retired name must not be reintroduced anywhere (code, docs, DB, env, caches, APIs). Any stray legacy token from that experiment is to be read as equivalent to `cadence`/`Cadence`.
 
 ---
 
 ## 0. What we are building
 
-**Circuit** is the **B2B Enterprise Product Cockpit**: the substrate on which a swarm of specialist AI agents runs the entire product lifecycle — discover, define, plan, build, test, ship, GTM launch, support, cohort analytics, and learning loop — while a human sets intent and approves the calls that matter. It is **not** a PM tool with AI bolted on. AI is the core. The human is an orchestrator, not middleware. Full product thesis, target personas, and 8 cockpit pillars: [`README.md`](./README.md).
+**Cadence** is the **B2B Enterprise Product Cockpit**: the substrate on which a swarm of specialist AI agents runs the entire product lifecycle — discover, define, plan, build, test, ship, GTM launch, support, cohort analytics, and learning loop — while a human sets intent and approves the calls that matter. It is **not** a PM tool with AI bolted on. AI is the core. The human is an orchestrator, not middleware. Full product thesis, target personas, and 8 cockpit pillars: [`README.md`](./README.md).
 
 Three principles govern every decision in this repo:
 
 1. **AI is the operating system, not a feature.** Every workflow flows through an intelligent layer with telemetry, evals, guardrails, and approval gates.
 2. **Fully autonomous super-agents, governed.** Agents don't just assist — they run multi-step missions end to end (discover → build → test → ship → launch → support), in parallel, behind approval gates. Autonomy is the product; governance makes it safe.
-3. **The moat is the end-to-end governed loop, not the model or the data.** Circuit is model-agnostic; frontier models are an input we orchestrate. Defensibility is owning + reliably orchestrating the _whole_ lifecycle, the trust/governance layer, the switching cost of being system-of-record-and-action, and agent-native interop. See [`README.md`](./README.md).
+3. **The moat is the end-to-end governed loop, not the model or the data.** Cadence is model-agnostic; frontier models are an input we orchestrate. Defensibility is owning + reliably orchestrating the _whole_ lifecycle, the trust/governance layer, the switching cost of being system-of-record-and-action, and agent-native interop. See [`README.md`](./README.md).
 4. **Build for agents first.** APIs, MCP, A2A, and CLIs over dashboards. The next users are agents. See [`architecture/integrations.md`](./architecture/integrations.md).
 
 **Demo logins** (for screen-recording, investor / customer demos, any flow that needs a working login): two pre-provisioned accounts (`demo@redcadence.app`, `demo2@redcadence.app`, shared password `Cadence!Demo2026`) land in a fully populated Demo workspace. Full doc + re-seed instructions: [`docs/operations/demo-credentials.md`](./docs/operations/demo-credentials.md).
@@ -144,7 +143,7 @@ Full skill-selection logic & anti-patterns: [`docs/operations/skills.md`](./docs
 16. **Budget caps are sacred.** Enforced server-side. See [`architecture/runtime.md`](./architecture/runtime.md).
 17. **Cache hits still get logged.**
 18. **Guardrails run on input and output.**
-19. **Eval failure is a deploy gate.** A ≥10-point score regression (on the 0–100 eval scale — KI-14) on any "Circuit core" case blocks merge unless explicitly waived.
+19. **Eval failure is a deploy gate.** A ≥10-point score regression (on the 0–100 eval scale — KI-14) on any "Cadence core" case blocks merge unless explicitly waived.
 20. **Drift is a passive watcher, not a blocker.**
 
 ### Testing
@@ -321,7 +320,7 @@ These are constraints on what we ship, not slogans.
 - **No human middleware.** Remove routing layers; velocity equals information-flow speed.
 - **Token-max in product value, token-optimize in our build.** Run a high inference bill where it replaces expensive headcount — but build the platform itself lean.
 - **Founder as orchestrator.** The founder leads agent strategy directly; does not delegate conviction.
-- **MVP-stage discipline.** Circuit is MVP-stage. Do not conflate MVP tactics with Launch/Scale tactics. Avoid: AI-codegen tech debt, hype-over-evidence, late security, over-scoping, founder bottleneck.
+- **MVP-stage discipline.** Cadence is MVP-stage. Do not conflate MVP tactics with Launch/Scale tactics. Avoid: AI-codegen tech debt, hype-over-evidence, late security, over-scoping, founder bottleneck.
 
 ---
 
@@ -357,7 +356,7 @@ This repo is built across several agentic tools at once. The hard rule that make
 
 - **`.mcp.json` owns MCP _servers_.** It is the single, tool-agnostic source for Supabase, Playwright, etc. Both Claude Code and Antigravity read it. **Do not** also source the same server from a Claude Code _plugin_ — that registers the tool twice. Plugins here are for skills/agents only.
 - **`enabledPlugins` (in `.claude/settings.json`) owns Claude-Code skills/agents** that you want pinned to the repo for any Claude Code instance (yours on another machine, a teammate, CI). Declare them; never vendor plugin source into the tree.
-- **`.claude/skills/` + `.claude/agents/`** hold only _project-specific_ skills/agents (ones that encode this repo's conventions). Do **not** bulk-copy a personal user-level library (`~/.claude/skills/`) in here — it bloats the repo, drifts from upstream, and most of it is irrelevant to this project. Copy the subset that is genuinely Circuit-specific.
+- **`.claude/skills/` + `.claude/agents/`** hold only _project-specific_ skills/agents (ones that encode this repo's conventions). Do **not** bulk-copy a personal user-level library (`~/.claude/skills/`) in here — it bloats the repo, drifts from upstream, and most of it is irrelevant to this project. Copy the subset that is genuinely Cadence-specific.
 
 ### 10.3 Per-tool entry points
 

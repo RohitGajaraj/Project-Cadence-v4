@@ -1,12 +1,11 @@
 # ENTRY.md — Where do I start?
 
-> You just opened Circuit. This file routes you. Circuit is the **B2B Enterprise Product Cockpit** — an agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle (discover → definition → plan → build → test → ship → GTM launch → support → cohort analytics → learning loop) and a human governs the calls that matter. Agents execute. Humans govern. Full thesis: [`README.md`](./README.md). Strategic positioning: [`docs/strategy/`](./docs/strategy/) — always read the latest version file there before any positioning, feature, or UX work.
+> You just opened Cadence. This file routes you. Cadence is the **B2B Enterprise Product Cockpit** — an agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle (discover → definition → plan → build → test → ship → GTM launch → support → cohort analytics → learning loop) and a human governs the calls that matter. Agents execute. Humans govern. Full thesis: [`README.md`](./README.md). Strategic positioning: [`docs/strategy/`](./docs/strategy/) — always read the latest version file there before any positioning, feature, or UX work.
 
 ---
 
 > [!IMPORTANT]
-> **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
-> _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
+> **PRODUCT NAME: CADENCE.** The product is **Cadence**, and that is the only name to use. A brief 2026-06-10 rename experiment to a different brand was reverted on 2026-06-16; the retired name must not be reintroduced anywhere (code, docs, DB, env, caches, APIs). Any stray legacy token from that experiment is to be read as equivalent to `cadence`/`Cadence`.
 
 ---
 
@@ -45,7 +44,7 @@
 
 | If you are…                                                | Read first                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asking "what is Circuit?"                                  | [`README.md`](./README.md)                                                                                                                                                                                                                          |
+| Asking "what is Cadence?"                                  | [`README.md`](./README.md)                                                                                                                                                                                                                          |
 | The founding constitution (AI co-founder role + mandates)  | [`Ai_Cofounder.md`](./Ai_Cofounder.md) — posture, north star, mandates; its **Repo Concordance** maps its 13 mandated docs onto this doc system                                                                                                     |
 | About to build (any agent or human)                        | [`AGENTS.md`](./AGENTS.md). Claude Code: [`CLAUDE.md`](./CLAUDE.md). Antigravity/Gemini: [`GEMINI.md`](./GEMINI.md).                                                                                                                                |
 | Designing UI / motion / tokens                             | [`design.md`](./design.md)                                                                                                                                                                                                                          |
@@ -68,7 +67,7 @@
 
 ## The thirty-second pitch
 
-Building software is no longer the bottleneck — product judgment under fragmented context is. Signals live in 6 places, reasoning in 4 more, planning in 3, execution in 5. The cost of switching, reconciling, and re-explaining now exceeds the cost of the work. Circuit collapses the lifecycle into one queryable substrate where agents cite their evidence, prove their reasoning, and act behind approval gates. **Agent-first, not a PM tool with AI bolted on.** Full thesis: [`README.md`](./README.md).
+Building software is no longer the bottleneck — product judgment under fragmented context is. Signals live in 6 places, reasoning in 4 more, planning in 3, execution in 5. The cost of switching, reconciling, and re-explaining now exceeds the cost of the work. Cadence collapses the lifecycle into one queryable substrate where agents cite their evidence, prove their reasoning, and act behind approval gates. **Agent-first, not a PM tool with AI bolted on.** Full thesis: [`README.md`](./README.md).
 
 ---
 
@@ -93,7 +92,7 @@ Environment is auto-provisioned by the cloud project (Supabase URL/key + AI gate
 ## Repo navigation
 
 ```text
-Circuit/
+Cadence/
 ├── ENTRY.md              <- repo index (here)
 ├── Ai_Cofounder.md       <- founding constitution (co-founder posture + mandates; see its Repo Concordance)
 ├── README.md             <- product: what + why

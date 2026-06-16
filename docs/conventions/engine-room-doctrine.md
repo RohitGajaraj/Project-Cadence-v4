@@ -12,7 +12,7 @@ This is the rule the constitution already states ("Complexity exists in the engi
 
 ## The reference model
 
-Lovable. A non-technical person ships real software without ever seeing the database, the deploy pipeline, or the agent loop. The tools are there the moment they go looking (logs, a SQL editor), but the default surface is calm and the machinery is invisible. The user brings their own sources, connects them with one button, and everything else comes from the platform. Circuit holds itself to that bar.
+Lovable. A non-technical person ships real software without ever seeing the database, the deploy pipeline, or the agent loop. The tools are there the moment they go looking (logs, a SQL editor), but the default surface is calm and the machinery is invisible. The user brings their own sources, connects them with one button, and everything else comes from the platform. Cadence holds itself to that bar.
 
 ## The failure mode it prevents (name it so you catch it)
 

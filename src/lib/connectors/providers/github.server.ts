@@ -13,7 +13,7 @@ const GH_API = "https://api.github.com";
 const GH_HEADERS = {
   Accept: "application/vnd.github+json",
   "X-GitHub-Api-Version": "2022-11-28",
-  "User-Agent": "circuit-connectors",
+  "User-Agent": "cadence-connectors",
 } as const;
 
 const NOT_CONNECTED_ERROR =
@@ -239,7 +239,7 @@ async function actorLabelFor(auth: ResolvedAuth): Promise<string> {
   } catch {
     /* label is cosmetic — fall through */
   }
-  return "Circuit GitHub App";
+  return "Cadence GitHub App";
 }
 
 export async function resolveGitHub(args: {

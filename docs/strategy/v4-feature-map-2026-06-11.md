@@ -1,6 +1,6 @@
 # v4 Feature Map: The Agent-Run Product Lifecycle, End to End (2026-06-11)
 
-> **What this is.** The canonical, stress-tested feature scope for Circuit (interim name, see [`../decisions/naming.md`](../decisions/naming.md)): every lifecycle station, every agent, every handoff, every human gate, decomposed L0→L5 and sequenced into milestones. **This supersedes [`v3-positioning-circuit-2026-06-10.md`](./v3-positioning-circuit-2026-06-10.md) for feature scope and IA.** Personas and the closed-loop metaphor from v3 remain valid.
+> **What this is.** The canonical, stress-tested feature scope for Cadence (interim name, see [`../decisions/naming.md`](../decisions/naming.md)): every lifecycle station, every agent, every handoff, every human gate, decomposed L0→L5 and sequenced into milestones. **This supersedes [`v3-positioning-cadence-2026-06-10.md`](./v3-positioning-cadence-2026-06-10.md) for feature scope and IA.** Personas and the closed-loop metaphor from v3 remain valid.
 >
 > **Who reads this.** Any human or AI session (Claude Code / Lovable / Antigravity) before building any feature. Build order lives in [`../../plan.md`](../../plan.md) §3; ticket-level F-IDs in [`../planning/feature-backlog.md`](../planning/feature-backlog.md); why this map exists in [`v4-stress-test-2026-06-11.md`](./v4-stress-test-2026-06-11.md); market evidence in [`../references/competitive-landscape-2026-06-11.md`](../references/competitive-landscape-2026-06-11.md).
 >
@@ -251,7 +251,7 @@ Right half becomes real: LRN-01 support triage loop, SEN-05 Quant inbound, LCH-0
 ENG-08 roles + persona approval lanes; DEF-04/05 design scaffolds + handoff; BLD-06 visual validation; LCH-04 enablement; comments on specs; multi-seat workspaces. **Proof: designer, eng lead, and GTM each complete their gate in their own lane on one mission.**
 
 ### M4: The Org Runs Itself
-Portfolio view, budgets enforcement UX, ENG-07 MCP server/client + A2A delegate-out (BLD-04), LRN-05 skill packs, ENG-09 enterprise plane, LCH-03 pricing briefs. **Proof: an external agent completes a Circuit mission step under our governance, fully traced.**
+Portfolio view, budgets enforcement UX, ENG-07 MCP server/client + A2A delegate-out (BLD-04), LRN-05 skill packs, ENG-09 enterprise plane, LCH-03 pricing briefs. **Proof: an external agent completes a Cadence mission step under our governance, fully traced.**
 
 ### M5: Compounding
 Memory-graph querying as a product surface, stale-fact drift, cross-product learnings, connector breadth, outcome-priced enterprise plans. **Proof: same-customer month-6 metrics beat week-1 (spec acceptance rate, mission cost, re-score precision).**

@@ -8,7 +8,7 @@
 
 ## Decisions taken this session (founder-confirmed)
 
-1. **Naming: DEFERRED to the final activity.** Founder rejected Rigel/Tanager/Sittella/Perihelion (and earlier Cadence/Circuit are conflicted). **"Circuit" stays the interim working name** in all docs, with the existing rename disclaimer. Fresh naming directions logged in [`../decisions/naming.md`](../decisions/naming.md). Do not block any work on naming.
+1. **Naming: DEFERRED to the final activity.** Founder rejected Rigel/Tanager/Sittella/Perihelion (and earlier Cadence/Cadence are conflicted). **"Cadence" stays the interim working name** in all docs, with the existing rename disclaimer. Fresh naming directions logged in [`../decisions/naming.md`](../decisions/naming.md). Do not block any work on naming.
 2. **GTM: PLG wedge → enterprise.** Land with the individual senior PM (self-serve, 10-minute wow), expand team → org. Enterprise governance (SSO, audit, budgets) built into the architecture from day 1, sold later. Founder weighting: **pain-point/end-user first, investor framing secondary.**
 3. **Future-proofing rule (founder mandate):** at every platform node, define (a) native agents, (b) pluggable external-agent slots (MCP/A2A), and (c) the frontier-absorption path — if a lab ships a "PM frontier model" or PM-specialized agents, it plugs into the chokepoint as a routable brain and *strengthens* the platform. Solutioning at every level must keep this in mind.
 4. **No version gating (V1/V2).** Plan end-to-end full scope; sequence by milestone (M1…M5), each milestone independently demo-able.
@@ -22,7 +22,7 @@
 - [x] **Step 5 — End-to-end agentic feature map (L0→L5).** Output: [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md). **This is now the strategic source of truth** (supersedes v3 positioning for feature scope).
 - [x] **Step 6 — Naming.** Deferred by founder decision; fresh candidate directions + criteria logged in [`../decisions/naming.md`](../decisions/naming.md). Final pick = last activity before launch.
 - [x] **Step 7 — Doc rewrites + cross-referencing.** README.md, plan.md (§1–3 feature scope + build order + log entry), design.md (IA contract), docs/planning/feature-backlog.md (v4 overlay section), CLAUDE.md/GEMINI.md/ENTRY.md/AGENTS.md read-order pointers, session-decisions entry.
-- [x] **Step 8 — Cross-reference verification.** All links checked; naming consistent (Circuit interim + deferred-rename note); build log appended.
+- [x] **Step 8 — Cross-reference verification.** All links checked; naming consistent (Cadence interim + deferred-rename note); build log appended.
 
 ## How to resume in a fresh session
 
@@ -41,5 +41,5 @@
 | `plan.md` | Thin pointer to the v4 map for scope; build order; ACTIVE BUILD LOG stays here |
 | `docs/planning/feature-backlog.md` | Ticket-level F-IDs; v4 overlay section maps backlog → stations |
 | `README.md` | Product thesis, updated to v4 framing |
-| `docs/strategy/v3-positioning-circuit-2026-06-10.md` | Historical — superseded by v4 for scope; persona definitions still valid |
+| `docs/strategy/v3-positioning-cadence-2026-06-10.md` | Historical — superseded by v4 for scope; persona definitions still valid |
 | `docs/decisions/naming.md` | Naming deferred; fresh directions; final activity |

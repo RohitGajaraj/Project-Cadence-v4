@@ -1,6 +1,6 @@
 # v4 Stress Test: Arguing Against Our Own Product (2026-06-11)
 
-> **What this is.** The commissioned adversarial review of Circuit as it stands (post v3, post F-COCKPIT-MERGE). Written from the seats of a founder, a senior PM end-user, an investor, and a frontier-lab strategist. Every verdict here feeds the v4 feature map ([`v4-feature-map-2026-06-11.md`](./v4-feature-map-2026-06-11.md)).
+> **What this is.** The commissioned adversarial review of Cadence as it stands (post v3, post F-COCKPIT-MERGE). Written from the seats of a founder, a senior PM end-user, an investor, and a frontier-lab strategist. Every verdict here feeds the v4 feature map ([`v4-feature-map-2026-06-11.md`](./v4-feature-map-2026-06-11.md)).
 >
 > **Method.** Full doc read + src inventory (34 routes, 40 server-fn domains, agent runtime), market research ([`../references/competitive-landscape-2026-06-11.md`](../references/competitive-landscape-2026-06-11.md)), and the founder's own complaint: "overwhelming, not demo-ready, no storyline, I don't know where I'd start."
 
@@ -8,7 +8,7 @@
 
 ## The one-line verdict
 
-**Circuit has built an engine room and called it a ship.** The substrate (chokepoint, orchestrator DAG, reactor, trust stack, builder CI loop) is genuinely ahead of most seed-stage agent startups, and the user experience exposes that substrate as 34 navigation destinations instead of hiding it behind one simple promise. The result: real capability, zero felt story.
+**Cadence has built an engine room and called it a ship.** The substrate (chokepoint, orchestrator DAG, reactor, trust stack, builder CI loop) is genuinely ahead of most seed-stage agent startups, and the user experience exposes that substrate as 34 navigation destinations instead of hiding it behind one simple promise. The result: real capability, zero felt story.
 
 ## What survives the stress test (keep, don't rebuild)
 
@@ -22,7 +22,7 @@
 
 ### F1. The IA is the org chart of the plumbing (founder's complaint, confirmed)
 
-34 routes: agents, analytics, briefing, budgets, build, calendar, chat, cockpit, discovery, docs, drift, evals, governance, guardrails, inbox, integrations, meetings, missions, observe, opportunities, outcome, prds, prompts, roadmap, settings, swarm, sync, tasks, traces… Claude Code is a text box. Perplexity is a text box. Lovable is a text box. **Circuit is a filing cabinet.** Every internal subsystem became a nav item. Nobody can demo a filing cabinet. → **Verdict: collapse to 7 user-facing surfaces; everything else becomes tabs inside context or moves to Settings** (spec in feature map §7).
+34 routes: agents, analytics, briefing, budgets, build, calendar, chat, cockpit, discovery, docs, drift, evals, governance, guardrails, inbox, integrations, meetings, missions, observe, opportunities, outcome, prds, prompts, roadmap, settings, swarm, sync, tasks, traces… Claude Code is a text box. Perplexity is a text box. Lovable is a text box. **Cadence is a filing cabinet.** Every internal subsystem became a nav item. Nobody can demo a filing cabinet. → **Verdict: collapse to 7 user-facing surfaces; everything else becomes tabs inside context or moves to Settings** (spec in feature map §7).
 
 ### F2. There is no golden path
 

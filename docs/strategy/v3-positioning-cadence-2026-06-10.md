@@ -1,6 +1,6 @@
-# Product Positioning v3: Strategic Pivot to Circuit (B2B Enterprise)
+# Product Positioning v3: Strategic Pivot to the B2B Enterprise Cockpit
 
-> **What this is.** A record of the strategic pivot from Cadence to **Circuit**, focusing on the **B2B Enterprise Product Cockpit** positioning, target personas, pluggable multi-model substrate, and the 12-stage product development lifecycle.
+> **What this is.** A record of the 2026-06-10 strategic pivot to the **B2B Enterprise Product Cockpit** positioning, focusing on target personas, the pluggable multi-model substrate, and the 12-stage product development lifecycle. (The rename that accompanied it was reverted on 2026-06-16; the product is Cadence.)
 >
 > **When to revisit.** When aligning agent system prompts, adjusting UX layouts, or introducing custom tenant integrations for enterprise clients.
 >
@@ -9,20 +9,19 @@
 ---
 
 > [!IMPORTANT]
-> **CADENCE ➔ CIRCUIT RENAME DISCLAIMER:**
-> _This project has been renamed from **Cadence** to **Circuit**. Any legacy folder structures, database tables, migrations, environment variables, or APIs that still contain the string `cadence` or `Cadence` are to be treated as equivalent to `circuit` or `Circuit` to prevent breakages in existing configurations and caches._
+> **PRODUCT NAME: CADENCE.** The product is **Cadence**. This is a superseded v3 positioning doc kept for its personas; a brief 2026-06-10 rename experiment to a different brand was reverted on 2026-06-16 and the retired name must not be reintroduced.
 
 ---
 
-## 1. The Story of Circuit ⚡
+## 1. The Story of Cadence ⚡
 
-### Naming Rationale
+### Naming note (reverted)
 
-The name "Cadence" was heavily contested for trademarks and SEO. The new name **Circuit** (inspired by Bloomberg’s _The Circuit_ with Emily Chang) represents a modern, ownable, and visually clean technology brand. It connotes high-tech execution, terminal paths, and signal flow.
+This v3 session briefly explored a rebrand away from Cadence on trademark and SEO grounds. That rename was **reverted on 2026-06-16** after the replacement proved to have its own collisions. The product name is **Cadence**; fresh-name exploration is paused, see [`../decisions/naming.md`](../decisions/naming.md).
 
-### The Closed-Loop Circuit Metaphor
+### The Closed-Loop Lifecycle
 
-A circuit is a closed, unbroken loop through which electric current flows. In a modern product organization, information represents this current:
+The product lifecycle is a closed, unbroken loop. In a modern product organization, information is the current that flows through it:
 
 1. **User Signals** (Ingested via Perplexity/WhisperFlow) flow into:
 2. **Opportunities & Scored Themes** (Discovery) which transition to:
@@ -34,13 +33,13 @@ A circuit is a closed, unbroken loop through which electric current flows. In a 
 8. **Customer Feedback & Support tickets** (Operating) which feed back to:
 9. **Learnings & Re-scoring** (Learning).
 
-If any seam requires manual data transport, spreadsheets, or un-tracked updates, **the circuit breaks**, and current ceases to flow. **Circuit** keeps the product current running in a continuous, unbroken, agent-run loop under human governance.
+If any seam requires manual data transport, spreadsheets, or un-tracked updates, **the loop breaks**, and the current stops flowing. **Cadence** keeps the product current running in a continuous, unbroken, agent-run loop under human governance.
 
 ---
 
 ## 2. Target Personas (B2B Enterprise Team)
 
-Rather than focusing exclusively on the solo PM, Circuit addresses the entire cross-functional B2B enterprise team:
+Rather than focusing exclusively on the solo PM, Cadence addresses the entire cross-functional B2B enterprise team:
 
 ### P1: Enterprise Director / VP of Product (The Portfolio Governor)
 
@@ -95,7 +94,7 @@ The platform offering represents the complete lifecycle, executed by specialist 
 
 ## 4. Pluggable Multi-Model Substrate
 
-To deliver optimal results, Circuit decouples cognitive tasks from individual providers, acting as an intelligent router:
+To deliver optimal results, Cadence decouples cognitive tasks from individual providers, acting as an intelligent router:
 
 1. **Gemini 1.5 Pro:** Leverages a 1M+ token context window to parse audio meeting transcripts (WhisperFlow) and support logs without chunking loss.
 2. **DeepSeek-Coder-V2 / Claude 3.5 Sonnet:** Surgical, high-accuracy multi-file code generation and linter-guided repairs.

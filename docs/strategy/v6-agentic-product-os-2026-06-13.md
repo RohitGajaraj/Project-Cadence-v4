@@ -5,7 +5,7 @@
 > remains the **expansion / engine map** (the 19-agent mesh, 7 laws, 6 stations). Personas trace to
 > v3; this doc refines them.
 > **Author:** Claude (technical co-founder / CTO, per `Ai_Cofounder.md`).
-> **Naming:** product name not finalized; **Cadence ≡ Circuit** everywhere (see CLAUDE.md disclaimer).
+> **Naming:** product name not finalized; **Cadence** everywhere (see CLAUDE.md disclaimer).
 > **Method:** 3 internal-lens explorations (surfaces · strategy canon · runtime reality) + 3
 > market-research streams (competition · customer pain · UX/pricing/GTM) + a 5-seat pressure test
 > (CTO red-team · CEO/GTM · investor · principal-PM · AI-architect). Every code-level claim below was
@@ -271,7 +271,7 @@ public launch. Gate on the §8 gauntlet, not a date.
 4. **Beachhead:** senior/founding PM at 50 to 400-person B2B SaaS. (§3)
 5. **Course-corrections accepted:** the §2 set (incl. 5 agents met-through-output +
    claim-never-outruns-wiring).
-6. **Naming:** unfinalized; **Cadence** placeholder (Cadence ≡ Circuit).
+6. **Naming:** unfinalized; **Cadence** placeholder (Cadence).
 7. **Session method:** first executable unit = persistence (§11) + **full Phase 0**; refinement mode =
    **ground + flag risks**; this doc is the **full plan**, not a change-list.
 
