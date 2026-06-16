@@ -41,7 +41,11 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| _(none)_ | | | | No feature currently claimed as In Dev. |
+| I3 | Branch/worktree isolation per mission | Claude Code (engine lane) | 2026-06-16 | Engine-core lane, SERIAL: I3 → J1 → J2 → I1 |
+| J1 | Test generation + run | Claude Code (engine lane) | 2026-06-16 | Engine-core lane |
+| J2 | QA gate + self-correct loop (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane |
+| I1 | Multi-file coding: per-hunk + revisions (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane |
+| I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
 
 ---
 
@@ -59,6 +63,8 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G7 Cockpit, IA & Observability | 3 | 1 | 0 | 12 |
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
+
+> 🔨 **Currently In Dev (2026-06-16):** 5 G3 rows. Engine-core lane (this session, serial): **I3 · J1 · J2 · I1**. Watch-the-build lane (parallel session): **I2**. See Active claims above.
 
 The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
 
@@ -125,11 +131,11 @@ _The biggest pending block and the core differentiator: genuine end-to-end execu
 | ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
 | --- | --- | --- | --- | --- |
 | F-STUDIO | Build engine (repo reads, multi-file changesets, `studio/*` branches, PR + CI, gated merge) | ✅ | The green path that ships real code | [`features/studio.md`](../features/studio.md) |
-| I1 | Studio multi-file coding (per-hunk accept/reject, atomic revisions) | ◐ Partial (verified 2026-06-16) | Multi-file changesets ship (`studioStage`, up to 20 files/changeset). Remaining: per-hunk accept/reject + true revision history (today only linear re-stage onto the branch) | `tools/registry.server.ts` (studioStage) + `ChangesPanel.tsx` |
-| I2 | Watch-the-agents-build live surface | ⬜ | Live per-session view (step, files, tool calls, cost); pause/steer mid-run | New streaming surface on `/build/$missionId` |
-| I3 | Branch/worktree isolation per mission | ⬜ | Parallel missions can't clobber each other's files | Per-mission worktree + merge path |
-| J1 | Test generation + run | ⬜ | Agents author + run unit/integration/E2E; results persisted | Runner wiring + `eval`/test tables |
-| J2 | QA gate + self-correct loop | ◐ Partial (verified 2026-06-16) | CI is readable (`github.ci.read`) and merge is review-gated. Remaining: an AUTOMATED self-correct loop (today "fix on red" is a prompt instruction, not orchestration) + a Cadence-level gate that blocks merge on red CI | `tools/registry.server.ts` (github.ci.read / studio.pr.merge) + loop orchestration |
+| I1 | Studio multi-file coding (per-hunk accept/reject, atomic revisions) | 🔨 In Dev (CC) (◐ base) | Multi-file changesets ship (`studioStage`, up to 20 files/changeset). Remaining: per-hunk accept/reject + true revision history (today only linear re-stage onto the branch) | `tools/registry.server.ts` (studioStage) + `ChangesPanel.tsx` |
+| I2 | Watch-the-agents-build live surface | 🔨 In Dev (parallel lane) | Live per-session view (step, files, tool calls, cost); pause/steer mid-run. Much exists already (`SessionTimeline` · `CostPanel` · `CiPanel` · `ApprovalCard` + `steerStudioSession`); the gap is live auto-refresh/streaming + polish (verify before building) | `_authenticated.build.$missionId.tsx` + `SessionTimeline.tsx`; poll `getStudioSession` |
+| I3 | Branch/worktree isolation per mission | 🔨 In Dev (CC) | Parallel missions can't clobber each other's files | Per-mission worktree + merge path |
+| J1 | Test generation + run | 🔨 In Dev (CC) | Agents author + run unit/integration/E2E; results persisted | Runner wiring + `eval`/test tables |
+| J2 | QA gate + self-correct loop | 🔨 In Dev (CC) (◐ base) | CI is readable (`github.ci.read`) and merge is review-gated. Remaining: an AUTOMATED self-correct loop (today "fix on red" is a prompt instruction, not orchestration) + a Cadence-level gate that blocks merge on red CI | `tools/registry.server.ts` (github.ci.read / studio.pr.merge) + loop orchestration |
 | K1 | PR / deploy / release notes behind approval | ⬜ | The Ship step: gated PR, deploy, generated release notes | Extend Build → approval-gated deploy |
 | K2 | Rollback triggers + one-action revert | ⬜ | Safe ship: documented rollback, feature-flag kill, UI revert | Revert path + flag kill |
 | BLD-05 | Inspector gate (agent tests + preview before merge) | ⬜ | A preview + test bar before a merge proposal reaches you | Depends on J1/J2 |

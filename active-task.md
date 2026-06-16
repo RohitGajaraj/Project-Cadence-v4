@@ -1,5 +1,17 @@
 # Active task — Phase 3: "Proof & Launch" (Agentic Product OS build)
 
+> ## 🔨 CURRENT FOCUS (2026-06-16): G3 build-engine lane
+> Building the autonomous execution chain (Build → QA → Ship). Lanes split file-disjoint and claimed on the [Feature Dashboard](docs/planning/feature-dashboard.md):
+> - **This session (Claude Code) - engine-core lane, SERIAL:** I3 (branch/worktree isolation) → J1 (test generation + run) → finish J2 (automated self-correct + CI-blocking merge gate) → finish I1 (per-hunk accept/reject + revisions). OWNS `src/lib/studio.functions.ts`, `src/lib/ai/tools/registry.server.ts`, `src/lib/ai/loop.server.ts`, `src/components/studio/ChangesPanel.tsx`, `src/components/studio/CiPanel.tsx`, new migrations.
+> - **Parallel session - watch-the-build lane (I2):** the live build view. OWNS `src/routes/_authenticated.build.$missionId.tsx`, `_authenticated.build.index.tsx`, `src/components/studio/SessionTimeline.tsx`, new view components. MUST NOT touch the engine-core files above. Pure frontend + TanStack Query polling of `getStudioSession`.
+>
+> Checklist (engine lane):
+> - [ ] I3: per-mission isolated branch + clean merge path (harden the `studio/*` branch model so concurrent missions never share a working branch)
+> - [ ] J1: a `studio.test.run` tool + `studio_test_runs` table (migration) + build-agent authors/runs tests + results persisted and read back
+> - [ ] J2: loop orchestration re-dispatches a fix step on red CI/tests until green or escalate; a Cadence-level guard blocks `studio.pr.merge` while CI/tests are red
+> - [ ] I1: per-hunk accept/reject in `ChangesPanel.tsx` + revision history in the changeset model (migration)
+> - [ ] Per slice: `bun test` for pure logic + `bun run build` green + adversarial review; flip the dashboard row to ✅ on landing, push the WHY
+
 > **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
 
 >
