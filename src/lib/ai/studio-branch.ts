@@ -1,5 +1,5 @@
 /**
- * I3 — collision-safe working-branch name for a Studio changeset.
+ * I3: collision-safe working-branch name for a Studio changeset.
  *
  * The Studio engine isolates each mission's edits on its own `studio/*` branch
  * (no local checkout; everything goes through the GitHub Git Data API). The

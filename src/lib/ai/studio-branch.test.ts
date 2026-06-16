@@ -18,7 +18,7 @@ describe("studioBranchName", () => {
   });
 
   test("REGRESSION (the I3 bug): two missions sharing an 8-hex prefix get DIFFERENT branches", () => {
-    // Same first 8 chars ("abc12345") — the old `studio/<missionId8>` collided here.
+    // Same first 8 chars ("abc12345"): the old `studio/<missionId8>` collided here.
     const m1 = "abc12345-1111-4aaa-8aaa-000000000001";
     const m2 = "abc12345-9999-4bbb-8bbb-000000000002";
     const cs1 = "aaaaaaaa-0000-0000-0000-000000000001";
