@@ -1,7 +1,7 @@
 # Active task — Phase 3: "Proof & Launch" (Agentic Product OS build)
 
-> ## 🔨 CURRENT FOCUS (2026-06-16): G3 build-engine lane
-> Building the autonomous execution chain (Build → QA → Ship). Lanes split file-disjoint and claimed on the [Feature Dashboard](docs/planning/feature-dashboard.md):
+> ## ✅ DONE (2026-06-16): G3 build-engine lane (I3 · J1 · J2 · I1 · I1b · K1) — shipped, reviewed, on main
+> Built the autonomous execution chain (Build → QA → Ship), all six on **main**, build-green, 146 tests, adversarially reviewed (4 findings fixed). **Only the post-deploy verification gate remains (below).** Lanes were split file-disjoint and claimed on the [Feature Dashboard](docs/planning/feature-dashboard.md):
 > - **This session (Claude Code) - engine-core lane, SERIAL:** I3 (branch/worktree isolation) → J1 (test generation + run) → finish J2 (automated self-correct + CI-blocking merge gate) → finish I1 (per-hunk accept/reject + revisions). OWNS `src/lib/studio.functions.ts`, `src/lib/ai/tools/registry.server.ts`, `src/lib/ai/loop.server.ts`, `src/components/studio/ChangesPanel.tsx`, `src/components/studio/CiPanel.tsx`, new migrations.
 > - **Parallel session - watch-the-build lane (I2):** the live build view. OWNS `src/routes/_authenticated.build.$missionId.tsx`, `_authenticated.build.index.tsx`, `src/components/studio/SessionTimeline.tsx`, new view components. MUST NOT touch the engine-core files above. Pure frontend + TanStack Query polling of `getStudioSession`.
 >
@@ -12,7 +12,15 @@
 > - [x] I1 (2026-06-16): per-hunk accept/reject + drop-file curation of a staged changeset before commit (pure `ai/studio-hunks.ts`, 11 tests; `applyStagedHunkSelection`/`rejectStagedFile`; `ChangesPanel` UI, gated to status='staged'). Build green, 146 tests.
 > - [x] I1b (2026-06-16): revision history. `studio_changeset_revisions` migration (`20260616230000`) + best-effort `!cached`-gated snapshot in `studio.commit` + `getChangesetRevisions` + a Changes-tab revisions strip with GitHub links. Revert-to-revision deferred. Build green, 146 tests. **G3 engine lane (I3·J1·J2·I1·I1b) COMPLETE.**
 > - [x] K1 (2026-06-16, honest path): release notes for a shipped changeset. migration `20260616240000` (release_notes cols) + `generateReleaseNotes` (AI chokepoint, `studio` surface, grounded in files+revisions+work-order, auto-humanized, persisted) + Changes-tab section (generate/regenerate). PR/merge gates already existed; deploy stays external (K1-deploy deferred). Owner-scoped generation (changeset RLS). Build green, 146 tests.
-> - [ ] Per slice: `bun test` for pure logic + `bun run build` green + adversarial review; flip the dashboard row to ✅ on landing, push the WHY
+> - [x] Adversarial review (ecc:typescript-reviewer) of J2 + K1 + I1 — 4 findings fixed: **(HIGH/J2)** CI fetch was `per_page=50` with no pagination, a failing check beyond #50 could read as green → now `per_page=100` + fail-safe block when `total_count` exceeds the page (never a false allow); **(HIGH/J2)** closed-but-unmerged PR fell through to a misleading 405 → now a clear `state != open` guard; **(MED/I1)** stale hunk-ids under a concurrent edit could silently corrupt content → optimistic-concurrency via `expectedUpdatedAt` conditional update (UI passes the row's `updated_at`); **(MED/K1)** uncapped commit messages could hijack the release-notes prompt → each capped to 500 chars. `bun test` 146 green, `bun run build` green.
+>
+> ### ⏳ POST-DEPLOY VERIFICATION GATE (the only thing left for G3; do once the next Lovable sync lands)
+> Three migrations apply on sync: `20260616220000` (J1 Studio prompt), `20260616230000` (I1b revisions table), `20260616240000` (K1 release_notes cols). Per the deploy-divergence rule, first confirm the deployed build actually reflects these commits, then on a live Studio mission with a connected repo:
+> - **J1:** a new/seeded Studio agent's system prompt includes the "INCLUDE TESTS" step (the agent authors tests).
+> - **J2:** requesting merge on a PR with red/pending CI returns `MergeBlocked`; green/neutral merges as before.
+> - **I1:** Changes tab (status=staged) shows per-hunk reject + Apply (reverts to base) + Reject-file; a stale apply returns the conflict message.
+> - **I1b:** after ≥1 commit, the Revisions strip lists commits with GitHub links.
+> - **K1:** Changes tab Generate produces factual release notes (owner-scoped); Regenerate refreshes.
 
 > **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
 

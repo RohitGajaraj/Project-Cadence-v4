@@ -1628,11 +1628,21 @@ const studioPrMerge = def({
       );
       if (!prRes.ok)
         throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 200)}`);
-      const prJson = (await prRes.json()) as { head: { sha: string }; merged: boolean };
+      const prJson = (await prRes.json()) as {
+        head: { sha: string };
+        merged: boolean;
+        state: string;
+      };
+      // A closed-but-unmerged PR can't be merged; fail clearly instead of
+      // falling through to a misleading "conflicts or pending checks" 405.
+      if (prJson.state !== "open" && !prJson.merged)
+        throw new Error(
+          `MergeBlocked: the pull request is ${prJson.state}, not open. Reopen it or open a fresh one.`,
+        );
       if (!prJson.merged) {
         const headSha = prJson.head.sha;
         const [checksRes, statusRes] = await Promise.all([
-          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=50`, {
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=100`, {
             headers,
           }),
           fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/status`, { headers }),
@@ -1641,13 +1651,22 @@ const studioPrMerge = def({
         if (!statusRes.ok)
           throw new Error(`GitHub combined-status ${statusRes.status} (merge gate)`);
         const checksJson = (await checksRes.json()) as {
+          total_count?: number;
           check_runs?: Array<{ status: string; conclusion: string | null }>;
         };
         const statusJson = (await statusRes.json()) as {
           statuses?: Array<{ state: string }>;
         };
+        const runs = checksJson.check_runs ?? [];
+        // Fail safe: if more check-runs exist than we fetched in one page, we
+        // cannot confirm they are all green, so refuse rather than risk a false
+        // allow (a missed failing check beyond the page would read as success).
+        if ((checksJson.total_count ?? runs.length) > runs.length)
+          throw new Error(
+            "MergeBlocked: too many CI checks to verify in one page. Confirm CI is green and merge from GitHub.",
+          );
         const ciChecks = [
-          ...(checksJson.check_runs ?? []).map((c) => ({
+          ...runs.map((c) => ({
             status: c.status,
             conclusion: c.conclusion ?? null,
           })),

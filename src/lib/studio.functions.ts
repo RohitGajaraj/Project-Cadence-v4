@@ -777,7 +777,9 @@ export const generateReleaseNotes = createServerFn({ method: "POST" })
     }
 
     const fileList = files.map((f) => `${f.op} ${f.path}`).join("\n") || "(none recorded)";
-    const commits = revs.map((r) => `r${r.revision_no}: ${r.message}`).join("\n");
+    // Cap each commit message (untrusted: an agent or member authored it) so a
+    // crafted message can't dominate or hijack the release-notes prompt.
+    const commits = revs.map((r) => `r${r.revision_no}: ${r.message.slice(0, 500)}`).join("\n");
     const system =
       "You write concise, factual software release notes. Output GitHub-flavored markdown: a one-line summary, then a short bulleted 'What changed' grounded ONLY in the provided files and commit messages, then a 'Notable' line only if warranted. No marketing tone, no hype, no invented features or claims. Under 180 words.";
     const user = [
@@ -826,6 +828,10 @@ export const applyStagedHunkSelection = createServerFn({ method: "POST" })
         changesetId: z.string().uuid(),
         path: z.string().min(1).max(400),
         rejectedHunkIds: z.array(z.number().int().min(0).max(100_000)).max(5_000),
+        // Optimistic-concurrency token: the row's updated_at as the UI saw it.
+        // The update only lands if the row is unchanged, so stale hunk ids
+        // (computed against older content) can never silently corrupt the file.
+        expectedUpdatedAt: z.string().max(64).optional(),
       })
       .parse(i),
   )
@@ -854,11 +860,15 @@ export const applyStagedHunkSelection = createServerFn({ method: "POST" })
       r.new_content ?? "",
       data.rejectedHunkIds,
     );
-    const { error } = await db
+    let upd = db
       .from("studio_changes")
       .update({ new_content: next, updated_at: new Date().toISOString() })
       .eq("id", r.id);
+    if (data.expectedUpdatedAt) upd = upd.eq("updated_at", data.expectedUpdatedAt);
+    const { data: updated, error } = await upd.select("id");
     if (error) throw new Error(error.message);
+    if (data.expectedUpdatedAt && (updated?.length ?? 0) === 0)
+      throw new Error("This file changed since you opened it. Refresh and reapply your selection.");
     return { ok: true, path: data.path, new_chars: next.length };
   });
 

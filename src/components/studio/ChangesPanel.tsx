@@ -33,6 +33,7 @@ type DiffRow = {
   op: string;
   base_content: string | null;
   new_content: string | null;
+  updated_at: string;
 };
 
 const LANG_BY_EXT: Record<string, string> = {
@@ -119,12 +120,13 @@ export function ChangesPanel({
     if (changeset) qc.invalidateQueries({ queryKey: ["studio-diff", changeset.id] });
   };
   const applyMut = useMutation({
-    mutationFn: (vars: { path: string; rejectedHunkIds: number[] }) =>
+    mutationFn: (vars: { path: string; rejectedHunkIds: number[]; expectedUpdatedAt?: string }) =>
       fApply({
         data: {
           changesetId: changeset!.id,
           path: vars.path,
           rejectedHunkIds: vars.rejectedHunkIds,
+          expectedUpdatedAt: vars.expectedUpdatedAt,
         },
       }),
     onSuccess: () => {
@@ -530,7 +532,11 @@ export function ChangesPanel({
                 <button
                   type="button"
                   onClick={() =>
-                    applyMut.mutate({ path: selectedPath!, rejectedHunkIds: [...rejected] })
+                    applyMut.mutate({
+                      path: selectedPath!,
+                      rejectedHunkIds: [...rejected],
+                      expectedUpdatedAt: selected?.updated_at,
+                    })
                   }
                   disabled={applyMut.isPending || rejected.size === 0}
                   className="mono-label"
