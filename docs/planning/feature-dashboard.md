@@ -44,6 +44,29 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 ---
 
+## 🎯 Build priority & disjoint lanes (the pick-list, from [v10](../strategy/v10-master-blueprint-2026-06-17.md))
+
+> **The single pick-list.** Priority and lane come from the [v10 master blueprint](../strategy/v10-master-blueprint-2026-06-17.md) sections 15 to 16 (full What/Pain/How per item there). Lanes are **file-disjoint** so a session claims a lane and builds its top item without colliding. Execution mechanics (per-item build/verify/ship discipline, milestone gates) are in [`implementation-plan.md`](./implementation-plan.md). Pick top-down.
+
+**P0 - build first (close the loop + land the wedge):**
+| Order | Item | Lane | Status | What |
+| --- | --- | --- | --- | --- |
+| 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ⬜ / ◐ | Real outcome reviews (predicted vs actual) + wire the scaffolded outcome-memory auto-trigger. Closes the loop; the moat. |
+| 2 | `WEDGE` | C (DECIDE) | ⬜ **new** | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. |
+| 3 | `MOAT-VIS` | B (LEARN) | ⬜ **new** | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. |
+| 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
+| 5 | `W6` | E (PLG) | ⬜ | Persona onboarding (also the wedge's delivery surface). |
+
+**P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `SEN-05`+`F-ANALYTICS-1/2`+`MOAT-METRIC` (A/B, new), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
+
+**P2 - breadth/polish:** `ENG-06`, `BLD-04`, `K2`, `BLD-05`, `D4`, `P7`, `P3`, `R3`, `B5`, `FND-0.7`, `U6`, IA culls.
+
+**CUT / DEFER (do not build now):** `K1-deploy` (external deploy), `F-AUDIO-1/2` + `SEN-04` (post-PMF), the full 19-mesh breadth, outcome-pricing machinery, team/RBAC `A6` beyond the MCP slice.
+
+**New items added by v10 (tracked here; not yet group rows below):** `WEDGE`, `W1-AUTO`, `MOAT-VIS`, `MOAT-METRIC`, `F-SHARE-TEARDOWN`, `SANDBOX`, `AMBIENT-ARC`, `Q1-MCP`. **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
+
+---
+
 ## At a glance
 
 | Group | ✅ Done | ◐ Partial | ⏸️/⏭️/🚧 | ⬜ Pending |

@@ -9,10 +9,34 @@
 
 ---
 
+## Which doc to pick (the role map - read this if unsure; one source per need, no duplication)
+
+| If you need... | Pick this ⭐ | Role |
+| --- | --- | --- |
+| **What to build next, why, how it should look and behave, priority + lane** | [**v10 master blueprint**](./v10-master-blueprint-2026-06-17.md) | the blueprint (pick first) |
+| **How we execute it** (build order, per-item discipline, milestone gates) | [**implementation-plan.md**](../planning/implementation-plan.md) | the how |
+| **Live status of every feature** (the cursor) | [**feature-dashboard.md**](../planning/feature-dashboard.md) | the status board |
+| Positioning / market / pricing / GTM / investor | [v7](./v7-agentic-product-os-2026-06-14.md) | positioning canon |
+| Surfaces / IA / structure / the hybrid Build spine | [v8](./v8-calm-front-deep-engine-2026-06-16.md) | structure canon |
+| The launch wedge / competitor posture | [v9](./v9-decision-wedge-and-build-next-2026-06-17.md) | decision lens |
+| The raw reasoning + the fundraising/YC narrative | [strategic-inputs-log.md](./strategic-inputs-log.md) | source reasoning |
+| Why a decision was made | [session-decisions.md](./session-decisions.md) | decision log |
+| Granular acceptance criteria per feature | [feature-backlog.md](../planning/feature-backlog.md) | granular ledger |
+| Milestone exit criteria (M-A to M-D) | [v7-build-status.md](../planning/v7-build-status.md) | milestone narrative |
+| Open bugs | [known-issues.md](../planning/known-issues.md) | bug list |
+| Engine / 19-agent mesh / handoff contract detail | [v4-feature-map](./v4-feature-map-2026-06-11.md) | engine reference |
+| Requirements / technical contracts | [v7-prd](../planning/v7-prd-2026-06-14.md) / [v7-trd](../planning/v7-trd-2026-06-14.md) | requirements reference |
+| **Superseded - do not use; queued for archive** | `strategic-tasks.md` (use v10 pick-list), `v7-feature-map` + `v7-functionality-map` (use v10), `v4-rebuild-handoff` (stale) | historical |
+
+> **De-dup status (2026-06-17):** the superseded docs above are flagged here rather than moved yet, because each is still linked from operational files (AGENTS.md, ENTRY.md, TASKS.md, plan.md, hooks). Archiving them cleanly means updating those references in a dedicated pass so nothing breaks. Until then, **this role map is the single arbiter of which doc to pick.**
+
+---
+
 ## Versions
 
 | Version                                                                           | Date       | Summary                                                                                                                                                                                                                                                            | Status                      |
 | --------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| [**v10: The Master Blueprint**](./v10-master-blueprint-2026-06-17.md) | 2026-06-17 | **⭐ CURRENT master execution blueprint.** The single doc that fuses v7 (positioning) + v8 (structure) + v9 (decision lens) with a file-grounded scan of what is built, into a granular item-by-item plan: tagline, naming/verbatim, IA + navigation, screen-by-screen function, the agentic closed loop, the analytical engine, connectors, architecture, pricing, and the phased build sequence (Tiers 1 to 4 mapped to dashboard IDs). **Pick this to know what to build next and how the product should look and behave.** References the live feature-dashboard for status (does not duplicate it). | **⭐ Current (master blueprint)** |
 | [**v9: The Decision Wedge & the Build-Next Plan**](./v9-decision-wedge-and-build-next-2026-06-17.md) | 2026-06-17 | **⭐ CURRENT decision-lens + build-next canon.** Sits on top of v7 (positioning) and v8 (structure); adds four things they did not state plainly: (1) the first-principles read of the "Cursor for PM" essay (code has a fast oracle, "what to build" does not, so memory is the moat, not a preference); (2) the sharpened single launch wedge (the **Critic teardown**: "Cadence tells you why your pet feature is wrong, with receipts"); (3) the competitor posture map (**integrate / absorb / race / ignore**; the real threat is workspace incumbents, not labs, so pull MCP forward); (4) an honest audit (engine + Build spine real; the loop-ends and packaging are the unfinished, highest-leverage work) and a tiered build-next plan mapped to dashboard IDs. Reconciles the Build call with v8's hybrid spine. | **⭐ Current (decision/build-next)** |
 | [**v8: Calm Front, Deep Engine (structure & build canon)**](./v8-calm-front-deep-engine-2026-06-16.md) | 2026-06-16 | **⭐ CURRENT structure / IA / build-order canon.** Operationalizes v7's "simple front, powerful engine" into a concrete surface map (5 calm top-level surfaces + one Engine Room door; machinery recessed-not-removed and fully drillable on demand), the hybrid Build spine (own the 80% path, rent the heavy 20%; sandbox+preview is the one real new build), and a 4-phase forward sequencing. Born from a 2026-06-16 founder reflection that the product had drifted into a technical control room. Settled: Build = hybrid spine; two heroes (Today=decide, Build=ship), one loop; Law #1 = the Engine-Room Doctrine. | **⭐ Current (structure/build)** |
 | [**v7: Agentic Product OS (the post-Phase-3 reset)**](./v7-agentic-product-os-2026-06-14.md) | 2026-06-14 | **⭐ CURRENT positioning + build canon.** Code-verified state-of-product (the autonomy/memory engine is real; gaps = a live slug bug + migration-sync + connectors + observing-default); four committed course-corrections (memory-moat · ambient+governed · hybrid+outcome pricing · complete-loop-first); **dual-persona** beachhead; honest market synthesis (failure-data baseline, vendor reports down-weighted); pricing/GTM/investor narrative; proof-gated **M-0→M-D** roadmap. Built on a holistic evidence base (code truth-audit + market/WTP/investor research + references), not any single source. | **⭐ Current (positioning)** |
@@ -40,7 +64,7 @@
 
 ## How to use this folder
 
-- **Building a feature, making a UX/positioning decision, or onboarding?** For the launch wedge, competitor posture, and what-to-build-next priority, read **v9 (The Decision Wedge & the Build-Next Plan)** first (the current decision-lens canon). For structure / IA / surface placement and build-order, read **v8 (Calm Front, Deep Engine)** (the current structure/build canon). For positioning / market, read **v7 (Agentic Product OS, the reset)**. It is the current positioning + build canon (code-verified state, four course-corrections, dual-persona, proof-gated M-0→M-D roadmap; founder rulings in §13). v6 holds the prior canon + engine/IA detail + market appendices; v5 holds the wedge UX detail; v4 governs expansion scope (stations, mesh, M2 to M5); personas in v3. Superseded iterations live in [`archive/`](./archive/).
+- **Building a feature, making a UX/positioning decision, or onboarding?** Start with the **role map above**. For what to build next and how it should look and behave, read **v10 (The Master Blueprint)** first, then **implementation-plan.md** for the execution order. For the launch wedge, competitor posture, and priority rationale, read **v9 (The Decision Wedge & the Build-Next Plan)** (the current decision-lens canon). For structure / IA / surface placement and build-order, read **v8 (Calm Front, Deep Engine)** (the current structure/build canon). For positioning / market, read **v7 (Agentic Product OS, the reset)**. It is the current positioning + build canon (code-verified state, four course-corrections, dual-persona, proof-gated M-0→M-D roadmap; founder rulings in §13). v6 holds the prior canon + engine/IA detail + market appendices; v5 holds the wedge UX detail; v4 governs expansion scope (stations, mesh, M2 to M5); personas in v3. Superseded iterations live in [`archive/`](./archive/).
 - **Received strategic input (market analysis, positioning feedback, new customer insight)?** Document it in the current version in the same session. If the change is significant enough to warrant a new version, create `v3-positioning-YYYY-MM-DD.md` and update this index.
 - **Wondering why a past decision was made?** Read the version that was current at that time.
 
