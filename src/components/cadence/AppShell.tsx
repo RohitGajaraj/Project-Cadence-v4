@@ -55,17 +55,19 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail: Today · Approvals · Brain (the v5 felt product).
+// Workspace — your daily rail: Today · Brain (the v5 felt product). Approvals
+// is NOT here: it lives in the Trust row (footer) with its live pending-count
+// badge, where governance shortcuts belong (founder ruling 2026-06-16 — keeping
+// Approvals in the Trust cluster reads better than pinning it in the rail).
 // Missions lives in its own group; Calendar reaches via the quick-access dock.
 // F-BRAIN: the chat surface is now "Brain" — route stays /chat.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/chat", label: "Brain", icon: Brain },
 ];
 
-// Floating quick-access dock — Calendar only (Approvals is pinned in the
-// workspace rail). Deep-links into /knowledge?tab=calendar so it stays
+// Floating quick-access dock — Calendar only (Approvals lives in the Trust
+// row, not the dock). Deep-links into /knowledge?tab=calendar so it stays
 // consistent with Calendar's home as a Knowledge tab.
 const quickAccess: {
   to: string;
@@ -113,15 +115,17 @@ const groups: NavGroup[] = [
 
 // Trust row — pinned governance shortcuts in the sidebar footer. With the
 // Govern nav group mothballed (F-V5-MOTHBALL), this is the only visible path
-// into the engine room — keep it visible. Approvals is intentionally NOT here:
-// it lives once in the daily rail above (badged with the live call count), so
-// the sidebar single-sources it (Phase-2 IA de-dup, 2026-06-16).
+// into the engine room — keep it visible. Approvals lives HERE (single-sourced
+// in the Trust row, with its live pending-count badge), not in the daily rail —
+// founder ruling 2026-06-16: governance belongs in the Trust cluster, and the
+// badge surfaces the pending count without taking a rail slot.
 const trustLinks: {
   to: string;
   label: string;
   icon: LucideIcon;
   search?: Record<string, string>;
 }[] = [
+  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/govern", label: "Budgets", icon: Gauge, search: { tab: "budgets" } },
   { to: "/govern", label: "Engine Room", icon: ShieldAlert },
   { to: "/sync", label: "Connectors", icon: Plug },
@@ -589,16 +593,11 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         {/* Scrollable middle: nav + products */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
           <nav className="flex flex-col">
-            {/* Workspace rail — always-on daily surfaces. Approvals carries
-                the pending-calls badge (ember = needs-human). */}
+            {/* Workspace rail — always-on daily surfaces (Today · Brain).
+                Approvals + its pending-calls badge live in the Trust row below. */}
             <div className="flex flex-col gap-0.5 pt-1.5">
               {workspace.map((n) => (
-                <NavRow
-                  key={`${n.to}:${n.search?.tab ?? ""}`}
-                  item={n}
-                  active={isItemActive(n)}
-                  badge={n.label === "Approvals" && callCount > 0 ? callCount : undefined}
-                />
+                <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
               ))}
             </div>
 
