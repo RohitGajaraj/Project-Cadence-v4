@@ -16,6 +16,8 @@
 | [`doc-closure-checklist.md`](./doc-closure-checklist.md) | The 8-step per-feature checklist that closes the documentation loop.                                                                              |
 | [`doc-update-cadence.md`](./doc-update-cadence.md)       | **Doc maintenance cadence + the "what next" source of truth.** Three tiers (continuous / per feature-milestone / per structural change) so living docs stay current while architecture docs do not churn. Names `docs/planning/v7-build-status.md` as the always-current build-state tracker that answers "what are we building next". |
 | [`ui-verification-steps.md`](./ui-verification-steps.md) | After each build, end the report with numbered self-serve UI-verification steps (route + what's visible + one-line why); say so plainly when a change is backend-only, and flag deploy state (live now / after the Lovable Publish). Founder ruling 2026-06-16. |
+| [`home-and-today-ia.md`](./home-and-today-ia.md)         | **Home/Today IA + the surface-placement rubric.** Today is not a dashboard (only what needs the human now + the while-away summary); relocate-and-curate, never delete or textualize a rich visual; every artifact has one home. The standing "where does X go" answer so Today never re-clutters. Founder ruling 2026-06-16. |
+| [`design-context.md`](./design-context.md)               | **The design brief that loads by default on any design work:** the Ember system + the design-craft skills (impeccable, emil-design-eng) + the reference north-stars (interfacecraft.dev, devouringdetails.com) + the tuned orange. Motion is craft, not absence (replaces any "no animations" wording). Founder ruling 2026-06-16. |
 
 ## How to add a new convention
 
