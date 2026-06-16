@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| H2 | Outcome roadmap (Now/Next/Later) | Claude Code (IA/cockpit lane) | 2026-06-17 | migration (opportunities += roadmap_bucket/outcome/measure) + new `roadmap.functions.ts` + a Roadmap **tab** on `/product` with native HTML5 drag (no @dnd-kit) — outcome-driven (each item declares an outcome+measure; agent ICE orders within each human-chosen bucket). Collision-free: `/product` + new files, NOT AppShell/CommandPalette. Migration gates the place-into-bucket flow on the next Lovable sync. |
 
 ---
 
@@ -114,7 +115,7 @@ _Turn signal into governed decisions and specs._
 | DEF-03 | Critic-on-spec red team | ✅ (2026-06-14) | Specs get an adversarial pass before commit | Critic inline call |
 | F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
-| H2 | Outcome roadmap (Now/Next/Later) | ⬜ | Each item declares an outcome + measure; drag-reorder board | `@dnd-kit` board on `/roadmap` |
+| H2 | Outcome roadmap (Now/Next/Later) | 🔨 In Dev (CC, 2026-06-17) | Each item declares an outcome + measure; drag-reorder board | `@dnd-kit` board on `/roadmap` |
 | H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | "Plan deep work" on the Calendar: `proposeWorkBlocks` schedules open deep-work tasks into free time within working hours (reuses proposeSlots' conflict logic; one block per task, back-to-back, skips weekends/meetings; pure read-only proposal), each block has "Add to calendar". Adversarially reviewed: 1 real boundary bug + a user-facing em-dash fixed | `calendar.functions.ts` (`proposeWorkBlocks`) + `CalendarPanel.tsx` |
 | D4 | Cancellation / replay-and-branch / checkpoints | ⬜ | Stop mid-run, re-run with a different model/prompt, diff the result | Mission control + loop checkpoints |
 
@@ -204,7 +205,7 @@ _The product feels coherent; the operator sees the machine._
 | R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
 | R4 | Settings expansion (budgets, guardrails, health, prefs, admin) | ◐ Partial | Self-serve control surface (Plan tab shipped) | `_authenticated.settings.tsx` |
 | F-COCKPIT-MACHINE-MODE | Human ↔ Machine mode toggle (full-screen dispatch board) | ⬜ | The "watch the factory" view (absorbed by F-IA-V4) | Header toggle |
-| OPS-01 | Flow mode (ambient soundscape + focus timer, notification quieting) | ✅ (2026-06-16) | Calm, focused operating surface | Chrome: Flow widget in `AppShell` footer; calm-state dim + hold-then-summarize toasts (`lib/notify` facade) + Web Audio soundscape (`lib/flow/*`) · [`features/flow-mode.md`](../features/flow-mode.md) |
+| OPS-01 | Flow mode (ambient soundscape + focus timer, notification quieting) | ✅ (2026-06-16) | Calm, focused operating surface | Chrome: Flow widget in `AppShell` footer; calm-state dim + hold-then-summarize toasts (`lib/notify` facade) + real-audio soundscape with drop-in files (`lib/flow/*`, `public/soundscape/`) + custom timer · [`features/flow-mode.md`](../features/flow-mode.md) |
 
 ---
 
