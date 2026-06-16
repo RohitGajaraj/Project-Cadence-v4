@@ -5,13 +5,13 @@ import {
   Home,
   Bot,
   Brain,
+  MessageCircle,
   Hammer,
   ListTodo,
   Settings,
   Sparkles,
   Search,
   Telescope,
-  BookOpen,
   ShieldAlert,
   Activity,
   Calendar as CalIcon,
@@ -81,7 +81,7 @@ export function CommandPalette() {
                   hint="G D"
                   onSelect={() => go("/")}
                 />
-                <Item icon={Brain} label="Brain" hint="G C" onSelect={() => go("/chat")} />
+                <Item icon={MessageCircle} label="Ask" hint="G C" onSelect={() => go("/chat")} />
                 <Item
                   icon={Bot}
                   label="Agents · roster & telemetry"
@@ -106,8 +106,8 @@ export function CommandPalette() {
                   onSelect={() => go("/build")}
                 />
                 <Item
-                  icon={BookOpen}
-                  label="Knowledge · memory, decisions, docs"
+                  icon={Brain}
+                  label="Brain · memory, learnings, decisions, docs"
                   hint="G M"
                   onSelect={() => go("/knowledge")}
                 />

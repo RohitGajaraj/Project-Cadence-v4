@@ -2,10 +2,10 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Brain,
+  MessageCircle,
   Compass,
   Settings,
   Telescope,
-  BookOpen,
   Inbox,
   Activity,
   LogOut,
@@ -18,7 +18,6 @@ import {
   Moon,
   Search,
   Hammer,
-  Sparkles,
   Plus,
   Trash2,
   MoreHorizontal,
@@ -55,15 +54,15 @@ import {
 type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-// Workspace — your daily rail: Today · Brain (the v5 felt product). Approvals
-// is NOT here: it lives in the Trust row (footer) with its live pending-count
-// badge, where governance shortcuts belong (founder ruling 2026-06-16 — keeping
-// Approvals in the Trust cluster reads better than pinning it in the rail).
-// Missions lives in its own group; Calendar reaches via the quick-access dock.
-// F-BRAIN: the chat surface is now "Brain" — route stays /chat.
+// Workspace — your daily rail: Today · Ask (the v5 felt product). "Ask" is the
+// chat surface (route stays /chat) that queries the Brain; renamed from "Brain"
+// when Knowledge became "Brain" (founder ruling 2026-06-16 — the substrate owns
+// the word "brain"; the query surface is "Ask"). Approvals is NOT here: it lives
+// in the Trust row (footer) with its live pending-count badge. Missions lives in
+// its own group; Calendar reaches via the quick-access dock.
 const workspace: NavItem[] = [
   { to: "/", label: "Today", icon: Home },
-  { to: "/chat", label: "Brain", icon: Brain },
+  { to: "/chat", label: "Ask", icon: MessageCircle },
 ];
 
 // Floating quick-access dock — Calendar only (Approvals lives in the Trust
@@ -76,7 +75,7 @@ const quickAccess: {
   search?: Record<string, string>;
 }[] = [{ to: "/knowledge", label: "Calendar", icon: CalIcon, search: { tab: "calendar" } }];
 
-// Nav groups — cut to the v5 felt product: Product · Missions · Knowledge.
+// Nav groups — cut to the v5 felt product: Product · Missions · Brain.
 // Build/Learn/Agents/Govern mothballed (F-V5-MOTHBALL); the engine room stays
 // reachable via the Trust row in the footer. Collapsible; auto-open active.
 const groups: NavGroup[] = [
@@ -96,20 +95,14 @@ const groups: NavGroup[] = [
     label: "Missions",
     items: [{ to: "/missions", label: "Missions", icon: Activity }],
   },
+  // Knowledge → Brain (founder ruling 2026-06-16): the product's brain, the one
+  // substrate of everything it knows. The compounding agent-recall moat (the
+  // old top-level /memory surface) is now the Brain "Memory" tab; "Ask" (/chat)
+  // queries it. The old human-learnings tab is now "Learnings".
   {
     id: "knowledge",
-    label: "Knowledge",
-    items: [{ to: "/knowledge", label: "Knowledge", icon: BookOpen }],
-  },
-  // /memory - the compounding-memory view (what the loop recalls): the moat,
-  // keeps the name "Memory". Separate from Knowledge > Learnings (the
-  // human-recorded learnings feed, renamed from "Memory" in the Phase-2 IA
-  // de-collision, 2026-06-16); this is the agent_memory store the loop reads
-  // on its next run.
-  {
-    id: "memory",
-    label: "Memory",
-    items: [{ to: "/memory", label: "Memory", icon: Sparkles }],
+    label: "Brain",
+    items: [{ to: "/knowledge", label: "Brain", icon: Brain }],
   },
 ];
 
@@ -593,7 +586,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         {/* Scrollable middle: nav + products */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
           <nav className="flex flex-col">
-            {/* Workspace rail — always-on daily surfaces (Today · Brain).
+            {/* Workspace rail — always-on daily surfaces (Today · Ask).
                 Approvals + its pending-calls badge live in the Trust row below. */}
             <div className="flex flex-col gap-0.5 pt-1.5">
               {workspace.map((n) => (

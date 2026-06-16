@@ -139,11 +139,11 @@ export function MemoryPanel() {
                 role="button"
                 tabIndex={0}
                 onClick={() =>
-                  navigate({ to: "/knowledge", search: { tab: "memory", learning: l.id } })
+                  navigate({ to: "/knowledge", search: { tab: "learnings", learning: l.id } })
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter")
-                    navigate({ to: "/knowledge", search: { tab: "memory", learning: l.id } });
+                    navigate({ to: "/knowledge", search: { tab: "learnings", learning: l.id } });
                 }}
                 style={{
                   display: "flex",

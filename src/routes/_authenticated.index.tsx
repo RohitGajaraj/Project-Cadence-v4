@@ -822,7 +822,7 @@ function Dashboard() {
 
                 <Link
                   to="/knowledge"
-                  search={{ tab: "memory" }}
+                  search={{ tab: "learnings" }}
                   className="bento lift"
                   style={{
                     padding: "12px var(--card-pad)",

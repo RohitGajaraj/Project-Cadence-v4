@@ -1,7 +1,7 @@
 // Knowledge — screen 5 of the Ember Editorial migration, ported 1:1 from
 // design-reference/cadence/loop.jsx (KnowledgeScreen): kicker "Loop · Learn",
 // serif h1, the Company-brain strip (REAL counts only — getBrainStatus +
-// getCompanyBrainStats), TabRow Calendar | Learnings | Decisions | Docs with
+// getCompanyBrainStats), TabRow Calendar | Memory | Learnings | Decisions | Docs with
 // KNOWLEDGE_DESC lines. Production contracts ride the reference layout:
 // ?tab= + ?meeting= search params, panel-level server-function wiring.
 // Screen-6 drill contract: detail state rides optional search params
@@ -12,7 +12,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Sparkles } from "lucide-react";
+import { Brain, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
@@ -20,18 +20,28 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
 import { MemoryPanel } from "@/components/knowledge/MemoryPanel";
+import { MemoryList } from "@/components/memory/MemoryList";
 import { DecisionsPanel } from "@/components/knowledge/DecisionsPanel";
 import { DecisionDetail } from "@/components/knowledge/DecisionDetail";
 import { LearningDetail } from "@/components/knowledge/LearningDetail";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
 import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 
-type Tab = "calendar" | "memory" | "decisions" | "docs";
-const TABS: Tab[] = ["calendar", "memory", "decisions", "docs"];
+// Brain (formerly Knowledge) — the product's brain: one substrate of everything
+// it knows. The "memory" tab is the compounding agent-recall (the moat, folded
+// in from the old /memory surface); "learnings" is the human-recorded outcome
+// feed (the tab kept id "memory" until this restructure — now re-id'd to
+// "learnings" so the agent-recall tab can own "memory"). Founder ruling
+// 2026-06-16: Knowledge→Brain, /chat→Ask, /memory folds in here.
+type Tab = "calendar" | "memory" | "learnings" | "decisions" | "docs";
+const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "docs"];
 
 const KNOWLEDGE_DESC: Record<string, string> = {
   calendar: "Events and meeting transcripts. Open a meeting to capture and extract.",
-  memory: "What the swarm has learned about your workspace, customers, and product.",
+  memory:
+    "What the loop recalls: reflections agents wrote and outcomes they distilled, the compounding product memory.",
+  learnings:
+    "What your team recorded: re-scored opportunities and outcome memos, each with a verdict.",
   decisions: "Every choice your team made, captured once. Sourced from missions, specs, meetings.",
   docs: "Workspace pages. Import from Google Docs or Notion, edit inline.",
 };
@@ -107,16 +117,16 @@ function KnowledgePage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Knowledge"]} />
+      <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Brain"]} />
       <div
-        data-screen-label="Knowledge"
+        data-screen-label="Brain"
         style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}
       >
         <SurfaceHeader
-          kicker="Loop · Learn"
-          icon={BookOpen}
-          title="Knowledge"
-          sub="What the swarm knows. Calendar, learnings, decisions, docs in one place."
+          kicker="Loop · Brain"
+          icon={Brain}
+          title="Brain"
+          sub="Your product's brain. Memory, learnings, decisions, docs, and calendar in one place."
         />
 
         {/* Company brain strip — one consolidated substrate, queryable from Chat. */}
@@ -132,7 +142,7 @@ function KnowledgePage() {
           }}
         >
           <MonoLabel icon={Sparkles} style={{ color: "var(--ink)" }}>
-            Company brain
+            Product brain
           </MonoLabel>
           {brainStats ? (
             brainStats.map(([l, v]) => (
@@ -150,14 +160,15 @@ function KnowledgePage() {
           )}
           <span style={{ flex: 1 }}></span>
           <span className="mono-label" style={{ fontSize: 8.5 }}>
-            everything here is what Chat reasons over — one brain
+            everything here is what Ask reasons over — one brain
           </span>
         </div>
 
         <TabRow
           tabs={[
             { id: "calendar", label: "Calendar" },
-            { id: "memory", label: "Learnings" },
+            { id: "memory", label: "Memory" },
+            { id: "learnings", label: "Learnings" },
             { id: "decisions", label: "Decisions" },
             { id: "docs", label: "Docs" },
           ]}
@@ -167,7 +178,8 @@ function KnowledgePage() {
         />
 
         {tab === "calendar" && <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />}
-        {tab === "memory" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
+        {tab === "memory" && <MemoryList />}
+        {tab === "learnings" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
         {tab === "decisions" && (decision ? <DecisionDetail id={decision} /> : <DecisionsPanel />)}
         {tab === "docs" && <DocsPanel />}
       </div>

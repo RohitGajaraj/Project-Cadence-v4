@@ -357,7 +357,7 @@ function ChatPage() {
       <TopBar
         crumbs={[
           activeWorkspace?.name ?? "Workspace",
-          "Brain",
+          "Ask",
           ...(activeTitle ? [activeTitle] : []),
         ]}
         actions={<BrainStatusButton />}
