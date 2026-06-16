@@ -42,6 +42,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
+| N2 | Re-score + insight memo + daily brief | Claude Code (IA/cockpit lane) | 2026-06-16 | re-score + brief already exist; the gap is the **insight memo** — feed recent `learnings` (re-scored outcomes) into the daily brief so it synthesizes "what the loop learned". Touches only `copilot.functions.ts` (the brief). Collision-free with the build lanes (studio/build). |
 
 ---
 
@@ -95,7 +96,7 @@ _Get real signal in, cluster it, keep it fresh._
 | F-CONN | Connector platform (OAuth) | ⏸️ Parked | The connector engine is built; **parked** pending founder OAuth-client registration | `src/lib/connectors/` · [`architecture/integrations.md`](../../architecture/integrations.md) |
 | SEN-01 | Connector dock: 2nd live ingest (Slack / GitHub issues / support) | ⬜ (M-A) | The loop needs ≥2 real sources to close on real data | Register one provider OAuth client → adapter in `src/lib/connectors/` |
 | F3 | Continuous discovery feed | ◐ Partial | Always-fresh per-product feed + incremental re-cluster (Scout ingest is manual today) | Extend discovery functions; feed UI on `/prds` discovery |
-| N2 | Re-score + insight memo + daily brief | ⬜ | Outcomes re-rank opportunities; brief surfaces in Today | `lineage.functions.ts` + Today |
+| N2 | Re-score + insight memo + daily brief | 🔨 In Dev (CC, 2026-06-16) | Outcomes re-rank opportunities; brief surfaces in Today | `lineage.functions.ts` + Today |
 | O1 | Knowledge graph + query | ⬜ | Typed signals→themes→opps→decisions→outcomes; "why is this on the roadmap?" | New graph tables + query fn |
 | O3 | Fact currency/drift + skill packs | ⬜ | Flag stale facts; export versioned skill bundles over MCP | Depends on O1 + Q1 |
 | SEN-04 | Researcher watchtower (competitor crawl briefs) | ⬜ (M2) | Ambient competitive signal without manual research | Firecrawl crawl + scheduled brief |
