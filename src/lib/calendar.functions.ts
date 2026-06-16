@@ -641,6 +641,7 @@ export const proposeWorkBlocks = createServerFn({ method: "POST" })
     const { data: tasks } = await supabase
       .from("tasks")
       .select("id,title,priority,status,is_deep_work,created_at")
+      .eq("is_deep_work", true)
       .neq("status", "done")
       .order("created_at", { ascending: true })
       .limit(data.max);
