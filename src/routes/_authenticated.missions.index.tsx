@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { AgentsPanel } from "@/components/cockpit/AgentsPanel";
 import { MissionsPanel } from "@/components/cockpit/MissionsPanel";
+import { LoopHealthBanner } from "@/components/cockpit/LoopHealthBanner";
 
 type Tab = "missions" | "agents";
 
@@ -52,6 +53,9 @@ function MissionsPage() {
             Goal-driven runs across the agent mesh. Watch the work, jump into any step.
           </p>
         </header>
+
+        {/* E8 · Loop Health Monitor — catch a stalled loop before it bites. */}
+        <LoopHealthBanner />
 
         <div
           style={{
