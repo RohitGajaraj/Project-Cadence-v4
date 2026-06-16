@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| B3 | Product switcher + portfolio view | Claude Code (IA/cockpit lane) | 2026-06-16 | new `getPortfolio` + a Portfolio section on `/product` (enriches the existing "Where the work stands" band with per-product signals/opps/specs counts + click-to-switch). Collision-free: `/product` + `projects.functions.ts`, NOT AppShell/CommandPalette (parallel-active). ⌘K product-switch deferred (CommandPalette collision). |
 
 ---
 
@@ -197,7 +198,7 @@ _The product feels coherent; the operator sees the machine._
 | F-IA-CULL-CALDOCS | Remove /calendar, /meetings, /docs, /sync from nav (data kept) | ⬜ | De-clutter the operator nav | Nav config |
 | F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
 | E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ✅ (2026-06-16) | An always-on health strip on the Missions surface: verdict (on watch / working / stalled) from stuck runs + expired calls, plus queue depth, last ingest, last run; the stalled state links to the engine room | `loop-health.functions.ts` (`getLoopHealth`) + `components/cockpit/LoopHealthBanner.tsx` + Missions index |
-| B3 | Product switcher + portfolio view (⌘K) | ⬜ | Run many products without losing the thread | Header + ⌘K |
+| B3 | Product switcher + portfolio view (⌘K) | 🔨 In Dev (CC, 2026-06-16) | Run many products without losing the thread | Header + ⌘K |
 | B5 | Archive / delete product (soft archive + hard delete w/ export) | ⬜ | Lifecycle hygiene with an audit trail | Product admin |
 | ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |
 | F-AGENTS-MENTIONABLE | Agents as first-class @-mentionable users | ⬜ | "@discovery, re-cluster the last 50 signals" from any card | Mention parser → mission |
