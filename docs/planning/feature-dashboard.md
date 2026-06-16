@@ -41,7 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
+| OPS-01 | Flow mode (ambient calm-state) | Claude Code | 2026-06-16 | Chrome-only; `use-flow-mode` + `lib/notify` facade + `lib/flow/*` |
 
 ---
 
@@ -52,7 +52,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 4 | 1 | 1 | 6 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
-| G3 Build → QA → Ship | 7 | 0 | 1 | 5 |
+| G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 1 | 1 | 0 | 6 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
@@ -60,7 +60,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
 
-> 🔨 **Currently In Dev (2026-06-16):** **I2** (watch-the-build, parallel session). G3 engine lane + K1 all ✅ (I3 · J1 · J2 · I1 · I1b · K1). IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed. See Active claims above.
+> ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
 
 The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
 
@@ -129,7 +129,7 @@ _The biggest pending block and the core differentiator: genuine end-to-end execu
 | F-STUDIO | Build engine (repo reads, multi-file changesets, `studio/*` branches, PR + CI, gated merge) | ✅ | The green path that ships real code | [`features/studio.md`](../features/studio.md) |
 | I1 | Studio multi-file coding (per-hunk accept/reject) | ✅ (2026-06-16) | Operator can curate a staged changeset before the gated commit: per-hunk reject (reverts to base) + drop a whole file. Pure tested diff engine shared UI/server | `ai/studio-hunks.ts` (11 tests) + `studio.functions.ts` (applyStagedHunkSelection / rejectStagedFile) + `ChangesPanel.tsx` |
 | I1b | True revision history (atomic revisions) | ✅ (2026-06-16) | Each `studio.commit` records a revision (no, sha, message, files); the Changes tab shows the commit history with GitHub links. Revert-to-revision deferred (needs per-revision content or git ops) | migration `20260616230000` + `registry.server.ts` studio.commit + `getChangesetRevisions` + `ChangesPanel` strip |
-| I2 | Watch-the-agents-build live surface | 🔨 In Dev (parallel lane) | Live per-session view (step, files, tool calls, cost); pause/steer mid-run. Much exists already (`SessionTimeline` · `CostPanel` · `CiPanel` · `ApprovalCard` + `steerStudioSession`); the gap is live auto-refresh/streaming + polish (verify before building) | `_authenticated.build.$missionId.tsx` + `SessionTimeline.tsx`; poll `getStudioSession` |
+| I2 | Watch-the-agents-build live surface | ✅ (2026-06-16) | Live per-session cockpit: 4s conditional polling, two-pane (timeline+steer / Changes·PR·Cost), journey strip, inline approval gates, merge gate, cost. Phase-2 polish added a live "what's it doing now" caption (outcome-named, no tool-id leak) + calmer copy. True SSE streaming deferred (nice-to-have) | `_authenticated.build.{index,$missionId}.tsx` + `SessionTimeline.tsx` |
 | I3 | Branch/worktree isolation per mission | ✅ (2026-06-16) | Concurrent missions can't share a branch or clobber files: per-path `builder_file_claims` (same-file guard) + collision-safe per-changeset branch `studio/<mission8>-<changeset12>` + clean open→squash-merge→release path. Git Data API (no local checkout), so "worktree" = isolated branch | `ai/studio-branch.ts` (6 tests) + `registry.server.ts` studio.commit |
 | J1 | Test generation + run | ✅ (2026-06-16) | Studio agent now authors tests as part of every change (prompt discipline); tests run in the connected repo's GitHub Actions CI (no Cadence sandbox, by design) | migration `20260616220000` (Studio system prompt) |
 | J2 | QA gate + self-correct loop | ✅ (2026-06-16) | `studio.pr.merge` now refuses to merge while CI is red or pending (Cadence-level gate, not just GitHub required-checks); with the J1 prompt directing fix-on-red-until-green, the self-correct loop closes | `ai/studio-ci.ts` (12 tests) + `registry.server.ts` studio.pr.merge |
@@ -205,7 +205,7 @@ _The product feels coherent; the operator sees the machine._
 | R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
 | R4 | Settings expansion (budgets, guardrails, health, prefs, admin) | ◐ Partial | Self-serve control surface (Plan tab shipped) | `_authenticated.settings.tsx` |
 | F-COCKPIT-MACHINE-MODE | Human ↔ Machine mode toggle (full-screen dispatch board) | ⬜ | The "watch the factory" view (absorbed by F-IA-V4) | Header toggle |
-| OPS-01 | Flow mode (ambient soundscape + focus timer, notification quieting) | ⬜ (P3) | Calm, focused operating surface | Home |
+| OPS-01 | Flow mode (ambient soundscape + focus timer, notification quieting) | 🔨 In Dev | Calm, focused operating surface | Chrome: Flow widget in `AppShell` footer (`use-flow-mode` + `lib/notify` + `lib/flow/*`) |
 
 ---
 

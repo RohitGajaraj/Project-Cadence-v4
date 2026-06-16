@@ -35,7 +35,7 @@ import { fmtCost } from "@/components/studio/studio-format";
 
 export const Route = createFileRoute("/_authenticated/build/")({
   component: BuildPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Build" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
@@ -93,7 +93,7 @@ function Composer({ textareaRef }: { textareaRef: RefObject<HTMLTextAreaElement 
         },
       }),
     onSuccess: (r) => {
-      toast.success("Session dispatched");
+      toast.success("Build started");
       navigate({ to: "/build/$missionId", params: { missionId: r.missionId } });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -176,11 +176,11 @@ function Composer({ textareaRef }: { textareaRef: RefObject<HTMLTextAreaElement 
           style={{ marginLeft: "auto", flexShrink: 0, opacity: canDispatch ? 1 : 0.5 }}
         >
           {dispatch.isPending ? <span className="spinner" /> : <Send size={11} />}
-          Dispatch · the build starts now
+          Start the build
         </button>
       </div>
       <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint)" }}>
-        ⌘Enter to dispatch · gates come back to you
+        ⌘Enter to start · gates come back to you
       </div>
     </section>
   );

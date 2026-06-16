@@ -133,7 +133,7 @@ function RunBlock({ run, index }: { run: StudioRunDetail; index: number }) {
               fontStyle: "italic",
             }}
           >
-            {live ? "waiting for the first checkpoint" : "no recorded steps"}
+            {live ? "starting up" : "no recorded steps"}
           </div>
         ) : (
           run.steps.map((s, i) => <StepLine key={i} step={s} idx={i} />)
@@ -256,7 +256,7 @@ export function SessionTimeline({
           color: "var(--ink-faint)",
         }}
       >
-        No activity yet. The session starts on the next tick.
+        No activity yet. The build starts in a moment.
       </div>
     );
   }

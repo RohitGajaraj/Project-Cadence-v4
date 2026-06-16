@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/build/$missionId")({
     return { tab: (TABS as string[]).includes(t as string) ? (t as Tab) : undefined };
   },
   component: BuildSessionPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Build" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
@@ -263,11 +263,35 @@ function SteerComposer({ missionId, disabled }: { missionId: string; disabled: b
           className="mono-label"
           style={{ marginTop: 8, fontSize: 9, color: "var(--ink-faint)" }}
         >
-          Session completed — steering is closed.
+          Session completed. Steering is closed.
         </div>
       )}
     </div>
   );
+}
+
+// The agent's current action, for the live header caption (the Cursor-style
+// "what's it doing right now"). Outcome-named, never the raw tool id; falls back
+// to a calm "working" so a new tool can never leak its internal name to the user.
+const ACTION_LABEL: Record<string, string> = {
+  "repo.read": "reading the repo",
+  "repo.tree": "reading the repo",
+  "repo.search": "searching the repo",
+  "studio.stage": "drafting changes",
+  "studio.commit": "saving changes",
+  "studio.pr.open": "opening a pull request",
+  "studio.pr.merge": "merging",
+  "github.ci.read": "checking tests",
+  "github.commit.append": "fixing the failing check",
+};
+function currentAction(runs: StudioRunDetail[]): string | null {
+  const liveRun = [...runs].reverse().find((r) => r.status === "running" || r.status === "queued");
+  if (!liveRun) return null;
+  const last = liveRun.steps[liveRun.steps.length - 1];
+  if (!last) return "starting up";
+  if (last.kind === "tool_call") return ACTION_LABEL[last.name] ?? "working";
+  if (last.kind === "thought") return "thinking";
+  return "working";
 }
 
 function BuildSessionPage() {
@@ -313,6 +337,7 @@ function BuildSessionPage() {
   const isLive =
     mission?.status === "running" ||
     runs.some((r) => ["queued", "running", "waiting_approval"].includes(r.status));
+  const liveAction = isLive ? currentAction(runs) : null;
   const mergeGatePending = approvals.some(
     (a) => a.status === "pending" && a.tool_name === "studio.pr.merge",
   );
@@ -378,7 +403,7 @@ function BuildSessionPage() {
                   }}
                 >
                   <span className="dot dot-running" style={{ width: 5, height: 5 }} />
-                  live · refreshing every 4s
+                  Live{liveAction ? ` · ${liveAction}` : ""}
                 </span>
               )}
               <button
