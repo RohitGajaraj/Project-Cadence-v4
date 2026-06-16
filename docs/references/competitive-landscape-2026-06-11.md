@@ -2,7 +2,7 @@
 
 > **What this is.** Full market/competitor research conducted 2026-06-11 (≈27 web searches) for the v4 feature-map rebuild. Reference for positioning, fundraising, and feature prioritization. Do not re-run this research in a new session — read this instead.
 >
-> **Cross-references.** Stress-test verdict → [`../strategy/v4-stress-test-2026-06-11.md`](../strategy/v4-stress-test-2026-06-11.md). Feature map → [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md). Session tracker → [`../planning/v4-rebuild-handoff-2026-06-11.md`](../planning/v4-rebuild-handoff-2026-06-11.md).
+> **Cross-references.** Stress-test verdict → [`../strategy/v4-stress-test-2026-06-11.md`](../strategy/v4-stress-test-2026-06-11.md). Feature map → [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md). Session tracker → [`../planning/archive/v4-rebuild-handoff-2026-06-11.md`](../planning/archive/v4-rebuild-handoff-2026-06-11.md).
 
 ---
 

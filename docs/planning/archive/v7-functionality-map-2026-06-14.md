@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-17. Superseded by [the v10 master blueprint](../../strategy/v10-master-blueprint-2026-06-17.md) and governed by the [role map](../../strategy/README.md). Kept for history only; do not use for current decisions. Internal links may be stale.
+
 # v7 functionality map: how Cadence behaves, flow by flow
 
 > **What this is.** The behavior reference, not the catalog. For each major flow it gives the inputs, the step-by-step behavior, the four states (loading, empty, error, success), the human-in-the-loop gates, and the data each step reads and writes. It answers "what happens when I click this" rather than "what tables exist." Grounded in a code read of `main` at commit `f515cfb` (2026-06-14).

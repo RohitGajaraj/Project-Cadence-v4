@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-17. Superseded by [the v10 master blueprint](../../strategy/v10-master-blueprint-2026-06-17.md) and governed by the [role map](../../strategy/README.md). Kept for history only; do not use for current decisions. Internal links may be stale.
+
 # v4 Rebuild — Session Tracker & Handoff (2026-06-11)
 
 > **What this is.** The progress log + resume instructions for the v4 "agentic feature map rebuild" activity commissioned by the founder on 2026-06-11. If you are a fresh AI session (Claude / Lovable / Antigravity / any account) picking this work up: **read this file first**, then follow "How to resume" below. Do NOT redo completed steps — their outputs are linked.

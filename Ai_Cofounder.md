@@ -27,8 +27,8 @@ This repo already runs a closed documentation loop ([`AGENTS.md`](./AGENTS.md) �
 | `BACKLOG.md`      | [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) — stable F-IDs, Live status board, Build-order rollup (the canonical task queue)                                                                                      |
 | `KNOWN_ISSUES.md` | [`docs/planning/known-issues.md`](./docs/planning/known-issues.md) (live KI-ID tracker, created 2026-06-11) + [`docs/planning/considerations.md`](./docs/planning/considerations.md) (standing gap register)                                   |
 | `WORKFLOWS.md`    | [`docs/operations/`](./docs/operations/) + [`docs/conventions/`](./docs/conventions/) + the protocols in [`AGENTS.md`](./AGENTS.md)                                                                                                            |
-| `SESSION.md`      | [`active-task.md`](./active-task.md) (in-flight cursor; root, when present) + [`docs/planning/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/v4-rebuild-handoff-2026-06-11.md) (session resume) + `.remember/` (machine memory)            |
-| `TASKS.md`        | [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) Build-order rollup + [`active-task.md`](./active-task.md) + [`docs/planning/strategic-tasks.md`](./docs/planning/strategic-tasks.md) (strategic P0–P3 view)           |
+| `SESSION.md`      | [`active-task.md`](./active-task.md) (in-flight cursor; root, when present) + [`docs/planning/archive/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/archive/v4-rebuild-handoff-2026-06-11.md) (session resume) + `.remember/` (machine memory)            |
+| `TASKS.md`        | [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) Build-order rollup + [`active-task.md`](./active-task.md) + [`docs/planning/archive/strategic-tasks.md`](./docs/planning/archive/strategic-tasks.md) (strategic P0–P3 view)           |
 
 ### Session continuity (mapped)
 

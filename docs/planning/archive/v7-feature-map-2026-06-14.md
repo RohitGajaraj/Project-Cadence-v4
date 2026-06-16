@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-17. Superseded by [the v10 master blueprint](../../strategy/v10-master-blueprint-2026-06-17.md) and governed by the [role map](../../strategy/README.md). Kept for history only; do not use for current decisions. Internal links may be stale.
+
 # v7 Feature Map: the catalog of what Cadence ships today (2026-06-14)
 
 > **What this is.** The shipped-state catalog of Cadence: every feature we offer, organized by the six lifecycle stations (Sense, Decide, Define, Build, Ship, Learn) and by surface. Each entry carries a name, a one-line, the agent(s) and tool(s) behind it, a status (Built / Partial / Missing-Planned), and the surface or route it lives on. This is the *what we offer* register, not behavior detail and not schema. It is code-verified against `main` at commit `f515cfb`.

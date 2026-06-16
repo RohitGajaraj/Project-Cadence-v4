@@ -4,7 +4,7 @@
 >
 > **Update cadence: Tier 1 (continuous).** Update this in the same commit as any change that ships a feature, moves a status, or completes a milestone. See [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md). The NEXT pick is mechanical: the first not-done item in the earliest not-done milestone.
 >
-> **Cross-links.** Canon: [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md). Feature catalog + status: [`v7-feature-map-2026-06-14.md`](./v7-feature-map-2026-06-14.md). Requirements + priorities: [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md). Granular ledger: [`feature-backlog.md`](./feature-backlog.md). Open bugs: [`known-issues.md`](./known-issues.md).
+> **Cross-links.** Canon: [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md). Feature catalog + status: [`v7-feature-map-2026-06-14.md`](./archive/v7-feature-map-2026-06-14.md). Requirements + priorities: [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md). Granular ledger: [`feature-backlog.md`](./feature-backlog.md). Open bugs: [`known-issues.md`](./known-issues.md).
 
 ---
 
@@ -62,4 +62,4 @@ Tier 1, continuous. On any status change or milestone completion, update the tab
 
 ## Related
 
-- [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md) (this tracker is the "what next" source of truth it names) · [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) · [`v7-feature-map-2026-06-14.md`](./v7-feature-map-2026-06-14.md) · [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md) · [`feature-backlog.md`](./feature-backlog.md) · [`../../active-task.md`](../../active-task.md)
+- [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md) (this tracker is the "what next" source of truth it names) · [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) · [`v7-feature-map-2026-06-14.md`](./archive/v7-feature-map-2026-06-14.md) · [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md) · [`feature-backlog.md`](./feature-backlog.md) · [`../../active-task.md`](../../active-task.md)

@@ -141,7 +141,7 @@ Cadence/
     │   ├── feature-backlog.md
     │   ├── foundation-audit.md
     │   ├── known-issues.md
-    │   └── strategic-tasks.md
+    │   └── archive/  (superseded docs: strategic-tasks, v7 maps, v4-rebuild-handoff; see v10 blueprint)
     ├── references/       <- market research & competitive inputs
     └── strategy/         <- versioned strategic positioning
 ```

@@ -14,7 +14,7 @@
 | If you need... | Pick this ⭐ | Role |
 | --- | --- | --- |
 | **What to build next, why, how it should look and behave, priority + lane** | [**v10 master blueprint**](./v10-master-blueprint-2026-06-17.md) | the blueprint (pick first) |
-| **How we execute it** (build order, per-item discipline, milestone gates) | [**implementation-plan.md**](../planning/implementation-plan.md) | the how |
+| **How we execute it** (build order, per-item discipline, milestone gates) | [**v10_implementation-plan.md**](../planning/v10_implementation-plan.md) | the how |
 | **Live status of every feature** (the cursor) | [**feature-dashboard.md**](../planning/feature-dashboard.md) | the status board |
 | Positioning / market / pricing / GTM / investor | [v7](./v7-agentic-product-os-2026-06-14.md) | positioning canon |
 | Surfaces / IA / structure / the hybrid Build spine | [v8](./v8-calm-front-deep-engine-2026-06-16.md) | structure canon |
@@ -26,7 +26,7 @@
 | Open bugs | [known-issues.md](../planning/known-issues.md) | bug list |
 | Engine / 19-agent mesh / handoff contract detail | [v4-feature-map](./v4-feature-map-2026-06-11.md) | engine reference |
 | Requirements / technical contracts | [v7-prd](../planning/v7-prd-2026-06-14.md) / [v7-trd](../planning/v7-trd-2026-06-14.md) | requirements reference |
-| **Superseded - do not use; queued for archive** | `strategic-tasks.md` (use v10 pick-list), `v7-feature-map` + `v7-functionality-map` (use v10), `v4-rebuild-handoff` (stale) | historical |
+| **Superseded - do not use; archived 2026-06-17 to docs/planning/archive/** | `strategic-tasks.md` (use v10 pick-list), `v7-feature-map` + `v7-functionality-map` (use v10), `v4-rebuild-handoff` (stale) | historical |
 
 > **De-dup status (2026-06-17):** the superseded docs above are flagged here rather than moved yet, because each is still linked from operational files (AGENTS.md, ENTRY.md, TASKS.md, plan.md, hooks). Archiving them cleanly means updating those references in a dedicated pass so nothing breaks. Until then, **this role map is the single arbiter of which doc to pick.**
 
@@ -64,7 +64,7 @@
 
 ## How to use this folder
 
-- **Building a feature, making a UX/positioning decision, or onboarding?** Start with the **role map above**. For what to build next and how it should look and behave, read **v10 (The Master Blueprint)** first, then **implementation-plan.md** for the execution order. For the launch wedge, competitor posture, and priority rationale, read **v9 (The Decision Wedge & the Build-Next Plan)** (the current decision-lens canon). For structure / IA / surface placement and build-order, read **v8 (Calm Front, Deep Engine)** (the current structure/build canon). For positioning / market, read **v7 (Agentic Product OS, the reset)**. It is the current positioning + build canon (code-verified state, four course-corrections, dual-persona, proof-gated M-0→M-D roadmap; founder rulings in §13). v6 holds the prior canon + engine/IA detail + market appendices; v5 holds the wedge UX detail; v4 governs expansion scope (stations, mesh, M2 to M5); personas in v3. Superseded iterations live in [`archive/`](./archive/).
+- **Building a feature, making a UX/positioning decision, or onboarding?** Start with the **role map above**. For what to build next and how it should look and behave, read **v10 (The Master Blueprint)** first, then **v10_implementation-plan.md** for the execution order. For the launch wedge, competitor posture, and priority rationale, read **v9 (The Decision Wedge & the Build-Next Plan)** (the current decision-lens canon). For structure / IA / surface placement and build-order, read **v8 (Calm Front, Deep Engine)** (the current structure/build canon). For positioning / market, read **v7 (Agentic Product OS, the reset)**. It is the current positioning + build canon (code-verified state, four course-corrections, dual-persona, proof-gated M-0→M-D roadmap; founder rulings in §13). v6 holds the prior canon + engine/IA detail + market appendices; v5 holds the wedge UX detail; v4 governs expansion scope (stations, mesh, M2 to M5); personas in v3. Superseded iterations live in [`archive/`](./archive/).
 - **Received strategic input (market analysis, positioning feedback, new customer insight)?** Document it in the current version in the same session. If the change is significant enough to warrant a new version, create `v3-positioning-YYYY-MM-DD.md` and update this index.
 - **Wondering why a past decision was made?** Read the version that was current at that time.
 
