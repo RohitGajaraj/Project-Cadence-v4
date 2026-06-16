@@ -38,6 +38,7 @@ import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
+import { AutonomyCard } from "@/components/today/AutonomyCard";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -521,6 +522,10 @@ function Dashboard() {
             </div>
           )}
         </section>
+
+        {/* AUTONOMY — the observing→proving→trusted progression made visible (M-A).
+            Hidden during cold-start so a brand-new workspace keeps the clean on-ramp. */}
+        {!isCold && <AutonomyCard />}
 
         {/* MEMORY — the closed loop made visible (v6 Phase 0 / W5) */}
         {latestRescore && (
