@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| B5 | Archive / delete product (soft archive + hard delete w/ export) | Claude Code (IA/cockpit lane) | 2026-06-17 | Full product lifecycle on the `/product` **Portfolio** (B3 continuation): soft archive + restore (reversible, Undo toast), JSON export (escape hatch), honest export-then-delete (typed-name confirm; copy reflects FK `on delete set null` — delete detaches signals/opps/specs to the workspace, doesn't destroy them). `projects.functions.ts` + `_authenticated.product.tsx` + `archived_at` migration. Collision-free: NOT AppShell (which has only the bare sidebar delete). |
 
 ---
 
@@ -198,7 +199,7 @@ _The product feels coherent; the operator sees the machine._
 | F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
 | E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ✅ (2026-06-16) | An always-on health strip on the Missions surface: verdict (on watch / working / stalled) from stuck runs + expired calls, plus queue depth, last ingest, last run; the stalled state links to the engine room | `loop-health.functions.ts` (`getLoopHealth`) + `components/cockpit/LoopHealthBanner.tsx` + Missions index |
 | B3 | Product switcher + portfolio view | ✅ (2026-06-16) | A Portfolio section on `/product`: every product with its loop status (task progress + signals/opps/specs counts) and click-to-switch (the active product is marked). New `getPortfolio` fn; switcher reuses `setActiveProductId`. Adversarially reviewed (1 medium: silent-zero-on-query-error, fixed). ⌘K product-switch deferred (CommandPalette is parallel-active) | `projects.functions.ts` (`getPortfolio`) + `_authenticated.product.tsx` |
-| B5 | Archive / delete product (soft archive + hard delete w/ export) | ⬜ | Lifecycle hygiene with an audit trail | Product admin |
+| B5 | Archive / delete product (soft archive + hard delete w/ export) | 🔨 In Dev (CC, 2026-06-17) | Lifecycle hygiene with an audit trail | Product admin |
 | ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |
 | F-AGENTS-MENTIONABLE | Agents as first-class @-mentionable users | ⬜ | "@discovery, re-cluster the last 50 signals" from any card | Mention parser → mission |
 | R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
