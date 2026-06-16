@@ -237,20 +237,40 @@ function BillingTab({ checkout }: { checkout?: string }) {
             <div
               key={tier}
               className="bento"
-              style={{ padding: "var(--card-pad, 18px)", display: "flex", flexDirection: "column", gap: 10 }}
+              style={{
+                padding: "var(--card-pad, 18px)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
             >
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <div
+                style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}
+              >
                 <span className="font-display" style={{ fontSize: 16 }}>
                   {p.name}
                 </span>
-                <span className="mono-label" style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)" }}>
+                <span
+                  className="mono-label"
+                  style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)" }}
+                >
                   {p.price}
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>{p.tagline}</p>
+              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>
+                {p.tagline}
+              </p>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
                 {p.highlights.map((h) => (
-                  <li key={h} style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", display: "flex", gap: 7 }}>
+                  <li
+                    key={h}
+                    style={{
+                      fontSize: 12,
+                      color: "var(--ink-muted, #4a4438)",
+                      display: "flex",
+                      gap: 7,
+                    }}
+                  >
                     <span
                       style={{
                         width: 4,
@@ -268,7 +288,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
               </ul>
               <div style={{ marginTop: "auto", paddingTop: 6 }}>
                 {isCurrent ? (
-                  <span className="mono-label" style={{ fontSize: 10, color: "var(--emerald, #2f8f6b)" }}>
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 10, color: "var(--emerald, #2f8f6b)" }}
+                  >
                     Your plan
                   </span>
                 ) : canUpgrade ? (
@@ -280,7 +303,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
                     {upgrade.isPending ? "Starting checkout" : "Upgrade to Pro"}
                   </button>
                 ) : tier === "team" ? (
-                  <span className="mono-label" style={{ fontSize: 10, color: "var(--ink-faint, #8a8377)" }}>
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 10, color: "var(--ink-faint, #8a8377)" }}
+                  >
                     In design with partners
                   </span>
                 ) : null}

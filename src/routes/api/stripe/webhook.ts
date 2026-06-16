@@ -25,15 +25,20 @@ async function verifyStripeSignature(
   sigHeader: string,
   secret: string,
 ): Promise<boolean> {
-  // Header shape: "t=<ts>,v1=<sig>[,v1=<sig>...]".
-  const parts: Record<string, string> = {};
+  // Header shape: "t=<ts>,v1=<sig>[,v1=<sig>...]". Stripe can send more than one
+  // v1 signature during signing-secret rotation, so collect them all and accept
+  // if ANY matches (taking only the last would reject valid events mid-rotation).
+  let t = "";
+  const v1List: string[] = [];
   for (const kv of sigHeader.split(",")) {
     const i = kv.indexOf("=");
-    if (i > 0) parts[kv.slice(0, i).trim()] = kv.slice(i + 1).trim();
+    if (i <= 0) continue;
+    const k = kv.slice(0, i).trim();
+    const v = kv.slice(i + 1).trim();
+    if (k === "t") t = v;
+    else if (k === "v1") v1List.push(v);
   }
-  const t = parts["t"];
-  const v1 = parts["v1"];
-  if (!t || !v1) return false;
+  if (!t || v1List.length === 0) return false;
 
   // Replay window: reject signatures outside the tolerance.
   const ts = Number(t);
@@ -50,11 +55,13 @@ async function verifyStripeSignature(
   const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(`${t}.${payload}`));
   const expected = [...new Uint8Array(sigBuf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 
-  // Length-then-constant-time compare.
-  if (expected.length !== v1.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ v1.charCodeAt(i);
-  return diff === 0;
+  // Accept if any provided v1 matches (length check, then constant-time compare).
+  return v1List.some((v1) => {
+    if (expected.length !== v1.length) return false;
+    let diff = 0;
+    for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ v1.charCodeAt(i);
+    return diff === 0;
+  });
 }
 
 async function setPlan(
