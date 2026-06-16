@@ -8,6 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isSideEffectingTool } from "@/lib/tool-consequences";
 import type { CriticReview } from "@/lib/discovery.functions";
 
 export type NeedsYou = {
@@ -178,4 +179,78 @@ export const getColdStart = createServerFn({ method: "GET" })
     ]);
     const total = (sig.count ?? 0) + (opp.count ?? 0) + (prd.count ?? 0);
     return { isCold: total === 0 };
+  });
+
+// ---------------------------------------------------------------------------
+// M-A Slice 2: "Executed unattended" Today card.
+//
+// What the loop ran on its OWN (no human gate). The honest source is tool_calls:
+// every tool_calls row is an inline auto-mode execution (gated tools queue an
+// agent_approvals row instead), so a SUCCESSFUL (ok=true) SIDE-EFFECTING one is a
+// write the agent's trust arc carried without your call. We do NOT read
+// agent_approvals(status='executed'): those are calls YOU approved, not
+// unattended. Effect, reversibility, and how-to-reverse come from the static
+// tool-consequences catalogue (never the model), so the claim never outruns the
+// wiring; there is deliberately no "undo" action (no compensating-call flow
+// exists yet, and a fake one on an already-done side effect would be dishonest),
+// only the honest reverse-path text per tool, surfaced by the card.
+
+export type ExecutedUnattended = {
+  tool_name: string;
+  /** Display name of the agent that ran it, or null if not resolvable. */
+  agent_name: string | null;
+  created_at: string;
+  latency_ms: number | null;
+};
+
+export const getRecentExecutedUnattended = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ runs: ExecutedUnattended[] }> => {
+    const { supabase, userId } = context;
+    const windowStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabase
+      .from("tool_calls")
+      .select("tool_name,agent_id,created_at,latency_ms")
+      .eq("user_id", userId)
+      .eq("ok", true) // successful inline executions only (a failed attempt did not carry the work)
+      .gte("created_at", windowStart)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    // Side-effecting only = the writes the loop carried unattended (read tools run
+    // inline too but are not delegation). Catalogue-gated via isSideEffectingTool.
+    const sideEffecting = (
+      (rows ?? []) as {
+        tool_name: string;
+        agent_id: string | null;
+        created_at: string;
+        latency_ms: number | null;
+      }[]
+    )
+      .filter((r) => isSideEffectingTool(r.tool_name))
+      .slice(0, 6);
+
+    // Batched agent-name lookup; best-effort (degrade to null, never block the card).
+    const agentIds = [
+      ...new Set(sideEffecting.map((r) => r.agent_id).filter((x): x is string => !!x)),
+    ];
+    const nameById = new Map<string, string>();
+    if (agentIds.length > 0) {
+      const { data: agents } = await supabase
+        .from("agents")
+        .select("id,name")
+        .in("id", agentIds)
+        .limit(50);
+      for (const a of (agents ?? []) as { id: string; name: string }[]) nameById.set(a.id, a.name);
+    }
+
+    return {
+      runs: sideEffecting.map((r) => ({
+        tool_name: r.tool_name,
+        agent_name: r.agent_id ? (nameById.get(r.agent_id) ?? null) : null,
+        created_at: r.created_at,
+        latency_ms: r.latency_ms,
+      })),
+    };
   });

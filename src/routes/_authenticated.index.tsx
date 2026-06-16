@@ -39,6 +39,7 @@ import { recordRitualSession } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { AutonomyCard } from "@/components/today/AutonomyCard";
+import { ExecutedCard } from "@/components/today/ExecutedCard";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -526,6 +527,10 @@ function Dashboard() {
         {/* AUTONOMY — the observing→proving→trusted progression made visible (M-A).
             Hidden during cold-start so a brand-new workspace keeps the clean on-ramp. */}
         {!isCold && <AutonomyCard />}
+
+        {/* EXECUTED UNATTENDED — what the loop ran without your call, with the honest
+            per-tool reverse-path (M-A Slice 2). Self-hides when empty; off on cold-start. */}
+        {!isCold && <ExecutedCard />}
 
         {/* MEMORY — the closed loop made visible (v6 Phase 0 / W5) */}
         {latestRescore && (
