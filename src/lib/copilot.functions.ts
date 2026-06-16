@@ -36,6 +36,7 @@ export async function ensureTodayBrief(
     { count: approvalsCount },
     { data: reviewPrds },
     { data: agentRuns },
+    { data: learnings },
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -58,17 +59,27 @@ export async function ensureTodayBrief(
       .select("agent_name,status")
       .gte("created_at", dayAgo.toISOString())
       .limit(8),
+    // N2 · the insight-memo source: the loop's recent closed-loop learnings
+    // (re-scored outcomes). RLS-scoped like the rest; the brief synthesises a
+    // "what the loop learned" line from these.
+    supabase
+      .from("learnings")
+      .select("verdict, summary, metric_label, metric_value, prior_ice, new_ice, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
   ]);
 
   const prompt = `Write a calm daily brief for ${profile?.display_name ?? "the user"}. Avoid emojis. Address the user by first name.
 Structure, in order:
 1. Lead with the operator's calls today: the pending approvals count and the specs awaiting review (by title — at most 3). Imperative voice ("Approve...", "Review...").
 2. One line on what agents completed overnight.
-3. One concrete focus for the day, based on the meetings and deep-work tasks.
+3. What the loop LEARNED recently (the insight memo): if RECENT LEARNINGS is non-empty, add one or two lines naming the priority or spec that moved and why. Cite the outcome verdict and the ICE shift (prior_ice to new_ice), for example "the off-hours bet proved out, so its priority rose." If RECENT LEARNINGS is empty, skip this step entirely; never invent a learning.
+4. One concrete focus for the day, based on the meetings and deep-work tasks.
 
 PENDING APPROVALS: ${approvalsCount ?? 0}
 SPECS AWAITING REVIEW: ${JSON.stringify(reviewPrds ?? [])}
 OVERNIGHT AGENT RUNS: ${JSON.stringify(agentRuns ?? [])}
+RECENT LEARNINGS (closed-loop outcomes, what the product LEARNED; each has a verdict, a summary, and the ICE shift from prior_ice to new_ice): ${JSON.stringify(learnings ?? [])}
 TODAY'S MEETINGS: ${JSON.stringify(meetings ?? [])}
 OPEN TASKS: ${JSON.stringify(tasks ?? [])}`;
 

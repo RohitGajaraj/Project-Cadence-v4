@@ -42,7 +42,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
-| N2 | Re-score + insight memo + daily brief | Claude Code (IA/cockpit lane) | 2026-06-16 | re-score + brief already exist; the gap is the **insight memo** — feed recent `learnings` (re-scored outcomes) into the daily brief so it synthesizes "what the loop learned". Touches only `copilot.functions.ts` (the brief). Collision-free with the build lanes (studio/build). |
 
 ---
 
@@ -51,7 +50,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | Group | ✅ Done | ◐ Partial | ⏸️/⏭️/🚧 | ⬜ Pending |
 | --- | --- | --- | --- | --- |
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
-| G1 Sense & Discovery | 3 | 1 | 1 | 7 |
+| G1 Sense & Discovery | 4 | 1 | 1 | 6 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
 | G3 Build → QA → Ship | 7 | 0 | 1 | 5 |
 | G4 Launch & Learn | 1 | 1 | 0 | 6 |
@@ -96,7 +95,7 @@ _Get real signal in, cluster it, keep it fresh._
 | F-CONN | Connector platform (OAuth) | ⏸️ Parked | The connector engine is built; **parked** pending founder OAuth-client registration | `src/lib/connectors/` · [`architecture/integrations.md`](../../architecture/integrations.md) |
 | SEN-01 | Connector dock: 2nd live ingest (Slack / GitHub issues / support) | ⬜ (M-A) | The loop needs ≥2 real sources to close on real data | Register one provider OAuth client → adapter in `src/lib/connectors/` |
 | F3 | Continuous discovery feed | ◐ Partial | Always-fresh per-product feed + incremental re-cluster (Scout ingest is manual today) | Extend discovery functions; feed UI on `/prds` discovery |
-| N2 | Re-score + insight memo + daily brief | 🔨 In Dev (CC, 2026-06-16) | Outcomes re-rank opportunities; brief surfaces in Today | `lineage.functions.ts` + Today |
+| N2 | Re-score + insight memo + daily brief | ✅ (2026-06-16) | Re-score loop + daily brief already existed; this added the missing **insight memo** — the daily brief now ingests the recent `learnings` (re-scored outcomes: verdict + summary + ICE shift) and synthesizes a "what the loop learned" beat. ⚠️ Wiring + build verified; the AI-generated brief output needs a live re-verify on the deployed app (local dev has no AI key) | `copilot.functions.ts` (`ensureTodayBrief`) → Today's brief |
 | O1 | Knowledge graph + query | ⬜ | Typed signals→themes→opps→decisions→outcomes; "why is this on the roadmap?" | New graph tables + query fn |
 | O3 | Fact currency/drift + skill packs | ⬜ | Flag stale facts; export versioned skill bundles over MCP | Depends on O1 + Q1 |
 | SEN-04 | Researcher watchtower (competitor crawl briefs) | ⬜ (M2) | Ambient competitive signal without manual research | Firecrawl crawl + scheduled brief |
