@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Gavel,
   GitBranch,
+  Layers,
   RotateCcw,
   ShieldAlert,
   X,
@@ -531,6 +532,138 @@ function TraceHop({
   );
 }
 
+/* N3 · Mission Compounding View — the moat made visible per mission. Aggregates
+   every prior memory this mission drew on (per-hop recalls + the memory_refs
+   threaded through handoffs), deduped by summary, with which agents cited each.
+   A fresh mission honestly shows zero; the count grows as the loop compounds.
+   "Copy snapshot" exports the lineage as markdown (the N3 export-snapshot). */
+function MissionCompounding({ data }: { data: MissionDetail }) {
+  // Dedup the same memory whether it arrives as a full per-hop recall or a
+  // truncated handoff summary: key on a normalized prefix (the same memory
+  // truncated to different lengths collapses) and keep the fuller text.
+  const byKey = new Map<string, { summary: string; agents: Set<string> }>();
+  const add = (raw: string, agent: string | null) => {
+    const summary = (raw ?? "").trim();
+    if (!summary) return;
+    const key = summary.toLowerCase().slice(0, 80);
+    const e = byKey.get(key) ?? { summary, agents: new Set<string>() };
+    if (summary.length > e.summary.length) e.summary = summary;
+    if (agent) e.agents.add(agent);
+    byKey.set(key, e);
+  };
+  for (const h of data.hops) {
+    for (const mem of h.recalled_memories) add(mem, h.agent_name);
+  }
+  for (const msg of data.messages) {
+    const refs = (msg.payload as { memory_refs?: { id: string; summary?: string }[] } | null)
+      ?.memory_refs;
+    if (!Array.isArray(refs)) continue;
+    for (const r of refs) {
+      add(
+        (r.summary ?? "").trim() || r.id,
+        msg.to_agent_slug ? agentDisplayName(msg.to_agent_slug) : null,
+      );
+    }
+  }
+  const memories = [...byKey.values()];
+  const n = memories.length;
+  const shown = memories.slice(0, 10);
+  const moreCount = n - shown.length;
+
+  const copySnapshot = () => {
+    const lines = [
+      `# ${data.mission.title} — compounding snapshot`,
+      "",
+      n === 0
+        ? "This mission started fresh — no prior memory recalled yet."
+        : `Drew on ${n} prior ${n === 1 ? "memory" : "memories"}:`,
+      ...memories.map(
+        (mem) =>
+          `- ${mem.summary}${mem.agents.size ? ` (cited by ${[...mem.agents].join(", ")})` : ""}`,
+      ),
+    ];
+    void navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => toast.success("Compounding snapshot copied"))
+      .catch(() => toast.error("Could not copy"));
+  };
+
+  return (
+    <section className="bento" style={{ padding: "var(--card-pad)", marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
+        <MonoLabel icon={Layers}>Compounding · the moat at work</MonoLabel>
+        {n > 0 && (
+          <button
+            onClick={copySnapshot}
+            className="mono-label"
+            style={{ color: "var(--action-blue)" }}
+          >
+            Copy snapshot
+          </button>
+        )}
+      </div>
+      {n === 0 ? (
+        <p style={{ fontSize: 12.5, color: "var(--ink-muted)", lineHeight: 1.5 }}>
+          This mission started fresh. As the loop runs it draws on what it has already learned, and
+          that memory compounds here. The next mission on this product will not start cold.
+        </p>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+            <span
+              className="font-display tabular-nums"
+              style={{ fontSize: 30, lineHeight: 1, color: "var(--ink)" }}
+            >
+              {n}
+            </span>
+            <span style={{ fontSize: 13, color: "var(--ink-muted)", lineHeight: 1.4 }}>
+              prior {n === 1 ? "memory" : "memories"} this mission drew on, instead of starting cold
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {shown.map((mem, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  fontSize: 12.5,
+                  paddingTop: i === 0 ? 0 : 6,
+                  borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+                }}
+              >
+                <span style={{ color: "var(--ink-muted)", flex: 1, lineHeight: 1.45 }}>
+                  {mem.summary}
+                </span>
+                {mem.agents.size > 0 && (
+                  <span
+                    className="mono-label"
+                    style={{ color: "var(--ink-faint)", flexShrink: 0, whiteSpace: "nowrap" }}
+                  >
+                    {[...mem.agents].join(" · ")}
+                  </span>
+                )}
+              </div>
+            ))}
+            {moreCount > 0 && (
+              <span className="mono-label" style={{ color: "var(--ink-faint)", marginTop: 4 }}>
+                +{moreCount} more in the snapshot
+              </span>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function MissionDetailPage() {
   const { missionId } = Route.useParams();
   const navigate = useNavigate();
@@ -799,6 +932,9 @@ function MissionDetailPage() {
               goal={data.mission.goal}
             />
           </div>
+
+          {/* N3 · Mission Compounding View — the moat made visible per mission. */}
+          <MissionCompounding data={data} />
 
           {/* Steps — plan list or live graph */}
           <section className="bento" style={{ padding: "var(--card-pad)", marginBottom: 16 }}>

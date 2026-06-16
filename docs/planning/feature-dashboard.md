@@ -42,7 +42,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
-| N3 | Mission Compounding View ("referenced N prior decisions") | Claude Code (IA/cockpit lane) | 2026-06-16 | Missions **detail** panel (`_authenticated.missions.$missionId.tsx`) + a read-only lineage server fn. Collision-free with I1 (registry/ChangesPanel) and I2 (the `/build` route — different surface). Does NOT touch the build engine. |
 
 ---
 
@@ -54,7 +53,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G1 Sense & Discovery | 3 | 1 | 1 | 7 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
 | G3 Build → QA → Ship | 5 | 0 | 1 | 6 |
-| G4 Launch & Learn | 0 | 1 | 0 | 7 |
+| G4 Launch & Learn | 1 | 1 | 0 | 6 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
 | G7 Cockpit, IA & Observability | 3 | 1 | 0 | 12 |
@@ -154,7 +153,7 @@ _Close the loop: ship to market, learn from outcomes, feed it back._
 | LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ⬜ | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
 | F-ANALYTICS-1 | Cohort metrics + telemetry ingestion → `product_analytics` | ⬜ | Released features get real usage data | Depends on SEN-05 |
 | F-ANALYTICS-2 | Opportunity impact eval (post-release cohort → Product Memory → auto-ICE) | ⬜ | The loop learns whether a bet paid off | Depends on F-ANALYTICS-1 |
-| N3 | Mission Compounding View ("referenced N prior decisions") | 🔨 In Dev (CC, 2026-06-16) | Makes the moat visible per mission; export snapshot | Missions detail panel |
+| N3 | Mission Compounding View ("referenced N prior decisions") | ✅ (2026-06-16) | Makes the moat visible per mission: "drew on N prior memories" + the lineage (each memory + which agent cited it) + a copy-snapshot export; deduped across per-hop recalls + handoff `memory_refs` | `_authenticated.missions.$missionId.tsx` (`MissionCompounding`, client-side from `getMission` — no new server fn needed) |
 
 ---
 
