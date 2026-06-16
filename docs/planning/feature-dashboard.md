@@ -41,7 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| H3 | Scheduling (calendar-aware work blocks) | Claude Code (IA/cockpit lane) | 2026-06-16 | new `proposeWorkBlocks` in `calendar.functions.ts` (schedules open deep-work tasks into free time, reusing the proposeSlots free-slot logic) + a "Plan deep work" affordance in `CalendarPanel.tsx`. Collision-free: the calendar surface, not Today/Govern/studio where the other lanes are active. |
 
 ---
 
@@ -51,7 +50,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 4 | 1 | 1 | 6 |
-| G2 Decide & Plan | 5 | 0 | 0 | 3 |
+| G2 Decide & Plan | 6 | 0 | 0 |  2 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 1 | 1 | 0 | 6 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
@@ -116,7 +115,7 @@ _Turn signal into governed decisions and specs._
 | F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | H2 | Outcome roadmap (Now/Next/Later) | ⬜ | Each item declares an outcome + measure; drag-reorder board | `@dnd-kit` board on `/roadmap` |
-| H3 | Scheduling (calendar-aware work blocks) | 🔨 In Dev (CC, 2026-06-16) | Agent proposes work within working hours | Calendar read + proposal fn |
+| H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | Agent proposes work within working hours | Calendar read + proposal fn |
 | D4 | Cancellation / replay-and-branch / checkpoints | ⬜ | Stop mid-run, re-run with a different model/prompt, diff the result | Mission control + loop checkpoints |
 
 ---

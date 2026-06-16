@@ -181,6 +181,26 @@ export function CalendarPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // H3 · propose deep-work blocks, then add a chosen block to the calendar.
+  const mPlan = useMutation({
+    mutationFn: () => fPlan({ data: {} }),
+    onSuccess: ({ blocks: b }) => {
+      setBlocks(b);
+      setPlanned(true);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const mAddBlock = useMutation({
+    mutationFn: (b: WorkBlock) =>
+      fCreate({ data: { summary: b.title, start_at: b.start_at, end_at: b.end_at } }),
+    onSuccess: (_r, b) => {
+      setAddedTasks((prev) => new Set(prev).add(b.task_id));
+      toast.success("Block added to calendar");
+      qc.invalidateQueries({ queryKey: ["calendar-events"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const mConnect = useMutation({
     mutationFn: async (provider: "google" | "microsoft") => {
       const result = await connectAppUser({
@@ -378,6 +398,16 @@ export function CalendarPanel({
           New event · Scheduler proposes slots
         </button>
         <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => {
+            setShowPlan(true);
+            mPlan.mutate();
+          }}
+          disabled={mPlan.isPending}
+        >
+          {mPlan.isPending ? "Planning…" : "Plan deep work"}
+        </button>
+        <button
           className="btn btn-primary btn-sm"
           onClick={() => mSync.mutate()}
           disabled={mSync.isPending}
@@ -486,6 +516,99 @@ export function CalendarPanel({
               {mCreate.isPending ? "Creating…" : "Create · syncs back"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* H3 · Plan deep work — a proposed block per open deep-work task, fitted
+          into free time inside your working hours. Add one to the calendar. */}
+      {showPlan && (
+        <div className="bento fade-up" style={{ padding: "var(--card-pad)", marginBottom: 14 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              marginBottom: 10,
+            }}
+          >
+            <MonoLabel icon={Sparkles}>Plan deep work · blocks inside your working hours</MonoLabel>
+            <button
+              className="mono-label"
+              style={{ fontSize: 9, color: "var(--ink-subtle)" }}
+              onClick={() => {
+                setShowPlan(false);
+                setPlanned(false);
+              }}
+            >
+              cancel
+            </button>
+          </div>
+          {mPlan.isPending ? (
+            <span className="mono-label" style={{ fontSize: 9 }}>
+              fitting your deep-work tasks around your calendar…
+            </span>
+          ) : blocks.length === 0 ? (
+            <p style={{ fontSize: 12, color: "var(--ink-muted)" }}>
+              {planned
+                ? "Nothing to schedule — no open deep-work tasks, or no free time in the next 7 days."
+                : ""}
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {blocks.map((b, i) => {
+                const added = addedTasks.has(b.task_id);
+                return (
+                  <div
+                    key={b.task_id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      justifyContent: "space-between",
+                      padding: "7px 2px",
+                      borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: 12.5,
+                        color: "var(--ink-muted)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ color: "var(--ink-subtle)", marginRight: 8 }}
+                      >
+                        {b.label}
+                      </span>
+                      {b.title}
+                    </span>
+                    <button
+                      className="mono-label"
+                      onClick={() => mAddBlock.mutate(b)}
+                      disabled={added || mAddBlock.isPending}
+                      style={{
+                        fontSize: 9,
+                        padding: "3px 10px",
+                        borderRadius: 99,
+                        border: "1px solid var(--hairline)",
+                        color: added ? "var(--emerald)" : "var(--action-blue)",
+                        whiteSpace: "nowrap",
+                        opacity: added ? 0.8 : 1,
+                      }}
+                    >
+                      {added ? "added ✓" : "Add to calendar"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
