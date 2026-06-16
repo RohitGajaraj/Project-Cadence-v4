@@ -4,7 +4,18 @@
 
 // Each non-off preset plays a real, looped recording from /public/soundscape/.
 // Synthesized white noise (the first cut) sounded harsh; real audio is calmer.
-export type SoundPreset = "rain" | "ocean" | "forest" | "lofi" | "heartbeat" | "off";
+// A set of soft, continuous textures (no hard strikes): ocean waves, a cozy
+// fireplace, a Himalayan forest, monsoon rain with faint temple bells, a soft
+// bansuri flute, and a bass-rich heartbeat. Generated via ElevenLabs sound
+// effects.
+export type SoundPreset =
+  | "ocean"
+  | "monsoon"
+  | "bansuri"
+  | "forest"
+  | "heartbeat"
+  | "fireplace"
+  | "off";
 
 // endsAt === null means an open-ended session (no timer). A finite endsAt is an
 // epoch-millis deadline.
@@ -14,7 +25,15 @@ export type FlowSession = {
   soundOn: boolean;
 };
 
-export const SOUND_PRESETS: SoundPreset[] = ["rain", "ocean", "forest", "lofi", "heartbeat", "off"];
+export const SOUND_PRESETS: SoundPreset[] = [
+  "ocean",
+  "monsoon",
+  "bansuri",
+  "forest",
+  "heartbeat",
+  "fireplace",
+  "off",
+];
 
 // The looped audio file for a preset, or null for "off". Files live in
 // public/soundscape/<preset>.mp3 (mp3 for universal browser support, incl.

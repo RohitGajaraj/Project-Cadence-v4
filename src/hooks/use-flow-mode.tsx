@@ -48,7 +48,7 @@ type FlowContextValue = {
 const CONFIG_KEY = "cadence.flow.config";
 const SESSION_KEY = "cadence.flow.session";
 
-const DEFAULT_CONFIG: FlowConfig = { preset: "rain", volume: 0.5, timerMin: 25 };
+const DEFAULT_CONFIG: FlowConfig = { preset: "ocean", volume: 0.5, timerMin: 25 };
 
 const FlowContext = createContext<FlowContextValue | null>(null);
 

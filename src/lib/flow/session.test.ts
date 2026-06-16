@@ -14,7 +14,7 @@ import {
 
 const NOW = 1_000_000;
 function session(endsAt: number | null): FlowSession {
-  return { endsAt, preset: "rain", soundOn: true };
+  return { endsAt, preset: "ocean", soundOn: true };
 }
 
 describe("endsAtFor", () => {
@@ -56,7 +56,7 @@ describe("isExpired / isResumable", () => {
 
 describe("presetSrc", () => {
   test("maps a preset to its public audio file", () => {
-    expect(presetSrc("rain")).toBe("/soundscape/rain.mp3");
+    expect(presetSrc("ocean")).toBe("/soundscape/ocean.mp3");
     expect(presetSrc("heartbeat")).toBe("/soundscape/heartbeat.mp3");
   });
   test("off has no source", () => {

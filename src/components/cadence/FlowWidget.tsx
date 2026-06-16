@@ -19,11 +19,12 @@ import { cn } from "@/lib/utils";
 // behind it (Engine-Room: named for the outcome, "Flow", not the mechanism).
 
 const PRESET_LABEL: Record<SoundPreset, string> = {
-  rain: "Rain",
   ocean: "Ocean",
+  monsoon: "Monsoon",
+  bansuri: "Bansuri",
   forest: "Forest",
-  lofi: "Lo-fi",
   heartbeat: "Heartbeat",
+  fireplace: "Fireplace",
   off: "Off",
 };
 

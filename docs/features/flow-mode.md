@@ -14,13 +14,15 @@ A one-click way to drop into focused work without leaving the app. It is a near-
 
 No new route. Flow mode is a global stance, so per the [home-and-today IA rubric](../conventions/home-and-today-ia.md) it lives in the chrome, not on Today. The control sits in the `AppShell` sidebar footer beside the theme toggle.
 
-- **Idle:** a quiet `Waves` icon. Click opens a small panel: ambient sound (Rain / Ocean / Forest / Lo-fi / Heartbeat / Off), a volume slider, and a focus length (25 / 50 / 90 / Open chips, plus a custom minutes field). "Start focus" begins.
+- **Idle:** a quiet `Waves` icon. Click opens a small panel: ambient sound (Ocean / Monsoon / Bansuri / Forest / Heartbeat / Fireplace / Off), a volume slider, and a focus length (25 / 50 / 90 / Open chips, plus a custom minutes field). "Start focus" begins.
 - **Active:** the sidebar and TopBar dim (`html.flow`, lifting back on hover); the icon breathes and shows the remaining time; an inline exit ends it. Main content stays at full strength.
 - **Reload:** an in-flight session resumes (state + remaining time). Audio cannot auto-start under the browser autoplay policy, so the panel offers "Resume sound" (one tap re-arms it).
 
 ## Ambient sound (real audio)
 
-The first cut synthesized the sound (filtered white noise), which came out harsh. It was replaced with real looped recordings, one file per preset, decoded once and looped without a gap via Web Audio (an HTMLAudioElement loop leaves an audible seam); switching presets crossfades. The files live in `public/soundscape/<preset>.mp3` and are sourced separately (royalty-free / CC0 only, with per-file provenance recorded in `public/soundscape/README.md`) so the repo never carries audio of unknown license. Until a file is present, that preset shows "This sound has no track yet" and stays silent; everything else in Flow mode still works. `start()` resolves a boolean so the UI can show that hint.
+The first cut synthesized the sound (filtered white noise), which came out harsh. It was replaced with real looped recordings, one file per preset, decoded once and looped without a gap via Web Audio (an HTMLAudioElement loop leaves an audible seam); switching presets crossfades. The files live in `public/soundscape/<preset>.mp3`. Until a file is present, that preset shows "This sound has no track yet" and stays silent; everything else in Flow mode still works. `start()` resolves a boolean so the UI can show that hint.
+
+The current set is generated with **ElevenLabs Sound Effects** (MCP) to a soft, continuous, partly-Indian palette: Ocean, Monsoon (rain + temple bells), Bansuri (flute texture), Himalayan Forest, a bass-rich Heartbeat, and Fireplace. It is an **experimental free-tier set**: ElevenLabs Sound Effects cap at 5s (looped) and the Music API is paid-only, so real melodic / cultural music presets (lo-fi raga, a full bansuri melody, Balinese gamelan) are deferred. The full pick-up plan, prompts, the "tried and rejected" learnings (tanpura + bowls were too harsh because a 5s loop repeats their attack), and the commercial-license gate live in [`public/soundscape/README.md`](../../public/soundscape/README.md).
 
 ## Notification quieting (hold, then summarize)
 
@@ -52,7 +54,7 @@ Per-soundscape EQ, a "what I'm focusing on" label, server-synced preferences, a 
 ## Verify
 
 - Add at least one file (e.g. `public/soundscape/rain.mp3`) per `public/soundscape/README.md`.
-- Footer Flow icon -> panel -> pick Rain, set volume, choose 25m or type a custom length, Start. Chrome dims, sound plays, timer counts down.
+- Footer Flow icon -> panel -> pick Ocean, set volume, choose 25m or type a custom length, Start. Chrome dims, sound plays, timer counts down.
 - A preset with no file shows "This sound has no track yet" and stays silent; the rest still works.
 - Fire a success toast: it does not show. Fire an error: it does. Exit: a `While you were focused · N` summary appears.
 - Re-enter, reload: session + timer resume; "Resume sound" re-arms audio.

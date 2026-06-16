@@ -4,7 +4,7 @@
 // crossfades; volume rides a master gain.
 //
 // Engine-Room: the audio graph + decode cache are machinery; the user just
-// picks "Rain / Ocean / Forest / Lo-fi / Heartbeat" and a volume.
+// picks a soundscape and a volume.
 //
 // Browser autoplay policy: start() must be called from a user gesture (the
 // widget's Start button, or "resume sound" after a reload). start() resolves
