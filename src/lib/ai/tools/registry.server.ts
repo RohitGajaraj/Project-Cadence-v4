@@ -1494,6 +1494,31 @@ const studioCommit = def({
         };
       },
     );
+    // I1b: record this commit as an atomic revision (the changeset's history
+    // trail). Best-effort and only on a FRESH commit, so a cached re-attempt
+    // (idempotency replay) never double-records.
+    if (!outcome.cached) {
+      try {
+        const { count } = await supabase
+          .from("studio_changeset_revisions")
+          .select("id", { count: "exact", head: true })
+          .eq("changeset_id", changeset.id);
+        await supabase.from("studio_changeset_revisions").insert({
+          changeset_id: changeset.id,
+          user_id: userId,
+          revision_no: (count ?? 0) + 1,
+          commit_sha: outcome.result.commit_sha,
+          commit_url: outcome.result.commit_url ?? null,
+          message: a.message,
+          files: (changes as { path: string; op: string }[]).map((c) => ({
+            path: c.path,
+            op: c.op,
+          })),
+        });
+      } catch (e) {
+        console.error("[studio.commit] revision record failed:", e);
+      }
+    }
     return { ...outcome.result, cached: outcome.cached };
   },
 });

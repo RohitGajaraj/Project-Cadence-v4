@@ -686,6 +686,34 @@ export const getChangesetDiff = createServerFn({ method: "GET" })
     return { changes: rows ?? [] };
   });
 
+export type StudioRevision = {
+  id: string;
+  revision_no: number;
+  commit_sha: string;
+  commit_url: string | null;
+  message: string;
+  files: Array<{ path: string; op: string }>;
+  created_at: string;
+};
+
+/**
+ * I1b: a changeset's revision history (one row per studio.commit), newest
+ * first. Read-only; RLS scopes to the workspace via the parent changeset.
+ */
+export const getChangesetRevisions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ changesetId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: rows, error } = await db
+      .from("studio_changeset_revisions")
+      .select("id,revision_no,commit_sha,commit_url,message,files,created_at")
+      .eq("changeset_id", data.changesetId)
+      .order("revision_no", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { revisions: (rows ?? []) as StudioRevision[] };
+  });
+
 /**
  * I1 curation: the operator rejects specific hunks of a staged file (the rejected
  * ones revert to base) before the gated commit. Only a not-yet-committed
@@ -723,7 +751,11 @@ export const applyStagedHunkSelection = createServerFn({ method: "POST" })
     if (rowErr) throw new Error(rowErr.message);
     if (!row) throw new Error("Staged file not found.");
     const r = row as { id: string; base_content: string | null; new_content: string | null };
-    const next = applyHunkSelection(r.base_content ?? "", r.new_content ?? "", data.rejectedHunkIds);
+    const next = applyHunkSelection(
+      r.base_content ?? "",
+      r.new_content ?? "",
+      data.rejectedHunkIds,
+    );
     const { error } = await db
       .from("studio_changes")
       .update({ new_content: next, updated_at: new Date().toISOString() })

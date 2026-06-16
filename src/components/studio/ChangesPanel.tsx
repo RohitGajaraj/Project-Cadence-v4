@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   applyStagedHunkSelection,
   getChangesetDiff,
+  getChangesetRevisions,
   rejectStagedFile,
   type StudioChangesetSummary,
 } from "@/lib/studio.functions";
@@ -95,6 +96,16 @@ export function ChangesPanel({
     return map;
   }, [diff.data]);
 
+  // I1b: the changeset's commit history (newest first), shown as a compact strip.
+  const fRevs = useServerFn(getChangesetRevisions);
+  const revs = useQuery({
+    queryKey: ["studio-revisions", changeset?.id],
+    queryFn: () => fRevs({ data: { changesetId: changeset!.id } }),
+    enabled: !!changeset,
+    staleTime: 10_000,
+  });
+  const revisions = revs.data?.revisions ?? [];
+
   // I1: operator curation (per-hunk reject + drop file), only before commit.
   const qc = useQueryClient();
   const canCurate = changeset?.status === "staged";
@@ -109,7 +120,11 @@ export function ChangesPanel({
   const applyMut = useMutation({
     mutationFn: (vars: { path: string; rejectedHunkIds: number[] }) =>
       fApply({
-        data: { changesetId: changeset!.id, path: vars.path, rejectedHunkIds: vars.rejectedHunkIds },
+        data: {
+          changesetId: changeset!.id,
+          path: vars.path,
+          rejectedHunkIds: vars.rejectedHunkIds,
+        },
       }),
     onSuccess: () => {
       toast.success("Rejected hunks reverted to base.");
@@ -183,6 +198,78 @@ export function ChangesPanel({
           </span>
         ) : null}
       </div>
+
+      {/* I1b revision history: one row per studio.commit, newest first. */}
+      {revisions.length > 0 ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+              Revisions ({revisions.length})
+            </span>
+            <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+              commit history
+            </span>
+          </div>
+          {revisions.map((r, i) => (
+            <div
+              key={r.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 18px",
+                borderBottom: i < revisions.length - 1 ? "1px solid var(--hairline)" : "none",
+              }}
+            >
+              <span className="mono-label" style={{ width: 36, color: "var(--ink-muted)" }}>
+                r{r.revision_no}
+              </span>
+              <span
+                className="truncate"
+                style={{ flex: 1, minWidth: 0, fontSize: 12, color: "var(--ink)" }}
+              >
+                {r.message || "(no message)"}
+              </span>
+              <span
+                className="tabular-nums"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10.5,
+                  color: "var(--ink-subtle)",
+                }}
+              >
+                {r.files.length} file{r.files.length === 1 ? "" : "s"}
+              </span>
+              {r.commit_url ? (
+                <a
+                  href={r.commit_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mono-label"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--ink-muted)" }}
+                >
+                  {r.commit_sha.slice(0, 7)}
+                </a>
+              ) : (
+                <span
+                  className="mono-label"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--ink-subtle)" }}
+                >
+                  {r.commit_sha.slice(0, 7)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {/* File list — table-bento: padding 0, mono-label header, hairline rows. */}
       <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
@@ -364,7 +451,8 @@ export function ChangesPanel({
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
-                  {hunks.length} hunk{hunks.length === 1 ? "" : "s"} · tap to reject (reverts to base)
+                  {hunks.length} hunk{hunks.length === 1 ? "" : "s"} · tap to reject (reverts to
+                  base)
                 </span>
                 <button
                   type="button"
@@ -416,7 +504,10 @@ export function ChangesPanel({
                   >
                     <span
                       className="mono-label"
-                      style={{ width: 64, color: isRejected ? "var(--ink-faint)" : "var(--ink-muted)" }}
+                      style={{
+                        width: 64,
+                        color: isRejected ? "var(--ink-faint)" : "var(--ink-muted)",
+                      }}
                     >
                       {isRejected ? "rejected" : `hunk ${h.id + 1}`}
                     </span>

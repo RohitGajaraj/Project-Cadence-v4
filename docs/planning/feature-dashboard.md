@@ -42,7 +42,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
-| I1b | True revision history (atomic revisions) | Claude Code (engine lane) | 2026-06-16 | `studio_changeset_revisions` migration + snapshot in `registry.server.ts` studio.commit + `getChangesetRevisions` + `ChangesPanel` strip. Same engine files as before; disjoint from I2's surface |
 | F-TODAY-LOOPPULSE | Loop Pulse hero (what the loop did while you were away) | Claude Code (IA/cockpit lane) | 2026-06-16 | `today.functions.ts` (`getLoopPulse` read-only counts) + the Today hero line in `_authenticated.index.tsx`. Collision-free: own Today surface, not the build engine (I1/I1b) or the `/build` route (I2). |
 
 ---
@@ -54,7 +53,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 3 | 1 | 1 | 7 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
-| G3 Build → QA → Ship | 5 | 0 | 0 | 6 |
+| G3 Build → QA → Ship | 6 | 0 | 0 | 6 |
 | G4 Launch & Learn | 1 | 1 | 0 | 6 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
@@ -62,7 +61,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
 
-> 🔨 **Currently In Dev (2026-06-16):** **I1b** (revision history, this session) — engine lane I3/J1/J2/I1 already ✅. Other session: **I2** (watch-the-build). N3 (mission compounding) ✅ landed. See Active claims above.
+> 🔨 **Currently In Dev (2026-06-16):** **I2** (watch-the-build, parallel session). G3 engine lane fully ✅ (I3 · J1 · J2 · I1 · I1b). N3 (mission compounding) + F-TODAY-LOOPPULSE in/landed via other lanes. See Active claims above.
 
 The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
 
@@ -130,7 +129,7 @@ _The biggest pending block and the core differentiator: genuine end-to-end execu
 | --- | --- | --- | --- | --- |
 | F-STUDIO | Build engine (repo reads, multi-file changesets, `studio/*` branches, PR + CI, gated merge) | ✅ | The green path that ships real code | [`features/studio.md`](../features/studio.md) |
 | I1 | Studio multi-file coding (per-hunk accept/reject) | ✅ (2026-06-16) | Operator can curate a staged changeset before the gated commit: per-hunk reject (reverts to base) + drop a whole file. Pure tested diff engine shared UI/server | `ai/studio-hunks.ts` (11 tests) + `studio.functions.ts` (applyStagedHunkSelection / rejectStagedFile) + `ChangesPanel.tsx` |
-| I1b | True revision history (atomic revisions) | 🔨 In Dev (CC) | A per-commit snapshot trail of a changeset: each `studio.commit` records a revision (no, sha, message, files) so the operator can see the commit history in-platform | new `studio_changeset_revisions` table + snapshot in `studio.commit` + `getChangesetRevisions` + UI strip |
+| I1b | True revision history (atomic revisions) | ✅ (2026-06-16) | Each `studio.commit` records a revision (no, sha, message, files); the Changes tab shows the commit history with GitHub links. Revert-to-revision deferred (needs per-revision content or git ops) | migration `20260616230000` + `registry.server.ts` studio.commit + `getChangesetRevisions` + `ChangesPanel` strip |
 | I2 | Watch-the-agents-build live surface | 🔨 In Dev (parallel lane) | Live per-session view (step, files, tool calls, cost); pause/steer mid-run. Much exists already (`SessionTimeline` · `CostPanel` · `CiPanel` · `ApprovalCard` + `steerStudioSession`); the gap is live auto-refresh/streaming + polish (verify before building) | `_authenticated.build.$missionId.tsx` + `SessionTimeline.tsx`; poll `getStudioSession` |
 | I3 | Branch/worktree isolation per mission | ✅ (2026-06-16) | Concurrent missions can't share a branch or clobber files: per-path `builder_file_claims` (same-file guard) + collision-safe per-changeset branch `studio/<mission8>-<changeset12>` + clean open→squash-merge→release path. Git Data API (no local checkout), so "worktree" = isolated branch | `ai/studio-branch.ts` (6 tests) + `registry.server.ts` studio.commit |
 | J1 | Test generation + run | ✅ (2026-06-16) | Studio agent now authors tests as part of every change (prompt discipline); tests run in the connected repo's GitHub Actions CI (no Cadence sandbox, by design) | migration `20260616220000` (Studio system prompt) |
