@@ -13,7 +13,7 @@
     "test": "bun test",
     "cost:track": "bash scripts/cost-track.sh",
     "cost:summary": "bash scripts/cost-summary.sh",
-    "clean:screenshots": "bash scripts/clean-screenshots.sh"
+    "clean:workspace": "bash scripts/clean-workspace.sh"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

@@ -54,7 +54,7 @@ agentdb*.rvf*.lock
 agentdb*.lock
 .swarm/
 # Images are local-only by default (bucket map + retention:
-# docs/conventions/screenshot-placement.md). design-reference/ is re-included below.
+# docs/conventions/workspace-hygiene.md). design-reference/ is re-included below.
 *.png
 *.jpg
 *.jpeg
@@ -63,7 +63,7 @@ agentdb*.lock
 src/routeTree.gen 2.ts
 
 # Local screenshots / visual artifacts (organized under docs/screenshots, kept local).
-# Where each image goes + retention: docs/conventions/screenshot-placement.md
+# Where each image goes + retention: docs/conventions/workspace-hygiene.md
 docs/screenshots/
 
 # Exception: canonical design-reference images ARE committed (file-placement
