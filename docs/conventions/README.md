@@ -15,6 +15,7 @@
 | [`inline-management.md`](./inline-management.md)         | Workspace + product management is inline (popover / dropdown / sheet), never a dedicated route.                                                   |
 | [`doc-closure-checklist.md`](./doc-closure-checklist.md) | The 8-step per-feature checklist that closes the documentation loop.                                                                              |
 | [`doc-update-cadence.md`](./doc-update-cadence.md)       | **Doc maintenance cadence + the "what next" source of truth.** Three tiers (continuous / per feature-milestone / per structural change) so living docs stay current while architecture docs do not churn. Names `docs/planning/v7-build-status.md` as the always-current build-state tracker that answers "what are we building next". |
+| [`ui-verification-steps.md`](./ui-verification-steps.md) | After each build, end the report with numbered self-serve UI-verification steps (route + what's visible + one-line why); say so plainly when a change is backend-only, and flag deploy state (live now / after the Lovable Publish). Founder ruling 2026-06-16. |
 
 ## How to add a new convention
 
