@@ -225,10 +225,7 @@ function Dashboard() {
             Taller than the reference's 26px band per founder input (2026-06-12):
             more vertical prominence, plus a small calm kaleidoscope of
             butterflies drifting top-left to balance the big ghost mark. */}
-        <section
-          className="hero-editorial rise"
-          style={{ padding: "44px 30px 40px", marginBottom: 24 }}
-        >
+        <section className="hero-editorial" style={{ padding: "44px 30px 40px", marginBottom: 24 }}>
           <div className="hero-ghost-mark" aria-hidden="true">
             <CadenceMark size={230} tile={false} />
           </div>
@@ -310,6 +307,16 @@ function Dashboard() {
                     [`${callCount} calls`, "waiting on you"],
                     [`${activeAgents} missions`, "running now"],
                     [spendLabel, "spent today"],
+                    ...((d?.todayMeetings ?? []).length > 0
+                      ? [
+                          [
+                            `${(d?.todayMeetings ?? []).length} meeting${
+                              (d?.todayMeetings ?? []).length === 1 ? "" : "s"
+                            }`,
+                            "today",
+                          ] as [string, string],
+                        ]
+                      : []),
                   ] as [string, string][]
                 ).map(([v, s]) => (
                   <span
@@ -408,10 +415,7 @@ function Dashboard() {
         </section>
 
         {/* NEEDS YOU — the calls queue */}
-        <section
-          className="bento rise-2"
-          style={{ padding: "14px var(--card-pad)", marginBottom: 24 }}
-        >
+        <section className="bento" style={{ padding: "14px var(--card-pad)", marginBottom: 24 }}>
           <div
             style={{
               display: "flex",
@@ -529,7 +533,7 @@ function Dashboard() {
         )}
 
         {/* BRIEF */}
-        <section className="bento rise-3" style={{ padding: "var(--card-pad)", marginBottom: 24 }}>
+        <section className="bento" style={{ padding: "var(--card-pad)", marginBottom: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <MonoLabel icon={Sparkles}>Today's brief</MonoLabel>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
