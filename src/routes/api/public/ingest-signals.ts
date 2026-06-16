@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { checkIngestRateLimit } from "@/lib/ingest-ratelimit.server";
 
 /**
  * F-V5-INGEST-WEBHOOK — public continuous-ingest door.
@@ -63,6 +64,15 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
             .maybeSingle();
           if (tokError) throw new Error(tokError.message);
           if (!tok) return json({ ok: false, error: "invalid ingest token" }, 401);
+
+          // --- Rate limit check: per-token cap ---
+          const rateLimitCheck = await checkIngestRateLimit(admin, tok.id);
+          if (!rateLimitCheck.allowed) {
+            return json(
+              { ok: false, error: "Rate limit exceeded", retryAfterSeconds: rateLimitCheck.retryAfterSeconds },
+              429,
+            );
+          }
 
           // --- Body: validate liberally, strip everything else ---
           let raw: unknown;
