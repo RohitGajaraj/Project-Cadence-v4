@@ -19,6 +19,7 @@ import { createMission } from "@/lib/ai/handoff.server";
 import { recordLineage } from "@/lib/lineage.functions";
 import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
+import { applyHunkSelection } from "@/lib/ai/studio-hunks";
 
 export type StudioChangesetSummary = {
   id: string;
@@ -683,6 +684,81 @@ export const getChangesetDiff = createServerFn({ method: "GET" })
       .order("path");
     if (error) throw new Error(error.message);
     return { changes: rows ?? [] };
+  });
+
+/**
+ * I1 curation: the operator rejects specific hunks of a staged file (the rejected
+ * ones revert to base) before the gated commit. Only a not-yet-committed
+ * changeset can be curated; once committed/merged the content is on the branch
+ * and the agent must re-stage. RLS scopes both reads/writes to the workspace.
+ */
+export const applyStagedHunkSelection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        changesetId: z.string().uuid(),
+        path: z.string().min(1).max(400),
+        rejectedHunkIds: z.array(z.number().int().min(0).max(100_000)).max(5_000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: cs, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,status")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!cs) throw new Error("Changeset not found.");
+    if ((cs as { status: string }).status !== "staged")
+      throw new Error("Only a staged changeset can be curated; this one is already committed.");
+    const { data: row, error: rowErr } = await db
+      .from("studio_changes")
+      .select("id,base_content,new_content")
+      .eq("changeset_id", data.changesetId)
+      .eq("path", data.path)
+      .maybeSingle();
+    if (rowErr) throw new Error(rowErr.message);
+    if (!row) throw new Error("Staged file not found.");
+    const r = row as { id: string; base_content: string | null; new_content: string | null };
+    const next = applyHunkSelection(r.base_content ?? "", r.new_content ?? "", data.rejectedHunkIds);
+    const { error } = await db
+      .from("studio_changes")
+      .update({ new_content: next, updated_at: new Date().toISOString() })
+      .eq("id", r.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, path: data.path, new_chars: next.length };
+  });
+
+/**
+ * I1 curation: drop a whole staged file from a not-yet-committed changeset (reject the
+ * entire file before commit). RLS scopes the delete to the workspace.
+ */
+export const rejectStagedFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ changesetId: z.string().uuid(), path: z.string().min(1).max(400) }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: cs, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,status")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!cs) throw new Error("Changeset not found.");
+    if ((cs as { status: string }).status !== "staged")
+      throw new Error("Only a staged changeset can be curated; this one is already committed.");
+    const { error } = await db
+      .from("studio_changes")
+      .delete()
+      .eq("changeset_id", data.changesetId)
+      .eq("path", data.path);
+    if (error) throw new Error(error.message);
+    return { ok: true, path: data.path };
   });
 
 /** Re-read CI for the session's PR (manual refresh from the PR & CI tab). */

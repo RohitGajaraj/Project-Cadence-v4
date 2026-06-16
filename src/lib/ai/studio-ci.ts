@@ -47,13 +47,19 @@ export function mergeReadinessFromCi(overall: CiOverall): { allowed: boolean; re
     case "success":
       return { allowed: true, reason: "CI is green." };
     case "neutral":
-      return { allowed: true, reason: "No CI is configured on this repo, so there is nothing to gate on." };
+      return {
+        allowed: true,
+        reason: "No CI is configured on this repo, so there is nothing to gate on.",
+      };
     case "failure":
       return {
         allowed: false,
         reason: "CI is red. Read the failing check, stage a fix, and commit again before merging.",
       };
     case "pending":
-      return { allowed: false, reason: "CI is still running. Wait for it to finish before merging." };
+      return {
+        allowed: false,
+        reason: "CI is still running. Wait for it to finish before merging.",
+      };
   }
 }

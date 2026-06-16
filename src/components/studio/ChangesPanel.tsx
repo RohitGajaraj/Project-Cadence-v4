@@ -1,7 +1,14 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { getChangesetDiff, type StudioChangesetSummary } from "@/lib/studio.functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  applyStagedHunkSelection,
+  getChangesetDiff,
+  rejectStagedFile,
+  type StudioChangesetSummary,
+} from "@/lib/studio.functions";
+import { computeHunks } from "@/lib/ai/studio-hunks";
 import { ChangesetChip } from "./studio-ui";
 import { fmtCompact } from "./studio-format";
 
@@ -88,6 +95,41 @@ export function ChangesPanel({
     return map;
   }, [diff.data]);
 
+  // I1: operator curation (per-hunk reject + drop file), only before commit.
+  const qc = useQueryClient();
+  const canCurate = changeset?.status === "staged";
+  const [rejected, setRejected] = useState<Set<number>>(new Set());
+  useEffect(() => setRejected(new Set()), [selectedPath]);
+  const fApply = useServerFn(applyStagedHunkSelection);
+  const fReject = useServerFn(rejectStagedFile);
+  const refetchAll = () => {
+    qc.invalidateQueries({ queryKey: ["studio-session"] });
+    if (changeset) qc.invalidateQueries({ queryKey: ["studio-diff", changeset.id] });
+  };
+  const applyMut = useMutation({
+    mutationFn: (vars: { path: string; rejectedHunkIds: number[] }) =>
+      fApply({
+        data: { changesetId: changeset!.id, path: vars.path, rejectedHunkIds: vars.rejectedHunkIds },
+      }),
+    onSuccess: () => {
+      toast.success("Rejected hunks reverted to base.");
+      setRejected(new Set());
+      refetchAll();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not apply the selection."),
+  });
+  const rejectFileMut = useMutation({
+    mutationFn: (path: string) => fReject({ data: { changesetId: changeset!.id, path } }),
+    onSuccess: () => {
+      toast.success("File dropped from the changeset.");
+      setSelectedPath(null);
+      refetchAll();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not drop the file."),
+  });
+
   if (!changeset) {
     return (
       <div
@@ -106,6 +148,10 @@ export function ChangesPanel({
   }
 
   const selected = selectedPath ? diffByPath.get(selectedPath) : null;
+  // Same pure diff the server applies, so hunk ids line up between UI and server.
+  const hunks = selected
+    ? computeHunks(selected.base_content ?? "", selected.new_content ?? "")
+    : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -266,6 +312,24 @@ export function ChangesPanel({
             <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
               base vs staged
             </span>
+            {canCurate && selectedPath ? (
+              <button
+                type="button"
+                onClick={() => rejectFileMut.mutate(selectedPath!)}
+                disabled={rejectFileMut.isPending}
+                className="mono-label"
+                style={{
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 6,
+                  padding: "3px 8px",
+                  background: "transparent",
+                  color: "var(--ink-muted)",
+                  cursor: rejectFileMut.isPending ? "default" : "pointer",
+                }}
+              >
+                {rejectFileMut.isPending ? "Dropping…" : "Reject file"}
+              </button>
+            ) : null}
           </div>
           {diff.isLoading || !selected ? (
             spinnerBox
@@ -288,6 +352,101 @@ export function ChangesPanel({
               />
             </Suspense>
           )}
+          {canCurate && selected && hunks.length > 0 ? (
+            <div
+              style={{
+                borderTop: "1px solid var(--hairline)",
+                padding: "12px 18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+                  {hunks.length} hunk{hunks.length === 1 ? "" : "s"} · tap to reject (reverts to base)
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyMut.mutate({ path: selectedPath!, rejectedHunkIds: [...rejected] })
+                  }
+                  disabled={applyMut.isPending || rejected.size === 0}
+                  className="mono-label"
+                  style={{
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 6,
+                    padding: "3px 10px",
+                    background: rejected.size === 0 ? "transparent" : "var(--surface-1)",
+                    color: rejected.size === 0 ? "var(--ink-faint)" : "var(--ink)",
+                    cursor: applyMut.isPending || rejected.size === 0 ? "default" : "pointer",
+                  }}
+                >
+                  {applyMut.isPending ? "Applying…" : `Apply (${rejected.size} rejected)`}
+                </button>
+              </div>
+              {hunks.map((h) => {
+                const isRejected = rejected.has(h.id);
+                const preview = (h.modifiedLines[0] ?? h.baseLines[0] ?? "").trim().slice(0, 80);
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() =>
+                      setRejected((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(h.id)) next.delete(h.id);
+                        else next.add(h.id);
+                        return next;
+                      })
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      textAlign: "left",
+                      width: "100%",
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      border: "1px solid var(--hairline)",
+                      background: isRejected ? "var(--surface-1)" : "transparent",
+                      opacity: isRejected ? 0.6 : 1,
+                      transition: "opacity var(--dur-fast, 140ms)",
+                    }}
+                  >
+                    <span
+                      className="mono-label"
+                      style={{ width: 64, color: isRejected ? "var(--ink-faint)" : "var(--ink-muted)" }}
+                    >
+                      {isRejected ? "rejected" : `hunk ${h.id + 1}`}
+                    </span>
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 10.5,
+                        color: "var(--ink-subtle)",
+                      }}
+                    >
+                      +{h.modifiedLines.length} / −{h.baseLines.length}
+                    </span>
+                    <span
+                      className="truncate"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 11,
+                        color: "var(--ink-muted)",
+                      }}
+                    >
+                      {preview || "(blank line)"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
