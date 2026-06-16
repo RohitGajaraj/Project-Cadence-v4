@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/missions/")({
     tab: search.tab === "agents" ? "agents" : "missions",
   }),
   component: MissionsPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Missions · Cadence" }] }),
 });
 
 function MissionsPage() {

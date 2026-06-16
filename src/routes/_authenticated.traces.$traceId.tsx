@@ -25,7 +25,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_authenticated/traces/$traceId")({
   component: TraceReplayPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Activity · Cadence" }] }),
 });
 
 type EventRow = {

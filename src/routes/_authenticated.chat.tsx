@@ -61,7 +61,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Ask · Cadence" }] }),
 });
 
 type Msg = {

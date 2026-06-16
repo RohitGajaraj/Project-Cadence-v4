@@ -95,7 +95,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
   }),
   component: SettingsPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Settings · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>

@@ -42,7 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
   component: MissionDetailPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Mission · Cadence" }] }),
 });
 
 type Hop = MissionDetail["hops"][number];

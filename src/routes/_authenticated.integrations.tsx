@@ -24,7 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: IntegrationsPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Integrations · Cadence" }] }),
 });
 
 type ClientPreset = {

@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/product")({
     };
   },
   component: ProductPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Product · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>

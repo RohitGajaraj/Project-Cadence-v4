@@ -20,7 +20,7 @@ export const Route = createFileRoute("/signup")({
     if (data.user) throw redirect({ to: "/" });
   },
   component: SignupPage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Sign up · Cadence" }] }),
 });
 
 function SignupPage() {

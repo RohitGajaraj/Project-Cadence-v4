@@ -41,7 +41,7 @@ import { SketchLine, SketchBar } from "@/components/cadence/Sketch";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Today · Cadence" }] }),
 });
 
 // Home · Today — ported 1:1 from design-reference/cadence/home.jsx (the

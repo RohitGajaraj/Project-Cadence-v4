@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
     };
   },
   component: KnowledgePage,
-  head: () => ({ meta: [{ title: "Cadence" }] }),
+  head: () => ({ meta: [{ title: "Brain · Cadence" }] }),
   errorComponent: ({ error, reset }) => (
     <AppShell>
       <div style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}>
