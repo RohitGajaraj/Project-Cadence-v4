@@ -43,6 +43,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
 | I1b | True revision history (atomic revisions) | Claude Code (engine lane) | 2026-06-16 | `studio_changeset_revisions` migration + snapshot in `registry.server.ts` studio.commit + `getChangesetRevisions` + `ChangesPanel` strip. Same engine files as before; disjoint from I2's surface |
+| F-TODAY-LOOPPULSE | Loop Pulse hero (what the loop did while you were away) | Claude Code (IA/cockpit lane) | 2026-06-16 | `today.functions.ts` (`getLoopPulse` read-only counts) + the Today hero line in `_authenticated.index.tsx`. Collision-free: own Today surface, not the build engine (I1/I1b) or the `/build` route (I2). |
 
 ---
 
@@ -194,7 +195,7 @@ _The product feels coherent; the operator sees the machine._
 | F-AUTONOMY | AutonomyCard on Today (observing→proving→trusted) | ✅ | The trust arc is visible to the operator | `src/lib/autonomy-progression.ts` |
 | F-IA-V4 | Collapse IA to 7 surfaces + redirects + vocab enforcement | ⬜ **(marked "next up")** | One coherent product instead of scattered routes | Route consolidation + redirects |
 | F-IA-TODAY-BRIEFING | Merge Today + Briefing | ⬜ | One morning surface, not two | Today route |
-| F-TODAY-LOOPPULSE | Loop Pulse hero (overnight signal/theme/PRD/PR status line) | ⬜ | Today opens with what the loop did while you slept | Today hero |
+| F-TODAY-LOOPPULSE | Loop Pulse hero (overnight signal/theme/PRD/PR status line) | 🔨 In Dev (CC, 2026-06-16) | Today opens with what the loop did while you slept | Today hero |
 | F-IA-CULL-CALDOCS | Remove /calendar, /meetings, /docs, /sync from nav (data kept) | ⬜ | De-clutter the operator nav | Nav config |
 | F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
 | E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ⬜ | Catch a stalled loop before the user does | New health fn + surface |
