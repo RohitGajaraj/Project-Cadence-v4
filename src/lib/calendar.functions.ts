@@ -574,7 +574,13 @@ export const proposeSlots = createServerFn({ method: "POST" })
     while (cursor < horizon && slots.length < data.count) {
       const day = cursor.getDay();
       const hour = cursor.getHours();
-      if (day === 0 || day === 6 || hour < whStart || hour + data.durationMinutes / 60 > whEnd) {
+      // Block END compared in minutes so a slot never overruns whEnd from a :30 cursor.
+      if (
+        day === 0 ||
+        day === 6 ||
+        hour < whStart ||
+        hour * 60 + cursor.getMinutes() + data.durationMinutes > whEnd * 60
+      ) {
         cursor.setTime(cursor.getTime() + stepMs);
         continue;
       }
@@ -682,7 +688,10 @@ export const proposeWorkBlocks = createServerFn({ method: "POST" })
     while (cursor < horizon && ti < todo.length) {
       const day = cursor.getDay();
       const hour = cursor.getHours();
-      if (day === 0 || day === 6 || hour < whStart || hour + data.blockMinutes / 60 > whEnd) {
+      // Compare the block END in minutes (not truncated fractional hours) so a
+      // block can never overrun whEnd when the cursor sits at :30 past the hour.
+      const endMin = hour * 60 + cursor.getMinutes() + data.blockMinutes;
+      if (day === 0 || day === 6 || hour < whStart || endMin > whEnd * 60) {
         cursor.setTime(cursor.getTime() + stepMs);
         continue;
       }

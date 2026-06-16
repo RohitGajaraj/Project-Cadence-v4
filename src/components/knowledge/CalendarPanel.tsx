@@ -551,7 +551,7 @@ export function CalendarPanel({
           ) : blocks.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--ink-muted)" }}>
               {planned
-                ? "Nothing to schedule — no open deep-work tasks, or no free time in the next 7 days."
+                ? "Nothing to schedule. No open deep-work tasks, or no free time in the next 7 days."
                 : ""}
             </p>
           ) : (

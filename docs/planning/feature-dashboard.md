@@ -115,7 +115,7 @@ _Turn signal into governed decisions and specs._
 | F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | H2 | Outcome roadmap (Now/Next/Later) | ⬜ | Each item declares an outcome + measure; drag-reorder board | `@dnd-kit` board on `/roadmap` |
-| H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | Agent proposes work within working hours | Calendar read + proposal fn |
+| H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | "Plan deep work" on the Calendar: `proposeWorkBlocks` schedules open deep-work tasks into free time within working hours (reuses proposeSlots' conflict logic; one block per task, back-to-back, skips weekends/meetings; pure read-only proposal), each block has "Add to calendar". Adversarially reviewed: 1 real boundary bug + a user-facing em-dash fixed | `calendar.functions.ts` (`proposeWorkBlocks`) + `CalendarPanel.tsx` |
 | D4 | Cancellation / replay-and-branch / checkpoints | ⬜ | Stop mid-run, re-run with a different model/prompt, diff the result | Mission control + loop checkpoints |
 
 ---
