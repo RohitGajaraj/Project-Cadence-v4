@@ -6,7 +6,7 @@
 > - **Parallel session - watch-the-build lane (I2):** the live build view. OWNS `src/routes/_authenticated.build.$missionId.tsx`, `_authenticated.build.index.tsx`, `src/components/studio/SessionTimeline.tsx`, new view components. MUST NOT touch the engine-core files above. Pure frontend + TanStack Query polling of `getStudioSession`.
 >
 > Checklist (engine lane):
-> - [ ] I3: per-mission isolated branch + clean merge path (harden the `studio/*` branch model so concurrent missions never share a working branch)
+> - [x] I3 (2026-06-16): collision-safe per-changeset branch `studio/<mission8>-<changeset12>` (pure `ai/studio-branch.ts` + 6 tests) closes the 32-bit branch-name collision; file claims + clean merge path already existed. Build green, 123 tests.
 > - [ ] J1: a `studio.test.run` tool + `studio_test_runs` table (migration) + build-agent authors/runs tests + results persisted and read back
 > - [ ] J2: loop orchestration re-dispatches a fix step on red CI/tests until green or escalate; a Cadence-level guard blocks `studio.pr.merge` while CI/tests are red
 > - [ ] I1: per-hunk accept/reject in `ChangesPanel.tsx` + revision history in the changeset model (migration)

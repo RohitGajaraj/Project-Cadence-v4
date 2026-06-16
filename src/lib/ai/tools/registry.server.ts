@@ -19,6 +19,7 @@ import {
   missionFinalize,
 } from "./orchestrator.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
+import { studioBranchName } from "@/lib/ai/studio-branch";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type ToolCtx = {
@@ -1376,7 +1377,7 @@ const studioCommit = def({
 
     const { token, repo } = await requireGithub(ctx);
     const headers = ghHeaders(token);
-    const branch = changeset.branch ?? `studio/${missionId.slice(0, 8)}`;
+    const branch = changeset.branch ?? studioBranchName(missionId, changeset.id);
     const paths = (changes as { path: string }[]).map((c) => c.path);
 
     // Claim every path (Bundle 9 Slice 3 semantics) — a parallel mission
