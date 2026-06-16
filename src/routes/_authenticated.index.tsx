@@ -14,6 +14,10 @@ import {
   Check,
   AlertTriangle,
   Target,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
@@ -29,10 +33,11 @@ import { getNeedsYou, getColdStart } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { listLearnings } from "@/lib/outcome.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
-import { recordRitualSession } from "@/lib/gauntlet.functions";
+import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { listOpportunities } from "@/lib/discovery.functions";
+import { SketchLine, SketchBar } from "@/components/cadence/Sketch";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -56,6 +61,8 @@ function Dashboard() {
   const fetchNeedsYou = useServerFn(getNeedsYou);
   const fetchColdStart = useServerFn(getColdStart);
   const fetchLearnings = useServerFn(listLearnings);
+  const fetchAcceptance = useServerFn(getAcceptanceRate);
+  const fetchAutonomy = useServerFn(getAutonomyRatio);
 
   const mCreateTask = useServerFn(createTask);
   const mUpdateTask = useServerFn(updateTask);
@@ -76,6 +83,16 @@ function Dashboard() {
   const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fetchLearnings() });
   const fetchOpps = useServerFn(listOpportunities);
   const opps = useQuery({ queryKey: ["opportunities"], queryFn: () => fetchOpps() });
+  // PM vitals — the two trust metrics a PM acts on, read from the Gauntlet's
+  // own server functions (single-sourced; the deep view stays on Govern).
+  const acceptance = useQuery({
+    queryKey: ["acceptance", 14],
+    queryFn: () => fetchAcceptance({ data: { days: 14 } }),
+  });
+  const autonomy = useQuery({
+    queryKey: ["autonomy", 14],
+    queryFn: () => fetchAutonomy({ data: { days: 14 } }),
+  });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
   // bucket matches their wall clock, not the server's UTC.
@@ -202,11 +219,48 @@ function Dashboard() {
   const expiredApprovals = (ny?.approvals ?? []).filter((a) => a.escalation_state === "expired");
   const failedRuns = runRows.filter((r) => r.status === "failed" || r.status === "error");
   const bottleneckCount = expiredApprovals.length + failedRuns.length;
-  const topOpps = (opps.data?.opportunities ?? []).slice(0, 3) as {
+  const topOpps = (opps.data?.opportunities ?? []).slice(0, 4) as {
     id: string;
     title: string;
     ice_score: number | null;
   }[];
+
+  // Pulse vitals + sketch series. Percentages stay null until there is real
+  // data (no fabricated trend); the 7-day series feeds the sketched sparkline.
+  const acceptPct = acceptance.data?.rate != null ? Math.round(acceptance.data.rate * 100) : null;
+  const autonomyPct = autonomy.data?.ratio != null ? Math.round(autonomy.data.ratio * 100) : null;
+  const acceptTrend = acceptance.data?.trend ?? "flat";
+  const autonomyTrend = autonomy.data?.trend ?? "flat";
+
+  // The week's pulse line: agent activity bucketed per day (the loop's
+  // heartbeat, populated in any active workspace). Falls back to the deep-work
+  // series when nothing has run yet — both are real, neither invented.
+  const DAY_MS = 86_400_000;
+  const last7 = Array.from({ length: 7 }).map((_, i) => {
+    const day = new Date(Date.now() - (6 - i) * DAY_MS);
+    return {
+      key: day.toDateString(),
+      label: day.toLocaleDateString("en-US", { weekday: "narrow" }),
+    };
+  });
+  const runCounts = last7.map(() => 0);
+  for (const r of runRows) {
+    const ts = (r as { created_at?: string }).created_at;
+    if (!ts) continue;
+    const idx = last7.findIndex((d) => d.key === new Date(ts).toDateString());
+    if (idx >= 0) runCounts[idx] += 1;
+  }
+  const runTotal = runCounts.reduce((a, b) => a + b, 0);
+  const deepSeries = (d?.deepWorkSeries ?? []).map((s) => s.count);
+  const deepDays = (d?.deepWorkSeries ?? []).map((s) => s.day);
+  const deepTotal = deepSeries.reduce((a, b) => a + b, 0);
+  const usingRuns = runTotal > 0;
+  const pulseSeries = usingRuns ? runCounts : deepSeries;
+  const pulseDays = usingRuns ? last7.map((d) => d.label) : deepDays;
+  const pulseCaption = usingRuns
+    ? `${runTotal} agent run${runTotal === 1 ? "" : "s"}`
+    : `${deepTotal} deep block${deepTotal === 1 ? "" : "s"}`;
+  const maxIce = Math.max(1, ...topOpps.map((o) => Number(o.ice_score ?? 0)));
 
   // Reference call-word formula: "One call is / Two calls are / N calls are".
   const callWord =
@@ -529,126 +583,279 @@ function Dashboard() {
           )}
         </section>
 
-        {/* COMMAND CENTER — the few things a PM acts on now: what is stuck, what to
-            push next, what changed. Each tile is one click to its station. Passive
-            activity (executed-unattended, raw runs) lives on Missions, not here. */}
+        {/* COMMAND CENTER — the few things a PM acts on now, as a live little
+            dashboard: the week's pulse (vitals + a hand-sketched activity line),
+            then what to push (ICE, sketched bars), what is stuck, what changed.
+            Each tile is one click to its station; passive activity lives on
+            Missions. Metrics here are the curated PM few, not the full Gauntlet. */}
         {!isCold && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 14,
-              marginBottom: 24,
-            }}
-          >
-            {/* Bottlenecks — what is stuck and needs you */}
-            <Link
-              to="/govern"
-              search={{ tab: "approvals" }}
-              className="bento lift"
-              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
-            >
-              <MonoLabel icon={AlertTriangle}>Bottlenecks</MonoLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
+            {/* PULSE — the week at a glance */}
+            <section className="bento" style={{ padding: "14px var(--card-pad)" }}>
               <div
-                className="font-display tabular-nums"
                 style={{
-                  fontSize: 26,
-                  marginTop: 6,
-                  color: bottleneckCount > 0 ? "var(--ember)" : "var(--ink-faint)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
                 }}
               >
-                {bottleneckCount}
+                <MonoLabel icon={Activity}>This week</MonoLabel>
+                <Link
+                  to="/govern"
+                  search={{ tab: "gauntlet" }}
+                  className="mono-label"
+                  style={{ color: "var(--action-blue)" }}
+                >
+                  The gauntlet →
+                </Link>
               </div>
-              <p
+              <div
                 style={{
-                  fontSize: 11.5,
-                  color: "var(--ink-subtle)",
-                  marginTop: 4,
-                  lineHeight: 1.4,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  gap: 24,
+                  flexWrap: "wrap",
                 }}
               >
-                {bottleneckCount === 0
-                  ? "Nothing stuck. The loop is flowing."
-                  : `${expiredApprovals.length} call${expiredApprovals.length === 1 ? "" : "s"} expired, ${failedRuns.length} run${failedRuns.length === 1 ? "" : "s"} failed`}
-              </p>
-            </Link>
-
-            {/* Top priorities — the ICE-ranked opportunities to push next */}
-            <Link
-              to="/product"
-              search={{ tab: "opportunities" }}
-              className="bento lift"
-              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
-            >
-              <MonoLabel icon={Target}>Top priorities</MonoLabel>
-              {topOpps.length === 0 ? (
-                <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
-                  No opportunities ranked yet.
-                </p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-                  {topOpps.map((o) => (
-                    <div
-                      key={o.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 8,
-                        fontSize: 12,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "var(--ink-muted)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {o.title}
-                      </span>
-                      <span
-                        className="mono-label tabular-nums"
-                        style={{ color: "var(--ink-subtle)", flexShrink: 0 }}
-                      >
-                        {Number(o.ice_score ?? 0).toFixed(1)}
-                      </span>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", gap: 30, flexWrap: "wrap" }}>
+                  <Vital
+                    label="Decisions accepted"
+                    value={acceptPct != null ? `${acceptPct}%` : "—"}
+                    trend={acceptTrend}
+                    hasData={acceptPct != null}
+                  />
+                  <Vital
+                    label="Autonomy"
+                    value={autonomyPct != null ? `${autonomyPct}%` : "—"}
+                    trend={autonomyTrend}
+                    hasData={autonomyPct != null}
+                  />
+                  <Vital label="Spent today" value={spendLabel} />
                 </div>
-              )}
-            </Link>
+                <div style={{ flex: "0 0 auto" }}>
+                  <SketchLine
+                    data={pulseSeries.length >= 2 ? pulseSeries : [0, 0]}
+                    color="var(--agent)"
+                    w={208}
+                    h={44}
+                    animate
+                  />
+                  <div
+                    className="mono-label tabular-nums"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: 208,
+                      marginTop: 5,
+                      color: "var(--ink-faint)",
+                    }}
+                  >
+                    <span>{pulseDays[0] ?? ""}</span>
+                    <span style={{ color: "var(--ink-subtle)" }}>{pulseCaption}</span>
+                    <span>{pulseDays[pulseDays.length - 1] ?? ""}</span>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            {/* What changed — the latest outcome the loop recorded */}
-            <Link
-              to="/knowledge"
-              search={{ tab: "memory" }}
-              className="bento lift"
-              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
-            >
-              <MonoLabel icon={RefreshCw}>What changed</MonoLabel>
-              {latestRescore ? (
-                <p
+            {/* ACTION ROW — priorities chart (wide) + stuck / changed (stacked) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14 }}>
+              {/* Top priorities — sketched ICE bar chart */}
+              <Link
+                to="/product"
+                search={{ tab: "opportunities" }}
+                className="bento lift"
+                style={{
+                  padding: "12px var(--card-pad)",
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "block",
+                }}
+              >
+                <div
                   style={{
-                    fontSize: 11.5,
-                    color: "var(--ink-subtle)",
-                    marginTop: 6,
-                    lineHeight: 1.4,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  A {latestRescore.verdict} outcome moved a priority{" "}
-                  <span style={{ color: "var(--ink)", fontWeight: 600 }}>
-                    ICE {Number(latestRescore.prior_ice).toFixed(1)} to{" "}
-                    {Number(latestRescore.new_ice).toFixed(1)}
+                  <MonoLabel icon={Target}>Top priorities</MonoLabel>
+                  <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                    by ICE
                   </span>
-                  .
-                </p>
-              ) : (
-                <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
-                  Nothing new since you last looked.
-                </p>
-              )}
-            </Link>
+                </div>
+                {topOpps.length === 0 ? (
+                  <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 12 }}>
+                    No opportunities ranked yet. They land here as discovery runs.
+                  </p>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-end",
+                        gap: 14,
+                        height: 52,
+                        marginTop: 14,
+                        padding: "0 2px",
+                      }}
+                    >
+                      {topOpps.map((o, i) => (
+                        <div
+                          key={o.id}
+                          title={`${o.title} · ICE ${Number(o.ice_score ?? 0).toFixed(1)}`}
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <span
+                            className="mono-label tabular-nums"
+                            style={{ fontSize: 9, color: "var(--ink-subtle)" }}
+                          >
+                            {Number(o.ice_score ?? 0).toFixed(1)}
+                          </span>
+                          <div style={{ width: "100%", height: 40 }}>
+                            <SketchBar
+                              pct={Math.round((Number(o.ice_score ?? 0) / maxIce) * 100)}
+                              seed={i + 3}
+                              color="var(--ember-soft)"
+                              trackH={40}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 3,
+                        marginTop: 12,
+                      }}
+                    >
+                      {topOpps.map((o, i) => (
+                        <div
+                          key={o.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 8,
+                            fontSize: 11.5,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: "var(--ink-muted)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <span
+                              className="tabular-nums"
+                              style={{ color: "var(--ink-faint)", marginRight: 7 }}
+                            >
+                              {i + 1}
+                            </span>
+                            {o.title}
+                          </span>
+                          <span
+                            className="mono-label tabular-nums"
+                            style={{ color: "var(--ink-subtle)", flexShrink: 0 }}
+                          >
+                            {Number(o.ice_score ?? 0).toFixed(1)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </Link>
+
+              {/* Stuck + changed, stacked */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Link
+                  to="/govern"
+                  search={{ tab: "approvals" }}
+                  className="bento lift"
+                  style={{
+                    padding: "12px var(--card-pad)",
+                    textDecoration: "none",
+                    color: "inherit",
+                    flex: 1,
+                  }}
+                >
+                  <MonoLabel icon={AlertTriangle}>Bottlenecks</MonoLabel>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+                    <span
+                      className="font-display tabular-nums"
+                      style={{
+                        fontSize: 26,
+                        color: bottleneckCount > 0 ? "var(--ember)" : "var(--ink-faint)",
+                      }}
+                    >
+                      {bottleneckCount}
+                    </span>
+                    <span style={{ fontSize: 11.5, color: "var(--ink-subtle)" }}>
+                      {bottleneckCount === 0 ? "nothing stuck" : "need a look"}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 11.5,
+                      color: "var(--ink-subtle)",
+                      marginTop: 4,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {bottleneckCount === 0
+                      ? "The loop is flowing."
+                      : `${expiredApprovals.length} call${expiredApprovals.length === 1 ? "" : "s"} expired, ${failedRuns.length} run${failedRuns.length === 1 ? "" : "s"} failed`}
+                  </p>
+                </Link>
+
+                <Link
+                  to="/knowledge"
+                  search={{ tab: "memory" }}
+                  className="bento lift"
+                  style={{
+                    padding: "12px var(--card-pad)",
+                    textDecoration: "none",
+                    color: "inherit",
+                    flex: 1,
+                  }}
+                >
+                  <MonoLabel icon={RefreshCw}>What changed</MonoLabel>
+                  {latestRescore ? (
+                    <p
+                      style={{
+                        fontSize: 11.5,
+                        color: "var(--ink-subtle)",
+                        marginTop: 6,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      A {latestRescore.verdict} outcome moved a priority{" "}
+                      <span style={{ color: "var(--ink)", fontWeight: 600 }}>
+                        ICE {Number(latestRescore.prior_ice).toFixed(1)} to{" "}
+                        {Number(latestRescore.new_ice).toFixed(1)}
+                      </span>
+                      .
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
+                      Nothing new since you last looked.
+                    </p>
+                  )}
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
@@ -760,6 +967,62 @@ function Dashboard() {
 }
 
 /* ------- Subcomponents ------- */
+
+/* Pulse vital — one PM number with an optional trend mark. Editorial, not a
+   hero-metric card: a quiet mono label over a display figure, trend inline. */
+function Vital({
+  label,
+  value,
+  trend,
+  hasData = true,
+}: {
+  label: string;
+  value: string;
+  trend?: "up" | "down" | "flat";
+  hasData?: boolean;
+}) {
+  return (
+    <div>
+      <div className="mono-label" style={{ color: "var(--ink-faint)" }}>
+        {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
+        <span
+          className="font-display tabular-nums"
+          style={{
+            fontSize: 22,
+            lineHeight: 1,
+            color: hasData ? "var(--ink)" : "var(--ink-faint)",
+          }}
+        >
+          {value}
+        </span>
+        {hasData && trend && <TrendMark trend={trend} />}
+      </div>
+    </div>
+  );
+}
+
+/* Trend mark — moss up, madder down, faint flat. Role-color law: these are
+   outcome colors, never ember (ember is reserved for needs-human). */
+function TrendMark({ trend }: { trend: "up" | "down" | "flat" }) {
+  if (trend === "up")
+    return (
+      <ArrowUpRight size={13} strokeWidth={2} style={{ color: "var(--emerald)" }} aria-label="up" />
+    );
+  if (trend === "down")
+    return (
+      <ArrowDownRight
+        size={13}
+        strokeWidth={2}
+        style={{ color: "var(--rose)" }}
+        aria-label="down"
+      />
+    );
+  return (
+    <Minus size={13} strokeWidth={2} style={{ color: "var(--ink-faint)" }} aria-label="flat" />
+  );
+}
 
 function normalizeBrief(text: string): string {
   // If the summary already contains list markers, return as-is.

@@ -220,8 +220,7 @@
   --gradient-card: linear-gradient(180deg, var(--canvas) 0%, var(--surface-1) 100%);
   --gradient-trace: linear-gradient(90deg, var(--agent), var(--action-blue) 55%, var(--ember));
   --shadow-glass: 0 1px 0 0 var(--hairline) inset, 0 1px 2px -1px oklch(0.2 0.02 60 / 8%);
-  --shadow-elevated:
-    0 1px 0 0 var(--hairline) inset, 0 8px 24px -12px oklch(0.2 0.02 60 / 16%);
+  --shadow-elevated: 0 1px 0 0 var(--hairline) inset, 0 8px 24px -12px oklch(0.2 0.02 60 / 16%);
   --shadow-focus: 0 0 0 2px color-mix(in oklab, var(--focus-blue) 70%, transparent);
 }
 
@@ -859,7 +858,11 @@
         color-mix(in oklab, var(--ember) 16%, transparent) 0%,
         transparent 70%
       ),
-      linear-gradient(118deg, transparent 60%, color-mix(in oklab, var(--ember) 5%, transparent) 100%);
+      linear-gradient(
+        118deg,
+        transparent 60%,
+        color-mix(in oklab, var(--ember) 5%, transparent) 100%
+      );
     border: 1px solid oklch(0.92 0.02 80 / 9%);
   }
 
@@ -937,12 +940,7 @@
     color: transparent;
   }
   .dark .neural-text {
-    background: linear-gradient(
-      110deg,
-      var(--ink) 0%,
-      var(--ember) 55%,
-      var(--saffron) 100%
-    );
+    background: linear-gradient(110deg, var(--ink) 0%, var(--ember) 55%, var(--saffron) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -1185,6 +1183,45 @@
       box-shadow: 0 10px 30px -12px oklch(0.2 0.02 60 / 20%);
       border-color: var(--hairline-strong);
     }
+  }
+  /* Pressable cards respond to touch (Emil: a pressable must feel heard). On
+     press the lift's hover-raise yields to a small scale — instant feedback. */
+  .lift:active {
+    transform: scale(0.99);
+  }
+  html[data-motion="off"] .lift:active {
+    transform: none;
+  }
+
+  /* Hand-sketched line draw-in — opt-in flourish for SketchLine (animate).
+     A single graphite stroke penning itself reads as the data being drawn in
+     real time; kept to one fast pass (260ms) so a surface opened all day never
+     feels choreographed. Reduced-motion completes it instantly (fully drawn);
+     data-motion="off" skips it. */
+  .sketch-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: sketch-draw var(--dur-slow) var(--ease-out) forwards;
+  }
+  .sketch-dot {
+    opacity: 0;
+    animation: sketch-dot-in var(--dur-fast) var(--ease-out) var(--dur-slow) forwards;
+  }
+  @keyframes sketch-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes sketch-dot-in {
+    to {
+      opacity: 0.9;
+    }
+  }
+  html[data-motion="off"] .sketch-draw,
+  html[data-motion="off"] .sketch-dot {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 
   /* Status dots — color roles: indigo running, moss done, madder failed,

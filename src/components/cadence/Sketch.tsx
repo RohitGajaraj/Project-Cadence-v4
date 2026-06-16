@@ -61,6 +61,7 @@ export function SketchLine({
   w = 210,
   h = 42,
   baseline,
+  animate = false,
 }: {
   data: number[];
   color?: string;
@@ -71,6 +72,10 @@ export function SketchLine({
    *  mark here the sketch law leaves straight. Rendered only when it falls
    *  inside the data's range (reference Sparkline contract). */
   baseline?: number;
+  /** Opt-in: pen the stroke in once on mount (CSS `.sketch-draw`, 260ms).
+   *  Off by default so the existing eval/drift charts stay static. Honors
+   *  data-motion="off" and reduced-motion (both render it fully drawn). */
+  animate?: boolean;
 }) {
   const { passA, passB, endX, endY, baseY } = useMemo(() => {
     const min = Math.min(...data);
@@ -102,6 +107,8 @@ export function SketchLine({
       )}
       <path
         d={passA}
+        className={animate ? "sketch-draw" : undefined}
+        pathLength={animate ? 1 : undefined}
         fill="none"
         stroke={color}
         strokeWidth="1.3"
@@ -111,6 +118,8 @@ export function SketchLine({
       />
       <path
         d={passB}
+        className={animate ? "sketch-draw" : undefined}
+        pathLength={animate ? 1 : undefined}
         fill="none"
         stroke={color}
         strokeWidth="0.9"
@@ -118,7 +127,14 @@ export function SketchLine({
         strokeLinecap="round"
         opacity="0.45"
       />
-      <circle cx={endX + 0.4} cy={endY - 0.3} r="2.4" fill={color} opacity="0.9" />
+      <circle
+        cx={endX + 0.4}
+        cy={endY - 0.3}
+        r="2.4"
+        fill={color}
+        className={animate ? "sketch-dot" : undefined}
+        opacity="0.9"
+      />
     </svg>
   );
 }
