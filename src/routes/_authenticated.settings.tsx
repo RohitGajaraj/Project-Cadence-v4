@@ -45,12 +45,17 @@ import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements"
 
 type SectionId = "connections" | "ai" | "staff" | "workspace" | "billing" | "profile";
 
-// Tab order from the reference (Connectors · Models · Staff · … · Profile);
-// "Connections" is the reference's "Connectors" (the /sync surface owns that
-// word in production), "ai" stays the id behind the Models label so existing
-// deep links (?section=ai) keep working, and Workspace is production-only.
+// Tab order from the reference (Connectors · Models · Staff · … · Profile).
+// "Accounts" is the account-level OAuth surface (which provider logins you have
+// connected); it is deliberately NOT called "Connectors"/"Connections" so it no
+// longer near-collides with the /sync "Connectors" surface, which owns the
+// distinct workspace-level resource bindings + sync conflicts (Phase-2 IA
+// de-collision, 2026-06-16; CLAUDE.md calls this "Connected accounts"). The id
+// stays "connections" so existing deep links (?section=connections) keep
+// working; likewise "ai" stays the id behind the Models label, and Workspace is
+// production-only.
 const TABS: { id: SectionId; label: string }[] = [
-  { id: "connections", label: "Connections" },
+  { id: "connections", label: "Accounts" },
   { id: "ai", label: "Models" },
   { id: "staff", label: "Staff" },
   { id: "workspace", label: "Workspace" },
