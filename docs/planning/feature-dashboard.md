@@ -41,12 +41,13 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| LRN-02 | Outcome reviews — Historian verdict (predicted vs actual) | Claude Code (LEARN lane) | 2026-06-17 | Recon found the CORE already built: `recordOutcome` (verdict + ICE rescore + `learnings` row, surfaced on `OutcomeCard`) and W1-AUTO already wired (`rememberOutcome` embeds a recallable `agent_memory` row). Building the genuine gap vs v10 ("predicted vs actual, Historian verdict"): an AI Historian assist on `OutcomeCard` that surfaces the prediction + proposes the verdict/summary for the human to confirm. Collision-free: `outcome.functions.ts` + `OutcomeCard.tsx`; reuses `surface:"judge"` (no chokepoint edit). |
 
 ---
 
 ## 🎯 Build priority & disjoint lanes (the pick-list, from [v10](../strategy/v10-master-blueprint-2026-06-17.md))
 
-> **The single pick-list.** Priority and lane come from the [v10 master blueprint](../strategy/v10-master-blueprint-2026-06-17.md) sections 15 to 16 (full What/Pain/How per item there). Lanes are **file-disjoint** so a session claims a lane and builds its top item without colliding. Execution mechanics (per-item build/verify/ship discipline, milestone gates) are in [`implementation-plan.md`](./implementation-plan.md). Pick top-down.
+> **The single pick-list.** Priority and lane come from the [v10 master blueprint](../strategy/v10-master-blueprint-2026-06-17.md) sections 15 to 16 (full What/Pain/How per item there). Lanes are **file-disjoint** so a session claims a lane and builds its top item without colliding. Execution mechanics (per-item build/verify/ship discipline, milestone gates) are in [`v10_implementation-plan.md`](./v10_implementation-plan.md). Pick top-down.
 
 **P0 - build first (close the loop + land the wedge):**
 | Order | Item | Lane | Status | What |
@@ -173,7 +174,7 @@ _Close the loop: ship to market, learn from outcomes, feed it back._
 | LCH-01 / L1 | Launch-kit mission (changelog/blog/email/social/docs from diff + spec) | ⬜ (M2) | One mission drafts the whole launch, human-approved | New mission template + outbound send |
 | L2 | Customer pages / announcements (`p.$slug`) | ⬜ (M2) | Public-facing announcement pages, approval to publish | `src/routes/p.$slug.tsx` |
 | M1 / LRN-01 | Support triage loop (tickets → drafted replies → bug clusters → signals) | ⬜ (M2) | Support feeds back into Discover; the loop closes | Inbound channel + Analyst learn loop |
-| LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ⬜ | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
+| LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | 🔨 In Dev (CC, 2026-06-17) | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
 | F-ANALYTICS-1 | Cohort metrics + telemetry ingestion → `product_analytics` | ⬜ | Released features get real usage data | Depends on SEN-05 |
 | F-ANALYTICS-2 | Opportunity impact eval (post-release cohort → Product Memory → auto-ICE) | ⬜ | The loop learns whether a bet paid off | Depends on F-ANALYTICS-1 |
 | N3 | Mission Compounding View ("referenced N prior decisions") | ✅ (2026-06-16) | Makes the moat visible per mission: "drew on N prior memories" + the lineage (each memory + which agent cited it) + a copy-snapshot export; deduped across per-hop recalls + handoff `memory_refs` | `_authenticated.missions.$missionId.tsx` (`MissionCompounding`, client-side from `getMission` — no new server fn needed) |
@@ -274,6 +275,6 @@ Statuses here are reconciled from [`v7-build-status.md`](./v7-build-status.md) (
 - [`feature-backlog.md`](./feature-backlog.md) - granular ledger + Build-order rollup (this dashboard is its master view)
 - [`v7-build-status.md`](./v7-build-status.md) - "what next" milestone narrative (M-0 to M-D)
 - [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
-- [`strategic-tasks.md`](./strategic-tasks.md) - P0-P3 strategic buckets
+- [`strategic-tasks.md`](./archive/strategic-tasks.md) - P0-P3 strategic buckets
 - [`../../active-task.md`](../../active-task.md) - the current session cursor
 - [`../../AGENTS.md`](../../AGENTS.md) §1 (pre-action) + §5 (doc-update protocol) - where the standing rule is enforced
