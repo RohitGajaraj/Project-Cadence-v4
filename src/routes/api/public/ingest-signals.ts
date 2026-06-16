@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
           const admin = supabaseAdmin as unknown as SupabaseClient;
           const { data: tok, error: tokError } = await admin
             .from("ingest_tokens")
-            .select("user_id,workspace_id")
+            .select("id,user_id,workspace_id")
             .eq("token", token)
             .is("revoked_at", null)
             .maybeSingle();
