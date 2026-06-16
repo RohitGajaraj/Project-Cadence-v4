@@ -13,7 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink, Share2, Link as LinkIcon } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { listDecisions, updateDecision, type DecisionSource } from "@/lib/decisions.functions";
 import { getDecisionShareState, setDecisionShared } from "@/lib/decisions-share.functions";
 import { DrillHeader, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";

@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { FlaskConical } from "lucide-react";
 import { listEvalSuites, createEvalSuite, getEvalScoreTrends } from "@/lib/evals.functions";
 import { EmptyState, MonoLabel } from "@/components/cadence/Primitives";

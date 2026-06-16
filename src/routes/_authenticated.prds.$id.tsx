@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Gavel,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
 import { listProjects } from "@/lib/projects.functions";
 import {

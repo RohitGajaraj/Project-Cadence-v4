@@ -18,14 +18,16 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   listCalendarEvents,
   syncCalendar,
   createCalendarEvent,
   proposeSlots,
+  proposeWorkBlocks,
   updateCalendarEvent,
   deleteCalendarEvent,
+  type WorkBlock,
 } from "@/lib/calendar.functions";
 import {
   listMyCalendarConnections,
@@ -115,6 +117,7 @@ export function CalendarPanel({
   const fDisconnect = useServerFn(disconnectCalendar);
   const fUpdate = useServerFn(updateCalendarEvent);
   const fDelete = useServerFn(deleteCalendarEvent);
+  const fPlan = useServerFn(proposeWorkBlocks);
   const events = useQuery({ queryKey: ["calendar-events"], queryFn: () => fEvents() });
   const meetings = useQuery({ queryKey: ["meetings"], queryFn: () => fMeetings() });
   const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
@@ -148,6 +151,12 @@ export function CalendarPanel({
   const [title, setTitle] = useState("");
   const [slots, setSlots] = useState<{ start_at: string; end_at: string; label: string }[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
+
+  // H3 · deep-work scheduling — propose a block per open deep-work task.
+  const [showPlan, setShowPlan] = useState(false);
+  const [blocks, setBlocks] = useState<WorkBlock[]>([]);
+  const [planned, setPlanned] = useState(false);
+  const [addedTasks, setAddedTasks] = useState<Set<string>>(new Set());
 
   const [editing, setEditing] = useState<EventRow | null>(null);
   const [editTitle, setEditTitle] = useState("");

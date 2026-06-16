@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRef, useState, type RefObject } from "react";
 import { ChevronDown, ExternalLink, FileText, GitPullRequest, Hammer, Send } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { EmptyState, MonoLabel, SurfaceHeader } from "@/components/cadence/Primitives";

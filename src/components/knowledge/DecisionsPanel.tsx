@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Gavel, Search } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   listDecisions,
   createDecision,

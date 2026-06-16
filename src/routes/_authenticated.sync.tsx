@@ -18,7 +18,7 @@ import {
   Loader2,
   Webhook,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
 import { WorkspaceBindingsSection } from "@/components/connections/WorkspaceBindingsSection";
 import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functions";

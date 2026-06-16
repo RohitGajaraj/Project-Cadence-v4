@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Link2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   listConnections,
   listWorkspaceBindings,

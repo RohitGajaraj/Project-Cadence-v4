@@ -21,7 +21,7 @@ import {
   ShieldAlert,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel, StepDot, StatusBadge, VerdictChip } from "@/components/cadence/Primitives";

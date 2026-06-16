@@ -10,7 +10,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { DrillHeader, MonoLabel } from "@/components/cadence/Primitives";
 import { listOpportunities, generatePrd } from "@/lib/discovery.functions";
 import { listLearnings } from "@/lib/outcome.functions";

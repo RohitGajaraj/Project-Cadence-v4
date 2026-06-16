@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { ShieldAlert } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { decideApproval } from "@/lib/agent_loop.functions";
 import type { StudioApproval } from "@/lib/studio.functions";
 import { MonoLabel } from "@/components/cadence/Primitives";

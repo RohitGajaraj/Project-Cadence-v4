@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { Save, Wand2, CheckCircle2, ListTodo, GitBranch, HelpCircle } from "lucide-react";
 import { getMeeting, saveTranscript, extractMeeting } from "@/lib/meetings.functions";
 

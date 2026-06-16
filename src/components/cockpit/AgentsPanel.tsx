@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ArrowRight, GitBranch, Inbox, ShieldAlert, Zap } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { MonoLabel, StatusBadge, StepDot } from "@/components/cadence/Primitives";
 import { SketchBar } from "@/components/cadence/Sketch";
 import { getSwarmHud, type SwarmHud } from "@/lib/swarm.functions";

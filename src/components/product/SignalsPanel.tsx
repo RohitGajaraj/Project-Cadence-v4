@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Radar } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   listSignals,
   createSignal,

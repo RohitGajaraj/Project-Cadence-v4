@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette, GotoShortcuts } from "@/components/cadence/CommandPalette";
 import { WorkspaceProvider } from "@/hooks/use-workspace";
+import { FlowModeProvider } from "@/hooks/use-flow-mode";
 import { needsOnboarding } from "@/lib/onboarding-gate";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -34,10 +35,12 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   return (
     <WorkspaceProvider>
-      {/* Ambient time/weather moved into the per-page TopBar (shell port). */}
-      <CommandPalette />
-      <GotoShortcuts />
-      <Outlet />
+      <FlowModeProvider>
+        {/* Ambient time/weather moved into the per-page TopBar (shell port). */}
+        <CommandPalette />
+        <GotoShortcuts />
+        <Outlet />
+      </FlowModeProvider>
     </WorkspaceProvider>
   );
 }

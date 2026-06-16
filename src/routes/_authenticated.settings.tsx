@@ -11,7 +11,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { Compass, SlidersHorizontal, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";

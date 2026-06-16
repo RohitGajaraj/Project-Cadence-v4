@@ -28,8 +28,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { BudgetBar } from "./BudgetBar";
+import { FlowWidget } from "./FlowWidget";
 import { CadenceMark } from "./Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useTheme } from "@/hooks/use-theme";
@@ -805,6 +806,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
           <div className="flex items-center gap-2 px-0.5">
             <BudgetBar />
             <span className="flex-1" />
+            <FlowWidget />
             <button
               type="button"
               aria-label="Toggle theme"

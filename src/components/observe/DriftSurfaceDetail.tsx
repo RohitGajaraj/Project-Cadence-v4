@@ -20,7 +20,7 @@ import { useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   getDriftOverview,
   runDriftNow,

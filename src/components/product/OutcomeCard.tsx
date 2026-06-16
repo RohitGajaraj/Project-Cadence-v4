@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Target } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { recordOutcome, checkPrdShipped } from "@/lib/outcome.functions";
 import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 

@@ -8,7 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { MonoLabel, StatusBadge, StepDot } from "@/components/cadence/Primitives";
 import { listMissions, type MissionListRow } from "@/lib/missions.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";

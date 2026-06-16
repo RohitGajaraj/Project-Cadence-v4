@@ -10,7 +10,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ChevronDown, ChevronRight, FileText, Search, X } from "lucide-react";
 import { DocEditor } from "@/components/cadence/DocEditor";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";

@@ -20,6 +20,8 @@ Before adding any panel, feature, or metric, apply this test so Today never re-c
 
 Worked example (the 2026-06-16 de-clutter): the autonomy stage visual -> Gauntlet; project progress ("Where the work stands") -> Product; agent activity + throughput -> Missions; spend + runs -> Govern/Analytics; meetings -> Knowledge/Calendar (a count on Today's lede); tasks stayed on Today (the `/tasks` redirect target).
 
+Worked example (OPS-01 Flow mode, 2026-06-16): a global operating stance (calm focus: dim chrome + ambient sound + quiet notifications) is not an act-on-it call or a curated vital, so it goes to the **chrome, not Today** — the control sits in the `AppShell` sidebar footer beside the theme toggle, exactly like theme. Stances and session toggles live in the chrome; Today stays the command center.
+
 Worked example (the 2026-06-16 command-center pass): after de-cluttering, the survivors were composed into a live little dashboard — a Pulse strip (decisions-accepted % and autonomy % with trend marks, spend, a hand-sketched activity sparkline) over an asymmetric action row (Top priorities as a sketched ICE bar chart, with Bottlenecks + What-changed stacked beside it). Each is a curated PM vital or action that links to its deep station (the gauntlet, Product, Govern, Knowledge); none is a full analytics surface. The pencil-sketch marks (`SketchLine` / `SketchBar`, per `design.md`) and the opt-in draw-in + press motion are how it reads as modern and live rather than an old-school panel — see [`design-context.md`](./design-context.md) "Motion is craft."
 
 ## Why

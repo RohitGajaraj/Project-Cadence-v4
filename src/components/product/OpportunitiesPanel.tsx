@@ -13,7 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { GitBranch, Lightbulb, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { EmptyState, VerdictChip } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import {

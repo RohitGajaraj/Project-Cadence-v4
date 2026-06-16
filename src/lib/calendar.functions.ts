@@ -600,3 +600,115 @@ export const proposeSlots = createServerFn({ method: "POST" })
     }
     return { slots };
   });
+
+export type WorkBlock = {
+  task_id: string;
+  title: string;
+  priority: string | null;
+  start_at: string;
+  end_at: string;
+  label: string;
+};
+
+/**
+ * H3 · Scheduling — propose calendar-aware work blocks for the operator's open
+ * deep-work tasks. Same working-hours + conflict logic as `proposeSlots`, but
+ * instead of open slots for one new event it lays ONE block per open deep-work
+ * task, back to back across the next `daysAhead` working days, skipping
+ * weekends, hours outside the profile's working window, and existing calendar
+ * events. It is a pure proposal: it never writes; accepting a block creates a
+ * calendar event from the UI (`createCalendarEvent`). Honest by construction —
+ * it only schedules what genuinely fits, so a packed calendar yields fewer (or
+ * no) blocks rather than a forced plan. (Hour checks use server time, same
+ * known limitation as `proposeSlots`; a full per-timezone pass is a separate
+ * platform fix.)
+ */
+export const proposeWorkBlocks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        blockMinutes: z.number().int().min(15).max(240).default(60),
+        daysAhead: z.number().int().min(1).max(14).default(7),
+        max: z.number().int().min(1).max(12).default(6),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ blocks: WorkBlock[] }> => {
+    const { supabase, userId } = context;
+
+    // Open deep-work tasks, oldest first (clear the longest-waiting work first).
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("id,title,priority,status,is_deep_work,created_at")
+      .eq("is_deep_work", true)
+      .neq("status", "done")
+      .order("created_at", { ascending: true })
+      .limit(data.max);
+    const todo = (tasks ?? []) as { id: string; title: string; priority: string | null }[];
+    if (todo.length === 0) return { blocks: [] };
+
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("working_hours_start,working_hours_end")
+      .eq("id", userId)
+      .maybeSingle();
+    const whStart = (prof as { working_hours_start?: number } | null)?.working_hours_start ?? 9;
+    const whEnd = (prof as { working_hours_end?: number } | null)?.working_hours_end ?? 18;
+
+    const now = new Date();
+    const horizon = new Date(now.getTime() + data.daysAhead * 86400000);
+    const { data: events } = await supabase
+      .from("calendar_events")
+      .select("start_at,end_at")
+      .gte("start_at", now.toISOString())
+      .lte("start_at", horizon.toISOString());
+    type Range = { s: number; e: number };
+    const busy: Range[] = (events ?? [])
+      .map((e) => ({
+        s: new Date(e.start_at as string).getTime(),
+        e: new Date((e.end_at as string) ?? (e.start_at as string)).getTime() + 30 * 60_000,
+      }))
+      .sort((a, b) => a.s - b.s);
+
+    const stepMs = 30 * 60_000;
+    const durMs = data.blockMinutes * 60_000;
+    const cursor = new Date(now);
+    cursor.setMinutes(cursor.getMinutes() + (30 - (cursor.getMinutes() % 30)));
+    cursor.setSeconds(0, 0);
+
+    const blocks: WorkBlock[] = [];
+    let ti = 0;
+    while (cursor < horizon && ti < todo.length) {
+      const day = cursor.getDay();
+      const hour = cursor.getHours();
+      if (day === 0 || day === 6 || hour < whStart || hour + data.blockMinutes / 60 > whEnd) {
+        cursor.setTime(cursor.getTime() + stepMs);
+        continue;
+      }
+      const s = cursor.getTime();
+      const e = s + durMs;
+      if (busy.some((b) => b.s < e && b.e > s)) {
+        cursor.setTime(cursor.getTime() + stepMs);
+        continue;
+      }
+      const t = todo[ti++];
+      blocks.push({
+        task_id: t.id,
+        title: t.title,
+        priority: t.priority ?? null,
+        start_at: new Date(s).toISOString(),
+        end_at: new Date(e).toISOString(),
+        label: new Date(s).toLocaleString([], {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      });
+      // Next block starts right after this one; the loop re-checks hours/conflicts.
+      cursor.setTime(e);
+    }
+    return { blocks };
+  });

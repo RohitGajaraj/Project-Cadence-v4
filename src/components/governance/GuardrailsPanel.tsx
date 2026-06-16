@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Shield } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { useConfirm } from "@/hooks/use-confirm";
 import {
   getGuardrailOverview,

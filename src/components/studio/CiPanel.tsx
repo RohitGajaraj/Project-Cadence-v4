@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { ExternalLink, RefreshCw, ShieldAlert } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   refreshStudioCi,
   type StudioChangesetSummary,

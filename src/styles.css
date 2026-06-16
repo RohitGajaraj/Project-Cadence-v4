@@ -1526,3 +1526,33 @@ html:not(.dark) {
   --color-indigo-300: oklch(0.46 0.18 266);
   --color-indigo-400: oklch(0.44 0.19 264);
 }
+
+/* === Flow mode — the calm front (OPS-01) ===
+   When `html.flow` is set, the chrome recedes so your work holds the eye: the
+   sidebar and the TopBar dim and lift back on hover. Main content stays at full
+   strength. Reduced-motion is handled by the global block above (durations
+   collapse), so the dim still applies but without the fade. */
+html.flow aside,
+html.flow main > header {
+  opacity: 0.55;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+html.flow aside:hover,
+html.flow aside:focus-within,
+html.flow main > header:hover {
+  opacity: 1;
+}
+
+/* Gentle breathing on the active Flow icon — a sign of life, not a distraction. */
+@keyframes flowBreathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.flow-pulse {
+  animation: flowBreathe 3.6s var(--ease-in-out) infinite;
+}

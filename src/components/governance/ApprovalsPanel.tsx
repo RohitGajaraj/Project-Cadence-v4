@@ -11,7 +11,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, Clock, ExternalLink, Shield, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { decideApproval } from "@/lib/agent_loop.functions";
 import { listGovernApprovals, extendApprovalTtl } from "@/lib/governance.functions";
 import { MonoLabel, RiskTag, StepDot } from "@/components/cadence/Primitives";

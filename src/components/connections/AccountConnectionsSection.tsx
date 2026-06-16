@@ -1,7 +1,7 @@
 import { useEffect, type CSSProperties } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   Calendar,
   CalendarRange,

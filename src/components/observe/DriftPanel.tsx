@@ -17,7 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { ChevronRight, Waves } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { getDriftOverview, runDriftNow, updateDriftBaseline } from "@/lib/drift.functions";
 import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
 import { SketchLine } from "@/components/cadence/Sketch";

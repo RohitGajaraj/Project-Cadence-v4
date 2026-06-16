@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { supabase } from "@/integrations/supabase/client";
 import { CadenceMark } from "@/components/cadence/Primitives";
 

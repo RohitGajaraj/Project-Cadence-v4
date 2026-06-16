@@ -12,7 +12,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { FileCode } from "lucide-react";
 import {
   listPromptTemplates,
