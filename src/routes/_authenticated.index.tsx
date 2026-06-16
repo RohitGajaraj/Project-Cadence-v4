@@ -4,23 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import {
-  Sparkles,
-  Target,
-  Plus,
-  RefreshCw,
-  Calendar,
-  Bot,
-  Activity,
-  Coins,
-  Rocket,
-  ShieldAlert,
-  Check,
-  Gauge,
-  Focus,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
+import { Sparkles, Plus, RefreshCw, Bot, Rocket, ShieldAlert, Check } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { CadenceMark, MonoLabel, StepDot } from "@/components/cadence/Primitives";
@@ -38,7 +22,6 @@ import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
-import { AutonomyCard } from "@/components/today/AutonomyCard";
 import { ExecutedCard } from "@/components/today/ExecutedCard";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -72,8 +55,6 @@ function Dashboard() {
   const mResolveApproval = useServerFn(resolveApproval);
   const mStartMission = useServerFn(startOrchestratedMission);
   const recordRitual = useServerFn(recordRitualSession);
-
-  const [tab, setTab] = useState<"overview" | "agents">("overview");
 
   const dash = useQuery({ queryKey: ["dashboard"], queryFn: () => fetchDashboard() });
   const tasks = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
@@ -226,8 +207,6 @@ function Dashboard() {
     }
   }
   const taskRows = tasks.data?.tasks ?? [];
-  const deepQueued = taskRows.filter((t) => t.is_deep_work && t.status !== "done").length;
-  const deepBlocksWeek = (d?.deepWorkSeries ?? []).reduce((a, x) => a + x.count, 0);
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -524,12 +503,9 @@ function Dashboard() {
           )}
         </section>
 
-        {/* AUTONOMY — the observing→proving→trusted progression made visible (M-A).
-            Hidden during cold-start so a brand-new workspace keeps the clean on-ramp. */}
-        {!isCold && <AutonomyCard />}
-
-        {/* EXECUTED UNATTENDED — what the loop ran without your call, with the honest
-            per-tool reverse-path (M-A Slice 2). Self-hides when empty; off on cold-start. */}
+        {/* WHILE YOU WERE AWAY — what the loop ran without your call, with the honest
+            per-tool reverse-path. Self-hides when empty; off on cold-start. The autonomy
+            progression visual now lives on the Gauntlet (/govern?tab=gauntlet). */}
         {!isCold && <ExecutedCard />}
 
         {/* MEMORY — the closed loop made visible (v6 Phase 0 / W5) */}
@@ -630,349 +606,16 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* TABS — Overview absorbs Pulse, per the blueprint */}
-        <div
-          style={{
-            display: "flex",
-            gap: 2,
-            borderBottom: "1px solid var(--hairline)",
-            marginBottom: 18,
-          }}
-        >
-          {(
-            [
-              ["overview", "Overview"],
-              ["agents", "Agent activity"],
-            ] as ["overview" | "agents", string][]
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              style={{
-                padding: "7px 13px",
-                fontSize: 12.5,
-                marginBottom: -1,
-                color: tab === id ? "var(--ink)" : "var(--ink-subtle)",
-                borderBottom: `2px solid ${tab === id ? "var(--ink)" : "transparent"}`,
-                fontWeight: tab === id ? 500 : 400,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "overview" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
-            <section
-              className="bento"
-              style={{ gridColumn: "span 5", padding: "var(--bento-pad)" }}
-            >
-              <MonoLabel icon={Target} style={{ marginBottom: 14 }}>
-                Priority alignment
-              </MonoLabel>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {(d?.projects ?? []).map((p) => (
-                  <div key={p.id}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 12.5,
-                        marginBottom: 4,
-                      }}
-                    >
-                      <span style={{ color: "var(--ink-muted)" }}>{p.name}</span>
-                      <span
-                        className="mono-label tabular-nums"
-                        style={{ color: "var(--ink-subtle)" }}
-                      >
-                        {p.done}/{p.total}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 4,
-                        borderRadius: 99,
-                        background: "var(--surface-2)",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${p.pct}%`,
-                          borderRadius: 99,
-                          background: p.pct > 75 ? "var(--coral)" : "var(--ink-subtle)",
-                          transition: "width var(--dur-slow)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-                {(d?.projects ?? []).length === 0 && (
-                  <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
-                    Products appear here as the swarm files work against them.
-                  </p>
-                )}
-              </div>
-            </section>
-
-            {/* State of the product — reference band-stone panel, wired to
-                real workspace numbers (founder ruling: keep the panel; never
-                fake metrics — these are live counts). */}
-            <section
-              className="band-stone"
-              style={{ gridColumn: "span 7", padding: "var(--bento-pad)" }}
-            >
-              <MonoLabel icon={Zap} style={{ marginBottom: 12 }}>
-                State of the product
-              </MonoLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-                {(
-                  [
-                    [
-                      "Tasks shipped",
-                      `${taskRows.filter((t) => t.status === "done").length}`,
-                      "done in workspace",
-                      "var(--emerald)",
-                    ],
-                    [
-                      "In flight",
-                      `${taskRows.filter((t) => t.status !== "done").length}`,
-                      "open now",
-                      "var(--ink)",
-                    ],
-                    ["Agent runs", `${runRows.length}`, "recent window", "var(--ink)"],
-                    ["AI spend", spendLabel, "today", "var(--ink-subtle)"],
-                  ] as [string, string, string, string][]
-                ).map(([l, v, s, c]) => (
-                  <div key={l}>
-                    <div className="mono-label" style={{ fontSize: 8.5 }}>
-                      {l}
-                    </div>
-                    <div
-                      className="font-display tabular-nums"
-                      style={{ fontSize: 22, marginTop: 2, color: c }}
-                    >
-                      {v}
-                    </div>
-                    <div style={{ fontSize: 10.5, color: "var(--ink-faint)" }}>{s}</div>
-                  </div>
-                ))}
-              </div>
-              {(d?.stakeholders ?? []).length > 0 && (
-                <div
-                  style={{
-                    borderTop: "1px solid var(--hairline)",
-                    marginTop: 12,
-                    paddingTop: 10,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
-                  {(d?.stakeholders ?? []).slice(0, 3).map((p) => (
-                    <div
-                      key={p.name}
-                      style={{ fontSize: 12, display: "flex", gap: 8, alignItems: "baseline" }}
-                    >
-                      <span
-                        className="mono-label"
-                        style={{ fontSize: 8.5, color: "var(--ink)", flexShrink: 0 }}
-                      >
-                        {p.name}
-                      </span>
-                      <span style={{ color: "var(--ink-subtle)" }}>
-                        {p.count} meeting{p.count === 1 ? "" : "s"} · last{" "}
-                        {new Date(p.last).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <TasksPanel
-              tasks={taskRows}
-              onAdd={(t, deep) => addTask.mutate({ title: t, is_deep_work: deep })}
-              onToggle={(id, done) => toggleTask.mutate({ id, status: done ? "done" : "todo" })}
-              onDelete={(id) => removeTask.mutate(id)}
-            />
-
-            <section
-              className="bento"
-              style={{
-                gridColumn: "span 5",
-                padding: "var(--bento-pad)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-              }}
-            >
-              <div>
-                <MonoLabel icon={Focus} style={{ marginBottom: 6 }}>
-                  Deep work
-                </MonoLabel>
-                <span className="font-display tabular-nums" style={{ fontSize: 24 }}>
-                  {deepBlocksWeek} blocks
-                </span>
-                <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
-                  {" "}
-                  this week · {deepQueued} deep task{deepQueued === 1 ? "" : "s"} queued
-                </span>
-              </div>
-              <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: 10 }}>
-                <MonoLabel icon={Calendar} style={{ marginBottom: 8 }}>
-                  Today's meetings
-                </MonoLabel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {(d?.todayMeetings ?? []).slice(0, 5).map((m) => (
-                    <div
-                      key={m.id}
-                      style={{ fontSize: 12.5, display: "flex", gap: 10, alignItems: "baseline" }}
-                    >
-                      <span
-                        className="mono-label tabular-nums"
-                        style={{ color: "var(--ink)", flexShrink: 0 }}
-                      >
-                        {new Date(m.start_at).toLocaleTimeString([], {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                      <span style={{ color: "var(--ink-muted)" }}>
-                        {m.title}
-                        {m.stakeholder && (
-                          <span style={{ color: "var(--ink-faint)", fontSize: 11 }}>
-                            {" "}
-                            · {m.stakeholder}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                  {(d?.todayMeetings ?? []).length === 0 && (
-                    <p style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>No meetings today.</p>
-                  )}
-                </div>
-              </div>
-              <Link
-                to="/chat"
-                className="btn btn-ghost btn-sm"
-                style={{ alignSelf: "flex-start", marginTop: "auto" }}
-              >
-                Hand me a goal
-                <ChevronRight size={12} strokeWidth={1.75} />
-              </Link>
-            </section>
-          </div>
-        )}
-
-        {tab === "agents" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
-            <section
-              className="bento"
-              style={{ gridColumn: "span 8", padding: "var(--bento-pad)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-                <MonoLabel icon={Activity}>Agent activity</MonoLabel>
-                <span className="mono-label">{runRows.length} recent</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {runRows.length === 0 && (
-                  <p style={{ fontSize: 12.5, color: "var(--ink-muted)", padding: "8px 0" }}>
-                    No agent runs yet — dispatch one from the rail above.
-                  </p>
-                )}
-                {runRows.slice(0, 8).map((r, i, arr) => (
-                  <div
-                    key={r.id}
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "baseline",
-                      padding: "8px 0",
-                      borderBottom: i < arr.length - 1 ? "1px solid var(--hairline)" : "none",
-                      fontSize: 13,
-                    }}
-                  >
-                    <span className="mono-label tabular-nums" style={{ width: 42, flexShrink: 0 }}>
-                      {new Date(r.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      })}
-                    </span>
-                    <StepDot
-                      status={
-                        r.status === "running"
-                          ? "running"
-                          : r.status === "failed"
-                            ? "failed"
-                            : "completed"
-                      }
-                    />
-                    <span
-                      className="mono-label"
-                      style={{ color: "var(--agent)", width: 78, flexShrink: 0 }}
-                    >
-                      {r.agent_name}
-                    </span>
-                    <span
-                      style={{
-                        color: "var(--ink-muted)",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {r.input}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-            <section
-              className="bento"
-              style={{ gridColumn: "span 4", padding: "var(--bento-pad)" }}
-            >
-              <MonoLabel icon={Gauge} style={{ marginBottom: 12 }}>
-                Throughput
-              </MonoLabel>
-              {(
-                [
-                  [
-                    "Runs completed",
-                    `${runRows.filter((r) => r.status === "complete").length}`,
-                    "recent window",
-                  ],
-                  ["Median run time", medianRunSeconds(runRows), "dispatch to done"],
-                  [
-                    "Gate response",
-                    ny?.gateMedianMinutes != null
-                      ? ny.gateMedianMinutes >= 60
-                        ? `${Math.round(ny.gateMedianMinutes / 60)}h`
-                        : `${ny.gateMedianMinutes}m`
-                      : "—",
-                    "your median, 7d",
-                  ],
-                ] as [string, string, string][]
-              ).map(([l, v, s]) => (
-                <div key={l} style={{ marginBottom: 14 }}>
-                  <div className="mono-label">{l}</div>
-                  <div className="font-display tabular-nums" style={{ fontSize: 26, marginTop: 2 }}>
-                    {v}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>{s}</div>
-                </div>
-              ))}
-            </section>
-          </div>
-        )}
+        {/* TODAY'S TASKS: light personal planning, demoted to a quiet aside.
+            The Overview / Agent-activity dashboards moved to their stations:
+            metrics -> Govern, agent activity -> Missions, priority + product-state
+            -> Product, meetings -> Knowledge/Calendar. */}
+        <TasksPanel
+          tasks={taskRows}
+          onAdd={(t, deep) => addTask.mutate({ title: t, is_deep_work: deep })}
+          onToggle={(id, done) => toggleTask.mutate({ id, status: done ? "done" : "todo" })}
+          onDelete={(id) => removeTask.mutate(id)}
+        />
 
         <footer
           className="mono-label"
@@ -1004,16 +647,6 @@ function normalizeBrief(text: string): string {
     .filter(Boolean);
   if (parts.length <= 1) return text;
   return parts.map((s) => `- ${s}`).join("\n");
-}
-
-function medianRunSeconds(runs: { duration_ms?: number | null }[]): string {
-  const ds = runs
-    .map((r) => r.duration_ms)
-    .filter((v): v is number => typeof v === "number" && v > 0)
-    .sort((a, b) => a - b);
-  if (ds.length === 0) return "—";
-  const mid = ds[Math.floor(ds.length / 2)];
-  return mid >= 60_000 ? `${Math.round(mid / 60_000)}m` : `${(mid / 1000).toFixed(0)}s`;
 }
 
 /* Footer build stamp — "Last build · date time" from document.lastModified,

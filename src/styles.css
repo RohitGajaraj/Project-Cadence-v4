@@ -114,10 +114,11 @@
 
   /* === Ember Editorial — light (canonical: cadence/tokens.css) === */
 
-  /* Accent — burnished ember copper */
-  --ember: oklch(0.6 0.155 50);
-  --ember-active: oklch(0.52 0.145 48);
-  --ember-soft: oklch(0.78 0.08 55);
+  /* Accent: ember, brightened toward the reference orange (devouringdetails #fb7100),
+   * still warm on parchment, not neon (founder ruling 2026-06-16). Needs-human only. */
+  --ember: oklch(0.65 0.18 50);
+  --ember-active: oklch(0.57 0.165 48);
+  --ember-soft: oklch(0.8 0.1 53);
 
   /* Surfaces — warm parchment ramp */
   --canvas: oklch(0.977 0.007 85);
@@ -229,8 +230,8 @@
  * in the accents. Sidebar one step darker than canvas for separation.
  * Activated by toggling `.dark` on <html>. */
 .dark {
-  --ember: oklch(0.7 0.15 52);
-  --ember-active: oklch(0.62 0.14 50);
+  --ember: oklch(0.72 0.175 50);
+  --ember-active: oklch(0.65 0.16 50);
   --ember-soft: oklch(0.5 0.09 55);
 
   --canvas: oklch(0.148 0.005 60);

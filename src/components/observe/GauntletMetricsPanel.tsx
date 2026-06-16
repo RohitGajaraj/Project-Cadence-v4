@@ -23,6 +23,7 @@ import {
   type MemoryCompounding,
 } from "@/lib/gauntlet.functions";
 import { MonoLabel } from "@/components/cadence/Primitives";
+import { AutonomyCard } from "@/components/today/AutonomyCard";
 
 function pct(n: number | null): string {
   if (n == null) return "—";
@@ -271,6 +272,13 @@ export function GauntletMetricsPanel() {
           substat={ritualSub}
           loading={ritualQ.isLoading}
         />
+      </div>
+
+      {/* The autonomy progression as its full stage visual (observing -> proving ->
+          trusted), relocated here from Today. The metric card above is the
+          at-a-glance number; this is the progression it sits on. */}
+      <div style={{ marginTop: 12 }}>
+        <AutonomyCard />
       </div>
 
       <MemoryCompoundsCard data={memQ.data} loading={memQ.isLoading} />
