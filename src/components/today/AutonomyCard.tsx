@@ -98,7 +98,7 @@ export function AutonomyCard() {
 }
 
 /** The observing -> proving -> trusted ladder with the loop's current rung lit.
- *  A reflection of the real ratio, not a stored tier — purely a visual of where
+ *  A reflection of the real ratio, not a stored tier; purely a visual of where
  *  the unattended share places the loop today. */
 function StageStrip({ currentIndex }: { currentIndex: number }) {
   return (

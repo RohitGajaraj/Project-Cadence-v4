@@ -1,4 +1,4 @@
-// M-A — turn the user-wide autonomy ratio (the Gauntlet's Metric C) into a
+// M-A: turn the user-wide autonomy ratio (the Gauntlet's Metric C) into a
 // visible position on the observing -> proving -> trusted ladder for the Today
 // card. Pure + client-safe (no server middleware), so it is unit-testable in
 // isolation, mirroring gauntlet-metrics.ts.
@@ -6,10 +6,12 @@
 // OBSERVATIONAL ONLY. The stage is a reflection of how much reversible work the
 // loop already runs unattended; it is NOT a safety gate (the real gate is the
 // per-agent arc in agent_autonomy, applied by resolveApprovalMode) and it is NOT
-// a stored per-user tier (none exists in the domain). So the copy describes the
-// stage, it never instructs the operator to "promote" agents (no advance UI
-// exists yet) nor implies the system grants trust on its own (no auto-advance
-// exists yet). The claim never outruns the wiring.
+// a stored per-user tier (none exists in the domain). The per-agent arc DOES
+// auto-advance on clean runs (auto_advance_agent_arc); this card just mirrors the
+// user-wide ratio, a separate figure recomputed each render, never stored and
+// never "advanced". So the copy describes the stage; it never instructs the
+// operator to "promote" agents and never points at a per-user advance control
+// (there is none). The claim never outruns the wiring.
 
 export type AutonomyStage = "observing" | "proving" | "trusted";
 
@@ -25,7 +27,7 @@ export const PROVING_AT = 1 / 3;
 export const TRUSTED_AT = 2 / 3;
 
 /** Map the user-wide autonomy ratio to a stage. `null` (no side-effecting
- *  actions in the window) reads as "observing" — the honest floor, never an
+ *  actions in the window) reads as "observing", the honest floor, never an
  *  invented step. */
 export function autonomyStage(ratio: number | null): AutonomyStage {
   if (ratio == null || ratio < PROVING_AT) return "observing";
@@ -39,9 +41,8 @@ export function stageIndex(stage: AutonomyStage): number {
 }
 
 /** One plain-language line of what the stage means. A description, not an
- *  instruction: there is no advance button and no auto-advance, so this never
- *  tells the operator to promote agents nor promises the loop will climb on its
- *  own. */
+ *  instruction: there is no per-user advance control, so this never tells the
+ *  operator to promote agents, and it makes no promise about future behavior. */
 export function stageMeaning(stage: AutonomyStage): string {
   switch (stage) {
     case "observing":
