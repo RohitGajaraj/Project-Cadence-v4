@@ -30,8 +30,10 @@ import { EvalSuiteDetail } from "@/components/governance/EvalSuiteDetail";
 import { AgentSpendDetail } from "@/components/observe/AgentSpendDetail";
 import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 
-// Govern surface — v4 IA. Absorbs /governance + /observe + thin redirects
-// (/guardrails, /budgets, /traces, /drift) and, in Phase 1b-2, /evals + /prompts.
+// Engine Room surface (route id 'govern', user-facing title "Engine Room"). Absorbs /governance +
+// /observe + thin redirects (/guardrails, /budgets, /traces, /drift) and /evals + /prompts.
+// Tab labels are outcome-named per the Engine-Room Doctrine; the ?tab=<id> ids are the routing
+// contract and stay unchanged. See docs/conventions/engine-room-doctrine.md.
 
 type Tab =
   | "controls"
@@ -45,17 +47,18 @@ type Tab =
   | "traces"
   | "drift";
 
+// Engine-Room Doctrine: ids are the routing contract (unchanged); labels name the outcome, not the mechanism.
 const TABS: { id: Tab; label: string }[] = [
   { id: "controls", label: "Controls" },
   { id: "approvals", label: "Approvals" },
-  { id: "guardrails", label: "Guardrails" },
-  { id: "budgets", label: "Budgets" },
+  { id: "guardrails", label: "Safety" },
+  { id: "budgets", label: "Spend" },
   { id: "prompts", label: "Prompts" },
-  { id: "evals", label: "Evals" },
+  { id: "evals", label: "Quality checks" },
   { id: "analytics", label: "Analytics" },
-  { id: "gauntlet", label: "Gauntlet" },
-  { id: "traces", label: "Traces" },
-  { id: "drift", label: "Drift" },
+  { id: "gauntlet", label: "Loop health" },
+  { id: "traces", label: "Activity" },
+  { id: "drift", label: "Trends" },
 ];
 
 // GOVERN_DESC from the reference, verbatim — keyed by the lowercase tab ids.
@@ -159,15 +162,15 @@ function GovernPage() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
-      <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Govern"]} />
+      <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Engine Room"]} />
       <div
         data-screen-label="Govern"
         style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}
       >
         <SurfaceHeader
-          kicker="Engine room"
+          kicker="Operator tools"
           icon={Shield}
-          title="Govern"
+          title="Engine Room"
           sub="Every autonomous action is cited, observable, gated, and reversible."
         />
         <TabRow tabs={tabs} active={tab} onSet={setTab} desc={GOVERN_DESC} />

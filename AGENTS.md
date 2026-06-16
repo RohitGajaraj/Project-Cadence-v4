@@ -106,6 +106,8 @@ Full skill-selection logic & anti-patterns: [`docs/operations/skills.md`](./docs
 
 ## 3. Engineering rules
 
+> **§3.0 — The Engine-Room Doctrine (the product's first UX law, non-negotiable).** Complexity lives in the engine, never in the experience: the user meets the _output_ of the machine, never the machine. All observability/governance/internal machinery (traces, evals, prompts, budgets, raw logs, agent internals) lives behind one recessed "Engine Room" door, revealed on demand; user-facing labels name the _outcome_, not the mechanism; users bring their own sources via one Connect button and never touch keys/DBs/wiring. Every new user-facing surface runs the **Engine-Room Test** ("would a smart non-technical person feel this is for them, or does it expose how the machine works?") and carries a greppable `Engine-Room:` line. This rule outranks any single surface, feature, or metric, and constrains solutioning and architecture (one door not many; outcome objects not machine objects reach the front; progressive disclosure is a reused component contract). Body + how-to-achieve: [`docs/conventions/engine-room-doctrine.md`](./docs/conventions/engine-room-doctrine.md). Founder ruling 2026-06-16.
+
 ### Architecture
 
 1. **Every AI call goes through the chokepoint** (`src/lib/ai/runtime.server.ts`). No second path. Contract: [`architecture/runtime.md`](./architecture/runtime.md).

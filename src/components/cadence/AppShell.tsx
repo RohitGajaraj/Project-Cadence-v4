@@ -119,7 +119,7 @@ const trustLinks: {
   search?: Record<string, string>;
 }[] = [
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/govern", label: "Budgets", icon: Gauge, search: { tab: "budgets" } },
+  { to: "/govern", label: "Spend", icon: Gauge, search: { tab: "budgets" } },
   { to: "/govern", label: "Engine Room", icon: ShieldAlert },
   { to: "/sync", label: "Connectors", icon: Plug },
 ];

@@ -475,13 +475,13 @@ async function checkBudget(supabase: SupabaseClient, userId: string): Promise<vo
     b.day_window === today &&
     Number(b.daily_usd_used) >= Number(b.daily_usd_cap)
   )
-    throw new Error("Daily AI budget reached. Raise the cap in Settings → Budgets.");
+    throw new Error("Daily AI budget reached. Raise the cap in Engine Room → Spend.");
   if (
     b.monthly_usd_cap != null &&
     b.month_window === thisMonth &&
     Number(b.monthly_usd_used) >= Number(b.monthly_usd_cap)
   )
-    throw new Error("Monthly AI budget reached. Raise the cap in Settings → Budgets.");
+    throw new Error("Monthly AI budget reached. Raise the cap in Engine Room → Spend.");
 }
 
 async function checkSurfaceBudget(

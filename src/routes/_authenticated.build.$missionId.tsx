@@ -37,7 +37,7 @@ type Tab = "changes" | "pr" | "cost";
 const TABS: Tab[] = ["changes", "pr", "cost"];
 const TAB_DISPLAY: [Tab, string][] = [
   ["changes", "Changes"],
-  ["pr", "PR · CI"],
+  ["pr", "PR · Checks"],
   ["cost", "Cost"],
 ];
 
@@ -151,7 +151,7 @@ function JourneyStrip({
   const stages: { label: string; status: string; href?: string }[] = [
     { label: "build", status: buildStatus },
     { label: prLabel, status: prStatus, href: changeset?.pr_url ?? undefined },
-    { label: "CI", status: ciStatus },
+    { label: "Checks", status: ciStatus },
     { label: "shipped", status: shippedStatus },
   ];
 

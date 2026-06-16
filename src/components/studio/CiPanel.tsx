@@ -53,7 +53,7 @@ export function CiPanel({
   const refresh = useMutation({
     mutationFn: () => fRefresh({ data: { missionId } }),
     onSuccess: () => {
-      toast.success("CI refreshed");
+      toast.success("Checks refreshed");
       onRefreshed();
     },
     onError: (e: Error) => toast.error(e.message),

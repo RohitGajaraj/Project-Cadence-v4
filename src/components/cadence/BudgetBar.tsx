@@ -41,7 +41,7 @@ export function BudgetBar() {
   return (
     <Link
       to="/budgets"
-      title={`AI spend / ${label} — open budgets`}
+      title={`AI spend / ${label} · open Spend`}
       className="mono-label flex items-center gap-[7px]"
       style={{ color: tone }}
     >
