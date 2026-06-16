@@ -20,6 +20,7 @@ import { recordLineage } from "@/lib/lineage.functions";
 import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
 import { applyHunkSelection } from "@/lib/ai/studio-hunks";
+import { callModel } from "@/lib/ai/runtime.server";
 
 export type StudioChangesetSummary = {
   id: string;
@@ -31,6 +32,8 @@ export type StudioChangesetSummary = {
   title: string;
   summary: string | null;
   file_count: number;
+  release_notes?: string | null;
+  release_notes_at?: string | null;
 };
 
 export type StudioSessionListItem = {
@@ -499,7 +502,9 @@ export const getStudioSession = createServerFn({ method: "GET" })
     // Active changeset + its changes (paths/ops/sizes — diffs load separately).
     const { data: csRow } = await db
       .from("studio_changesets")
-      .select("id,status,repo,branch,base_sha,pr_url,pr_number,title,summary,updated_at")
+      .select(
+        "id,status,repo,branch,base_sha,pr_url,pr_number,title,summary,release_notes,release_notes_at,updated_at",
+      )
       .eq("mission_id", data.missionId)
       .neq("status", "abandoned")
       .order("created_at", { ascending: false })
@@ -712,6 +717,99 @@ export const getChangesetRevisions = createServerFn({ method: "GET" })
       .order("revision_no", { ascending: false });
     if (error) throw new Error(error.message);
     return { revisions: (rows ?? []) as StudioRevision[] };
+  });
+
+/**
+ * K1: generate (or regenerate) release notes for a changeset. Factual notes
+ * drawn ONLY from the changeset's files + commit revisions + linked work order,
+ * via the AI chokepoint (the runtime sanitizer humanizes the output). Persisted
+ * on the changeset so they are operator-reviewable and stable across views.
+ * Deploy itself is external (Lovable); this is the ship artifact, not a trigger.
+ */
+export const generateReleaseNotes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ changesetId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }): Promise<{ release_notes: string }> => {
+    const { supabase, userId } = context;
+    const db = supabase as unknown as SupabaseClient;
+
+    const { data: csRow, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,workspace_id,mission_id,repo,branch,title,summary")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!csRow) throw new Error("Changeset not found.");
+    const cs = csRow as {
+      id: string;
+      workspace_id: string | null;
+      mission_id: string | null;
+      repo: string;
+      branch: string | null;
+      title: string | null;
+      summary: string | null;
+    };
+
+    const { data: fileRows } = await db
+      .from("studio_changes")
+      .select("path,op")
+      .eq("changeset_id", cs.id)
+      .order("path");
+    const { data: revRows } = await db
+      .from("studio_changeset_revisions")
+      .select("revision_no,message")
+      .eq("changeset_id", cs.id)
+      .order("revision_no", { ascending: true });
+    const files = (fileRows ?? []) as Array<{ path: string; op: string }>;
+    const revs = (revRows ?? []) as Array<{ revision_no: number; message: string }>;
+    if (files.length === 0 && revs.length === 0)
+      throw new Error("Nothing to describe yet: stage and commit changes first.");
+
+    let workOrder = "";
+    if (cs.mission_id) {
+      const { data: m } = await db
+        .from("missions")
+        .select("title,goal")
+        .eq("id", cs.mission_id)
+        .maybeSingle();
+      const mm = m as { title?: string | null; goal?: string | null } | null;
+      workOrder = (mm?.goal ?? mm?.title ?? "").slice(0, 4000);
+    }
+
+    const fileList = files.map((f) => `${f.op} ${f.path}`).join("\n") || "(none recorded)";
+    const commits = revs.map((r) => `r${r.revision_no}: ${r.message}`).join("\n");
+    const system =
+      "You write concise, factual software release notes. Output GitHub-flavored markdown: a one-line summary, then a short bulleted 'What changed' grounded ONLY in the provided files and commit messages, then a 'Notable' line only if warranted. No marketing tone, no hype, no invented features or claims. Under 180 words.";
+    const user = [
+      cs.title ? `Title: ${cs.title}` : "",
+      cs.summary ? `Summary: ${cs.summary}` : "",
+      workOrder ? `Work order context:\n${workOrder}` : "",
+      `Files changed:\n${fileList}`,
+      commits ? `Commits:\n${commits}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const result = await callModel(supabase, userId, {
+      surface: "studio",
+      surface_ref: `release-notes:${cs.id}`,
+      model: "google/gemini-2.5-flash",
+      workspaceId: cs.workspace_id,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+    if (result.status !== "ok" || !result.output.trim())
+      throw new Error(result.error || "Release-notes generation failed.");
+    const notes = result.output.trim();
+
+    const { error: upErr } = await db
+      .from("studio_changesets")
+      .update({ release_notes: notes, release_notes_at: new Date().toISOString() })
+      .eq("id", cs.id);
+    if (upErr) throw new Error(upErr.message);
+    return { release_notes: notes };
   });
 
 /**

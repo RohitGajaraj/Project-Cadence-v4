@@ -42,8 +42,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
-| K1 | Release notes for a shipped changeset | Claude Code (engine lane) | 2026-06-16 | migration (release_notes cols) + `generateReleaseNotes` in `studio.functions.ts` + `ChangesPanel` section. Reuses `studio` AI surface. Disjoint from I2 (its build route doesn't touch these) |
-| E8 | Loop Health Monitor | Claude Code (IA/cockpit lane) | 2026-06-16 | new `loop-health.functions.ts` (`getLoopHealth`) + new `components/cockpit/LoopHealthBanner.tsx` + wire into the Missions **index** (`_authenticated.missions.index.tsx`). Collision-free: all-new files + the missions index; does NOT touch `/build` (I2), `studio.functions.ts` (K1), or the engine. |
 
 ---
 
@@ -54,15 +52,15 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 3 | 1 | 1 | 7 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
-| G3 Build → QA → Ship | 6 | 0 | 1 | 5 |
+| G3 Build → QA → Ship | 7 | 0 | 1 | 5 |
 | G4 Launch & Learn | 1 | 1 | 0 | 6 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
-| G7 Cockpit, IA & Observability | 4 | 1 | 0 | 11 |
+| G7 Cockpit, IA & Observability | 5 | 1 | 0 | 10 |
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
 
-> 🔨 **Currently In Dev (2026-06-16):** **K1** (release notes, this session) + **I2** (watch-the-build, parallel session). G3 engine lane ✅ (I3 · J1 · J2 · I1 · I1b). N3 + F-TODAY-LOOPPULSE in/landed via other lanes. See Active claims above.
+> 🔨 **Currently In Dev (2026-06-16):** **I2** (watch-the-build, parallel session). G3 engine lane + K1 all ✅ (I3 · J1 · J2 · I1 · I1b · K1). IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed. See Active claims above.
 
 The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
 
@@ -135,7 +133,7 @@ _The biggest pending block and the core differentiator: genuine end-to-end execu
 | I3 | Branch/worktree isolation per mission | ✅ (2026-06-16) | Concurrent missions can't share a branch or clobber files: per-path `builder_file_claims` (same-file guard) + collision-safe per-changeset branch `studio/<mission8>-<changeset12>` + clean open→squash-merge→release path. Git Data API (no local checkout), so "worktree" = isolated branch | `ai/studio-branch.ts` (6 tests) + `registry.server.ts` studio.commit |
 | J1 | Test generation + run | ✅ (2026-06-16) | Studio agent now authors tests as part of every change (prompt discipline); tests run in the connected repo's GitHub Actions CI (no Cadence sandbox, by design) | migration `20260616220000` (Studio system prompt) |
 | J2 | QA gate + self-correct loop | ✅ (2026-06-16) | `studio.pr.merge` now refuses to merge while CI is red or pending (Cadence-level gate, not just GitHub required-checks); with the J1 prompt directing fix-on-red-until-green, the self-correct loop closes | `ai/studio-ci.ts` (12 tests) + `registry.server.ts` studio.pr.merge |
-| K1 | Release notes for a shipped changeset | 🔨 In Dev (CC) | Generate factual release notes from a changeset (files + commit revisions + linked work order) via the AI chokepoint, persisted + operator-regenerable. PR/merge gates already exist (studio.pr.*, J2 CI-gated); deploy stays external (Lovable) | migration (release_notes cols) + `generateReleaseNotes` + `ChangesPanel` section |
+| K1 | Release notes for a shipped changeset | ✅ (2026-06-16) | Generate/regenerate factual release notes from a changeset (files + commit revisions + linked work order) via the AI chokepoint (auto-humanized), persisted on the changeset + shown in the Changes tab. PR/merge gates already exist (studio.pr.*, J2 CI-gated); deploy stays external. Note: owner-scoped generation (changeset RLS) | migration `20260616240000` + `generateReleaseNotes` + `ChangesPanel` section |
 | K1-deploy | Cadence-triggered deploy gate | ⏭️ Deferred | Triggering the actual deploy from Cadence needs a Cloudflare/Lovable deploy hook + founder config; deploy is external today. Deferred (founder ruling: honest path, no speculative infra) | needs a deploy hook + token |
 | K2 | Rollback triggers + one-action revert | ⬜ | Safe ship: documented rollback, feature-flag kill, UI revert | Revert path + flag kill |
 | BLD-05 | Inspector gate (agent tests + preview before merge) | ⬜ | A preview + test bar before a merge proposal reaches you | Depends on J1/J2 |
@@ -199,7 +197,7 @@ _The product feels coherent; the operator sees the machine._
 | F-TODAY-LOOPPULSE | Loop Pulse hero (what the loop did while you were away) | ✅ (2026-06-16) | Today's hero opens with a tight "While you were away · N signals · N opportunities · N specs · N agent runs · N memories" line (last 24h, non-zero parts only, hidden when quiet) — the second half of the Today mandate | `today.functions.ts` (`getLoopPulse`) + `_authenticated.index.tsx` hero |
 | F-IA-CULL-CALDOCS | Remove /calendar, /meetings, /docs, /sync from nav (data kept) | ⬜ | De-clutter the operator nav | Nav config |
 | F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
-| E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | 🔨 In Dev (CC, 2026-06-16) | Catch a stalled loop before the user does | New health fn + surface |
+| E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ✅ (2026-06-16) | An always-on health strip on the Missions surface: verdict (on watch / working / stalled) from stuck runs + expired calls, plus queue depth, last ingest, last run; the stalled state links to the engine room | `loop-health.functions.ts` (`getLoopHealth`) + `components/cockpit/LoopHealthBanner.tsx` + Missions index |
 | B3 | Product switcher + portfolio view (⌘K) | ⬜ | Run many products without losing the thread | Header + ⌘K |
 | B5 | Archive / delete product (soft archive + hard delete w/ export) | ⬜ | Lifecycle hygiene with an audit trail | Product admin |
 | ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |

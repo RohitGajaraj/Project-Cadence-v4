@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   applyStagedHunkSelection,
+  generateReleaseNotes,
   getChangesetDiff,
   getChangesetRevisions,
   rejectStagedFile,
@@ -145,6 +146,18 @@ export function ChangesPanel({
       toast.error(e instanceof Error ? e.message : "Could not drop the file."),
   });
 
+  // K1: release notes for the changeset (generate/regenerate; persisted server-side).
+  const fGenNotes = useServerFn(generateReleaseNotes);
+  const genNotesMut = useMutation({
+    mutationFn: () => fGenNotes({ data: { changesetId: changeset!.id } }),
+    onSuccess: () => {
+      toast.success("Release notes generated.");
+      qc.invalidateQueries({ queryKey: ["studio-session"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not generate release notes."),
+  });
+
   if (!changeset) {
     return (
       <div
@@ -198,6 +211,58 @@ export function ChangesPanel({
           </span>
         ) : null}
       </div>
+
+      {/* K1 release notes: the ship artifact for this changeset (factual, AI-drafted). */}
+      {changeset.release_notes || changes.length > 0 || revisions.length > 0 ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: changeset.release_notes ? "1px solid var(--hairline)" : "none",
+            }}
+          >
+            <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+              Release notes
+            </span>
+            <button
+              type="button"
+              onClick={() => genNotesMut.mutate()}
+              disabled={genNotesMut.isPending}
+              className="mono-label"
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 6,
+                padding: "3px 10px",
+                background: "transparent",
+                color: "var(--ink-muted)",
+                cursor: genNotesMut.isPending ? "default" : "pointer",
+              }}
+            >
+              {genNotesMut.isPending
+                ? "Generating…"
+                : changeset.release_notes
+                  ? "Regenerate"
+                  : "Generate"}
+            </button>
+          </div>
+          {changeset.release_notes ? (
+            <div
+              style={{
+                padding: "12px 18px",
+                fontSize: 12.5,
+                lineHeight: 1.6,
+                color: "var(--ink)",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {changeset.release_notes}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* I1b revision history: one row per studio.commit, newest first. */}
       {revisions.length > 0 ? (
