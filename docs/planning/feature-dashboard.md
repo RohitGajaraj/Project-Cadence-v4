@@ -43,6 +43,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | I1 | Multi-file coding: per-hunk + revisions (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane, SERIAL: ~~I3~~ → ~~J1~~ → ~~J2~~ → **I1 (current, last)** |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
+| N3 | Mission Compounding View ("referenced N prior decisions") | Claude Code (IA/cockpit lane) | 2026-06-16 | Missions **detail** panel (`_authenticated.missions.$missionId.tsx`) + a read-only lineage server fn. Collision-free with I1 (registry/ChangesPanel) and I2 (the `/build` route — different surface). Does NOT touch the build engine. |
 
 ---
 
@@ -153,7 +154,7 @@ _Close the loop: ship to market, learn from outcomes, feed it back._
 | LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ⬜ | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
 | F-ANALYTICS-1 | Cohort metrics + telemetry ingestion → `product_analytics` | ⬜ | Released features get real usage data | Depends on SEN-05 |
 | F-ANALYTICS-2 | Opportunity impact eval (post-release cohort → Product Memory → auto-ICE) | ⬜ | The loop learns whether a bet paid off | Depends on F-ANALYTICS-1 |
-| N3 | Mission Compounding View ("referenced N prior decisions") | ⬜ | Makes the moat visible per mission; export snapshot | Missions detail panel |
+| N3 | Mission Compounding View ("referenced N prior decisions") | 🔨 In Dev (CC, 2026-06-16) | Makes the moat visible per mission; export snapshot | Missions detail panel |
 
 ---
 
