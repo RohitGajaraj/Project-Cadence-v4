@@ -7,8 +7,8 @@
 >
 > Checklist (engine lane):
 > - [x] I3 (2026-06-16): collision-safe per-changeset branch `studio/<mission8>-<changeset12>` (pure `ai/studio-branch.ts` + 6 tests) closes the 32-bit branch-name collision; file claims + clean merge path already existed. Build green, 123 tests.
-> - [ ] J1: a `studio.test.run` tool + `studio_test_runs` table (migration) + build-agent authors/runs tests + results persisted and read back
-> - [ ] J2: loop orchestration re-dispatches a fix step on red CI/tests until green or escalate; a Cadence-level guard blocks `studio.pr.merge` while CI/tests are red
+> - [x] J1 (2026-06-16, honest path): no Cadence sandbox exists, so tests run in the repo's GitHub Actions CI. Studio system prompt now makes the agent AUTHOR tests as a step + restates CI-green-before-merge (migration `20260616220000`, applies on Lovable sync).
+> - [x] J2 (2026-06-16): `studio.pr.merge` hard-gates on CI (refuses red/pending) via pure tested `ai/studio-ci.ts` (`overallFromChecks` + `mergeReadinessFromCi`, 12 tests), shared with `github.ci.read`. With the J1 fix-on-red prompt, the self-correct loop closes (can't merge red). Build green, 135 tests.
 > - [ ] I1: per-hunk accept/reject in `ChangesPanel.tsx` + revision history in the changeset model (migration)
 > - [ ] Per slice: `bun test` for pure logic + `bun run build` green + adversarial review; flip the dashboard row to ✅ on landing, push the WHY
 

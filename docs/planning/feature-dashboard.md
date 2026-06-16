@@ -41,9 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| J1 | Test generation + run | Claude Code (engine lane) | 2026-06-16 | Engine-core lane, SERIAL: ~~I3~~ → **J1 (current)** → J2 → I1 |
-| J2 | QA gate + self-correct loop (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane |
-| I1 | Multi-file coding: per-hunk + revisions (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane |
+| I1 | Multi-file coding: per-hunk + revisions (finish) | Claude Code (engine lane) | 2026-06-16 | Engine-core lane, SERIAL: ~~I3~~ → ~~J1~~ → ~~J2~~ → **I1 (current, last)** |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
 
 ---
@@ -55,7 +53,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 3 | 1 | 1 | 7 |
 | G2 Decide & Plan | 5 | 0 | 0 | 3 |
-| G3 Build → QA → Ship | 2 | 2 | 0 | 7 |
+| G3 Build → QA → Ship | 4 | 1 | 0 | 6 |
 | G4 Launch & Learn | 0 | 1 | 0 | 7 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
@@ -63,7 +61,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
 
-> 🔨 **Currently In Dev (2026-06-16):** Engine-core lane (this session, serial): **J1 (current) · J2 · I1** (✅ I3 landed). Watch-the-build lane (parallel session): **I2**. See Active claims above.
+> 🔨 **Currently In Dev (2026-06-16):** Engine-core lane (this session, serial): **I1 (current, last)** (✅ I3 · J1 · J2 landed). Watch-the-build lane (parallel session): **I2**. See Active claims above.
 
 The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
 
@@ -133,8 +131,8 @@ _The biggest pending block and the core differentiator: genuine end-to-end execu
 | I1 | Studio multi-file coding (per-hunk accept/reject, atomic revisions) | 🔨 In Dev (CC) (◐ base) | Multi-file changesets ship (`studioStage`, up to 20 files/changeset). Remaining: per-hunk accept/reject + true revision history (today only linear re-stage onto the branch) | `tools/registry.server.ts` (studioStage) + `ChangesPanel.tsx` |
 | I2 | Watch-the-agents-build live surface | 🔨 In Dev (parallel lane) | Live per-session view (step, files, tool calls, cost); pause/steer mid-run. Much exists already (`SessionTimeline` · `CostPanel` · `CiPanel` · `ApprovalCard` + `steerStudioSession`); the gap is live auto-refresh/streaming + polish (verify before building) | `_authenticated.build.$missionId.tsx` + `SessionTimeline.tsx`; poll `getStudioSession` |
 | I3 | Branch/worktree isolation per mission | ✅ (2026-06-16) | Concurrent missions can't share a branch or clobber files: per-path `builder_file_claims` (same-file guard) + collision-safe per-changeset branch `studio/<mission8>-<changeset12>` + clean open→squash-merge→release path. Git Data API (no local checkout), so "worktree" = isolated branch | `ai/studio-branch.ts` (6 tests) + `registry.server.ts` studio.commit |
-| J1 | Test generation + run | 🔨 In Dev (CC) | Agents author + run unit/integration/E2E; results persisted | Runner wiring + `eval`/test tables |
-| J2 | QA gate + self-correct loop | 🔨 In Dev (CC) (◐ base) | CI is readable (`github.ci.read`) and merge is review-gated. Remaining: an AUTOMATED self-correct loop (today "fix on red" is a prompt instruction, not orchestration) + a Cadence-level gate that blocks merge on red CI | `tools/registry.server.ts` (github.ci.read / studio.pr.merge) + loop orchestration |
+| J1 | Test generation + run | ✅ (2026-06-16) | Studio agent now authors tests as part of every change (prompt discipline); tests run in the connected repo's GitHub Actions CI (no Cadence sandbox, by design) | migration `20260616220000` (Studio system prompt) |
+| J2 | QA gate + self-correct loop | ✅ (2026-06-16) | `studio.pr.merge` now refuses to merge while CI is red or pending (Cadence-level gate, not just GitHub required-checks); with the J1 prompt directing fix-on-red-until-green, the self-correct loop closes | `ai/studio-ci.ts` (12 tests) + `registry.server.ts` studio.pr.merge |
 | K1 | PR / deploy / release notes behind approval | ⬜ | The Ship step: gated PR, deploy, generated release notes | Extend Build → approval-gated deploy |
 | K2 | Rollback triggers + one-action revert | ⬜ | Safe ship: documented rollback, feature-flag kill, UI revert | Revert path + flag kill |
 | BLD-05 | Inspector gate (agent tests + preview before merge) | ⬜ | A preview + test bar before a merge proposal reaches you | Depends on J1/J2 |

@@ -20,6 +20,7 @@ import {
 } from "./orchestrator.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
 import { studioBranchName } from "@/lib/ai/studio-branch";
+import { mergeReadinessFromCi, overallFromChecks } from "@/lib/ai/studio-ci";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type ToolCtx = {
@@ -816,25 +817,9 @@ const githubCiRead = def({
         }));
         const all = [...checks, ...statuses];
 
-        // Derive overall:
-        //  - empty       → neutral (no CI configured on this repo).
-        //  - any failing → failure.
-        //  - any pending → pending.
-        //  - else        → success.
-        let overall: "pending" | "success" | "failure" | "neutral";
-        if (all.length === 0) overall = "neutral";
-        else if (
-          all.some(
-            (c) =>
-              c.conclusion === "failure" ||
-              c.conclusion === "timed_out" ||
-              c.conclusion === "action_required" ||
-              c.conclusion === "cancelled",
-          )
-        )
-          overall = "failure";
-        else if (all.some((c) => c.status !== "completed")) overall = "pending";
-        else overall = "success";
+        // Single source of truth for the verdict, shared with the J2
+        // studio.pr.merge gate (src/lib/ai/studio-ci.ts).
+        const overall = overallFromChecks(all);
 
         return {
           pr_number: a.pr_number,
@@ -1591,7 +1576,7 @@ const studioPrOpen = def({
 const studioPrMerge = def({
   name: "studio.pr.merge",
   description:
-    "Studio: merge the changeset's pull request (squash by default) — closes the loop in-platform. Review-gated; request it ONLY after github.ci.read reports success (or the repo has no CI). Releases the mission's file claims.",
+    "Studio: merge the changeset's pull request (squash by default) and close the loop in-platform. Review-gated AND hard-gated on CI: the merge is refused while CI is red or still running, so request it only once github.ci.read reports success (or the repo has no CI). Releases the mission's file claims.",
   category: "write",
   argsSchema: z.object({
     method: z.enum(["squash", "merge", "rebase"]).optional(),
@@ -1604,6 +1589,54 @@ const studioPrMerge = def({
     if (!changeset?.pr_number) throw new Error("no open Studio PR on this mission");
     const { token, repo } = await requireGithub(ctx);
     const headers = ghHeaders(token);
+
+    // J2 — CI-green merge gate. studio.pr.merge is review-gated, but we also
+    // refuse at the Cadence level when CI is red or still running, so a clean
+    // run is the only path to ship (independent of whether the repo configures
+    // GitHub required checks). Read fresh so we never merge on a stale green;
+    // kept outside withIdempotency so a blocked attempt re-checks each time and
+    // only a green merge is cached. Verdict logic shared with github.ci.read.
+    {
+      const prRes = await fetch(
+        `https://api.github.com/repos/${repo}/pulls/${changeset.pr_number}`,
+        { headers },
+      );
+      if (!prRes.ok)
+        throw new Error(`GitHub get-pr ${prRes.status}: ${(await prRes.text()).slice(0, 200)}`);
+      const prJson = (await prRes.json()) as { head: { sha: string }; merged: boolean };
+      if (!prJson.merged) {
+        const headSha = prJson.head.sha;
+        const [checksRes, statusRes] = await Promise.all([
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/check-runs?per_page=50`, {
+            headers,
+          }),
+          fetch(`https://api.github.com/repos/${repo}/commits/${headSha}/status`, { headers }),
+        ]);
+        if (!checksRes.ok) throw new Error(`GitHub check-runs ${checksRes.status} (merge gate)`);
+        if (!statusRes.ok)
+          throw new Error(`GitHub combined-status ${statusRes.status} (merge gate)`);
+        const checksJson = (await checksRes.json()) as {
+          check_runs?: Array<{ status: string; conclusion: string | null }>;
+        };
+        const statusJson = (await statusRes.json()) as {
+          statuses?: Array<{ state: string }>;
+        };
+        const ciChecks = [
+          ...(checksJson.check_runs ?? []).map((c) => ({
+            status: c.status,
+            conclusion: c.conclusion ?? null,
+          })),
+          ...(statusJson.statuses ?? []).map((s) => ({
+            status: s.state === "pending" ? "in_progress" : "completed",
+            conclusion:
+              s.state === "pending" ? null : s.state === "success" ? "success" : "failure",
+          })),
+        ];
+        const gate = mergeReadinessFromCi(overallFromChecks(ciChecks));
+        if (!gate.allowed) throw new Error(`MergeBlocked: ${gate.reason}`);
+      }
+    }
+
     const outcome = await withIdempotency(
       supabase,
       "studio_merge",
