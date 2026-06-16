@@ -60,7 +60,14 @@ agentdb*.lock
 *.jpeg
 *.gif
 *.webp
-src/routeTree.gen 2.ts
+# macOS / iCloud Drive sync conflict-copies. The repo lives under an iCloud-synced
+# ~/Documents path, so concurrent writes by parallel tools (Claude Code · Lovable ·
+# Gemini · Antigravity) make iCloud spawn numbered duplicates like
+# "feature-dashboard 2.md" or "src/components 2/". Never commit them — the canonical
+# file is the unsuffixed one. Durable fix: move the repo off the iCloud-synced path.
+* [0-9].*
+* [0-9]
+* [0-9]/
 
 # Local screenshots / visual artifacts (organized under docs/screenshots, kept local).
 # Where each image goes + retention: docs/conventions/workspace-hygiene.md
