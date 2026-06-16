@@ -1,11 +1,22 @@
 # Convention: humanized output, zero AI fingerprints
 
-> **What this is.** The master rule that no text we ship carries a machine fingerprint. It governs two levels, and both are mandatory:
+> **What this is.** The master rule that no text we ship carries a machine fingerprint. It governs two levels (see **Priority and scope** below for how strictly each is enforced, and apply it at authoring time):
 >
 > 1. **What we author.** Every string a human or tool writes into this repo: UI copy, code comments, docs, commit messages, error text, seed data, marketing copy. Applies to every co-development tool equally (Claude Code, Lovable, Gemini, Antigravity, and any future one).
 > 2. **What the platform generates.** Every output the product produces for a user through an AI feature: PRDs, drafts, chat replies, research summaries, decision rationales, anything a model writes. The end user's outcome must read as if a sharp human wrote it.
 >
 > [`ui-voice.md`](./ui-voice.md) is the UI-string application of this rule (length budgets + the buzzword denylist). This file is the umbrella and adds the parts that rule does not cover: it extends scope to all authored text and to runtime-generated output, bans invisible characters, and specifies the runtime enforcement.
+
+---
+
+## Priority and scope (apply at authoring time, read this first)
+
+Write clean from the first keystroke. This rule is an authoring habit invoked **before** you write, not a QA step after. Do not write text with fingerprints and then scan, correct, and rescan it: that four-step cycle wastes time and tokens. Know the banned set up front and just author without them.
+
+Enforcement is tiered (founder ruling, 2026-06-16):
+
+- **Tier 1, hard gate, non-negotiable: platform output and user-facing UI copy.** Anything the product generates or shows an end user (PRDs, chat replies, research summaries, decision rationales, drafts, and the in-app UI strings) is the verbatim that actually matters. The runtime sanitizer at the AI chokepoint (`humanizeText` in `runtime.server.ts`) is the real gate for generated text; UI copy is authored clean.
+- **Tier 2, write clean by habit, no enforcement pass: internal docs, code comments, commit messages, build logs.** Write these clean because it is the house style, but they do **not** warrant a dedicated detect-fix-rescan pass or a token spend chasing a stray dash. A residual fingerprint in an internal doc is acceptable; there is no required scan loop and no separate doc-cleanup stage for Tier 2.
 
 ---
 
@@ -50,7 +61,7 @@ The sanitizer is the boundary; the prompt directive is convenience. Treat the sa
 
 ## How to apply (build time)
 
-Before shipping any text change (code, copy, docs, generated-output prompts):
+The runtime sanitizer (above) is the gate for Tier 1 generated output. The `rg` checks below are an **optional** spot-check for Tier 1 surfaces (UI copy, prompt templates) when you want to confirm by hand. They are not a required loop, and not for Tier 2 internal docs (see "Priority and scope"):
 
 ```bash
 # 1. Dashes: must return 0 (outside code).
