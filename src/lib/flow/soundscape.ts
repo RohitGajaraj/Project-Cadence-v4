@@ -1,146 +1,136 @@
-// Synthesized ambient soundscape (Web Audio). No audio files ship: a looping
-// noise source through a tuned filter, with a slow LFO for gentle movement.
+// Ambient soundscape player. Streams a real, looped recording per preset from
+// /public/soundscape/<preset>.mp3, decoded once and looped gaplessly via Web
+// Audio (an HTMLAudioElement loop leaves an audible seam). Switching presets
+// crossfades; volume rides a master gain.
 //
-// Engine-Room: the synthesis graph is machinery. The user picks "Rain / Wind /
-// Deep" and a volume; the oscillators, filters, and ramps stay hidden here.
+// Engine-Room: the audio graph + decode cache are machinery; the user just
+// picks "Rain / Ocean / Forest / Lo-fi / Heartbeat" and a volume.
 //
-// Browser autoplay policy: an AudioContext can only start from a user gesture,
-// so start() must be called from a click handler (the widget's Start button or
-// the "resume sound" tap after a reload).
+// Browser autoplay policy: start() must be called from a user gesture (the
+// widget's Start button, or "resume sound" after a reload). start() resolves
+// false when the file is missing or fails to decode, so the UI can hint that a
+// track still needs to be added (see public/soundscape/README.md).
 
-import type { SoundPreset } from "./session";
+import { presetSrc, type SoundPreset } from "./session";
 
-type ActivePreset = Exclude<SoundPreset, "off">;
+type Voice = { source: AudioBufferSourceNode; gain: GainNode; preset: SoundPreset };
 
-type Graph = {
-  ctx: AudioContext;
-  source: AudioBufferSourceNode;
-  filter: BiquadFilterNode;
-  gain: GainNode;
-  lfo: OscillatorNode;
-  lfoGain: GainNode;
-};
+const CROSSFADE = 0.5; // seconds
 
-type PresetTuning = {
-  filterType: BiquadFilterType;
-  freq: number;
-  q: number;
-  lfoRate: number; // Hz
-  lfoDepth: number; // Hz of filter-frequency sweep
-};
-
-const TUNING: Record<ActivePreset, PresetTuning> = {
-  // Airy hiss, like steady rain on a window.
-  rain: { filterType: "lowpass", freq: 1400, q: 0.6, lfoRate: 0.12, lfoDepth: 320 },
-  // Mid-band sweep that breathes like wind.
-  wind: { filterType: "bandpass", freq: 520, q: 0.8, lfoRate: 0.06, lfoDepth: 280 },
-  // Low rumble for deep focus.
-  deep: { filterType: "lowpass", freq: 220, q: 0.7, lfoRate: 0.04, lfoDepth: 70 },
-};
-
-const RAMP = 0.6; // seconds; gentle fades to avoid clicks
-
-let graph: Graph | null = null;
+let ctx: AudioContext | null = null;
+let master: GainNode | null = null;
+let current: Voice | null = null;
+let currentVolume = 0.5;
+let startToken = 0; // guards against overlapping async starts on rapid switches
+const buffers = new Map<SoundPreset, AudioBuffer>();
 
 export function hasAudio(): boolean {
   if (typeof window === "undefined") return false;
   return "AudioContext" in window || "webkitAudioContext" in window;
 }
 
-function makeAudioContext(): AudioContext {
-  const Ctx =
+function ensureContext(): AudioContext {
+  if (ctx && master) return ctx;
+  const Ctor =
     window.AudioContext ||
     (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  return new Ctx();
+  ctx = new Ctor();
+  master = ctx.createGain();
+  master.gain.value = currentVolume;
+  master.connect(ctx.destination);
+  return ctx;
 }
 
-function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
-  const seconds = 2;
-  const length = ctx.sampleRate * seconds;
-  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
-  return buffer;
+async function loadBuffer(preset: SoundPreset): Promise<AudioBuffer> {
+  const cached = buffers.get(preset);
+  if (cached) return cached;
+  const src = presetSrc(preset);
+  if (!src) throw new Error("no source for preset");
+  const res = await fetch(src);
+  if (!res.ok) throw new Error(`fetch ${src} -> ${res.status}`);
+  const bytes = await res.arrayBuffer();
+  const decoded = await ensureContext().decodeAudioData(bytes);
+  buffers.set(preset, decoded);
+  return decoded;
 }
 
-function tune(g: Graph, preset: ActivePreset): void {
-  const t = TUNING[preset];
-  const now = g.ctx.currentTime;
-  g.filter.type = t.filterType;
-  g.filter.frequency.setTargetAtTime(t.freq, now, 0.2);
-  g.filter.Q.setTargetAtTime(t.q, now, 0.2);
-  g.lfo.frequency.setTargetAtTime(t.lfoRate, now, 0.2);
-  g.lfoGain.gain.setTargetAtTime(t.lfoDepth, now, 0.2);
+function fadeOut(voice: Voice, audio: AudioContext) {
+  const now = audio.currentTime;
+  voice.gain.gain.cancelScheduledValues(now);
+  voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+  voice.gain.gain.linearRampToValueAtTime(0, now + CROSSFADE);
+  window.setTimeout(
+    () => {
+      try {
+        voice.source.stop();
+        voice.source.disconnect();
+        voice.gain.disconnect();
+      } catch {
+        /* already stopped */
+      }
+    },
+    CROSSFADE * 1000 + 50,
+  );
 }
 
-// Start (or retune) the soundscape at the given preset and volume (0..1).
-// Must be called from a user gesture. No-op for the "off" preset or when Web
-// Audio is unavailable.
-export function start(preset: SoundPreset, volume: number): void {
-  if (preset === "off" || !hasAudio()) return;
-
-  if (!graph) {
-    const ctx = makeAudioContext();
-    const source = ctx.createBufferSource();
-    source.buffer = makeNoiseBuffer(ctx);
-    source.loop = true;
-
-    const filter = ctx.createBiquadFilter();
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    // LFO nudges the filter frequency so the texture never sits perfectly still.
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.connect(lfoGain).connect(filter.frequency);
-
-    source.connect(filter).connect(gain).connect(ctx.destination);
-    source.start();
-    lfo.start();
-
-    graph = { ctx, source, filter, gain, lfo, lfoGain };
-  }
-
-  void graph.ctx.resume();
-  tune(graph, preset);
-  setVolume(volume);
-}
-
-export function setPreset(preset: SoundPreset, volume: number): void {
+// Start (or crossfade to) a preset at the given volume (0..1). Resolves true
+// when audio is playing, false for "off", missing file, or no Web Audio.
+export async function start(preset: SoundPreset, volume: number): Promise<boolean> {
   if (preset === "off") {
     stop();
-    return;
+    return false;
   }
-  start(preset, volume);
+  if (!hasAudio()) return false;
+
+  const token = ++startToken;
+  setVolume(volume);
+
+  let buffer: AudioBuffer;
+  try {
+    buffer = await loadBuffer(preset);
+  } catch {
+    return false; // file not added yet, or failed to decode
+  }
+  // A newer start() (or a stop()) ran while we were loading; abandon this one.
+  if (token !== startToken) return false;
+
+  const audio = ensureContext();
+  await audio.resume().catch(() => {});
+
+  const source = audio.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+  const gain = audio.createGain();
+  gain.gain.value = 0;
+  source.connect(gain).connect(master as GainNode);
+  source.start();
+
+  const now = audio.currentTime;
+  gain.gain.linearRampToValueAtTime(1, now + CROSSFADE);
+
+  if (current) fadeOut(current, audio);
+  current = { source, gain, preset };
+  return true;
+}
+
+export function setPreset(preset: SoundPreset, volume: number): Promise<boolean> {
+  return start(preset, volume);
 }
 
 export function setVolume(volume: number): void {
-  if (!graph) return;
-  const clamped = Math.max(0, Math.min(1, volume));
-  graph.gain.gain.setTargetAtTime(clamped, graph.ctx.currentTime, RAMP / 3);
+  currentVolume = Math.max(0, Math.min(1, volume));
+  if (master && ctx) master.gain.setTargetAtTime(currentVolume, ctx.currentTime, CROSSFADE / 3);
 }
 
-// Fade out and tear down. The graph is rebuilt on the next start().
+// Fade the current voice out. Keeps the context + decoded buffers for reuse.
 export function stop(): void {
-  if (!graph) return;
-  const g = graph;
-  graph = null;
-  try {
-    g.gain.gain.setTargetAtTime(0, g.ctx.currentTime, RAMP / 3);
-    window.setTimeout(() => {
-      try {
-        g.source.stop();
-        g.lfo.stop();
-        void g.ctx.close();
-      } catch {
-        /* already torn down */
-      }
-    }, RAMP * 1000);
-  } catch {
-    /* noop */
+  startToken++;
+  if (current && ctx) {
+    fadeOut(current, ctx);
+    current = null;
   }
 }
 
 export function isPlaying(): boolean {
-  return graph !== null;
+  return current !== null;
 }

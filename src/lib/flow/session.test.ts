@@ -1,9 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
+  MAX_CUSTOM_MIN,
+  MIN_CUSTOM_MIN,
+  clampMinutes,
   endsAtFor,
   formatRemaining,
   isExpired,
   isResumable,
+  presetSrc,
   remainingMs,
   type FlowSession,
 } from "./session";
@@ -47,6 +51,28 @@ describe("isExpired / isResumable", () => {
     expect(isResumable(session(NOW + 60_000), NOW)).toBe(true);
     expect(isExpired(session(NOW - 1), NOW)).toBe(true);
     expect(isResumable(session(NOW - 1), NOW)).toBe(false);
+  });
+});
+
+describe("presetSrc", () => {
+  test("maps a preset to its public audio file", () => {
+    expect(presetSrc("rain")).toBe("/soundscape/rain.mp3");
+    expect(presetSrc("heartbeat")).toBe("/soundscape/heartbeat.mp3");
+  });
+  test("off has no source", () => {
+    expect(presetSrc("off")).toBeNull();
+  });
+});
+
+describe("clampMinutes", () => {
+  test("clamps to the allowed range and rounds", () => {
+    expect(clampMinutes(15)).toBe(15);
+    expect(clampMinutes(0)).toBe(MIN_CUSTOM_MIN);
+    expect(clampMinutes(9999)).toBe(MAX_CUSTOM_MIN);
+    expect(clampMinutes(20.6)).toBe(21);
+  });
+  test("non-finite input falls back to the minimum", () => {
+    expect(clampMinutes(Number.NaN)).toBe(MIN_CUSTOM_MIN);
   });
 });
 

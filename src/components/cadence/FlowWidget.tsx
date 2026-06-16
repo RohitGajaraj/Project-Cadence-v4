@@ -1,8 +1,16 @@
+import { useState } from "react";
 import { Waves, X, Volume2, Play } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { useFlowMode } from "@/hooks/use-flow-mode";
-import { SOUND_PRESETS, TIMER_PRESETS_MIN, type SoundPreset } from "@/lib/flow/session";
+import {
+  SOUND_PRESETS,
+  TIMER_QUICK_MIN,
+  clampMinutes,
+  MIN_CUSTOM_MIN,
+  MAX_CUSTOM_MIN,
+  type SoundPreset,
+} from "@/lib/flow/session";
 import { cn } from "@/lib/utils";
 
 // The Flow-mode control in the sidebar footer, beside the theme toggle. Idle:
@@ -12,44 +20,41 @@ import { cn } from "@/lib/utils";
 
 const PRESET_LABEL: Record<SoundPreset, string> = {
   rain: "Rain",
-  wind: "Wind",
-  deep: "Deep",
+  ocean: "Ocean",
+  forest: "Forest",
+  lofi: "Lo-fi",
+  heartbeat: "Heartbeat",
   off: "Off",
 };
+
+const TIMER_OPTIONS = [...TIMER_QUICK_MIN, 0] as const;
 
 function timerLabel(min: number): string {
   return min > 0 ? `${min}m` : "Open";
 }
 
-function Segmented<T extends string | number>({
-  options,
-  value,
-  onSelect,
-  render,
+function Pill({
+  active,
+  onClick,
+  children,
 }: {
-  options: readonly T[];
-  value: T;
-  onSelect: (v: T) => void;
-  render: (v: T) => string;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-1">
-      {options.map((opt) => (
-        <button
-          key={String(opt)}
-          type="button"
-          onClick={() => onSelect(opt)}
-          className={cn(
-            "flex-1 rounded-md border px-2 py-1 text-[11.5px] transition",
-            opt === value
-              ? "border-foreground/30 bg-foreground/[0.06] text-foreground"
-              : "border-transparent text-ink-subtle hover:text-foreground hover:bg-foreground/[0.03]",
-          )}
-        >
-          {render(opt)}
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-md border px-2 py-1 text-[11.5px] transition",
+        active
+          ? "border-foreground/30 bg-foreground/[0.06] text-foreground"
+          : "border-transparent text-ink-subtle hover:text-foreground hover:bg-foreground/[0.03]",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -59,12 +64,23 @@ export function FlowWidget() {
     remainingLabel,
     heldCount,
     soundResumable,
+    soundUnavailable,
     config,
     setConfig,
     enterFlow,
     exitFlow,
     resumeSound,
   } = useFlowMode();
+
+  // Local string state for the custom-minutes field so it stays freely editable
+  // (clearable while typing); a quick chip clears it and wins.
+  const [customStr, setCustomStr] = useState("");
+
+  const applyCustom = (v: string) => {
+    setCustomStr(v);
+    const n = Number(v);
+    if (v !== "" && Number.isFinite(n)) setConfig({ timerMin: clampMinutes(n) });
+  };
 
   return (
     <Popover>
@@ -117,12 +133,20 @@ export function FlowWidget() {
         <div className="space-y-3">
           <div>
             <div className="mb-1 text-[11px] text-ink-subtle">Ambient sound</div>
-            <Segmented
-              options={SOUND_PRESETS}
-              value={config.preset}
-              onSelect={(preset) => setConfig({ preset })}
-              render={(p) => PRESET_LABEL[p]}
-            />
+            <div className="grid grid-cols-3 gap-1">
+              {SOUND_PRESETS.map((preset) => (
+                <Pill
+                  key={preset}
+                  active={preset === config.preset}
+                  onClick={() => setConfig({ preset })}
+                >
+                  {PRESET_LABEL[preset]}
+                </Pill>
+              ))}
+            </div>
+            {isFlowMode && soundUnavailable && config.preset !== "off" ? (
+              <div className="mt-1.5 text-[11px] text-ink-muted">This sound has no track yet.</div>
+            ) : null}
           </div>
 
           {config.preset !== "off" ? (
@@ -142,12 +166,42 @@ export function FlowWidget() {
           {!isFlowMode ? (
             <div>
               <div className="mb-1 text-[11px] text-ink-subtle">Focus length</div>
-              <Segmented
-                options={TIMER_PRESETS_MIN}
-                value={config.timerMin}
-                onSelect={(timerMin) => setConfig({ timerMin })}
-                render={timerLabel}
-              />
+              <div className="flex gap-1">
+                {TIMER_OPTIONS.map((min) => (
+                  <div key={min} className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomStr("");
+                        setConfig({ timerMin: min });
+                      }}
+                      className={cn(
+                        "w-full rounded-md border px-2 py-1 text-[11.5px] transition",
+                        config.timerMin === min && customStr === ""
+                          ? "border-foreground/30 bg-foreground/[0.06] text-foreground"
+                          : "border-transparent text-ink-subtle hover:text-foreground hover:bg-foreground/[0.03]",
+                      )}
+                    >
+                      {timerLabel(min)}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="text-[11px] text-ink-subtle">Custom</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={MIN_CUSTOM_MIN}
+                  max={MAX_CUSTOM_MIN}
+                  placeholder="min"
+                  value={customStr}
+                  onChange={(e) => applyCustom(e.target.value)}
+                  className="w-16 rounded-md border border-foreground/15 bg-transparent px-2 py-1 text-[12px] tabular-nums focus:border-foreground/30 focus:outline-none"
+                  aria-label="Custom focus minutes"
+                />
+                <span className="text-[11px] text-ink-subtle">min</span>
+              </div>
             </div>
           ) : null}
 

@@ -1,8 +1,10 @@
-// Pure helpers for the Flow-mode focus session: remaining time, resume-across-
-// reload, and display formatting. Kept free of React and Web Audio so they are
-// unit-testable (see session.test.ts); the provider composes them with a tick.
+// Pure helpers for the Flow-mode focus session: sound presets, timer math,
+// resume-across-reload, and display formatting. Kept free of React and Web Audio
+// so they are unit-testable (see session.test.ts); the provider composes them.
 
-export type SoundPreset = "rain" | "wind" | "deep" | "off";
+// Each non-off preset plays a real, looped recording from /public/soundscape/.
+// Synthesized white noise (the first cut) sounded harsh; real audio is calmer.
+export type SoundPreset = "rain" | "ocean" | "forest" | "lofi" | "heartbeat" | "off";
 
 // endsAt === null means an open-ended session (no timer). A finite endsAt is an
 // epoch-millis deadline.
@@ -12,10 +14,25 @@ export type FlowSession = {
   soundOn: boolean;
 };
 
-export const SOUND_PRESETS: SoundPreset[] = ["rain", "wind", "deep", "off"];
+export const SOUND_PRESETS: SoundPreset[] = ["rain", "ocean", "forest", "lofi", "heartbeat", "off"];
 
-// Timer choices shown in the widget. 0 = open-ended (no countdown).
-export const TIMER_PRESETS_MIN = [25, 50, 90, 0] as const;
+// The looped audio file for a preset, or null for "off". Files live in
+// public/soundscape/<preset>.mp3 (mp3 for universal browser support, incl.
+// Safari). See public/soundscape/README.md for sourcing + licensing.
+export function presetSrc(preset: SoundPreset): string | null {
+  return preset === "off" ? null : `/soundscape/${preset}.mp3`;
+}
+
+// Quick timer chips. 0 = open-ended (no countdown). Any custom value is allowed
+// too via the widget's minutes input, clamped to [MIN, MAX].
+export const TIMER_QUICK_MIN = [25, 50, 90] as const;
+export const MIN_CUSTOM_MIN = 1;
+export const MAX_CUSTOM_MIN = 240;
+
+export function clampMinutes(n: number): number {
+  if (!Number.isFinite(n)) return MIN_CUSTOM_MIN;
+  return Math.max(MIN_CUSTOM_MIN, Math.min(MAX_CUSTOM_MIN, Math.round(n)));
+}
 
 export function endsAtFor(timerMin: number, now: number): number | null {
   return timerMin > 0 ? now + timerMin * 60_000 : null;

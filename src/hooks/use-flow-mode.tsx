@@ -37,6 +37,7 @@ type FlowContextValue = {
   remainingLabel: string;
   heldCount: number;
   soundResumable: boolean; // true after a reload-resume, until the next gesture
+  soundUnavailable: boolean; // the chosen track has no file yet (see README)
   config: FlowConfig;
   setConfig: (patch: Partial<FlowConfig>) => void;
   enterFlow: (patch?: Partial<FlowConfig>) => void;
@@ -105,6 +106,7 @@ export function FlowModeProvider({ children }: { children: ReactNode }) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [held, setHeld] = useState(0);
   const [soundResumable, setSoundResumable] = useState(false);
+  const [soundUnavailable, setSoundUnavailable] = useState(false);
   const [config, setConfigState] = useState<FlowConfig>(DEFAULT_CONFIG);
 
   // Latest values for the interval + completion path without resubscribing.
@@ -165,28 +167,43 @@ export function FlowModeProvider({ children }: { children: ReactNode }) {
     setEndsAt(deadline);
     setRemaining(remainingMs(deadline, now));
     setSoundResumable(false);
+    setSoundUnavailable(false);
     writeSession({ endsAt: deadline, preset: next.preset, soundOn: next.preset !== "off" });
 
-    if (next.preset !== "off") soundscape.start(next.preset, next.volume);
+    if (next.preset !== "off") {
+      void soundscape.start(next.preset, next.volume).then((ok) => {
+        if (!ok) setSoundUnavailable(true);
+      });
+    }
   }, []);
 
   const setConfig = useCallback(
     (patch: Partial<FlowConfig>) => {
-      setConfigState((prev) => {
-        const next = { ...prev, ...patch };
-        writeConfig(next);
-        if (isFlowMode) {
-          if (patch.preset !== undefined) soundscape.setPreset(next.preset, next.volume);
-          if (patch.volume !== undefined) soundscape.setVolume(next.volume);
+      const next = { ...configRef.current, ...patch };
+      setConfigState(next);
+      writeConfig(next);
+      if (!isFlowMode) return;
+      if (patch.preset !== undefined) {
+        setSoundUnavailable(false);
+        if (next.preset === "off") {
+          soundscape.stop();
+        } else {
+          void soundscape.setPreset(next.preset, next.volume).then((ok) => {
+            if (!ok) setSoundUnavailable(true);
+          });
         }
-        return next;
-      });
+      } else if (patch.volume !== undefined) {
+        soundscape.setVolume(next.volume);
+      }
     },
     [isFlowMode],
   );
 
   const resumeSound = useCallback(() => {
-    soundscape.start(configRef.current.preset, configRef.current.volume);
+    setSoundUnavailable(false);
+    void soundscape.start(configRef.current.preset, configRef.current.volume).then((ok) => {
+      if (!ok && configRef.current.preset !== "off") setSoundUnavailable(true);
+    });
     setSoundResumable(false);
   }, []);
 
@@ -214,6 +231,7 @@ export function FlowModeProvider({ children }: { children: ReactNode }) {
     remainingLabel: formatRemaining(remaining),
     heldCount: held,
     soundResumable,
+    soundUnavailable,
     config,
     setConfig,
     enterFlow,
@@ -234,6 +252,7 @@ export function useFlowMode(): FlowContextValue {
       remainingLabel: "",
       heldCount: 0,
       soundResumable: false,
+      soundUnavailable: false,
       config: DEFAULT_CONFIG,
       setConfig: () => {},
       enterFlow: () => {},
