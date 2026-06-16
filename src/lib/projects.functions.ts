@@ -49,6 +49,98 @@ export const listProjects = createServerFn({ method: "GET" })
     return { projects: stats };
   });
 
+// B3 · Portfolio — per-product loop status so an operator can run many products
+// without losing the thread. For each product in the workspace: task progress
+// plus how much sits in its loop (signals, opportunities, specs). All RLS-scoped;
+// signals/opportunities/prds and tasks all carry project_id. Read-only.
+export type PortfolioProduct = {
+  id: string;
+  name: string;
+  north_star: string | null;
+  task_done: number;
+  task_total: number;
+  progress: number;
+  signals: number;
+  opportunities: number;
+  specs: number;
+};
+
+export const getPortfolio = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ products: PortfolioProduct[] }> => {
+    const { supabase, userId } = context;
+    let workspaceId = data.workspaceId;
+    if (!workspaceId) {
+      const { data: memberRows } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (memberRows && memberRows.length > 0) workspaceId = memberRows[0].workspace_id;
+    }
+    if (!workspaceId) return { products: [] };
+
+    const { data: projects } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false });
+    const list = (projects ?? []) as { id: string; name: string; north_star?: string | null }[];
+    if (list.length === 0) return { products: [] };
+    const ids = list.map((p) => p.id);
+
+    const [tasksRes, sigRes, oppRes, prdRes] = await Promise.all([
+      supabase.from("tasks").select("status,project_id").in("project_id", ids),
+      supabase.from("signals").select("project_id").in("project_id", ids),
+      supabase.from("opportunities").select("project_id").in("project_id", ids),
+      supabase.from("prds").select("project_id").in("project_id", ids),
+    ]);
+    // Surface a failed count query instead of silently zeroing — a zero must mean
+    // "genuinely none", never "the query failed" (the route's error boundary
+    // shows a retry rather than a misleading empty portfolio).
+    const countErr = tasksRes.error || sigRes.error || oppRes.error || prdRes.error;
+    if (countErr) throw new Error(countErr.message);
+
+    const countBy = (rows: { project_id: string | null }[] | null) => {
+      const m = new Map<string, number>();
+      for (const r of rows ?? []) {
+        if (r.project_id) m.set(r.project_id, (m.get(r.project_id) ?? 0) + 1);
+      }
+      return m;
+    };
+    const sig = countBy(sigRes.data as { project_id: string | null }[] | null);
+    const opp = countBy(oppRes.data as { project_id: string | null }[] | null);
+    const prd = countBy(prdRes.data as { project_id: string | null }[] | null);
+    const taskAgg = new Map<string, { done: number; total: number }>();
+    for (const t of (tasksRes.data ?? []) as { status: string; project_id: string | null }[]) {
+      if (!t.project_id) continue;
+      const cur = taskAgg.get(t.project_id) ?? { done: 0, total: 0 };
+      cur.total += 1;
+      if (t.status === "done") cur.done += 1;
+      taskAgg.set(t.project_id, cur);
+    }
+
+    const products: PortfolioProduct[] = list.map((p) => {
+      const tk = taskAgg.get(p.id) ?? { done: 0, total: 0 };
+      return {
+        id: p.id,
+        name: p.name,
+        north_star: p.north_star ?? null,
+        task_done: tk.done,
+        task_total: tk.total,
+        progress: tk.total ? Math.round((tk.done / tk.total) * 100) : 0,
+        signals: sig.get(p.id) ?? 0,
+        opportunities: opp.get(p.id) ?? 0,
+        specs: prd.get(p.id) ?? 0,
+      };
+    });
+    return { products };
+  });
+
 const createSchema = z.object({
   name: z.string().min(1).max(200),
   north_star: z.string().max(500).nullable().optional(),

@@ -19,7 +19,7 @@ import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { SurfaceHeader, TabRow, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { listProjects } from "@/lib/projects.functions";
+import { listProjects, getPortfolio } from "@/lib/projects.functions";
 import { SignalsPanel } from "@/components/product/SignalsPanel";
 import { SignalDetail } from "@/components/product/SignalDetail";
 import { OpportunitiesPanel } from "@/components/product/OpportunitiesPanel";
@@ -94,10 +94,12 @@ export const Route = createFileRoute("/_authenticated/product")({
 function ProductPage() {
   const { tab, signal, opp } = Route.useSearch();
   const navigate = useNavigate({ from: "/product" });
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, activeProductId, setActiveProductId } = useWorkspace();
 
   const fProjects = useServerFn(listProjects);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
+  const fPortfolio = useServerFn(getPortfolio);
+  const portfolio = useQuery({ queryKey: ["portfolio"], queryFn: () => fPortfolio() });
 
   const setTab = (next: string) => navigate({ search: { tab: next as Tab } });
 
@@ -114,52 +116,141 @@ function ProductPage() {
           title="Product"
           sub="Discover, define, plan, and ship. One station for the whole product loop."
         />
-        {/* Where the work stands: per-product task progress, relocated from Today
-            (Today is not a dashboard; product-state belongs on its own station). */}
-        {(projects.data?.projects ?? []).length > 0 && (
+        {/* B3 · Portfolio — run many products without losing the thread: each
+            product with its loop status (task progress + signals/opps/specs) and
+            click-to-switch. Enriches the old "Where the work stands" band; the
+            active product is marked and the tabs below scope to it. */}
+        {(portfolio.data?.products ?? []).length > 0 && (
           <section className="bento" style={{ padding: "12px var(--card-pad)", marginBottom: 20 }}>
-            <MonoLabel icon={Target} style={{ marginBottom: 10 }}>
-              Where the work stands
-            </MonoLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {(projects.data?.projects ?? []).map((p) => (
-                <div key={p.id}>
-                  <div
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <MonoLabel icon={Target}>
+                Portfolio · {portfolio.data?.products.length} product
+                {portfolio.data?.products.length === 1 ? "" : "s"}
+              </MonoLabel>
+              {portfolio.data && portfolio.data.products.length > 1 && (
+                <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                  click to switch
+                </span>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {portfolio.data?.products.map((p) => {
+                const active = p.id === activeProductId;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setActiveProductId(p.id)}
+                    className="lift"
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: 12.5,
-                      marginBottom: 4,
-                    }}
-                  >
-                    <span style={{ color: "var(--ink-muted)" }}>{p.name}</span>
-                    <span
-                      className="mono-label tabular-nums"
-                      style={{ color: "var(--ink-subtle)" }}
-                    >
-                      {p.task_done}/{p.task_total}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: 4,
-                      borderRadius: 99,
-                      background: "var(--surface-2)",
-                      overflow: "hidden",
+                      textAlign: "left",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${active ? "var(--ember)" : "var(--hairline)"}`,
+                      background: active
+                        ? "color-mix(in oklab, var(--ember) 6%, transparent)"
+                        : "transparent",
                     }}
                   >
                     <div
                       style={{
-                        height: "100%",
-                        width: `${p.progress}%`,
-                        borderRadius: 99,
-                        background: p.progress > 75 ? "var(--ember)" : "var(--ink-subtle)",
-                        transition: "width var(--dur-slow)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        gap: 10,
                       }}
-                    />
-                  </div>
-                </div>
-              ))}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                        {active && (
+                          <span
+                            aria-hidden
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: 99,
+                              background: "var(--ember)",
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <span
+                          style={{
+                            fontSize: 13.5,
+                            color: "var(--ink)",
+                            fontWeight: active ? 600 : 500,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {p.name}
+                        </span>
+                        {active && (
+                          <span
+                            className="mono-label"
+                            style={{ color: "var(--ember)", flexShrink: 0 }}
+                          >
+                            active
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ color: "var(--ink-subtle)", flexShrink: 0 }}
+                      >
+                        {p.task_done}/{p.task_total} tasks
+                      </span>
+                    </div>
+                    {p.north_star && (
+                      <p
+                        style={{
+                          fontSize: 11.5,
+                          color: "var(--ink-subtle)",
+                          margin: "3px 0 7px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {p.north_star}
+                      </p>
+                    )}
+                    <div
+                      style={{
+                        height: 4,
+                        borderRadius: 99,
+                        background: "var(--surface-2)",
+                        overflow: "hidden",
+                        margin: p.north_star ? "0 0 8px" : "7px 0 8px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${p.progress}%`,
+                          borderRadius: 99,
+                          background: p.progress > 75 ? "var(--ember)" : "var(--ink-subtle)",
+                          transition: "width var(--dur-slow)",
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="mono-label tabular-nums"
+                      style={{ display: "flex", gap: 14, color: "var(--ink-faint)" }}
+                    >
+                      <span>{p.signals} signals</span>
+                      <span>{p.opportunities} opportunities</span>
+                      <span>{p.specs} specs</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
