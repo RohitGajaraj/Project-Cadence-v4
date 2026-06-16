@@ -4,7 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import { Sparkles, Plus, RefreshCw, Bot, Rocket, ShieldAlert, Check } from "lucide-react";
+import {
+  Sparkles,
+  Plus,
+  RefreshCw,
+  Bot,
+  Rocket,
+  ShieldAlert,
+  Check,
+  AlertTriangle,
+  Target,
+} from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { CadenceMark, MonoLabel, StepDot } from "@/components/cadence/Primitives";
@@ -22,7 +32,7 @@ import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
-import { ExecutedCard } from "@/components/today/ExecutedCard";
+import { listOpportunities } from "@/lib/discovery.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -64,6 +74,8 @@ function Dashboard() {
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
   const coldStart = useQuery({ queryKey: ["cold-start"], queryFn: () => fetchColdStart() });
   const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fetchLearnings() });
+  const fetchOpps = useServerFn(listOpportunities);
+  const opps = useQuery({ queryKey: ["opportunities"], queryFn: () => fetchOpps() });
 
   // Localized + time-of-day greeting. Passes the user's local hour so the
   // bucket matches their wall clock, not the server's UTC.
@@ -185,6 +197,16 @@ function Dashboard() {
     (l) => l.prior_ice != null && l.new_ice != null && Number(l.prior_ice) !== Number(l.new_ice),
   );
   const latestRescore = rescores[0];
+
+  // Command center: what is stuck (expired calls + failed runs) and what to push (top ICE).
+  const expiredApprovals = (ny?.approvals ?? []).filter((a) => a.escalation_state === "expired");
+  const failedRuns = runRows.filter((r) => r.status === "failed" || r.status === "error");
+  const bottleneckCount = expiredApprovals.length + failedRuns.length;
+  const topOpps = (opps.data?.opportunities ?? []).slice(0, 3) as {
+    id: string;
+    title: string;
+    ice_score: number | null;
+  }[];
 
   // Reference call-word formula: "One call is / Two calls are / N calls are".
   const callWord =
@@ -507,29 +529,127 @@ function Dashboard() {
           )}
         </section>
 
-        {/* WHILE YOU WERE AWAY — what the loop ran without your call, with the honest
-            per-tool reverse-path. Self-hides when empty; off on cold-start. The autonomy
-            progression visual now lives on the Gauntlet (/govern?tab=gauntlet). */}
-        {!isCold && <ExecutedCard />}
+        {/* COMMAND CENTER — the few things a PM acts on now: what is stuck, what to
+            push next, what changed. Each tile is one click to its station. Passive
+            activity (executed-unattended, raw runs) lives on Missions, not here. */}
+        {!isCold && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 14,
+              marginBottom: 24,
+            }}
+          >
+            {/* Bottlenecks — what is stuck and needs you */}
+            <Link
+              to="/govern"
+              search={{ tab: "approvals" }}
+              className="bento lift"
+              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
+            >
+              <MonoLabel icon={AlertTriangle}>Bottlenecks</MonoLabel>
+              <div
+                className="font-display tabular-nums"
+                style={{
+                  fontSize: 26,
+                  marginTop: 6,
+                  color: bottleneckCount > 0 ? "var(--ember)" : "var(--ink-faint)",
+                }}
+              >
+                {bottleneckCount}
+              </div>
+              <p
+                style={{
+                  fontSize: 11.5,
+                  color: "var(--ink-subtle)",
+                  marginTop: 4,
+                  lineHeight: 1.4,
+                }}
+              >
+                {bottleneckCount === 0
+                  ? "Nothing stuck. The loop is flowing."
+                  : `${expiredApprovals.length} call${expiredApprovals.length === 1 ? "" : "s"} expired, ${failedRuns.length} run${failedRuns.length === 1 ? "" : "s"} failed`}
+              </p>
+            </Link>
 
-        {/* MEMORY — the closed loop made visible (v6 Phase 0 / W5) */}
-        {latestRescore && (
-          <section className="bento" style={{ padding: "12px var(--card-pad)", marginBottom: 24 }}>
-            <MonoLabel icon={RefreshCw}>Memory · the loop closed</MonoLabel>
-            <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginTop: 6, lineHeight: 1.5 }}>
-              A {latestRescore.verdict} outcome re-scored an opportunity{" "}
-              <span style={{ color: "var(--ink)", fontWeight: 600 }}>
-                ICE {Number(latestRescore.prior_ice).toFixed(1)} →{" "}
-                {Number(latestRescore.new_ice).toFixed(1)}
-              </span>
-              {latestRescore.summary ? ` — ${latestRescore.summary}` : ""}.
-              {rescores.length > 1 && (
-                <span className="mono-label" style={{ marginLeft: 6, color: "var(--ink-faint)" }}>
-                  · {rescores.length} re-scores from recent outcomes
-                </span>
+            {/* Top priorities — the ICE-ranked opportunities to push next */}
+            <Link
+              to="/product"
+              search={{ tab: "opportunities" }}
+              className="bento lift"
+              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
+            >
+              <MonoLabel icon={Target}>Top priorities</MonoLabel>
+              {topOpps.length === 0 ? (
+                <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
+                  No opportunities ranked yet.
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {topOpps.map((o) => (
+                    <div
+                      key={o.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        fontSize: 12,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: "var(--ink-muted)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {o.title}
+                      </span>
+                      <span
+                        className="mono-label tabular-nums"
+                        style={{ color: "var(--ink-subtle)", flexShrink: 0 }}
+                      >
+                        {Number(o.ice_score ?? 0).toFixed(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
-            </p>
-          </section>
+            </Link>
+
+            {/* What changed — the latest outcome the loop recorded */}
+            <Link
+              to="/knowledge"
+              search={{ tab: "memory" }}
+              className="bento lift"
+              style={{ padding: "12px var(--card-pad)", textDecoration: "none", color: "inherit" }}
+            >
+              <MonoLabel icon={RefreshCw}>What changed</MonoLabel>
+              {latestRescore ? (
+                <p
+                  style={{
+                    fontSize: 11.5,
+                    color: "var(--ink-subtle)",
+                    marginTop: 6,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  A {latestRescore.verdict} outcome moved a priority{" "}
+                  <span style={{ color: "var(--ink)", fontWeight: 600 }}>
+                    ICE {Number(latestRescore.prior_ice).toFixed(1)} to{" "}
+                    {Number(latestRescore.new_ice).toFixed(1)}
+                  </span>
+                  .
+                </p>
+              ) : (
+                <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
+                  Nothing new since you last looked.
+                </p>
+              )}
+            </Link>
+          </div>
         )}
 
         {/* BRIEF */}
