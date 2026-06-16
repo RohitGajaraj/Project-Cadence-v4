@@ -1,13 +1,13 @@
-// M-A — the observing -> proving -> trusted progression made visible on Today.
+// M-A: the observing -> proving -> trusted progression made visible on Today.
 //
 // Reuses the Gauntlet's real Metric C (getAutonomyRatio): the share of
 // side-effecting actions the loop ran unattended vs the share it gated for your
 // call. We reflect that real ratio onto the trust ladder so the operator can SEE
 // the loop earning trust over time. Read-only and honest: a sparse window reads
-// "not enough data yet" (never an invented step), and the copy describes where
-// the loop sits without claiming an advance button or auto-advance that does not
-// exist yet. Styling follows GauntletMetricsPanel (bento, MonoLabel, serif
-// tabular headline, faint sub-line).
+// "not enough data yet" (never an invented step), and the copy only describes
+// where the loop sits today; it never points at an advance control (there is no
+// per-user advance UI). Styling follows GauntletMetricsPanel (bento, MonoLabel,
+// serif tabular headline, faint sub-line).
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Gauge, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
@@ -32,8 +32,9 @@ export function AutonomyCard() {
   const hasData = c != null && c.ratio != null;
   const stage = autonomyStage(c?.ratio ?? null);
   const idx = stageIndex(stage);
-  const pctText = c?.ratio == null ? "—" : `${Math.round(c.ratio * 100)}%`;
-  // Trend only when both windows carry data — mirror the Gauntlet's honesty.
+  // Only rendered inside the hasData branch (ratio != null), so the coalesce is safe.
+  const pctText = `${Math.round((c?.ratio ?? 0) * 100)}%`;
+  // Trend only when both windows carry data, mirroring the Gauntlet's honesty.
   const showTrend = hasData && c!.priorRatio != null;
 
   return (
