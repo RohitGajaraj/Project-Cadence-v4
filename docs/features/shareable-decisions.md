@@ -29,6 +29,7 @@ v6 §7 names a shareable decision link as the viral mechanism: proof of the swar
 - **Server fns** (`src/lib/decisions-share.functions.ts`): `setDecisionShared` / `getDecisionShareState` (authed; RLS guarantees ownership; pre-migration tolerant) and `getPublicDecision` (PUBLIC, no auth), the read behind the route.
 - **Public route** (`src/routes/d.$slug.tsx`): SSR loader → `getPublicDecision` → dynamic `head()` (og:title = the decision, og:description = the rationale snippet; static brand og:image). The app's first per-route dynamic-meta page.
 - **Share UI** (`src/components/knowledge/DecisionDetail.tsx`): the `ShareDecisionButton` in the detail header.
+- **Per-IP rate limit** (`src/lib/decisions-ratelimit.server.ts` + migration `20260616190000_p3_public_decision_ratelimit.sql`): `getPublicDecision` runs a per-IP guard *before* the read. 600 reads / 1-hour rolling window per client IP (a service-role `public_decision_rate_limits` table, the same rolling-window shape as KI-10's ingest limiter). The IP key is `cf-connecting-ip` (Cloudflare-set, unspoofable on the Workers deploy; `x-forwarded-for`/`x-real-ip` are dev fallbacks). The pure window/limit policy (`decidePublicReadRateLimit`) is unit-tested; the wrapper **fails open** on any DB error.
 
 ## Governance & guardrails
 
@@ -42,11 +43,12 @@ v6 §7 names a shareable decision link as the viral mechanism: proof of the swar
 - **Unshare** → the public link reads "private or no longer valid".
 - A random/guessed `/d/<slug>` → "private or not found" (no enumeration leak of private decisions).
 - `bun run build` green; the `/d/$slug` route is registered.
+- Rate limit (after the migration applies): a normal share-link open succeeds; hammering one shared link from a single IP past 600 reads/hour returns the "not available" page until the window rolls over. `bun test src/lib/decisions-ratelimit.test.ts` covers the policy edges.
 
 ## Known limits / out of scope
 
 - **OG image is the static brand card** (no per-decision generated image yet).
-- **No rate-limit on `/d/*`**, consistent with the repo's deferred public-route posture (KI-10); budgets/kill-switch + Cloudflare are the backstop. Add a per-IP cap before heavy promotion.
+- **Rate limiting is now in place** (per-IP, see "How it works"). It is anti-DoS, not anti-enumeration (slugs are unguessable), and a botnet rotating real IPs is out of scope; the budgets/kill-switch + Cloudflare remain the backstop for that.
 - **Until the next Lovable sync** applies the migration, the Share control shows "share · after sync" and the public route returns "not available", by design (pre-migration tolerant).
 - No attribution (owner/workspace name) on the public page, deliberately omitted for privacy; an opt-in "show my name" is a future enhancement.
 

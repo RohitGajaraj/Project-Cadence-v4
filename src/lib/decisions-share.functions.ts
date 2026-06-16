@@ -16,9 +16,35 @@
 // then the authed fns report { available: false } and the public read returns
 // null — nothing throws.
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase as anonSupabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { checkPublicDecisionRateLimit } from "@/lib/decisions-ratelimit.server";
+
+/**
+ * Resolve the caller's IP for the per-IP public-read rate limit. Cloudflare
+ * Workers sets cf-connecting-ip and overwrites it before forwarding, so a client
+ * cannot spoof it: that is the trustworthy production key. x-forwarded-for and
+ * x-real-ip are dev / non-CF fallbacks only (a client CAN set those outside a CF
+ * Workers context); they are acceptable here because the limiter fails open.
+ * Returns null when no request context / header resolves, which skips the limit.
+ */
+function getClientIp(): string | null {
+  try {
+    const cf = getRequestHeader("cf-connecting-ip");
+    if (cf) return cf.trim();
+    const xff = getRequestHeader("x-forwarded-for");
+    if (xff) return xff.split(",")[0]?.trim() || null;
+    const xreal = getRequestHeader("x-real-ip");
+    if (xreal) return xreal.trim();
+  } catch {
+    // no active request context (e.g. prerender), so fail open.
+  }
+  return null;
+}
 
 function isMissingShareColumn(e: { code?: string; message?: string } | null | undefined): boolean {
   if (!e) return false;
@@ -93,6 +119,24 @@ export type PublicDecision = {
 export const getPublicDecision = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ slug: z.string().min(6).max(64) }).parse(i))
   .handler(async ({ data }): Promise<PublicDecision | null> => {
+    // Per-IP anti-abuse guard (Phase 3). Runs BEFORE the read so a hammering
+    // client can't even reach the DB. Fail-open: only blocks when we both
+    // resolve a client IP AND it has exceeded the rolling cap. A blocked caller
+    // sees the same "not available" page as a private/missing slug, which is fine
+    // because slugs are unguessable, so this is anti-DoS, not anti-enumeration.
+    try {
+      const ip = getClientIp();
+      if (ip) {
+        const rl = await checkPublicDecisionRateLimit(
+          supabaseAdmin as unknown as SupabaseClient,
+          ip,
+        );
+        if (!rl.allowed) return null;
+      }
+    } catch {
+      // never let the limiter break a legitimate read.
+    }
+
     try {
       const { data: row, error } = await anonSupabase
         .from("decisions")
