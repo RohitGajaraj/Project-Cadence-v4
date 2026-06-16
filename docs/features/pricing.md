@@ -32,6 +32,7 @@ The proof gauntlet (v7 section 8) requires paying PMs. M-C names "plan tier + me
 - **Server fns** (`src/lib/billing.functions.ts`): `getBillingState` (authed; reads the workspace plan, owner flag, and whether Stripe is configured; pre-migration tolerant, defaults to free) and `createCheckoutSession` (authed, owner-only; creates a Stripe Checkout via the REST API over fetch, gated on `STRIPE_SECRET_KEY` + a price id). No Stripe SDK dependency.
 - **Webhook** (`src/routes/api/stripe/webhook.ts`): verifies the Stripe HMAC signature (Web Crypto, with a replay-tolerance window) and maps subscription state to `plan_tier` via the service-role client. Gated on `STRIPE_WEBHOOK_SECRET`: a 200 no-op until configured.
 - **UI** (`src/routes/_authenticated.settings.tsx`): the `BillingTab` under the new "Plan" tab.
+- **Memory expiry** (`supabase/migrations/20260616210000_mc_memory_expiry.sql`, added 2026-06-16): the actual "charge for memory persistence" enforcement. `agent_memory.expires_at` is stamped on insert by a `BEFORE INSERT` trigger from the owner's plan (free = `created_at` + 14 days, pro/team = NULL so it never expires; 14 mirrors `FREE_MEMORY_RETENTION_DAYS`). The `match_agent_memory` recall RPC hard-filters expired rows so the loop never recalls them, and the daily `memory-tick` cron (`src/routes/api/public/hooks/memory-tick.ts`) hard-deletes them. Existing rows are grandfathered (`expires_at` stays NULL), so nothing is retroactively wiped, including the demo seed. The TS write path is unchanged, so it is pre-migration tolerant.
 
 ## Configuration (founder, when ready to charge)
 
@@ -46,7 +47,7 @@ Point the Stripe webhook at `https://<app>/api/stripe/webhook` for the `checkout
 
 ## Deferred (next increments, deliberately not in this foundation)
 
-- **Memory-expiry enforcement** (the actual free-memory-expires mechanic). It touches the memory subsystem and is being kept out of this lane to stay file-disjoint from the parallel M-A Slice 2 (Today) work; it lands as a clean additive follow-up (an `expires_at` on memory + a recall-path filter) after Slice 2.
+- **Memory-expiry enforcement: DONE 2026-06-16** (migration `20260616210000`; see "Memory expiry" under How it works). It was deferred until M-A Slice 2 landed to stay file-disjoint; Slice 2 shipped (`b7215797ea`), and this followed as a clean additive change touching none of the Slice 2 files.
 - Gating Critic-everywhere and other entitlements in the product surfaces (the map exists; the gates wire incrementally, claim-never-outruns-wiring).
 - A public `/pricing` marketing page.
 
