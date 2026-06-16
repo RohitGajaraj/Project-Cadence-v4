@@ -182,6 +182,60 @@ export const getColdStart = createServerFn({ method: "GET" })
   });
 
 // ---------------------------------------------------------------------------
+// F-TODAY-LOOPPULSE — "what the loop did while you were away".
+//
+// A tight count of what the autonomous loop produced in the last 24h: new
+// signals sensed, opportunities framed, specs drafted, agent runs executed, and
+// memories distilled. Read-only, RLS-scoped (every table is keyed on user_id +
+// indexed on created_at). Each count degrades to 0 on error, so a missing column
+// can never break Today. Surfaced as one line in the Today hero — the second
+// half of the Today mandate (what needs me + what the loop did while I was away).
+
+export type LoopPulse = {
+  windowHours: number;
+  signals: number;
+  opportunities: number;
+  specs: number;
+  runs: number;
+  memories: number;
+  total: number;
+};
+
+export const getLoopPulse = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LoopPulse> => {
+    const { supabase, userId } = context;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const countSince = (table: string) =>
+      supabase
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", since);
+    const [sig, opp, prd, runs, mem] = await Promise.all([
+      countSince("signals"),
+      countSince("opportunities"),
+      countSince("prds"),
+      countSince("agent_runs"),
+      countSince("agent_memory"),
+    ]);
+    const signals = sig.count ?? 0;
+    const opportunities = opp.count ?? 0;
+    const specs = prd.count ?? 0;
+    const runsCount = runs.count ?? 0;
+    const memories = mem.count ?? 0;
+    return {
+      windowHours: 24,
+      signals,
+      opportunities,
+      specs,
+      runs: runsCount,
+      memories,
+      total: signals + opportunities + specs + runsCount + memories,
+    };
+  });
+
+// ---------------------------------------------------------------------------
 // M-A Slice 2: "Executed unattended" Today card.
 //
 // What the loop ran on its OWN (no human gate). The honest source is tool_calls:

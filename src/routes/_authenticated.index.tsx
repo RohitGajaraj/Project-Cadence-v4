@@ -29,7 +29,7 @@ import { listProjects } from "@/lib/projects.functions";
 import { generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
 import { getGreeting } from "@/lib/greeting.functions";
-import { getNeedsYou, getColdStart } from "@/lib/today.functions";
+import { getNeedsYou, getColdStart, getLoopPulse } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { listLearnings } from "@/lib/outcome.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
@@ -60,6 +60,7 @@ function Dashboard() {
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
   const fetchColdStart = useServerFn(getColdStart);
+  const fetchLoopPulse = useServerFn(getLoopPulse);
   const fetchLearnings = useServerFn(listLearnings);
   const fetchAcceptance = useServerFn(getAcceptanceRate);
   const fetchAutonomy = useServerFn(getAutonomyRatio);
@@ -80,6 +81,7 @@ function Dashboard() {
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
   const coldStart = useQuery({ queryKey: ["cold-start"], queryFn: () => fetchColdStart() });
+  const loopPulse = useQuery({ queryKey: ["loop-pulse"], queryFn: () => fetchLoopPulse() });
   const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fetchLearnings() });
   const fetchOpps = useServerFn(listOpportunities);
   const opps = useQuery({ queryKey: ["opportunities"], queryFn: () => fetchOpps() });
@@ -270,6 +272,23 @@ function Dashboard() {
         `${callCount} calls are`;
   const spend = ny?.spendTodayUsd ?? 0;
   const spendLabel = spend > 0 && spend < 0.01 ? "<$0.01" : `$${spend.toFixed(2)}`;
+
+  // F-TODAY-LOOPPULSE — "what the loop did while you were away" (last 24h). Only
+  // the non-zero parts render; the whole line is hidden when nothing happened, so
+  // it stays a tight signal in the hero, never noise.
+  const lp = loopPulse.data;
+  const pulseParts = lp
+    ? [
+        lp.signals > 0 ? `${lp.signals} signal${lp.signals === 1 ? "" : "s"}` : null,
+        lp.opportunities > 0
+          ? `${lp.opportunities} ${lp.opportunities === 1 ? "opportunity" : "opportunities"}`
+          : null,
+        lp.specs > 0 ? `${lp.specs} spec${lp.specs === 1 ? "" : "s"}` : null,
+        lp.runs > 0 ? `${lp.runs} agent run${lp.runs === 1 ? "" : "s"}` : null,
+        lp.memories > 0 ? `${lp.memories} ${lp.memories === 1 ? "memory" : "memories"}` : null,
+      ].filter(Boolean)
+    : [];
+  const showPulse = !isCold && !!lp && lp.total > 0 && pulseParts.length > 0;
   const totalCalls = callCount + clearedSession;
   const briefRow = d?.brief as { summary?: string | null; created_at?: string } | null | undefined;
 
@@ -407,6 +426,30 @@ function Dashboard() {
                   </span>
                 ))}
               </div>
+              {showPulse && (
+                <div
+                  className="mono-label"
+                  title="What the autonomous loop produced in the last 24 hours"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    marginTop: 12,
+                    maxWidth: 540,
+                    color: "color-mix(in oklab, var(--hero-ink) 60%, transparent)",
+                  }}
+                >
+                  <Activity size={11} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                  <span
+                    style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    <strong style={{ color: "var(--hero-ink)", fontWeight: 600 }}>
+                      While you were away
+                    </strong>{" "}
+                    · {pulseParts.join(" · ")}
+                  </span>
+                </div>
+              )}
             </div>
             <div
               style={{ textAlign: "center", flexShrink: 0 }}
