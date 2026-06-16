@@ -55,6 +55,7 @@ import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as AuthenticatedBuildIndexRouteImport } from './routes/_authenticated.build.index'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioMissionIdRouteImport } from './routes/_authenticated.studio.$missionId'
@@ -308,6 +309,11 @@ const AuthenticatedBuildIndexRoute = AuthenticatedBuildIndexRouteImport.update({
   path: '/build/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestSignalsRoute = ApiPublicIngestSignalsRouteImport.update({
   id: '/api/public/ingest-signals',
   path: '/api/public/ingest-signals',
@@ -466,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build/': typeof AuthenticatedBuildIndexRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
@@ -531,6 +538,7 @@ export interface FileRoutesByTo {
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build': typeof AuthenticatedBuildIndexRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
@@ -599,6 +607,7 @@ export interface FileRoutesById {
   '/_authenticated/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_authenticated/build/': typeof AuthenticatedBuildIndexRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/api/stripe/webhook'
     | '/build/'
     | '/missions/'
     | '/prds/'
@@ -732,6 +742,7 @@ export interface FileRouteTypes {
     | '/studio/$missionId'
     | '/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/api/stripe/webhook'
     | '/build'
     | '/missions'
     | '/prds'
@@ -799,6 +810,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studio/$missionId'
     | '/_authenticated/traces/$traceId'
     | '/api/public/ingest-signals'
+    | '/api/stripe/webhook'
     | '/_authenticated/build/'
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
@@ -827,6 +839,7 @@ export interface RootRouteChildren {
   DSlugRoute: typeof DSlugRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
@@ -1165,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuildIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest-signals': {
       id: '/api/public/ingest-signals'
       path: '/api/public/ingest-signals'
@@ -1438,6 +1458,7 @@ const rootRouteChildren: RootRouteChildren = {
   DSlugRoute: DSlugRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,

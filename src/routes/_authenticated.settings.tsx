@@ -40,8 +40,10 @@ import {
   ConnectorDetail,
 } from "@/components/connections/AccountConnectionsSection";
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/connectors/registry";
+import { getBillingState, createCheckoutSession, type BillingState } from "@/lib/billing.functions";
+import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 
-type SectionId = "connections" | "ai" | "staff" | "workspace" | "profile";
+type SectionId = "connections" | "ai" | "staff" | "workspace" | "billing" | "profile";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile);
 // "Connections" is the reference's "Connectors" (the /sync surface owns that
@@ -52,6 +54,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "ai", label: "Models" },
   { id: "staff", label: "Staff" },
   { id: "workspace", label: "Workspace" },
+  { id: "billing", label: "Plan" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -79,9 +82,12 @@ function normalizeConnector(raw: string | undefined): ProviderId | undefined {
 }
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  validateSearch: (search: Record<string, unknown>): { section?: string; connector?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { section?: string; connector?: string; checkout?: string } => ({
     section: typeof search.section === "string" ? search.section : undefined,
     connector: typeof search.connector === "string" ? search.connector : undefined,
+    checkout: typeof search.checkout === "string" ? search.checkout : undefined,
   }),
   component: SettingsPage,
   head: () => ({ meta: [{ title: "Cadence" }] }),
@@ -105,7 +111,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 function SettingsPage() {
-  const { section, connector } = Route.useSearch();
+  const { section, connector, checkout } = Route.useSearch();
   const active = normalizeSection(section);
   const activeConnector = active === "connections" ? normalizeConnector(connector) : undefined;
   const navigate = useNavigate({ from: "/settings" });
@@ -141,9 +147,149 @@ function SettingsPage() {
         {active === "ai" && <ModelsTab />}
         {active === "staff" && <StaffTab />}
         {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
+        {active === "billing" && <BillingTab checkout={checkout} />}
         {active === "profile" && <ProfileTab />}
       </div>
     </AppShell>
+  );
+}
+
+/* ---- Plan — M-C billing: the current plan, the three tiers, and an upgrade CTA.
+   getBillingState reads workspaces.plan_tier (set only by the Stripe webhook);
+   "Upgrade" starts a Stripe Checkout via createCheckoutSession. Degrades to an
+   honest "billing not connected yet" until the founder wires Stripe keys, so the
+   surface ships now and charges nothing. ---- */
+
+function BillingTab({ checkout }: { checkout?: string }) {
+  const qc = useQueryClient();
+  const fGetBilling = useServerFn(getBillingState);
+  const fCheckout = useServerFn(createCheckoutSession);
+
+  const billing = useQuery({
+    queryKey: ["billing"],
+    queryFn: () => fGetBilling({ data: {} }),
+  });
+
+  useEffect(() => {
+    if (checkout === "success") {
+      toast.success("You are on Pro. Your decision memory now persists.");
+      qc.invalidateQueries({ queryKey: ["billing"] });
+    } else if (checkout === "cancel") {
+      toast("Checkout canceled. You are still on your current plan.");
+    }
+  }, [checkout, qc]);
+
+  const upgrade = useMutation({
+    mutationFn: (tier: "pro" | "team") => fCheckout({ data: { tier } }),
+    onSuccess: (res) => {
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      toast(
+        res.reason ||
+          (res.configured ? "Could not start checkout." : "Billing is not connected yet."),
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Checkout failed."),
+  });
+
+  const state: BillingState | undefined = billing.data;
+  const currentTier: PlanTier = state?.planTier ?? "free";
+  const current = planPresentation(currentTier);
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Current plan
+        </div>
+        <div className="font-display" style={{ fontSize: 20, marginTop: 4 }}>
+          {current.name}
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "6px 0 0" }}>
+          {current.tagline}
+        </p>
+        {state && !state.stripeConfigured && (
+          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
+            Paid plans turn on once billing is connected. Nothing is charged yet.
+          </p>
+        )}
+        {state && !state.isOwner && (
+          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
+            Only the workspace owner can change the plan.
+          </p>
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        }}
+      >
+        {PLAN_TIERS.map((tier) => {
+          const p = planPresentation(tier);
+          const isCurrent = tier === currentTier;
+          const canUpgrade = tier === "pro" && currentTier === "free" && (state?.isOwner ?? false);
+          return (
+            <div
+              key={tier}
+              className="bento"
+              style={{ padding: "var(--card-pad, 18px)", display: "flex", flexDirection: "column", gap: 10 }}
+            >
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span className="font-display" style={{ fontSize: 16 }}>
+                  {p.name}
+                </span>
+                <span className="mono-label" style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)" }}>
+                  {p.price}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>{p.tagline}</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
+                {p.highlights.map((h) => (
+                  <li key={h} style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", display: "flex", gap: 7 }}>
+                    <span
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: 99,
+                        background: "var(--ink-faint, #8a8377)",
+                        display: "inline-block",
+                        marginTop: 6,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                {isCurrent ? (
+                  <span className="mono-label" style={{ fontSize: 10, color: "var(--emerald, #2f8f6b)" }}>
+                    Your plan
+                  </span>
+                ) : canUpgrade ? (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    disabled={upgrade.isPending}
+                    onClick={() => upgrade.mutate("pro")}
+                  >
+                    {upgrade.isPending ? "Starting checkout" : "Upgrade to Pro"}
+                  </button>
+                ) : tier === "team" ? (
+                  <span className="mono-label" style={{ fontSize: 10, color: "var(--ink-faint, #8a8377)" }}>
+                    In design with partners
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
