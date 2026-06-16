@@ -53,12 +53,18 @@ agentdb*.rvf
 agentdb*.rvf*.lock
 agentdb*.lock
 .swarm/
+# Images are local-only by default (bucket map + retention:
+# docs/conventions/screenshot-placement.md). design-reference/ is re-included below.
 *.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
 src/routeTree.gen 2.ts
 
-# Local screenshots / visual artifacts (organized under docs/screenshots, kept local)
+# Local screenshots / visual artifacts (organized under docs/screenshots, kept local).
+# Where each image goes + retention: docs/conventions/screenshot-placement.md
 docs/screenshots/
-*.jpeg
 
 # Exception: canonical design-reference images ARE committed (file-placement
 # policy — docs/README.md §"Where everything lives"). The global *.png/*.jpeg
@@ -69,3 +75,4 @@ docs/screenshots/
 !design-reference/**/*.jpeg
 !design-reference/**/*.jpg
 !design-reference/**/*.gif
+!design-reference/**/*.webp
