@@ -20,6 +20,18 @@ CREATE INDEX IF NOT EXISTS agent_memory_expires_at_idx
   ON public.agent_memory (expires_at)
   WHERE expires_at IS NOT NULL;
 
+-- Dormancy flag (founder ruling 2026-06-16): the expiry enforcement ships BUILT
+-- but OFF at the prototype stage, so no plan gate actually bites yet. While this
+-- returns false the trigger never stamps expires_at, so every row stays NULL =
+-- never expires, and the recall filter + the memory-tick sweep are automatic
+-- no-ops (nothing ever has a non-null expires_at to filter or delete). To ENABLE
+-- later: CREATE OR REPLACE this to `SELECT true` in a one-line migration.
+CREATE OR REPLACE FUNCTION public.memory_expiry_enabled()
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$ SELECT false $$;
+
 -- Stamp expiry on insert from the owner's plan. 14 days mirrors
 -- FREE_MEMORY_RETENTION_DAYS in src/lib/entitlements.ts (keep the two in sync).
 CREATE OR REPLACE FUNCTION public.set_agent_memory_expiry()
@@ -31,6 +43,11 @@ AS $$
 DECLARE
   v_paid boolean;
 BEGIN
+  -- Dormant by default: while the feature is off, never stamp an expiry, so
+  -- memory never expires (the engine is built, the gate is not yet active).
+  IF NOT public.memory_expiry_enabled() THEN
+    RETURN NEW;
+  END IF;
   -- ONLY the service-role may pin an explicit expires_at (e.g. a permanent row).
   -- For every other caller the value is recomputed from the plan and any
   -- client-supplied expires_at is ignored, so a free user cannot self-grant
