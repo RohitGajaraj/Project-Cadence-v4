@@ -26,6 +26,7 @@ import { OpportunitiesPanel } from "@/components/product/OpportunitiesPanel";
 import { OpportunityDetail } from "@/components/product/OpportunityDetail";
 import { SpecsPanel } from "@/components/product/SpecsPanel";
 import { ReleasesPanel } from "@/components/product/ReleasesPanel";
+import { RoadmapBoard } from "@/components/product/RoadmapBoard";
 
 // v6 Phase 0 / W1: the Roadmap (sprint planner + capacity) and Tasks (To-Do/
 // Doing/Done kanban) tabs are deleted — they wear the clothes of a human-PM
@@ -34,20 +35,24 @@ import { ReleasesPanel } from "@/components/product/ReleasesPanel";
 // decomposed dependency graph, later. The `tasks` TABLE stays (Today's capture
 // list reads it); only the product-tab kanban + sprint planner are gone.
 // /roadmap + /tasks routes now redirect away (see those route files).
-type Tab = "signals" | "opportunities" | "specs" | "releases";
+type Tab = "signals" | "opportunities" | "roadmap" | "specs" | "releases";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "signals", label: "Signals" },
   { id: "opportunities", label: "Opportunities" },
+  { id: "roadmap", label: "Roadmap" },
   { id: "specs", label: "Specs" },
   { id: "releases", label: "Releases" },
 ];
 
 // PRODUCT_DESC from the reference; Builder → Studio → Build per the
-// 2026-06-12 renames (user-facing name only).
+// 2026-06-12 renames (user-facing name only). H2: the Roadmap is the outcome
+// commitment layer (Now/Next/Later), not the deleted task kanban.
 const PRODUCT_DESC: Record<Tab, string> = {
   signals: "Capture customer signals from anywhere; cluster them into actionable themes.",
   opportunities: "Ranked by ICE. Generate a PRD with one click when you're ready to build.",
+  roadmap:
+    "Commit opportunities to Now, Next, or Later with an outcome and a measure. ICE orders within each bucket.",
   specs: "Product requirement docs. Draft from a brief, hand off to GitHub or Build.",
   releases: "Build sessions that completed end-to-end, with duration and cost.",
 };
@@ -258,6 +263,7 @@ function ProductPage() {
 
         {tab === "signals" && (signal ? <SignalDetail id={signal} /> : <SignalsPanel />)}
         {tab === "opportunities" && (opp ? <OpportunityDetail id={opp} /> : <OpportunitiesPanel />)}
+        {tab === "roadmap" && <RoadmapBoard />}
         {tab === "specs" && <SpecsPanel />}
         {tab === "releases" && <ReleasesPanel />}
       </div>
