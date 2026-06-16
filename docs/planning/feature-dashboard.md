@@ -43,6 +43,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | I2 | Watch-the-agents-build live surface | Reserved: parallel session | 2026-06-16 | Frontend lane (brief handed off). OWNS the `build` route + `SessionTimeline.tsx` + new view components. MUST NOT touch `studio.functions.ts` / `registry.server.ts` / `loop.server.ts` / `ChangesPanel.tsx` / `CiPanel.tsx` |
 | K1 | Release notes for a shipped changeset | Claude Code (engine lane) | 2026-06-16 | migration (release_notes cols) + `generateReleaseNotes` in `studio.functions.ts` + `ChangesPanel` section. Reuses `studio` AI surface. Disjoint from I2 (its build route doesn't touch these) |
+| E8 | Loop Health Monitor | Claude Code (IA/cockpit lane) | 2026-06-16 | new `loop-health.functions.ts` (`getLoopHealth`) + new `components/cockpit/LoopHealthBanner.tsx` + wire into the Missions **index** (`_authenticated.missions.index.tsx`). Collision-free: all-new files + the missions index; does NOT touch `/build` (I2), `studio.functions.ts` (K1), or the engine. |
 
 ---
 
@@ -198,7 +199,7 @@ _The product feels coherent; the operator sees the machine._
 | F-TODAY-LOOPPULSE | Loop Pulse hero (what the loop did while you were away) | ✅ (2026-06-16) | Today's hero opens with a tight "While you were away · N signals · N opportunities · N specs · N agent runs · N memories" line (last 24h, non-zero parts only, hidden when quiet) — the second half of the Today mandate | `today.functions.ts` (`getLoopPulse`) + `_authenticated.index.tsx` hero |
 | F-IA-CULL-CALDOCS | Remove /calendar, /meetings, /docs, /sync from nav (data kept) | ⬜ | De-clutter the operator nav | Nav config |
 | F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
-| E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ⬜ | Catch a stalled loop before the user does | New health fn + surface |
+| E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | 🔨 In Dev (CC, 2026-06-16) | Catch a stalled loop before the user does | New health fn + surface |
 | B3 | Product switcher + portfolio view (⌘K) | ⬜ | Run many products without losing the thread | Header + ⌘K |
 | B5 | Archive / delete product (soft archive + hard delete w/ export) | ⬜ | Lifecycle hygiene with an audit trail | Product admin |
 | ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |
