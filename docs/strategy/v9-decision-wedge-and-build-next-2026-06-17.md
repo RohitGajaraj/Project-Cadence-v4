@@ -1,6 +1,6 @@
 # v9 - The Decision Wedge and the Build-Next Plan (decision lens + sharpened wedge + audit + what to build next)
 
-**Date: 2026-06-17. Status: CURRENT decision-lens + build-next canon.** This doc sits on top of v7 (positioning + market) and v8 (structure + build-order). It does not replace them. It adds four things they do not yet state plainly: (1) the first-principles reason the "Cursor for PM" category is real but the obvious product is a trap, (2) a sharper single launch wedge, (3) a clean competitor posture map (integrate / absorb / race / ignore), and (4) an honest audit of the current build with a concrete "what I would build next" plan grounded in the live feature dashboard.
+**Date: 2026-06-17 (revised 2026-06-17 post-founder feedback). Status: CURRENT decision-lens + build-next canon.** This doc sits on top of v7 (positioning + market) and v8 (structure + build-order). It does not replace them. It adds four things they do not yet state plainly: (1) the first-principles reason the "Cursor for PM" category is real but the obvious product is a trap, (2) a sharper single launch wedge, (3) a clean competitor posture map (integrate / absorb / race / ignore), and (4) an honest audit of the current build with a concrete "what I would build next" plan grounded in the live feature dashboard. **Section 4 reconciles v8 Fork 1 (hybrid Build) with founder feedback: the model is tiered ownership (own 100% common path by default, delegation as escape-hatch fallback), not a 50-50 rent-vs-own split.**
 
 > Born from a founder brainstorm (2026-06-16/17): a holistic read of Andrew Miklas's "Cursor for Product Managers" essay, played through the lenses of operator, PM-customer, investor, and marketer, then reconciled against what Cadence has actually shipped. Where positioning and v9 disagree, v7 wins. Where structure / surface / build-order and v9 disagree, v8 wins. v9 governs the launch wedge, the competitor posture, and the build-next priority call.
 
@@ -29,11 +29,13 @@ Cursor works because code is verifiable in seconds: it compiles or it does not, 
 
 Everything strategic follows from that one fact:
 
-1. **You cannot sell autopilot.** There is no cheap way to know the autopilot was wrong before the damage is done. This is exactly why v7's "ambient plus governed, not autonomous" correction is right, and it means the essay's autopilot framing actually over-claims relative to where Cadence has already landed.
+1. **The correct autonomy model: reversible vs. irreversible gates.** "Fully autonomous/agentic" means no human gates on *reversible* work — diff staging, self-correction after CI fail, branch rebase, re-planning. HITL (human-in-the-loop) gates only at *irreversible* boundaries: merge to main, prod deploy, spend ceiling, destructive data ops. This is not the essay's "autopilot framing" (which v7 rightly rejected); it is the governed model already encoded in Cadence's architecture. The moat lives in memory, not in avoiding human judgment.
 2. **The only way to manufacture a feedback signal is to close the loop and remember the outcome:** decision, then what shipped, then what happened, then was the reasoning right. This is not a feature. It is the whole defensibility. So "memory is the moat" is not a positioning preference; it is the *only* thing that turns this category into a business instead of a wrapper. v9 grounds v7 correction #2 in this first principle.
 3. **The product is a judgment amplifier with an audit trail, not a "Cursor for PM."** The PM's grunt work (triage, synthesis, drafting, status, task graphs) gets removed; the PM's judgment gets made faster and defensible. Sell the second thing. The first is only the on-ramp.
 
 **What the essay under-weights, and Cadence must not:** ingestion is 80% of the unglamorous work ("upload your data" hides that real signal is sparse, scattered across 15 tools, and biased to loud customers), and accountability is the adoption gate (a wrong PR is auto-caught; a wrong roadmap bet is a career event, so the human must stay accountable, which is precisely the governed model). Both validate Cadence's existing emphasis and flag SENSE plus LEARN as the un-commoditizable ends of the loop.
+
+**The product is the autonomous loop, and that is the part to say out loud (founder steer, 2026-06-17).** The felt entry is a single moment (the §2 wedge), but the *product* is the agent loop running intent to outcome: sense, decide, define, build, ship, learn, with agents executing and the human governing only at the gates that need judgment. The autonomy dial (observing, proving, trusted, ambient) is the mechanism that lets it feel progressively hands-off as trust is earned. The deepest design rule falls straight out of the oracle asymmetry above: **push autonomy hardest exactly where there is an oracle, and keep it governed exactly where there is not.** Code has an oracle (tests, CI, the build), so BUILD to QA to SHIP is the one place full autonomy is *safe*: the agent self-corrects against ground truth with no human in the inner loop. Product judgment has no oracle, so DECIDE stays human-governed at the gate. This is the precise, defensible version of "agents execute, humans govern": autonomy where truth is checkable, governance where it is not. It is also why owning the build engine and pushing it to full autonomy is *not* in tension with ambient-plus-governed; it is the same principle applied where it is safe.
 
 ---
 
@@ -77,21 +79,29 @@ In an agentic world where orchestration is commoditizing (MCP at ~97M installs, 
 
 ---
 
-## 4. The Build engine, reconciled: the hybrid spine and the end-to-end workflow
+## 4. The Build engine, reconciled: tiered ownership and the end-to-end workflow
 
-v8 Fork 1 already settled the Build question as a **hybrid spine**, and that is the right answer, more right than a binary "build it all" or "build none of it":
+v8 Fork 1 settled the Build question as a **hybrid spine**, and v9 refines it: the right model is **tiered ownership**, not a 50-50 rent-vs-own split.
 
-- **Cadence owns the common 80% path:** plan, file tree plus read plus search, multi-file diff review, per-hunk accept/reject, mid-run steering, CI read plus self-correct, review-gated in-platform merge, cost/model panel. This is built and Cursor-grade today (F-STUDIO, I1, I2, I3, J1, J2, K1 all done per the dashboard).
-- **Cadence rents the heavy 20%:** delegate-out to external coding agents (Claude Code / Cursor / Devin) under the same governance and handoff contract (BLD-04, not yet built).
-- **The correction to a naive "freeze ours and orchestrate" call:** do not freeze a working, differentiated 80% path; it is your loop-closing demo. Just **stop adding new heavy engineering to compete with Devin on the 20%.** The one justified new build (v8 Phase 3) is the sandbox plus live-preview environment, and that unblocks *your own* loop (tests + preview), it does not fight Cursor. The hybrid rule tells you exactly which 20% you never build, so you carry none of the "maintain two engines" overhead the founder rightly worried about.
+**On "why not build the whole Cursor-equivalent ourselves and keep all the revenue" (founder, 2026-06-17): mostly yes, with one precision.** First, the clarification that reframes everything: the 80/20 that matters is *agent-vs-human* (how much the agent does autonomously), not easy-task-vs-hard-task. For the work a PM actually dispatches (a new field, a screen, a workflow, a CRUD feature, copy, an integration), autonomous coding is viable *today* and the engine is already built. Three independent market facts back owning it rather than bolting on:
+- **Switching is not the barrier for this buyer.** Developers run multiple coding tools side by side (Cursor for daily editing, Claude Code for hard tasks) and re-evaluate every 2 to 4 months; the stickiness is to the *engineer's IDE*, not the PM's surface. The PM buyer is not emotionally locked to Cursor; the founder's read is correct, value wins.
+- **Consolidation is a 2026 tailwind.** ~93 apps per company, a McKinsey "consolidation wave" cutting SaaS 20 to 35% by 2027, ~70% of firms actively consolidating, CFOs demanding ROI on every renewal. "Do the whole lifecycle in one platform" is with the market, not against it.
+- **The integrated spec is the accuracy multiplier, and it is the moat a bolt-on can never have.** The single biggest determinant of autonomous-coding success is task-description quality (Devin: ~67% PR-merge on well-scoped work, ~15-30% on vague or evolving work). A standalone Cursor/Devin gets a thin ticket. Cadence feeds *its own* engine a signal-grounded, Critic-hardened, cited PRD. Owning both ends means the build engine runs on better input than anyone else's can. This is the strongest argument for owning the engine, and it exists *only* because Cadence owns the upstream.
 
-### The end-to-end workflow (the founder's question: signal to code to back, seamless, zero-friction?)
+**The one precision (the trap to avoid):** do not aspire to be "Cursor." Cursor/Devin pour hundreds of millions into the *hardest 20%* (deep refactors, ambiguous evolving work, IDE-grade ergonomics for senior engineers), exactly where even Devin still fails most and where a PM hands off to an eng team anyway. Owning *that* frontier is the misallocation, and it is what turns a believable "2-week" build into a 12-month one. So: own the autonomous *delivery* engine for PM-shaped work (already built; push it to full autonomy), and make delegate-out a **BYO-key escape hatch** for the rare heavy-eng task (the customer brings their own Cursor/Devin/Claude key through the model-agnostic chokepoint, so there is no revenue split and no margin leak; the default path stays 100% in-platform and 100% yours). This is how "everything stays inside my platform" and "keep all the revenue" both stay true without chasing a frontier you should not own.
+
+- **Cadence owns the common-path engine fully (default):** plan, file tree plus read plus search, multi-file diff review, per-hunk accept/reject, mid-run steering, CI read plus self-correct, review-gated in-platform merge, cost/model panel. This is built and Cursor-grade today (F-STUDIO, I1, I2, I3, J1, J2, K1 all done per the dashboard). This is the primary path; no timeboxing or deprecation.
+- **Cadence adds the justified 2-week investment (sandbox + live preview):** the one genuine new build is the sandboxed test execution plus live preview environment (v8 Phase 3). Cloudflare Workers cannot host on-disk worktrees or run tests locally, so integrating a sandbox service (Cloudflare Sandbox SDK, E2B, or Vercel Sandbox) closes the autonomy gap — tests run for real, preview renders for real, and self-correction after CI fail becomes a loop-driven action, not a polling wait. This is not competing with Devin; it is closing the platform's own loop.
+- **Delegation as escape-hatch fallback (not default):** only when a mission classifier flags "heavy 20%" (large diff radius, cross-service, perf-critical refactors) does Cadence delegate to external coding agents (Claude Code / Cursor / Devin) under the same governance and handoff contract (BLD-04, not yet built). Treat it as graceful degradation, not a primary path. This keeps revenue and margin predictability (no per-mission cost variance outside your control) while still handling the rare heavy case.
+- **Why tiered, not 50-50 split?** A binary "own 80%, rent 20%" creates two problems: (1) customers feel the seam (handoff failures, credential confusion, feature inconsistency), and (2) you carry the cognitive burden of two engines, even if the 20% sees low traffic. Tiered ownership means the default is seamless (100% inside), the escape hatch is explicit (only when needed, and the user knows why), and you do not carry two architectures in your head. This is what "everything stays inside the platform" means operationally.
+
+### The end-to-end workflow (founder's question: signal to code to ship, seamless, zero-friction?)
 
 Honest answer: **the spine from signal to shipped PR is largely built and seamless; the two gaps are capability gaps (delegate-out and outcome learning), not friction gaps.** The user touches the loop at exactly two governance gates, not a dozen juggling points.
 
 ```
-  SIGNAL            DECIDE                 DEFINE            BUILD (hybrid spine)        LEARN
-  ───────           ──────                 ──────            ───────────────────        ─────
+  SIGNAL            DECIDE                 DEFINE            BUILD (tiered spine)        LEARN
+  ───────           ──────                 ──────            ────────────────────        ─────
   webhook/        Scout clusters →       approved opp →    dispatchStudioSession →     merged PR →
   connector  ──►   ICE re-score →    ──►  cited PRD    ──►  plan, branch-isolate,  ──►  outcome →
   (KI-10 ✅)       Critic red-team →       (H1 ✅) →         per-hunk diff, tests,       memory
@@ -101,14 +111,17 @@ Honest answer: **the spine from signal to shipped PR is largely built and seamle
                    GATE 1: the human         (auto)         GATE 2: the human
                    makes the call                          approves the merge
                                                                 │
-                                            heavy 20% → delegate-out to Devin/Cursor (BLD-04 ⬜)
+                                      ┌─ 100% owned path (default, no seams)
+                                      │
+                                      └─ escape hatch: heavy 20% → delegate to Devin/Cursor (BLD-04 ⬜)
+                                         (only if mission classifier flags it; graceful degradation)
 ```
 
 - **The seam from PRD to coding mission is already one approval** (`dispatchStudioSession`, with a `prd -> mission` lineage edge). That is the zero-friction handoff the founder asked about, and it exists.
-- **Gap A (capability):** delegate-out to external agents for the heavy 20% (BLD-04). Until built, everything runs through the in-house engine, which is fine for the 80%. This is the rent-the-20% half of the hybrid.
+- **Gap A (justified work):** sandbox + live preview (v8 Phase 3, 2-week investment). Until built, tests run via CI polling. Once built, self-correction becomes a real loop action (tests fail, agent re-plans, re-diffs, re-submits, all in-platform). This is the work that closes the autonomy loop.
 - **Gap B (capability, and this is the moat):** the merged outcome rescoring memory is wired (W1), but real predicted-vs-actual outcome reviews (LRN-02) and cohort analytics (F-ANALYTICS) are not built. This is what actually *closes* the loop and makes memory compound. It is v8 Phase 4 and it is the highest-leverage unbuilt work.
 
-So: zero-friction at the seams that exist; the work left is adding the two capabilities, not removing juggling.
+So: zero-friction at the seams that exist; the work left is adding the two capabilities (sandbox, outcome learning), not removing juggling.
 
 ---
 
@@ -118,7 +131,7 @@ Build-state sourced from the reconciled [feature dashboard](../planning/feature-
 
 **What is genuinely good (protect and lean on these):**
 - **The autonomous engine is real and verified** (G0: 11/11 done). The loop advances unattended, memory threads and compounds (W1), governance is honest (executed-unattended audit, kill-switch, spend caps). This is better than most "agentic" vendors ship, and it is the substrate the moat needs.
-- **The Build spine is Cursor-grade and complete** (G3: 8 done). Branch isolation, per-hunk curation, live cockpit, CI gate, release notes. This is the loop-closing demo. Protect it; do not over-invest further.
+- **The Build spine is Cursor-grade and complete** (G3: 8 done). Branch isolation, per-hunk curation, live cockpit, CI gate, release notes. This is the loop-closing demo and, pushed to full autonomy, the USP (§4). Protect and deepen it for PM-shaped work; the only thing to *not* chase is the senior-eng IDE frontier.
 - **The decide-ritual exists** (Critic on opportunities DEC-02, decision card F-DEC-CARD, shareable link F-SHARE). The launch wedge (§2) is buildable from parts that already exist.
 - **The structure doctrine is sound** (v8 calm-front, Engine Room door). The product was drifting into a control room; v8 corrects it.
 
@@ -127,7 +140,7 @@ Build-state sourced from the reconciled [feature dashboard](../planning/feature-
 2. **The wedge is not yet packaged.** The Critic teardown exists as parts, not as a first-run, 10-minute, shareable moment. No persona onboarding (W6), no PLG funnel (PLG).
 3. **Interop is mis-sequenced.** MCP/API (Q1) is "later," but §3 argues it is a moat against the workspace incumbents and should be pulled forward.
 4. **Monetization rails are built but dark** (M-C-PRICE needs Stripe secrets; M-C-EXPIRY dormant). Real, but not switched on.
-5. **Over-investment risk in Build.** It is the most complete station; further heavy build there is misallocation. Freeze at clean-handoff plus the sandbox; redeploy energy to SENSE and LEARN.
+5. **Autonomy not yet fully closed in Build.** The engine is built, but *full* autonomy still needs the sandbox/preview (so self-correction is a real loop action, not CI polling) plus the BYO-key escape hatch for the heavy 20%. The misallocation to avoid is chasing the senior-eng IDE frontier; the work to do is closing the autonomy loop on PM-shaped work, then redeploying surplus to SENSE and LEARN (still the #1 gap).
 
 **The one-line verdict:** the engine and the spine are real; the *ends* of the loop (real ingestion, real outcome learning) and the *packaging* (the wedge, onboarding, interop) are the unfinished, highest-leverage work. Per the market, the last mile is the moat; closing it is the work, not catch-up.
 

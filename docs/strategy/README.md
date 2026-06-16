@@ -34,6 +34,7 @@
 | File                                           | Purpose                                                                                                                                                                                                                                                          |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [session-decisions.md](./session-decisions.md) | Running log of major strategic decisions, tradeoffs evaluated, and facts presented across sessions. Read this to understand _why_ things are the way they are without re-reading conversation history. Updated every session that produces a strategic decision. |
+| [strategic-inputs-log.md](./strategic-inputs-log.md) | Living, append-forward record of the **raw strategic reasoning and brainstorm inputs** that fed the canon (the operator/PM/investor/marketer lenses, the arguments, the evidence) preserved in original form, not just the distilled conclusion. The source narrative for **fundraising and incubator applications (YC, accelerators, investor memos)**. Updated in the same session any strategic input surfaces. |
 
 ---
 
