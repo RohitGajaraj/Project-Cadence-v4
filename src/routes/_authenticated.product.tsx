@@ -14,10 +14,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Compass } from "lucide-react";
+import { Compass, Target } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
+import { SurfaceHeader, TabRow, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { SignalsPanel } from "@/components/product/SignalsPanel";
@@ -114,6 +114,55 @@ function ProductPage() {
           title="Product"
           sub="Discover, define, plan, and ship. One station for the whole product loop."
         />
+        {/* Where the work stands: per-product task progress, relocated from Today
+            (Today is not a dashboard; product-state belongs on its own station). */}
+        {(projects.data?.projects ?? []).length > 0 && (
+          <section className="bento" style={{ padding: "12px var(--card-pad)", marginBottom: 20 }}>
+            <MonoLabel icon={Target} style={{ marginBottom: 10 }}>
+              Where the work stands
+            </MonoLabel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(projects.data?.projects ?? []).map((p) => (
+                <div key={p.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: 12.5,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span style={{ color: "var(--ink-muted)" }}>{p.name}</span>
+                    <span
+                      className="mono-label tabular-nums"
+                      style={{ color: "var(--ink-subtle)" }}
+                    >
+                      {p.task_done}/{p.task_total}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 4,
+                      borderRadius: 99,
+                      background: "var(--surface-2)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${p.progress}%`,
+                        borderRadius: 99,
+                        background: p.progress > 75 ? "var(--ember)" : "var(--ink-subtle)",
+                        transition: "width var(--dur-slow)",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <TabRow tabs={TABS} active={tab} onSet={setTab} desc={PRODUCT_DESC} />
 
         {tab === "signals" && (signal ? <SignalDetail id={signal} /> : <SignalsPanel />)}
