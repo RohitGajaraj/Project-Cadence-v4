@@ -75,7 +75,7 @@ export function MemoryPanel() {
   if (learnings.isError) {
     return (
       <div className="bento" style={{ padding: "var(--card-pad)" }}>
-        <MonoLabel style={{ marginBottom: 8 }}>memory · failed to load</MonoLabel>
+        <MonoLabel style={{ marginBottom: 8 }}>learnings · failed to load</MonoLabel>
         <p style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 12 }}>
           {(learnings.error as Error).message}
         </p>

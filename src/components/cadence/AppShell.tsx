@@ -99,9 +99,11 @@ const groups: NavGroup[] = [
     label: "Knowledge",
     items: [{ to: "/knowledge", label: "Knowledge", icon: BookOpen }],
   },
-  // /memory - the compounding-memory view (what the loop recalls). Separate
-  // from Knowledge > Memory (the human-recorded learnings feed); this is the
-  // agent_memory store the loop reads on its next run.
+  // /memory - the compounding-memory view (what the loop recalls): the moat,
+  // keeps the name "Memory". Separate from Knowledge > Learnings (the
+  // human-recorded learnings feed, renamed from "Memory" in the Phase-2 IA
+  // de-collision, 2026-06-16); this is the agent_memory store the loop reads
+  // on its next run.
   {
     id: "memory",
     label: "Memory",
@@ -111,14 +113,15 @@ const groups: NavGroup[] = [
 
 // Trust row — pinned governance shortcuts in the sidebar footer. With the
 // Govern nav group mothballed (F-V5-MOTHBALL), this is the only visible path
-// into the engine room — keep it visible.
+// into the engine room — keep it visible. Approvals is intentionally NOT here:
+// it lives once in the daily rail above (badged with the live call count), so
+// the sidebar single-sources it (Phase-2 IA de-dup, 2026-06-16).
 const trustLinks: {
   to: string;
   label: string;
   icon: LucideIcon;
   search?: Record<string, string>;
 }[] = [
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/govern", label: "Budgets", icon: Gauge, search: { tab: "budgets" } },
   { to: "/govern", label: "Engine Room", icon: ShieldAlert },
   { to: "/sync", label: "Connectors", icon: Plug },

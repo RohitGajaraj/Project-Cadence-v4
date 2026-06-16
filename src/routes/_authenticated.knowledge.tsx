@@ -1,7 +1,7 @@
 // Knowledge — screen 5 of the Ember Editorial migration, ported 1:1 from
 // design-reference/cadence/loop.jsx (KnowledgeScreen): kicker "Loop · Learn",
 // serif h1, the Company-brain strip (REAL counts only — getBrainStatus +
-// getCompanyBrainStats), TabRow Calendar | Memory | Decisions | Docs with
+// getCompanyBrainStats), TabRow Calendar | Learnings | Decisions | Docs with
 // KNOWLEDGE_DESC lines. Production contracts ride the reference layout:
 // ?tab= + ?meeting= search params, panel-level server-function wiring.
 // Screen-6 drill contract: detail state rides optional search params
@@ -116,7 +116,7 @@ function KnowledgePage() {
           kicker="Loop · Learn"
           icon={BookOpen}
           title="Knowledge"
-          sub="What the swarm knows. Calendar, memory, decisions, docs in one place."
+          sub="What the swarm knows. Calendar, learnings, decisions, docs in one place."
         />
 
         {/* Company brain strip — one consolidated substrate, queryable from Chat. */}
@@ -157,7 +157,7 @@ function KnowledgePage() {
         <TabRow
           tabs={[
             { id: "calendar", label: "Calendar" },
-            { id: "memory", label: "Memory" },
+            { id: "memory", label: "Learnings" },
             { id: "decisions", label: "Decisions" },
             { id: "docs", label: "Docs" },
           ]}
