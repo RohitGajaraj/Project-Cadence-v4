@@ -140,6 +140,7 @@ export type Database = {
           content: string
           created_at: string
           embedding: string | null
+          expires_at: string | null
           id: string
           importance: number
           kind: string
@@ -155,6 +156,7 @@ export type Database = {
           content: string
           created_at?: string
           embedding?: string | null
+          expires_at?: string | null
           id?: string
           importance?: number
           kind?: string
@@ -170,6 +172,7 @@ export type Database = {
           content?: string
           created_at?: string
           embedding?: string | null
+          expires_at?: string | null
           id?: string
           importance?: number
           kind?: string
@@ -2175,6 +2178,68 @@ export type Database = {
           },
         ]
       }
+      ingest_rate_limits: {
+        Row: {
+          id: string
+          request_count: number
+          token_id: string
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          id?: string
+          request_count?: number
+          token_id: string
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          id?: string
+          request_count?: number
+          token_id?: string
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_rate_limits_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: true
+            referencedRelation: "ingest_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingest_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string | null
+          revoked_at: string | null
+          token: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          token: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       kill_switches: {
         Row: {
           created_at: string
@@ -2565,6 +2630,9 @@ export type Database = {
           problem: string
           product_id: string | null
           project_id: string | null
+          roadmap_bucket: string | null
+          roadmap_measure: string | null
+          roadmap_outcome: string | null
           status: string
           target_user: string | null
           theme_id: string | null
@@ -2585,6 +2653,9 @@ export type Database = {
           problem?: string
           product_id?: string | null
           project_id?: string | null
+          roadmap_bucket?: string | null
+          roadmap_measure?: string | null
+          roadmap_outcome?: string | null
           status?: string
           target_user?: string | null
           theme_id?: string | null
@@ -2605,6 +2676,9 @@ export type Database = {
           problem?: string
           product_id?: string | null
           project_id?: string | null
+          roadmap_bucket?: string | null
+          roadmap_measure?: string | null
+          roadmap_outcome?: string | null
           status?: string
           target_user?: string | null
           theme_id?: string | null
@@ -2755,6 +2829,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           name: string
@@ -2766,6 +2841,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name: string
@@ -2777,6 +2853,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -3191,6 +3268,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_decision_rate_limits: {
+        Row: {
+          client_ip: string
+          id: string
+          request_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          client_ip: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          client_ip?: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       rag_chunks: {
         Row: {
@@ -4036,7 +4137,11 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          plan_tier: string
+          plan_updated_at: string | null
           slug: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
         }
         Insert: {
@@ -4044,7 +4149,11 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          plan_tier?: string
+          plan_updated_at?: string | null
           slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -4052,7 +4161,11 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          plan_tier?: string
+          plan_updated_at?: string | null
           slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4141,6 +4254,7 @@ export type Database = {
           title: string
         }[]
       }
+      memory_expiry_enabled: { Args: never; Returns: boolean }
       next_ready_mission_steps: {
         Args: { p_mission_id: string }
         Returns: {
