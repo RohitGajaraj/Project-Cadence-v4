@@ -29,13 +29,16 @@ export type Database = {
           escalation_state: string
           expires_at: string | null
           id: string
+          mission_id: string | null
           rationale: string | null
           result: Json | null
+          run_id: string | null
           status: string
           tool_name: string
           trace_id: string | null
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           agent_id?: string | null
@@ -51,13 +54,16 @@ export type Database = {
           escalation_state?: string
           expires_at?: string | null
           id?: string
+          mission_id?: string | null
           rationale?: string | null
           result?: Json | null
+          run_id?: string | null
           status?: string
           tool_name: string
           trace_id?: string | null
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string | null
@@ -73,13 +79,16 @@ export type Database = {
           escalation_state?: string
           expires_at?: string | null
           id?: string
+          mission_id?: string | null
           rationale?: string | null
           result?: Json | null
+          run_id?: string | null
           status?: string
           tool_name?: string
           trace_id?: string | null
           updated_at?: string
           user_id?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -294,6 +303,7 @@ export type Database = {
           mission_id: string | null
           mission_spend_cap_usd: number | null
           mission_token_cap: number | null
+          model: string | null
           output: string | null
           spend_used_usd: number
           status: string
@@ -316,6 +326,7 @@ export type Database = {
           mission_id?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
+          model?: string | null
           output?: string | null
           spend_used_usd?: number
           status?: string
@@ -338,6 +349,7 @@ export type Database = {
           mission_id?: string | null
           mission_spend_cap_usd?: number | null
           mission_token_cap?: number | null
+          model?: string | null
           output?: string | null
           spend_used_usd?: number
           status?: string
@@ -3401,6 +3413,165 @@ export type Database = {
           },
         ]
       }
+      studio_changes: {
+        Row: {
+          base_content: string | null
+          base_sha: string | null
+          changeset_id: string
+          created_at: string
+          id: string
+          new_content: string | null
+          op: string
+          path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_content?: string | null
+          base_sha?: string | null
+          changeset_id: string
+          created_at?: string
+          id?: string
+          new_content?: string | null
+          op: string
+          path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_content?: string | null
+          base_sha?: string | null
+          changeset_id?: string
+          created_at?: string
+          id?: string
+          new_content?: string | null
+          op?: string
+          path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_changes_changeset_id_fkey"
+            columns: ["changeset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_changesets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_changeset_revisions: {
+        Row: {
+          changeset_id: string
+          commit_sha: string
+          commit_url: string | null
+          created_at: string
+          files: Json
+          id: string
+          message: string
+          revision_no: number
+          user_id: string
+        }
+        Insert: {
+          changeset_id: string
+          commit_sha: string
+          commit_url?: string | null
+          created_at?: string
+          files?: Json
+          id?: string
+          message?: string
+          revision_no: number
+          user_id: string
+        }
+        Update: {
+          changeset_id?: string
+          commit_sha?: string
+          commit_url?: string | null
+          created_at?: string
+          files?: Json
+          id?: string
+          message?: string
+          revision_no?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_changeset_revisions_changeset_id_fkey"
+            columns: ["changeset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_changesets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_changesets: {
+        Row: {
+          base_sha: string | null
+          branch: string | null
+          created_at: string
+          id: string
+          mission_id: string | null
+          pr_number: number | null
+          pr_url: string | null
+          product_id: string | null
+          release_notes: string | null
+          release_notes_at: string | null
+          repo: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          base_sha?: string | null
+          branch?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string | null
+          pr_number?: number | null
+          pr_url?: string | null
+          product_id?: string | null
+          release_notes?: string | null
+          release_notes_at?: string | null
+          repo: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          base_sha?: string | null
+          branch?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string | null
+          pr_number?: number | null
+          pr_url?: string | null
+          product_id?: string | null
+          release_notes?: string | null
+          release_notes_at?: string | null
+          repo?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_changesets_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_mappings: {
         Row: {
           conflict: boolean
@@ -4039,6 +4210,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      seed_studio_tools: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       calendar_provider: "google" | "microsoft"
