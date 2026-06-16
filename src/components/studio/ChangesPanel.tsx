@@ -254,14 +254,22 @@ export function ChangesPanel({
                   target="_blank"
                   rel="noreferrer"
                   className="mono-label"
-                  style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--ink-muted)" }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10.5,
+                    color: "var(--ink-muted)",
+                  }}
                 >
                   {r.commit_sha.slice(0, 7)}
                 </a>
               ) : (
                 <span
                   className="mono-label"
-                  style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--ink-subtle)" }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10.5,
+                    color: "var(--ink-subtle)",
+                  }}
                 >
                   {r.commit_sha.slice(0, 7)}
                 </span>

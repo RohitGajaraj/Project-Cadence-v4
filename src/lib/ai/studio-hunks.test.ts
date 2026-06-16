@@ -57,7 +57,13 @@ describe("applyHunkSelection", () => {
     const b = "a\nb\n";
     const m = "a\nB\n";
     expect(applyHunkSelection(b, m, [])).toBe(m);
-    expect(applyHunkSelection(b, m, computeHunks(b, m).map((h) => h.id))).toBe(b);
+    expect(
+      applyHunkSelection(
+        b,
+        m,
+        computeHunks(b, m).map((h) => h.id),
+      ),
+    ).toBe(b);
   });
 
   test("unknown rejected ids are ignored (no crash, treated as accept)", () => {
