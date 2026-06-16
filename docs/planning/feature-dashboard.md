@@ -1,0 +1,253 @@
+# Feature Dashboard - the single live status board (master sheet)
+
+> **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
+>
+> **Last updated:** 2026-06-16 · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+
+---
+
+## ⛔ STANDING RULE - read this BEFORE starting any feature work (non-negotiable)
+
+Every tool (Claude Code · Antigravity · Gemini · Lovable · a future session) **must** do this before touching any feature:
+
+1. **`git pull origin main`**, then **read this dashboard.** It is checked before any activity starts, exactly so a new or parallel session knows what is already in flight or already deferred and does not collide or redo.
+2. **Respect the claims.** If a row is `🔨 In Dev`, another session may be on it - do not start it. Pick a different row, or coordinate. Check the **Active claims** table below first.
+3. **On pickup:** flip that row's status to `🔨 In Dev (<tool>, YYYY-MM-DD)`, add a line to the **Active claims** table, and commit + push immediately so others see the claim. Same commit, before you write feature code.
+4. **On completion:** flip the row to `✅ (YYYY-MM-DD · <commit>)`, remove the Active-claims line, and update the linked detail doc + `plan.md` §4 in the same unit of work (the closed-doc loop).
+5. **On pause/defer/block:** flip to `⏸️`, `⏭️`, or `🚧` with a one-line reason in the row.
+
+> This is the same shared-cursor discipline as the Live status board in [`feature-backlog.md`](./feature-backlog.md); this page is the human-readable master view of it. When they disagree, fix both in the same commit.
+
+### How to pick something up
+Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent resolves the ID here → reads the **Cue** → opens the linked detail → builds. The IDs are stable and shared with [`feature-backlog.md`](./feature-backlog.md) and [`v7-build-status.md`](./v7-build-status.md).
+
+### Status legend
+| Mark | Meaning |
+| --- | --- |
+| ✅ | **Done** - built, on `main`, verified (date · commit where known) |
+| 🔨 | **In Development** - actively being built this/another session (see Active claims) |
+| ◐ | **Partial** - foundation built, real remaining work; row says what's left |
+| ⏸️ | **Paused** - started or built but intentionally idle, with a reason |
+| ⏭️ | **Deferred** - deliberately not now (gate/sequence reason) |
+| 🚧 | **Blocked** - cannot proceed until a dependency clears (often a `KI-` or a founder action) |
+| ⬜ | **Pending** - not started, ready to pick up |
+| ⚠️ | **Verify** - docs conflict on whether this is done; confirm against the live build before acting |
+
+---
+
+## Active claims (who is on what, right now)
+
+> Keep this table empty when nothing is in flight. Add a row the moment you pick something up.
+
+| ID | Feature | Tool / session | Since | Notes |
+| --- | --- | --- | --- | --- |
+| _(none)_ | | | | No feature currently claimed as In Dev. |
+
+---
+
+## At a glance
+
+| Group | ✅ Done | ◐ Partial | ⏸️/⏭️/🚧 | ⬜ Pending |
+| --- | --- | --- | --- | --- |
+| G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
+| G1 Sense & Discovery | 3 | 1 | 1 | 7 |
+| G2 Decide & Plan | 5 | 0 | 0 | 3 |
+| G3 Build → QA → Ship | 1 | 2 | 0 | 8 |
+| G4 Launch & Learn | 0 | 1 | 0 | 7 |
+| G5 Monetize & Growth | 1 | 1 | 2 | 2 |
+| G6 Interop & Team | 0 | 1 | 0 | 4 |
+| G7 Cockpit, IA & Observability | 3 | 1 | 0 | 12 |
+| G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
+| G9 Platform & Foundation | 5 | 0 | 1 | 2 |
+
+The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
+
+---
+
+## G0 - Core loop & memory (the engine)
+_The autonomous spine. Built and code/live-verified. Do not rebuild; extend via the groups below._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-AGENT-1 | Orchestrator + multi-agent missions | ✅ | The mission DAG that runs the whole loop | [`features/f-agent-1-orchestrator.md`](../features/f-agent-1-orchestrator.md) |
+| F-AGENT-2 | Persistent memory + self-reflection + trust auto-advance | ✅ | Agents remember and earn autonomy; the moat's substrate | [`features/f-agent-2-memory-reflection.md`](../features/f-agent-2-memory-reflection.md) |
+| F-AGENT-3 | Event reactor + auto-pipelines | ✅ | Signals trigger missions with no human poke | [`features/f-agent-3-event-reactor.md`](../features/f-agent-3-event-reactor.md) |
+| F-AGENT-4 | Swarm HUD | ✅ | See the agent mesh working (Missions → Agents tab) | [`features/f-agent-4-swarm-hud.md`](../features/f-agent-4-swarm-hud.md) |
+| P1-AA | Deterministic auto-advance | ✅ | Missions advance unattended past wave 0 | `src/lib/ai/mission-advance.server.ts` |
+| P1-RETRY | Bounded hop retry | ✅ | A failed hop retries with backoff, not a dead mission | `src/lib/ai/retry.ts` |
+| P1-BUDGET | Adaptive step budget | ✅ | Step budget scales to role/arc, not a static cap | `src/lib/ai/budget.ts` |
+| W1 | Memory-compounding loop | ✅ | Outcomes distil into recallable memory across agents (the moat wired) | `src/lib/ai/outcome-memory.ts` |
+| W2 | Executed-unattended audit | ✅ | The cockpit shows what the loop ran without you | `ExecutedCard` · Missions |
+| W3 | A2A hardening + moat on cockpit | ✅ | Handoffs validate memory refs; outcomes-remembered count shown | `enqueueHandoff` · Swarm HUD |
+| M-0 | Loop runs end-to-end on live data | ✅ (2026-06-15) | Plan → dispatch → specialist execution confirmed live (hollow-completion fixed) | [`v7-build-status.md`](./v7-build-status.md) |
+
+---
+
+## G1 - Sense & Discovery
+_Get real signal in, cluster it, keep it fresh._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| KI-10 | Ingest webhook + per-token rate limit | ✅ (2026-06-16) | One secure live ingest path for public use | [`features/ingest-webhook.md`](../features/ingest-webhook.md) |
+| F-BRAIN | Brain (web + workspace research) | ✅ | Perplexity-grade research feeding decisions | [`features/brain.md`](../features/brain.md) |
+| F-CONN | Connector platform (OAuth) | ⏸️ Parked | The connector engine is built; **parked** pending founder OAuth-client registration | `src/lib/connectors/` · [`architecture/integrations.md`](../../architecture/integrations.md) |
+| SEN-01 | Connector dock: 2nd live ingest (Slack / GitHub issues / support) | ⬜ (M-A) | The loop needs ≥2 real sources to close on real data | Register one provider OAuth client → adapter in `src/lib/connectors/` |
+| F3 | Continuous discovery feed | ◐ Partial | Always-fresh per-product feed + incremental re-cluster (Scout ingest is manual today) | Extend discovery functions; feed UI on `/prds` discovery |
+| N2 | Re-score + insight memo + daily brief | ⬜ | Outcomes re-rank opportunities; brief surfaces in Today | `lineage.functions.ts` + Today |
+| O1 | Knowledge graph + query | ⬜ | Typed signals→themes→opps→decisions→outcomes; "why is this on the roadmap?" | New graph tables + query fn |
+| O3 | Fact currency/drift + skill packs | ⬜ | Flag stale facts; export versioned skill bundles over MCP | Depends on O1 + Q1 |
+| SEN-04 | Researcher watchtower (competitor crawl briefs) | ⬜ (M2) | Ambient competitive signal without manual research | Firecrawl crawl + scheduled brief |
+| SEN-05 | Quant analytics inbound (PostHog/Amplitude/Mixpanel) | ⬜ (M2) | Product metrics as first-class signal | Connector adapter + `product_analytics` |
+| F-AUDIO-1 | Speech transcription + chunking | ⬜ | Upload meeting audio → transcript → diarized chunks | Whisper pipeline + storage |
+| F-AUDIO-2 | Action-item / ticket extraction from transcripts | ⬜ | Meetings become drafted opportunities/PRDs citing the transcript | Depends on F-AUDIO-1 |
+
+---
+
+## G2 - Decide & Plan
+_Turn signal into governed decisions and specs._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-CHAT-NL-INTENT | Conversational command of the swarm | ✅ | Drive missions in natural language | `src/routes/api/chat.ts` |
+| H1 | PRD / spec generation | ✅ (2026-06-14) | Cited specs from opportunities | discovery/lineage functions |
+| DEF-03 | Critic-on-spec red team | ✅ (2026-06-14) | Specs get an adversarial pass before commit | Critic inline call |
+| F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
+| F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
+| H2 | Outcome roadmap (Now/Next/Later) | ⬜ | Each item declares an outcome + measure; drag-reorder board | `@dnd-kit` board on `/roadmap` |
+| H3 | Scheduling (calendar-aware work blocks) | ⬜ | Agent proposes work within working hours | Calendar read + proposal fn |
+| D4 | Cancellation / replay-and-branch / checkpoints | ⬜ | Stop mid-run, re-run with a different model/prompt, diff the result | Mission control + loop checkpoints |
+
+---
+
+## G3 - Build → QA → Ship (the autonomous execution chain)
+_The biggest pending block and the core differentiator: genuine end-to-end execution. Some of this exists via the Build engine (F-STUDIO); verify overlap before building._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-STUDIO | Build engine (repo reads, multi-file changesets, `studio/*` branches, PR + CI, gated merge) | ✅ | The green path that ships real code | [`features/studio.md`](../features/studio.md) |
+| I1 | Studio multi-file coding (per-hunk accept/reject, atomic revisions) | ◐ Partial (verified 2026-06-16) | Multi-file changesets ship (`studioStage`, up to 20 files/changeset). Remaining: per-hunk accept/reject + true revision history (today only linear re-stage onto the branch) | `tools/registry.server.ts` (studioStage) + `ChangesPanel.tsx` |
+| I2 | Watch-the-agents-build live surface | ⬜ | Live per-session view (step, files, tool calls, cost); pause/steer mid-run | New streaming surface on `/build/$missionId` |
+| I3 | Branch/worktree isolation per mission | ⬜ | Parallel missions can't clobber each other's files | Per-mission worktree + merge path |
+| J1 | Test generation + run | ⬜ | Agents author + run unit/integration/E2E; results persisted | Runner wiring + `eval`/test tables |
+| J2 | QA gate + self-correct loop | ◐ Partial (verified 2026-06-16) | CI is readable (`github.ci.read`) and merge is review-gated. Remaining: an AUTOMATED self-correct loop (today "fix on red" is a prompt instruction, not orchestration) + a Cadence-level gate that blocks merge on red CI | `tools/registry.server.ts` (github.ci.read / studio.pr.merge) + loop orchestration |
+| K1 | PR / deploy / release notes behind approval | ⬜ | The Ship step: gated PR, deploy, generated release notes | Extend Build → approval-gated deploy |
+| K2 | Rollback triggers + one-action revert | ⬜ | Safe ship: documented rollback, feature-flag kill, UI revert | Revert path + flag kill |
+| BLD-05 | Inspector gate (agent tests + preview before merge) | ⬜ | A preview + test bar before a merge proposal reaches you | Depends on J1/J2 |
+| F-BUILDER-MULTIFILE | Scoped multi-file build (pre-declared touch list, max N files) | ⬜ | Thin slice of I1; safer multi-file edits | `studio.functions.ts` claims |
+| BLD-04 | Delegate-out to external coding agents under governance | ⬜ (M4) | A2A-style hand-off of build work, still governed | Depends on Q2 |
+
+---
+
+## G4 - Launch & Learn
+_Close the loop: ship to market, learn from outcomes, feed it back._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| LRN-04 | Product Memory consult/write runtime visibility | ◐ Partial | The memory loop is wired (W1); surfacing it per mission is N3 | `/memory` + Missions |
+| LCH-01 / L1 | Launch-kit mission (changelog/blog/email/social/docs from diff + spec) | ⬜ (M2) | One mission drafts the whole launch, human-approved | New mission template + outbound send |
+| L2 | Customer pages / announcements (`p.$slug`) | ⬜ (M2) | Public-facing announcement pages, approval to publish | `src/routes/p.$slug.tsx` |
+| M1 / LRN-01 | Support triage loop (tickets → drafted replies → bug clusters → signals) | ⬜ (M2) | Support feeds back into Discover; the loop closes | Inbound channel + Analyst learn loop |
+| LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ⬜ | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
+| F-ANALYTICS-1 | Cohort metrics + telemetry ingestion → `product_analytics` | ⬜ | Released features get real usage data | Depends on SEN-05 |
+| F-ANALYTICS-2 | Opportunity impact eval (post-release cohort → Product Memory → auto-ICE) | ⬜ | The loop learns whether a bet paid off | Depends on F-ANALYTICS-1 |
+| N3 | Mission Compounding View ("referenced N prior decisions") | ⬜ | Makes the moat visible per mission; export snapshot | Missions detail panel |
+
+---
+
+## G5 - Monetize & Growth (M-C)
+_First paying PMs; a viral share loop._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-SHARE | Shareable-decision link | ✅ (2026-06-16) | The viral acquisition surface (also in G2) | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
+| M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
+| M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
+| PLG | PLG funnel (public onboarding → first-win → upgrade) | ⬜ | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
+| W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ⬜ (P0) | Per-track sample data + first-mission + first-win moment | Onboarding flow + seed data |
+
+---
+
+## G6 - Interop & Team (M-D)
+_Dual-user: external agents plug in; teams land._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-A2A | Internal A2A handoff contract | ✅ | Agents hand off missions with structured payloads | [`features/a2a-handoff.md`](../features/a2a-handoff.md) |
+| Q1 / ENG-07 / F-MCP-V1 | MCP server + client (read signals/opps/PRDs · append decision · queue mission) | ⬜ (M-D) | Other agents/tools use Cadence as a tool; the interop moat | New MCP surface; A2A card route exists |
+| Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
+| A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
+| U6 | Full data-portability / export wizard | ⬜ (P0/P1) | Trust + escape hatch: export signals, decisions+lineage, PRDs, memory graph | Export fn + audit log |
+
+---
+
+## G7 - Cockpit, IA & Observability
+_The product feels coherent; the operator sees the machine._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-GAUNTLET | Gauntlet metrics (acceptance · autonomy · retention) | ✅ | The north-star metrics, honestly instrumented | [`features/gauntlet-metrics.md`](../features/gauntlet-metrics.md) |
+| F-MEMVIEW | `/memory` compounding-memory view | ✅ (2026-06-14) | The moat made visible | [`features/memory-view.md`](../features/memory-view.md) |
+| F-AUTONOMY | AutonomyCard on Today (observing→proving→trusted) | ✅ | The trust arc is visible to the operator | `src/lib/autonomy-progression.ts` |
+| F-IA-V4 | Collapse IA to 7 surfaces + redirects + vocab enforcement | ⬜ **(marked "next up")** | One coherent product instead of scattered routes | Route consolidation + redirects |
+| F-IA-TODAY-BRIEFING | Merge Today + Briefing | ⬜ | One morning surface, not two | Today route |
+| F-TODAY-LOOPPULSE | Loop Pulse hero (overnight signal/theme/PRD/PR status line) | ⬜ | Today opens with what the loop did while you slept | Today hero |
+| F-IA-CULL-CALDOCS | Remove /calendar, /meetings, /docs, /sync from nav (data kept) | ⬜ | De-clutter the operator nav | Nav config |
+| F-IA-AGENTS-TABS | Fold /prompts + /agents into one Agents route | ⬜ | Agents live in one place | Route merge |
+| E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ⬜ | Catch a stalled loop before the user does | New health fn + surface |
+| B3 | Product switcher + portfolio view (⌘K) | ⬜ | Run many products without losing the thread | Header + ⌘K |
+| B5 | Archive / delete product (soft archive + hard delete w/ export) | ⬜ | Lifecycle hygiene with an audit trail | Product admin |
+| ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |
+| F-AGENTS-MENTIONABLE | Agents as first-class @-mentionable users | ⬜ | "@discovery, re-cluster the last 50 signals" from any card | Mention parser → mission |
+| R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
+| R4 | Settings expansion (budgets, guardrails, health, prefs, admin) | ◐ Partial | Self-serve control surface (Plan tab shipped) | `_authenticated.settings.tsx` |
+| F-COCKPIT-MACHINE-MODE | Human ↔ Machine mode toggle (full-screen dispatch board) | ⬜ | The "watch the factory" view (absorbed by F-IA-V4) | Header toggle |
+| OPS-01 | Flow mode (ambient soundscape + focus timer, notification quieting) | ⬜ (P3) | Calm, focused operating surface | Home |
+
+---
+
+## G8 - Governance, Trust & Safety
+_The loop runs the reversible work; you make the calls. Honest by construction._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| F-TRUST | Trust score + four autonomy arcs at the gate | ✅ | Autonomy is earned and visible | [`features/trust-and-autonomy.md`](../features/trust-and-autonomy.md) |
+| FND-0.6 | Kill-switch + spend caps | ✅ | The brake pedal; budgets enforced server-side | [`architecture/security.md`](../../architecture/security.md) |
+| F-HUMANIZE | `humanizeText()` runtime sanitizer at the chokepoint | ✅ (2026-06-14) | Zero AI fingerprints in generated output | `src/lib/ai/humanize.ts` |
+| DEC-02 | Critic adversarial pass on opportunities | ✅ (verified 2026-06-16) | Opportunities get a red-team verdict (ship/revise/kill) at promotion, shown via CriticBadge | `discovery.functions.ts` `runCritic()` · promote-to-DAG-step is DEC-02-LOOP (M-B) |
+| FND-0.7 | Prompt-injection defense (sanitize/delimit, isolation, quarantine) | ◐ Partial (verified 2026-06-16) | Untrusted tool/RAG output is XML-tagged + escaped with system warnings; guardrails support injection rules. Remaining: a learned injection classifier + hard quarantine from high-risk sources (regex-only today) | `loop.server.ts` (untrusted_tool_output) · `guardrails.server.ts` |
+| FND-0.5 | Agent blast-radius limits (per-agent tool allow-list, scope) | ◐ Partial | An agent can't reach beyond its remit | `src/lib/ai/tools/registry.server.ts` |
+| P4 | Eval harness + regression gate (≥10-pt blocks deploy) | ◐ Partial | Quality can't silently regress (scale fixed KI-14) | `/evals` + deploy gate |
+| P5 | Drift watch (score/cost/latency per surface/model) | ◐ Partial | Catch model/cost drift early (passive watcher) | `/drift` |
+| DEC-02-LOOP | Critic as an explicit loop step (M-B) | ⬜ | Promote Critic from inline call to a real DAG step | Orchestrator step |
+| P3 | Prompt studio (versioning + A/B + pin + rollback) | ⬜ | Safe prompt iteration with rollback | `/prompts` |
+| P7 | Incidents log (safety/guardrail/cost incidents → traces) | ⬜ | A record when something goes wrong | New incidents table + surface |
+| C4 / E7 | Agent detail + run history + shared/private memory inspector | ⬜ | See and govern what each agent knows | Agent detail route |
+
+---
+
+## G9 - Platform & Foundation
+_Load-bearing infra. Feature-relevant items only; pure perf/optimization is intentionally out of scope here (separate pass)._
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| FND-AUTH | Auth + tenancy + RLS (`user_id`+`workspace_id`+`product_id`) | ✅ | The multi-tenant spine | [`architecture/security.md`](../../architecture/security.md) |
+| FND-CHOKE | AI runtime chokepoint (`callModel`/`callModelStream`) | ✅ | One governed path for every AI call | [`architecture/runtime.md`](../../architecture/runtime.md) |
+| KI-13 | Resilient signup (`handle_new_user` subtransactions) | ✅ (verify live) | A real account can be created without a 500 | migration `20260614140000` |
+| KI-14 | Eval score scale → 0-100 | ✅ | Eval scores don't overflow / false-fail the gate | migration `20260614160000` |
+| F-A2A-CARD | Public A2A agent card | ✅ | Discoverability for external agents | `src/routes/api/.well-known` |
+| F-HUMANIZE-HOOK | Pre-commit dash/invisible-char trace hook | ⬜ | Build-time backstop for the humanization rule | `scripts/check-humanized.sh` → pre-commit |
+| KI-15 / KI-16 | Stale zero-step-mission completion · advance 20/tick cap | ⬜ (low) | Rare edge cases; high-scale only | [`known-issues.md`](./known-issues.md) |
+| HUMAN-SWEEP | Full-product humanization sweep (UI strings, seed data) | ⏭️ Deferred | Pre-launch gate; deferred so screen churn doesn't force a re-sweep | Founder-prompted at the launch gate |
+
+---
+
+## Status reconciliation note
+Statuses here are reconciled from [`v7-build-status.md`](./v7-build-status.md) (milestone tags), [`../../active-task.md`](../../active-task.md) (latest shipped/dormant/parked detail), and [`feature-backlog.md`](./feature-backlog.md) (granular ledger). Where those docs conflict on a "done" claim, the row is marked **⚠️ Verify** rather than assumed - confirm against the live build before building. **The four ⚠️-Verify rows from the first cut were reconciled against the live code on 2026-06-16 (with file:line evidence): DEC-02 confirmed Done; FND-0.7, I1, and J2 confirmed Partial, with the specific remaining work noted in each row.** Granular acceptance criteria and "How to use / verify" blocks live in [`feature-backlog.md`](./feature-backlog.md); milestone exit criteria live in [`v7-build-status.md`](./v7-build-status.md); open bugs live in [`known-issues.md`](./known-issues.md).
+
+## Related
+- [`feature-backlog.md`](./feature-backlog.md) - granular ledger + Build-order rollup (this dashboard is its master view)
+- [`v7-build-status.md`](./v7-build-status.md) - "what next" milestone narrative (M-0 to M-D)
+- [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
+- [`strategic-tasks.md`](./strategic-tasks.md) - P0-P3 strategic buckets
+- [`../../active-task.md`](../../active-task.md) - the current session cursor
+- [`../../AGENTS.md`](../../AGENTS.md) §1 (pre-action) + §5 (doc-update protocol) - where the standing rule is enforced

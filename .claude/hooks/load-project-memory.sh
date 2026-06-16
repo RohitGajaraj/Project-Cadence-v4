@@ -18,6 +18,16 @@ echo "  3. CLAUDE.md          (Claude Code specifics)           -> file://$CLAUD
 echo "  4. README.md          (product thesis, MOAT, personas)  -> file://$CLAUDE_PROJECT_DIR/README.md"
 echo ""
 
+if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-dashboard.md" ]; then
+  echo "=== MASTER FEATURE DASHBOARD (read BEFORE starting any feature work) ==="
+  echo "  -> file://$CLAUDE_PROJECT_DIR/docs/planning/feature-dashboard.md"
+  echo "  Single live status board. Respect In-Dev claims so parallel sessions never collide."
+  echo "  --- Currently claimed (In Dev) ---"
+  CLAIMS=$(grep -E "^\|.*In Dev \(" "$CLAUDE_PROJECT_DIR/docs/planning/feature-dashboard.md" | grep -v "<tool>" | sed 's/|/ /g' | sed 's/^ *//' | sed 's/ *$//')
+  if [ -n "$CLAIMS" ]; then echo "$CLAIMS"; else echo "  (none currently claimed)"; fi
+  echo ""
+fi
+
 if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" ]; then
   echo "=== ACTIVE BUILD TASK ==="
   grep -E "Now building|Next up" "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" | sed 's/|/ /g' | sed 's/^ *//' | sed 's/ *$//'

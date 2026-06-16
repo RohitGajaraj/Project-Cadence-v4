@@ -1,6 +1,6 @@
 # v7 build status and roadmap tracker (the "what next" source of truth)
 
-> **What this is.** The single, always-current answer to "what is built, what is in progress, and what do we build next." Read [`../../active-task.md`](../../active-task.md) first (the session cursor), then this. Milestones are defined in the v7 canon section 12; feature statuses roll up from the v7 feature map; priorities come from the PRD.
+> **What this is.** The single, always-current answer to "what is built, what is in progress, and what do we build next." Read [`../../active-task.md`](../../active-task.md) first (the session cursor), then the master **[Feature Dashboard](./feature-dashboard.md)** (every feature's live status + In-Dev claims - check it before starting any feature work), then this for the milestone narrative. Milestones are defined in the v7 canon section 12; feature statuses roll up from the v7 feature map; priorities come from the PRD.
 >
 > **Update cadence: Tier 1 (continuous).** Update this in the same commit as any change that ships a feature, moves a status, or completes a milestone. See [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md). The NEXT pick is mechanical: the first not-done item in the earliest not-done milestone.
 >
