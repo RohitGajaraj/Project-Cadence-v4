@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import { buildOutcomeMemory, outcomeImportance } from "@/lib/ai/outcome-memory";
 import { rememberOutcome } from "@/lib/ai/memory.server";
+import { callModel } from "@/lib/ai/runtime.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
@@ -269,6 +270,114 @@ export const recordOutcome = createServerFn({ method: "POST" })
     });
 
     return { learning, opportunity, memory_id: memory?.id ?? null };
+  });
+
+// LRN-02 · Historian verdict. The outcome card was purely manual (the human
+// picks a verdict + types what happened). This adds the "predicted vs actual,
+// Historian verdict" half from the v10 blueprint: an AI assist that restates
+// what was PREDICTED when the bet was committed (the opportunity's problem /
+// hypothesis / expected ICE, and — post-H2, once synced — its roadmap outcome +
+// measure) and proposes a verdict + summary against the ACTUAL signal so far.
+// It only DRAFTS — the human still confirms and fires recordOutcome, so the
+// rescore + memory write stay human-gated. Reuses surface:"judge" (the Historian
+// is an assessor) so it rides the AI chokepoint without touching runtime.server.
+const HISTORIAN_MODEL = "google/gemini-2.5-flash";
+
+const HISTORIAN_SYSTEM =
+  "You are the Historian: the agent that closes the product loop by honestly scoring a shipped bet against what was predicted. " +
+  "You receive the PREDICTION (the problem, hypothesis, and expected impact captured when the work was committed) and the ACTUAL signal known so far (a metric and/or the operator's notes; either may be thin or empty). " +
+  'Compare them and return ONLY JSON: {"predicted": one plain sentence restating what we expected, "verdict": "validated" | "missed" | "mixed", "summary": two or three plain sentences on predicted vs actual and why}. ' +
+  "'validated' = the bet paid off; 'missed' = it did not; 'mixed' = partial or unclear. " +
+  "If the actual is unknown, base the verdict on the available signal and say it is provisional. Be honest, specific, and concise; no preamble.";
+
+export const suggestOutcomeVerdict = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        prdId: z.string().uuid(),
+        metricLabel: z.string().max(200).optional(),
+        metricValue: z.string().max(200).optional(),
+        notes: z.string().max(2000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { userId } = context;
+    const db = context.supabase as unknown as SupabaseClient;
+
+    const { data: prd, error: prdErr } = await db
+      .from("prds")
+      .select("id, title, opportunity_id, workspace_id")
+      .eq("id", data.prdId)
+      .single();
+    if (prdErr) throw new Error(prdErr.message);
+
+    // The prediction substrate = the linked opportunity. select("*") keeps this
+    // pre-migration tolerant for the H2 roadmap_outcome/roadmap_measure columns.
+    let opp: Record<string, unknown> | null = null;
+    if (prd.opportunity_id) {
+      const { data: o } = await db
+        .from("opportunities")
+        .select("*")
+        .eq("id", prd.opportunity_id)
+        .maybeSingle();
+      opp = (o as Record<string, unknown> | null) ?? null;
+    }
+
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+    const predictionParts: string[] = [];
+    if (str(prd.title)) predictionParts.push(`Spec: ${prd.title}.`);
+    if (opp) {
+      if (str(opp.problem)) predictionParts.push(`Problem: ${opp.problem}.`);
+      if (str(opp.hypothesis)) predictionParts.push(`Hypothesis: ${opp.hypothesis}.`);
+      if (str(opp.roadmap_outcome))
+        predictionParts.push(`Committed outcome: ${opp.roadmap_outcome}.`);
+      if (str(opp.roadmap_measure))
+        predictionParts.push(`Committed measure: ${opp.roadmap_measure}.`);
+      if (opp.ice_score != null) {
+        predictionParts.push(
+          `Predicted ICE ${Number(opp.ice_score).toFixed(1)} (impact ${opp.impact}, confidence ${opp.confidence}, ease ${opp.ease}).`,
+        );
+      }
+    }
+    const prediction = predictionParts.join(" ") || "No recorded prediction.";
+
+    const actualParts: string[] = [];
+    if (data.metricLabel || data.metricValue) {
+      actualParts.push(
+        `Metric — ${data.metricLabel ?? "value"}: ${data.metricValue ?? "(no value)"}.`,
+      );
+    }
+    if (str(data.notes)) actualParts.push(`Operator notes: ${data.notes!.trim()}.`);
+    const actual = actualParts.join(" ") || "No actual result captured yet.";
+
+    const result = await callModel(db as never, userId, {
+      surface: "judge",
+      surface_ref: `historian:outcome:${prd.id}`,
+      model: HISTORIAN_MODEL,
+      responseFormat: "json_object",
+      workspaceId: (prd.workspace_id as string | null) ?? null,
+      messages: [
+        { role: "system", content: HISTORIAN_SYSTEM },
+        { role: "user", content: `PREDICTION:\n${prediction}\n\nACTUAL:\n${actual}` },
+      ],
+    });
+
+    const parsed = (result.json ?? {}) as {
+      predicted?: string;
+      verdict?: string;
+      summary?: string;
+    };
+    const verdict =
+      parsed.verdict === "validated" || parsed.verdict === "missed" || parsed.verdict === "mixed"
+        ? parsed.verdict
+        : ("mixed" as const);
+    return {
+      predicted: (parsed.predicted ?? "").slice(0, 280),
+      verdict,
+      summary: (parsed.summary ?? "").slice(0, 2000),
+    };
   });
 
 /** Latest 50 learnings, newest first (workspace-scoped via RLS). */

@@ -41,7 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| LRN-02 | Outcome reviews — Historian verdict (predicted vs actual) | Claude Code (LEARN lane) | 2026-06-17 | Recon found the CORE already built: `recordOutcome` (verdict + ICE rescore + `learnings` row, surfaced on `OutcomeCard`) and W1-AUTO already wired (`rememberOutcome` embeds a recallable `agent_memory` row). Building the genuine gap vs v10 ("predicted vs actual, Historian verdict"): an AI Historian assist on `OutcomeCard` that surfaces the prediction + proposes the verdict/summary for the human to confirm. Collision-free: `outcome.functions.ts` + `OutcomeCard.tsx`; reuses `surface:"judge"` (no chokepoint edit). |
 
 ---
 
@@ -52,7 +51,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 **P0 - build first (close the loop + land the wedge):**
 | Order | Item | Lane | Status | What |
 | --- | --- | --- | --- | --- |
-| 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ⬜ / ◐ | Real outcome reviews (predicted vs actual) + wire the scaffolded outcome-memory auto-trigger. Closes the loop; the moat. |
+| 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ✅ (2026-06-17) | Done. Recon found the core already built (`recordOutcome` rescores ICE + writes `learnings`; `rememberOutcome` already wires W1-AUTO into a recallable `agent_memory`). Added the missing "predicted vs actual, Historian verdict" half: an AI Historian assist on the outcome card. The loop is closed. |
 | 2 | `WEDGE` | C (DECIDE) | ⬜ **new** | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. |
 | 3 | `MOAT-VIS` | B (LEARN) | ⬜ **new** | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
@@ -76,7 +75,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G1 Sense & Discovery | 4 | 1 | 1 | 6 |
 | G2 Decide & Plan | 7 | 0 | 0 |  1 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
-| G4 Launch & Learn | 1 | 1 | 0 | 6 |
+| G4 Launch & Learn | 2 | 1 | 0 | 5 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
 | G7 Cockpit, IA & Observability | 8 | 1 | 0 | 7 |
@@ -174,7 +173,7 @@ _Close the loop: ship to market, learn from outcomes, feed it back._
 | LCH-01 / L1 | Launch-kit mission (changelog/blog/email/social/docs from diff + spec) | ⬜ (M2) | One mission drafts the whole launch, human-approved | New mission template + outbound send |
 | L2 | Customer pages / announcements (`p.$slug`) | ⬜ (M2) | Public-facing announcement pages, approval to publish | `src/routes/p.$slug.tsx` |
 | M1 / LRN-01 | Support triage loop (tickets → drafted replies → bug clusters → signals) | ⬜ (M2) | Support feeds back into Discover; the loop closes | Inbound channel + Analyst learn loop |
-| LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | 🔨 In Dev (CC, 2026-06-17) | Honest scorekeeping that trains the next decision | Outcome tables + review fn |
+| LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ✅ (2026-06-17) | Honest scorekeeping that trains the next decision. Core was already built (`recordOutcome`: human verdict + ICE rescore + `learnings` + W1-AUTO `rememberOutcome`); this added the missing **Historian verdict (predicted vs actual)**: `suggestOutcomeVerdict` reads the opportunity's prediction (problem/hypothesis/predicted-ICE + H2 roadmap outcome/measure when synced) and the actual signal, then drafts a verdict + summary on the OutcomeCard for the human to confirm (reuses `surface:"judge"`; output enum-clamped; human-gated write). Adversarially reviewed (APPROVE; 1 MED + 1 LOW folded) | `outcome.functions.ts` (`suggestOutcomeVerdict`) + `OutcomeCard.tsx` |
 | F-ANALYTICS-1 | Cohort metrics + telemetry ingestion → `product_analytics` | ⬜ | Released features get real usage data | Depends on SEN-05 |
 | F-ANALYTICS-2 | Opportunity impact eval (post-release cohort → Product Memory → auto-ICE) | ⬜ | The loop learns whether a bet paid off | Depends on F-ANALYTICS-1 |
 | N3 | Mission Compounding View ("referenced N prior decisions") | ✅ (2026-06-16) | Makes the moat visible per mission: "drew on N prior memories" + the lineage (each memory + which agent cited it) + a copy-snapshot export; deduped across per-hop recalls + handoff `memory_refs` | `_authenticated.missions.$missionId.tsx` (`MissionCompounding`, client-side from `getMission` — no new server fn needed) |

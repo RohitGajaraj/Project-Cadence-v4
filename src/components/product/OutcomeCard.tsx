@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Target } from "lucide-react";
 import { toast } from "@/lib/notify";
-import { recordOutcome, checkPrdShipped } from "@/lib/outcome.functions";
+import { recordOutcome, checkPrdShipped, suggestOutcomeVerdict } from "@/lib/outcome.functions";
 import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
 type Verdict = "validated" | "mixed" | "missed";
@@ -48,11 +48,13 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
   const qc = useQueryClient();
   const fCheck = useServerFn(checkPrdShipped);
   const fRecord = useServerFn(recordOutcome);
+  const fSuggest = useServerFn(suggestOutcomeVerdict);
 
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [summary, setSummary] = useState("");
   const [metricLabel, setMetricLabel] = useState("");
   const [metricValue, setMetricValue] = useState("");
+  const [predicted, setPredicted] = useState<string | null>(null);
 
   const check = useMutation({
     mutationFn: () => fCheck({ data: { prdId: prd.id } }),
@@ -103,6 +105,31 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // LRN-02 · Historian assist — drafts the predicted-vs-actual verdict + summary
+  // from the opportunity's prediction and whatever actual the operator has typed.
+  // It only pre-fills; the human still confirms and fires "Record outcome".
+  const suggest = useMutation({
+    mutationFn: () =>
+      fSuggest({
+        data: {
+          prdId: prd.id,
+          metricLabel: metricLabel.trim() || undefined,
+          metricValue: metricValue.trim() || undefined,
+          notes: summary.trim() || undefined,
+        },
+      }),
+    // Clear the prior prediction the moment a re-draft starts, so the operator
+    // never reads a stale "Predicted:" line while the new draft is in flight.
+    onMutate: () => setPredicted(null),
+    onSuccess: (r) => {
+      setVerdict(r.verdict);
+      if (r.summary) setSummary(r.summary);
+      setPredicted(r.predicted || null);
+      toast.success("Historian drafted a verdict — review, then record");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const shipped = prd.status === "shipped" || !!prd.shipped_at;
   const outcome = prd.outcome ?? null;
 
@@ -116,6 +143,24 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
         <RecordedOutcome outcome={outcome} />
       ) : shipped ? (
         <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              Score this bet against what you predicted.
+            </span>
+            <button
+              onClick={() => suggest.mutate()}
+              disabled={suggest.isPending}
+              className="btn-pill-outline px-3 py-1 text-xs disabled:opacity-50"
+              title="Let the Historian draft a predicted-vs-actual verdict you can edit"
+            >
+              {suggest.isPending ? "Drafting…" : "Draft with Historian"}
+            </button>
+          </div>
+          {predicted && (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Predicted:</span> {predicted}
+            </p>
+          )}
           <div className="flex items-center gap-2">
             {VERDICT_ORDER.map((v) => (
               <button key={v} onClick={() => setVerdict(v)} title={`Record as ${v}`}>
