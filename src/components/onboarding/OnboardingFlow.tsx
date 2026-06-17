@@ -38,7 +38,9 @@ import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { listAgents } from "@/lib/agents.functions";
 import { listThemes } from "@/lib/discovery.functions";
 import { completeOnboarding, setAgentEnabled } from "@/lib/onboarding.functions";
+import { getProfile } from "@/lib/profile.functions";
 import { TrackSelector } from "@/components/onboarding/TrackSelector";
+import { BasicDetailsStep } from "@/components/onboarding/BasicDetailsStep";
 import { markOnboarded } from "@/lib/onboarding-gate";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
@@ -135,6 +137,16 @@ export function OnboardingFlow() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [step, setStep] = useState(0);
+
+  /* — gate 0: capture the user's name/role first, for any signup path that
+       lacks it. Sign-up only takes credentials now, and the OAuth path never
+       sets a display_name, so this is where every new user is named. A user
+       who already has a display_name (e.g. a returning account) skips it. — */
+  const fGetProfile = useServerFn(getProfile);
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fGetProfile() });
+  const [detailsDone, setDetailsDone] = useState(false);
+  const needsDetails =
+    !!profileQ.data && !(profileQ.data.profile as { display_name?: string } | null)?.display_name;
 
   /* — step 1 data: real connections + availability — */
   const fListConnections = useServerFn(listConnections);
@@ -265,6 +277,37 @@ export function OnboardingFlow() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  /* ---------- gate 0 — Basic details (name + role) ---------- */
+  // Resolved before the 4-step flow so the rest of onboarding (and the app) can
+  // greet the user by name. While the profile read is in flight we hold on a
+  // calm screen rather than flashing the track selector then swapping it out.
+  if (profileQ.isLoading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--paper)",
+        }}
+      >
+        <Loader2 size={20} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+      </div>
+    );
+  }
+  if (needsDetails && !detailsDone) {
+    return (
+      <BasicDetailsStep
+        onDone={() => {
+          setDetailsDone(true);
+          qc.invalidateQueries({ queryKey: ["profile"] });
+          qc.invalidateQueries({ queryKey: ["dashboard"] });
+        }}
+      />
+    );
+  }
 
   /* ---------- step 0 — Pick your path (TrackSelector) ---------- */
   // Advances to step 2 (the first StepShell branch). State 1 is intentionally

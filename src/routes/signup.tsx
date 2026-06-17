@@ -25,8 +25,6 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("AI Product Manager");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,24 +54,20 @@ function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: fullName.trim(), display_name: fullName.trim().split(" ")[0], role },
       },
     });
     if (error) {
       setLoading(false);
       return toast.error(error.message);
     }
-    // Auto-confirm is on; session should be present. Upsert profile.
-    // onboarded stays false — the _authenticated gate routes the new user
-    // through /onboarding on first landing.
+    // Auto-confirm is on; session should be present. Mark the account
+    // un-onboarded so the _authenticated gate routes it through /onboarding,
+    // where the first step now captures name + role (the single identity-capture
+    // surface shared with the Google path). onboarded stays false.
     if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        full_name: fullName.trim(),
-        display_name: fullName.trim().split(" ")[0],
-        role,
-        onboarded: false,
-      });
+      await supabase
+        .from("profiles")
+        .upsert({ id: data.user.id, onboarded: false }, { onConflict: "id" });
     }
     setLoading(false);
     toast.success("Account created");
@@ -189,21 +183,6 @@ function SignupPage() {
           <form onSubmit={signup}>
             <input
               className="input"
-              required
-              placeholder="full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              style={{ marginBottom: 8, width: "100%" }}
-            />
-            <input
-              className="input"
-              placeholder="role — e.g. AI Product Manager"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              style={{ marginBottom: 8, width: "100%" }}
-            />
-            <input
-              className="input"
               type="email"
               required
               placeholder="work email"
@@ -216,7 +195,7 @@ function SignupPage() {
               type="password"
               required
               minLength={6}
-              placeholder="password — at least 6 characters"
+              placeholder="password, at least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{ marginBottom: 8, width: "100%" }}

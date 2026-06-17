@@ -1,6 +1,6 @@
 # W6 — Persona onboarding tracks
 
-> Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 · **RLS seed hotfix 2026-06-18** (track-pick crashed every new user with a `projects` RLS error; now self-heals the workspace) · (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
+> Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 · **RLS seed hotfix 2026-06-18** (track-pick crashed every new user with a `projects` RLS error; now self-heals the workspace) · **Basic-details step + credentials-only signup 2026-06-18** (single name/role capture shared by email + Google; fixes the `abc.def` display-name) · (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
 
 ## What it does
 
@@ -13,21 +13,24 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 ## Where to find it
 
 - Route: `/onboarding` (inside the authenticated shell, reached via the first-run gate in `src/lib/onboarding-gate.ts`).
+- **Basic details** (`BasicDetailsStep`): the first gate, shown only when the profile has no `display_name` (every Google signup, and now every email signup since sign-up is credentials-only). Captures name + role; never counted in "step X of 4".
 - Step 1 of 4: "Pick your path" (`TrackSelector`). Steps 2-4 are the ported screen-8 flow (connect sources, meet your staff, hand a first goal).
 - After finish, the user lands on `/` (Today), where the seeded data drives the cold-start WEDGE card.
 
 ## Demo script (≤ 90s)
 
 1. Sign in as a fresh (not-yet-onboarded) account; the gate routes to `/onboarding`.
-2. On "Pick your path", choose **Solo PM**. A toast confirms "Track selected"; the flow advances to step 2.
-3. Step 2 "Where should Cadence listen?": leave connectors empty, click "Skip for now".
-4. Step 3 "Meet your staff": toggle one specialist off and on (it now persists; see the fix note below), then Continue.
-5. Step 4 "Hand them a first goal": the seeded themes appear as goal candidates. Pick one (or type your own), click Finish.
-6. Land on Today; the seeded signals and opportunities are present and the WEDGE cold-start card has a real idea to tear down.
+2. **Basic details**: enter first/last name + role (a Google signup arrives prefilled), click "Continue · setup begins".
+3. On "Pick your path", choose **Solo PM**. A toast confirms "Track selected"; the flow advances to step 2.
+4. Step 2 "Where should Cadence listen?": leave connectors empty, click "Skip for now".
+5. Step 3 "Meet your staff": toggle one specialist off and on (it now persists; see the fix note below), then Continue.
+6. Step 4 "Hand them a first goal": the seeded themes appear as goal candidates. Pick one (or type your own), click Finish.
+7. Land on Today; the seeded signals and opportunities are present and the WEDGE cold-start card has a real idea to tear down.
 
 ## How it works
 
 - **UI**: `src/components/onboarding/TrackSelector.tsx` (step 0/1) and `src/components/onboarding/OnboardingFlow.tsx` (StepShell steps 2-4). The flow renumbered to 4 steps when TrackSelector took slot 0; state 1 is intentionally skipped (`step === 0` advances straight to `step === 2`), documented inline.
+- **Basic details gate**: `src/components/onboarding/BasicDetailsStep.tsx` renders before `step === 0` when the profile has no `display_name`. It is the single identity-capture surface shared by both signup paths (sign-up is now credentials-only). It writes `profiles` (via `updateProfile`) AND auth `user_metadata` (via `supabase.auth.updateUser`), because the Today greeting reads the profiles row while the AppShell chip + chat header read `user_metadata`. Google signups prefill from `given_name`/`family_name`/`full_name`; the email local-part is never used as a name. Full rationale: [`auth-flows.md`](./auth-flows.md).
 - **Seed data**: `src/lib/onboarding/track-seeds.ts` defines three `TrackSeed` objects (project, signals, opportunities) plus `trackDescriptions` for the selector cards. `getTrackSeed(track)` is exhaustively typed.
 - **Server fn**: `seedWorkspaceForTrack` in `src/lib/onboarding.functions.ts` runs under `requireSupabaseAuth`. Order: guard against re-seed (rejects if any signal already exists) → **resolve/create the default workspace** (`ensureDefaultWorkspace`) → get/create project → insert signals → insert opportunities → mark `profiles.onboarded = true` **last**, so a mid-flight failure leaves the user retryable rather than half-onboarded.
 - **Workspace self-heal (2026-06-18 RLS hotfix)**: post-tenancy-retrofit the write RLS on `projects` / `signals` / `opportunities` is membership-keyed (`is_workspace_member(workspace_id)`), and `workspace_id` only auto-fills from the `current_user_default_workspace()` column default — which is NULL for a user with no `workspace_members` row. A brand-new user can reach onboarding (their first write) before signup provisioning created that row (`ensure_default_workspace` runs in a swallow-all block in `handle_new_user`, isn't in our migrations, and demo accounts skip it), so the insert hit `is_workspace_member(NULL) = false` → _"new row violates row-level security policy for table projects"_. `ensureDefaultWorkspace(supabase, userId)` now resolves-or-creates the workspace + owner membership (RLS permits the user-scoped client to do both) and every insert sets `workspace_id` **explicitly** — the path migration `20260530120200_tenancy_c` documented as intended. See [`../planning/known-issues.md`](../planning/known-issues.md) for the deeper signup-provisioning follow-up.

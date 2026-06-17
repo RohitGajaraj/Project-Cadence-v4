@@ -12,10 +12,31 @@
 
 ## Sign-up (`/signup`)
 
-1. User enters full name, role, email, and password.
-2. `supabase.auth.signUp()` creates the auth user.
-3. A profile row is upserted into `public.profiles` with `onboarded: true`.
-4. Auto-confirm is enabled, so the user is signed in immediately and redirected to `/`.
+Sign-up captures **credentials only** (email + password, or Google). Identity — name
+and role — is captured once, on the first step of `/onboarding`, shared by both signup
+paths (see "Basic details" below). This is the industry-standard split (authenticate,
+then a profile step prefilled from the OAuth provider) and removes the old asymmetry
+where email/password captured a name inline but Google captured none and fell back to
+the email local-part as the display name.
+
+1. User enters email and password (or clicks "Continue with Google").
+2. `supabase.auth.signUp()` creates the auth user (auto-confirm on → signed in immediately).
+3. A profile row is upserted with `onboarded: false`, so the `_authenticated` first-run
+   gate routes the new user through `/onboarding`.
+4. `/onboarding` opens on the **Basic details** step (name + role) before the 4-step setup.
+
+### Basic details (name + role) — the single identity-capture surface
+
+- Component: `src/components/onboarding/BasicDetailsStep.tsx`, rendered as the first gate
+  in `OnboardingFlow` when the profile has no `display_name`.
+- For Google signups the name fields prefill from auth `user_metadata`
+  (`given_name` / `family_name` / `full_name`); a bare email signup starts blank. The email
+  local-part is **never** used as a name (that was the bug being fixed).
+- On submit it writes BOTH `public.profiles` (`full_name`, `display_name` = first name,
+  `role`) via `updateProfile` AND auth `user_metadata` (`display_name`, `full_name`) via
+  `supabase.auth.updateUser` — because the Today greeting reads the profiles row while the
+  AppShell account chip + chat header read `user_metadata`. Writing one and not the other
+  leaves the wrong name on the other surface.
 
 ## Sign-in (`/login`)
 
