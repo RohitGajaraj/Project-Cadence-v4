@@ -11,13 +11,22 @@
 // deliberately do NOT invalidate the ["cold-start"] query here — flipping isCold
 // would unmount this card and throw away the verdict the operator just earned.
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldAlert, ShieldCheck, ShieldX, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Link2,
+  Share2,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "@/lib/notify";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { runWedgeTeardown, type CriticReview } from "@/lib/discovery.functions";
+import { getTeardownShareState, setTeardownShared } from "@/lib/opportunities-share.functions";
 import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
 const VERDICT: Record<
@@ -273,6 +282,7 @@ function Teardown({ result, onAnother }: { result: Result; onAnother: () => void
           Confidence {(review.confidence * 100).toFixed(0)}% · saved to your opportunities
         </span>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <ShareTeardownButton id={opportunity.id} />
           <Link
             to="/product"
             search={{ tab: "opportunities" }}
@@ -292,6 +302,85 @@ function Teardown({ result, onAnother }: { result: Result; onAnother: () => void
         </div>
       </div>
     </div>
+  );
+}
+
+function copyTeardownLink(slug: string) {
+  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/t/${slug}`;
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Public link copied"),
+      () => toast.message(url),
+    );
+  } else {
+    toast.message(url);
+  }
+}
+
+/** Share / Unshare this teardown + copy its public /t/<slug> link (F-SHARE-TEARDOWN,
+ *  the viral loop). Mirrors ShareDecisionButton. Pre-migration tolerant: before the
+ *  share columns land it shows a quiet "after sync" hint. */
+function ShareTeardownButton({ id }: { id: string }) {
+  const qc = useQueryClient();
+  const fState = useServerFn(getTeardownShareState);
+  const fSet = useServerFn(setTeardownShared);
+
+  const state = useQuery({
+    queryKey: ["teardown-share", id],
+    queryFn: () => fState({ data: { id } }),
+  });
+  const toggle = useMutation({
+    mutationFn: (isPublic: boolean) => fSet({ data: { id, isPublic } }),
+    onSuccess: (res) => {
+      qc.setQueryData(["teardown-share", id], res);
+      if (res.is_public && res.share_slug) copyTeardownLink(res.share_slug);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const s = state.data;
+  if (!s) return null;
+  if (!s.available) {
+    return (
+      <span
+        className="mono-label"
+        style={{ fontSize: 9, color: "var(--ink-faint)" }}
+        title="Sharing lights up after the next sync applies the share columns."
+      >
+        share · after sync
+      </span>
+    );
+  }
+  if (!s.is_public) {
+    return (
+      <button
+        className="btn btn-ghost btn-sm"
+        disabled={toggle.isPending}
+        onClick={() => toggle.mutate(true)}
+        title="Make this teardown public and copy a shareable link"
+      >
+        <Share2 size={11} /> Share
+      </button>
+    );
+  }
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={() => s.share_slug && copyTeardownLink(s.share_slug)}
+        title="Copy the public link"
+      >
+        <Link2 size={11} /> Copy link
+      </button>
+      <button
+        className="btn btn-ghost btn-sm"
+        disabled={toggle.isPending}
+        onClick={() => toggle.mutate(false)}
+        title="Make private again"
+      >
+        Unshare
+      </button>
+    </span>
   );
 }
 
