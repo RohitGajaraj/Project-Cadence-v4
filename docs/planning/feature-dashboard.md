@@ -202,7 +202,7 @@ _Dual-user: external agents plug in; teams land._
 | ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
 | --- | --- | --- | --- | --- |
 | F-A2A | Internal A2A handoff contract | ✅ | Agents hand off missions with structured payloads | [`features/a2a-handoff.md`](../features/a2a-handoff.md) |
-| Q1 / ENG-07 / F-MCP-V1 | MCP server + client (read signals/opps/PRDs · append decision · queue mission) | ⬜ (M-D) | Other agents/tools use Cadence as a tool; the interop moat | New MCP surface; A2A card route exists |
+| Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phase 2 dispatch wired 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch done; Phase 3 (Settings UI) pending. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
 | Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
 | A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
 | U6 | Full data-portability / export wizard | ⬜ (P0/P1) | Trust + escape hatch: export signals, decisions+lineage, PRDs, memory graph | Export fn + audit log |
