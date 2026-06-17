@@ -60,6 +60,8 @@ This refines v5 ("evidence-to-decision ritual") and v7 (general decide-ritual) t
 
 **Persona implication (sharpening v7 §5):** keep the dual-persona *destination* and the serial-with-overlap *motion*, but collapse the *narrative* to the individual PM (P2) until the single-player loop is addictive. "We are for everyone" is what pre-PMF companies say. The team tier is expansion, not a co-equal launch story.
 
+**Operating-model frame (added 2026-06-17, "the year of the agent manager"):** layer the 2026 agent-manager shift *underneath* the wedge, never as the headline. The role Cadence gives the PM (decide what is worth building, direct the agent fleet, review what shipped) is exactly the emerging "agent manager" job, so it is a free narrative amplifier on the landing page: lead with "the AI that red-teams your roadmap," then "the operating model is shifting from doing the work to directing agents, and Cadence is where a PM does that for product." Do **not** make it the category ("agent manager / agent ops" commoditizes into infrastructure and shifts the ICP to platform / eng buyers), and do **not** build an in-app surface named "Agent Manager" (the Engine-Room Doctrine's "control-room creep"; the capability already exists, outcome-named, in the Engine Room). The end-user value of "how much are the agents consuming" is reframed as **cost-per-outcome** (what you got for what you spent), kept light on the calm front, with full per-agent telemetry behind the Engine Room door. Source reasoning: [`strategic-inputs-log.md`](./strategic-inputs-log.md) (2026-06-17); decision: [`session-decisions.md`](./session-decisions.md).
+
 ---
 
 ## 3. The competitor posture map: integrate / absorb / race / ignore

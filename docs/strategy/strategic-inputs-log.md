@@ -99,6 +99,26 @@ The founder challenged the Part A "refuse to build the coding engine" call and r
 
 ---
 
+## 2026-06-17 - "2026 is the year of the agent manager" (operating-model frame)
+
+**Trigger.** A founder brainstorm prompt: 2026 is the year of "the agent manager." Work shifts from creating everything yourself to directing, reviewing, and orchestrating multiple agents; the operating model changes before the job titles do. The founder's instinct: make the agent-manager role explicit in the product (and on the landing page), with a place that shows what every agent is doing, its task, and its consumption (cost, API, time, output, efficiency), and push the product to be more autonomous and value-driven. The ask included an explicit invitation to critique the instinct and validate it against the canon (v10 and others).
+
+**The read (operator + PM + marketer lenses).**
+
+- **The trend is real and it is already our thesis.** Once "how to build" is cheap, the human's job becomes deciding, directing, and reviewing a fleet of agents. Cadence already casts the user this way: the PM decides what is worth building and watches it get built (v10), and the wedge is "be the manager, not the maker" (v9). "You are the agent manager" is the same idea in 2026's language: a narrative amplifier, not a pivot.
+
+- **The trap is making it the category.** "Agent manager / agent ops / agent observability" is a crowding infrastructure category that sells to platform and engineering buyers on monitoring. If Cadence leads with "manage your agents," it (a) commoditizes itself into agent-ops, and (b) demotes the wedge that actually wins (judgment, red-teaming the roadmap, decision memory) and muddies the PM ICP. Reinforce the frame; do not repoint the category. Keep "the AI that red-teams your roadmap" as the lead and layer the operating-model frame underneath.
+
+- **A literal in-app "Agent Manager" surface is the doctrine's named anti-pattern.** The Engine-Room Doctrine (calm front, deep engine; name the outcome, not the mechanism) calls this exact move "control-room creep." Cadence already has the surface, named for outcomes: the Engine Room (renamed from Govern) carries Activity, Analytics, Loop health, Spend, Quality checks, and Drift. Agent dispatch is Missions; per-run replay is Traces. The data plumbing (`ai_events`, `agent_runs` spend / tokens, `tool_calls`, `drift_snapshots`) is complete. So the founder's list is mostly already built; what is genuinely missing is one thing, cost-per-outcome / unit economics (backlog ENG-06), plus a tighter "manager's glance" of the fleet.
+
+- **Audience split (founder call): both, by surface.** The end-user PM does not want to "manage agents"; they want to know what needs their judgment, what shipped, and what it cost for what they got. So cost is reframed from mechanism (API calls, tokens) to outcome (cost-per-outcome) and kept light on the calm front; the full per-agent telemetry stays behind the Engine Room door for the operator / founder.
+
+- **The autonomous, value-driven form is management by exception.** In an autonomous system the manager's role is review and judgment, not micromanaging a live console. The product surfaces exceptions and decisions (what needs me, what is stuck, what shipped), with depth one click away. This is the autonomy on-ramp (observing to proving to trusted) doing its job, not a NASA control room.
+
+**Decision (distilled).** Adopt agent-manager as a reinforcing narrative (landing page + how we talk about the role), not a category and not a new surface. Respect the Engine-Room Doctrine: no surface literally named "Agent Manager." Express cost as cost-per-outcome split across the calm front (light) and the Engine Room (deep). The build increment is the existing backlog item ENG-06, not new strategy. Distilled into [`v9`](./v9-decision-wedge-and-build-next-2026-06-17.md) §2 (operating-model frame) and the [decisions log](./session-decisions.md); doctrine worked example added to [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md).
+
+---
+
 ## How to use and extend this log
 
 - **Append, do not overwrite.** Each new strategic input (a brainstorm, a market check, an investor conversation, a customer-behavior finding) gets a dated entry here in the same session it happens, then is distilled into the relevant canon doc and decisions log.
