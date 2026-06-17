@@ -61,7 +61,7 @@ function StepShell({
   footer,
 }: {
   step: number;
-  title: string;
+  title: React.ReactNode;
   sub: string;
   children: React.ReactNode;
   footer: React.ReactNode;
@@ -80,8 +80,8 @@ function StepShell({
         padding: 24,
       }}
     >
-      <div className="fade-up" style={{ width: 620, maxWidth: "100%" }} key={step}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
+      <div className="fade-up" style={{ width: 600, maxWidth: "100%" }} key={step}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 26 }}>
           <CadenceMark size={26} />
           <span className="mono-label">Setup · step {step} of 4</span>
           <span style={{ flex: 1 }}></span>
@@ -100,11 +100,17 @@ function StepShell({
             ))}
           </span>
         </div>
-        <h1 className="font-display" style={{ fontSize: 28, fontWeight: 430 }}>
+        <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, lineHeight: 1.15 }}>
           {title}
         </h1>
         <p
-          style={{ fontSize: 13, color: "var(--ink-subtle)", margin: "6px 0 22px", maxWidth: 480 }}
+          style={{
+            fontSize: 13.5,
+            color: "var(--ink-subtle)",
+            margin: "10px 0 24px",
+            maxWidth: 470,
+            lineHeight: 1.55,
+          }}
         >
           {sub}
         </p>
@@ -272,8 +278,12 @@ export function OnboardingFlow() {
     return (
       <StepShell
         step={2}
-        title="Where should Cadence listen?"
-        sub="Signals are the loop's fuel. Connect the places your users already talk — three or more gives Scout enough to cluster real themes. Nothing is required now; Settings keeps every connector a click away."
+        title={
+          <>
+            Where should Cadence <em style={{ fontStyle: "italic" }}>listen</em>?
+          </>
+        }
+        sub="Signals are the loop's fuel. Connect the places your users already talk; three or more lets Scout cluster real themes. Nothing is required now, and Settings keeps every connector a click away."
         footer={
           <>
             <span className="mono-label">{connCount} connected</span>
@@ -349,7 +359,7 @@ export function OnboardingFlow() {
                 >
                   {configured || on
                     ? spec.description
-                    : "Admin setup required — ask your workspace admin."}
+                    : "Admin setup required. Ask your workspace admin."}
                 </span>
               </button>
             );
@@ -364,8 +374,12 @@ export function OnboardingFlow() {
     return (
       <StepShell
         step={3}
-        title="Meet your staff."
-        sub={`${staff.length || "Your"} specialists run the loop. All of them ask before anything irreversible — you can stand any of them down later in Settings.`}
+        title={
+          <>
+            Meet your <em style={{ fontStyle: "italic" }}>staff</em>.
+          </>
+        }
+        sub={`${staff.length || "Your"} specialists run the loop for you, from finding signals to red-teaming ideas to shipping outcomes. Each asks before anything irreversible; stand any of them down later in Settings.`}
         footer={
           <>
             <button className="btn btn-ghost" onClick={() => setStep(2)}>
@@ -456,11 +470,15 @@ export function OnboardingFlow() {
   return (
     <StepShell
       step={4}
-      title="Hand them a first goal."
+      title={
+        <>
+          Hand them a first <em style={{ fontStyle: "italic" }}>goal</em>.
+        </>
+      }
       sub={
         goalOptions.length > 0
-          ? "Scout already found themes in your sources. Pick one, or write your own — it becomes the brief every specialist reads."
-          : "Write the first goal in your own words — it becomes the brief every specialist reads."
+          ? "Scout already found themes in your sources. Pick one, or write your own; it becomes the brief every specialist reads."
+          : "Write the first goal in your own words; it becomes the brief every specialist reads."
       }
       footer={
         <>
