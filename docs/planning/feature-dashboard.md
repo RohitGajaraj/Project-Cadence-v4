@@ -79,7 +79,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G5 Monetize & Growth | 2 | 0 | 2 | 2 |
 | G6 Interop & Team | 0 | 2 | 0 | 3 |
 | G7 Cockpit, IA & Observability | 8 | 2 | 0 | 6 |
-| G8 Governance, Trust & Safety | 4 | 5 | 0 | 3 |
+| G8 Governance, Trust & Safety | 4 | 6 | 0 | 2 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
 
 > ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
@@ -249,7 +249,7 @@ _The loop runs the reversible work; you make the calls. Honest by construction._
 | DEC-02-LOOP | Critic as an explicit loop step (M-B) | ✅ (2026-06-17) | Shipped the safe increment: the Critic is now a routable, gating-exempt agent-loop tool `critic.evaluate`. Extracted `runCritic` → `src/lib/ai/critic.server.ts`, registered in `TOOL_REGISTRY`, seeded into `agent_tools` (new + backfilled users). The orchestrator / any specialist can red-team in-loop. Full `mission_steps` DAG-node promotion deferred to Phase 2 (avoids the handoff/retry blast radius). | `critic.server.ts` + `registry.server.ts` + migration `20260617160000` |
 | P3 | Prompt studio (versioning + A/B + pin + rollback) | ⬜ | Safe prompt iteration with rollback | `/prompts` |
 | P7 | Incidents log (safety/guardrail/cost incidents → traces) | ◐ (2026-06-18) | A record when something goes wrong: the read-only Incidents log shipped (Engine Room > Incidents): failed tool executions + errored auto-pipelines, newest first, each execution linked to its trace. Derived live, no migration. Remaining: guardrail/cost incident sources + a persistent incidents table for manual logging | `getIncidents` (`incidents.functions.ts`) + `IncidentsPanel.tsx` · [`p7-incidents.md`](../features/p7-incidents.md) |
-| C4 / E7 | Agent detail + run history + shared/private memory inspector | ⬜ | See and govern what each agent knows | Agent detail route |
+| C4 / E7 | Agent detail + run history + shared/private memory inspector | ◐ (2026-06-18) | See and govern what each agent knows: the Agent Inspector shipped (Missions > Agents): pick an agent, see its recent run history (status, mission, step, when). Read-only, no migration. Remaining: the shared/private memory inspector | `getAgentRuns` (`agent-runs.functions.ts`) + `AgentInspector.tsx` · [`c4-e7-agent-inspector.md`](../features/c4-e7-agent-inspector.md) |
 
 ---
 

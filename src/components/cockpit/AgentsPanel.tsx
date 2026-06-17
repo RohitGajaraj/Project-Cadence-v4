@@ -16,6 +16,7 @@ import { getSwarmHud, type SwarmHud } from "@/lib/swarm.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { decideEventDispatch } from "@/lib/reactor.functions";
 import { TrustDial } from "@/components/cockpit/TrustDial";
+import { AgentInspector } from "@/components/cockpit/AgentInspector";
 
 function relative(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -188,6 +189,9 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
 
       {/* AMBIENT-ARC: per-agent autonomy arc + score + suggested promotion. */}
       <TrustDial nameById={nameById} />
+
+      {/* C4/E7: pick an agent, inspect its recent run history. */}
+      <AgentInspector agents={hud.agents} />
 
       {/* TOP STRIP: throughput · attention */}
       <div className="grid grid-cols-12 gap-4">
