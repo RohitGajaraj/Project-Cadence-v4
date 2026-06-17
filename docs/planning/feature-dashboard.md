@@ -57,13 +57,13 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
 | 5 | `W6` | E (PLG) | ✅ (2026-06-17) | Persona onboarding (also the wedge's delivery surface). Shipped: 3-track selector + per-track seed data, 4-step flow. Closed: fixed the step-3 agent-toggle contract bug (agentId), removed the no-op `agentSlugsToEnable` field, wrote [`features/onboarding-tracks.md`](../features/onboarding-tracks.md). Live UI walkthrough on next publish. |
 
-**P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `SEN-05`+`F-ANALYTICS-1/2`+`MOAT-METRIC` (A/B, new), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
+**P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `MOAT-METRIC` ✅ (Gauntlet Outcome-accuracy card) + `SEN-05`+`F-ANALYTICS-1/2` (A/B; SEN-05 + F-ANALYTICS gated on a product-analytics connector OAuth), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
 
 **P2 - breadth/polish:** `ENG-06`, `BLD-04`, `K2`, `BLD-05`, `D4`, `P7`, `P3`, `R3`, `B5`, `FND-0.7`, `U6`, IA culls.
 
 **CUT / DEFER (do not build now):** `K1-deploy` (external deploy), `F-AUDIO-1/2` + `SEN-04` (post-PMF), the full 19-mesh breadth, outcome-pricing machinery, team/RBAC `A6` beyond the MCP slice.
 
-**New items added by v10 (tracked here; not yet group rows below):** `MOAT-VIS` ✅, `MOAT-METRIC`, `F-SHARE-TEARDOWN` ✅, `SANDBOX`, `AMBIENT-ARC` ✅ (Trust Dial on the Agents tab — `src/components/cockpit/TrustDial.tsx`; surfaces the per-agent arc incl. Ambient + suggested promotion; see [`features/trust-and-autonomy.md`](../features/trust-and-autonomy.md) §7), `Q1-MCP` ◐ (Phases 1-3 done). (`WEDGE` ✅ and `W1-AUTO` ✅ now have group rows.) **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
+**New items added by v10 (tracked here; not yet group rows below):** `MOAT-VIS` ✅, `MOAT-METRIC` ✅ (Gauntlet "Outcome accuracy" card · [`features/gauntlet-metrics.md`](../features/gauntlet-metrics.md)), `F-SHARE-TEARDOWN` ✅, `SANDBOX`, `AMBIENT-ARC` ✅ (Trust Dial on the Agents tab — `src/components/cockpit/TrustDial.tsx`; surfaces the per-agent arc incl. Ambient + suggested promotion; see [`features/trust-and-autonomy.md`](../features/trust-and-autonomy.md) §7), `Q1-MCP` ◐ (Phases 1-3 done). (`WEDGE` ✅ and `W1-AUTO` ✅ now have group rows.) **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
 
 ---
 

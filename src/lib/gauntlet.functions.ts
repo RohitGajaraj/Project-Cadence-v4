@@ -446,3 +446,102 @@ export const getMemoryCompounding = createServerFn({ method: "GET" })
       tableReady: true,
     };
   });
+
+// ---------------------------------------------------------------------------
+// MOAT-METRIC — outcome accuracy (the second half of the moat proof).
+//
+// Of the bets you shipped and then reviewed, the share that VALIDATED. The
+// "lift" is the trend: is that share climbing as the loop's memory compounds?
+// Read straight from learnings.verdict (validated / missed / mixed), written by
+// the closed loop (LRN-02). A rate, not a count, so it is scale-independent.
+//
+// Honesty boundary (deliberate): this does NOT claim causal "memory lift" —
+// isolating that needs a memory-on/off control we do not have, and asserting it
+// without one would be exactly the invented number the Gauntlet refuses. We pair
+// outcome accuracy (is judgment validating) with Memory compounds (is the store
+// reused); together they tell the moat story without overclaiming causation.
+// Mixed counts toward the reviewed total but not as a validation, so the rate is
+// the strict "fully paid off" share. Pre-migration tolerant like the others.
+
+export type OutcomeAccuracy = {
+  /** validated / decided over the window, or null when nothing reviewed. */
+  rate: number | null;
+  validated: number;
+  missed: number;
+  mixed: number;
+  /** validated + missed + mixed — the reviewed outcomes the rate is over. */
+  decided: number;
+  trend: Trend;
+  /** Prior-half rate for context (0..1, or null). */
+  priorRate: number | null;
+  /** False only when learnings is not present yet (pre-migration). */
+  tableReady: boolean;
+};
+
+export const getOutcomeAccuracy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ days: z.number().int().min(2).max(365).default(90) }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<OutcomeAccuracy> => {
+    const { supabase, userId } = context;
+    const windowStart = new Date(Date.now() - data.days * DAY_MS).toISOString();
+    const { data: rows, error } = await supabase
+      .from("learnings")
+      .select("verdict,created_at")
+      .eq("user_id", userId)
+      .gte("created_at", windowStart)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+
+    if (error) {
+      // learnings absent on a fresh env: degrade to not-ready rather than throw.
+      if (isMissingRelation(error as { code?: string; message?: string })) {
+        return {
+          rate: null,
+          validated: 0,
+          missed: 0,
+          mixed: 0,
+          decided: 0,
+          trend: "flat",
+          priorRate: null,
+          tableReady: false,
+        };
+      }
+      throw new Error(error.message);
+    }
+
+    const learnings = (rows ?? []) as { verdict: string; created_at: string }[];
+    const validated = learnings.filter((l) => l.verdict === "validated").length;
+    const missed = learnings.filter((l) => l.verdict === "missed").length;
+    const mixed = learnings.filter((l) => l.verdict === "mixed").length;
+    const decided = validated + missed + mixed;
+    const rate = decided > 0 ? validated / decided : null;
+
+    // Trend: split the window in half (recent vs prior) on the same verdict set.
+    // Outcomes are sparse, so this is half-window vs half-window, not 7d/7d.
+    const halfMs = (data.days / 2) * DAY_MS;
+    const recentCut = Date.now() - halfMs;
+    const priorCut = Date.now() - data.days * DAY_MS;
+    let rV = 0,
+      rD = 0,
+      pV = 0,
+      pD = 0;
+    for (const l of learnings) {
+      if (l.verdict !== "validated" && l.verdict !== "missed" && l.verdict !== "mixed") continue;
+      const t = +new Date(l.created_at);
+      const isV = l.verdict === "validated";
+      if (t >= recentCut) {
+        rD++;
+        if (isV) rV++;
+      } else if (t >= priorCut) {
+        pD++;
+        if (isV) pV++;
+      }
+    }
+    const recentRate = rD > 0 ? rV / rD : null;
+    const priorRate = pD > 0 ? pV / pD : null;
+    const trend = recentRate != null && priorRate != null ? trendOf(recentRate, priorRate) : "flat";
+
+    return { rate, validated, missed, mixed, decided, trend, priorRate, tableReady: true };
+  });
