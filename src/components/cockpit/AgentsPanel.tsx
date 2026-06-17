@@ -117,12 +117,10 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
   const nameById = useMemo(
     () =>
       new Map(
-        (hud?.agents ?? []).map(
-          (a): [string, { name: string; role: string }] => [
-            a.agent_id,
-            { name: a.name, role: a.role },
-          ],
-        ),
+        (hud?.agents ?? []).map((a): [string, { name: string; role: string }] => [
+          a.agent_id,
+          { name: a.name, role: a.role },
+        ]),
       ),
     [hud],
   );

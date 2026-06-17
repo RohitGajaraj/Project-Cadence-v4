@@ -104,19 +104,20 @@ export function TrustDial({ nameById }: { nameById: Map<string, NameInfo> }) {
         <MonoLabel>Autonomy · trust dial</MonoLabel>
         <span
           className="mono-label"
-          style={{ fontSize: 9, color: "var(--ink-faint)", display: "flex", alignItems: "center", gap: 5 }}
+          style={{
+            fontSize: 9,
+            color: "var(--ink-faint)",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
         >
           <ShieldCheck size={11} strokeWidth={1.75} /> earned, not granted
         </span>
       </div>
       <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
         {rows.map((t, i) => (
-          <TrustRow
-            key={t.agent_id}
-            trust={t}
-            info={nameById.get(t.agent_id)}
-            first={i === 0}
-          />
+          <TrustRow key={t.agent_id} trust={t} info={nameById.get(t.agent_id)} first={i === 0} />
         ))}
       </div>
     </section>
@@ -170,7 +171,12 @@ function TrustRow({
           <div
             className="mono-label"
             title={info?.role}
-            style={{ fontSize: 8.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            style={{
+              fontSize: 8.5,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
           >
             {trust.arc}
             {info?.role ? ` · ${info.role}` : ""}
@@ -242,7 +248,9 @@ function TrustRow({
         })}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+      >
         <p style={{ fontSize: 11, color: "var(--ink-subtle)", margin: 0, flex: 1, minWidth: 0 }}>
           {ARC_MEANING[trust.arc]}
         </p>
@@ -268,7 +276,10 @@ function TrustRow({
             <ChevronDown
               size={13}
               strokeWidth={1.75}
-              style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform var(--dur-fast)" }}
+              style={{
+                transform: open ? "rotate(180deg)" : "none",
+                transition: "transform var(--dur-fast)",
+              }}
             />
           </button>
         )}

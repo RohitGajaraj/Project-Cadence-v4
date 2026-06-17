@@ -173,7 +173,8 @@ export function IntegrationsTab() {
       <div className="bento" style={{ padding: "var(--card-pad)" }}>
         <MonoLabel style={{ marginBottom: 4 }}>Issue a token</MonoLabel>
         <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
-          Name this token for the tool using it. The secret is shown once, right after you create it.
+          Name this token for the tool using it. The secret is shown once, right after you create
+          it.
         </p>
         <form
           onSubmit={(e) => {

@@ -44,14 +44,7 @@ import { getBillingState, createCheckoutSession, type BillingState } from "@/lib
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 
-type SectionId =
-  | "connections"
-  | "ai"
-  | "staff"
-  | "workspace"
-  | "billing"
-  | "interop"
-  | "profile";
+type SectionId = "connections" | "ai" | "staff" | "workspace" | "billing" | "interop" | "profile";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile).
 // "Accounts" is the account-level OAuth surface (which provider logins you have
