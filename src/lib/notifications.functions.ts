@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// R3 · Notifications — one "what needs you" feed derived live from the loop's
+// R3 · Notifications, one "what needs you" feed derived live from the loop's
 // own state: tool calls waiting on a human, spend nearing or over a cap, and a
 // stalled loop. Read-only, RLS-scoped (every table keyed on user_id); each probe
 // degrades to a safe default (a null or errored query yields no items) so the

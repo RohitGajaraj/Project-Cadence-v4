@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// C4/E7 · Agent inspector data — the recent run history for one agent, so the
+// C4/E7 · Agent inspector data, the recent run history for one agent, so the
 // operator can see what a given agent has actually been doing. Read-only,
 // RLS-scoped (agent_runs is keyed on user_id, with an explicit filter as
 // defense-in-depth and for the index). A null or errored query yields no rows.
@@ -37,7 +37,7 @@ export const getAgentRuns = createServerFn({ method: "GET" })
     return { runs };
   });
 
-// C4/E7 · Agent memory inspector data — what a given agent knows: its own
+// C4/E7 · Agent memory inspector data, what a given agent knows: its own
 // (private) memories plus the shared/global memories it can draw on. Two .eq
 // queries merged (no `.or()` string interpolation, so a crafted agentId cannot
 // alter the filter); RLS scopes every read to the caller.

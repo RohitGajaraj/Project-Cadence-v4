@@ -8,7 +8,7 @@ import {
   type AgentMemory,
 } from "@/lib/agent-runs.functions";
 
-// C4/E7 · Agent inspector — pick an agent, see its recent run history and what it
+// C4/E7 · Agent inspector, pick an agent, see its recent run history and what it
 // knows (its private memories plus the shared/global pool it draws on). Read-only,
 // RLS-scoped. Engine-Room: names the outcome ("what this agent has been doing and
 // knows").

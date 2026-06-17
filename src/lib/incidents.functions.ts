@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// P7 · Incidents — a read-only "what went wrong" record: failed tool executions
+// P7 · Incidents, a read-only "what went wrong" record: failed tool executions
 // and errored auto-pipeline events, newest first, each linked to its trace where
 // available. Derived live from confirmed logs (no new table): agent_approvals
 // (status = failed) and event_queue (rows carrying an error). RLS-scoped; a null

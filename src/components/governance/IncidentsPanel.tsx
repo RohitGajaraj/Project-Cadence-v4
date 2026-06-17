@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getIncidents, type Incident } from "@/lib/incidents.functions";
 
-// P7 · Incidents — read-only "what went wrong" log on the Engine Room: failed
+// P7 · Incidents, read-only "what went wrong" log on the Engine Room: failed
 // tool executions and errored auto-pipeline events, newest first. Engine-Room:
 // names the outcome ("what went wrong"); each execution incident links to its trace.
 

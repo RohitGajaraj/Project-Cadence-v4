@@ -80,7 +80,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G6 Interop & Team | 0 | 2 | 0 | 3 |
 | G7 Cockpit, IA & Observability | 8 | 2 | 0 | 6 |
 | G8 Governance, Trust & Safety | 5 | 5 | 0 | 2 |
-| G9 Platform & Foundation | 5 | 0 | 1 | 2 |
+| G9 Platform & Foundation | 6 | 0 | 1 | 1 |
 
 > ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
 
@@ -263,7 +263,7 @@ _Load-bearing infra. Feature-relevant items only; pure perf/optimization is inte
 | KI-13 | Resilient signup (`handle_new_user` subtransactions) | ✅ (verify live) | A real account can be created without a 500 | migration `20260614140000` |
 | KI-14 | Eval score scale → 0-100 | ✅ | Eval scores don't overflow / false-fail the gate | migration `20260614160000` |
 | F-A2A-CARD | Public A2A agent card | ✅ | Discoverability for external agents | `src/routes/api/.well-known` |
-| F-HUMANIZE-HOOK | Pre-commit dash/invisible-char trace hook | ⬜ | Build-time backstop for the humanization rule | `scripts/check-humanized.sh` → pre-commit |
+| F-HUMANIZE-HOOK | Pre-commit dash/invisible-char trace hook | ✅ (2026-06-18) | Build-time backstop for the humanization rule: `scripts/check-humanized.sh` (already built) is now wired as a pre-commit hook by `install-git-hooks.sh` (warn-only by default; `HUMANIZE_STRICT=1` to gate). Run `bash scripts/install-git-hooks.sh` to activate | `scripts/check-humanized.sh` + `scripts/install-git-hooks.sh` |
 | KI-15 / KI-16 | Stale zero-step-mission completion · advance 20/tick cap | ⬜ (low) | Rare edge cases; high-scale only | [`known-issues.md`](./known-issues.md) |
 | HUMAN-SWEEP | Full-product humanization sweep (UI strings, seed data) | ⏭️ Deferred | Pre-launch gate; deferred so screen churn doesn't force a re-sweep | Founder-prompted at the launch gate |
 

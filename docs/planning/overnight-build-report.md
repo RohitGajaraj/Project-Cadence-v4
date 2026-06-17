@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 6 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
+**Last updated:** 2026-06-18 (cycle 7 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 6 complete; cycle 7 next) |
+| Status | ACTIVE (cycle 7 complete; cycle 8 next) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -39,11 +39,11 @@ Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
 
 | Bucket | Count |
 | --- | --- |
-| Done | ~53 |
+| Done | ~54 |
 | Partial | ~11 |
 | Paused / deferred / blocked | ~5 |
-| Pending | ~32 |
-| **Approx completion** | **~53 of ~101 tracked rows (~52%)** |
+| Pending | ~31 |
+| **Approx completion** | **~54 of ~101 tracked rows (~53%)** |
 
 Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then mine v9 and v8 for relevant work.
 
@@ -57,6 +57,7 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 | 2026-06-18 | C4/E7 (core) | G8 Governance | `e9aa2706e1` | Agent inspector on Missions > Agents: pick an agent, see its recent run history (status, mission, step, when). Read-only, no migration. tsc + eslint + build green; adversarial review clean (no fix). Memory inspector added cycle 5 (below). **Pending your publish + live verify (see below).** |
 | 2026-06-18 | C4/E7 memory | G8 Governance | `(this push)` | Completes C4/E7: a "What this agent knows" section in the Agent inspector showing the agent's private + shared/global memories. `getAgentMemory` via two injection-safe queries. Read-only, no migration. tsc + eslint + build green; review clean. C4/E7 now ✅. **Pending your publish + live verify (see below).** |
 | 2026-06-18 | U6 selective | G6 Interop | `(this push)` | U6 advance: the workspace export now has per-section checkboxes (pick what to include). Output-filtered server-side; existing query/RLS logic untouched. tsc + eslint + build green; review clean. ◐ remainder: export audit-log. **Pending your publish + live verify (see below).** |
+| 2026-06-18 | Humanization fix + F-HUMANIZE-HOOK | G9 Platform | `(this push)` | Self-correction: the repo's `check-humanized.sh` flagged 7 em-dashes in my own comment headers (6 files); fixed to commas, re-scan clean, tsc/eslint green. Completed F-HUMANIZE-HOOK (was a stale ⬜): `install-git-hooks.sh` now wires the scanner as a warn-only pre-commit hook (`HUMANIZE_STRICT=1` to gate). Tooling/docs only, no app behaviour change, so no publish-verify needed. |
 
 ## In progress
 
@@ -90,6 +91,7 @@ The live app does not reflect this run's changes until you publish them. These i
 - **Cycle 5 completed C4/E7** (above): added the memory inspector ("What this agent knows": private + shared/global), via two injection-safe queries. C4/E7 is now done. Note: the clean read-only, no-migration backlog is thinning; remaining items lean toward migrations, hot-surface chrome, or loop-coupling, which the loop will weigh against the section-14 design pass.
 - **Cycle 6 shipped U6 selective export** (above): per-section checkboxes on the export. Clean, no migration.
 - **Recommendation on the §14 design pass:** it is the natural next phase, but it needs visual verification, which the no-published-app rule rightly defers to you. I am not running a code-only design pass unattended (it would be a weak version, and unverified UI changes are risky). Best run it with me when you are back and can see the rendered UI, or publish so I can verify live. Meanwhile I keep taking safe, gated build items.
+- **Cycle 7: self-correction + F-HUMANIZE-HOOK** (above). The repo's own `check-humanized.sh` caught 7 em-dashes in this session's comment headers; fixed. Also completed F-HUMANIZE-HOOK (the scanner existed but was not wired pre-commit; the dashboard ⬜ was stale). This is the kind of safe, no-visual, launch-quality work the loop can keep doing while the clean feature backlog is thin.
 - **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
 - **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
 - Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.

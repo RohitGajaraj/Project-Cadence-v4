@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getNotifications, type AppNotification } from "@/lib/notifications.functions";
 
-// R3 · Attention — one calm feed of what needs the operator right now: approvals
+// R3 · Attention, one calm feed of what needs the operator right now: approvals
 // waiting, spend nearing caps, a stalled loop. Engine-Room: names the outcome
 // ("what needs you"), not the mechanism; read-only, each item links to its home.
 
