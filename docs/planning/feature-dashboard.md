@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| `WEDGE` | Critic-teardown first-run | Claude Code | 2026-06-17 | Guided first-run: feature idea → Critic red-team → cited teardown on Today, <10 min. Lane C (DECIDE). Wiring the existing `runCritic` engine into a first-run surface. |
 
 ---
 
@@ -52,7 +53,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | Order | Item | Lane | Status | What |
 | --- | --- | --- | --- | --- |
 | 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ✅ (2026-06-17) | Done. Recon found the core already built (`recordOutcome` rescores ICE + writes `learnings`; `rememberOutcome` already wires W1-AUTO into a recallable `agent_memory`). Added the missing "predicted vs actual, Historian verdict" half: an AI Historian assist on the outcome card. The loop is closed. |
-| 2 | `WEDGE` | C (DECIDE) | ⬜ **new** | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. |
+| 2 | `WEDGE` | C (DECIDE) | 🔨 In Dev (CC, 2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. |
 | 3 | `MOAT-VIS` | B (LEARN) | ⬜ **new** | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
 | 5 | `W6` | E (PLG) | ⬜ | Persona onboarding (also the wedge's delivery surface). |
