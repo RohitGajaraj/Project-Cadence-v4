@@ -2,7 +2,7 @@
 
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
-> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ reconciled) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ · F3 always-fresh feed ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
 
 ---
 
@@ -116,7 +116,7 @@ _Get real signal in, cluster it, keep it fresh._
 | F-BRAIN | Brain (web + workspace research) | ✅ | Perplexity-grade research feeding decisions | [`features/brain.md`](../features/brain.md) |
 | F-CONN | Connector platform (OAuth) | ⏸️ Parked | The connector engine is built; **parked** pending founder OAuth-client registration | `src/lib/connectors/` · [`architecture/integrations.md`](../../architecture/integrations.md) |
 | SEN-01 | Connector dock: 2nd live ingest (Slack / GitHub issues / support) | ⬜ (M-A) | The loop needs ≥2 real sources to close on real data | Register one provider OAuth client → adapter in `src/lib/connectors/` |
-| F3 | Continuous discovery feed | ◐ Partial | Always-fresh per-product feed + incremental re-cluster (Scout ingest is manual today) | Extend discovery functions; feed UI on `/prds` discovery |
+| F3 | Continuous discovery feed | ◐ Partial (2026-06-18) | **Always-fresh feed shipped:** the discovery surface (`/product?tab=signals`) now auto-refreshes signals (30s poll, pauses when the tab is unfocused), so the continuously-ingested signals (webhook → reactor) appear live without a manual reload. Remaining: **auto-cluster cron** (continuous incremental re-cluster — queued as a founder spend decision, since it commits recurring AI cost) + per-product clustering scope. | `SignalsPanel.tsx` (`refetchInterval`) + `clusterSignals` (`discovery.functions.ts`) |
 | N2 | Re-score + insight memo + daily brief | ✅ (2026-06-16) | Re-score loop + daily brief already existed; this added the missing **insight memo** — the daily brief now ingests the recent `learnings` (re-scored outcomes: verdict + summary + ICE shift) and synthesizes a "what the loop learned" beat. ⚠️ Wiring + build verified; the AI-generated brief output needs a live re-verify on the deployed app (local dev has no AI key) | `copilot.functions.ts` (`ensureTodayBrief`) → Today's brief |
 | O1 | Knowledge graph + query | ⬜ | Typed signals→themes→opps→decisions→outcomes; "why is this on the roadmap?" | New graph tables + query fn |
 | O3 | Fact currency/drift + skill packs | ⬜ | Flag stale facts; export versioned skill bundles over MCP | Depends on O1 + Q1 |

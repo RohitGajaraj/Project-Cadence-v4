@@ -63,7 +63,16 @@ export function SignalsPanel() {
   const mPromoteSignal = useServerFn(promoteSignalToOpportunity);
   const mGen = useServerFn(generatePrd);
 
-  const signals = useQuery({ queryKey: ["signals"], queryFn: () => fSignals() });
+  // F3 (always-fresh feed): signals stream in continuously through the ingest
+  // webhook + reactor, so poll while this surface is open so newly-ingested
+  // signals appear without a manual reload. Cheap (a scoped read), pauses when
+  // the tab is unfocused (refetchIntervalInBackground defaults to false), and
+  // only runs while the discovery surface is mounted.
+  const signals = useQuery({
+    queryKey: ["signals"],
+    queryFn: () => fSignals(),
+    refetchInterval: 30_000,
+  });
   const themes = useQuery({ queryKey: ["themes"], queryFn: () => fThemes() });
 
   const inv = () => {

@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-18 · Split F3 by spend posture: ship the always-fresh feed, queue the auto-cluster cron for founder sign-off
+
+**Decision:** Build only the no-spend half of F3 (continuous discovery) unattended — the always-fresh feed (auto-refresh the discovery surface so continuously-ingested signals surface live). Queue the auto-cluster cron (a `discovery-tick` that re-clusters new signals on a schedule) for the founder, rather than enabling it.
+
+**Why:** Signals already ingest continuously (webhook → reactor), but the feed was static and clustering is manual. The always-fresh feed is purely additive (a polling interval), offline-gateable, and costs nothing beyond cheap DB reads — safe to ship. The auto-cluster cron, by contrast, commits **recurring AI spend** for every workspace. The autonomous build contract lists spend as a founder-gated decision, so enabling an always-on cost process unilaterally would violate it, even though it is governed by the existing spend caps + kill-switch and fits the product's "the loop runs itself" model.
+
+**Tradeoffs considered:** (1) Build the cron "gated off" so the founder just wires the schedule — still rejected for an unattended cycle because shipping the always-fresh half first is cleaner and the cron is better built right after an explicit yes (it also pairs with per-product clustering scope, which needs the active-product context plumbed in). (2) Pick a different core item — rejected; F3 is the founder's named top core candidate and its safe half is genuinely valuable.
+
+**Impact:** `src/components/product/SignalsPanel.tsx` (`refetchInterval`). F3 stays ◐. The cron + per-product scope are in the report's "Skipped / queued for the founder" table awaiting a spend-posture yes.
+
 ### 2026-06-18 · Build D4's cancellation slice unattended (re-assessing the "too risky to build blind" deferral)
 
 **Decision:** Build the D4 cancellation slice (a "Cancel mission" brake on `/missions/$id`) during the autonomous overnight loop, reversing cycle 8's call that D4 was "NOT gate-verifiable, unsafe to build blind." Reconcile `H1-TASKS` to ✅ (already built). Set the next autonomous pick to `F3` (continuous discovery), the founder's named top core candidate.
