@@ -36,3 +36,54 @@ export const getAgentRuns = createServerFn({ method: "GET" })
     }));
     return { runs };
   });
+
+// C4/E7 · Agent memory inspector data — what a given agent knows: its own
+// (private) memories plus the shared/global memories it can draw on. Two .eq
+// queries merged (no `.or()` string interpolation, so a crafted agentId cannot
+// alter the filter); RLS scopes every read to the caller.
+export type AgentMemory = {
+  id: string;
+  scope: string | null;
+  kind: string | null;
+  content: string;
+  importance: number | null;
+  last_used_at: string | null;
+};
+
+export const getAgentMemory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ agentId: z.string().min(1) }).parse(input))
+  .handler(async ({ context, data }): Promise<{ memories: AgentMemory[] }> => {
+    const { supabase, userId } = context;
+    const cols = "id,scope,kind,content,importance,last_used_at";
+    const [own, shared] = await Promise.all([
+      supabase
+        .from("agent_memory")
+        .select(cols)
+        .eq("user_id", userId)
+        .eq("agent_id", data.agentId)
+        .order("importance", { ascending: false })
+        .limit(20),
+      supabase
+        .from("agent_memory")
+        .select(cols)
+        .eq("user_id", userId)
+        .eq("scope", "global")
+        .order("importance", { ascending: false })
+        .limit(20),
+    ]);
+    const byId = new Map<string, AgentMemory>();
+    for (const m of [...(own.data ?? []), ...(shared.data ?? [])]) {
+      const id = m.id as string;
+      if (byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        scope: (m.scope as string | null) ?? null,
+        kind: (m.kind as string | null) ?? null,
+        content: (m.content as string | null) ?? "",
+        importance: (m.importance as number | null) ?? null,
+        last_used_at: (m.last_used_at as string | null) ?? null,
+      });
+    }
+    return { memories: [...byId.values()] };
+  });

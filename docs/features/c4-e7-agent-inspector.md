@@ -1,6 +1,6 @@
 # C4 / E7 · Agent inspector (run history)
 
-> Status · Core shipped 2026-06-18 (autonomous overnight cycle 4) · Route: `/missions?tab=agents` · Owner: operator-facing, read-only
+> Status · Shipped 2026-06-18 (autonomous overnight cycles 4 to 5) · Route: `/missions?tab=agents` · Owner: operator-facing, read-only
 
 ## What it does
 
@@ -39,7 +39,7 @@ Missions (`/missions`) > the **Agents** tab > the **Agent inspector** card (belo
 
 ## Known limits / out of scope
 
-- Run history only. The shared/private memory inspector (what each agent knows) is the documented remainder (the partial mark on the C4/E7 dashboard row); it needs the agent-scope columns on `agent_memory` confirmed against the live schema.
+- The memory inspector ships alongside run history (cycle 5): a "What this agent knows" section shows the agent's private memories plus the shared/global pool, via two injection-safe `.eq()` queries (`getAgentMemory`). Live verify should confirm `agent_memory.agent_id` matches the swarm agent id so private memories attribute correctly.
 - The inspector is a dropdown-select view, not a per-card click-through; a click-from-the-card drill is a fast-follow.
 
 ## Related
