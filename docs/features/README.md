@@ -47,6 +47,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | M-B       | Compounding-memory view (the moat made visible)               | ✅ Shipped 2026-06-14                           | `/memory`                                         | [`memory-view.md`](./memory-view.md)                                 |
 | OPS-01    | Flow mode (ambient calm-state: soundscape + focus timer + quieting) | ✅ Shipped 2026-06-16                      | Chrome (`AppShell` footer)                        | [`flow-mode.md`](./flow-mode.md)                                     |
 | WEDGE     | Critic-teardown first-run (the launch wedge)                   | ✅ Shipped 2026-06-17                           | Today (cold-start)                                | [`wedge.md`](./wedge.md)                                             |
+| F-SHARE-TEARDOWN | Shareable Critic-teardown links (the viral loop)        | ✅ Shipped 2026-06-17 (migration pending sync)  | `/t/$slug` (public)                               | [`shareable-teardowns.md`](./shareable-teardowns.md)                 |
 
 ## Rules
 
