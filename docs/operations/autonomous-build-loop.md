@@ -61,9 +61,10 @@ For each item:
 
 - Roll the context window over at **clean boundaries (between items), never mid-build.**
 - Before starting a new item, check headroom. If it is low, finalize the current commit, write the full handoff, then roll to a fresh leg, then start the next item. This is how a "new session with proper instructions" happens before a new build, not during one.
-- Handoff target: `.remember/overnight-loop-handoff.md` (a loop-specific file, so it never collides with a parallel session's `remember.md`; overwrite at every milestone and before any rollover) plus the live report. After a rollover, disk is the source of truth, not the in-memory summary.
+- Handoff = the live report (`docs/planning/overnight-build-report.md`), committed every cycle; it is the single resume-from-here doc. A separate `.remember` handoff is not maintained (founder ruling, 2026-06-18): we stay in one session and the report, dashboard, and `plan.md` already carry the full state, so a handoff file would be redundant. If the session ever dies, a fresh session reads the report first. After a rollover, disk is the source of truth, not the in-memory summary.
 - A forced mid-build compaction is the safety net, not the plan: work is already committed and handed off, so nothing is lost.
 - **One continuous session (founder decision, 2026-06-18).** The loop runs in a single session: each cycle is a scheduled wakeup (`ScheduleWakeup`) that fires a new turn in the SAME session, and the harness auto-compacts when the context fills. This keeps one session log and one cumulative metrics view (input / output / cost). Outcome drift from lossy compaction is prevented by design: every cycle re-grounds from disk (the report, dashboard, plan.md, and the handoff), so decisions never depend on the in-context summary. Because the cycles are part-by-part with minimal carry-forward, compaction loses nothing that matters. A genuinely fresh session is only a fallback if this session dies; it resumes from the same disk artifacts.
+- **Proactive compaction every 2 cycles (founder ruling, 2026-06-18).** After every two successfully shipped cycles (each fully committed and pushed), initiate a compaction at that clean boundary before starting the next cycle, rather than letting context balloon until the harness auto-compacts near the limit. This bounds token cost while keeping one session. Only ever compact between cycles, never mid-build. Everything needed to resume is already on disk (the report), so compaction loses nothing.
 
 ## 8. Resilience and retry
 
@@ -82,7 +83,8 @@ For each item:
 
 - Live report: [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md), rewritten every cycle: completion %, items done with notes, in-progress, skipped with reason, comments.
 - Check it: `git pull`, then open the report. The commit trail (`git log --oneline`) is the second view.
-- **Date every entry (contract).** Every row in the report (done, skipped, pending-verification) carries its date (YYYY-MM-DD) and the cycle, so across multiple nights the report is a dated record of what was done and when. Accumulate across runs; never erase a prior night's dated entries. Group or label by date so each night reads on its own.
+- **Date AND time every entry (contract, project-wide).** Every row in the report (done, skipped, pending-verification), every `plan.md` build-log entry, and every dashboard status flip carries its date and time (`YYYY-MM-DD HH:MM`, 24h, read from `date "+%Y-%m-%d %H:%M"`) and the cycle, so the record is a timestamped audit trail of what was done and exactly when (the git commit also carries its own timestamp). Capture the build-start or commit time. Accumulate across runs; never erase a prior night's entries. **This date-plus-time rule applies project-wide, not only to the overnight loop (founder ruling, 2026-06-18); mirror it into `docs/operations/git-discipline.md` so every tool follows it.**
+- **UI breadcrumb per item (contract).** Every shipped item in the report (and in its feature doc) carries a one-line "where to see it" navigation path so the founder can verify it from the UI at a glance: just the path, no explanation. For example `Settings > Data > Download workspace export`, or `Engine Room > Attention`, or `Missions > Agents > Agent inspector`.
 
 ## 11. How to run and re-invoke
 
