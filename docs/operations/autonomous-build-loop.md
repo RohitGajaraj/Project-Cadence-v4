@@ -61,8 +61,9 @@ For each item:
 
 - Roll the context window over at **clean boundaries (between items), never mid-build.**
 - Before starting a new item, check headroom. If it is low, finalize the current commit, write the full handoff, then roll to a fresh leg, then start the next item. This is how a "new session with proper instructions" happens before a new build, not during one.
-- Handoff target: `.remember/remember.md` (overwrite at every milestone and before any rollover) plus the live report. After a rollover, disk is the source of truth, not the in-memory summary.
+- Handoff target: `.remember/overnight-loop-handoff.md` (a loop-specific file, so it never collides with a parallel session's `remember.md`; overwrite at every milestone and before any rollover) plus the live report. After a rollover, disk is the source of truth, not the in-memory summary.
 - A forced mid-build compaction is the safety net, not the plan: work is already committed and handed off, so nothing is lost.
+- **One continuous session (founder decision, 2026-06-18).** The loop runs in a single session: each cycle is a scheduled wakeup (`ScheduleWakeup`) that fires a new turn in the SAME session, and the harness auto-compacts when the context fills. This keeps one session log and one cumulative metrics view (input / output / cost). Outcome drift from lossy compaction is prevented by design: every cycle re-grounds from disk (the report, dashboard, plan.md, and the handoff), so decisions never depend on the in-context summary. Because the cycles are part-by-part with minimal carry-forward, compaction loses nothing that matters. A genuinely fresh session is only a fallback if this session dies; it resumes from the same disk artifacts.
 
 ## 8. Resilience and retry
 
@@ -88,7 +89,7 @@ For each item:
 There are two ways to operate, and they differ only in who makes the choices.
 
 **Autonomous mode (overnight or away).** Hands-off, self-paced, takes its own option-calls.
-1. **Shift+Tab** to **"accept edits on"** (it auto-accepts file edits). The command allowlist in `.claude/settings.local.json` auto-approves the loop's git, build, and lint commands even in this mode, so the run does not stall. If your build also offers a **"bypass permissions"** mode that works too; if you do not see it, "accept edits on" plus the allowlist is enough (proven: every commit, push, and build runs with no prompt). The loop may extend that allowlist as needed so it never stalls (founder-authorized).
+1. **Shift+Tab** to **"accept edits on"** (it auto-accepts file edits within the workspace). **The loop must NEVER stall on a permission prompt** (it runs while the founder is away). Two settings in `.claude/settings.local.json` guarantee this: (a) a broad command allowlist (git, bun, bunx, npx, perl, bash, and the read utilities) plus a destructive denylist (force-push, reset --hard, rm -rf); and (b) `additionalDirectories` set to the repo root, so writes anywhere in the repo are trusted, including the parent repo's `.remember/`. That second one is the gotcha that bit once: a worktree's cwd is the worktree, so a write to the parent repo (outside the workspace) prompts unless the repo root is a trusted directory. **Standing rule:** if any command or path ever prompts, add it to the allowlist or `additionalDirectories` immediately and continue (founder pre-authorized); never wait on the founder for a permission. A "bypass permissions" mode, if available, removes prompts entirely and is also fine.
 2. Type **`/overnight-build`**.
 
 That one command tells the loop: read this playbook, pick the top buildable item in priority order, plan and decide, build, gate, adversarially review, run the doc-loop, commit with a why, push, retry through usage limits, roll context at clean boundaries, and keep the report current. Nothing else is needed.
