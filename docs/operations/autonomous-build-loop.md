@@ -68,12 +68,12 @@ For each item:
 
 - **Usage limit / quota / session expiry (not a code problem):** do not halt, do not fail the item. Schedule a retry on a roughly 30 minute cadence (`ScheduleWakeup`, 1800s). The loop auto-resumes the moment the limit clears, and continues on its own.
 - **Real build-gate failure (code broke tsc/build/lint):** attempt a bounded fix (2 to 3 tries). If still red, revert the item's changes, skip the item, queue it in the report with the error text, and move to the next buildable item. The item is parked; the loop never dies.
-- **Out of buildable items:** mine the next strategy doc (section 3). Only when all are exhausted, write a final handoff and idle with a periodic re-check.
+- **Out of buildable items:** mine the next strategy doc (section 3). When all are exhausted, do NOT idle: run the design-quality pass (section 14). Only idle (with a periodic re-check) once the design pass is also complete and nothing is pending.
 
 ## 9. Stop and pause conditions (narrow by design)
 
 - **Pause and auto-resume** for: usage limits (retry per section 8).
-- **Stop and wait for the founder** only for: a destructive or outward-facing action that needs them, an explicit founder stop, or the entire backlog exhausted.
+- **Stop and wait for the founder** only for: a destructive or outward-facing action that needs them, or an explicit founder stop. (Backlog exhausted does NOT stop the loop; it routes to the design-quality pass, section 14.)
 - Everything else (a failing item, an ambiguous item, a gated item) routes to skip-and-continue. The loop does not halt over a single item.
 
 ## 10. Status reporting
@@ -118,6 +118,16 @@ The live app does not reflect a change until the founder publishes it. During an
 - **Needs publish first:** the change is this run's own work and must be published before it can be verified. Note it and move on; verify it once the founder publishes and says so.
 
 When uncertain whether something is already live, do NOT juggle or burn tokens guessing: halt that test, make a clear dated note in the report, and notify the founder. This is a standing contract rule, not a one-night exception.
+
+## 14. Design-quality pass (the last step, when the backlog is dry)
+
+When no buildable backlog item is left (v10 through v8 mined, founder-gated items skipped) and nothing else is pending, do NOT idle. Switch to a design-quality pass and hold the product to a launch-ready, consumer-grade bar: could this ship to a paying customer tomorrow?
+
+- **Run the design-craft skills against the brand canon.** Use the available design skills (impeccable, emil-design-eng, design-taste-frontend, high-end-visual-design, gpt-taste, stitch-design-taste, make-interfaces-feel-better, redesign-existing-projects) and judge against the brand guidelines: the Ember system + [`../conventions/design-context.md`](../conventions/design-context.md), [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md) (calm front, deep engine; name the outcome), [`../conventions/home-and-today-ia.md`](../conventions/home-and-today-ia.md), [`../conventions/ui-voice.md`](../conventions/ui-voice.md), and [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
+- **Audit, surface by surface:** structure and information hierarchy, category and section placement, typography (font, size, weight), spacing and positioning, color combinations and contrast, motion (craft, not absence), and responsive behavior.
+- **Customer-experience lens:** is it easy, friendly, and obvious? Does it overcomplicate what it is trying to say? Run all copy through the voice + humanized-output gate (no AI fingerprints, no em or en dashes, plain outcome-named language). Read it as a first-time customer would.
+- **Same discipline.** Treat each design finding as a buildable item: surgical change, gate (`tsc --noEmit` + build + lint), adversarial review, doc-loop, commit + push, and a dated report entry. Work findings top-down by impact.
+- This is also the fallback whenever nothing else is pending: pick up the design pass rather than stop.
 
 ---
 

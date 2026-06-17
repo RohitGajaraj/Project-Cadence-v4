@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 2 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
+**Last updated:** 2026-06-18 (cycle 3 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 2 complete; cycle 3 next) |
+| Status | ACTIVE (cycle 3 complete; cycle 4 next) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -40,9 +40,9 @@ Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
 | Bucket | Count |
 | --- | --- |
 | Done | ~52 |
-| Partial | ~10 |
+| Partial | ~11 |
 | Paused / deferred / blocked | ~5 |
-| Pending | ~34 |
+| Pending | ~33 |
 | **Approx completion** | **~52 of ~101 tracked rows (~51%)** |
 
 Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then mine v9 and v8 for relevant work.
@@ -53,6 +53,7 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 | --- | --- | --- | --- | --- |
 | 2026-06-18 | U6 (core) | G6 Interop | `99563e7db6` | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
 | 2026-06-18 | R3 (core) | G7 Cockpit | `456a6ed777` | Notifications "Attention" feed on the Engine Room (`/govern?tab=attention`): one derived feed of pending approvals, spend nearing/over a cap, and a stalled loop, severity-sorted, each card deep-links to its home. No migration (reads existing loop state). tsc + eslint + build green; adversarial review folded 1 fix (tab order). ◐ remainder: email + digests + prefs + a bell badge. **Pending your publish + live verify (see below).** |
+| 2026-06-18 | P7 (core) | G8 Governance | `(this push)` | Incidents log on the Engine Room (`/govern?tab=incidents`): read-only "what went wrong", failed tool executions + errored auto-pipelines, newest first, each execution links to its trace. No migration. tsc + eslint + build green; adversarial review folded 1 fix (explicit workspace scoping on event_queue). ◐ remainder: guardrail/cost sources + a persistent incidents table. **Pending your publish + live verify (see below).** |
 
 ## In progress
 
@@ -73,11 +74,13 @@ The live app does not reflect this run's changes until you publish them. These i
 | --- | --- | --- | --- |
 | 2026-06-18 | U6 workspace export | Needs publish first (new this run) | Settings > Data > "Download workspace export". Confirm the JSON has the expected sections with non-zero counts on a seeded workspace, and that another workspace's data is not present. |
 | 2026-06-18 | R3 Attention feed | Needs publish first (new this run) | Engine Room > Attention. With a pending approval (or a near-cap budget), confirm a severity-coded card appears and links to the right tab; confirm "All clear" when the loop is clean. |
+| 2026-06-18 | P7 Incidents log | Needs publish first (new this run) | Engine Room > Incidents. With a failed tool execution present, confirm it appears with the error detail and a working "View trace" link; confirm "No incidents" when clean. |
 
 ## Notes and comments
 
 - **Cycle 1 shipped U6 (core)** (above). Picked autonomously as the top buildable, file-disjoint, no-migration item (P0/P1-tagged trust escape-hatch), avoiding the parallel session's PLG and Gauntlet lanes.
 - **Cycle 2 shipped R3 (core)** (above): the in-app Attention feed on the Engine Room. Top remaining buildable, file-disjoint, no-migration item; it derives from existing loop state, so it works the moment you publish.
+- **Cycle 3 shipped P7 (core)** (above): the read-only Incidents log on the Engine Room. Derived from existing failure logs, no migration; folded a tenancy fix (explicit workspace scoping on `event_queue`).
 - **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
 - **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
 - Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.

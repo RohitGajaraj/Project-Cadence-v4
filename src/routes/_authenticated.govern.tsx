@@ -19,6 +19,7 @@ import { getDriftOverview } from "@/lib/drift.functions";
 import { ControlsPanel } from "@/components/governance/ControlsPanel";
 import { ApprovalsPanel } from "@/components/governance/ApprovalsPanel";
 import { NotificationsPanel } from "@/components/governance/NotificationsPanel";
+import { IncidentsPanel } from "@/components/governance/IncidentsPanel";
 import { GuardrailsPanel } from "@/components/governance/GuardrailsPanel";
 import { BudgetsPanel } from "@/components/governance/BudgetsPanel";
 import { AnalyticsPanel } from "@/components/observe/AnalyticsPanel";
@@ -47,7 +48,8 @@ type Tab =
   | "analytics"
   | "gauntlet"
   | "traces"
-  | "drift";
+  | "drift"
+  | "incidents";
 
 // Engine-Room Doctrine: ids are the routing contract (unchanged); labels name the outcome, not the mechanism.
 const TABS: { id: Tab; label: string }[] = [
@@ -62,6 +64,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "gauntlet", label: "Loop health" },
   { id: "traces", label: "Activity" },
   { id: "drift", label: "Trends" },
+  { id: "incidents", label: "Incidents" },
 ];
 
 // GOVERN_DESC from the reference, verbatim — keyed by the lowercase tab ids.
@@ -78,6 +81,8 @@ const GOVERN_DESC: Record<Tab, string> = {
     "The three proof metrics: how often you approve the loop's calls, how much it runs unattended, and your daily-ritual retention.",
   traces: "Step-by-step replay of each agent run, with timing and tool calls.",
   drift: "Quality shifts against baseline. Flags when answers start changing.",
+  incidents:
+    "What went wrong: failed tool executions and errored auto-pipelines, newest first, linked to traces.",
 };
 
 export const Route = createFileRoute("/_authenticated/govern")({
@@ -190,6 +195,7 @@ function GovernPage() {
         {tab === "gauntlet" && <GauntletMetricsPanel />}
         {tab === "traces" && <TracesPanel />}
         {tab === "drift" && (surface ? <DriftSurfaceDetail id={surface} /> : <DriftPanel />)}
+        {tab === "incidents" && <IncidentsPanel />}
       </div>
     </AppShell>
   );
