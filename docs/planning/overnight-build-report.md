@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 1 complete; cycle 2 next) |
+| Status | ACTIVE (cycle 2 complete; cycle 3 next) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -26,23 +26,23 @@ This run operates under the [autonomous build loop playbook](../operations/auton
 - **Two modes.** Manual (daytime): the founder says `pick <ID>`, one item builds, options are surfaced for the founder. Autonomous (overnight): one command, `/overnight-build`, runs the loop hands-off and self-paced.
 - **Each cycle.** Pick the top buildable item (v10, then v9, then v8), plan and decide, build, gate on `tsc --noEmit` + `bun run build` + lint, adversarially self-review, run the full doc-loop, commit with a why, fast-forward push to `main`.
 - **Decisions.** In autonomous mode the loop picks the best option on the data and logs the rationale; it defers only founder-gated calls (taste, spend, accounts, anything irreversible) and queues them below.
-- **Safety.** Bypass permission mode plus a denylist that blocks destructive commands even hands-off; an isolated worktree so it never collides with parallel sessions.
+- **Safety.** "Accept edits" mode plus a command allowlist and a denylist that blocks destructive commands; an isolated worktree so it never collides with parallel sessions.
 - **Resilience.** A usage limit pauses the run, it does not stop it: retry on a ~30 minute cadence, auto-resume when the limit clears.
 - **Continuity.** Context rolls over only at clean boundaries between builds, with a written handoff first, never mid-build.
 - **Model and effort.** Opus 4.8 1M context, top effort on the hard steps, dialed down for mechanical ones.
 
-**How to operate.** Autonomous: Shift+Tab to "bypass permissions on", then `/overnight-build`. Manual: `pick <ID>`. Full detail: playbook sections 11 to 12.
+**How to operate.** Autonomous: Shift+Tab to "accept edits on" (the command allowlist covers the rest), then `/overnight-build`. Manual: `pick <ID>`. Full detail: playbook sections 11 to 13.
 
-## Completion snapshot (baseline at run start)
+## Completion snapshot (live)
 
 Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
 
 | Bucket | Count |
 | --- | --- |
 | Done | ~52 |
-| Partial | ~8 |
+| Partial | ~10 |
 | Paused / deferred / blocked | ~5 |
-| Pending | ~36 |
+| Pending | ~34 |
 | **Approx completion** | **~52 of ~101 tracked rows (~51%)** |
 
 Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then mine v9 and v8 for relevant work.
@@ -51,7 +51,8 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 
 | Item | Lane | Commit | Notes |
 | --- | --- | --- | --- |
-| U6 (core) | G6 Interop | (this push) | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
+| U6 (core) | G6 Interop | `99563e7db6` | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
+| R3 (core) | G7 Cockpit | (this push) | Notifications "Attention" feed on the Engine Room (`/govern?tab=attention`): one derived feed of pending approvals, spend nearing/over a cap, and a stalled loop, severity-sorted, each card deep-links to its home. No migration (reads existing loop state). tsc + eslint + build green; adversarial review folded 1 fix (tab order). ◐ remainder: email + digests + prefs + a bell badge. **Pending your publish + live verify (see below).** |
 
 ## In progress
 
@@ -71,10 +72,12 @@ The live app does not reflect tonight's changes until you publish them. These it
 | Item | What to verify on the live app |
 | --- | --- |
 | U6 workspace export | Settings > Data > "Download workspace export". Confirm the JSON has the expected sections with non-zero counts on a seeded workspace, and that another workspace's data is not present. |
+| R3 Attention feed | Engine Room > Attention. With a pending approval (or a near-cap budget), confirm a severity-coded card appears and links to the right tab; confirm "All clear" when the loop is clean. |
 
 ## Notes and comments
 
 - **Cycle 1 shipped U6 (core)** (above). Picked autonomously as the top buildable, file-disjoint, no-migration item (P0/P1-tagged trust escape-hatch), avoiding the parallel session's PLG and Gauntlet lanes.
+- **Cycle 2 shipped R3 (core)** (above): the in-app Attention feed on the Engine Room. Top remaining buildable, file-disjoint, no-migration item; it derives from existing loop state, so it works the moment you publish.
 - **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
 - **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
 - Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.

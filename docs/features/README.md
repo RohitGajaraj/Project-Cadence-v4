@@ -34,6 +34,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 
 | ID        | Feature                                                        | Status                                          | Route(s)                                          | Doc                                                                  |
 | --------- | -------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| R3 | Notifications (in-app Attention feed) | ◐ Core shipped 2026-06-18 | `/govern?tab=attention` | [`r3-notifications.md`](./r3-notifications.md) |
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
 | F-AGENT-1 | Orchestrator + multi-agent missions                            | ✅ Shipped 2026-06-06                           | `/missions`, `/missions/$id`                      | [`f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md)           |
 | F-AGENT-2 | Persistent agent memory + self-reflection + trust auto-advance | ✅ Shipped 2026-06-06                           | `/agents`                                         | [`f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md) |

@@ -18,6 +18,7 @@ import { listTraces } from "@/lib/traces.functions";
 import { getDriftOverview } from "@/lib/drift.functions";
 import { ControlsPanel } from "@/components/governance/ControlsPanel";
 import { ApprovalsPanel } from "@/components/governance/ApprovalsPanel";
+import { NotificationsPanel } from "@/components/governance/NotificationsPanel";
 import { GuardrailsPanel } from "@/components/governance/GuardrailsPanel";
 import { BudgetsPanel } from "@/components/governance/BudgetsPanel";
 import { AnalyticsPanel } from "@/components/observe/AnalyticsPanel";
@@ -36,6 +37,7 @@ import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 // contract and stay unchanged. See docs/conventions/engine-room-doctrine.md.
 
 type Tab =
+  | "attention"
   | "controls"
   | "approvals"
   | "guardrails"
@@ -50,6 +52,7 @@ type Tab =
 // Engine-Room Doctrine: ids are the routing contract (unchanged); labels name the outcome, not the mechanism.
 const TABS: { id: Tab; label: string }[] = [
   { id: "controls", label: "Controls" },
+  { id: "attention", label: "Attention" },
   { id: "approvals", label: "Approvals" },
   { id: "guardrails", label: "Safety" },
   { id: "budgets", label: "Spend" },
@@ -63,6 +66,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 // GOVERN_DESC from the reference, verbatim — keyed by the lowercase tab ids.
 const GOVERN_DESC: Record<Tab, string> = {
+  attention: "What needs you right now: approvals waiting, spend nearing caps, and a stalled loop.",
   controls: "Kill switch, mission caps, stuck approvals, auto-pipelines.",
   approvals: "Tool calls waiting on a human. Approve runs them; reject keeps them paused.",
   guardrails: "Rules that block, warn, or redact text on every AI call.",
@@ -176,6 +180,7 @@ function GovernPage() {
         <TabRow tabs={tabs} active={tab} onSet={setTab} desc={GOVERN_DESC} />
 
         {tab === "controls" && <ControlsPanel onOpenQueue={() => setTab("approvals")} />}
+        {tab === "attention" && <NotificationsPanel />}
         {tab === "approvals" && <ApprovalsPanel />}
         {tab === "guardrails" && <GuardrailsPanel />}
         {tab === "budgets" && <BudgetsPanel />}
