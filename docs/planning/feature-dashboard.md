@@ -41,8 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| Q1-MCP-P3 | MCP token UI (Settings → Integrations) | Claude Code | 2026-06-17 | Phase 3 of Q1-MCP. Lane F. Pure UI on shipped Phase 1/2 backend: token gen/revoke + config snippets. File-disjoint from AMBIENT-ARC. |
-| AMBIENT-ARC | Autonomy Trust Dial (Agents tab) | Claude Code | 2026-06-17 | Lane D. Surfaces the already-wired per-agent arc (observing→proving→trusted→ambient) + score + suggested promotion from `getAllAgentTrust`. File-disjoint from Q1-MCP-P3. |
 
 ---
 
@@ -65,7 +63,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 **CUT / DEFER (do not build now):** `K1-deploy` (external deploy), `F-AUDIO-1/2` + `SEN-04` (post-PMF), the full 19-mesh breadth, outcome-pricing machinery, team/RBAC `A6` beyond the MCP slice.
 
-**New items added by v10 (tracked here; not yet group rows below):** `MOAT-VIS`, `MOAT-METRIC`, `F-SHARE-TEARDOWN`, `SANDBOX`, `AMBIENT-ARC`, `Q1-MCP`. (`WEDGE` ✅ and `W1-AUTO` ✅ now have group rows.) **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
+**New items added by v10 (tracked here; not yet group rows below):** `MOAT-VIS` ✅, `MOAT-METRIC`, `F-SHARE-TEARDOWN` ✅, `SANDBOX`, `AMBIENT-ARC` ✅ (Trust Dial on the Agents tab — `src/components/cockpit/TrustDial.tsx`; surfaces the per-agent arc incl. Ambient + suggested promotion; see [`features/trust-and-autonomy.md`](../features/trust-and-autonomy.md) §7), `Q1-MCP` ◐ (Phases 1-3 done). (`WEDGE` ✅ and `W1-AUTO` ✅ now have group rows.) **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
 
 ---
 
@@ -203,7 +201,7 @@ _Dual-user: external agents plug in; teams land._
 | ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
 | --- | --- | --- | --- | --- |
 | F-A2A | Internal A2A handoff contract | ✅ | Agents hand off missions with structured payloads | [`features/a2a-handoff.md`](../features/a2a-handoff.md) |
-| Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phase 2 dispatch wired 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch done; Phase 3 (Settings UI) pending. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
+| Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phases 1-3 done 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch + **Phase 3 token UI** (Settings → Integrations: issue/revoke + connect snippets) all done. Remaining (Q2/Phase 4): full MCP streamable-HTTP transport + external discovery. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
 | Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
 | A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
 | U6 | Full data-portability / export wizard | ⬜ (P0/P1) | Trust + escape hatch: export signals, decisions+lineage, PRDs, memory graph | Export fn + audit log |
@@ -226,7 +224,7 @@ _The product feels coherent; the operator sees the machine._
 | E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ✅ (2026-06-16) | An always-on health strip on the Missions surface: verdict (on watch / working / stalled) from stuck runs + expired calls, plus queue depth, last ingest, last run; the stalled state links to the engine room | `loop-health.functions.ts` (`getLoopHealth`) + `components/cockpit/LoopHealthBanner.tsx` + Missions index |
 | B3 | Product switcher + portfolio view | ✅ (2026-06-16) | A Portfolio section on `/product`: every product with its loop status (task progress + signals/opps/specs counts) and click-to-switch (the active product is marked). New `getPortfolio` fn; switcher reuses `setActiveProductId`. Adversarially reviewed (1 medium: silent-zero-on-query-error, fixed). ⌘K product-switch deferred (CommandPalette is parallel-active) | `projects.functions.ts` (`getPortfolio`) + `_authenticated.product.tsx` |
 | B5 | Archive / delete product (soft archive + hard delete w/ export) | ✅ (2026-06-17) | Full product lifecycle on the `/product` **Portfolio** (B3 continuation, extracted to `PortfolioBoard.tsx`): soft archive + restore (reversible, Undo toast; archived products drop from the sidebar + tabs, shown in an Archived section), JSON export of the product's whole footprint (the escape hatch), and an honest export-then-delete (typed-name confirm; copy reflects FK `on delete set null` — delete detaches signals/opps/specs/tasks to the workspace, doesn't destroy them; a snapshot downloads first). Verified RLS-scoped writes. Adversarially reviewed: 3 fixes (a runtime `useConfirm` destructure bug that only `tsc` caught, a serializable server-fn return, a verified delete) + a partial index. Place-into-archive write is gated on the next sync adding `archived_at`; reads are pre-migration tolerant | `projects.functions.ts` + `PortfolioBoard.tsx` + migration `20260617120000_b5_project_archive.sql` |
-| ENG-06 / F-GOV-COST-SURFACE | Cost-per-outcome chip (front) + unit-economics roll-up (Engine Room) | ⬜ | "What you got for what you spent" on the calm front; full per-agent telemetry behind the door (refined per the 2026-06-17 agent-manager decision: split-by-surface) | Front: `agent_runs.spend_used_usd` + outcome counts on Today/Missions. Engine Room: cost per mission/artifact/decision in Analytics. Decision: [`session-decisions.md`](../strategy/session-decisions.md) |
+| ENG-06 / F-GOV-COST-SURFACE | Cost-per-outcome chip (front) + unit-economics roll-up (Engine Room) | ◐ | B1 (Today chip) + B3 (Engine Room roll-up) built 2026-06-17 · tsc/lint green · live-verify gated on the pre-existing lovable-tagger build error · B2 (Missions glance) deferred. "What you got for what you spent" on the calm front; full per-agent telemetry behind the door (split-by-surface per the 2026-06-17 agent-manager decision) | Front: `getCostPerOutcome` chip on Today. Engine Room: `getUnitEconomics` in Analytics. Detail: [`cost-per-outcome.md`](../features/cost-per-outcome.md) · Decision: [`session-decisions.md`](../strategy/session-decisions.md) |
 | F-AGENTS-MENTIONABLE | Agents as first-class @-mentionable users | ⬜ | "@discovery, re-cluster the last 50 signals" from any card | Mention parser → mission |
 | R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
 | R4 | Settings expansion (budgets, guardrails, health, prefs, admin) | ◐ Partial | Self-serve control surface (Plan tab shipped) | `_authenticated.settings.tsx` |

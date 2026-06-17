@@ -91,8 +91,9 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
   (`getAllAgentTrust`, `setAgentArc`).
 - Loop integration: `src/lib/ai/loop.server.ts` calls
   `resolveApprovalMode(toolMode, arc)` at every tool-call gate.
-- UI: `src/routes/_authenticated.agents.tsx`, `TrustChip` (with full
-  tooltip breakdown) and `AutonomyDial` (with per-arc tooltips).
+- UI: `src/components/cockpit/TrustDial.tsx` (the Trust Dial on the Agents
+  tab — score, the 4-stage arc as a clickable dial, suggested promotion, and
+  the breakdown), wired into `src/components/cockpit/AgentsPanel.tsx`.
 
 ## 6. What this is _not_
 
@@ -103,7 +104,36 @@ The dial lives in `agent_autonomy(user_id, agent_id, arc)`. The agent loop
   current decision queue.
 - Not a substitute for evals or guardrails. It's a summary _of_ them.
 
-## 7. Related
+## 7. AMBIENT-ARC: surfacing the dial on the cockpit (shipped 2026-06-17)
+
+The engine computed all of this (`getAllAgentTrust` returns `score`,
+`arc`, `suggested_arc`, and the `breakdown`) and the loop already executed
+unattended at the **Ambient** arc, but the cockpit only ever showed a bare
+`trust_arc` string on the agent card. AMBIENT-ARC closes that visibility gap.
+
+The **Trust Dial** (`src/components/cockpit/TrustDial.tsx`, on the Agents tab)
+renders, per agent:
+- the 0-100 trust **score** and sample count;
+- the four arcs as a **clickable dial** (Observing → Proving → Trusted →
+  **Ambient**) — the current arc is filled, Ambient glows ember; clicking a
+  stage sets the arc via `setAgentArc`. The dial **is** the control;
+- a **"Promote to {suggested}"** affordance whenever `suggested_arc` is higher
+  than the current arc (the score-derived hint, never auto-applied — safety
+  floor #3);
+- an expandable **breakdown** (missions / approvals / eval-mean) and a
+  plain-language meaning per arc (Ambient = "runs confirm-gated tools
+  unattended where it is safe to").
+
+This is the only place **Ambient** is shown: the user-wide AutonomyCard ladder
+(Today) deliberately tops out at Trusted because Ambient is per-agent, not a
+workspace stage. No new server fn and no migration — it consumes the existing
+`getAllAgentTrust` / `setAgentArc`. Trust is user + agent scoped (agents are
+not workspace-scoped), so the dial is intentionally workspace-agnostic.
+
+**Fast-follow (not built):** an auto-promotion achievement on the Today
+AutonomyCard when an agent crosses into a new arc.
+
+## 8. Related
 
 - A2A handoff (how receiver-arc gating applies on handoff): [`a2a-handoff.md`](./a2a-handoff.md)
 - Orchestration contract (approval modes, sweeper, mission lifecycle): [`../architecture/orchestration.md`](../architecture/orchestration.md)

@@ -15,6 +15,7 @@ import { SketchBar } from "@/components/cadence/Sketch";
 import { getSwarmHud, type SwarmHud } from "@/lib/swarm.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { decideEventDispatch } from "@/lib/reactor.functions";
+import { TrustDial } from "@/components/cockpit/TrustDial";
 
 function relative(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -111,6 +112,21 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
     return hud.agents.filter((a) => a.latest_run?.status === "running").length;
   }, [hud]);
 
+  // Name/role map so the trust dial (keyed by agent_id) can label rows without
+  // a second query — the swarm HUD already carries both.
+  const nameById = useMemo(
+    () =>
+      new Map(
+        (hud?.agents ?? []).map(
+          (a): [string, { name: string; role: string }] => [
+            a.agent_id,
+            { name: a.name, role: a.role },
+          ],
+        ),
+      ),
+    [hud],
+  );
+
   if (isLoading && !hud) {
     return (
       <div
@@ -171,6 +187,9 @@ export function AgentsPanel({ activeWorkspaceId }: { activeWorkspaceId: string |
         </span>
         <span>Refreshed {relative(hud.generated_at)}</span>
       </div>
+
+      {/* AMBIENT-ARC: per-agent autonomy arc + score + suggested promotion. */}
+      <TrustDial nameById={nameById} />
 
       {/* TOP STRIP: throughput · attention */}
       <div className="grid grid-cols-12 gap-4">

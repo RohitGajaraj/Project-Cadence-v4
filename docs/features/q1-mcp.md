@@ -1,10 +1,10 @@
 # Q1-MCP · Read-only Model Context Protocol (MCP) server
 
-**Status:** ◐ Partial (Phase 2: tool dispatch complete; Phase 3: UI pending)  
+**Status:** ◐ Partial (Phases 1-3 complete: backend + token UI shipped; Phase 4 / Q2 future)  
 **Lanes:** F (INTEROP / the neutral brain)  
 **P-tier:** P1 (pull forward — the neutral-brain moat)  
-**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch)  
-**What's next:** Phase 3 — UI token gen/revoke in Settings > Integrations; Phase 4 (Q2, future) — full CRUD + external agent discovery.
+**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17  
+**What's next:** Phase 4 (Q2, future) — full CRUD + external agent discovery + full MCP streamable-HTTP transport handshake.
 
 ---
 
@@ -125,20 +125,21 @@ curl -X POST https://<host>/api/mcp \
 
 ---
 
-## Phase 3: Settings UI (pending)
+## Phase 3: Settings UI (shipped 2026-06-17)
 
-**File:** `src/routes/_authenticated.settings.tsx` (new tab: "Integrations")
+**Surface:** Settings → **Integrations** tab (`/settings?section=interop`).
 
-**UX:**
-- Generate MCP token: input `slug` (name) → button → display `<slug>:<secret>` once (copy button)
-- List tokens: table of (name, created_at, last_used_at, rate_limit_per_min) + revoke button
-- Revoke: confirm dialog → disabled token (revoked_at set)
-- Pre-configured snippets: Claude Desktop, Cursor, ChatGPT — copy-paste config blocks
+**What shipped:**
+- **Issue a token:** name input (`slug`) + per-minute rate limit (1-1000, default 60) → `issueMCPToken` → the full `slug:secret` renders once in an ember-tinted box with an explicit "copy it now, it will not be shown again" warning + copy button. The secret is generated server-side, returned once, never persisted plaintext (only the SHA256 hash is stored), and never logged.
+- **Active tokens:** `listMCPTokens` table — name, created, last used, rate limit, active/revoked.
+- **Revoke:** confirm-gated (destructive `useConfirm`) → `revokeMCPToken` sets `revoked_at`; the row dims to revoked. Any external agent on that token stops immediately.
+- **How to connect:** the live endpoint (`<origin>/api/mcp`), the `Authorization: Bearer slug:secret` contract, a copy-paste **working `curl`** example, and the four-method list.
 
-**Files to create/modify:**
-- `src/components/settings/IntegrationsTab.tsx` — token gen/revoke UI
-- `src/routes/_authenticated.settings.tsx` — wire in the tab
-- Modify `mcp.functions.ts` — add `updateMCPTokenRateLimit` if needed
+**Honesty note (claim-never-outruns-wiring):** `/api/mcp` is a **JSON-RPC-over-HTTP** endpoint with bearer auth, not the full MCP streamable-HTTP transport (no `initialize`/SSE session handshake). So the UI leads with a `curl` example that genuinely works against the implemented route, and frames it as "point any MCP-aware or HTTP client here" rather than shipping a Claude Desktop `mcpServers` config that would not handshake. A full MCP-transport adapter is the documented Phase 4 fast-follow.
+
+**Files:**
+- `src/components/settings/IntegrationsTab.tsx` (new) — the whole tab (issue / list / revoke / connect).
+- `src/routes/_authenticated.settings.tsx` — `SectionId` adds `"interop"`, one `TABS` entry ("Integrations"), one render branch. No new server fn, no migration (consumes the shipped Phase 1 `mcp.functions.ts`).
 
 ---
 

@@ -42,8 +42,16 @@ import {
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/connectors/registry";
 import { getBillingState, createCheckoutSession, type BillingState } from "@/lib/billing.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
+import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 
-type SectionId = "connections" | "ai" | "staff" | "workspace" | "billing" | "profile";
+type SectionId =
+  | "connections"
+  | "ai"
+  | "staff"
+  | "workspace"
+  | "billing"
+  | "interop"
+  | "profile";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile).
 // "Accounts" is the account-level OAuth surface (which provider logins you have
@@ -60,6 +68,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "staff", label: "Staff" },
   { id: "workspace", label: "Workspace" },
   { id: "billing", label: "Plan" },
+  { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -153,6 +162,7 @@ function SettingsPage() {
         {active === "staff" && <StaffTab />}
         {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
         {active === "billing" && <BillingTab checkout={checkout} />}
+        {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
       </div>
     </AppShell>
