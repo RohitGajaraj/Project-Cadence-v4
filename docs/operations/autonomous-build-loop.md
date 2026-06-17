@@ -66,9 +66,10 @@ For each item:
 
 ## 8. Resilience and retry
 
-- **Usage limit / quota / session expiry (not a code problem):** do not halt, do not fail the item. Schedule a retry on a roughly 30 minute cadence (`ScheduleWakeup`, 1800s). The loop auto-resumes the moment the limit clears, and continues on its own.
+- **Usage limit / quota / session-window expiry (not a code problem):** do not halt, do not fail the item. Read the reset time from the limit message and schedule the wake to just after it (the reset time plus about a minute), then resume exactly where you left off (`ScheduleWakeup`). If the reset time is not known, poll: re-check roughly every 30 minutes until the window reopens, then continue. This timed-to-the-reset wait is the ONLY case where a wait approaches 30 minutes.
+- **Cadence (while the session window is open):** build fast. Roll straight from one item to the next; if a break is genuinely needed (for example a clean context-boundary roll), keep it under five minutes. Never slow to a long idle cadence because the backlog looks thin. A thin backlog means pick the next most important item or start the design pass, not wait.
 - **Real build-gate failure (code broke tsc/build/lint):** attempt a bounded fix (2 to 3 tries). If still red, revert the item's changes, skip the item, queue it in the report with the error text, and move to the next buildable item. The item is parked; the loop never dies.
-- **Out of buildable items:** mine the next strategy doc (section 3). When all are exhausted, do NOT idle: run the design-quality pass (section 14). Only idle (with a periodic re-check) once the design pass is also complete and nothing is pending.
+- **Thin or exhausted backlog:** do NOT slow down or idle. Pick the next most important item, including ones that need a migration (build them pre-migration-tolerant; the founder syncs later) or are otherwise harder, in priority order (v10, then v9, then v8). Only when genuinely nothing buildable remains, run the design-quality pass (section 14). The full-product humanization sweep (HUMAN-SWEEP) is deferred to the very end, done as one complete scan once everything is built, never mid-build.
 
 ## 9. Stop and pause conditions (narrow by design)
 
