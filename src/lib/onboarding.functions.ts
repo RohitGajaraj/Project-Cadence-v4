@@ -126,6 +126,15 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
       };
     } catch (error) {
       console.error("Error seeding workspace:", error);
+      // Map schema-drift Postgres errors to a clear, actionable message so the
+      // user sees "the backend is behind" instead of "column foo does not exist".
+      // Codes: 42703 undefined_column, 42883 undefined_function, 42P01 undefined_table.
+      const pgCode = (error as { code?: string })?.code;
+      if (pgCode === "42703" || pgCode === "42883" || pgCode === "42P01") {
+        throw new Error(
+          "Workspace setup is temporarily unavailable while the backend updates. Please retry in a minute or contact support.",
+        );
+      }
       throw error;
     }
   });
