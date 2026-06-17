@@ -1,6 +1,6 @@
 # W6 — Persona onboarding tracks
 
-> Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
+> Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 · **RLS seed hotfix 2026-06-18** (track-pick crashed every new user with a `projects` RLS error; now self-heals the workspace) · (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
 
 ## What it does
 
@@ -29,7 +29,8 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 
 - **UI**: `src/components/onboarding/TrackSelector.tsx` (step 0/1) and `src/components/onboarding/OnboardingFlow.tsx` (StepShell steps 2-4). The flow renumbered to 4 steps when TrackSelector took slot 0; state 1 is intentionally skipped (`step === 0` advances straight to `step === 2`), documented inline.
 - **Seed data**: `src/lib/onboarding/track-seeds.ts` defines three `TrackSeed` objects (project, signals, opportunities) plus `trackDescriptions` for the selector cards. `getTrackSeed(track)` is exhaustively typed.
-- **Server fn**: `seedWorkspaceForTrack` in `src/lib/onboarding.functions.ts` runs under `requireSupabaseAuth`. Order: guard against re-seed (rejects if any signal already exists) → get/create project → insert signals → insert opportunities → mark `profiles.onboarded = true` **last**, so a mid-flight failure leaves the user retryable rather than half-onboarded.
+- **Server fn**: `seedWorkspaceForTrack` in `src/lib/onboarding.functions.ts` runs under `requireSupabaseAuth`. Order: guard against re-seed (rejects if any signal already exists) → **resolve/create the default workspace** (`ensureDefaultWorkspace`) → get/create project → insert signals → insert opportunities → mark `profiles.onboarded = true` **last**, so a mid-flight failure leaves the user retryable rather than half-onboarded.
+- **Workspace self-heal (2026-06-18 RLS hotfix)**: post-tenancy-retrofit the write RLS on `projects` / `signals` / `opportunities` is membership-keyed (`is_workspace_member(workspace_id)`), and `workspace_id` only auto-fills from the `current_user_default_workspace()` column default — which is NULL for a user with no `workspace_members` row. A brand-new user can reach onboarding (their first write) before signup provisioning created that row (`ensure_default_workspace` runs in a swallow-all block in `handle_new_user`, isn't in our migrations, and demo accounts skip it), so the insert hit `is_workspace_member(NULL) = false` → _"new row violates row-level security policy for table projects"_. `ensureDefaultWorkspace(supabase, userId)` now resolves-or-creates the workspace + owner membership (RLS permits the user-scoped client to do both) and every insert sets `workspace_id` **explicitly** — the path migration `20260530120200_tenancy_c` documented as intended. See [`../planning/known-issues.md`](../planning/known-issues.md) for the deeper signup-provisioning follow-up.
 - **Schema contract**: writes through `SupabaseClient<Database>`, so the generated types are the contract for every column (`signals.source/title/content`, `opportunities.impact/confidence/ease/problem/target_user/status`, `projects.name`, `profiles.onboarded`). A clean `tsc --noEmit` is the verification.
 - **Agent toggle**: step 3 calls `setAgentEnabled({ agentId, enabled })`, keyed by the agent row id.
 - **First-run gate**: `_authenticated.tsx beforeLoad` routes a user to `/onboarding` when `profiles.onboarded === false`. The gate (`src/lib/onboarding-gate.ts`) is the single source of truth: if an authenticated user has **no** profile row it creates one with `onboarded=false` (`upsert` with `ignoreDuplicates`, never clobbering an existing row) and routes them into first-run. This is what makes onboarding fire for **Google OAuth** signups, which have no client-side profile write and depend on the unreliable `handle_new_user` trigger (KI-13).
@@ -47,6 +48,8 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 - [x] `eslint` clean on `onboarding.functions.ts` and `track-seeds.ts`.
 - [x] Seed order writes `onboarded` last (retryable on partial failure).
 - [x] Step-3 agent toggle persists (server now keyed by `agentId`, matching the only caller).
+- [x] `seedWorkspaceForTrack` resolves/creates the workspace + sets `workspace_id` explicitly (no longer trips the membership RLS for a freshly-provisioned user) — `tsc`/`eslint`/`build` green 2026-06-18.
+- [ ] Live: a fresh **non-demo** signup → pick any track lands on step 2 with no RLS error (verify after republish — this was the demo-blocking crash).
 - [ ] Live UI walkthrough on the hosted app after the next publish — confirm a fresh **Google** signup now lands on step 1 "Pick your path" (the gate self-heal fix), NOT straight on Home. (The 2026-06-17 publish exposed it landing on Home; root cause: no profile row for OAuth signups + a fail-open gate.)
 
 ## Known limits / out of scope

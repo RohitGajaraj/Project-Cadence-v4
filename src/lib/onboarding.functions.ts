@@ -1,7 +1,73 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { getTrackSeed, type OnboardingTrack } from "@/lib/onboarding/track-seeds";
+
+/**
+ * Resolve the caller's default workspace, creating one (with an owner membership)
+ * if none exists yet.
+ *
+ * WHY THIS EXISTS: post-tenancy-retrofit (migration 20260530120200_tenancy_c), the
+ * write RLS on projects/signals/opportunities is `is_workspace_member(workspace_id)`,
+ * and workspace_id only auto-fills from the `current_user_default_workspace()` column
+ * default — which returns the caller's earliest workspace_members row. A brand-new
+ * user reaches onboarding (the very first write they make) before they reliably have
+ * that row: handle_new_user() runs ensure_default_workspace() inside a swallow-all
+ * EXCEPTION block, that function isn't in our migrations (Lovable-managed, drift-prone),
+ * and demo accounts skip it entirely. With no membership the default resolves to NULL,
+ * so `is_workspace_member(NULL)` is false and the INSERT is rejected with
+ * "new row violates row-level security policy for table projects".
+ *
+ * This makes the onboarding seed self-healing and matches the intended path documented
+ * in migration C ("set workspace_id explicitly in server functions"). The user-scoped
+ * client is permitted by RLS to create its own workspace (owner_id = auth.uid()) and
+ * the owner membership row (the "owner manages members" policy).
+ */
+async function ensureDefaultWorkspace(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<string> {
+  // 1. Fast path: the membership-backed default resolver (same value the column default uses).
+  const { data: existing } = await supabase.rpc("current_user_default_workspace");
+  if (existing) return existing as string;
+
+  // 2. The user may already OWN a workspace whose membership row never got created
+  //    (partial signup provisioning). Reuse it rather than spawning a duplicate.
+  const { data: owned, error: ownedError } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", userId)
+    .order("created_at")
+    .limit(1);
+  if (ownedError) throw ownedError;
+
+  let workspaceId: string;
+  if (owned && owned.length > 0) {
+    workspaceId = owned[0].id;
+  } else {
+    const { data: created, error: createWsError } = await supabase
+      .from("workspaces")
+      .insert([{ owner_id: userId, name: "My Workspace" }])
+      .select("id")
+      .single();
+    if (createWsError) throw createWsError;
+    if (!created) throw new Error("Workspace creation returned no data");
+    workspaceId = created.id;
+  }
+
+  // 3. Ensure the owner membership row exists — this is what every table's RLS keys on.
+  const { error: memberError } = await supabase
+    .from("workspace_members")
+    .upsert([{ workspace_id: workspaceId, user_id: userId, role: "owner" }], {
+      onConflict: "workspace_id,user_id",
+      ignoreDuplicates: true,
+    });
+  if (memberError) throw memberError;
+
+  return workspaceId;
+}
 
 /**
  * Seed a workspace with per-track sample data
@@ -45,7 +111,13 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
         throw new Error("Workspace already seeded. Reset in Settings if you need to re-seed.");
       }
 
-      // 2. Get or create the active project
+      // 2. Resolve (or create) the caller's default workspace. Every insert below is
+      //    scoped to it explicitly — the membership-keyed RLS requires workspace_id to
+      //    name a workspace the caller belongs to, and a brand-new user may not yet have
+      //    one provisioned. See ensureDefaultWorkspace() above.
+      const workspaceId = await ensureDefaultWorkspace(supabase, userId);
+
+      // 3. Get or create the active project
       const { data: projects, error: projectsError } = await supabase
         .from("projects")
         .select("id")
@@ -59,7 +131,7 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
         // Create a new project
         const { data: newProject, error: createError } = await supabase
           .from("projects")
-          .insert([{ user_id: userId, name: seed.projectName }])
+          .insert([{ user_id: userId, workspace_id: workspaceId, name: seed.projectName }])
           .select("id")
           .single();
 
@@ -70,10 +142,11 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
         projectId = projects[0].id;
       }
 
-      // 3. Insert signals
+      // 4. Insert signals
       // If this fails, the handler will throw and profile won't be marked onboarded (guard below).
       const signalRows = seed.signals.map((sig) => ({
         user_id: userId,
+        workspace_id: workspaceId,
         project_id: projectId,
         source: sig.source,
         title: sig.title,
@@ -84,12 +157,13 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (signalsError) throw signalsError;
 
-      // 4. Insert opportunities
+      // 5. Insert opportunities
       // If this fails, signals are already inserted but will be orphaned.
       // This is acceptable (partial seed is better than no seed), but profile won't be marked
       // onboarded, so the user can retry. Signals are just extra data that won't be used.
       const opportunityRows = seed.opportunities.map((opp) => ({
         user_id: userId,
+        workspace_id: workspaceId,
         project_id: projectId,
         title: opp.title,
         problem: opp.problem,
@@ -106,7 +180,7 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (opportunitiesError) throw opportunitiesError;
 
-      // 5. Mark the profile as onboarded (final step; only if all above succeed)
+      // 6. Mark the profile as onboarded (final step; only if all above succeed)
       const { error: profileError, data: profileData } = await supabase
         .from("profiles")
         .update({ onboarded: true })
