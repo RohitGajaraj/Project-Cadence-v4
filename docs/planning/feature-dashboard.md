@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| PLG | PLG funnel (Phase 1: public `/pricing` + pre-signup CTA) | Claude Code · plg-funnel worktree | 2026-06-17 | Lane E, the viral→signup conversion surface. File-disjoint new routes/components; reuses `planPresentation`. |
 
 ---
 
@@ -190,7 +191,7 @@ _First paying PMs; a viral share loop._
 | F-SHARE | Shareable-decision link | ✅ (2026-06-16) | The viral acquisition surface (also in G2) | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
 | M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
-| PLG | PLG funnel (public onboarding → first-win → upgrade) | ⬜ | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
+| PLG | PLG funnel (public onboarding → first-win → upgrade) | 🔨 In Dev (Claude Code, 2026-06-17) · Phase 1 | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
 | W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ✅ Shipped 2026-06-17 (live-verify on next publish) | Per-track sample data + first-win moment; cold-start fuel for WEDGE | [`onboarding-tracks.md`](../features/onboarding-tracks.md) |
 
 ---
