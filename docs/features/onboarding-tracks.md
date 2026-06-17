@@ -1,6 +1,6 @@
 # W6 — Persona onboarding tracks
 
-> Status · Shipped 2026-06-17 (on `main`; live UI walkthrough on next Lovable publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
+> Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
 
 ## What it does
 
@@ -33,6 +33,7 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 - **Schema contract**: writes through `SupabaseClient<Database>`, so the generated types are the contract for every column (`signals.source/title/content`, `opportunities.impact/confidence/ease/problem/target_user/status`, `projects.name`, `profiles.onboarded`). A clean `tsc --noEmit` is the verification.
 - **Agent toggle**: step 3 calls `setAgentEnabled({ agentId, enabled })`, keyed by the agent row id.
 - **First-run gate**: `_authenticated.tsx beforeLoad` routes a user to `/onboarding` when `profiles.onboarded === false`. The gate (`src/lib/onboarding-gate.ts`) is the single source of truth: if an authenticated user has **no** profile row it creates one with `onboarded=false` (`upsert` with `ignoreDuplicates`, never clobbering an existing row) and routes them into first-run. This is what makes onboarding fire for **Google OAuth** signups, which have no client-side profile write and depend on the unreliable `handle_new_user` trigger (KI-13).
+- **Design (2026-06-17 redesign)**: Ember Editorial, value-forward. Each step names the outcome, not the mechanism (engine-room-doctrine): step 1's persona cards preview the real workspace + first teardown they deliver (read from the seed data); steps 2-4 carry serif italic-em titles (`listen` / `staff` / `goal`) and value copy. Ember is reserved for the single primary CTA (role-color law); entrance is a staggered transform-only reveal with `.lift` press feedback, reduced-motion gated. Built with the `impeccable` (onboard) + `emil-design-eng` craft lenses; the user-facing copy is em-dash-free (humanized-output).
 
 ## Governance & guardrails
 
