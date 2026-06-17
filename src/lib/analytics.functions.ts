@@ -110,6 +110,59 @@ export const getAnalyticsOverview = createServerFn({ method: "POST" })
     };
   });
 
+/**
+ * ENG-06 (Part B3) — unit economics behind the Engine Room door.
+ *
+ * The operator/founder half of the cost-per-outcome split: total attributed
+ * agent-run spend in the window over the outcomes produced (specs, decisions,
+ * missions shipped), plus a blended cost-per-outcome. The calm-front half is
+ * getCostPerOutcome (cost-per-outcome.functions.ts). The denominator is blended
+ * across outcome types on purpose — per-type spend attribution would over-claim
+ * precision the data does not support.
+ */
+export const getUnitEconomics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => DaysSchema.parse(i ?? {}))
+  .handler(async ({ context, data }) => {
+    const since = new Date(Date.now() - data.days * 86400000).toISOString();
+    const { supabase } = context;
+    const [runsRes, specsRes, decisionsRes, missionsRes] = await Promise.all([
+      supabase.from("agent_runs").select("spend_used_usd").gte("created_at", since),
+      supabase.from("prds").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase
+        .from("decisions")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since),
+      supabase
+        .from("missions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "completed")
+        .gte("completed_at", since),
+    ]);
+    if (runsRes.error) throw new Error(runsRes.error.message);
+    if (specsRes.error) throw new Error(specsRes.error.message);
+    if (decisionsRes.error) throw new Error(decisionsRes.error.message);
+    if (missionsRes.error) throw new Error(missionsRes.error.message);
+
+    const totalSpendUsd = (runsRes.data ?? []).reduce(
+      (sum, r) => sum + Number(r.spend_used_usd),
+      0,
+    );
+    const specs = specsRes.count ?? 0;
+    const decisions = decisionsRes.count ?? 0;
+    const missions = missionsRes.count ?? 0;
+    const outcomes = specs + decisions + missions;
+    return {
+      days: data.days,
+      totalSpendUsd,
+      specs,
+      decisions,
+      missions,
+      outcomes,
+      costPerOutcomeUsd: outcomes > 0 ? totalSpendUsd / outcomes : null,
+    };
+  });
+
 export const listAiEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>

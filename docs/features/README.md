@@ -49,6 +49,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | WEDGE     | Critic-teardown first-run (the launch wedge)                   | ✅ Shipped 2026-06-17                           | Today (cold-start)                                | [`wedge.md`](./wedge.md)                                             |
 | F-SHARE-TEARDOWN | Shareable Critic-teardown links (the viral loop)        | ✅ Shipped 2026-06-17 (migration pending sync)  | `/t/$slug` (public)                               | [`shareable-teardowns.md`](./shareable-teardowns.md)                 |
 | W6        | Persona onboarding tracks (Solo / Founding PM / Tech Founder)   | ✅ Shipped 2026-06-17 (live-verify on next publish) | `/onboarding`                                 | [`onboarding-tracks.md`](./onboarding-tracks.md)                     |
+| ENG-06    | Cost per outcome (calm-front chip + Engine Room unit-economics) | ◐ B1+B3 built 2026-06-17 (tsc/lint/build green; live-verify on next publish; B2 deferred) | Today · `/govern?tab=analytics` | [`cost-per-outcome.md`](./cost-per-outcome.md)                       |
 
 ## Rules
 

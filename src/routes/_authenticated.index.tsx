@@ -37,6 +37,7 @@ import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
+import { CostPerOutcomeChip } from "@/components/today/CostPerOutcomeChip";
 import { listOpportunities } from "@/lib/discovery.functions";
 import { SketchLine, SketchBar } from "@/components/cadence/Sketch";
 
@@ -720,6 +721,8 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
+              {/* ENG-06 · cost-per-outcome — what you got for what you spent */}
+              <CostPerOutcomeChip />
             </section>
 
             {/* ACTION ROW — priorities chart (wide) + stuck / changed (stacked) */}

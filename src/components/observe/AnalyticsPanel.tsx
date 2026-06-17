@@ -20,6 +20,7 @@ import { ChevronRight, Gauge, X } from "lucide-react";
 import {
   getAnalyticsOverview,
   getAgentSpendBreakdown,
+  getUnitEconomics,
   listAiEvents,
   getEventDetail,
   getGuardrailStats,
@@ -54,6 +55,7 @@ export function AnalyticsPanel() {
   const navigate = useNavigate();
   const fOverview = useServerFn(getAnalyticsOverview);
   const fByAgent = useServerFn(getAgentSpendBreakdown);
+  const fUnit = useServerFn(getUnitEconomics);
   const fBudget = useServerFn(getBudgetSummary);
   const fEvents = useServerFn(listAiEvents);
   const fDetail = useServerFn(getEventDetail);
@@ -71,6 +73,10 @@ export function AnalyticsPanel() {
   const byAgentQ = useQuery({
     queryKey: ["analytics-by-agent", days],
     queryFn: () => fByAgent({ data: { days } }),
+  });
+  const unitQ = useQuery({
+    queryKey: ["unit-economics", days],
+    queryFn: () => fUnit({ data: { days } }),
   });
   const budgetQ = useQuery({
     queryKey: ["budget-summary"],
@@ -117,6 +123,7 @@ export function AnalyticsPanel() {
   const byAgents = byAgentQ.data?.agents ?? [];
   const byModel = overview.data?.byModel ?? [];
   const daily = overview.data?.daily ?? [];
+  const ue = unitQ.data;
   const totalCost = s?.totalCost ?? 0;
   const maxRuns = Math.max(...daily.map((d) => d.runs), 1);
   // "of $X cap" is only honest where a real cap covers the window: ai_budgets
@@ -180,6 +187,54 @@ export function AnalyticsPanel() {
               avg {fmtMs(s?.avgLatency ?? 0)} · p95 {fmtMs(s?.p95Latency ?? 0)}
             </div>
           </div>
+
+          {/* ENG-06 · unit economics — cost-per-outcome roll-up (operator view).
+              Renders only once outcomes exist so the panel stays quiet on cold
+              workspaces. The calm-front half is the Today cost-per-outcome line. */}
+          {ue && ue.outcomes > 0 ? (
+            <div className="bento" style={{ gridColumn: "span 3", padding: "var(--card-pad)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: 12,
+                }}
+              >
+                <MonoLabel>Unit economics · {range}</MonoLabel>
+                <span className="mono-label" style={{ fontSize: 8.5 }}>
+                  what each outcome cost
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                <div>
+                  <MonoLabel style={{ marginBottom: 6 }}>Agent spend</MonoLabel>
+                  <div className="font-display tabular-nums" style={{ fontSize: 22 }}>
+                    {fmtUsd(ue.totalSpendUsd)}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
+                    over {ue.outcomes} outcome{ue.outcomes === 1 ? "" : "s"}
+                  </div>
+                </div>
+                <div>
+                  <MonoLabel style={{ marginBottom: 6 }}>Outcomes</MonoLabel>
+                  <div className="font-display tabular-nums" style={{ fontSize: 22 }}>
+                    {ue.specs} · {ue.decisions} · {ue.missions}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>
+                    specs · decisions · shipped
+                  </div>
+                </div>
+                <div>
+                  <MonoLabel style={{ marginBottom: 6 }}>Cost per outcome</MonoLabel>
+                  <div className="font-display tabular-nums" style={{ fontSize: 22 }}>
+                    {ue.costPerOutcomeUsd != null ? fmtUsd(ue.costPerOutcomeUsd) : "—"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>spend ÷ outcomes</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="bento" style={{ gridColumn: "span 3", padding: "var(--card-pad)" }}>
             <div
