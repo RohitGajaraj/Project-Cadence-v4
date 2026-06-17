@@ -1,92 +1,70 @@
-# Active task — Phase 3: "Proof & Launch" (Agentic Product OS build)
+# W6 · Persona onboarding (active task)
 
-> ## ✅ DONE (2026-06-16): G3 build-engine lane (I3 · J1 · J2 · I1 · I1b · K1) — shipped, reviewed, on main
-> Built the autonomous execution chain (Build → QA → Ship), all six on **main**, build-green, 146 tests, adversarially reviewed (4 findings fixed). **Only the post-deploy verification gate remains (below).** Lanes were split file-disjoint and claimed on the [Feature Dashboard](docs/planning/feature-dashboard.md):
-> - **This session (Claude Code) - engine-core lane, SERIAL:** I3 (branch/worktree isolation) → J1 (test generation + run) → finish J2 (automated self-correct + CI-blocking merge gate) → finish I1 (per-hunk accept/reject + revisions). OWNS `src/lib/studio.functions.ts`, `src/lib/ai/tools/registry.server.ts`, `src/lib/ai/loop.server.ts`, `src/components/studio/ChangesPanel.tsx`, `src/components/studio/CiPanel.tsx`, new migrations.
-> - **Parallel session - watch-the-build lane (I2):** the live build view. OWNS `src/routes/_authenticated.build.$missionId.tsx`, `_authenticated.build.index.tsx`, `src/components/studio/SessionTimeline.tsx`, new view components. MUST NOT touch the engine-core files above. Pure frontend + TanStack Query polling of `getStudioSession`.
->
-> Checklist (engine lane):
-> - [x] I3 (2026-06-16): collision-safe per-changeset branch `studio/<mission8>-<changeset12>` (pure `ai/studio-branch.ts` + 6 tests) closes the 32-bit branch-name collision; file claims + clean merge path already existed. Build green, 123 tests.
-> - [x] J1 (2026-06-16, honest path): no Cadence sandbox exists, so tests run in the repo's GitHub Actions CI. Studio system prompt now makes the agent AUTHOR tests as a step + restates CI-green-before-merge (migration `20260616220000`, applies on Lovable sync).
-> - [x] J2 (2026-06-16): `studio.pr.merge` hard-gates on CI (refuses red/pending) via pure tested `ai/studio-ci.ts` (`overallFromChecks` + `mergeReadinessFromCi`, 12 tests), shared with `github.ci.read`. With the J1 fix-on-red prompt, the self-correct loop closes (can't merge red). Build green, 135 tests.
-> - [x] I1 (2026-06-16): per-hunk accept/reject + drop-file curation of a staged changeset before commit (pure `ai/studio-hunks.ts`, 11 tests; `applyStagedHunkSelection`/`rejectStagedFile`; `ChangesPanel` UI, gated to status='staged'). Build green, 146 tests.
-> - [x] I1b (2026-06-16): revision history. `studio_changeset_revisions` migration (`20260616230000`) + best-effort `!cached`-gated snapshot in `studio.commit` + `getChangesetRevisions` + a Changes-tab revisions strip with GitHub links. Revert-to-revision deferred. Build green, 146 tests. **G3 engine lane (I3·J1·J2·I1·I1b) COMPLETE.**
-> - [x] K1 (2026-06-16, honest path): release notes for a shipped changeset. migration `20260616240000` (release_notes cols) + `generateReleaseNotes` (AI chokepoint, `studio` surface, grounded in files+revisions+work-order, auto-humanized, persisted) + Changes-tab section (generate/regenerate). PR/merge gates already existed; deploy stays external (K1-deploy deferred). Owner-scoped generation (changeset RLS). Build green, 146 tests.
-> - [x] Adversarial review (ecc:typescript-reviewer) of J2 + K1 + I1 — 4 findings fixed: **(HIGH/J2)** CI fetch was `per_page=50` with no pagination, a failing check beyond #50 could read as green → now `per_page=100` + fail-safe block when `total_count` exceeds the page (never a false allow); **(HIGH/J2)** closed-but-unmerged PR fell through to a misleading 405 → now a clear `state != open` guard; **(MED/I1)** stale hunk-ids under a concurrent edit could silently corrupt content → optimistic-concurrency via `expectedUpdatedAt` conditional update (UI passes the row's `updated_at`); **(MED/K1)** uncapped commit messages could hijack the release-notes prompt → each capped to 500 chars. `bun test` 146 green, `bun run build` green.
->
-> ### ⏳ POST-DEPLOY VERIFICATION GATE (the only thing left for G3; do once the next Lovable sync lands)
-> Three migrations apply on sync: `20260616220000` (J1 Studio prompt), `20260616230000` (I1b revisions table), `20260616240000` (K1 release_notes cols). Per the deploy-divergence rule, first confirm the deployed build actually reflects these commits, then on a live Studio mission with a connected repo:
-> - **J1:** a new/seeded Studio agent's system prompt includes the "INCLUDE TESTS" step (the agent authors tests).
-> - **J2:** requesting merge on a PR with red/pending CI returns `MergeBlocked`; green/neutral merges as before.
-> - **I1:** Changes tab (status=staged) shows per-hunk reject + Apply (reverts to base) + Reject-file; a stale apply returns the conflict message.
-> - **I1b:** after ≥1 commit, the Revisions strip lists commits with GitHub links.
-> - **K1:** Changes tab Generate produces factual release notes (owner-scoped); Regenerate refreshes.
+**Date:** 2026-06-17  
+**Lane:** E (MONETIZE/PLG)  
+**Parallel-safe with:** A, B, C  
+**Blocked by:** None  
 
-> **✅ PHASE 1 ("The Loop Runs Itself") COMPLETE 2026-06-14** — all four gaps wired on **main**, pushed; 2-agent review (4 fixes). **✅ PHASE 2 ("The OS / Autonomous Execution") COMPLETE 2026-06-14** — W1 memory moat · W2 unattended-execution audit · W3 A2A hardening + moat-on-cockpit, all on **main**, build-green, `bun test` 23 green, adversarial review each (W1 4 fixes · W2+W3 2 honesty fixes). Build-log: [`plan.md`](plan.md) §4. Feature page (P1): [`docs/features/loop-runs-itself.md`](docs/features/loop-runs-itself.md). Decisions: [`docs/strategy/session-decisions.md`](docs/strategy/session-decisions.md) (2026-06-14).
+---
 
->
-> **🔨 PHASE 3 ("Proof & Launch") IN PROGRESS** ([`v6` doc](docs/strategy/v6-agentic-product-os-2026-06-13.md) §8 gauntlet + §9 Phase 3). **✅ Slice 1 ("Unblock + Instrument") DONE 2026-06-14** — Track 1: KI-13 signup made resilient (a real account can finally be created); Track 2: the **Gauntlet** surface (`/govern?tab=gauntlet`) instruments the three north-star metrics (acceptance rate · autonomy ratio · ritual retention) honestly on real tables. Built recon-first → parallel worktree → 12-finding adversarial review → 7 fixes; on **main**, build-green, `bun test` 32 green. **✅ KI-14 also DONE 2026-06-14** — eval-score scale standardized on 0–100 (silent overflow + false "below gate" fixed; migration `20260614160000`; 12-finding adversarial review). **✅ M-B kickoff — compounding-memory view DONE 2026-06-14** — read-only `/memory` renders real `agent_memory` rows (what the loop recalls: kind · content · source · scope · recalled-at) with a real-count strip and an honest "Nothing learned yet" empty state; the moat is visible. Separate surface from Knowledge > Memory (the `learnings` audit). No migration (read-only). `bun run build` + `bun test` 47 green. Feature doc: [`docs/features/memory-view.md`](docs/features/memory-view.md). **✅ M-B moat metric DONE 2026-06-14** — a "Memory compounds" card on the Gauntlet (`/govern?tab=gauntlet`) measures reuse (recalled-back / stored), weekly growth, and priorities moved; NDR gated on M-C billing, stated plainly. Pure `reuseRate`/`countPriorityMoves` (14 tests, incl. the numeric-as-string wire shape a review caught); `bun test` 61 green. Feature doc: [`docs/features/gauntlet-metrics.md`](docs/features/gauntlet-metrics.md). **✅ M-0 unseeded-slug drift sealed 2026-06-14** (migration `20260614200000`, commit `5b0b0b93ea`): an RCA workflow disproved the tracker's "mission.plan throws" story; the real deterministic bug was the event-reactor default subscription targeting unseeded slug `'discovery'` (now `discovery-scout`, plus a backfill and an orchestrator-prompt cleanup); 2 latent `enabled`-filter gaps logged as KI-19. **✅ M-0 cleanup batch + migration sync DONE 2026-06-14:** KI-19/20 closed (disabled agents cannot be dispatched; the `resumeAgentLoop` residual is tracked as KI-21), KI-15/16 mission robustness fixed, a warn-only humanization guard (`scripts/check-humanized.sh`) added, and ALL pending migrations applied via the Lovable sync (KI-13/14/17/09/12 + P1 retry/memory + slug-drift), so the engine is fully wired on the live DB. M-0 now needs only a live end-to-end verification plus one live ingest source. **🔴 to 🟢 M-0 live finding + fix 2026-06-14:** the live e2e check caught the real M-0 blocker, orchestrated missions stalled because the orchestrator's own `mission.plan`/`dispatch` were approval-gated at the observing arc and expired (proven by a live server-fn trace; the 7 stuck Today approvals are these). Fixed by exempting the 4 orchestration control-flow tools from gating (always inline) plus 3 defense-in-depth guards (loud `agent_runs` insert, halt-on-launch-throw, no silent-complete of an unplanned mission). Build + 88 tests green, review safe-to-land; **live re-verify pending the Lovable deploy of the fix commit.** **Next:** the shareable-decision viral loop + pricing/paywall, then public launch. **Gate on the §8 gauntlet, not a date.** (Detail + open gate in the "Phase 3" section below.)
+## What / Pain / How (from v10)
 
-> **Handoff 2026-06-14.** Work directly on **main** (repo convention — all tools on main, no long-lived branches).
-> **Brand lane (2026-06-15) — SPLIT OUT.** The build-in-public brand system now lives in its own **PRIVATE repo, `RohitGajaraj/build-in-public`** (so the founder's brand, voice, drafts, and social tokens stay out of this shareable product repo). `docs/brand/` is gone from here. **Standing rule when building in this repo:** append real, non-obvious build insights to the brand repo's `content-well.md` (the one-way insight feed) so the weekly content routine can draft from them; never post to the founder's accounts without approval; do not recreate `docs/brand/` here. This week's v4 posts are already staged + scheduled in Buffer (the Fable post went out manually with the agent-orchestration video). A weekly Claude Code cloud routine (Friday 19:00 IST) will research + draft + push to Buffer (via the Buffer API token, no MCP connector) + notify, once the founder does two one-time steps: `/web-setup` (GitHub for the cloud agent) and a Buffer API token. The brand repo holds the 21 voice directives, the routine prompt (`routine.md`), and the feed mechanism (`insight-feed.md`). Separate from the M-0 build lane below.
-> **Canonical plan:** [`docs/strategy/v6-agentic-product-os-2026-06-13.md`](docs/strategy/v6-agentic-product-os-2026-06-13.md) — read **§8 (gauntlet) + §9 (Phase 3)** + the runtime-reality audit in Appendix B.
-> **Session read order:** `git pull origin main` → this file → v6 doc §9 → [`docs/README.md`](docs/README.md) (file-placement policy) → [`AGENTS.md`](AGENTS.md).
+**What:** Per-track onboarding (Solo PM / Founding PM / Tech Founder) with sample data + first-win.
 
-## ✅ Phase 1 — DONE (2026-06-14)
-All four wired (detail in `plan.md` §4 + `docs/features/loop-runs-itself.md`):
-- ☑ **Deterministic auto-advance** — `src/lib/ai/mission-advance.server.ts` (`advanceMissionCore`: reflect → dispatch ready → finalize, model-free, claim-first CAS). Folded into the `resume-runs` per-minute cron; the manual `advanceMission` fn + `mission.dispatch` tool share the same core. Missions run unattended past wave-0.
-- ☑ **Bounded hop retry** — migration `20260614090000` (`mission_steps.{attempts,max_attempts,next_retry_at}` + `next_ready_mission_steps` backoff); pure policy `src/lib/ai/retry.ts`; pre-migration-tolerant probe.
-- ☑ **Adaptive step budget** — `src/lib/ai/budget.ts` (`adaptiveStepBudget`: role base + arc + orchestrator-size, capped); replaces static `maxStepsFor` in `executeLoop` (both fresh + resume paths).
-- ☑ **`memory_refs[]` populated** — `src/lib/ai/memory.server.ts` (`recallMemoryRefs` + `touchMemory` last_used_at); each dispatched hop threads memory; migration `20260614091000` rescopes `match_agent_memory` to `COALESCE(auth.uid(), for_user)` for the service-role path.
-- ☑ **Latent bug fixed** — `maybeCompleteMission` is now DAG-aware (a wave-0 child finishing no longer prematurely completes a multi-wave mission; failure-aware final status).
+**Pain:** #8 (growth funnel; new users need to feel value fast).
 
-## ⚠️ OPEN GATE (carry forward — same pattern as every prior phase)
-The **two P1 migrations apply on the next Lovable sync**: `20260614090000_p1_mission_step_retry` (retry columns + RPC backoff) and `20260614091000_p1_memory_recall_for_user` (`match_agent_memory` `for_user`). Until then the code degrades gracefully — **auto-advance + adaptive budgets work; retry is off (a failed hop terminalizes); autonomous-path `memory_refs` carries reflections only.** After sync, verify (below).
+**How:** A new user picks a track at signup, gets seeded data matched to their persona, and reaches the WEDGE (Critic-teardown first-win) without hand-holding.
 
-## Verify (Phase 1 done bar)
-- `bun test` + `bun run build` green. ✅ (done this session)
-- After sync: on `/missions/$id`, a ≥ 2-wave orchestrated mission reaches a terminal state with **no** operator Advance press; a deliberately-failed hop shows a second child run (retry) before finalizing `completed_with_failures`; a dispatched hop's handoff payload carries non-empty `memory_refs`.
+**Build accept (definition of done):** A signed-up PM reaches first-win (the WEDGE teardown) without hand-holding.
 
-## Phase 2 — decomposition (grounded by a code sweep; sequenced demoable units)
-- ☑ **W1 — Close the memory-compounding loop (the moat) · DONE 2026-06-14.** `recordOutcome` now distils each outcome into a global-scope, embedded `agent_memory` row (`src/lib/ai/outcome-memory.ts` + `memory.server.ts → rememberOutcome`), so `match_agent_memory` returns it to future runs of any agent and P1 threading carries it across hops. Fixes the claim-vs-wiring gap (the `learnings` audit was written but never read by the loop). 23 `bun test` green; 1-agent review (4 fixes). Detail: `plan.md` §4.
-- ☑ **W2 — Execution-delegation audit trail · DONE 2026-06-14.** `/missions/$id` now shows an "Executed unattended" card — side-effecting tools the loop ran inline with no gate (the arc had earned auto), each with its catalogued effect + reversibility. `getMission` flags `HopToolCall.is_unattended` via `isSideEffectingTool()`. Honest by construction: every `tool_calls` row is an inline auto-execution (gated tools queue approvals; `executeApproval` never writes `tool_calls`).
-- ☑ **W3 — A2A hardening + moat on the cockpit · DONE 2026-06-14.** `enqueueHandoff` validates `memory_refs[]` against real `agent_memory` ids (drops phantom refs, best-effort). `getSwarmHud` gains `outcomes_remembered`, surfaced as "N outcomes in memory" in the Agents-tab HUD. Reused the existing Swarm HUD (the `/swarm` route is mothballed → `/missions?tab=agents`) instead of a redundant new `/system`. Artifacts left free-form (validated on use).
+---
 
-> **Phase 2 is functionally complete (W1·W2·W3 all on `main`).** The remaining v6 §9 Phase-2 framing item ("OS framing/IA") is satisfied by the enriched Swarm HUD; a deeper IA pass can fold into Phase 3 if real-data feedback asks for it.
+## Acceptance criteria
 
-> **Session note (2026-06-14) — wider strategic reset queued (the "v7" program).** Founder opened a **post-Phase-3 strategic reset**: honest platform-vs-claim audit, a **self-run, holistic, independently-researched** market study, dual-persona design (senior/founding PM @ 50–400 B2B SaaS **+** individual PM/prosumer), pricing, GTM, investor narrative, and detailed feature/functionality/TRD/PRD docs. **Step 1 done:** two founder-supplied AI reports ingested as standing reference + a synthesis — [`docs/references/external-strategy-synthesis-2026-06-14.md`](docs/references/external-strategy-synthesis-2026-06-14.md) (+ the two GCP digests). **Founder steer:** those reports are *context/inputs only* — decisions must take a wider holistic lens and our own research, not anchor on them. **v7 canon + the full Phase-B doc set are done** (feature map, functionality map, TRD, PRD in `docs/planning/`; architecture diagrams, deployment, api, observability, threat-model in `architecture/`). **The live answer to "what next" is [`docs/planning/v7-build-status.md`](docs/planning/v7-build-status.md)** (read it right after this cursor); the doc-update cadence is [`docs/conventions/doc-update-cadence.md`](docs/conventions/doc-update-cadence.md). **Next pick: the M-0 unblock — orchestrator slug fix, then the KI-13 migration apply-and-verify, then one live ingest source, then the `humanizeText()` sanitizer.**
+1. **Track selection UI:** At signup (or post-login first-time), user selects one of three onboarding tracks:
+   - Solo PM (individual, self-managed)
+   - Founding PM (early-stage startup)
+   - Tech Founder (technical founder, code-aware)
 
-## Phase 3 — "Proof & Launch" (IN PROGRESS, gate on the §8 gauntlet, not a date)
-Real-data design-partner hardening · proof-gauntlet instrumentation (≥10 PMs paying ≥$150/mo · the loop closes once on a partner's real data · autonomy ticks up on a real account) · pricing + the shareable-decision viral loop · public launch. Read v6 §8 + §9 before continuing. GTM + hardening phase, taken in slices.
+2. **Seeded data:** Each track receives curated sample data:
+   - A sample product (or several, depending on track)
+   - Starter signals/opportunities/PRD (realistic for that persona)
+   - First opportunity is seeded such that running WEDGE on it is the natural first action
 
-### ✅ Slice 1 — "Unblock + Instrument" DONE 2026-06-14 (recon-first → parallel worktree build → adversarial review → fixes)
-- ☑ **Track 1 — KI-13 signup unblock.** `20260614140000_p3_ki13_signup_resilience.sql`: each seed step in `handle_new_user` runs in its own `BEGIN..EXCEPTION` subtransaction so a fresh signup never 500s again (the app self-heals profile + workspace). Defensive-by-construction. The real-data gauntlet premise (≥8 partners on real data) needs this — it was blocked at the door. Review found Track 1 clean.
-- ☑ **Track 2 — the Gauntlet surface.** `/govern?tab=gauntlet` — three north-star metrics on real owner-scoped tables with honest "not enough data yet" empty states: **A** acceptance rate (accepted={approved,executed,failed} / decided), **C** autonomy ratio (successful unattended `tool_calls` vs gated `agent_approvals`), **B** ritual retention (`ritual_sessions`, pre-migration-tolerant, per-UTC-day idempotent). `src/lib/gauntlet.functions.ts` + `gauntlet-metrics.ts`(+tests) + `GauntletMetricsPanel.tsx`. Feature doc: [`docs/features/gauntlet-metrics.md`](docs/features/gauntlet-metrics.md).
-- **Method note:** two file-disjoint tracks — T2 built by a background worktree agent while T1 went on main, then a 3-lens adversarial-review workflow (`wf_27276120`) over both diffs → 12 confirmed findings (all Track 2) → 7 distinct fixes folded in before landing. `bun run build` green, `bun test` 32/32. Commits on **main**: `9401ae2` (KI-13) · `e6c8b5b` (Gauntlet).
+3. **Navigation to first-win:** After onboarding, the user lands on Today (home), sees the WEDGE card in cold-start, and can run the teardown.
 
-## ⚠️ OPEN GATE — Phase 3 slice 1 (carry forward — same pattern as every prior phase)
-**Three** new migrations apply on the **next Lovable sync**: `20260614140000_p3_ki13_signup_resilience` (resilient `handle_new_user` — until applied, live signup still 500s); `20260614150000_p3_ritual_sessions` (table + per-day unique index — until applied, Gauntlet Metric B reads "not enough data yet" by design; A and C are live now); and `20260614160000_p3_ki14_eval_score_0to100` (eval scores → 0–100 — until applied, a live eval run overflows the column and seeded eval scores read "below gate"). KI-13 + KI-14 can't be verified live until sync (the Supabase MCP here was unauthenticated).
+4. **No hand-holding:** The flow is self-explanatory; no tooltips or forced modals. Sample data makes the next step obvious.
 
-### ⏭️ Next (Phase 3 — gate on §8, not a date)
-- 🔨 **M-A (Real Loop, Real Data) · Slice 1, Autonomy on Today: BUILT (working tree).** A read-only `AutonomyCard` on Today makes the observing -> proving -> trusted progression visible, reflecting the real autonomy ratio (Gauntlet Metric C); pure tested helper `src/lib/autonomy-progression.ts`, hidden during cold-start, honest empty state, 3-lens adversarial review folded in. `bun test` 8/8 + `bun run build` green. Live on commit + next Lovable Publish. M-A remainder: a 2nd real ingest source needs OAuth client IDs (KI-01/KI-12), webhook is the 1st (rate-limited, KI-10); surfacing the per-agent trust arc.
-- 🔨 **M-A · Slice 2, "Executed unattended" on Today: BUILT and on `main` (`b7215797ea`).** A read-only card listing the side-effecting work the loop ran without your call (sourced from `tool_calls`, not approved-then-executed approvals), each with its effect + reversibility + the honest reverse-path; no undo button by founder ruling (no compensating-call flow exists yet). `ExecutedCard.tsx` + `getRecentExecutedUnattended`; 3-lens adversarial review (17 raised, 0 confirmed); `bun run build` green. **Home redesign:** the Today surface is being editorially recomposed per the approved plan (`plans/piped-brewing-knuth.md`), which keeps this as the "while you were away" element and relocates the other panels (e.g. the Autonomy stage visual moves to the Gauntlet, preserved exactly). Next M-A: the 2nd real ingest source (founder OAuth).
-- ✅ **Shareable-decision viral loop** (§7): SHIPPED on `main` (route `src/routes/d.$slug.tsx`, server fns `src/lib/decisions-share.functions.ts`, migration `20260614170000_p3_decisions_share` plus the duplicate-but-idempotent copy inside the `20260614095406` Lovable bundle, UI `ShareDecisionButton` in `src/components/knowledge/DecisionDetail.tsx`, spec [`docs/features/shareable-decisions.md`](docs/features/shareable-decisions.md)). Three-gate anon-read (column-scoped grant · RLS `TO anon` · Realtime DROP) re-verified secure end-to-end 2026-06-16 across the DB wire, server-fn ownership, and render escaping (no `dangerouslySetInnerHTML`; only the safe projection reaches the page). **Verified LIVE 2026-06-16** on `cadence-flow-beta.lovable.app`: route deployed (build-stamp Jun 16 02:22), migration applied (Share toggle returns `available:true`, CSPRNG 32-hex slug), and the full share → anon-read → unshare → revoked lifecycle works. A cookie-less (`credentials:'omit'`) anon fetch of `/d/<slug>` returns the safe card only and leaks no decision id / source-meeting id / owner email (not even the strings `user_id`/`workspace_id` in the 9KB payload); the owner renders as a generic "Agent", never the person. Demo decision reverted to private after the test. **Per-IP rate-limit on `/d/*` now DONE (2026-06-16, migration `20260616190000`):** 600 anon reads/hour per `cf-connecting-ip`, fail-open, mirroring KI-10; closes the last gate before heavy promotion. The viral loop is fully shippable.
-- ✅ **KI-10 rate limiting for ingest webhook (DONE 2026-06-16):** 100 signals/hour per token (rolling window, rolling-window counter in `ingest_rate_limits` table). Checker function in `src/lib/ingest-ratelimit.server.ts`; webhook endpoint updated to enforce gate and return HTTP 429 with `Retry-After` header. Unit tests in `ingest-ratelimit.test.ts`. Migration `20260616180000_ki10_ingest_rate_limits`. Feature doc: [`docs/features/ingest-webhook.md`](docs/features/ingest-webhook.md). This unblocks M-0's "one live ingest source" (webhook is now secure for public use).
-- **Pricing / paywall** (§7): Free / Pro($39) / Team; charge for memory persistence; Stripe + quota enforcement. **Foundation BUILT 2026-06-16** (migration `20260616200000`): `workspaces.plan_tier` (service-role-write-only via a protect trigger, so the paywall cannot be self-granted), pure tested `entitlements.ts`, `billing.functions.ts` (owner-only Stripe Checkout via REST, gated on `STRIPE_SECRET_KEY`), the gated `/api/stripe/webhook` (HMAC-verified), and a Settings -> Plan tab. Feature doc: [`docs/features/pricing.md`](docs/features/pricing.md). **Remaining:** founder sets the Stripe secrets for live charging; the memory-expiry enforcement (free memory expiring) is BUILT but DORMANT 2026-06-16 (migration `20260616210000`, gated off by the `memory_expiry_enabled()` flag so nothing expires at the prototype stage; founder ruling: engine only, no active gates yet): when enabled a BEFORE INSERT trigger stamps `agent_memory.expires_at` from the owner's plan (free = +14 days, pro/team = never), the `match_agent_memory` recall RPC filters expired rows, and the daily `memory-tick` cron sweeps them; existing rows grandfathered. Built after M-A Slice 2 landed, file-disjoint from it. Remaining M-C: founder sets the Stripe secrets for live charging.
-- **KI-15 / KI-16** (low/rare): stale zero-step-mission completion · mission-advance 20/tick cap.
-## Standing rules (non-negotiable)
-- **Before starting ANY feature work, read [`docs/planning/feature-dashboard.md`](docs/planning/feature-dashboard.md)** (the master status board) after `git pull`. Respect `🔨 In Dev` claims (a parallel session may be on it). Flip the row to In Dev on pickup and Done on completion, in the same commit. This is how parallel/new sessions avoid colliding or redoing work.
-- Work on **main**; commit small with a one-line **WHY**; push so other tools pulling main see it (and the migrations queue for the next sync).
-- **Claim never outruns wiring** — no "fully autonomous" copy anywhere. Voice: *"the loop runs the reversible work; you make the calls."*
-- **File-placement policy** (`docs/README.md`): every new file → correct subfolder + linked from that folder's index, same commit; never repo root or `docs/` top level; no duplicates/stubs; screenshots local-only under `docs/screenshots/`.
-- Closed-doc loop: update `plan.md` §4 + the relevant doc in the **same commit**.
-- **After each build, give the founder UI-verification steps** (numbered: the route + what's visible + a one-line why, so he can self-verify; say so plainly when a change is backend-only, and flag deploy state). Convention: [`docs/conventions/ui-verification-steps.md`](docs/conventions/ui-verification-steps.md).
-- Scan skills/agents/plugins/MCP before each task (AGENTS.md §2).
-- Pure logic (policy functions) gets a `bun test` (`*.test.ts`, excluded from the build/lint surface); Supabase-coupled wiring is verified by `bun run build` + adversarial review + live e2e.
+---
 
-## Inherited open gates (carry forward — full tracker: `docs/planning/known-issues.md`)
-- **KI-13:** ✅ fix landed (`20260614140000`) — resilient `handle_new_user`; applies on next Lovable sync (until then signup still 500s; verify a fresh signup after sync).
-- **Migration-apply via Lovable sync:** the two P1 migrations + the W3/W6 Phase-0 migrations land when Lovable syncs `main` + deploys.
-- **KI-14:** ✅ fix landed (`20260614160000`) — eval scale → 0–100 (widen + rescale eval_runs/eval_case_results/drift_snapshots); applies on next Lovable sync.
-- **KI-15 / KI-16 (new, Phase 1 review):** zero-step-mission stale-message lingering · auto-advance 20-mission/tick cap — both minor / high-scale-only.
-- Do **not** touch `vite.config.ts`; do **not** merge the stale `lovable-sync-*` branch.
+## Files to touch
+
+### New files:
+- `src/components/onboarding/TrackSelector.tsx` — persona track selection form (Solo/Founding/Tech Founder)
+- `src/lib/onboarding.functions.ts` — server functions: `seedWorkspaceForTrack({ track })` + data fixtures
+- `src/lib/onboarding/track-seeds.ts` — sample data per persona (products, signals, opportunities, workspace config)
+
+### Modified files:
+- `src/routes/sign-up.tsx` or entry point — wire the track selector into the post-signup flow
+- `src/routes/_authenticated.index.tsx` — ensure cold-start WEDGE is visible and accessible post-onboarding
+
+### Database:
+- No migration needed (seed data writes to existing tables: `projects`, `signals`, `opportunities`, `products`)
+- May add optional `workspace_onboarded_track` column to `workspaces` for future reference
+
+---
+
+## Implementation order
+
+1. Spec the tracks & sample data
+2. Build `track-seeds.ts` with three persona seed sets
+3. Build `onboarding.functions.ts` with `seedWorkspaceForTrack`
+4. Build `TrackSelector.tsx` component
+5. Wire into signup/post-login flow
+6. Verify data appears on Today with cold-start false
+
+---
+
+## Acceptance signal
+
+User signs up → selects track → sees seeded data → can run WEDGE teardown as first action.
