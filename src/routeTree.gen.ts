@@ -37,7 +37,6 @@ import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated.learn'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated.knowledge'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
-import { Route as AuthenticatedIndex2RouteImport } from './routes/_authenticated.index 2'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
 import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
@@ -219,11 +218,6 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedIndex2Route = AuthenticatedIndex2RouteImport.update({
-  id: '/index 2',
-  path: '/index 2',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -456,7 +450,6 @@ export interface FileRoutesByFullPath {
   '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
-  '/index 2': typeof AuthenticatedIndex2Route
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/learn': typeof AuthenticatedLearnRoute
@@ -524,7 +517,6 @@ export interface FileRoutesByTo {
   '/governance': typeof AuthenticatedGovernanceRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
-  '/index 2': typeof AuthenticatedIndex2Route
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/learn': typeof AuthenticatedLearnRoute
@@ -594,7 +586,6 @@ export interface FileRoutesById {
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
   '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
-  '/_authenticated/index 2': typeof AuthenticatedIndex2Route
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
@@ -666,7 +657,6 @@ export interface FileRouteTypes {
     | '/governance'
     | '/guardrails'
     | '/inbox'
-    | '/index 2'
     | '/integrations'
     | '/knowledge'
     | '/learn'
@@ -734,7 +724,6 @@ export interface FileRouteTypes {
     | '/governance'
     | '/guardrails'
     | '/inbox'
-    | '/index 2'
     | '/integrations'
     | '/knowledge'
     | '/learn'
@@ -803,7 +792,6 @@ export interface FileRouteTypes {
     | '/_authenticated/governance'
     | '/_authenticated/guardrails'
     | '/_authenticated/inbox'
-    | '/_authenticated/index 2'
     | '/_authenticated/integrations'
     | '/_authenticated/knowledge'
     | '/_authenticated/learn'
@@ -1075,13 +1063,6 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/index 2': {
-      id: '/_authenticated/index 2'
-      path: '/index 2'
-      fullPath: '/index 2'
-      preLoaderRoute: typeof AuthenticatedIndex2RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/inbox': {
@@ -1413,7 +1394,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
   AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
-  AuthenticatedIndex2Route: typeof AuthenticatedIndex2Route
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
@@ -1457,7 +1437,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
   AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
-  AuthenticatedIndex2Route: AuthenticatedIndex2Route,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
