@@ -4,6 +4,7 @@ import { CommandPalette, GotoShortcuts } from "@/components/cadence/CommandPalet
 import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { FlowModeProvider } from "@/hooks/use-flow-mode";
 import { needsOnboarding } from "@/lib/onboarding-gate";
+import { BackendHealthBanner } from "@/components/system/BackendHealthBanner";
 
 export const Route = createFileRoute("/_authenticated")({
   // Disable SSR/prerender for the entire authenticated subtree. Without a
@@ -37,6 +38,7 @@ function AuthedLayout() {
     <WorkspaceProvider>
       <FlowModeProvider>
         {/* Ambient time/weather moved into the per-page TopBar (shell port). */}
+        <BackendHealthBanner />
         <CommandPalette />
         <GotoShortcuts />
         <Outlet />
