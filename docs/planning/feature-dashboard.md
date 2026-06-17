@@ -41,8 +41,8 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| W6 | Persona onboarding | Claude Code | 2026-06-17 | Adversarial review done; pending UI verification + docs closure
 
-| W6 | Persona onboarding | Claude Code | 2026-06-17 | Recon + build Lane E
 ---
 
 ## 🎯 Build priority & disjoint lanes (the pick-list, from [v10](../strategy/v10-master-blueprint-2026-06-17.md))
