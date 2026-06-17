@@ -903,7 +903,11 @@ function Dashboard() {
                         lineHeight: 1.4,
                       }}
                     >
-                      A {latestRescore.verdict} outcome moved a priority{" "}
+                      A {latestRescore.verdict} outcome moved{" "}
+                      <span style={{ color: "var(--ink)", fontWeight: 600 }}>
+                        {latestRescore.opportunity_title ?? "a priority"}
+                      </span>
+                      {" · "}
                       <span style={{ color: "var(--ink)", fontWeight: 600 }}>
                         ICE {Number(latestRescore.prior_ice).toFixed(1)} to{" "}
                         {Number(latestRescore.new_ice).toFixed(1)}

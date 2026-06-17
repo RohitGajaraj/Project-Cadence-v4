@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, Search } from "lucide-react";
 import { listLearnings } from "@/lib/outcome.functions";
+import { countPriorityMoves } from "@/lib/memory-compounding";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
 import { MonoLabel, VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
@@ -28,6 +29,9 @@ type LearningRow = {
   prior_ice: number | null;
   new_ice: number | null;
   created_at: string;
+  /** Title of the opportunity this learning rescored — the named priority that
+   *  moved (MOAT-VIS). Null when the learning is not tied to an opportunity. */
+  opportunity_title: string | null;
 };
 
 const VERDICT_TONE: Record<LearningRow["verdict"], VerdictTone> = {
@@ -58,9 +62,12 @@ export function MemoryPanel() {
   const fStats = useServerFn(getCompanyBrainStats);
   const stats = useQuery({ queryKey: ["company-brain-stats"], queryFn: () => fStats() });
 
-  const rows = ((learnings.data?.learnings ?? []) as LearningRow[]).filter((l) =>
-    l.summary.toLowerCase().includes(q.toLowerCase()),
-  );
+  const allLearnings = (learnings.data?.learnings ?? []) as LearningRow[];
+  const rows = allLearnings.filter((l) => l.summary.toLowerCase().includes(q.toLowerCase()));
+  // MOAT-VIS: of the loaded learnings, how many actually MOVED an opportunity's
+  // ICE — the literal "this learning moved these priorities" count, the same
+  // honest metric the Gauntlet reads. Shown in the Product-memory rail below.
+  const prioritiesMoved = countPriorityMoves(allLearnings);
 
   if (learnings.isLoading) {
     return (
@@ -90,6 +97,7 @@ export function MemoryPanel() {
   const memoryStats: [string, string][] = [];
   if (brain.data) memoryStats.push(["Decisions on record", String(brain.data.counts.decisions)]);
   if (stats.data) memoryStats.push(["Learnings written", String(stats.data.learnings)]);
+  memoryStats.push(["Priorities moved", String(prioritiesMoved)]);
   if (brain.data) memoryStats.push(["Findings indexed", String(brain.data.counts.findings)]);
 
   return (
@@ -175,7 +183,11 @@ export function MemoryPanel() {
                       className="mono-label tabular-nums"
                       style={{ fontSize: 8.5, display: "block", marginTop: 2 }}
                     >
-                      ICE {l.prior_ice.toFixed(1)} → {l.new_ice.toFixed(1)}
+                      moved{" "}
+                      <span style={{ color: "var(--ink)" }}>
+                        {l.opportunity_title ?? "a priority"}
+                      </span>{" "}
+                      · ICE {Number(l.prior_ice).toFixed(1)} → {Number(l.new_ice).toFixed(1)}
                     </span>
                   ) : null}
                 </span>

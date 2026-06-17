@@ -380,7 +380,11 @@ export const suggestOutcomeVerdict = createServerFn({ method: "POST" })
     };
   });
 
-/** Latest 50 learnings, newest first (workspace-scoped via RLS). */
+/** Latest 50 learnings, newest first (workspace-scoped via RLS). Each row carries
+ *  the title of the opportunity it rescored (`opportunity_title`) so callers can
+ *  NAME the priority a learning moved — "this learning moved THESE priorities"
+ *  (MOAT-VIS) — without a second query. The embed rides RLS; a learning with no
+ *  opportunity (or one in another workspace) reads `opportunity_title: null`. */
 export const listLearnings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -388,10 +392,35 @@ export const listLearnings = createServerFn({ method: "GET" })
     const { data: learnings, error } = await db
       .from("learnings")
       .select(
-        "id, prd_id, opportunity_id, verdict, summary, metric_label, metric_value, prior_ice, new_ice, created_at",
+        "id, prd_id, opportunity_id, verdict, summary, metric_label, metric_value, prior_ice, new_ice, created_at, opportunity:opportunities(title)",
       )
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return { learnings: learnings ?? [] };
+    // Flatten the embedded opportunity to a plain `opportunity_title`. PostgREST
+    // returns a to-one embed as an object, but the generated types can widen it
+    // to an array — handle both, and drop the nested key so the wire shape stays
+    // flat and every existing field is preserved (additive, back-compatible). The
+    // row is typed precisely (not `unknown`-widened) so callers keep strong field
+    // types; `numeric` columns arrive as strings over PostgREST, so callers coerce
+    // ICE with Number() — we pass the raw value through untouched.
+    type LearningWire = {
+      id: string;
+      prd_id: string | null;
+      opportunity_id: string | null;
+      verdict: "validated" | "missed" | "mixed";
+      summary: string;
+      metric_label: string | null;
+      metric_value: string | null;
+      prior_ice: number | string | null;
+      new_ice: number | string | null;
+      created_at: string;
+      opportunity: { title: string | null } | { title: string | null }[] | null;
+    };
+    const rows = (learnings ?? []) as LearningWire[];
+    const flattened = rows.map(({ opportunity, ...rest }) => {
+      const opp = Array.isArray(opportunity) ? opportunity[0] : opportunity;
+      return { ...rest, opportunity_title: opp?.title ?? null };
+    });
+    return { learnings: flattened };
   });

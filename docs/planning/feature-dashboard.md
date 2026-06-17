@@ -53,7 +53,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ✅ (2026-06-17) | Done. Recon found the core already built (`recordOutcome` rescores ICE + writes `learnings`; `rememberOutcome` already wires W1-AUTO into a recallable `agent_memory`). Added the missing "predicted vs actual, Historian verdict" half: an AI Historian assist on the outcome card. The loop is closed. |
 | 2 | `WEDGE` | C (DECIDE) | ✅ (2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. Shipped: cold-start Today card → `runWedgeTeardown` records the idea as an opportunity + runs the existing Critic inline → Ship/Revise/Kill verdict with risks, kill criteria, and evidence gaps. No new AI infra, no migration. Detail: [`features/wedge.md`](../features/wedge.md). |
-| 3 | `MOAT-VIS` | B (LEARN) | ⬜ **new** | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. |
+| 3 | `MOAT-VIS` | B (LEARN) | ✅ (2026-06-17) | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. Shipped: `listLearnings` now carries the moved opportunity's title; Brain Learnings reads "moved {opportunity} · ICE x→y" + a "Priorities moved" count; Today's What-changed card names the opportunity. Recon found LRN-02 already rendered the raw rescore — the gap was naming the priority. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
 | 5 | `W6` | E (PLG) | ⬜ | Persona onboarding (also the wedge's delivery surface). |
 
