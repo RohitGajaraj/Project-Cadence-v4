@@ -16,6 +16,7 @@ When the founder wants the backlog worked autonomously across a long unattended 
 - **Scope:** the whole backlog minus founder-gated items.
 - **Blocked or founder-gated item:** skip it and queue it in the report. Never let one item block the loop.
 - **Isolation:** work in an isolated git worktree branched off `origin/main`; fast-forward push to `main` when clean. Work still lands on main; collisions with parallel sessions cannot happen.
+- **Decisions (autonomous mode):** when a step would normally surface options for the founder to choose, pick the best option on the available data and proceed; record the choice and the rationale in `session-decisions.md` and the report. Defer (skip and queue) only founder-gated calls: taste/positioning, spend, accounts/credentials, or anything irreversible or outward-facing. In manual mode, surfacing options to the founder is the default.
 
 ## 3. Scope and priority order
 
@@ -82,9 +83,26 @@ For each item:
 
 ## 11. How to run and re-invoke
 
-1. Enable hands-off mode: **Shift+Tab** until the footer reads **"bypass permissions on"**.
-2. Start the run: **`/overnight-build`** (or a self-paced `/loop` with the build prompt). The loop reads this playbook, then begins cycle 1.
-3. Stop: interrupt the session, or say stop. Pausing leaves the report and handoff current so the next run resumes cold.
+There are two ways to operate, and they differ only in who makes the choices.
+
+**Autonomous mode (overnight or away).** Hands-off, self-paced, takes its own option-calls.
+1. **Shift+Tab** until the footer reads **"bypass permissions on"**.
+2. Type **`/overnight-build`**.
+
+That one command tells the loop: read this playbook, pick the top buildable item in priority order, plan and decide, build, gate, adversarially review, run the doc-loop, commit with a why, push, retry through usage limits, roll context at clean boundaries, and keep the report current. Nothing else is needed.
+
+**Manual mode (daytime, founder in the chair).** Stay in normal or "accept edits on" mode.
+- Say **`pick <ID>`** (for example "pick K2") or describe the task.
+- The same per-item discipline runs once (plan, build, gate, review, doc-loop, commit, push), but options are surfaced for the founder to choose rather than auto-decided.
+- No loop, no self-pacing: one item at a time, founder-driven.
+
+**Stop or pause.** Interrupt the session or say stop. Pausing leaves the report and the handoff current, so the next run resumes cold from disk.
+
+## 12. Model and effort
+
+- **Model:** Claude Opus 4.8 with the 1M-token context window (`claude-opus-4-8[1m]`). The large window is what lets a long unattended run hold the playbook, the dashboard, and the working set across many cycles.
+- **Effort:** run at high effort by default; escalate to the top tier for the hard steps (planning, architecture and design decisions, adversarial review, debugging a red gate); dial down for mechanical steps (doc-loop edits, formatting, routine moves) to conserve budget. When the loop spawns subagents, pass effort per step the same way: top effort for the skeptical reviewer, lower for mechanical scans.
+- The founder has authorized full autonomy over this model and effort modulation for autonomous runs. Correctness first, budget-aware second.
 
 ---
 

@@ -19,6 +19,20 @@
 | Isolation | worktree branch `worktree-overnight-build`, fast-forward push to `main` |
 | Started | 2026-06-17, late session |
 
+## How this works (the contract)
+
+This run operates under the [autonomous build loop playbook](../operations/autonomous-build-loop.md). The short version:
+
+- **Two modes.** Manual (daytime): the founder says `pick <ID>`, one item builds, options are surfaced for the founder. Autonomous (overnight): one command, `/overnight-build`, runs the loop hands-off and self-paced.
+- **Each cycle.** Pick the top buildable item (v10, then v9, then v8), plan and decide, build, gate on `tsc --noEmit` + `bun run build` + lint, adversarially self-review, run the full doc-loop, commit with a why, fast-forward push to `main`.
+- **Decisions.** In autonomous mode the loop picks the best option on the data and logs the rationale; it defers only founder-gated calls (taste, spend, accounts, anything irreversible) and queues them below.
+- **Safety.** Bypass permission mode plus a denylist that blocks destructive commands even hands-off; an isolated worktree so it never collides with parallel sessions.
+- **Resilience.** A usage limit pauses the run, it does not stop it: retry on a ~30 minute cadence, auto-resume when the limit clears.
+- **Continuity.** Context rolls over only at clean boundaries between builds, with a written handoff first, never mid-build.
+- **Model and effort.** Opus 4.8 1M context, top effort on the hard steps, dialed down for mechanical ones.
+
+**How to operate.** Autonomous: Shift+Tab to "bypass permissions on", then `/overnight-build`. Manual: `pick <ID>`. Full detail: playbook sections 11 to 12.
+
 ## Completion snapshot (baseline at run start)
 
 Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
