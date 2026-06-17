@@ -190,7 +190,7 @@ _First paying PMs; a viral share loop._
 | F-SHARE | Shareable-decision link | ✅ (2026-06-16) | The viral acquisition surface (also in G2) | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
 | M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
-| PLG | PLG funnel (public onboarding → first-win → upgrade) | ◐ Phase 1 ✅ (2026-06-17) · public `/pricing` + pre-signup CTA on share links; Phases 2-4 (onboarding hero · expiry banner · share prompt) queued | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
+| PLG | PLG funnel (public onboarding → first-win → upgrade) | ◐ Phases 1-2 ✅ (2026-06-17) · public `/pricing` + pre-signup CTA on share links + source-aware signup continuity; Phases 3-4 (memory-expiry banner · share prompt) queued | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
 | W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ✅ Shipped 2026-06-17 (live-verify on next publish) | Per-track sample data + first-win moment; cold-start fuel for WEDGE | [`onboarding-tracks.md`](../features/onboarding-tracks.md) |
 
 ---
