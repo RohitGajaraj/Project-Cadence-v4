@@ -54,6 +54,7 @@ v6 §7 names a shareable decision link as the viral mechanism: proof of the swar
 
 ## Related
 
+- [`shareable-teardowns.md`](./shareable-teardowns.md) — the `/t` viral loop for Critic-teardown verdicts (mirrors this pattern).
 - [`../../plan.md`](../../plan.md) §4: build log entry
 - [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md) §7: the viral loop in the GTM plan
 - `src/routes/p.$slug.tsx`: the prototype-share pattern this mirrors

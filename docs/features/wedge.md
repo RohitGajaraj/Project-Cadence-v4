@@ -39,7 +39,7 @@ Local dev has no AI key, so the full cited verdict only renders on the deployed 
 
 - The Critic currently red-teams the idea in isolation. Feeding **connected signals** into the teardown ("with receipts" from the operator's own data) is the natural next step and ties into MOAT-VIS.
 - The intake is cold-start only (the build-accept is the first-run). A "tear down any idea, any time" entry for existing users is a fast-follow.
-- The shareable teardown (`F-SHARE-TEARDOWN`, the viral loop) reuses this verdict on the public `/d/$slug` card.
+- The shareable teardown (`F-SHARE-TEARDOWN`, the viral loop) reuses this verdict on the public `/t/$slug` card — full detail in [`shareable-teardowns.md`](./shareable-teardowns.md).
 
 ## Related
 

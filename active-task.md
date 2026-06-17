@@ -1,10 +1,10 @@
-# F-SHARE-TEARDOWN · Shareable Critic-teardown link (active task) — IN PROGRESS
+# F-SHARE-TEARDOWN · Shareable Critic-teardown link — ✅ SHIPPED
 
 **Date:** 2026-06-17  
 **Lane:** C (DECIDE) → viral loop (also G5 Monetize)  
-**Status:** Claimed; building (recon done, seam confirmed tight)
+**Status:** ✅ Shipped to `main` (2026-06-17 · `ca7672fa17`)
 
-> **Parked alongside:** **W6 (persona onboarding)** is built + adversarially reviewed but **not shipped** — live UI verification (partly gated on a deploy/AI key) + docs closure remain. Its claim row stays open on the dashboard. Circle back to verify + ship.
+> **Next task:** Determine P1 buildable from the feature dashboard (F-SHARE-TEARDOWN now shipped). W6 (persona onboarding) remains parked, awaiting live verify + docs closure + ship.
 
 ---
 
@@ -30,7 +30,7 @@
 | 4 | Per-IP rate-limit guard before the public read | `src/lib/decisions-ratelimit.server.ts` | reuse (note shared IP bucket as a known limit) |
 | 5 | "Share this teardown" control on the verdict (gated on `review` present) | `src/components/today/WedgeTeardown.tsx` + small `ShareTeardownButton` | mirror `ShareDecisionButton` |
 | 6 | Verify in-browser (`bun run dev`) as far as local allows (toggle + copy + pre-migration "after sync" state); full anon-read confirmed on deployed app post-sync | — | — |
-| 7 | Close docs: new `docs/features/shareable-teardowns.md`, dashboard → ✅, `plan.md` §4 build-log, cross-link `wedge.md` + `shareable-decisions.md` | docs | — |
+| 7 | Close docs: new `docs/features/shareable-teardowns.md`, dashboard → ✅, `plan.md` §4 build-log, cross-link `wedge.md` + `shareable-decisions.md` | docs | ✅ Done |
 
 ---
 
