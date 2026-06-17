@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-17 (run start) · **Maintainer:** the autonomous loop, every cycle.
+**Last updated:** 2026-06-18 (cycle 2 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -49,10 +49,10 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 
 ## Done this run
 
-| Item | Lane | Commit | Notes |
-| --- | --- | --- | --- |
-| U6 (core) | G6 Interop | `99563e7db6` | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
-| R3 (core) | G7 Cockpit | (this push) | Notifications "Attention" feed on the Engine Room (`/govern?tab=attention`): one derived feed of pending approvals, spend nearing/over a cap, and a stalled loop, severity-sorted, each card deep-links to its home. No migration (reads existing loop state). tsc + eslint + build green; adversarial review folded 1 fix (tab order). ◐ remainder: email + digests + prefs + a bell badge. **Pending your publish + live verify (see below).** |
+| Date | Item | Lane | Commit | Notes |
+| --- | --- | --- | --- | --- |
+| 2026-06-18 | U6 (core) | G6 Interop | `99563e7db6` | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
+| 2026-06-18 | R3 (core) | G7 Cockpit | `456a6ed777` | Notifications "Attention" feed on the Engine Room (`/govern?tab=attention`): one derived feed of pending approvals, spend nearing/over a cap, and a stalled loop, severity-sorted, each card deep-links to its home. No migration (reads existing loop state). tsc + eslint + build green; adversarial review folded 1 fix (tab order). ◐ remainder: email + digests + prefs + a bell badge. **Pending your publish + live verify (see below).** |
 
 ## In progress
 
@@ -67,12 +67,12 @@ _(none yet)_
 
 ## Pending published-app verification (needs you to publish, then I verify)
 
-The live app does not reflect tonight's changes until you publish them. These items are code-complete and gate-green (tsc + build + lint + adversarial review) but not yet verified on the live app. Per the no-juggle rule (playbook section 13), I do not test against the unpublished app during the run. When you are back and have published, tell me and I will run these checks.
+The live app does not reflect this run's changes until you publish them. These items are code-complete and gate-green (tsc + build + lint + adversarial review) but not yet verified on the live app. Per playbook section 13, I do not test this run's unpublished changes against the live app (I may test behavior already deployed). Each item is dated and classified: "needs publish first" (this run's new work) or "quick-check now" (already-live behavior you can verify in a moment). When you publish, tell me and I will run the checks.
 
-| Item | What to verify on the live app |
-| --- | --- |
-| U6 workspace export | Settings > Data > "Download workspace export". Confirm the JSON has the expected sections with non-zero counts on a seeded workspace, and that another workspace's data is not present. |
-| R3 Attention feed | Engine Room > Attention. With a pending approval (or a near-cap budget), confirm a severity-coded card appears and links to the right tab; confirm "All clear" when the loop is clean. |
+| Date noted | Item | When it can be verified | What to check |
+| --- | --- | --- | --- |
+| 2026-06-18 | U6 workspace export | Needs publish first (new this run) | Settings > Data > "Download workspace export". Confirm the JSON has the expected sections with non-zero counts on a seeded workspace, and that another workspace's data is not present. |
+| 2026-06-18 | R3 Attention feed | Needs publish first (new this run) | Engine Room > Attention. With a pending approval (or a near-cap budget), confirm a severity-coded card appears and links to the right tab; confirm "All clear" when the loop is clean. |
 
 ## Notes and comments
 

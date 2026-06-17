@@ -33,7 +33,7 @@ Prefer file-disjoint lanes so a cycle never touches another in-flight lane.
 
 For each item:
 
-1. **Sync:** `git fetch`, rebase the worktree on `origin/main`.
+1. **Sync:** `git fetch`, rebase the worktree on `origin/main`. This runs before every cycle, so each cycle automatically picks up any founder or Lovable pushes, including security fixes, and never works on stale data. (Per-cycle sync is enough; no mid-cycle re-pull rule.)
 2. **Plan:** read the item spec + linked detail. State the approach, the assumptions, and the success criteria. Take the necessary decisions; do not wait on the founder for anything that is not founder-gated.
 3. **Claim:** add the item to the report as in-progress.
 4. **Build:** surgical changes only; every line traces to the item. Follow the two-files-in-lockstep convention (server function + route) and the existing patterns.
@@ -80,6 +80,7 @@ For each item:
 
 - Live report: [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md), rewritten every cycle: completion %, items done with notes, in-progress, skipped with reason, comments.
 - Check it: `git pull`, then open the report. The commit trail (`git log --oneline`) is the second view.
+- **Date every entry (contract).** Every row in the report (done, skipped, pending-verification) carries its date (YYYY-MM-DD) and the cycle, so across multiple nights the report is a dated record of what was done and when. Accumulate across runs; never erase a prior night's dated entries. Group or label by date so each night reads on its own.
 
 ## 11. How to run and re-invoke
 
@@ -104,13 +105,19 @@ That one command tells the loop: read this playbook, pick the top buildable item
 - **Effort:** run at high effort by default; escalate to the top tier for the hard steps (planning, architecture and design decisions, adversarial review, debugging a red gate); dial down for mechanical steps (doc-loop edits, formatting, routine moves) to conserve budget. When the loop spawns subagents, pass effort per step the same way: top effort for the skeptical reviewer, lower for mechanical scans.
 - The founder has authorized full autonomy over this model and effort modulation for autonomous runs. Correctness first, budget-aware second.
 
-## 13. Published-app verification (the no-juggle rule)
+## 13. Published-app verification (what may be tested live, and what must wait)
 
-The live app does not reflect a change until the founder publishes it. During an unattended run the founder is away, so nothing built tonight is live yet.
+The live app does not reflect a change until the founder publishes it. During an unattended run the founder is away, so this run's own changes are not live yet. The rule has two cases:
 
-- Do NOT test against the published app during the run (Playwright or any live check). The change is not deployed, so a "failing" live test is meaningless and only burns tokens. Never juggle or debug a not-yet-published feature.
-- Verify with what is real offline: `tsc --noEmit`, `bun run build`, `bun run lint`, and the adversarial review of the diff. That green gate is the definition of done for an unattended cycle.
-- If an item genuinely needs live verification, record it in the report under "Pending published-app verification" with exactly what to check, then move to the next item. When the founder is back and has published, run the verification and report the result.
+1. **This run's unpublished changes:** do NOT test them against the live app. They are not deployed, so a "failing" live test is meaningless and only burns tokens. Never juggle or debug a not-yet-published feature. Verify them offline only: `tsc --noEmit`, `bun run build`, `bun run lint`, and the adversarial review. That green gate is the definition of done for an unattended cycle.
+2. **Behavior that is already on the published app:** you MAY test it. If a check is about a feature or behavior already deployed (not introduced by this run), go ahead and run it against the live app and report the result. Already-live behavior is fair game.
+
+**For every item that needs the founder's build, record it in the report's "Pending published-app verification" table, dated, and classify it:**
+
+- **Quick-check now (already live):** if the relevant behavior is already on the published app, give a short numbered go-through so the founder can make a quick call and verify it themselves, no new publish needed.
+- **Needs publish first:** the change is this run's own work and must be published before it can be verified. Note it and move on; verify it once the founder publishes and says so.
+
+When uncertain whether something is already live, do NOT juggle or burn tokens guessing: halt that test, make a clear dated note in the report, and notify the founder. This is a standing contract rule, not a one-night exception.
 
 ---
 
