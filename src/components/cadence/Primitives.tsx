@@ -103,6 +103,7 @@ export function StatusBadge({ status }: { status: string }) {
     gate: { label: "at gate", fg: "var(--coral)", pulse: true },
     completed: { label: "completed", fg: "var(--emerald)" },
     failed: { label: "failed", fg: "var(--rose)" },
+    cancelled: { label: "cancelled", fg: "var(--ink-subtle)" },
     planned: { label: "planned", fg: "var(--ink-faint)" },
     waiting: { label: "waiting", fg: "var(--coral)" },
     idle: { label: "idle", fg: "var(--ink-faint)" },

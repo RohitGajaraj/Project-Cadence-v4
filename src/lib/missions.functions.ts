@@ -353,3 +353,113 @@ export const getMission = createServerFn({ method: "POST" })
       messages: (messages ?? []) as MissionDetail["messages"],
     };
   });
+
+/**
+ * D4 (cancellation slice): the per-mission brake pedal. Stop a mission mid-run.
+ *
+ * Setting `missions.status='cancelled'` is sufficient to halt advancement — the
+ * auto-advance tick selects missions by `.in("status", ["running","in_progress"])`
+ * and `advanceMissionCore` early-returns for any non-running mission, so a
+ * cancelled mission is never advanced (no loop surgery). But the resume cron
+ * (`resume-runs.ts`) resumes individual `agent_runs` by their OWN status
+ * (queued / running / waiting_approval), independent of the mission — so we MUST
+ * also flip this mission's in-flight runs to cancelled, or the cron would keep
+ * resuming orphaned children. We also: mark non-terminal `mission_steps`
+ * cancelled (UI honesty); release any held Build file claims (the
+ * `release_claims_for_terminal_run` trigger only fires on completed/halted/failed,
+ * NOT cancelled, so they would otherwise orphan and block future builds); and
+ * cancel this mission's pending approvals (so a cancelled mission stops asking
+ * for your sign-off). Every write is RLS-scoped to the caller's own rows.
+ *
+ * No migration: `missions.status` and `agent_runs.status` carry no CHECK
+ * constraint, and `agent_approvals.status` already allows 'cancelled'.
+ */
+export const cancelMission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { missionId: string }) => z.object({ missionId: z.string().uuid() }).parse(d))
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ cancelled: boolean; alreadyTerminal?: boolean; approvalsCancelled?: number }> => {
+      const { supabase } = context;
+      const now = new Date().toISOString();
+      // A stopped mission can't be cancelled — it already reached a terminal end.
+      const TERMINAL = ["completed", "done", "failed", "halted", "cancelled"];
+      const RUN_IN_FLIGHT = ["queued", "running", "dispatched", "waiting_approval"];
+      const STEP_IN_FLIGHT = ["planned", "queued", "dispatched", "running", "waiting_approval"];
+
+      const { data: mission, error: mErr } = await supabase
+        .from("missions")
+        .select("id,status")
+        .eq("id", data.missionId)
+        .maybeSingle();
+      if (mErr) throw new Error(mErr.message);
+      if (!mission) throw new Error("Mission not found");
+      if (TERMINAL.includes(mission.status)) {
+        return { cancelled: false, alreadyTerminal: true };
+      }
+
+      // 1. Flip the mission to cancelled — but ONLY if it is still non-terminal,
+      //    so a mission that finished in the read→write window keeps its honest
+      //    terminal state (no overwriting 'completed' with 'cancelled'). Ownership
+      //    is already confirmed above (RLS would have nulled the select), so a
+      //    null result here means it raced to a terminal status.
+      const { data: updated, error: uErr } = await supabase
+        .from("missions")
+        .update({ status: "cancelled", completed_at: now })
+        .eq("id", data.missionId)
+        .not("status", "in", `(${TERMINAL.join(",")})`)
+        .select("id")
+        .maybeSingle();
+      if (uErr) throw new Error(uErr.message);
+      if (!updated) return { cancelled: false, alreadyTerminal: true };
+
+      // 2. Stop the cron resuming this mission's individual child runs.
+      await supabase
+        .from("agent_runs")
+        .update({ status: "cancelled" })
+        .eq("mission_id", data.missionId)
+        .in("status", RUN_IN_FLIGHT);
+
+      // 3. Reflect onto the plan (the tick never reads a cancelled mission's steps;
+      //    this is purely so the cockpit shows the steps stopped, not stuck).
+      await supabase
+        .from("mission_steps")
+        .update({ status: "cancelled" })
+        .eq("mission_id", data.missionId)
+        .in("status", STEP_IN_FLIGHT);
+
+      // 4. Release held Build file claims (the terminal-run trigger skips
+      //    'cancelled', so do it here or the per-(repo,path) locks orphan).
+      await supabase
+        .from("builder_file_claims")
+        .update({ status: "released", released_at: now, released_reason: "mission_cancelled" })
+        .eq("mission_id", data.missionId)
+        .eq("status", "held");
+
+      // 5. Cancel pending approvals tied to this mission's runs so it stops
+      //    asking for sign-off (clears the Attention feed). Best-effort.
+      let approvalsCancelled = 0;
+      try {
+        const { data: runs } = await supabase
+          .from("agent_runs")
+          .select("id")
+          .eq("mission_id", data.missionId);
+        const runIds = (runs ?? []).map((r) => (r as { id: string }).id);
+        if (runIds.length) {
+          const { data: appr } = await supabase
+            .from("agent_approvals")
+            .update({ status: "cancelled", decided_at: now })
+            .in("run_id", runIds)
+            .eq("status", "pending")
+            .select("id");
+          approvalsCancelled = (appr ?? []).length;
+        }
+      } catch (e) {
+        console.error("[cancelMission] approval cleanup skipped (non-fatal):", e);
+      }
+
+      return { cancelled: true, approvalsCancelled };
+    },
+  );

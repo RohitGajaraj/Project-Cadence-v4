@@ -2,7 +2,7 @@
 
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
-> **Last updated:** 2026-06-17 · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ reconciled) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
 
 ---
 
@@ -57,7 +57,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
 | 5 | `W6` | E (PLG) | ✅ (2026-06-17) | Persona onboarding (also the wedge's delivery surface). Shipped: 3-track selector + per-track seed data, 4-step flow. Closed: fixed the step-3 agent-toggle contract bug (agentId), removed the no-op `agentSlugsToEnable` field, wrote [`features/onboarding-tracks.md`](../features/onboarding-tracks.md). Live UI walkthrough on next publish. |
 
-**P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `MOAT-METRIC` ✅ (Gauntlet Outcome-accuracy card) + `SEN-05`+`F-ANALYTICS-1/2` (A/B; SEN-05 + F-ANALYTICS gated on a product-analytics connector OAuth), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
+**P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `MOAT-METRIC` ✅ (Gauntlet Outcome-accuracy card) + `SEN-05`+`F-ANALYTICS-1/2` (A/B; SEN-05 + F-ANALYTICS gated on a product-analytics connector OAuth), `DEC-02-LOOP` ✅+`H1-TASKS` ✅ (PRD → engineering task graph: `generateTaskGraph` decomposes a spec into a dependency-ordered task DAG + the task-graph card on `/prds/$id`; recon-confirmed already built 2026-06-18)+`H2-WRITES` (C).
 
 **P2 - breadth/polish:** `ENG-06`, `BLD-04`, `K2`, `BLD-05`, `D4`, `P7`, `P3`, `R3`, `B5`, `FND-0.7`, `U6`, IA culls.
 
@@ -73,7 +73,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 4 | 1 | 1 | 6 |
-| G2 Decide & Plan | 8 | 0 | 0 |  1 |
+| G2 Decide & Plan | 8 | 1 | 0 | 0 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 2 | 1 | 0 | 5 |
 | G5 Monetize & Growth | 2 | 0 | 2 | 2 |
@@ -141,7 +141,7 @@ _Turn signal into governed decisions and specs._
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | H2 | Outcome roadmap (Now/Next/Later) | ✅ (2026-06-17) | Outcome-driven board on `/product?tab=roadmap`: the human commits opportunities to Now/Next/Later with a declared outcome + measure; the agent's continuous ICE ranking orders within each bucket (NOT the v6-deleted task kanban). Native HTML5 drag + a keyboard/click bucket select per card; verified RLS-scoped writes (user-scoped `.select()` so a blocked update fails loudly). Adversarially reviewed: 3 fixes (phantom-ok write, a11y drag-only gap, field reset). **Place-into-bucket write is gated on the next Lovable sync applying the migration; read is pre-migration tolerant.** | `roadmap.functions.ts` + `RoadmapBoard.tsx` + migration `20260617000000_h2_roadmap_outcome.sql` |
 | H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | "Plan deep work" on the Calendar: `proposeWorkBlocks` schedules open deep-work tasks into free time within working hours (reuses proposeSlots' conflict logic; one block per task, back-to-back, skips weekends/meetings; pure read-only proposal), each block has "Add to calendar". Adversarially reviewed: 1 real boundary bug + a user-facing em-dash fixed | `calendar.functions.ts` (`proposeWorkBlocks`) + `CalendarPanel.tsx` |
-| D4 | Cancellation / replay-and-branch / checkpoints | ⬜ | Stop mid-run, re-run with a different model/prompt, diff the result | Mission control + loop checkpoints |
+| D4 | Cancellation / replay-and-branch / checkpoints | ◐ (2026-06-18) | The per-mission brake pedal: a "Cancel mission" control on `/missions/$id` stops an active mission (it stops advancing, in-flight steps + child runs stop, held Build file locks release, pending approvals clear; reads `cancelled`, keeps done work). No loop surgery (the tick already gates on status) and no migration. Adversarial review folded a TOCTOU race-guard + caught the orphaned-file-lock trigger gap. Remaining: replay-and-branch (re-run with a different model/prompt) + checkpoint-diff. **Pending publish + live verify.** | `cancelMission` (`missions.functions.ts`) + `_authenticated.missions.$missionId.tsx` · [`d4-mission-cancellation.md`](../features/d4-mission-cancellation.md) |
 
 ---
 

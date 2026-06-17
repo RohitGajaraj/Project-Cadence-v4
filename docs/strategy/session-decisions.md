@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-18 · Build D4's cancellation slice unattended (re-assessing the "too risky to build blind" deferral)
+
+**Decision:** Build the D4 cancellation slice (a "Cancel mission" brake on `/missions/$id`) during the autonomous overnight loop, reversing cycle 8's call that D4 was "NOT gate-verifiable, unsafe to build blind." Reconcile `H1-TASKS` to ✅ (already built). Set the next autonomous pick to `F3` (continuous discovery), the founder's named top core candidate.
+
+**Why:** Cycle 8 deferred D4 as risky, but it judged the whole item (cancellation + replay + checkpoints) at once. Deep recon showed the *cancellation* half is the safe subset: the auto-advance tick already gates on mission status (`advanceMissionCore` early-returns for any non-running mission; the cron selects only `running`/`in_progress`), so cancelling is a pure DB state transition with **zero loop surgery** and is fully deterministic, i.e. fully covered by the `tsc`/build/review gate. No migration (no CHECK on `missions.status`/`agent_runs.status`; `agent_approvals.status` already allows `cancelled`). The "unattended = unsafe" premise was false for this slice. It is also core (loop/mission control), satisfying the founder's core-first ruling.
+
+**Tradeoffs considered:** (1) Hold D4 for founder-supervised runtime testing — rejected: the logic is offline-verifiable and the end-to-end UX simply joins the standard publish-then-verify queue, so holding would waste correct, gate-green work and idle the loop against the founder's "do not idle" ruling. (2) Pivot straight to F3/O1 and skip D4 — rejected because D4 was already built and verified this cycle; instead F3 is queued as the explicit next pick. (3) Cascade depth: cancelling the mission alone is insufficient (the resume cron resumes child runs by their own status), so in-flight `agent_runs` must also flip to `cancelled`; and held `builder_file_claims` must be released explicitly because the terminal-run trigger skips `cancelled` (else file locks orphan and block future builds).
+
+**Impact:** New `cancelMission` (`src/lib/missions.functions.ts`); Cancel control in `_authenticated.missions.$missionId.tsx`; `cancelled` `StatusBadge` in `Primitives.tsx`; `docs/features/d4-mission-cancellation.md`. Dashboard: D4 ◐, H1-TASKS ✅. Pending publish + live verify.
+
 ### 2026-06-17 · "Agent manager" framing: reinforce the narrative, no new surface, cost-per-outcome split across surfaces
 
 **Decision:** Adopt "2026 = the year of the agent manager" as a *reinforcing narrative* for the role the product already gives the user (you direct and review a fleet of agents), not a category change and not a new in-app surface. Keep the wedge ("the AI that red-teams your roadmap" + decision memory) as the lead; layer the operating-model frame underneath on the landing page. No surface literally named "Agent Manager." Express the founder's cost / API / time / efficiency ask as **cost-per-outcome**, split across surfaces: light on the calm front (Today / Missions), full per-agent telemetry behind the Engine Room door.

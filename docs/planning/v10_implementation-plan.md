@@ -42,7 +42,7 @@ The only sprint that matters until it is done. Target: the loop closes once on a
 **Sprint P0 exit (the gate):** on a real account, a signal enters, becomes a Critic-checked decision, ships, and the outcome rescores a priority that is *visible* on Today/Brain; a brand-new user reaches a cited teardown inside 10 minutes. This is v7 milestones M-A + M-B + the start of M-C.
 
 ### Sprint P1 - monetize, defend the moat, deepen autonomy
-After P0 proves the loop. `F-SHARE-TEARDOWN` + `PLG` + `M-C-PRICE` (revenue + viral), `Q1-MCP` (neutral-brain moat, pulled forward), `SANDBOX` + `AMBIENT-ARC` (full build autonomy), `SEN-05` + `F-ANALYTICS-1/2` + `MOAT-METRIC` (the outer analytical loop), `DEC-02-LOOP` + `H1-TASKS` + `H2-WRITES` (DECIDE/DEFINE depth). **Exit:** first paying PMs; a share link drives a signup; a trusted agent runs a confirm-gated tool unattended; the gauntlet shows outcome-accuracy lift on a real account.
+After P0 proves the loop. `F-SHARE-TEARDOWN` + `PLG` + `M-C-PRICE` (revenue + viral), `Q1-MCP` (neutral-brain moat, pulled forward), `SANDBOX` + `AMBIENT-ARC` (full build autonomy), `SEN-05` + `F-ANALYTICS-1/2` + `MOAT-METRIC` (the outer analytical loop), `DEC-02-LOOP` + `H1-TASKS` + `H2-WRITES` (DECIDE/DEFINE depth; `DEC-02-LOOP` ✅, `H1-TASKS` ✅ recon-confirmed 2026-06-18 via `generateTaskGraph` + the `/prds/$id` task-graph card). **Exit:** first paying PMs; a share link drives a signup; a trusted agent runs a confirm-gated tool unattended; the gauntlet shows outcome-accuracy lift on a real account.
 
 ### Sprint P2 - breadth and polish
 `ENG-06`, `BLD-04`, `K2`, `BLD-05`, `D4`, `P7`, `P3`, `R3`, `B5`, `FND-0.7`, `U6`, IA culls. Pull only when P0/P1 gates are green.

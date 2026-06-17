@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   Gavel,
+  Ban,
   GitBranch,
   Layers,
   RotateCcw,
@@ -29,7 +30,7 @@ import { toolConsequence, REVERSIBILITY_LABEL } from "@/lib/tool-consequences";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
 import { listProjects } from "@/lib/projects.functions";
-import { getMission, type MissionDetail } from "@/lib/missions.functions";
+import { getMission, cancelMission, type MissionDetail } from "@/lib/missions.functions";
 import {
   listMissionSteps,
   advanceMission,
@@ -38,6 +39,7 @@ import {
 import { decideApproval } from "@/lib/agent_loop.functions";
 import { createDecision } from "@/lib/decisions.functions";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useConfirm } from "@/hooks/use-confirm";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/missions/$missionId")({
@@ -672,6 +674,8 @@ function MissionDetailPage() {
   const fSteps = useServerFn(listMissionSteps);
   const fAdvance = useServerFn(advanceMission);
   const fStart = useServerFn(startOrchestratedMission);
+  const fCancel = useServerFn(cancelMission);
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const { activeWorkspace } = useWorkspace();
 
@@ -704,6 +708,24 @@ function MissionDetailPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const cancel = useMutation({
+    mutationFn: () => fCancel({ data: { missionId } }),
+    onSuccess: (r) => {
+      if (r.alreadyTerminal) {
+        toast.success("This mission had already finished.");
+      } else {
+        toast.success(
+          r.approvalsCancelled
+            ? `Mission cancelled · ${r.approvalsCancelled} pending approval${r.approvalsCancelled === 1 ? "" : "s"} cleared.`
+            : "Mission cancelled · the loop will not advance it further.",
+        );
+      }
+      qc.invalidateQueries({ queryKey: ["mission", missionId] });
+      qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
+      qc.invalidateQueries({ queryKey: ["missions"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const retry = useMutation({
     mutationFn: () => {
       const mission = m.data?.mission;
@@ -728,6 +750,9 @@ function MissionDetailPage() {
   const missionRunning = data?.mission.status === "running" || data?.mission.status === "queued";
   const canAdvance = hasPending && data?.mission.status === "running";
   const missionFailed = data?.mission.status === "failed" || data?.mission.status === "halted";
+  // D4: a mission can be cancelled while it is still active (not yet terminal).
+  const missionActive =
+    !!data && !["completed", "done", "failed", "halted", "cancelled"].includes(data.mission.status);
   const failedStep = stepRows.find((r) => r.status === "failed");
   const liveHop = hops.find((h) => ["running", "queued", "awaiting_review"].includes(h.status));
 
@@ -838,7 +863,40 @@ function MissionDetailPage() {
                   {data.mission.goal}
                 </p>
               </div>
-              <StatusBadge status={badgeStatus(data.mission.status)} />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <StatusBadge status={badgeStatus(data.mission.status)} />
+                {missionActive ? (
+                  <button
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Cancel this mission?",
+                        body: "Stops the mission now: it will not advance further, in-flight steps and runs stop, any held build file locks release, and pending approvals clear. Work already done is kept. This can't be undone, so start a fresh mission to run the goal again.",
+                        destructive: true,
+                        confirmLabel: "Cancel mission",
+                      });
+                      if (ok) cancel.mutate();
+                    }}
+                    disabled={cancel.isPending}
+                    className="mono-label"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: 9,
+                      padding: "3px 10px",
+                      borderRadius: 5,
+                      border: "1px solid color-mix(in oklab, var(--rose) 35%, transparent)",
+                      color: "var(--rose)",
+                      background: "transparent",
+                      opacity: cancel.isPending ? 0.5 : 1,
+                    }}
+                    title="Stop this mission so it will not advance further"
+                  >
+                    <Ban style={{ width: 11, height: 11 }} />
+                    {cancel.isPending ? "Cancelling…" : "Cancel mission"}
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div
               style={{
