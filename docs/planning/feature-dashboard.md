@@ -41,6 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| DEC-02-LOOP | Critic as a routable loop step | Claude Code | 2026-06-17 | Lane C. Extract `runCritic` → `critic.server.ts`, register a gating-exempt `critic.evaluate` tool, seed it. Safe scope: no `mission_steps`/DAG/handoff changes. Touches `registry.server.ts` + `loop.server.ts` (coordinate engine work). |
 
 ---
 
