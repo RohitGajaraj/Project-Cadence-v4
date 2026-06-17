@@ -803,3 +803,20 @@ _This log is maintained as part of the closed documentation loop. Every session 
 **Follow-up rulings (same review):** (1) the clamped year grid must FILL the card, fluid 1fr week columns with aspect-ratio cells, month labels anchored to their starting week, growth capped early-year (shipped `fc4779b8aa`); (2) sketch marks apply RETROACTIVELY to all existing screens, not just new work, audit confirmed the three converted charts are the only data-series graphs in production (all other bars are meters, kept clean by the scope rule).
 
 **Status:** shipped `ecd9aebbb9` + `fc4779b8aa` (with the escaped-card-padding fix across Govern/Knowledge panels: root cause: reference `.bento`/`.band-stone` carry default padding, production's don't).
+
+---
+
+## 2026-06-18 · Autonomous overnight build loop adopted (operating-model decision)
+
+**Decision (founder-directed):** the product can be built autonomously during long unattended windows (overnight), not just hand-driven. Codified as a standing, re-invokable operating model, not a one-off. Full contract: [`../operations/autonomous-build-loop.md`](../operations/autonomous-build-loop.md).
+
+- **Modes.** Manual (daytime): founder says `pick <ID>`, options are surfaced for the founder. Autonomous (overnight): one command `/overnight-build`, the loop self-paces and takes the option-calls itself with logged rationale; it defers only founder-gated calls (taste, spend, accounts, irreversible).
+- **Scope order:** v10 first, then v9, then v8, then earlier strategy docs; founder-gated items skipped and queued.
+- **Per item:** plan, build, gate (`tsc --noEmit` + build + lint), adversarial review, full doc-loop, commit + push.
+- **Isolation:** an isolated worktree off `origin/main`, fast-forward push to main, so it never collides with parallel sessions (proven the first night: `origin/main` advanced under it more than once and it rebased-and-retried cleanly each time).
+- **Resilience:** a usage limit pauses, not stops, the run (a ~30-minute retry, auto-resume); a real build failure gets a bounded fix then skip-and-queue.
+- **Continuity:** context rolls over only at clean boundaries between builds, with a written handoff first.
+- **Permissions:** "accept edits on" plus a command allowlist and a destructive-command denylist in `.claude/settings.local.json` is enough to run hands-off; no "bypass" required.
+- **Published-app rule:** the loop does NOT test against the live app during a run (changes are not deployed until the founder publishes); items needing live verification are recorded in the report for publish-then-verify.
+
+**Why it matters:** it turns idle overnight hours into shipped, gate-verified, documented progress on `main`, while keeping the honesty rails (no untested claims, no founder-gated calls taken, no collisions). Status: live; first cycle shipped U6 (workspace data export). Live status: [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md).

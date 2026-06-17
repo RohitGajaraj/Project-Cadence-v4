@@ -43,8 +43,17 @@ import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/co
 import { getBillingState, createCheckoutSession, type BillingState } from "@/lib/billing.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
+import { DataExportCard } from "@/components/settings/DataExportCard";
 
-type SectionId = "connections" | "ai" | "staff" | "workspace" | "billing" | "interop" | "profile";
+type SectionId =
+  | "connections"
+  | "ai"
+  | "staff"
+  | "workspace"
+  | "billing"
+  | "interop"
+  | "profile"
+  | "data";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile).
 // "Accounts" is the account-level OAuth surface (which provider logins you have
@@ -63,6 +72,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "billing", label: "Plan" },
   { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
+  { id: "data", label: "Data" },
 ];
 
 // Legacy deep links still arrive with the old section values. Map them so
@@ -157,6 +167,7 @@ function SettingsPage() {
         {active === "billing" && <BillingTab checkout={checkout} />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
+        {active === "data" && <DataExportCard workspaceId={activeWorkspace?.id} />}
       </div>
     </AppShell>
   );

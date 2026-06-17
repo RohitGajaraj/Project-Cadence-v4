@@ -86,7 +86,7 @@ For each item:
 There are two ways to operate, and they differ only in who makes the choices.
 
 **Autonomous mode (overnight or away).** Hands-off, self-paced, takes its own option-calls.
-1. **Shift+Tab** until the footer reads **"bypass permissions on"**.
+1. **Shift+Tab** to **"accept edits on"** (it auto-accepts file edits). The command allowlist in `.claude/settings.local.json` auto-approves the loop's git, build, and lint commands even in this mode, so the run does not stall. If your build also offers a **"bypass permissions"** mode that works too; if you do not see it, "accept edits on" plus the allowlist is enough (proven: every commit, push, and build runs with no prompt). The loop may extend that allowlist as needed so it never stalls (founder-authorized).
 2. Type **`/overnight-build`**.
 
 That one command tells the loop: read this playbook, pick the top buildable item in priority order, plan and decide, build, gate, adversarially review, run the doc-loop, commit with a why, push, retry through usage limits, roll context at clean boundaries, and keep the report current. Nothing else is needed.
@@ -103,6 +103,14 @@ That one command tells the loop: read this playbook, pick the top buildable item
 - **Model:** Claude Opus 4.8 with the 1M-token context window (`claude-opus-4-8[1m]`). The large window is what lets a long unattended run hold the playbook, the dashboard, and the working set across many cycles.
 - **Effort:** run at high effort by default; escalate to the top tier for the hard steps (planning, architecture and design decisions, adversarial review, debugging a red gate); dial down for mechanical steps (doc-loop edits, formatting, routine moves) to conserve budget. When the loop spawns subagents, pass effort per step the same way: top effort for the skeptical reviewer, lower for mechanical scans.
 - The founder has authorized full autonomy over this model and effort modulation for autonomous runs. Correctness first, budget-aware second.
+
+## 13. Published-app verification (the no-juggle rule)
+
+The live app does not reflect a change until the founder publishes it. During an unattended run the founder is away, so nothing built tonight is live yet.
+
+- Do NOT test against the published app during the run (Playwright or any live check). The change is not deployed, so a "failing" live test is meaningless and only burns tokens. Never juggle or debug a not-yet-published feature.
+- Verify with what is real offline: `tsc --noEmit`, `bun run build`, `bun run lint`, and the adversarial review of the diff. That green gate is the definition of done for an unattended cycle.
+- If an item genuinely needs live verification, record it in the report under "Pending published-app verification" with exactly what to check, then move to the next item. When the founder is back and has published, run the verification and report the result.
 
 ---
 

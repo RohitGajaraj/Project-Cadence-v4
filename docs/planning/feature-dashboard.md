@@ -77,7 +77,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 2 | 1 | 0 | 5 |
 | G5 Monetize & Growth | 2 | 0 | 2 | 2 |
-| G6 Interop & Team | 0 | 1 | 0 | 4 |
+| G6 Interop & Team | 0 | 2 | 0 | 3 |
 | G7 Cockpit, IA & Observability | 8 | 1 | 0 | 7 |
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
 | G9 Platform & Foundation | 5 | 0 | 1 | 2 |
@@ -204,7 +204,7 @@ _Dual-user: external agents plug in; teams land._
 | Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phases 1-3 done 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch + **Phase 3 token UI** (Settings → Integrations: issue/revoke + connect snippets) all done. Remaining (Q2/Phase 4): full MCP streamable-HTTP transport + external discovery. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
 | Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
 | A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
-| U6 | Full data-portability / export wizard | ⬜ (P0/P1) | Trust + escape hatch: export signals, decisions+lineage, PRDs, memory graph | Export fn + audit log |
+| U6 | Full data-portability / export wizard | ◐ (2026-06-17) | Trust + escape hatch: the core workspace export shipped. Settings > Data downloads the whole workspace (signals, opportunities/decisions, specs, tasks, outcomes, agent memory) as one RLS-scoped JSON, no migration. Remaining: per-section selective export + an export audit-log | `exportWorkspace` (`projects.functions.ts`) + `DataExportCard.tsx` · [`u6-data-export.md`](../features/u6-data-export.md) |
 
 ---
 

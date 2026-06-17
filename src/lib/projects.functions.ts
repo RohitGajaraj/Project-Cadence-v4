@@ -307,3 +307,120 @@ export const exportProduct = createServerFn({ method: "GET" })
       exported_by: userId,
     };
   });
+
+// U6 · Workspace data-portability export, the trust escape-hatch. Assemble the
+// caller's whole workspace footprint into one JSON snapshot they can download
+// and take anywhere, no lock-in. RLS scopes every read to the caller, so this
+// only ever exports the user's own rows. Project-bound entities scope to the
+// active workspace's projects; owner-scoped learnings and memory are the user's
+// own. Same JSON-safe shape contract as ProductExport above.
+export type WorkspaceExport = {
+  workspace_id: string;
+  exported_by: string;
+  exported_at: string;
+  counts: { [section: string]: number };
+  projects: JsonObject[];
+  signals: JsonObject[];
+  opportunities: JsonObject[];
+  specs: JsonObject[];
+  tasks: JsonObject[];
+  learnings: JsonObject[];
+  memory: JsonObject[];
+};
+
+export const exportWorkspace = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<WorkspaceExport> => {
+    const { supabase, userId } = context;
+
+    let workspaceId = data.workspaceId;
+    if (!workspaceId) {
+      const { data: memberRows } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (memberRows && memberRows.length > 0) workspaceId = memberRows[0].workspace_id;
+    }
+
+    if (!workspaceId) {
+      return {
+        workspace_id: "",
+        exported_by: userId,
+        exported_at: new Date().toISOString(),
+        counts: {},
+        projects: [],
+        signals: [],
+        opportunities: [],
+        specs: [],
+        tasks: [],
+        learnings: [],
+        memory: [],
+      };
+    }
+
+    const { data: projects, error: pErr } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("workspace_id", workspaceId);
+    if (pErr) throw new Error(pErr.message);
+    const projectRows = projects ?? [];
+    const projectIds = projectRows.map((p) => p.id as string).filter(Boolean);
+
+    // Project-bound entities. Guard the empty case so a workspace with no
+    // projects never issues an `in (<empty list>)` query.
+    let sig: JsonObject[] = [];
+    let opp: JsonObject[] = [];
+    let spc: JsonObject[] = [];
+    let tsk: JsonObject[] = [];
+    if (projectIds.length > 0) {
+      const [signals, opportunities, prds, tasks] = await Promise.all([
+        supabase.from("signals").select("*").in("project_id", projectIds),
+        supabase.from("opportunities").select("*").in("project_id", projectIds),
+        supabase.from("prds").select("*").in("project_id", projectIds),
+        supabase.from("tasks").select("*").in("project_id", projectIds),
+      ]);
+      const e = signals.error || opportunities.error || prds.error || tasks.error;
+      if (e) throw new Error(e.message);
+      sig = signals.data ?? [];
+      opp = opportunities.data ?? [];
+      spc = prds.data ?? [];
+      tsk = tasks.data ?? [];
+    }
+
+    // Owner-scoped entities: the user's own outcome learnings and agent memory.
+    const [learnings, memory] = await Promise.all([
+      supabase.from("learnings").select("*").eq("user_id", userId),
+      supabase.from("agent_memory").select("*").eq("user_id", userId),
+    ]);
+    const ownErr = learnings.error || memory.error;
+    if (ownErr) throw new Error(ownErr.message);
+    const lrn = learnings.data ?? [];
+    const mem = memory.data ?? [];
+
+    return {
+      workspace_id: workspaceId,
+      exported_by: userId,
+      exported_at: new Date().toISOString(),
+      counts: {
+        projects: projectRows.length,
+        signals: sig.length,
+        opportunities: opp.length,
+        specs: spc.length,
+        tasks: tsk.length,
+        learnings: lrn.length,
+        memory: mem.length,
+      },
+      projects: projectRows,
+      signals: sig,
+      opportunities: opp,
+      specs: spc,
+      tasks: tsk,
+      learnings: lrn,
+      memory: mem,
+    };
+  });

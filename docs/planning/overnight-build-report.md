@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | STARTING |
+| Status | ACTIVE (cycle 1 complete; cycle 2 next) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -49,10 +49,9 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 
 ## Done this run
 
-_(none yet)_
-
 | Item | Lane | Commit | Notes |
 | --- | --- | --- | --- |
+| U6 (core) | G6 Interop | (this push) | Workspace data export: Settings > Data downloads the whole workspace as one RLS-scoped JSON (signals, opportunities/decisions, specs, tasks, outcomes, agent memory). tsc + eslint + build all green; adversarial review folded 2 fixes (empty-projects guard, active-workspace pass-through). ◐ remainder: per-section selective export + audit-log. **Pending your publish + live verify (see below).** |
 
 ## In progress
 
@@ -65,7 +64,18 @@ _(none yet)_
 | Item | Why skipped | What it needs from you |
 | --- | --- | --- |
 
+## Pending published-app verification (needs you to publish, then I verify)
+
+The live app does not reflect tonight's changes until you publish them. These items are code-complete and gate-green (tsc + build + lint + adversarial review) but not yet verified on the live app. Per the no-juggle rule (playbook section 13), I do not test against the unpublished app during the run. When you are back and have published, tell me and I will run these checks.
+
+| Item | What to verify on the live app |
+| --- | --- |
+| U6 workspace export | Settings > Data > "Download workspace export". Confirm the JSON has the expected sections with non-zero counts on a seeded workspace, and that another workspace's data is not present. |
+
 ## Notes and comments
 
-- Run scaffolding created: this report, the [playbook](../operations/autonomous-build-loop.md), the unattended permission allow/deny set, and the isolated worktree. Loop launching.
-- The parallel session is active on `main` (it pushed MOAT-METRIC during setup). Isolation via worktree means no collision; work lands on main by fast-forward push.
+- **Cycle 1 shipped U6 (core)** (above). Picked autonomously as the top buildable, file-disjoint, no-migration item (P0/P1-tagged trust escape-hatch), avoiding the parallel session's PLG and Gauntlet lanes.
+- **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
+- **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
+- Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.
+- The parallel session is active on `main`. Isolation via worktree means no collision; work lands on main by fast-forward push (already rebased-and-retried twice cleanly).
