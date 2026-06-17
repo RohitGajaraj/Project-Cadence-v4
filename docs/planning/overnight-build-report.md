@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 7 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
+**Last updated:** 2026-06-18 (cycle 8 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 7 complete; cycle 8 next) |
+| Status | ACTIVE (cycle 8 complete) · safe unattended feature backlog effectively complete, see Recommendation |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -27,7 +27,7 @@ This run operates under the [autonomous build loop playbook](../operations/auton
 - **Each cycle.** Pick the top buildable item (v10, then v9, then v8), plan and decide, build, gate on `tsc --noEmit` + `bun run build` + lint, adversarially self-review, run the full doc-loop, commit with a why, fast-forward push to `main`.
 - **Decisions.** In autonomous mode the loop picks the best option on the data and logs the rationale; it defers only founder-gated calls (taste, spend, accounts, anything irreversible) and queues them below.
 - **Safety.** "Accept edits" mode plus a command allowlist and a denylist that blocks destructive commands; an isolated worktree so it never collides with parallel sessions.
-- **Resilience.** A usage limit pauses the run, it does not stop it: retry on a ~30 minute cadence, auto-resume when the limit clears.
+- **Resilience.** While the session window is open, build fast (no slow/idle cadence). The only long wait is a usage limit or session-window reset: read the reset time, wake just after it, and resume.
 - **Continuity.** Context rolls over only at clean boundaries between builds, with a written handoff first, never mid-build.
 - **Model and effort.** Opus 4.8 1M context, top effort on the hard steps, dialed down for mechanical ones.
 
@@ -39,13 +39,22 @@ Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
 
 | Bucket | Count |
 | --- | --- |
-| Done | ~54 |
+| Done | ~55 |
 | Partial | ~11 |
 | Paused / deferred / blocked | ~5 |
-| Pending | ~31 |
-| **Approx completion** | **~54 of ~101 tracked rows (~53%)** |
+| Pending | ~30 |
+| **Approx completion** | **~55 of ~101 tracked rows (~54%); true completion is higher, the board is stale (see Recommendation)** |
 
 Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then mine v9 and v8 for relevant work.
+
+## Recommendation for the founder (the loop's honest read)
+
+After 8 cycles, the **safe, unattended-buildable feature backlog is effectively complete.** What shipped this run (U6 + selective, R3 Attention, P7 Incidents, C4/E7 Agent inspector) is gate-green and waiting on your publish-then-verify (table below). Two things to know:
+
+1. **The dashboard was stale.** Picking the "next ⬜ item" kept landing on work already built: `P3` (prompt versioning + A/B + pin + rollback), `F-HUMANIZE-HOOK`, and `L2`'s public `p.$slug` route all exist but were marked ⬜. I corrected the ones I verified. True completion is higher than the ~54% the board shows; a fuller reconciliation would confirm it.
+2. **What is genuinely left needs you.** The unbuilt items are the hard ones: `D4` (cancel/replay a run), `K2` (one-action rollback), `BLD-05` (inspector gate) all change the autonomous loop or studio control flow, which the `tsc`/build gate cannot verify and I cannot runtime-test against an unpublished app, so building them blind overnight is genuinely risky. `O1`/`SEN-04`/`LCH-01` are big integrations. The **section-14 design pass** needs your eyes (visual verification).
+
+**Highest-value next steps are founder-led:** (a) publish, then I verify the night's features live; (b) run the design pass together; (c) build the risky items with you watching the runtime. The loop stays alive on a fast cadence and keeps doing safe work (verification, reconciliation, any genuinely-clean item it finds); it will not force risky or speculative builds.
 
 ## Done this run
 
@@ -58,6 +67,7 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 | 2026-06-18 | C4/E7 memory | G8 Governance | `(this push)` | Completes C4/E7: a "What this agent knows" section in the Agent inspector showing the agent's private + shared/global memories. `getAgentMemory` via two injection-safe queries. Read-only, no migration. tsc + eslint + build green; review clean. C4/E7 now ✅. **Pending your publish + live verify (see below).** |
 | 2026-06-18 | U6 selective | G6 Interop | `(this push)` | U6 advance: the workspace export now has per-section checkboxes (pick what to include). Output-filtered server-side; existing query/RLS logic untouched. tsc + eslint + build green; review clean. ◐ remainder: export audit-log. **Pending your publish + live verify (see below).** |
 | 2026-06-18 | Humanization fix + F-HUMANIZE-HOOK | G9 Platform | `(this push)` | Self-correction: the repo's `check-humanized.sh` flagged 7 em-dashes in my own comment headers (6 files); fixed to commas, re-scan clean, tsc/eslint green. Completed F-HUMANIZE-HOOK (was a stale ⬜): `install-git-hooks.sh` now wires the scanner as a warn-only pre-commit hook (`HUMANIZE_STRICT=1` to gate). Tooling/docs only, no app behaviour change, so no publish-verify needed. |
+| 2026-06-18 | Backlog reconciliation | verify | `(this push)` | Verify-not-build: corrected P3 (prompt versioning + A/B + pin + rollback) from a stale ⬜ to ✅ (fully built). Flagged L2 (its `p.$slug` route exists). Confirmed D4/K2/BLD-05 are genuinely unbuilt but loop/studio-spine-risky. No app change. See Recommendation above. |
 
 ## In progress
 
