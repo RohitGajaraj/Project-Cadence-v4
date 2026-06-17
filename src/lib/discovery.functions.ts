@@ -130,6 +130,60 @@ export const runCriticReview = createServerFn({ method: "POST" })
     return { review };
   });
 
+// ---------- WEDGE (Critic-teardown first-run) ----------
+//
+// Engine-Room: the felt entry. The operator names a feature they believe in
+// and gets an evidence-backed teardown in one call. The machinery (the judge
+// model, the ICE scoring, the opportunities table) stays behind the outcome
+// ("see why your idea might be wrong, with receipts"). It records the idea
+// verbatim so the Critic judges exactly what the operator said, then red-teams
+// it inline. No source connection or data setup is required, so a brand-new
+// account reaches the first verdict in its first session.
+
+/**
+ * Record a feature idea as an opportunity (verbatim, neutral ICE) and run the
+ * Critic against it in the same call. Returns the opportunity plus the verdict
+ * for the first-run surface to render. The verdict may be `null` when the AI
+ * gateway is unavailable (e.g. local dev with no key) — the idea is still saved
+ * and the caller shows an honest fallback rather than a broken card.
+ */
+export const runWedgeTeardown = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        idea: z.string().trim().min(3).max(200),
+        problem: z.string().trim().max(2000).optional(),
+        target_user: z.string().trim().max(200).optional(),
+        project_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: opp, error } = await supabase
+      .from("opportunities")
+      .insert({
+        user_id: userId,
+        title: data.idea.slice(0, 200),
+        problem: (data.problem ?? "").slice(0, 2000),
+        target_user: data.target_user?.slice(0, 200) ?? null,
+        // Neutral ICE: the operator hasn't scored the bet, so we don't fake a
+        // score. The Critic judges the idea itself and surfaces what's undefined
+        // through `missing_evidence` — which is most of the first-run value.
+        impact: 5,
+        confidence: 5,
+        ease: 5,
+        project_id: data.project_id ?? null,
+      })
+      .select()
+      .single();
+    if (error || !opp) throw new Error(error?.message ?? "Could not record the idea");
+
+    const review = await runCritic(supabase, userId, { kind: "opportunity", id: opp.id });
+    return { opportunity: opp, review };
+  });
+
 // ---------- TASK GRAPH (M1: H1 — PRD → engineering plan) ----------
 
 /** The Planner step: decompose an approved spec into a DEPENDENCY-ORDERED

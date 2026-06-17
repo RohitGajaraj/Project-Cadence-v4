@@ -41,7 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| `WEDGE` | Critic-teardown first-run | Claude Code | 2026-06-17 | Guided first-run: feature idea → Critic red-team → cited teardown on Today, <10 min. Lane C (DECIDE). Wiring the existing `runCritic` engine into a first-run surface. |
 
 ---
 
@@ -53,7 +52,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | Order | Item | Lane | Status | What |
 | --- | --- | --- | --- | --- |
 | 1 | `LRN-02` + `W1-AUTO` | B (LEARN) | ✅ (2026-06-17) | Done. Recon found the core already built (`recordOutcome` rescores ICE + writes `learnings`; `rememberOutcome` already wires W1-AUTO into a recallable `agent_memory`). Added the missing "predicted vs actual, Historian verdict" half: an AI Historian assist on the outcome card. The loop is closed. |
-| 2 | `WEDGE` | C (DECIDE) | 🔨 In Dev (CC, 2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. |
+| 2 | `WEDGE` | C (DECIDE) | ✅ (2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. Shipped: cold-start Today card → `runWedgeTeardown` records the idea as an opportunity + runs the existing Critic inline → Ship/Revise/Kill verdict with risks, kill criteria, and evidence gaps. No new AI infra, no migration. Detail: [`features/wedge.md`](../features/wedge.md). |
 | 3 | `MOAT-VIS` | B (LEARN) | ⬜ **new** | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
 | 5 | `W6` | E (PLG) | ⬜ | Persona onboarding (also the wedge's delivery surface). |
@@ -64,7 +63,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 **CUT / DEFER (do not build now):** `K1-deploy` (external deploy), `F-AUDIO-1/2` + `SEN-04` (post-PMF), the full 19-mesh breadth, outcome-pricing machinery, team/RBAC `A6` beyond the MCP slice.
 
-**New items added by v10 (tracked here; not yet group rows below):** `WEDGE`, `W1-AUTO`, `MOAT-VIS`, `MOAT-METRIC`, `F-SHARE-TEARDOWN`, `SANDBOX`, `AMBIENT-ARC`, `Q1-MCP`. **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
+**New items added by v10 (tracked here; not yet group rows below):** `MOAT-VIS`, `MOAT-METRIC`, `F-SHARE-TEARDOWN`, `SANDBOX`, `AMBIENT-ARC`, `Q1-MCP`. (`WEDGE` ✅ and `W1-AUTO` ✅ now have group rows.) **Lanes:** A SENSE/ingestion · B LEARN/analytical engine · C DECIDE/wedge · D BUILD/autonomy spine · E MONETIZE/PLG · F INTEROP · G Cockpit/IA/gov polish.
 
 ---
 
@@ -74,7 +73,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | --- | --- | --- | --- | --- |
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
 | G1 Sense & Discovery | 4 | 1 | 1 | 6 |
-| G2 Decide & Plan | 7 | 0 | 0 |  1 |
+| G2 Decide & Plan | 8 | 0 | 0 |  1 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 2 | 1 | 0 | 5 |
 | G5 Monetize & Growth | 1 | 1 | 2 | 2 |
@@ -137,6 +136,7 @@ _Turn signal into governed decisions and specs._
 | H1 | PRD / spec generation | ✅ (2026-06-14) | Cited specs from opportunities | discovery/lineage functions |
 | DEF-03 | Critic-on-spec red team | ✅ (2026-06-14) | Specs get an adversarial pass before commit | Critic inline call |
 | F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
+| WEDGE | Critic-teardown first-run (the launch wedge) | ✅ (2026-06-17) | The felt entry: a brand-new account names a feature it believes in and gets an evidence-backed Critic teardown (Ship/Revise/Kill + risks/kill-criteria/evidence-gaps) in the first session, no setup. Leads the cold-start Today. Wires the existing `runCritic` engine; no new AI infra, no migration | `runWedgeTeardown` (`discovery.functions.ts`) + `WedgeTeardown.tsx` · [`features/wedge.md`](../features/wedge.md) |
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | H2 | Outcome roadmap (Now/Next/Later) | ✅ (2026-06-17) | Outcome-driven board on `/product?tab=roadmap`: the human commits opportunities to Now/Next/Later with a declared outcome + measure; the agent's continuous ICE ranking orders within each bucket (NOT the v6-deleted task kanban). Native HTML5 drag + a keyboard/click bucket select per card; verified RLS-scoped writes (user-scoped `.select()` so a blocked update fails loudly). Adversarially reviewed: 3 fixes (phantom-ok write, a11y drag-only gap, field reset). **Place-into-bucket write is gated on the next Lovable sync applying the migration; read is pre-migration tolerant.** | `roadmap.functions.ts` + `RoadmapBoard.tsx` + migration `20260617000000_h2_roadmap_outcome.sql` |
 | H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | "Plan deep work" on the Calendar: `proposeWorkBlocks` schedules open deep-work tasks into free time within working hours (reuses proposeSlots' conflict logic; one block per task, back-to-back, skips weekends/meetings; pure read-only proposal), each block has "Add to calendar". Adversarially reviewed: 1 real boundary bug + a user-facing em-dash fixed | `calendar.functions.ts` (`proposeWorkBlocks`) + `CalendarPanel.tsx` |

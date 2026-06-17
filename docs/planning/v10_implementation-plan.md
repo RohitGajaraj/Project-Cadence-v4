@@ -67,10 +67,11 @@ After P0 proves the loop. `F-SHARE-TEARDOWN` + `PLG` + `M-C-PRICE` (revenue + vi
 - *Accept:* closing a decision writes a verdict + an ICE rescore, and a later mission's handoff cites that outcome memory.
 - *Verify:* unit-test the review fn; on a real account, close a decision and confirm the memory is recalled.
 
-**Pick 2 - `WEDGE` (Lane C).**
-- *Server:* a guided first-run path in `discovery.functions.ts` that takes a feature idea + the workspace's connected signals and runs the existing Critic (`runCritic`) to produce a cited red-team.
-- *UI:* the Today cold-start hero hosts "point Cadence at a feature you believe in"; the result is a decision card with the Critic verdict + citations.
-- *Accept:* a new user gets a cited teardown in the first session, < 10 min.
+**Pick 2 - `WEDGE` (Lane C). ✅ Shipped 2026-06-17** — detail: [`../features/wedge.md`](../features/wedge.md).
+- *Server:* `runWedgeTeardown` in `discovery.functions.ts` records the feature idea as an opportunity (verbatim, neutral ICE) and runs the existing Critic (`runCritic`) inline, returning `{ opportunity, review }`. No new AI infra, no migration.
+- *UI:* the Today cold-start "Start here" section leads with `WedgeTeardown` ("See why your idea might be wrong"); the verdict (Ship/Revise/Kill) renders in place with risks, kill criteria, and evidence gaps, and the idea persists as an opportunity.
+- *Accept:* a new user gets a teardown in the first session, < 10 min, with no setup. (The full verdict needs the AI gateway, so it renders on the deployed app; local dev shows the honest fallback.)
+- *Shipped scope note:* the Critic red-teams the idea itself; feeding the workspace's connected signals into the teardown ("with receipts" from real data) is the documented fast-follow that ties into MOAT-VIS.
 
 **Pick 3 - `MOAT-VIS` (Lane B).**
 - *Server:* extend `today.functions.ts` what-changed to name the learning that moved a priority; mirror on Brain Learnings.

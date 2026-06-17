@@ -36,6 +36,7 @@ import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
+import { WedgeTeardown } from "@/components/today/WedgeTeardown";
 import { listOpportunities } from "@/lib/discovery.functions";
 import { SketchLine, SketchBar } from "@/components/cadence/Sketch";
 
@@ -80,7 +81,17 @@ function Dashboard() {
   const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
-  const coldStart = useQuery({ queryKey: ["cold-start"], queryFn: () => fetchColdStart() });
+  // WEDGE: the first teardown creates the workspace's first opportunity, which
+  // would flip isCold → false. A focus/reconnect refetch must NOT unmount the
+  // cold-start branch mid-read and throw away the verdict the operator just
+  // earned. Cold-start re-evaluates on a real remount (next Today visit), not
+  // on a window-focus event.
+  const coldStart = useQuery({
+    queryKey: ["cold-start"],
+    queryFn: () => fetchColdStart(),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
   const loopPulse = useQuery({ queryKey: ["loop-pulse"], queryFn: () => fetchLoopPulse() });
   const learnings = useQuery({ queryKey: ["learnings"], queryFn: () => fetchLearnings() });
   const fetchOpps = useServerFn(listOpportunities);
@@ -560,7 +571,15 @@ function Dashboard() {
             )}
           </div>
           {isCold ? (
-            <ColdStartOnramp />
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* The wedge leads: an instant teardown needs no data, so it is the
+                  first felt win. Feeding the loop (ColdStartOnramp) is the
+                  follow-on for ongoing signal. */}
+              <WedgeTeardown />
+              <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: 16 }}>
+                <ColdStartOnramp />
+              </div>
+            </div>
           ) : visibleCount === 0 ? (
             <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
               {callCount === 0

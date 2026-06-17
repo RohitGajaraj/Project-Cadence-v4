@@ -46,6 +46,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | v6 P3 T2  | The Gauntlet · acceptance rate · autonomy ratio · ritual retention | ✅ Shipped 2026-06-14 (ritual_sessions migration pending sync) | `/govern?tab=gauntlet`                  | [`gauntlet-metrics.md`](./gauntlet-metrics.md)                       |
 | M-B       | Compounding-memory view (the moat made visible)               | ✅ Shipped 2026-06-14                           | `/memory`                                         | [`memory-view.md`](./memory-view.md)                                 |
 | OPS-01    | Flow mode (ambient calm-state: soundscape + focus timer + quieting) | ✅ Shipped 2026-06-16                      | Chrome (`AppShell` footer)                        | [`flow-mode.md`](./flow-mode.md)                                     |
+| WEDGE     | Critic-teardown first-run (the launch wedge)                   | ✅ Shipped 2026-06-17                           | Today (cold-start)                                | [`wedge.md`](./wedge.md)                                             |
 
 ## Rules
 
