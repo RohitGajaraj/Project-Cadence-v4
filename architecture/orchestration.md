@@ -91,7 +91,9 @@ The first two of those tables — `missions` and `agent_messages` (the structure
 
 ## Adversarial review (Critic, M1 DEC-02)
 
-Every new opportunity (theme- or signal-promoted) and every freshly generated PRD is reviewed inline by the `critic` agent before the operator sees the row. The verdict (`ship | revise | kill` + risks + kill criteria + missing evidence + confidence) is persisted to `opportunities.critic_review` / `prds.critic_review` and surfaced on the row as a `CriticBadge`. The Critic is a chokepoint Gemini call (`surface='judge'`); failures are swallowed so a missing Critic never blocks the upstream Strategist/Scribe write. Operator may re-run from the badge. See [`../docs/features/critic-agent.md`](../docs/features/critic-agent.md).
+Every new opportunity (theme- or signal-promoted) and every freshly generated PRD is reviewed inline by the `critic` agent before the operator sees the row. The verdict (`ship | revise | kill` + risks + kill criteria + missing evidence + confidence) is persisted to `opportunities.critic_review` / `prds.critic_review` and surfaced on the row as a `CriticBadge`. The Critic is a chokepoint Gemini call (`surface='judge'`); failures are swallowed so a missing Critic never blocks the upstream Strategist/Scribe write. Operator may re-run from the badge.
+
+**DEC-02-LOOP (2026-06-17):** the same Critic is now also a routable agent-loop tool, `critic.evaluate` (`{target_kind, target_id}`) in `TOOL_REGISTRY`, backed by `src/lib/ai/critic.server.ts` — so the orchestrator or any specialist can red-team an opportunity/PRD **in-loop**, not only via the inline promotion/spec paths. It is gating-exempt (listed in `ORCHESTRATION_CONTROL_FLOW_TOOLS`) because the verdict is advisory and side-effect-free beyond the row's own `critic_review` column; a `kill` verdict never auto-fails dependent work. Promoting the Critic to a full `mission_steps` DAG node is the deferred Phase 2 (it would touch the handoff completion-guard + retry machinery). See [`../docs/features/critic-agent.md`](../docs/features/critic-agent.md).
 
 ## Invariants
 

@@ -18,6 +18,7 @@ import {
   missionObserve,
   missionFinalize,
 } from "./orchestrator.server";
+import { runCriticTool } from "@/lib/ai/critic.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
 import { studioBranchName } from "@/lib/ai/studio-branch";
 import { mergeReadinessFromCi, overallFromChecks } from "@/lib/ai/studio-ci";
@@ -2235,6 +2236,24 @@ const agentHandoff = def({
   },
 });
 
+// DEC-02-LOOP — the Critic as a routable, gating-exempt loop tool. Lets the
+// orchestrator (or any specialist) red-team an opportunity/PRD in-loop, not
+// only via the inline promotion/spec paths. category 'planning' + membership in
+// loop.server's ORCHESTRATION_CONTROL_FLOW_TOOLS keeps it inline (the verdict is
+// advisory and side-effect-free beyond the row's own critic_review column).
+const criticEvaluate = def({
+  name: "critic.evaluate",
+  description:
+    "Adversarially red-team an opportunity or PRD before a human approves it. Persists a ship/revise/kill verdict with risks, kill-criteria, and missing evidence on the row. The verdict is advisory.",
+  category: "planning",
+  argsSchema: z.object({
+    target_kind: z.enum(["opportunity", "prd"]),
+    target_id: z.string().uuid(),
+  }),
+  preview: (a) => `Critic: red-team ${a.target_kind} ${a.target_id.slice(0, 8)}`,
+  run: (args, ctx) => runCriticTool(args, ctx),
+});
+
 export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
   [
     workspaceSearch,
@@ -2272,6 +2291,7 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     missionDispatch,
     missionObserve,
     missionFinalize,
+    criticEvaluate,
   ].map((t) => [t.name, t]),
 );
 

@@ -49,6 +49,11 @@ const ORCHESTRATION_CONTROL_FLOW_TOOLS = new Set([
   "mission.dispatch",
   "mission.observe",
   "mission.finalize",
+  // DEC-02-LOOP: the Critic's verdict is advisory and side-effect-free beyond
+  // the row's own critic_review column, like the mission.* bookkeeping tools.
+  // Exempt it from approval gating so it runs in-loop and can never strand a
+  // run waiting on an approval that never comes.
+  "critic.evaluate",
 ]);
 
 export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };

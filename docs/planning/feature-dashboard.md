@@ -41,7 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| DEC-02-LOOP | Critic as a routable loop step | Claude Code | 2026-06-17 | Lane C. Extract `runCritic` → `critic.server.ts`, register a gating-exempt `critic.evaluate` tool, seed it. Safe scope: no `mission_steps`/DAG/handoff changes. Touches `registry.server.ts` + `loop.server.ts` (coordinate engine work). |
 
 ---
 
@@ -247,7 +246,7 @@ _The loop runs the reversible work; you make the calls. Honest by construction._
 | FND-0.5 | Agent blast-radius limits (per-agent tool allow-list, scope) | ◐ Partial | An agent can't reach beyond its remit | `src/lib/ai/tools/registry.server.ts` |
 | P4 | Eval harness + regression gate (≥10-pt blocks deploy) | ◐ Partial | Quality can't silently regress (scale fixed KI-14) | `/evals` + deploy gate |
 | P5 | Drift watch (score/cost/latency per surface/model) | ◐ Partial | Catch model/cost drift early (passive watcher) | `/drift` |
-| DEC-02-LOOP | Critic as an explicit loop step (M-B) | ⬜ | Promote Critic from inline call to a real DAG step | Orchestrator step |
+| DEC-02-LOOP | Critic as an explicit loop step (M-B) | ✅ (2026-06-17) | Shipped the safe increment: the Critic is now a routable, gating-exempt agent-loop tool `critic.evaluate`. Extracted `runCritic` → `src/lib/ai/critic.server.ts`, registered in `TOOL_REGISTRY`, seeded into `agent_tools` (new + backfilled users). The orchestrator / any specialist can red-team in-loop. Full `mission_steps` DAG-node promotion deferred to Phase 2 (avoids the handoff/retry blast radius). | `critic.server.ts` + `registry.server.ts` + migration `20260617160000` |
 | P3 | Prompt studio (versioning + A/B + pin + rollback) | ⬜ | Safe prompt iteration with rollback | `/prompts` |
 | P7 | Incidents log (safety/guardrail/cost incidents → traces) | ⬜ | A record when something goes wrong | New incidents table + surface |
 | C4 / E7 | Agent detail + run history + shared/private memory inspector | ⬜ | See and govern what each agent knows | Agent detail route |

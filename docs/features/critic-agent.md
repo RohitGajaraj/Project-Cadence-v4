@@ -7,7 +7,7 @@ The Critic is an adversarial reviewer that red-teams every new opportunity and e
 ## What ships
 
 - New `critic` agent seeded per user (rose-toned, role-only, no UI presence beyond the badge).
-- `runCritic(supabase, userId, target)` helper in `src/lib/discovery.functions.ts`, calls Gemini 2.5 Pro with a strict-JSON red-team prompt and writes the result to `opportunities.critic_review` / `prds.critic_review`.
+- `runCritic(supabase, userId, target)` helper in `src/lib/ai/critic.server.ts` (moved there in DEC-02-LOOP; re-exported from `discovery.functions.ts` for back-compat), calls Gemini 2.5 Pro with a strict-JSON red-team prompt and writes the result to `opportunities.critic_review` / `prds.critic_review`.
 - Auto-attached inline to `promoteThemeToOpportunity`, `promoteSignalToOpportunity`, and `generatePrd` so the verdict lands before the row is shown.
 - `runCriticReview` server fn for manual UI re-runs.
 - `CriticBadge` component (`src/components/governance/CriticBadge.tsx`) rendered in `OpportunitiesPanel` rows and the PRD detail metadata row.
@@ -38,6 +38,10 @@ The Critic is an adversarial reviewer that red-teams every new opportunity and e
   2. Click the chip → side sheet renders the four sections.
   3. Generate a PRD from the opportunity → PRD detail metadata row has a verdict chip.
   4. Click "Re-run Critic" → toast confirms and the chip refreshes with a new `reviewed_at`.
+
+## Routable in-loop (DEC-02-LOOP, 2026-06-17)
+
+Beyond the inline auto-attach, the Critic is a **registered agent-loop tool**: `critic.evaluate` (`{ target_kind: "opportunity" | "prd"; target_id }`) in `TOOL_REGISTRY`, backed by `runCriticTool` in `src/lib/ai/critic.server.ts`. The orchestrator or any specialist can call it to red-team a target **in-loop**, persisting the same `critic_review` — not only via the three inline promotion/spec paths. It is seeded into every user's `agent_tools` (mode `auto`, `built_in`; migration `20260617160000`, new + backfilled users) and is **gating-exempt** (listed in `ORCHESTRATION_CONTROL_FLOW_TOOLS` in `loop.server.ts`) because the verdict is advisory and side-effect-free beyond the row's own column, so it runs inline and can never strand a run waiting on an approval. The verdict never auto-fails dependent work; the caller decides. Promoting the Critic to a full `mission_steps` DAG node (a routed specialist step) is the deferred Phase 2 — it would touch the handoff completion-guard and retry machinery, so it was scoped out to keep this increment's blast radius near zero.
 
 ## Related
 
