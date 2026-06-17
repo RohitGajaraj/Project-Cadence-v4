@@ -25,6 +25,8 @@ Resolve the next item from, in order:
 1. **v10** master blueprint + v10 implementation plan + the feature dashboard (P0 to P2 lanes, file-disjoint).
 2. When v10-derived buildable items are exhausted, mine **v9**, then **v8**, then earlier strategy docs for anything still relevant and buildable. Add each newly surfaced item as a row in the feature dashboard before building it, so the master view stays the single source of truth.
 
+**Core functionality first (founder ruling, 2026-06-18).** Within the buildable set, prioritize **core product/platform functionality** over additional features. Build in this order of intent: (1) the **discovery engine** and the core Sense → Decide → Plan → Build → Launch → Learn loop the product *is* (deepen G0/G1/G2/G3/G4: continuous/always-fresh discovery feed, the knowledge graph, the execution chain, outcome learning); then (2) second-priority/additional features, explicitly **pricing/monetization** (G5) and **customer-announcement / launch pages** (L2 and friends). Always pick the highest-value CORE item before any second-priority one, even when a second-priority item looks easier or more self-contained. Current top core candidates to verify-then-build: `F3` (continuous discovery feed / incremental re-cluster, extends `discovery.functions.ts`) and `O1` (typed knowledge graph + "why is this on the roadmap?" query). Pricing and announcements wait.
+
 **Founder-gated (always skip):** Stripe secrets, OAuth client registration, infra picks (sandbox provider), analytics OAuth, and anything needing the founder's accounts or a taste/scope/positioning decision.
 
 Prefer file-disjoint lanes so a cycle never touches another in-flight lane.

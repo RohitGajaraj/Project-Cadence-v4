@@ -93,6 +93,10 @@ The live app does not reflect this run's changes until you publish them. These i
 | 2026-06-18 | C4/E7 Agent inspector | Needs publish first (new this run) | Missions > Agents > Agent inspector. Pick an agent, confirm its recent runs AND its memory ("What this agent knows": private + shared) render correctly; confirm `agent_memory.agent_id` matches the swarm agent id so private memories attribute right; confirm the empty states. |
 | 2026-06-18 | U6 selective export | Needs publish first (new this run) | Settings > Data: uncheck some sections, export, and confirm the JSON contains only the checked sections (and the button disables when none are checked). |
 
+## Build priority (founder ruling, 2026-06-18 03:33)
+
+**Core functionality first; pricing + customer-announcement pages are second.** The next pick must be a CORE platform item: the **discovery engine** and the core Sense → Decide → Plan → Build → Launch → Learn loop. Top core candidates to verify-then-build: `F3` (continuous/always-fresh discovery feed + incremental re-cluster, extends `discovery.functions.ts`) and `O1` (typed knowledge graph + "why is this on the roadmap?" query). Second priority (build only after core is advanced): `M-C-PRICE`/pricing, `L2` customer-announcement pages. Rule lives in the playbook §3. This supersedes the "highest-value next steps are founder-led" read below for the autonomous loop's pick order: keep building core, do not idle.
+
 ## Notes and comments
 
 - **Cycle 1 shipped U6 (core)** (above). Picked autonomously as the top buildable, file-disjoint, no-migration item (P0/P1-tagged trust escape-hatch), avoiding the parallel session's PLG and Gauntlet lanes.
