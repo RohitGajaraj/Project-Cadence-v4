@@ -849,6 +849,63 @@ export type Database = {
           },
         ]
       }
+      api_calls: {
+        Row: {
+          cost_usd: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_tokens: number | null
+          metadata: Json | null
+          output_tokens: number | null
+          result: string
+          token_id: string
+          tool_name: string
+          workspace_id: string
+        }
+        Insert: {
+          cost_usd?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          output_tokens?: number | null
+          result?: string
+          token_id: string
+          tool_name: string
+          workspace_id: string
+        }
+        Update: {
+          cost_usd?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          metadata?: Json | null
+          output_tokens?: number | null
+          result?: string
+          token_id?: string
+          tool_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_calls_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_calls_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artifact_lineage: {
         Row: {
           ai_event_id: string | null
@@ -2343,6 +2400,53 @@ export type Database = {
             columns: ["prd_id"]
             isOneToOne: false
             referencedRelation: "prds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_used_at: string | null
+          metadata: Json | null
+          rate_limit_per_min: number | null
+          revoked_at: string | null
+          secret_hash: string
+          slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json | null
+          rate_limit_per_min?: number | null
+          revoked_at?: string | null
+          secret_hash: string
+          slug: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json | null
+          rate_limit_per_min?: number | null
+          revoked_at?: string | null
+          secret_hash?: string
+          slug?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_tokens_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -4211,6 +4315,65 @@ export type Database = {
         Returns: undefined
       }
       is_workspace_member: { Args: { ws: string }; Returns: boolean }
+      issue_mcp_token: {
+        Args: {
+          _rate_limit_per_min?: number
+          _secret_hash: string
+          _slug: string
+          _user_id: string
+          _workspace_id: string
+        }
+        Returns: {
+          created_at: string | null
+          id: string
+          last_used_at: string | null
+          metadata: Json | null
+          rate_limit_per_min: number | null
+          revoked_at: string | null
+          secret_hash: string
+          slug: string
+          user_id: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "mcp_tokens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      log_api_call: {
+        Args: {
+          _cost_usd: number
+          _error_message?: string
+          _input_tokens: number
+          _metadata?: Json
+          _output_tokens: number
+          _result: string
+          _token_id: string
+          _tool_name: string
+          _workspace_id: string
+        }
+        Returns: {
+          cost_usd: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_tokens: number | null
+          metadata: Json | null
+          output_tokens: number | null
+          result: string
+          token_id: string
+          tool_name: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "api_calls"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       match_agent_memory: {
         Args: {
           for_agent_slug?: string
@@ -4307,6 +4470,7 @@ export type Database = {
         Args: { _cost_usd: number; _run_id: string; _tokens: number }
         Returns: undefined
       }
+      revoke_mcp_token: { Args: { _token_id: string }; Returns: undefined }
       seed_default_agent_tools: {
         Args: { _user_id: string }
         Returns: undefined
