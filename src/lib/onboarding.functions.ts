@@ -42,9 +42,7 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (countError) throw countError;
       if (existingSignals && existingSignals.length > 0) {
-        throw new Error(
-          "Workspace already seeded. Reset in Settings if you need to re-seed.",
-        );
+        throw new Error("Workspace already seeded. Reset in Settings if you need to re-seed.");
       }
 
       // 2. Get or create the active project
@@ -117,9 +115,7 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (profileError) throw profileError;
       if (!profileData || profileData.length === 0) {
-        throw new Error(
-          "Failed to mark workspace as onboarded (profile not found or RLS denied)",
-        );
+        throw new Error("Failed to mark workspace as onboarded (profile not found or RLS denied)");
       }
 
       return {
@@ -158,23 +154,25 @@ export const completeOnboarding = createServerFn({ method: "POST" })
 
     if (error) throw error;
     if (!data || data.length === 0) {
-      throw new Error(
-        "Failed to complete onboarding (profile not found or RLS denied)",
-      );
+      throw new Error("Failed to complete onboarding (profile not found or RLS denied)");
     }
 
     return { success: true };
   });
 
 /**
- * Set agent enabled status (called by the onboarding flow step 2)
+ * Set agent enabled status (called by the onboarding flow "Meet your staff" step).
+ *
+ * Keyed by agent id (the row PK), which is what the only caller — OnboardingFlow —
+ * passes. The earlier slug-based contract never matched that payload, so every
+ * toggle silently failed Zod validation; this aligns the server to the call site.
  */
 export const setAgentEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
-        agentSlug: z.string(),
+        agentId: z.string().uuid(),
         enabled: z.boolean(),
       })
       .parse(i),
@@ -186,14 +184,12 @@ export const setAgentEnabled = createServerFn({ method: "POST" })
       .from("agents")
       .update({ enabled: data.enabled })
       .eq("user_id", userId)
-      .eq("slug", data.agentSlug)
+      .eq("id", data.agentId)
       .select("id");
 
     if (error) throw error;
     if (!rows || rows.length === 0) {
-      throw new Error(
-        `Agent "${data.agentSlug}" not found for this workspace, or RLS denied access`,
-      );
+      throw new Error(`Agent "${data.agentId}" not found for this workspace, or RLS denied access`);
     }
 
     return { success: true };

@@ -48,6 +48,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | OPS-01    | Flow mode (ambient calm-state: soundscape + focus timer + quieting) | ✅ Shipped 2026-06-16                      | Chrome (`AppShell` footer)                        | [`flow-mode.md`](./flow-mode.md)                                     |
 | WEDGE     | Critic-teardown first-run (the launch wedge)                   | ✅ Shipped 2026-06-17                           | Today (cold-start)                                | [`wedge.md`](./wedge.md)                                             |
 | F-SHARE-TEARDOWN | Shareable Critic-teardown links (the viral loop)        | ✅ Shipped 2026-06-17 (migration pending sync)  | `/t/$slug` (public)                               | [`shareable-teardowns.md`](./shareable-teardowns.md)                 |
+| W6        | Persona onboarding tracks (Solo / Founding PM / Tech Founder)   | ✅ Shipped 2026-06-17 (live-verify on next publish) | `/onboarding`                                 | [`onboarding-tracks.md`](./onboarding-tracks.md)                     |
 
 ## Rules
 

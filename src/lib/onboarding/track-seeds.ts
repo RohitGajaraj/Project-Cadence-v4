@@ -5,7 +5,6 @@
  * - A starter project (product/problem domain)
  * - Realistic signals (market feedback, user feedback, research)
  * - Seeded opportunities (derived ideas ready to prioritize)
- * - Agent suggestions (which staff to enable immediately)
  *
  * The first opportunity is always something worth running WEDGE on —
  * a feature idea or strategy question that benefits from red-teaming.
@@ -30,7 +29,6 @@ export interface TrackSeed {
     confidence: number; // 1-10
     ease: number; // 1-10
   }>;
-  agentSlugsToEnable: string[]; // Agents to turn on by default for this track
 }
 
 /**
@@ -108,7 +106,6 @@ export const soloTrack: TrackSeed = {
       ease: 8,
     },
   ],
-  agentSlugsToEnable: ["critic", "scout"],
 };
 
 /**
@@ -187,7 +184,6 @@ export const foundingTrack: TrackSeed = {
       ease: 2,
     },
   ],
-  agentSlugsToEnable: ["critic", "scout", "strategist"],
 };
 
 /**
@@ -266,7 +262,6 @@ export const techTrack: TrackSeed = {
       ease: 8,
     },
   ],
-  agentSlugsToEnable: ["critic", "scout", "builder"],
 };
 
 /**
@@ -280,9 +275,10 @@ export function getTrackSeed(track: OnboardingTrack): TrackSeed {
       return foundingTrack;
     case "tech":
       return techTrack;
-    default:
+    default: {
       const _exhaustive: never = track;
       return _exhaustive;
+    }
   }
 }
 
@@ -296,7 +292,8 @@ export const trackDescriptions: Record<OnboardingTrack, { label: string; subtitl
   },
   founding: {
     label: "Founding PM",
-    subtitle: "Early-stage founder wearing the PM hat, resource-constrained and aligned with investors",
+    subtitle:
+      "Early-stage founder wearing the PM hat, resource-constrained and aligned with investors",
   },
   tech: {
     label: "Tech Founder",

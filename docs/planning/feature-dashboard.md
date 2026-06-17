@@ -2,7 +2,7 @@
 
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
-> **Last updated:** 2026-06-16 · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+> **Last updated:** 2026-06-17 · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
 
 ---
 
@@ -41,7 +41,6 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| W6 | Persona onboarding | Claude Code | 2026-06-17 | Built + adversarially reviewed; now on `main` (`fad3b60`, pushed 2026-06-17). **PARKED** pending live-verify (after a Lovable Publish) + docs-close. Not actively being coded. |
 
 ---
 
@@ -56,7 +55,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | 2 | `WEDGE` | C (DECIDE) | ✅ (2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. Shipped: cold-start Today card → `runWedgeTeardown` records the idea as an opportunity + runs the existing Critic inline → Ship/Revise/Kill verdict with risks, kill criteria, and evidence gaps. No new AI infra, no migration. Detail: [`features/wedge.md`](../features/wedge.md). |
 | 3 | `MOAT-VIS` | B (LEARN) | ✅ (2026-06-17) | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. Shipped: `listLearnings` now carries the moved opportunity's title; Brain Learnings reads "moved {opportunity} · ICE x→y" + a "Priorities moved" count; Today's What-changed card names the opportunity. Recon found LRN-02 already rendered the raw rescore — the gap was naming the priority. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
-| 5 | `W6` | E (PLG) | ◐ On `main` (fad3b60, 2026-06-17); pending live-verify + docs-close | Persona onboarding (also the wedge's delivery surface). |
+| 5 | `W6` | E (PLG) | ✅ (2026-06-17) | Persona onboarding (also the wedge's delivery surface). Shipped: 3-track selector + per-track seed data, 4-step flow. Closed: fixed the step-3 agent-toggle contract bug (agentId), removed the no-op `agentSlugsToEnable` field, wrote [`features/onboarding-tracks.md`](../features/onboarding-tracks.md). Live UI walkthrough on next publish. |
 
 **P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `SEN-05`+`F-ANALYTICS-1/2`+`MOAT-METRIC` (A/B, new), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
 
@@ -77,7 +76,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G2 Decide & Plan | 8 | 0 | 0 |  1 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 2 | 1 | 0 | 5 |
-| G5 Monetize & Growth | 1 | 1 | 2 | 2 |
+| G5 Monetize & Growth | 2 | 0 | 2 | 2 |
 | G6 Interop & Team | 0 | 1 | 0 | 4 |
 | G7 Cockpit, IA & Observability | 8 | 1 | 0 | 7 |
 | G8 Governance, Trust & Safety | 4 | 4 | 0 | 4 |
@@ -192,7 +191,7 @@ _First paying PMs; a viral share loop._
 | M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
 | M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
 | PLG | PLG funnel (public onboarding → first-win → upgrade) | ⬜ | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
-| W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ◐ Built, on `main` (fad3b60); pending live-verify + docs-close | Per-track sample data + first-mission + first-win moment | Onboarding flow + seed data |
+| W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ✅ Shipped 2026-06-17 (live-verify on next publish) | Per-track sample data + first-win moment; cold-start fuel for WEDGE | [`onboarding-tracks.md`](../features/onboarding-tracks.md) |
 
 ---
 
@@ -225,7 +224,7 @@ _The product feels coherent; the operator sees the machine._
 | E8 | Loop Health Monitor (per-product: stalls, queue depth, last ingest/deploy) | ✅ (2026-06-16) | An always-on health strip on the Missions surface: verdict (on watch / working / stalled) from stuck runs + expired calls, plus queue depth, last ingest, last run; the stalled state links to the engine room | `loop-health.functions.ts` (`getLoopHealth`) + `components/cockpit/LoopHealthBanner.tsx` + Missions index |
 | B3 | Product switcher + portfolio view | ✅ (2026-06-16) | A Portfolio section on `/product`: every product with its loop status (task progress + signals/opps/specs counts) and click-to-switch (the active product is marked). New `getPortfolio` fn; switcher reuses `setActiveProductId`. Adversarially reviewed (1 medium: silent-zero-on-query-error, fixed). ⌘K product-switch deferred (CommandPalette is parallel-active) | `projects.functions.ts` (`getPortfolio`) + `_authenticated.product.tsx` |
 | B5 | Archive / delete product (soft archive + hard delete w/ export) | ✅ (2026-06-17) | Full product lifecycle on the `/product` **Portfolio** (B3 continuation, extracted to `PortfolioBoard.tsx`): soft archive + restore (reversible, Undo toast; archived products drop from the sidebar + tabs, shown in an Archived section), JSON export of the product's whole footprint (the escape hatch), and an honest export-then-delete (typed-name confirm; copy reflects FK `on delete set null` — delete detaches signals/opps/specs/tasks to the workspace, doesn't destroy them; a snapshot downloads first). Verified RLS-scoped writes. Adversarially reviewed: 3 fixes (a runtime `useConfirm` destructure bug that only `tsc` caught, a serializable server-fn return, a verified delete) + a partial index. Place-into-archive write is gated on the next sync adding `archived_at`; reads are pre-migration tolerant | `projects.functions.ts` + `PortfolioBoard.tsx` + migration `20260617120000_b5_project_archive.sql` |
-| ENG-06 / F-GOV-COST-SURFACE | Cost-per-mission / cost-per-artifact chips | ⬜ | Unit economics in front of the operator | Read `token_usage`; chip on Build/Govern |
+| ENG-06 / F-GOV-COST-SURFACE | Cost-per-outcome chip (front) + unit-economics roll-up (Engine Room) | ⬜ | "What you got for what you spent" on the calm front; full per-agent telemetry behind the door (refined per the 2026-06-17 agent-manager decision: split-by-surface) | Front: `agent_runs.spend_used_usd` + outcome counts on Today/Missions. Engine Room: cost per mission/artifact/decision in Analytics. Decision: [`session-decisions.md`](../strategy/session-decisions.md) |
 | F-AGENTS-MENTIONABLE | Agents as first-class @-mentionable users | ⬜ | "@discovery, re-cluster the last 50 signals" from any card | Mention parser → mission |
 | R3 | Notifications (approvals, budget, guardrail, health, digests) | ⬜ | The operator hears about what needs them | In-app + email + prefs |
 | R4 | Settings expansion (budgets, guardrails, health, prefs, admin) | ◐ Partial | Self-serve control surface (Plan tab shipped) | `_authenticated.settings.tsx` |
