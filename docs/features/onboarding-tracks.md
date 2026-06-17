@@ -32,6 +32,7 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 - **Server fn**: `seedWorkspaceForTrack` in `src/lib/onboarding.functions.ts` runs under `requireSupabaseAuth`. Order: guard against re-seed (rejects if any signal already exists) → get/create project → insert signals → insert opportunities → mark `profiles.onboarded = true` **last**, so a mid-flight failure leaves the user retryable rather than half-onboarded.
 - **Schema contract**: writes through `SupabaseClient<Database>`, so the generated types are the contract for every column (`signals.source/title/content`, `opportunities.impact/confidence/ease/problem/target_user/status`, `projects.name`, `profiles.onboarded`). A clean `tsc --noEmit` is the verification.
 - **Agent toggle**: step 3 calls `setAgentEnabled({ agentId, enabled })`, keyed by the agent row id.
+- **First-run gate**: `_authenticated.tsx beforeLoad` routes a user to `/onboarding` when `profiles.onboarded === false`. The gate (`src/lib/onboarding-gate.ts`) is the single source of truth: if an authenticated user has **no** profile row it creates one with `onboarded=false` (`upsert` with `ignoreDuplicates`, never clobbering an existing row) and routes them into first-run. This is what makes onboarding fire for **Google OAuth** signups, which have no client-side profile write and depend on the unreliable `handle_new_user` trigger (KI-13).
 
 ## Governance & guardrails
 
@@ -45,7 +46,7 @@ The cold-start problem: a brand-new workspace has nothing to prioritize, so the 
 - [x] `eslint` clean on `onboarding.functions.ts` and `track-seeds.ts`.
 - [x] Seed order writes `onboarded` last (retryable on partial failure).
 - [x] Step-3 agent toggle persists (server now keyed by `agentId`, matching the only caller).
-- [ ] Live UI walkthrough on the hosted app after the next Lovable publish (gated on publish, same as other 2026-06-17 ships).
+- [ ] Live UI walkthrough on the hosted app after the next publish — confirm a fresh **Google** signup now lands on step 1 "Pick your path" (the gate self-heal fix), NOT straight on Home. (The 2026-06-17 publish exposed it landing on Home; root cause: no profile row for OAuth signups + a fail-open gate.)
 
 ## Known limits / out of scope
 
