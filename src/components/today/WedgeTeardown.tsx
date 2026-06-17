@@ -267,6 +267,26 @@ function Teardown({ result, onAnother }: { result: Result; onAnother: () => void
         empty="No evidence gaps called out."
       />
 
+      {/* PLG Phase 4 · the viral nudge — frames why to share, right above the
+          existing Share button, closing the loop back to the public /t/$slug
+          page (where a viewer meets the pre-signup CTA). */}
+      <div
+        style={{
+          marginTop: 2,
+          padding: "11px 13px",
+          borderRadius: 10,
+          background: "var(--surface-1)",
+          border: "1px solid var(--hairline)",
+          fontSize: 12,
+          lineHeight: 1.55,
+          color: "var(--ink-muted)",
+        }}
+      >
+        <span style={{ fontWeight: 600, color: "var(--ink)" }}>Worth sharing?</span> Publishing this
+        teardown gives you a public link anyone can read without an account. It is the fastest way
+        to put your thinking where the right people will see it.
+      </div>
+
       <div
         style={{
           display: "flex",
