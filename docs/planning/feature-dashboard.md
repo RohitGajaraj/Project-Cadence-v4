@@ -41,6 +41,8 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| Q1-MCP-P3 | MCP token UI (Settings → Integrations) | Claude Code | 2026-06-17 | Phase 3 of Q1-MCP. Lane F. Pure UI on shipped Phase 1/2 backend: token gen/revoke + config snippets. File-disjoint from AMBIENT-ARC. |
+| AMBIENT-ARC | Autonomy Trust Dial (Agents tab) | Claude Code | 2026-06-17 | Lane D. Surfaces the already-wired per-agent arc (observing→proving→trusted→ambient) + score + suggested promotion from `getAllAgentTrust`. File-disjoint from Q1-MCP-P3. |
 
 ---
 
