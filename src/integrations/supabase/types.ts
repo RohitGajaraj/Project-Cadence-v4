@@ -2627,12 +2627,14 @@ export type Database = {
           ice_score: number | null
           id: string
           impact: number
+          is_public: boolean
           problem: string
           product_id: string | null
           project_id: string | null
           roadmap_bucket: string | null
           roadmap_measure: string | null
           roadmap_outcome: string | null
+          share_slug: string | null
           status: string
           target_user: string | null
           theme_id: string | null
@@ -2650,12 +2652,14 @@ export type Database = {
           ice_score?: number | null
           id?: string
           impact?: number
+          is_public?: boolean
           problem?: string
           product_id?: string | null
           project_id?: string | null
           roadmap_bucket?: string | null
           roadmap_measure?: string | null
           roadmap_outcome?: string | null
+          share_slug?: string | null
           status?: string
           target_user?: string | null
           theme_id?: string | null
@@ -2673,12 +2677,14 @@ export type Database = {
           ice_score?: number | null
           id?: string
           impact?: number
+          is_public?: boolean
           problem?: string
           product_id?: string | null
           project_id?: string | null
           roadmap_bucket?: string | null
           roadmap_measure?: string | null
           roadmap_outcome?: string | null
+          share_slug?: string | null
           status?: string
           target_user?: string | null
           theme_id?: string | null
