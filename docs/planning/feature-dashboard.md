@@ -41,7 +41,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| W6 | Persona onboarding | Claude Code | 2026-06-17 | Built + adversarially reviewed; **PARKED** pending live verify + docs-close + ship |
+| W6 | Persona onboarding | Claude Code | 2026-06-17 | Built + adversarially reviewed; now on `main` (`fad3b60`, pushed 2026-06-17). **PARKED** pending live-verify (after a Lovable Publish) + docs-close. Not actively being coded. |
 
 ---
 
@@ -56,7 +56,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | 2 | `WEDGE` | C (DECIDE) | ✅ (2026-06-17) | Critic-teardown first-run ("why your pet feature is wrong, with receipts"). The 10-minute moment. Shipped: cold-start Today card → `runWedgeTeardown` records the idea as an opportunity + runs the existing Critic inline → Ship/Revise/Kill verdict with risks, kill criteria, and evidence gaps. No new AI infra, no migration. Detail: [`features/wedge.md`](../features/wedge.md). |
 | 3 | `MOAT-VIS` | B (LEARN) | ✅ (2026-06-17) | Surface "this learning moved these priorities" on Today + Brain. Makes compounding visible. Shipped: `listLearnings` now carries the moved opportunity's title; Brain Learnings reads "moved {opportunity} · ICE x→y" + a "Priorities moved" count; Today's What-changed card names the opportunity. Recon found LRN-02 already rendered the raw rescore — the gap was naming the priority. |
 | 4 | `SEN-01` (needs `F-CONN` OAuth) | A (SENSE) | ⬜ / ⏸ | A second live ingest source. Founder registers one OAuth client first. |
-| 5 | `W6` | E (PLG) | 🔨 In Dev (Claude Code, 2026-06-17) | Persona onboarding (also the wedge's delivery surface). |
+| 5 | `W6` | E (PLG) | ◐ On `main` (fad3b60, 2026-06-17); pending live-verify + docs-close | Persona onboarding (also the wedge's delivery surface). |
 
 **P1 - monetize, defend, deepen autonomy:** `F-SHARE-TEARDOWN` (C, new), `PLG` (E), `M-C-PRICE` switch-on (E, founder secrets), `Q1-MCP` read-only (F, new), `SANDBOX`+`AMBIENT-ARC` (D, new), `SEN-05`+`F-ANALYTICS-1/2`+`MOAT-METRIC` (A/B, new), `DEC-02-LOOP`+`H1-TASKS`+`H2-WRITES` (C).
 
@@ -192,7 +192,7 @@ _First paying PMs; a viral share loop._
 | M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
 | M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
 | PLG | PLG funnel (public onboarding → first-win → upgrade) | ⬜ | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
-| W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ⬜ (P0) | Per-track sample data + first-mission + first-win moment | Onboarding flow + seed data |
+| W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ◐ Built, on `main` (fad3b60); pending live-verify + docs-close | Per-track sample data + first-mission + first-win moment | Onboarding flow + seed data |
 
 ---
 
