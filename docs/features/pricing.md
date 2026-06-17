@@ -49,7 +49,7 @@ Point the Stripe webhook at `https://<app>/api/stripe/webhook` for the `checkout
 
 - **Memory-expiry enforcement: BUILT but DORMANT 2026-06-16** (migration `20260616210000`; see "Memory expiry" under How it works). The mechanic is coded and reviewed but gated off by `memory_expiry_enabled()` (returns false), so no plan gate bites at the prototype stage; flip the flag when ready to enforce. Engine-only for now is the founder ruling: build the pricing engine, do not wire active paywall gates yet.
 - Gating Critic-everywhere and other entitlements in the product surfaces (the map exists; the gates wire incrementally, claim-never-outruns-wiring).
-- A public `/pricing` marketing page.
+- ~~A public `/pricing` marketing page.~~ **Shipped 2026-06-17** (PLG Phase 1): `src/routes/pricing.tsx` renders the three tiers from `planPresentation` (this module), led by the "charge for memory persistence" positioning; a `PreSignupCTA` (`src/components/plg/PreSignupCTA.tsx`) was added to the public share pages (`/t/$slug`, `/d/$slug`). See `plan.md` §4.
 
 ## Verification checklist
 
