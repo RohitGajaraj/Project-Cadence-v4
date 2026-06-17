@@ -43,7 +43,7 @@ Settings (`/settings`) > the **Data** tab > "Download workspace export".
 
 ## Known limits / out of scope
 
-- The "wizard" (per-section selective export, format choices) and an export audit-log are not built yet; this is the core one-click export. Tracked as the partial remainder on the U6 dashboard row.
+- Per-section selective export shipped (cycle 6): the card has checkboxes to choose which sections to include (output-filtered server-side). Remaining: an export audit-log (and richer format choices). Tracked as the partial remainder on the U6 dashboard row.
 - The standalone `decisions` and `lineage` edge tables are not yet exported separately (decisions travel with opportunities and specs via `critic_review`); a documented fast-follow.
 
 ## Related

@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 5 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
+**Last updated:** 2026-06-18 (cycle 6 complete) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 5 complete; cycle 6 next) |
+| Status | ACTIVE (cycle 6 complete; cycle 7 next) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -56,6 +56,7 @@ Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then min
 | 2026-06-18 | P7 (core) | G8 Governance | `8a0514e4fd` | Incidents log on the Engine Room (`/govern?tab=incidents`): read-only "what went wrong", failed tool executions + errored auto-pipelines, newest first, each execution links to its trace. No migration. tsc + eslint + build green; adversarial review folded 1 fix (explicit workspace scoping on event_queue). ◐ remainder: guardrail/cost sources + a persistent incidents table. **Pending your publish + live verify (see below).** |
 | 2026-06-18 | C4/E7 (core) | G8 Governance | `e9aa2706e1` | Agent inspector on Missions > Agents: pick an agent, see its recent run history (status, mission, step, when). Read-only, no migration. tsc + eslint + build green; adversarial review clean (no fix). Memory inspector added cycle 5 (below). **Pending your publish + live verify (see below).** |
 | 2026-06-18 | C4/E7 memory | G8 Governance | `(this push)` | Completes C4/E7: a "What this agent knows" section in the Agent inspector showing the agent's private + shared/global memories. `getAgentMemory` via two injection-safe queries. Read-only, no migration. tsc + eslint + build green; review clean. C4/E7 now ✅. **Pending your publish + live verify (see below).** |
+| 2026-06-18 | U6 selective | G6 Interop | `(this push)` | U6 advance: the workspace export now has per-section checkboxes (pick what to include). Output-filtered server-side; existing query/RLS logic untouched. tsc + eslint + build green; review clean. ◐ remainder: export audit-log. **Pending your publish + live verify (see below).** |
 
 ## In progress
 
@@ -78,6 +79,7 @@ The live app does not reflect this run's changes until you publish them. These i
 | 2026-06-18 | R3 Attention feed | Needs publish first (new this run) | Engine Room > Attention. With a pending approval (or a near-cap budget), confirm a severity-coded card appears and links to the right tab; confirm "All clear" when the loop is clean. |
 | 2026-06-18 | P7 Incidents log | Needs publish first (new this run) | Engine Room > Incidents. With a failed tool execution present, confirm it appears with the error detail and a working "View trace" link; confirm "No incidents" when clean. |
 | 2026-06-18 | C4/E7 Agent inspector | Needs publish first (new this run) | Missions > Agents > Agent inspector. Pick an agent, confirm its recent runs AND its memory ("What this agent knows": private + shared) render correctly; confirm `agent_memory.agent_id` matches the swarm agent id so private memories attribute right; confirm the empty states. |
+| 2026-06-18 | U6 selective export | Needs publish first (new this run) | Settings > Data: uncheck some sections, export, and confirm the JSON contains only the checked sections (and the button disables when none are checked). |
 
 ## Notes and comments
 
@@ -86,6 +88,8 @@ The live app does not reflect this run's changes until you publish them. These i
 - **Cycle 3 shipped P7 (core)** (above): the read-only Incidents log on the Engine Room. Derived from existing failure logs, no migration; folded a tenancy fix (explicit workspace scoping on `event_queue`).
 - **Cycle 4 shipped C4/E7 (core)** (above): the Agent inspector on Missions > Agents. Read-only run history per agent, no migration; review came back clean (no fix needed).
 - **Cycle 5 completed C4/E7** (above): added the memory inspector ("What this agent knows": private + shared/global), via two injection-safe queries. C4/E7 is now done. Note: the clean read-only, no-migration backlog is thinning; remaining items lean toward migrations, hot-surface chrome, or loop-coupling, which the loop will weigh against the section-14 design pass.
+- **Cycle 6 shipped U6 selective export** (above): per-section checkboxes on the export. Clean, no migration.
+- **Recommendation on the §14 design pass:** it is the natural next phase, but it needs visual verification, which the no-published-app rule rightly defers to you. I am not running a code-only design pass unattended (it would be a weak version, and unverified UI changes are risky). Best run it with me when you are back and can see the rendered UI, or publish so I can verify live. Meanwhile I keep taking safe, gated build items.
 - **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
 - **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
 - Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.

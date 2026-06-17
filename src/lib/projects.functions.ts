@@ -331,7 +331,12 @@ export type WorkspaceExport = {
 export const exportWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}),
+    z
+      .object({
+        workspaceId: z.string().uuid().optional(),
+        sections: z.array(z.string()).optional(),
+      })
+      .parse(input ?? {}),
   )
   .handler(async ({ context, data }): Promise<WorkspaceExport> => {
     const { supabase, userId } = context;
@@ -402,25 +407,30 @@ export const exportWorkspace = createServerFn({ method: "GET" })
     const lrn = learnings.data ?? [];
     const mem = memory.data ?? [];
 
+    // U6 selective export: when `sections` is given, include only those; an
+    // empty or absent list means everything (the unchanged default).
+    const want = (s: string) =>
+      !data.sections || data.sections.length === 0 || data.sections.includes(s);
+    const counts: { [section: string]: number } = {};
+    if (want("projects")) counts.projects = projectRows.length;
+    if (want("signals")) counts.signals = sig.length;
+    if (want("opportunities")) counts.opportunities = opp.length;
+    if (want("specs")) counts.specs = spc.length;
+    if (want("tasks")) counts.tasks = tsk.length;
+    if (want("learnings")) counts.learnings = lrn.length;
+    if (want("memory")) counts.memory = mem.length;
+
     return {
       workspace_id: workspaceId,
       exported_by: userId,
       exported_at: new Date().toISOString(),
-      counts: {
-        projects: projectRows.length,
-        signals: sig.length,
-        opportunities: opp.length,
-        specs: spc.length,
-        tasks: tsk.length,
-        learnings: lrn.length,
-        memory: mem.length,
-      },
-      projects: projectRows,
-      signals: sig,
-      opportunities: opp,
-      specs: spc,
-      tasks: tsk,
-      learnings: lrn,
-      memory: mem,
+      counts,
+      projects: want("projects") ? projectRows : [],
+      signals: want("signals") ? sig : [],
+      opportunities: want("opportunities") ? opp : [],
+      specs: want("specs") ? spc : [],
+      tasks: want("tasks") ? tsk : [],
+      learnings: want("learnings") ? lrn : [],
+      memory: want("memory") ? mem : [],
     };
   });

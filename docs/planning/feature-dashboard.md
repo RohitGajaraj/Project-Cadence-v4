@@ -204,7 +204,7 @@ _Dual-user: external agents plug in; teams land._
 | Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phases 1-3 done 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch + **Phase 3 token UI** (Settings → Integrations: issue/revoke + connect snippets) all done. Remaining (Q2/Phase 4): full MCP streamable-HTTP transport + external discovery. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
 | Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
 | A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
-| U6 | Full data-portability / export wizard | ◐ (2026-06-17) | Trust + escape hatch: the core workspace export shipped. Settings > Data downloads the whole workspace (signals, opportunities/decisions, specs, tasks, outcomes, agent memory) as one RLS-scoped JSON, no migration. Remaining: per-section selective export + an export audit-log | `exportWorkspace` (`projects.functions.ts`) + `DataExportCard.tsx` · [`u6-data-export.md`](../features/u6-data-export.md) |
+| U6 | Full data-portability / export wizard | ◐ (2026-06-18) | Trust + escape hatch: Settings > Data exports the whole workspace (signals, opportunities/decisions, specs, tasks, outcomes, agent memory) as one RLS-scoped JSON, now with per-section selection (pick what to include). No migration. Remaining: an export audit-log | `exportWorkspace` (`projects.functions.ts`) + `DataExportCard.tsx` · [`u6-data-export.md`](../features/u6-data-export.md) |
 
 ---
 
