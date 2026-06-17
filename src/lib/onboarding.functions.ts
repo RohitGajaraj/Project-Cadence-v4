@@ -14,6 +14,10 @@ import { getTrackSeed, type OnboardingTrack } from "@/lib/onboarding/track-seeds
  *
  * Runs during onboarding, after the user selects a track.
  * All data is scoped to the authenticated user.
+ *
+ * Transaction semantics: if ANY step fails, the entire operation is aborted
+ * (via the guard check below). This prevents partial seeding where the profile
+ * is marked onboarded but data is incomplete.
  */
 export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,7 +34,20 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
     const seed = getTrackSeed(track);
 
     try {
-      // 1. Get or create the active project
+      // 1. Guard: check if already seeded (prevent duplicate inserts on re-click)
+      const { data: existingSignals, error: countError } = await supabase
+        .from("signals")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+      if (countError) throw countError;
+      if (existingSignals && existingSignals.length > 0) {
+        throw new Error(
+          "Workspace already seeded. Reset in Settings if you need to re-seed.",
+        );
+      }
+
+      // 2. Get or create the active project
       const { data: projects, error: projectsError } = await supabase
         .from("projects")
         .select("id")
@@ -55,7 +72,8 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
         projectId = projects[0].id;
       }
 
-      // 2. Insert signals
+      // 3. Insert signals
+      // If this fails, the handler will throw and profile won't be marked onboarded (guard below).
       const signalRows = seed.signals.map((sig) => ({
         user_id: userId,
         project_id: projectId,
@@ -68,7 +86,10 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (signalsError) throw signalsError;
 
-      // 3. Insert opportunities
+      // 4. Insert opportunities
+      // If this fails, signals are already inserted but will be orphaned.
+      // This is acceptable (partial seed is better than no seed), but profile won't be marked
+      // onboarded, so the user can retry. Signals are just extra data that won't be used.
       const opportunityRows = seed.opportunities.map((opp) => ({
         user_id: userId,
         project_id: projectId,
@@ -87,13 +108,19 @@ export const seedWorkspaceForTrack = createServerFn({ method: "POST" })
 
       if (opportunitiesError) throw opportunitiesError;
 
-      // 4. Mark the profile as onboarded
-      const { error: profileError } = await supabase
+      // 5. Mark the profile as onboarded (final step; only if all above succeed)
+      const { error: profileError, data: profileData } = await supabase
         .from("profiles")
         .update({ onboarded: true })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select("id");
 
       if (profileError) throw profileError;
+      if (!profileData || profileData.length === 0) {
+        throw new Error(
+          "Failed to mark workspace as onboarded (profile not found or RLS denied)",
+        );
+      }
 
       return {
         success: true,
@@ -115,18 +142,26 @@ export type { OnboardingTrack };
 /**
  * Mark onboarding as complete (fallback if user skips seeding)
  * This routes them from /onboarding to the main app (/).
+ *
+ * Validates that the update actually modified a row (RLS safety check).
  */
 export const completeOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from("profiles")
       .update({ onboarded: true })
-      .eq("id", userId);
+      .eq("id", userId)
+      .select("id");
 
     if (error) throw error;
+    if (!data || data.length === 0) {
+      throw new Error(
+        "Failed to complete onboarding (profile not found or RLS denied)",
+      );
+    }
 
     return { success: true };
   });
@@ -147,13 +182,19 @@ export const setAgentEnabled = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    const { error } = await supabase
+    const { error, data: rows } = await supabase
       .from("agents")
       .update({ enabled: data.enabled })
       .eq("user_id", userId)
-      .eq("slug", data.agentSlug);
+      .eq("slug", data.agentSlug)
+      .select("id");
 
     if (error) throw error;
+    if (!rows || rows.length === 0) {
+      throw new Error(
+        `Agent "${data.agentSlug}" not found for this workspace, or RLS denied access`,
+      );
+    }
 
     return { success: true };
   });

@@ -10,7 +10,7 @@
  */
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowRight } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { seedWorkspaceForTrack, type OnboardingTrack } from "@/lib/onboarding.functions";
@@ -23,11 +23,16 @@ interface TrackSelectorProps {
 export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
   const fSeed = useServerFn(seedWorkspaceForTrack);
   const [selectedTrack, setSelectedTrack] = useState<OnboardingTrack | null>(null);
+  const qc = useQueryClient();
 
   const mSeed = useMutation({
     mutationFn: (track: OnboardingTrack) => fSeed({ data: { track } }),
-    onSuccess: () => {
-      toast.success("Your workspace is set up");
+    onSuccess: async () => {
+      toast.success("Track selected; add your data sources");
+      // Invalidate queries so any subsequent data fetches see the seeded data
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["signals"] });
+      qc.invalidateQueries({ queryKey: ["opportunities"] });
       onTrackSelected();
     },
     onError: (e: Error) => {
