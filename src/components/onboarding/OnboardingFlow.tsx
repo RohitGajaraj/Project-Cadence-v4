@@ -38,6 +38,7 @@ import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import { listAgents } from "@/lib/agents.functions";
 import { listThemes } from "@/lib/discovery.functions";
 import { completeOnboarding, setAgentEnabled } from "@/lib/onboarding.functions";
+import { TrackSelector } from "@/components/onboarding/TrackSelector";
 import { markOnboarded } from "@/lib/onboarding-gate";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
@@ -127,7 +128,7 @@ function StepShell({
 export function OnboardingFlow() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
 
   /* — step 1 data: real connections + availability — */
   const fListConnections = useServerFn(listConnections);
@@ -260,7 +261,12 @@ export function OnboardingFlow() {
   });
 
   /* ---------- step 1 — Where should Cadence listen? ---------- */
-  if (step === 1) {
+  /* ---------- step 0 — Pick your path (TrackSelector) ---------- */
+  if (step === 0) {
+    return <TrackSelector onTrackSelected={() => setStep(1)} />;
+  }
+
+  if (step === 2) {
     return (
       <StepShell
         step={1}
@@ -272,7 +278,7 @@ export function OnboardingFlow() {
             {/* Founder ruling: connecting is never a gate — at zero
                 connections the right-side action IS the skip, primary
                 weight, so the no-friction path is unmistakable. */}
-            <button className="btn btn-primary" onClick={() => setStep(2)}>
+            <button className="btn btn-primary" onClick={() => setStep(3)}>
               {connCount > 0
                 ? "Continue · Scout starts listening"
                 : "Skip for now · connect anytime in Settings"}
@@ -352,7 +358,7 @@ export function OnboardingFlow() {
   }
 
   /* ---------- step 2 — Meet your staff. ---------- */
-  if (step === 2) {
+  if (step === 3) {
     return (
       <StepShell
         step={2}
@@ -360,10 +366,10 @@ export function OnboardingFlow() {
         sub={`${staff.length || "Your"} specialists run the loop. All of them ask before anything irreversible — you can stand any of them down later in Settings.`}
         footer={
           <>
-            <button className="btn btn-ghost" onClick={() => setStep(1)}>
+            <button className="btn btn-ghost" onClick={() => setStep(2)}>
               ← Back
             </button>
-            <button className="btn btn-primary" onClick={() => setStep(3)}>
+            <button className="btn btn-primary" onClick={() => setStep(4)}>
               Continue · {staffCount} agents on staff
             </button>
           </>
@@ -456,7 +462,7 @@ export function OnboardingFlow() {
       }
       footer={
         <>
-          <button className="btn btn-ghost" onClick={() => setStep(2)}>
+          <button className="btn btn-ghost" onClick={() => setStep(3)}>
             ← Back
           </button>
           <button
