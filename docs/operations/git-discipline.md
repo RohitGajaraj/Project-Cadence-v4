@@ -44,6 +44,18 @@ This rule applies equally to:
 
 ---
 
+## Timestamp Discipline (date + time, for an audit trail)
+
+**Every NEW dated entry across the project carries both the date AND the time, in `YYYY-MM-DD HH:MM` form** (not just the overnight build report). This covers the live build log in [`../../plan.md`](../../plan.md) §4, the feature dashboard's Recent log, the strategy [`session-decisions.md`](../strategy/session-decisions.md), any status or handoff doc, and the push log below. A bare date loses the ordering of work within a day; the time restores it, so a future reader or tool can reconstruct exactly when each change landed.
+
+- **Forward-only, no historical backfill.** This rule applies to entries written from 2026-06-18 onward. Do NOT spend time or tokens retro-stamping old entries; a date-only history is fine. Recent entries (today/yesterday) may get a time if the data point is already on hand, but never backfill day-one history.
+- **Source the timestamp from the clock, never guess it:** `date "+%Y-%m-%d %H:%M"`.
+- **Stamp at the moment of the action:** capture the start-of-build (or commit) time, so the entry reflects when the work actually happened, not when the doc was later tidied.
+
+This is a standing, cross-tool rule (Claude Code, Lovable, Antigravity, Gemini), on equal footing with the WHY rule above.
+
+---
+
 ## Implementation Rules (by Tool)
 
 ### Claude Code (CLAUDE.md)
