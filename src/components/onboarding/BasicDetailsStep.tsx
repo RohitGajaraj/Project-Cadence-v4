@@ -8,7 +8,7 @@ import { updateProfile } from "@/lib/profile.functions";
 
 /**
  * Shared basic-details capture — the single place EVERY signup path (email
- * /password AND Google OAuth) gives Cadence a name and role.
+ * /password AND Google OAuth) gives Cadence a name.
  *
  * Sign-up now only takes credentials (email + password, or Google). Identity is
  * captured here so the app can greet the user properly: before this, the OAuth
@@ -20,13 +20,20 @@ import { updateProfile } from "@/lib/profile.functions";
  * Rendered as the first step of /onboarding, gated on a missing display_name, so
  * a user who already has a name never sees it.
  *
+ * NAME ONLY — by design. We deliberately do NOT capture role (or anything else)
+ * here: the name earns its place (it is shown and signs decisions), but role had
+ * no consumer beyond being dumped into the chat grounding blob, so capturing it
+ * only spent the user's time and our storage. Per docs/conventions/
+ * data-minimalism.md, a field returns here only when wired to a real consumer
+ * (e.g. if/when we design role-based personalization). The persona that actually
+ * customizes the workspace is the onboarding track selector, not a role string.
+ *
  * Engine-Room: none — calm-front identity capture, no machinery exposed.
  */
 export function BasicDetailsStep({ onDone }: { onDone: () => void }) {
   const fUpdate = useServerFn(updateProfile);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("AI Product Manager");
   const [saving, setSaving] = useState(false);
 
   // Prefill from whatever the auth provider already gave us. Google returns
@@ -56,11 +63,10 @@ export function BasicDetailsStep({ onDone }: { onDone: () => void }) {
     const first = firstName.trim();
     if (!first) return toast.error("Please add at least your first name");
     const fullName = [first, lastName.trim()].filter(Boolean).join(" ");
-    const roleValue = role.trim() || "Product Manager";
     setSaving(true);
     try {
       await fUpdate({
-        data: { full_name: fullName, display_name: first, role: roleValue },
+        data: { full_name: fullName, display_name: first },
       });
       // Mirror to the session: the AppShell and chat header resolve the name
       // from auth user_metadata, not the profiles row, so both must carry it.
@@ -156,18 +162,11 @@ export function BasicDetailsStep({ onDone }: { onDone: () => void }) {
                 style={{ flex: 1, minWidth: 0 }}
               />
             </div>
-            <input
-              className="input"
-              placeholder="your role, e.g. AI Product Manager"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              style={{ marginBottom: 12, width: "100%" }}
-            />
             <button
               className="btn btn-primary"
               type="submit"
               disabled={saving}
-              style={{ width: "100%", justifyContent: "center" }}
+              style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : "Continue · setup begins"}
             </button>
