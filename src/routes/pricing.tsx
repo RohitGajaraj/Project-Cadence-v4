@@ -200,7 +200,7 @@ function PricingPage() {
                   </ul>
 
                   <a
-                    href="/signup"
+                    href="/signup?from=pricing"
                     className={isPro ? "btn btn-primary" : "btn btn-ghost"}
                     style={{ marginTop: 6, justifyContent: "center", width: "100%" }}
                   >
@@ -240,7 +240,11 @@ function PricingPage() {
         <span className="mono-label" style={{ fontSize: 9 }}>
           Made with Cadence
         </span>
-        <a href="/signup" className="btn btn-ghost btn-sm" style={{ textDecoration: "none" }}>
+        <a
+          href="/signup?from=pricing"
+          className="btn btn-ghost btn-sm"
+          style={{ textDecoration: "none" }}
+        >
           Start free →
         </a>
       </footer>

@@ -41,7 +41,7 @@ export function PreSignupCTA({ sourceType }: { sourceType: "teardown" | "decisio
         and remembers every outcome. Free to start; Pro keeps your decision memory forever.
       </p>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-        <a href="/signup" className="btn btn-primary">
+        <a href={`/signup?from=${sourceType}`} className="btn btn-primary">
           Start free →
         </a>
         <a href="/pricing" className="btn btn-ghost">

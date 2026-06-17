@@ -32,6 +32,21 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
+  // PLG continuity: when the user arrives from a public funnel surface
+  // (a shared teardown/decision or /pricing), carry that context into a
+  // welcome line so the jump from "I saw a teardown" to "create account"
+  // feels like one flow. Read-only; never changes the signup logic.
+  const from =
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("from");
+  const contextLine =
+    from === "teardown"
+      ? "Continue from the teardown you just read"
+      : from === "decision"
+        ? "Continue from the decision you just read"
+        : from === "pricing"
+          ? "Every plan starts free"
+          : null;
+
   async function signup(e: React.FormEvent) {
     e.preventDefault();
     if (password.length < 6) return toast.error("Password must be at least 6 characters");
@@ -121,6 +136,14 @@ function SignupPage() {
             marginBottom: 26,
           }}
         >
+          {contextLine ? (
+            <div
+              className="mono-label"
+              style={{ fontSize: 9, color: "var(--ink-subtle)", marginBottom: 12 }}
+            >
+              {contextLine}
+            </div>
+          ) : null}
           <CadenceMark size={52} />
           <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, marginTop: 14 }}>
             Create your workspace
@@ -128,6 +151,18 @@ function SignupPage() {
           <div className="mono-label" style={{ marginTop: 6 }}>
             agents execute · you govern
           </div>
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--ink-subtle)",
+              marginTop: 10,
+              lineHeight: 1.5,
+              maxWidth: 290,
+            }}
+          >
+            Free to start, no card required. Cadence red-teams your calls and remembers every
+            outcome.
+          </p>
         </div>
 
         <div className="bento" style={{ padding: 22 }}>
