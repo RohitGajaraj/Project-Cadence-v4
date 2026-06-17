@@ -83,10 +83,10 @@ function StepShell({
       <div className="fade-up" style={{ width: 620, maxWidth: "100%" }} key={step}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
           <CadenceMark size={26} />
-          <span className="mono-label">Setup · step {step} of 3</span>
+          <span className="mono-label">Setup · step {step} of 4</span>
           <span style={{ flex: 1 }}></span>
           <span style={{ display: "flex", gap: 4 }}>
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <span
                 key={i}
                 style={{
@@ -260,16 +260,18 @@ export function OnboardingFlow() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  /* ---------- step 1 — Where should Cadence listen? ---------- */
   /* ---------- step 0 — Pick your path (TrackSelector) ---------- */
+  // Advances to step 2 (the first StepShell branch). State 1 is intentionally
+  // unused: the legacy steps were renumbered 1→2, 2→3, 3→4 when TrackSelector
+  // took slot 0, so the first real screen now lives at `step === 2`.
   if (step === 0) {
-    return <TrackSelector onTrackSelected={() => setStep(1)} />;
+    return <TrackSelector onTrackSelected={() => setStep(2)} />;
   }
 
   if (step === 2) {
     return (
       <StepShell
-        step={1}
+        step={2}
         title="Where should Cadence listen?"
         sub="Signals are the loop's fuel. Connect the places your users already talk — three or more gives Scout enough to cluster real themes. Nothing is required now; Settings keeps every connector a click away."
         footer={
@@ -361,7 +363,7 @@ export function OnboardingFlow() {
   if (step === 3) {
     return (
       <StepShell
-        step={2}
+        step={3}
         title="Meet your staff."
         sub={`${staff.length || "Your"} specialists run the loop. All of them ask before anything irreversible — you can stand any of them down later in Settings.`}
         footer={
@@ -453,7 +455,7 @@ export function OnboardingFlow() {
   /* ---------- step 3 — Hand them a first goal. ---------- */
   return (
     <StepShell
-      step={3}
+      step={4}
       title="Hand them a first goal."
       sub={
         goalOptions.length > 0

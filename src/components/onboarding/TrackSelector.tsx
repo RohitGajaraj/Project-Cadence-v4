@@ -13,6 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowRight } from "lucide-react";
 import { toast } from "@/lib/notify";
+import { CadenceMark } from "@/components/cadence/Primitives";
 import { seedWorkspaceForTrack, type OnboardingTrack } from "@/lib/onboarding.functions";
 import { trackDescriptions } from "@/lib/onboarding/track-seeds";
 
@@ -46,7 +47,7 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
 
   return (
     <div
-      data-screen-label="Onboarding · step 0 · TrackSelector"
+      data-screen-label="Onboarding · step 1 · TrackSelector"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -61,17 +62,18 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
       <div className="fade-up" style={{ width: 620, maxWidth: "100%" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-          <span className="mono-label">Setup · step 0 of 3</span>
+          <CadenceMark size={26} />
+          <span className="mono-label">Setup · step 1 of 4</span>
           <span style={{ flex: 1 }}></span>
           <span style={{ display: "flex", gap: 4 }}>
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <span
                 key={i}
                 style={{
                   width: 26,
                   height: 3,
                   borderRadius: 99,
-                  background: "var(--surface-2)",
+                  background: i <= 1 ? "var(--ember)" : "var(--surface-2)",
                   transition: "background var(--dur-slow)",
                 }}
               ></span>
@@ -85,7 +87,8 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
         <p
           style={{ fontSize: 13, color: "var(--ink-subtle)", margin: "6px 0 22px", maxWidth: 480 }}
         >
-          We&apos;ll seed your workspace with sample data and goals that match your role. You can change this anytime.
+          We&apos;ll seed your workspace with sample data and goals that match your role. You can
+          change this anytime.
         </p>
 
         {/* Track cards */}
@@ -110,9 +113,7 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
                   textAlign: "left",
                   padding: "16px 18px",
                   borderRadius: 10,
-                  border: isSelected
-                    ? "2px solid var(--ember)"
-                    : "1px solid var(--hairline)",
+                  border: isSelected ? "2px solid var(--ember)" : "1px solid var(--hairline)",
                   background: isSelected
                     ? "color-mix(in oklab, var(--ember) 7%, var(--canvas))"
                     : "var(--canvas)",
@@ -170,8 +171,8 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
             maxWidth: 480,
           }}
         >
-          Selecting a path will populate your workspace with realistic sample signals and opportunities.
-          You can always adjust or skip ahead in Settings.
+          Selecting a path will populate your workspace with realistic sample signals and
+          opportunities. You can always adjust or skip ahead in Settings.
         </p>
       </div>
     </div>
