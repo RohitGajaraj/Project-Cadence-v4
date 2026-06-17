@@ -1,135 +1,50 @@
-# W6 · Persona onboarding (active task) — IN PROGRESS
+# F-SHARE-TEARDOWN · Shareable Critic-teardown link (active task) — IN PROGRESS
 
 **Date:** 2026-06-17  
-**Lane:** E (MONETIZE/PLG)  
-**Status:** Building (recon + core build done; UI verification + polish in progress)
+**Lane:** C (DECIDE) → viral loop (also G5 Monetize)  
+**Status:** Claimed; building (recon done, seam confirmed tight)
+
+> **Parked alongside:** **W6 (persona onboarding)** is built + adversarially reviewed but **not shipped** — live UI verification (partly gated on a deploy/AI key) + docs closure remain. Its claim row stays open on the dashboard. Circle back to verify + ship.
 
 ---
 
-## What / Pain / How (from v10)
+## What / Pain / How
 
-**What:** Per-track onboarding (Solo PM / Founding PM / Tech Founder) with sample data + first-win.
+**What:** Make a WEDGE Critic-teardown result publicly shareable via a read-only link (`/t/<share_slug>`), mirroring the shipped F-SHARE shareable-decision rails.
 
-**Pain:** #8 (growth funnel; new users need to feel value fast).
+**Pain:** Growth funnel — the teardown is the most brand-carrying artifact Cadence produces ("here's the feature I believed in, here's the honest red-team"). It should travel and pull signups (the v9 decision-wedge as acquisition).
 
-**How:** A new user picks a track during onboarding (step 0), gets seeded data matched to their persona, and reaches the WEDGE (Critic-teardown first-win) without hand-holding.
+**How:** Reuse three shipped systems verbatim in shape — (1) the WEDGE teardown already persists `critic_review` jsonb on a stable `opportunities` row; (2) F-SHARE proves the anon-public-read security model (column-scoped GRANT + RLS `TO anon` + Realtime exclusion); (3) the `/d/$slug` public SSR + OG route. F-SHARE-TEARDOWN is the assembly of these onto the teardown.
 
-**Build accept (definition of done):** A signed-up PM completes onboarding → lands on Today → sees WEDGE card → can immediately run teardown on seeded opportunity.
-
----
-
-## ✅ COMPLETED
-
-### Phase 1: Recon + Design
-- ✅ Confirmed track selector goes as **step 0 of OnboardingFlow** (before connect/staff/goals)
-- ✅ Confirmed "first-win" = reaching WEDGE on Today
-- ✅ Confirmed cold-start logic (any signals/opps/PRDs = warm)
-- ✅ Confirmed seeding should populate agents + goals per track
-
-### Phase 2: Core Implementation
-- ✅ **track-seeds.ts:** Three personas with realistic sample data (4 signals + 4 opportunities each)
-  - Solo PM: Mobile app roadmap (offline mode, UX redesign, pricing, notifications)
-  - Founding PM: Startup MVP (pivot, UX polish, moat, tech debt)
-  - Tech Founder: Developer platform (auth, scaling, SDKs, infra costs)
-- ✅ **seedWorkspaceForTrack():** Server function (creates project, seeds signals/opps, marks onboarded)
-- ✅ **TrackSelector.tsx:** Step 0 UI (3 track cards, loading states, success toast)
-- ✅ **OnboardingFlow.tsx:** Integrated TrackSelector (step 0 → advances to step 1)
-- ✅ **Type safety:** Exported OnboardingTrack from .functions.ts so TrackSelector can import it
-- ✅ **TypeScript:** All W6 files compile cleanly
+**Build accept (definition of done):** From a WEDGE teardown result, the operator toggles Share → a `/t/<slug>` link copies → opening it logged-out renders the verdict + risks + kill-criteria + evidence-gaps read-only under a "Made with Cadence" frame + CTA; the anon network response carries only safe columns (no `*_id`); Unshare flips it private.
 
 ---
 
-## 🔨 IN PROGRESS
+## Plan (mirror the F-SHARE pair)
 
-### Phase 3: Verification & Polish
-- [ ] **UI verification (live):** Test the full signup → track selection → seeding → Today flow
-  - Sign up with test account
-  - Select each track (verify seeding works for all 3)
-  - Confirm signals/opportunities appear on Discovery page
-  - Confirm cold-start is false (WEDGE card appears)
-  - Confirm can run WEDGE teardown on seeded opportunity
-  
-- [ ] **Edge cases & hardening:**
-  - [ ] What if seeding fails partway? (partial data + profile marked onboarded)
-  - [ ] What if user re-visits onboarding? (profile already onboarded, redirects to /)
-  - [ ] What if workspace already has data? (seeding still works, adds to existing)
-  
-- [ ] **UX refinement:**
-  - [ ] TrackSelector header says "step 0 of 3" but there are 4 steps total — refine copy to "step 1 of 4" or remove counter
-  - [ ] Test that seeded agents (critic, scout, builder) are enabled per track
-  - [ ] Confirm "Meet your staff" screen on step 2 handles pre-seeded agents
-
-### Phase 4: Docs + Closure
-- [ ] Update active-task.md → success summary + files changed
-- [ ] Update feature-dashboard.md → mark W6 as ✅ with date
-- [ ] Update plan.md §4 → build log entry
-- [ ] Update docs/features/README.md → add W6 row
-- [ ] Commit everything + push
+| # | Item | File | Reuse / new |
+| --- | --- | --- | --- |
+| 1 | Migration: `share_slug`+`is_public` on `opportunities`, column-scoped anon GRANT (title, `critic_review`, created_at, is_public, share_slug only), RLS `FOR SELECT TO anon USING (is_public)`, drop `opportunities` from Realtime publication | `supabase/migrations/2026…_fshare_teardown_opportunity_share.sql` | mirror of `20260614170000_p3_decisions_share.sql` |
+| 2 | `getTeardownShareState(id)` / `setTeardownShared(id, isPublic)` (authed, RLS-guarded, pre-migration tolerant) + `getPublicTeardown(slug)` (PUBLIC, rate-limited) | `src/lib/opportunities-share.functions.ts` | clone of `decisions-share.functions.ts` |
+| 3 | Public SSR route + dynamic `head()` (og:title = idea, og:description = verdict + summary snippet) rendering the teardown read-only | `src/routes/t.$slug.tsx` | clone of `d.$slug.tsx` |
+| 4 | Per-IP rate-limit guard before the public read | `src/lib/decisions-ratelimit.server.ts` | reuse (note shared IP bucket as a known limit) |
+| 5 | "Share this teardown" control on the verdict (gated on `review` present) | `src/components/today/WedgeTeardown.tsx` + small `ShareTeardownButton` | mirror `ShareDecisionButton` |
+| 6 | Verify in-browser (`bun run dev`) as far as local allows (toggle + copy + pre-migration "after sync" state); full anon-read confirmed on deployed app post-sync | — | — |
+| 7 | Close docs: new `docs/features/shareable-teardowns.md`, dashboard → ✅, `plan.md` §4 build-log, cross-link `wedge.md` + `shareable-decisions.md` | docs | — |
 
 ---
 
-## Files Created
+## Design decisions (locked)
 
-| File | Purpose | Status |
-| --- | --- | --- |
-| `src/lib/onboarding/track-seeds.ts` | Sample data (3 personas × 4 signals + opps) | ✅ |
-| `src/lib/onboarding.functions.ts` | `seedWorkspaceForTrack()` + `completeOnboarding()` | ✅ |
-| `src/components/onboarding/TrackSelector.tsx` | Step 0 UI + mutation handler | ✅ |
-
-## Files Modified
-
-| File | Change | Status |
-| --- | --- | --- |
-| `src/components/onboarding/OnboardingFlow.tsx` | Add step 0 handler; increment steps 1-3 to 2-4 | ✅ |
+1. **Mirror, don't generalize.** Add share columns directly to `opportunities` (same as `decisions`), not a polymorphic `shares` table. The skill mandate is "mirror an existing pair."
+2. **Reveal the full teardown publicly** (verdict + risks + kill-criteria + evidence-gaps), matching F-SHARE revealing full decision rationale. The "teaser + gate behind signup" curiosity-gap variant is a future growth experiment, not the first cut.
+3. **Safe anon projection:** title, `critic_review` (jsonb — verdict/summary/risks/kill_criteria/missing_evidence/confidence; no PII), created_at, share_slug, is_public. Never grant `user_id`/`workspace_id`/`product_id`/`problem`/`target_user`/`hypothesis`.
+4. **Pre-migration tolerant** like F-SHARE/H2/B5: share controls show "share · after sync" and the public route returns "not available" until the next Lovable sync applies the migration.
+5. **Route `/t/$slug`** (verify free before creating; `/d` = decisions, `/p` = prototype).
 
 ---
 
-## Definition of Done Checklist
+## Open questions / notes
 
-- [x] Acceptance criteria met (track selection + seeding + first-win reachable)
-- [x] `tsc --noEmit` clean (W6 files)
-- [ ] Tested on real data (UI verification needed)
-- [ ] Adversarially reviewed
-- [ ] Shipped to main
-- [ ] Dashboard + docs updated
-- [ ] Handoff written to .remember/
-
----
-
-## Open Questions / Notes
-
-1. **Agent seeding:** Currently just marks profile as onboarded. Should we also enable certain agents per track? (e.g., Critic + Scout for Solo PM, all for Tech Founder?)
-   - Not in current build; can be fast-follow if founder wants
-   
-2. **First goal seeding:** Currently just seeds signals + opps. Should we also seed a first goal/mission template?
-   - Not in current build; can be fast-follow if founder wants better onboarding cohesion
-
-3. **UI copy for step counter:** TrackSelector shows "step 0 of 3" but real count is 4 steps (0-3). Minor UX issue, not blocking.
-
-4. **Duplicate onboarding:** If user re-triggers onboarding after completing it, what happens? (Profile already has onboarded=true, so gate redirects to /; should be harmless)
-
----
-
-## Quick Start for Verification
-
-```bash
-# 1. Start dev server
-bun run dev
-
-# 2. Go to /signup (not logged in)
-# 3. Sign up with test account
-# 4. You should land on /onboarding
-# 5. Step 0: Pick your path (select "Solo PM" as example)
-# 6. Should see "Your workspace is set up" toast
-# 7. Auto-advance to Step 1 (Where should Cadence listen?)
-# 8. Complete remaining steps (skip connections, enable agents, set goal)
-# 9. Land on Today (home)
-# 10. Should see WEDGE card in cold-start section
-# 11. Click WEDGE → enter seeded opportunity title as idea
-# 12. Should get Critic verdict (Ship/Revise/Kill)
-
-# 13. Check database:
-# SELECT * FROM signals WHERE user_id = '<test_user_id>' LIMIT 10;
-# SELECT * FROM opportunities WHERE user_id = '<test_user_id>' LIMIT 10;
-# Should have 4 signals + 4 opportunities per track selected
-```
+- Rate limiter currently shares one per-IP table with `/d`; acceptable (more conservative, anti-DoS). Namespacing the bucket is a trivial fast-follow if needed.
+- Share trigger lives on the WedgeTeardown result for the first cut (the viral moment). Dropping the same `ShareTeardownButton` onto the opportunity-card verdict (share any teardown, any time) is the natural fast-follow.

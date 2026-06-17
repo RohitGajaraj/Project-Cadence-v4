@@ -41,7 +41,8 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
-| W6 | Persona onboarding | Claude Code | 2026-06-17 | Adversarial review done; pending UI verification + docs closure
+| W6 | Persona onboarding | Claude Code | 2026-06-17 | Built + adversarially reviewed; **PARKED** pending live verify + docs-close + ship |
+| F-SHARE-TEARDOWN | Shareable WEDGE teardown (viral loop) | Claude Code | 2026-06-17 | Claimed; mirrors F-SHARE rails onto `opportunities` / `critic_review` |
 
 ---
 
@@ -138,6 +139,7 @@ _Turn signal into governed decisions and specs._
 | DEF-03 | Critic-on-spec red team | ✅ (2026-06-14) | Specs get an adversarial pass before commit | Critic inline call |
 | F-DEC-CARD | Decision card + Critic badge on Today | ✅ | The human makes the call with the Critic's view in front of them | Today surface |
 | WEDGE | Critic-teardown first-run (the launch wedge) | ✅ (2026-06-17) | The felt entry: a brand-new account names a feature it believes in and gets an evidence-backed Critic teardown (Ship/Revise/Kill + risks/kill-criteria/evidence-gaps) in the first session, no setup. Leads the cold-start Today. Wires the existing `runCritic` engine; no new AI infra, no migration | `runWedgeTeardown` (`discovery.functions.ts`) + `WedgeTeardown.tsx` · [`features/wedge.md`](../features/wedge.md) |
+| F-SHARE-TEARDOWN | Shareable Critic-teardown link (viral loop) | 🔨 In Dev (Claude Code, 2026-06-17) | The wedge's sharpest artifact made public ("why your pet feature is wrong, with receipts") — the v9 wedge as acquisition. Mirrors the F-SHARE rails onto `opportunities` (`share_slug`+`is_public`) + a `/t/$slug` public route rendering the persisted `critic_review`; no new AI infra | `opportunities-share.functions.ts` + `t.$slug.tsx` (building) |
 | F-SHARE | Shareable-decision viral loop + rate limit | ✅ (2026-06-16) | A public decision link drives signups; secure anon-read | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
 | H2 | Outcome roadmap (Now/Next/Later) | ✅ (2026-06-17) | Outcome-driven board on `/product?tab=roadmap`: the human commits opportunities to Now/Next/Later with a declared outcome + measure; the agent's continuous ICE ranking orders within each bucket (NOT the v6-deleted task kanban). Native HTML5 drag + a keyboard/click bucket select per card; verified RLS-scoped writes (user-scoped `.select()` so a blocked update fails loudly). Adversarially reviewed: 3 fixes (phantom-ok write, a11y drag-only gap, field reset). **Place-into-bucket write is gated on the next Lovable sync applying the migration; read is pre-migration tolerant.** | `roadmap.functions.ts` + `RoadmapBoard.tsx` + migration `20260617000000_h2_roadmap_outcome.sql` |
 | H3 | Scheduling (calendar-aware work blocks) | ✅ (2026-06-16) | "Plan deep work" on the Calendar: `proposeWorkBlocks` schedules open deep-work tasks into free time within working hours (reuses proposeSlots' conflict logic; one block per task, back-to-back, skips weekends/meetings; pure read-only proposal), each block has "Add to calendar". Adversarially reviewed: 1 real boundary bug + a user-facing em-dash fixed | `calendar.functions.ts` (`proposeWorkBlocks`) + `CalendarPanel.tsx` |
