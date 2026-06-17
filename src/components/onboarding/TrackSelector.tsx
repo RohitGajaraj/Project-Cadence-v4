@@ -1,24 +1,46 @@
 /**
- * TrackSelector — step 0 of onboarding
+ * TrackSelector — step 1 of onboarding
  *
- * User selects their persona (Solo PM, Founding PM, or Tech Founder).
- * On selection, seeds their workspace with persona-appropriate sample data.
- * Then advances to step 1 (connect data sources).
+ * The first-run "aha": the user picks the role they play, and Cadence stands up
+ * a realistic workspace for it with a first idea already queued to tear down.
+ * On selection, seeds the workspace with persona-appropriate sample data, then
+ * advances to step 2 (connect data sources).
  *
- * Engine-Room: this is a routing/decision surface that names the outcome ("pick your path")
- * and routes to seeding, not raw machinery.
+ * Design (Ember Editorial + impeccable onboard + emil-design-eng):
+ *  - Names the OUTCOME, not the mechanism (engine-room-doctrine): each card
+ *    previews the workspace + first teardown it delivers, read from the real
+ *    seed data — value made visible, not "we'll seed sample data".
+ *  - Ember stays scarce: it marks the active choice only (the role-color law).
+ *  - Motion is craft: staggered transform-only entrance, .lift press feedback,
+ *    all gated by data-motion / prefers-reduced-motion.
+ *
+ * Engine-Room: a routing/decision surface that names the outcome ("pick the
+ * role you play") and routes to seeding, not raw machinery.
  */
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import { seedWorkspaceForTrack, type OnboardingTrack } from "@/lib/onboarding.functions";
-import { trackDescriptions } from "@/lib/onboarding/track-seeds";
+import { getTrackSeed, trackDescriptions } from "@/lib/onboarding/track-seeds";
 
 interface TrackSelectorProps {
-  onTrackSelected: () => void; // Called after seeding succeeds; parent advances to step 1
+  onTrackSelected: () => void; // Called after seeding succeeds; parent advances to step 2
+}
+
+const TRACKS: OnboardingTrack[] = ["solo", "founding", "tech"];
+
+// Preview each path from the REAL seed data, so the card promises exactly what
+// the workspace will contain — no invented copy (no-filler law).
+function trackPreview(track: OnboardingTrack) {
+  const seed = getTrackSeed(track);
+  return {
+    ...trackDescriptions[track],
+    startsIn: seed.projectName,
+    firstTeardown: seed.opportunities[0]?.title ?? "",
+  };
 }
 
 export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
@@ -29,8 +51,8 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
   const mSeed = useMutation({
     mutationFn: (track: OnboardingTrack) => fSeed({ data: { track } }),
     onSuccess: async () => {
-      toast.success("Track selected; add your data sources");
-      // Invalidate queries so any subsequent data fetches see the seeded data
+      toast.success("Your workspace is ready");
+      // Invalidate so any subsequent data fetches see the seeded data.
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["signals"] });
       qc.invalidateQueries({ queryKey: ["opportunities"] });
@@ -43,7 +65,6 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
   });
 
   const isLoading = mSeed.isPending;
-  const tracks: OnboardingTrack[] = ["solo", "founding", "tech"];
 
   return (
     <div
@@ -59,9 +80,9 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
         padding: 24,
       }}
     >
-      <div className="fade-up" style={{ width: 620, maxWidth: "100%" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
+      <div className="fade-up" style={{ width: 600, maxWidth: "100%" }}>
+        {/* Header — consistent rail across all 4 steps */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 26 }}>
           <CadenceMark size={26} />
           <span className="mono-label">Setup · step 1 of 4</span>
           <span style={{ flex: 1 }}></span>
@@ -81,22 +102,30 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
           </span>
         </div>
 
-        <h1 className="font-display" style={{ fontSize: 28, fontWeight: 430 }}>
-          Pick your path
+        {/* Value frame — names the outcome, not the mechanism */}
+        <h1 className="font-display" style={{ fontSize: 30, fontWeight: 440, lineHeight: 1.15 }}>
+          Choose the role you <em style={{ fontStyle: "italic" }}>play</em>.
         </h1>
         <p
-          style={{ fontSize: 13, color: "var(--ink-subtle)", margin: "6px 0 22px", maxWidth: 480 }}
+          style={{
+            fontSize: 13.5,
+            color: "var(--ink-subtle)",
+            margin: "10px 0 24px",
+            maxWidth: 470,
+            lineHeight: 1.55,
+          }}
         >
-          We&apos;ll seed your workspace with sample data and goals that match your role. You can
-          change this anytime.
+          Cadence stands up your product team on a realistic version of your world, with a first
+          idea already queued to tear down. Pick a path to begin; you can change it anytime in
+          Settings.
         </p>
 
-        {/* Track cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginBottom: 24 }}>
-          {tracks.map((track) => {
-            const desc = trackDescriptions[track];
+        {/* Persona cards — each previews the workspace it delivers */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          {TRACKS.map((track, i) => {
+            const p = trackPreview(track);
             const isSelected = selectedTrack === track;
-            const isBusy = isLoading && selectedTrack === track;
+            const isBusy = isLoading && isSelected;
 
             return (
               <button
@@ -110,70 +139,89 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
                 }}
                 aria-pressed={isSelected}
                 style={{
+                  // staggered transform-only entrance (gated by reduced-motion)
+                  animation: "fadeUp var(--dur-base) var(--ease-out) both",
+                  animationDelay: `${60 + i * 70}ms`,
                   textAlign: "left",
                   padding: "16px 18px",
-                  borderRadius: 10,
-                  border: isSelected ? "2px solid var(--ember)" : "1px solid var(--hairline)",
+                  borderRadius: 12,
+                  border: isSelected
+                    ? "1px solid color-mix(in oklab, var(--ember) 55%, transparent)"
+                    : "1px solid var(--hairline)",
                   background: isSelected
-                    ? "color-mix(in oklab, var(--ember) 7%, var(--canvas))"
+                    ? "color-mix(in oklab, var(--ember) 6%, var(--canvas))"
                     : "var(--canvas)",
                   cursor: isLoading ? "not-allowed" : "pointer",
-                  transition: "all var(--dur-base)",
-                  opacity: isLoading && !isBusy ? 0.6 : 1,
+                  opacity: isLoading && !isBusy ? 0.5 : 1,
+                  transition: "opacity var(--dur-base) var(--ease-out)",
                 }}
               >
+                {/* Title row */}
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "flex-start",
+                    alignItems: "center",
                     justifyContent: "space-between",
                     gap: 12,
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 550, fontSize: 14 }}>{desc.label}</div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--ink-subtle)",
-                        marginTop: 4,
-                      }}
-                    >
-                      {desc.subtitle}
-                    </div>
-                  </div>
-
-                  {/* Icon */}
+                  <span className="font-display" style={{ fontSize: 17, fontWeight: 460 }}>
+                    {p.label}
+                  </span>
                   {isBusy ? (
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                      style={{ color: "var(--ember)", flexShrink: 0, marginTop: 2 }}
-                    />
+                    <Loader2 size={15} className="animate-spin" style={{ color: "var(--ember)" }} />
                   ) : isSelected ? (
-                    <ArrowRight
-                      size={16}
-                      style={{ color: "var(--ember)", flexShrink: 0, marginTop: 2 }}
-                    />
+                    <Check size={15} style={{ color: "var(--ember)" }} />
                   ) : null}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: "var(--ink-subtle)",
+                    marginTop: 4,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {p.subtitle}
+                </div>
+
+                {/* Preview, from the real seed — the value made visible */}
+                <div
+                  style={{
+                    marginTop: 13,
+                    paddingTop: 12,
+                    borderTop: "1px solid var(--hairline)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span
+                      className="mono-label"
+                      style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                    >
+                      Starts in
+                    </span>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>{p.startsIn}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span
+                      className="mono-label"
+                      style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                    >
+                      First teardown
+                    </span>
+                    <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+                      {p.firstTeardown}
+                    </span>
+                  </div>
                 </div>
               </button>
             );
           })}
         </div>
-
-        {/* Footer note */}
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--ink-faint)",
-            margin: "12px 0 0",
-            maxWidth: 480,
-          }}
-        >
-          Selecting a path will populate your workspace with realistic sample signals and
-          opportunities. You can always adjust or skip ahead in Settings.
-        </p>
       </div>
     </div>
   );
