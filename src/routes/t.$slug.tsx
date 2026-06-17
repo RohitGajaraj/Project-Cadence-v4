@@ -10,6 +10,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getPublicTeardown, type PublicTeardown } from "@/lib/opportunities-share.functions";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
+import { PreSignupCTA } from "@/components/plg/PreSignupCTA";
 
 const OG_IMAGE =
   "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/9011d005-fe77-48c4-9d01-8cb09513383c";
@@ -262,6 +263,8 @@ function PublicTeardownPage() {
         A read-only snapshot of one Critic teardown. Cadence is the PM chief of staff that red-teams
         your calls, runs the reversible work, and remembers every outcome.
       </p>
+
+      <PreSignupCTA sourceType="teardown" />
     </Shell>
   );
 }
