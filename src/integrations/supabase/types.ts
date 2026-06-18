@@ -4243,10 +4243,8 @@ export type Database = {
       }
       workspaces: {
         Row: {
-          auto_cluster_enabled: boolean
           created_at: string
           id: string
-          last_auto_cluster_at: string | null
           name: string
           owner_id: string
           plan_tier: string
@@ -4257,10 +4255,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          auto_cluster_enabled?: boolean
           created_at?: string
           id?: string
-          last_auto_cluster_at?: string | null
           name: string
           owner_id: string
           plan_tier?: string
@@ -4271,10 +4267,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          auto_cluster_enabled?: boolean
           created_at?: string
           id?: string
-          last_auto_cluster_at?: string | null
           name?: string
           owner_id?: string
           plan_tier?: string
