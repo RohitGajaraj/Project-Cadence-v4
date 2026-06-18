@@ -29,6 +29,7 @@ import { MonoLabel, StepDot, StatusBadge, VerdictChip } from "@/components/caden
 import { toolConsequence, REVERSIBILITY_LABEL } from "@/lib/tool-consequences";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
+import { MODELS } from "@/lib/ai/models";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, cancelMission, type MissionDetail } from "@/lib/missions.functions";
 import {
@@ -726,14 +727,25 @@ function MissionDetailPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const retry = useMutation({
+  // D4-REPLAY: re-run this mission's goal as a new mission, optionally with a
+  // different model (the server already accepts model), and record the branch
+  // link so the new mission shows "Replayed from" this one.
+  const [replayModel, setReplayModel] = useState<string>("");
+  const replay = useMutation({
     mutationFn: () => {
       const mission = m.data?.mission;
       if (!mission) throw new Error("Mission not loaded");
-      return fStart({ data: { goal: mission.goal, title: mission.title } });
+      return fStart({
+        data: {
+          goal: mission.goal,
+          title: mission.title,
+          model: replayModel || undefined,
+          replayedFrom: missionId,
+        },
+      });
     },
     onSuccess: (r) => {
-      toast.success("Retry started · a new mission carries the same goal.");
+      toast.success("Replay started · a new mission carries the same goal.");
       navigate({ to: "/missions/$missionId", params: { missionId: r.mission_id } });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -862,6 +874,24 @@ function MissionDetailPage() {
                 >
                   {data.mission.goal}
                 </p>
+                {data.mission.replayed_from_mission_id ? (
+                  <Link
+                    to="/missions/$missionId"
+                    params={{ missionId: data.mission.replayed_from_mission_id }}
+                    className="mono-label"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      marginTop: 8,
+                      fontSize: 9,
+                      color: "color-mix(in oklab, var(--hero-ink) 65%, transparent)",
+                    }}
+                    title="Open the mission this one was replayed from"
+                  >
+                    <RotateCcw style={{ width: 10, height: 10 }} /> Replayed from an earlier mission
+                  </Link>
+                ) : null}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <StatusBadge status={badgeStatus(data.mission.status)} />
@@ -895,6 +925,54 @@ function MissionDetailPage() {
                     <Ban style={{ width: 11, height: 11 }} />
                     {cancel.isPending ? "Cancelling…" : "Cancel mission"}
                   </button>
+                ) : !missionFailed ? (
+                  // D4-REPLAY: re-run a finished mission with a chosen model.
+                  // (Failed/halted missions keep the contextual retry below.)
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <select
+                      aria-label="Replay model"
+                      value={replayModel}
+                      onChange={(e) => setReplayModel(e.target.value)}
+                      className="mono-label"
+                      style={{
+                        fontSize: 9,
+                        padding: "3px 6px",
+                        borderRadius: 5,
+                        border: "1px solid color-mix(in oklab, var(--hero-ink) 35%, transparent)",
+                        background: "transparent",
+                        color: "var(--hero-ink)",
+                        maxWidth: 160,
+                      }}
+                    >
+                      <option value="">Default model</option>
+                      {MODELS.map((mo) => (
+                        <option key={mo.id} value={mo.id}>
+                          {mo.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => replay.mutate()}
+                      disabled={replay.isPending}
+                      className="mono-label"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: 9,
+                        padding: "3px 10px",
+                        borderRadius: 5,
+                        border: "1px solid color-mix(in oklab, var(--hero-ink) 35%, transparent)",
+                        color: "var(--hero-ink)",
+                        background: "transparent",
+                        opacity: replay.isPending ? 0.5 : 1,
+                      }}
+                      title="Re-run this goal as a new mission, optionally with a different model"
+                    >
+                      <RotateCcw style={{ width: 11, height: 11 }} />
+                      {replay.isPending ? "Replaying…" : "Replay"}
+                    </button>
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -1267,11 +1345,11 @@ function MissionDetailPage() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button
                   className="btn btn-primary btn-sm"
-                  disabled={retry.isPending}
-                  onClick={() => retry.mutate()}
+                  disabled={replay.isPending}
+                  onClick={() => replay.mutate()}
                 >
                   <RotateCcw size={11} />
-                  {retry.isPending ? "Retrying…" : "Retry · same goal, new mission"}
+                  {replay.isPending ? "Replaying…" : "Replay · same goal, new mission"}
                 </button>
                 <Link to="/govern" search={{ tab: "guardrails" }} className="btn btn-ghost btn-sm">
                   View guardrails

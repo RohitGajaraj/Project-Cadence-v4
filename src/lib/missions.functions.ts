@@ -23,6 +23,8 @@ export type MissionDetail = {
     created_at: string;
     updated_at: string;
     completed_at: string | null;
+    /** D4-REPLAY: the mission this one was replayed from (null otherwise). */
+    replayed_from_mission_id: string | null;
   };
   /** Aggregated from ai_events over the mission's run traces (F-DESIGN-EMBER
    * screen 4: the detail hero's started/cost/tokens/trace stat row). */
@@ -215,6 +217,19 @@ export const getMission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!mission) throw new Error("Mission not found");
 
+    // D4-REPLAY: resolve the branch link in a SEPARATE error-tolerant read so the
+    // main mission select (and the whole detail page) keeps working before the
+    // replayed_from migration applies. On a missing-column error, default null.
+    const { data: rfRow, error: rfErr } = await supabase
+      .from("missions")
+      .select("replayed_from_mission_id")
+      .eq("id", data.missionId)
+      .maybeSingle();
+    const replayedFrom =
+      !rfErr && rfRow
+        ? ((rfRow as { replayed_from_mission_id?: string | null }).replayed_from_mission_id ?? null)
+        : null;
+
     // Pull trace_id from the first ai_events row per run (cheap, no join).
     const { data: runs } = await supabase
       .from("agent_runs")
@@ -324,7 +339,7 @@ export const getMission = createServerFn({ method: "POST" })
     }
 
     return {
-      mission: mission as MissionDetail["mission"],
+      mission: { ...mission, replayed_from_mission_id: replayedFrom } as MissionDetail["mission"],
       usage,
       hops: (runs ?? []).map((r) => {
         const cp = latestByRun.get(r.id);
