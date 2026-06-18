@@ -21,13 +21,14 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { CadenceMark, MonoLabel, StepDot } from "@/components/cadence/Primitives";
+import { CadenceMark, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { generateDailyBrief } from "@/lib/copilot.functions";
-import { listAgents, listAgentRuns, runAgent } from "@/lib/agents.functions";
+import { listAgentRuns } from "@/lib/agents.functions";
+import { AgentRelay } from "@/components/agents/AgentRelay";
 import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou, getColdStart, getLoopPulse } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
@@ -57,7 +58,6 @@ function Dashboard() {
   const fetchDashboard = useServerFn(getDashboard);
   const fetchTasks = useServerFn(listTasks);
   const fetchProjects = useServerFn(listProjects);
-  const fetchAgents = useServerFn(listAgents);
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
@@ -71,7 +71,6 @@ function Dashboard() {
   const mUpdateTask = useServerFn(updateTask);
   const mDeleteTask = useServerFn(deleteTask);
   const mBrief = useServerFn(generateDailyBrief);
-  const mRunAgent = useServerFn(runAgent);
   const mResolveApproval = useServerFn(resolveApproval);
   const mStartMission = useServerFn(startOrchestratedMission);
   const recordRitual = useServerFn(recordRitualSession);
@@ -79,7 +78,6 @@ function Dashboard() {
   const dash = useQuery({ queryKey: ["dashboard"], queryFn: () => fetchDashboard() });
   const tasks = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
-  const agents = useQuery({ queryKey: ["agents"], queryFn: () => fetchAgents() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
   // WEDGE: the first teardown creates the workspace's first opportunity, which
@@ -163,14 +161,6 @@ function Dashboard() {
     onSuccess: () => {
       invalidate("dashboard");
       toast.success("Brief refreshed");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const dispatchAgent = useMutation({
-    mutationFn: (data: { agentId: string; input: string }) => mRunAgent({ data }),
-    onSuccess: () => {
-      invalidate("runs");
-      toast.success("Agent finished");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -304,15 +294,6 @@ function Dashboard() {
   const totalCalls = callCount + clearedSession;
   const briefRow = d?.brief as { summary?: string | null; created_at?: string } | null | undefined;
 
-  const agentRows = agents.data?.agents ?? [];
-  // Latest run per agent — the rail note shows what each agent last did,
-  // like the reference's per-agent status notes (live, not invented).
-  const latestRunByAgent = new Map<string, { input: string; status: string }>();
-  for (const r of runRows) {
-    if (r.agent_name && !latestRunByAgent.has(r.agent_name)) {
-      latestRunByAgent.set(r.agent_name, { input: r.input ?? "", status: r.status });
-    }
-  }
   const taskRows = tasks.data?.tasks ?? [];
 
   return (
@@ -969,7 +950,9 @@ function Dashboard() {
           )}
         </section>
 
-        {/* AGENT RAIL */}
+        {/* AGENT-EXP: Today shows one calm live line of what is running now, not a
+            roster of chips. The full relay (the mission) and the team (Engine Room)
+            are one click away. */}
         <section style={{ marginBottom: 24 }}>
           <div
             style={{
@@ -979,31 +962,10 @@ function Dashboard() {
               marginBottom: 10,
             }}
           >
-            <MonoLabel icon={Bot}>AI agents</MonoLabel>
-            <span className="mono-label">
-              {agentRows.length} on staff · {activeAgents} running
-            </span>
+            <MonoLabel icon={Bot}>Running now</MonoLabel>
+            {activeAgents > 0 ? <span className="mono-label">{activeAgents} running</span> : null}
           </div>
-          <div
-            className="scrollbar-thin"
-            style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}
-          >
-            {agentRows.map((a) => (
-              <AgentChip
-                key={a.id}
-                agent={a}
-                note={latestRunByAgent.get(a.name)?.input || null}
-                running={runRows.some((r) => r.status === "running" && r.agent_name === a.name)}
-                onRun={(input) => dispatchAgent.mutate({ agentId: a.id, input })}
-                pending={dispatchAgent.isPending && dispatchAgent.variables?.agentId === a.id}
-              />
-            ))}
-            {agentRows.length === 0 && (
-              <p style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
-                No agents yet — set one up in Missions.
-              </p>
-            )}
-          </div>
+          <AgentRelay variant="mini" workspaceId={activeWorkspace?.id ?? null} />
         </section>
 
         {/* TODAY'S TASKS: light personal planning, demoted to a quiet aside.
@@ -1186,105 +1148,8 @@ function StartMissionButton({
   );
 }
 
-/* Agent chip — reference visual (soft-stone card, role kicker, display name,
-   status dot + note); production behavior (tap to open the dispatch form). */
-function AgentChip({
-  agent,
-  note,
-  running,
-  onRun,
-  pending,
-}: {
-  agent: { id: string; name: string; role: string };
-  note: string | null;
-  running: boolean;
-  onRun: (input: string) => void;
-  pending: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-
-  return (
-    <div className="relative" style={{ minWidth: 148, flex: "0 0 auto" }}>
-      <button
-        onClick={() => setOpen((s) => !s)}
-        className="lift"
-        style={{
-          width: "100%",
-          textAlign: "left",
-          borderRadius: 8,
-          border: "1px solid var(--hairline)",
-          background: "var(--soft-stone)",
-          padding: "10px 12px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div className="mono-label" style={{ fontSize: 9 }}>
-          {agent.role.replace("AI ", "")}
-        </div>
-        <div className="font-display" style={{ fontSize: 15, marginTop: 2 }}>
-          {agent.name}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginTop: 7,
-            fontSize: 10.5,
-            color: "var(--ink-subtle)",
-          }}
-        >
-          <StepDot status={running ? "running" : note ? "completed" : "planned"} />
-          <span
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: 120,
-            }}
-          >
-            {running ? "running now" : note || "idle · ready"}
-          </span>
-        </div>
-      </button>
-      {open && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!text.trim()) return;
-            onRun(text.trim());
-            setText("");
-            setOpen(false);
-          }}
-          className="absolute z-20 top-full mt-2 left-0 w-64 rounded-md border hairline bg-card p-3 shadow-elevated"
-        >
-          <textarea
-            autoFocus
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={3}
-            placeholder={`Brief ${agent.name}…`}
-            className="input resize-none text-xs"
-          />
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-[11px] text-muted-foreground"
-            >
-              Cancel
-            </button>
-            <button disabled={pending} className="btn btn-primary btn-sm disabled:opacity-60">
-              {pending ? "Running…" : "Dispatch · runs once"}
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
-  );
-}
+// AGENT-EXP: AgentChip + the ad-hoc dispatch-from-Today affordance were retired
+// with the agent rail. Today shows the live relay; agents run via missions.
 
 /* Tasks panel — reference layout (span 7, input row, checkbox list, deep
    pill); production CRUD (add/toggle/delete persist to the workspace). */

@@ -29,6 +29,7 @@ import { MonoLabel, StepDot, StatusBadge, VerdictChip } from "@/components/caden
 import { toolConsequence, REVERSIBILITY_LABEL } from "@/lib/tool-consequences";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
+import { AgentRelay } from "@/components/agents/AgentRelay";
 import { MODELS } from "@/lib/ai/models";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, cancelMission, type MissionDetail } from "@/lib/missions.functions";
@@ -1035,6 +1036,10 @@ function MissionDetailPage() {
               </span>
             </div>
           </header>
+
+          {/* AGENT-EXP: the relay is the lede - the named faces in motion, grouped
+              by station. The plan/graph + full execution trace stay below as detail. */}
+          <AgentRelay variant="full" missionId={missionId} />
 
           {/* Production: live-refresh marker + capture-as-decision, quiet row. */}
           <div

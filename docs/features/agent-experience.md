@@ -2,7 +2,7 @@
 
 > **What this is.** The canonical plan for how Cadence models, names, shows, and manages its agents: the resolution of the long-standing "19 agents vs 6" confusion, the cast-vs-crew exposure model, the friendly naming + visual-identity system, and the live "relay" that shows agents working (in parallel) under each station. This builds ON the shipped agent substrate (orchestrator, memory, reactor, swarm HUD) documented in [`agent-ecosystem-plan.md`](./agent-ecosystem-plan.md); it does not replace it. It turns that substrate into a calm, legible, branded surface that honors the Engine-Room Doctrine.
 >
-> **Status (2026-06-18):** spec captured; building. Founder ruling 2026-06-18: the standing design-last rule does NOT apply to this initiative, so BOTH phases (foundation + the experience UX) build now under this initiative's own authority (see section 8). Worktree `worktree-agent-experience` (branched off the overnight-build tip so it carries the latest agent work, e.g. `F-AGENTS-MENTIONABLE`).
+> **Status (2026-06-18):** BUILT, both phases. Gate green: `tsc --noEmit` clean, `bun run build` clean (24.8s), humanized (zero em/en dashes), and lint-clean on every changed file (0 errors). Founder ruling 2026-06-18: the standing design-last rule does NOT apply to this initiative, so both phases shipped under its own authority (see section 8). On `worktree-agent-experience` (off the overnight tip); pending merge to main + live-verify on the next publish.
 >
 > **Why this exists.** The strategy canon described "19+ agents that drill down to 6," but how that resolves in the product was never clear, and the code carried three un-reconciled agent vocabularies (a 4+1 live seed, a 5-face display map written against different slugs, and 6 "stations" that exist only as copy). The result: several seeded agents (including the primary `discovery-scout`) leak raw-ish names because they map to no face. This plan resolves the model once, cleans the seam, populates every station, tightens every prompt, and gives agents a modern identity, while keeping the front calm.
 
@@ -82,7 +82,7 @@ Verified in the codebase (so an implementer does not work from a stale premise):
 - The 6 stations exist in code only as stray copy strings, never as structure.
 - A second display path, `src/lib/memory-view.ts` `agentLabel()`, title-cases slugs independently of the faces and must be reconciled.
 
-The fix: a single three-tier catalog in `agent-vocabulary.ts` (stations, faces, specialists) from which the slug maps are derived, made total so no canonical slug ever leaks; plus two safe migrations (columns + canonical seed + the `handle_new_user` fix; then an idempotent backfill that classifies every existing row and re-enables the cast). No slug rename, no row delete, so history and in-flight missions are untouched.
+The fix: a single three-tier catalog in `agent-vocabulary.ts` (stations, faces, specialists) from which the slug maps are derived, made total so no canonical slug ever leaks. The catalog is the SINGLE source for station/face/tier/hue/glyph (imported on both client and server), so NO database columns are added: the `agents` table keeps slug/name/role/system_prompt/color/enabled and everything else derives from the catalog by slug. Two safe migrations carry the rest: the canonical seed (new names, roles, prompts) plus the `handle_new_user` seed fix, then an idempotent backfill that re-seeds every existing user and re-asserts the roster cut. No slug rename, no row delete, no schema change, so history and in-flight missions are untouched.
 
 ---
 
@@ -137,7 +137,7 @@ There is a standing founder ruling (SSOT section 1, 2026-06-18) that the design 
 **Phase 1, agent foundation (buildable now, no founder taste needed):**
 1. The three-tier catalog in `agent-vocabulary.ts` (stations, faces, specialists; total resolvers; fixes the leak). Reconcile `memory-view.ts`.
 2. The naming + identity tokens (the agent palette + glyphs as data; the called-out component spec).
-3. Migration A (columns + canonical seed incl. the new agents + the `handle_new_user` fix) and Migration B (idempotent backfill + enable the cast). Smoke-test signup.
+3. Migration A (canonical seed incl. the new `critic` agent + the `handle_new_user` seed fix; no schema change) and Migration B (idempotent backfill: re-seed every user + re-assert the cut). Smoke-test signup.
 4. The prompt rewrite + the adversarial proofread pass + at least one eval per cast agent.
 5. Orchestrator station-aware planning (group the roster by station in the planner prompt; persist `mission_steps.station`).
 

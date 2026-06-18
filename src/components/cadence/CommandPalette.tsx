@@ -84,9 +84,9 @@ export function CommandPalette() {
                 <Item icon={MessageCircle} label="Ask" hint="G C" onSelect={() => go("/chat")} />
                 <Item
                   icon={Bot}
-                  label="Agents · roster & telemetry"
+                  label="Team · the agent roster"
                   hint="G A"
-                  onSelect={() => go("/missions", { tab: "agents" })}
+                  onSelect={() => go("/govern", { tab: "team" })}
                 />
                 <Item
                   icon={CalIcon}

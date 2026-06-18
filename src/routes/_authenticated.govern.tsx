@@ -17,6 +17,7 @@ import { listProjects } from "@/lib/projects.functions";
 import { listTraces } from "@/lib/traces.functions";
 import { getDriftOverview } from "@/lib/drift.functions";
 import { ControlsPanel } from "@/components/governance/ControlsPanel";
+import { AgentRosterPanel } from "@/components/governance/AgentRosterPanel";
 import { ApprovalsPanel } from "@/components/governance/ApprovalsPanel";
 import { NotificationsPanel } from "@/components/governance/NotificationsPanel";
 import { IncidentsPanel } from "@/components/governance/IncidentsPanel";
@@ -40,6 +41,7 @@ import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 type Tab =
   | "attention"
   | "controls"
+  | "team"
   | "approvals"
   | "guardrails"
   | "budgets"
@@ -55,6 +57,7 @@ type Tab =
 const TABS: { id: Tab; label: string }[] = [
   { id: "controls", label: "Controls" },
   { id: "attention", label: "Attention" },
+  { id: "team", label: "Team" },
   { id: "approvals", label: "Approvals" },
   { id: "guardrails", label: "Safety" },
   { id: "budgets", label: "Spend" },
@@ -70,6 +73,7 @@ const TABS: { id: Tab; label: string }[] = [
 // GOVERN_DESC from the reference, verbatim — keyed by the lowercase tab ids.
 const GOVERN_DESC: Record<Tab, string> = {
   attention: "What needs you right now: approvals waiting, spend nearing caps, and a stalled loop.",
+  team: "Your agents: who they are, what they are trusted to do, and what each has been up to.",
   controls: "Kill switch, mission caps, stuck approvals, auto-pipelines.",
   approvals: "Tool calls waiting on a human. Approve runs them; reject keeps them paused.",
   guardrails: "Rules that block, warn, or redact text on every AI call.",
@@ -186,6 +190,7 @@ function GovernPage() {
 
         {tab === "controls" && <ControlsPanel onOpenQueue={() => setTab("approvals")} />}
         {tab === "attention" && <NotificationsPanel />}
+        {tab === "team" && <AgentRosterPanel workspaceId={activeWorkspace?.id ?? null} />}
         {tab === "approvals" && <ApprovalsPanel />}
         {tab === "guardrails" && <GuardrailsPanel />}
         {tab === "budgets" && <BudgetsPanel />}

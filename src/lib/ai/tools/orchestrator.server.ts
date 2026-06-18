@@ -25,6 +25,12 @@ import {
   reflectStepStatusFromRuns,
   type MissionLite,
 } from "@/lib/ai/mission-advance.server";
+import {
+  AGENT_STATIONS,
+  AGENT_STATION_ORDER,
+  resolveStationTotal,
+  type AgentStation,
+} from "@/lib/agent-vocabulary";
 
 // Re-export the same helper signature the registry uses.
 function def<S extends z.ZodTypeAny>(d: ToolDef<S>) {
@@ -129,17 +135,38 @@ export const missionPlan = def({
       );
     }
 
+    // Group the roster by loop station so the planner plans in station order and
+    // can place independent specialists in the same station in parallel. Unknown
+    // slugs fall to BUILD via resolveStationTotal, so nothing is dropped.
+    const byStation = new Map<AgentStation, { slug: string; role: string }[]>();
+    for (const a of roster) {
+      const st = resolveStationTotal(a.slug);
+      const list = byStation.get(st) ?? [];
+      list.push(a);
+      byStation.set(st, list);
+    }
+    const rosterLines: string[] = [];
+    for (const st of AGENT_STATION_ORDER) {
+      const members = byStation.get(st);
+      if (!members || members.length === 0) continue;
+      rosterLines.push(`${AGENT_STATIONS[st].name.toUpperCase()}: ${AGENT_STATIONS[st].blurb}`);
+      for (const a of members) rosterLines.push(`  - ${a.slug}: ${a.role}`);
+    }
+
     const planSystem = [
-      "You are a mission planner. Given a goal and a roster of specialist agents, return a small DAG of sub-tasks.",
+      "You are a mission planner for Cadence, whose product loop runs in six stations, in order: Sense, Decide, Define, Build, Ship, Learn.",
+      "Given a goal and a roster of specialist agents grouped by station, return a small DAG of sub-tasks.",
       "",
-      "Specialist roster (use these slugs exactly):",
-      ...roster.map((a) => `- ${a.slug} — ${a.role}`),
+      "Specialist roster, by station (use these slugs exactly):",
+      ...rosterLines,
       "",
       "Output STRICT JSON only with this shape:",
       `{"summary":"one-sentence mission framing","steps":[{"agent_slug":"<slug>","sub_goal":"concrete self-contained instruction","depends_on":[],"rationale":"why this step"}]}`,
       "",
       "Rules:",
-      "- 1 to 6 steps. Fewer is better.",
+      "- 1 to 6 steps. Fewer is better, but use multiple specialists when the goal genuinely needs them.",
+      "- Plan in station order: earlier-station work (Sense, Decide) comes before later work (Build, Ship, Learn).",
+      "- Within a single station you MAY run two or three specialists in parallel (give them the same depends_on) when their work is independent.",
       "- Each step's sub_goal must be self-contained (the specialist will not see the wider plan).",
       "- depends_on is an array of zero-based indices of EARLIER steps that must finish first. Leave [] for root steps.",
       "- Only use agent_slugs from the roster above. Never invent a slug.",
