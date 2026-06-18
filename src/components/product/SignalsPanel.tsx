@@ -29,6 +29,7 @@ import {
 import { EmptyState } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import type { ArtifactKind } from "@/lib/lineage.functions";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { relTime } from "./format";
 
 const SOURCES = ["manual", "interview", "ticket", "review", "sales", "slack", "twitter"];
@@ -53,6 +54,10 @@ type Row = {
 export function SignalsPanel() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  // F3 (per-product feed): scope the discovery feed to the active product. When
+  // none is active (all-products view) productId is null and the feed is the
+  // full, unscoped one, exactly as before.
+  const { activeProductId } = useWorkspace();
   const fSignals = useServerFn(listSignals);
   const fThemes = useServerFn(listThemes);
   const mCreate = useServerFn(createSignal);
@@ -69,11 +74,14 @@ export function SignalsPanel() {
   // the tab is unfocused (refetchIntervalInBackground defaults to false), and
   // only runs while the discovery surface is mounted.
   const signals = useQuery({
-    queryKey: ["signals"],
-    queryFn: () => fSignals(),
+    queryKey: ["signals", activeProductId],
+    queryFn: () => fSignals({ data: { productId: activeProductId } }),
     refetchInterval: 30_000,
   });
-  const themes = useQuery({ queryKey: ["themes"], queryFn: () => fThemes() });
+  const themes = useQuery({
+    queryKey: ["themes", activeProductId],
+    queryFn: () => fThemes({ data: { productId: activeProductId } }),
+  });
 
   const inv = () => {
     qc.invalidateQueries({ queryKey: ["signals"] });
@@ -81,7 +89,8 @@ export function SignalsPanel() {
   };
 
   const add = useMutation({
-    mutationFn: (d: { content: string; source: string }) => mCreate({ data: d }),
+    mutationFn: (d: { content: string; source: string }) =>
+      mCreate({ data: { ...d, project_id: activeProductId } }),
     onSuccess: () => {
       inv();
       toast.success("Signal captured.");
@@ -89,7 +98,8 @@ export function SignalsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
   const bulk = useMutation({
-    mutationFn: (d: { text: string; source: string }) => mBulk({ data: d }),
+    mutationFn: (d: { text: string; source: string }) =>
+      mBulk({ data: { ...d, project_id: activeProductId } }),
     onSuccess: (r) => {
       inv();
       toast.success(`${r.inserted} signals imported.`);
@@ -102,7 +112,7 @@ export function SignalsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
   const cluster = useMutation({
-    mutationFn: () => mCluster({}),
+    mutationFn: () => mCluster({ data: { productId: activeProductId } }),
     onSuccess: (r) => {
       inv();
       toast.success(r.message ?? "Clustering done.");
@@ -147,7 +157,11 @@ export function SignalsPanel() {
 
   const allSignals = signals.data?.signals ?? [];
   const themeList = themes.data?.themes ?? [];
-  const unclustered = allSignals.filter((s) => !s.theme_id);
+  // Show a signal standalone if it has no theme, OR if its theme is not in the
+  // current (product-scoped) theme list, so a signal whose theme was clustered
+  // under a different scope never silently vanishes from this view.
+  const themeIds = new Set(themeList.map((t) => t.id));
+  const unclustered = allSignals.filter((s) => !s.theme_id || !themeIds.has(s.theme_id));
 
   // Reference rows are themes with evidence; fresh captures ride on top.
   const rows: Row[] = [

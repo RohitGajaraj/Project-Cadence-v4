@@ -255,7 +255,7 @@ export function OnboardingFlow() {
 
   /* — step 3 data: real themes as goal candidates — */
   const fListThemes = useServerFn(listThemes);
-  const themesQ = useQuery({ queryKey: ["themes"], queryFn: () => fListThemes() });
+  const themesQ = useQuery({ queryKey: ["themes"], queryFn: () => fListThemes({ data: {} }) });
   const goalOptions = ((themesQ.data?.themes ?? []) as Array<{ id: string; title: string }>).slice(
     0,
     3,

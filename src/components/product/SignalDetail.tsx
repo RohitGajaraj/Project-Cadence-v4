@@ -85,8 +85,10 @@ export function SignalDetail({ id }: { id: string }) {
   const fLineage = useServerFn(getLineage);
   const mGen = useServerFn(generatePrd);
 
-  const signals = useQuery({ queryKey: ["signals"], queryFn: () => fSignals() });
-  const themes = useQuery({ queryKey: ["themes"], queryFn: () => fThemes() });
+  // Unscoped (no product filter): a signal's detail needs the full set to find
+  // its theme members and related signals, regardless of the active product.
+  const signals = useQuery({ queryKey: ["signals"], queryFn: () => fSignals({ data: {} }) });
+  const themes = useQuery({ queryKey: ["themes"], queryFn: () => fThemes({ data: {} }) });
 
   const allSignals = (signals.data?.signals ?? []) as SignalRow[];
   const themeList = (themes.data?.themes ?? []) as ThemeRow[];

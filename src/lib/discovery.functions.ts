@@ -193,16 +193,26 @@ Be concrete and buildable. Only tasks the spec actually implies - do not invent 
 
 // ---------- SIGNALS ----------
 
+// F3 (per-product feed): when a product is active the client passes its id and
+// the feed scopes to that product (`project_id`); with no product active the
+// input is empty and the query is unscoped, exactly as before (back-compatible).
+// Unassigned signals (no product, e.g. the workspace ingest webhook) live in the
+// all-products view, so nothing is hidden, it just is not filed under a product.
 export const listSignals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((i: unknown) =>
+    z.object({ productId: z.string().uuid().nullable().optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    let query = context.supabase
       .from("signals")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
+    if (data.productId) query = query.eq("project_id", data.productId);
+    const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return { signals: data ?? [] };
+    return { signals: rows ?? [] };
   });
 
 export const createSignal = createServerFn({ method: "POST" })
@@ -245,6 +255,8 @@ export const bulkImportSignals = createServerFn({ method: "POST" })
         source: z.string().min(1).max(40).default("paste"),
         // newline-separated, one signal per line
         text: z.string().min(2).max(50_000),
+        // F3: file the imported signals under the active product when one is set.
+        project_id: z.string().uuid().nullable().optional(),
       })
       .parse(i),
   )
@@ -259,6 +271,7 @@ export const bulkImportSignals = createServerFn({ method: "POST" })
       user_id: context.userId,
       content,
       source: data.source,
+      project_id: data.project_id ?? null,
     }));
     const { error } = await context.supabase.from("signals").insert(rows);
     if (error) throw new Error(error.message);
@@ -278,25 +291,36 @@ export const deleteSignal = createServerFn({ method: "POST" })
 
 export const listThemes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((i: unknown) =>
+    z.object({ productId: z.string().uuid().nullable().optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    let query = context.supabase
       .from("themes")
       .select("*")
       .order("frequency", { ascending: false });
+    if (data.productId) query = query.eq("project_id", data.productId);
+    const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return { themes: data ?? [] };
+    return { themes: rows ?? [] };
   });
 
 /** AI cluster: read unclustered signals, ask Gemini Pro for themes JSON, persist. */
 export const clusterSignals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((i: unknown) =>
+    z.object({ productId: z.string().uuid().nullable().optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    const { data: sigs, error } = await supabase
-      .from("signals")
-      .select("id,content,source")
-      .is("theme_id", null)
+    // F3: when a product is active, cluster only that product's unclustered
+    // signals (and stamp the new themes with it), so each product gets its own
+    // themes. With no product active, cluster the user's unclustered signals as
+    // before. Unassigned signals (no product) cluster in the all-products view.
+    let sigQuery = supabase.from("signals").select("id,content,source").is("theme_id", null);
+    if (data.productId) sigQuery = sigQuery.eq("project_id", data.productId);
+    const { data: sigs, error } = await sigQuery
       .order("created_at", { ascending: false })
       .limit(80);
     if (error) throw new Error(error.message);
@@ -345,6 +369,7 @@ Return STRICT JSON only — no prose, no markdown fences.`;
         .from("themes")
         .insert({
           user_id: userId,
+          project_id: data.productId ?? null,
           title: t.title.slice(0, 120),
           summary: (t.summary ?? "").slice(0, 400),
           severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),

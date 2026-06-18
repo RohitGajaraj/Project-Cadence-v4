@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-18 · F3 per-product discovery: opt-in product scope, all-products view is the catch-all, no migration
+
+**Decision:** Scope the discovery feed (signals + themes + clustering) to the active product via the existing `project_id` columns, as an **opt-in, back-compatible** change: with a product active the feed/clustering filter on `project_id`; with no product active (the all-products view) every query is unscoped, byte-identical to the prior behavior. Unassigned signals (no product, e.g. the workspace ingest webhook) live in the all-products view rather than being force-filed into a product.
+
+**Why:** F3 is the founder's named top core candidate (the discovery engine). The schema already had `project_id` on `signals`/`themes`, so no migration was needed, only the app starting to use it. Making it opt-in (null product = unscoped) bounds the blast radius: nothing changes for existing users until they actively switch to a product, and the live app cannot be verified unattended, so a back-compatible default is the safe posture.
+
+**Tradeoffs considered:** (1) Show product signals PLUS unassigned in every product feed (`project_id = X OR NULL`) so webhook signals appear everywhere, rejected: it muddies the per-product separation and makes the clustering count inconsistent with the feed. Cleaner: a product feed is exactly its signals; the all-products view is the catch-all. (2) Force the webhook ingest to assign a product, rejected: the webhook is workspace-level by design and has no product context; assigning at capture time (for manual/active-product captures) plus an all-products home is the honest model. (3) Block on a migration to add product scoping to opportunities/specs too, deferred: F3 is specifically the signals/themes feed; opportunity/spec scoping is separate future work.
+
+**Impact:** `src/lib/discovery.functions.ts` (+ `SignalsPanel.tsx`, `SignalDetail.tsx`, `OnboardingFlow.tsx`). No migration. F3 stays ◐ (remaining: the spend-gated auto-cluster cron). Detail: [`../features/f3-continuous-discovery.md`](../features/f3-continuous-discovery.md).
+
 ### 2026-06-18 · R3 global bell badges the whole Attention feed, not a subset, and keeps the existing Approvals badge
 
 **Decision:** The new global Attention bell in the TopBar (cycle 15) badges the **entire** Attention feed count (approvals + spend alerts + stalled loop) and links to `/govern?tab=attention`. The pre-existing Trust-row "Approvals" badge (`getNeedsYou`, linking to `?tab=approvals`) is kept as-is, not merged into or replaced by the bell.
