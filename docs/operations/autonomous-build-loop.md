@@ -70,16 +70,18 @@ For each item:
 
 ## 8. Resilience and retry
 
-- **Usage limit / quota / session-window expiry (not a code problem):** do not halt, do not fail the item. Read the reset time from the limit message and schedule the wake to just after it (the reset time plus about a minute), then resume exactly where you left off (`ScheduleWakeup`). If the reset time is not known, poll: re-check roughly every 30 minutes until the window reopens, then continue. This timed-to-the-reset wait is the ONLY case where a wait approaches 30 minutes.
+- **Usage limit / quota / session-window expiry (not a code problem):** do not halt, do not fail the item. If the limit message states a reset time, schedule the wake to just after it (reset plus about a minute) and resume exactly where you left off (`ScheduleWakeup`). **If the reset time is not known, re-check on a sub-five-minute cadence (`ScheduleWakeup`, ~270s), NOT every 30 minutes** (founder ruling, 2026-06-18). The only wait that may exceed five minutes is one timed precisely to a KNOWN reset stamp; an unknown-reset poll is always sub-five-minutes so the loop resumes the instant the window reopens.
 - **Cadence (while the session window is open):** build fast. Roll straight from one item to the next; if a break is genuinely needed (for example a clean context-boundary roll), keep it under five minutes. Never slow to a long idle cadence because the backlog looks thin. A thin backlog means pick the next most important item or start the design pass, not wait.
 - **Real build-gate failure (code broke tsc/build/lint):** attempt a bounded fix (2 to 3 tries). If still red, revert the item's changes, skip the item, queue it in the report with the error text, and move to the next buildable item. The item is parked; the loop never dies.
 - **Thin or exhausted backlog:** do NOT slow down or idle. Pick the next most important item, including ones that need a migration (build them pre-migration-tolerant; the founder syncs later) or are otherwise harder, in priority order (v10, then v9, then v8). Only when genuinely nothing buildable remains, run the design-quality pass (section 14). The full-product humanization sweep (HUMAN-SWEEP) is deferred to the very end, done as one complete scan once everything is built, never mid-build.
 
 ## 9. Stop and pause conditions (narrow by design)
 
-- **Pause and auto-resume** for: usage limits (retry per section 8).
-- **Stop and wait for the founder** only for: a destructive or outward-facing action that needs them, or an explicit founder stop. (Backlog exhausted does NOT stop the loop; it routes to the design-quality pass, section 14.)
-- Everything else (a failing item, an ambiguous item, a gated item) routes to skip-and-continue. The loop does not halt over a single item.
+> **⛔ STANDING INSTRUCTION (founder, 2026-06-18, non-negotiable, repeated): the loop NEVER pauses, halts, idles, or "schedules a wakeup and stops" on its own. Only the founder ends the run, manually.** A thin or seemingly-exhausted backlog is NOT a stop condition: skip founder-gated items and build the next non-gated one down the v10 → v9 → v8 priority list (migrations, visual work, and loop-coupled items all count, build them, gate offline, flag for publish-verify). The ONLY wait is a real usage-limit/session reset, and even then the re-check is sub-five-minutes (section 8), never a 30-minute or hourly sleep. Do not invent reasons to wait ("better with the founder watching", "needs visual verification", "nothing clean left"); those are reasons to flag-and-continue, not to pause. _(History: the loop wrongly scheduled 30 then 60 minute waits on 2026-06-18 after wrongly concluding the backlog was exhausted; the founder corrected it. Do not repeat.)_
+
+- **Pause and auto-resume** for: usage limits only (sub-five-minute retry per section 8).
+- **Stop and wait for the founder** only for: a destructive or outward-facing action that needs them, or an explicit founder stop. (Backlog "exhausted" does NOT stop the loop; keep building down the priority list, then the design-quality pass, section 14.)
+- Everything else (a failing item, an ambiguous item, a gated item) routes to skip-and-continue. The loop does not halt over a single item, and it does not halt because items look hard.
 
 ## 10. Status reporting
 
