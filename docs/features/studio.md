@@ -154,7 +154,11 @@ Everything below documents the shipped implementation: what a session feels like
 ## Where to find it
 
 - **`/studio`**: session list (5s live poll; `waiting_approval` renders as "waiting on you" in amber) + composer. Command palette: "Studio" · shortcut **G B**. `/build` redirects here.
-- **`/studio/$missionId`**: left: live timeline (thoughts, tool calls with status chips, finals, steers interleaved) + inline approve/reject gate cards + steering composer. Right tabs (`?tab=`): **Changes** (file list + per-file Monaco diff, lazy-loaded), **PR & CI** (link, checks, refresh, merge-gate pointer), **Cost** (per-run model/tokens/$ + total).
+- **`/studio/$missionId`**: left: live timeline (thoughts, tool calls with status chips, finals, steers interleaved) + inline approve/reject gate cards + steering composer. Right tabs (`?tab=`): **Changes** (file list + per-file Monaco diff, lazy-loaded; the revision history carries a confirm-gated **Revert** button per prior revision, K2 below), **PR & CI** (link, checks, refresh, merge-gate pointer), **Cost** (per-run model/tokens/$ + total).
+
+### K2: one-action rollback (revert to a revision)
+
+The revision history (one row per `studio.commit`) carries a **Revert** button on every revision except the latest, shown only while the branch is live (`committed` / `pr_open`). It is **non-destructive**: `revertToRevision` (in `studio.functions.ts`) resolves GitHub auth for the changeset's workspace (`resolveGitHub`) and calls the shared `revertChangesetToRevision` helper (`src/lib/ai/studio-revert.server.ts`), which creates a NEW commit whose tree is the target revision's tree, parented on the current branch head, then fast-forwards the ref (`force:false`). History only ever moves forward, so the revert is itself a normal, revertible commit, and a stale-parent race is refused by GitHub rather than clobbering work. The revert is recorded as the next revision row. The operator initiating it is the authorization (same human-in-the-loop posture as the agent's gates). **Deferred (K2b):** a `studio.revert` agent engine-tool (needs an `agent_tools` migration to gate it) and a feature-flag kill (no flag system is tied to changesets yet).
 - **Today → "Needs you"**: Studio gates surface in the existing calls queue automatically (they are ordinary `agent_approvals`).
 - **PRD detail / Specs panel**: "Send to Studio".
 

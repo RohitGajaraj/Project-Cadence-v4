@@ -10,9 +10,11 @@ import {
   getChangesetDiff,
   getChangesetRevisions,
   rejectStagedFile,
+  revertToRevision,
   type StudioChangesetSummary,
 } from "@/lib/studio.functions";
 import { computeHunks } from "@/lib/ai/studio-hunks";
+import { useConfirm } from "@/hooks/use-confirm";
 import { ChangesetChip } from "./studio-ui";
 import { fmtCompact } from "./studio-format";
 
@@ -110,8 +112,25 @@ export function ChangesPanel({
   });
   const revisions = revs.data?.revisions ?? [];
 
-  // I1: operator curation (per-hunk reject + drop file), only before commit.
   const qc = useQueryClient();
+
+  // K2: operator rollback. Revert the branch to a prior revision (a forward,
+  // non-destructive commit). Only while the branch is live (committed / pr_open)
+  // and never to the latest revision (that is a no-op). Confirm-gated.
+  const confirm = useConfirm();
+  const fRevert = useServerFn(revertToRevision);
+  const canRevert = changeset?.status === "committed" || changeset?.status === "pr_open";
+  const revertMut = useMutation({
+    mutationFn: (vars: { changesetId: string; revisionId: string }) => fRevert({ data: vars }),
+    onSuccess: (res) => {
+      toast.success(`Reverted the branch to revision ${res.restored_from_revision_no}.`);
+      qc.invalidateQueries({ queryKey: ["studio-revisions", changeset?.id] });
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not revert to that revision."),
+  });
+
+  // I1: operator curation (per-hunk reject + drop file), only before commit.
   const canCurate = changeset?.status === "staged";
   const [rejected, setRejected] = useState<Set<number>>(new Set());
   useEffect(() => setRejected(new Set()), [selectedPath]);
@@ -449,6 +468,34 @@ export function ChangesPanel({
                   {r.commit_sha.slice(0, 7)}
                 </span>
               )}
+              {canRevert && i > 0 ? (
+                <button
+                  type="button"
+                  className="mono-label"
+                  disabled={revertMut.isPending}
+                  onClick={async () => {
+                    if (!changeset) return;
+                    const ok = await confirm({
+                      title: `Revert to revision ${r.revision_no}?`,
+                      body: `Creates a new commit on ${changeset.branch ?? "the branch"} that restores every file to revision ${r.revision_no} (${r.commit_sha.slice(0, 7)}). It moves history forward, so the revert is itself revertible.`,
+                      confirmLabel: "Revert",
+                    });
+                    if (!ok) return;
+                    revertMut.mutate({ changesetId: changeset.id, revisionId: r.id });
+                  }}
+                  style={{
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 6,
+                    padding: "2px 8px",
+                    fontSize: 10,
+                    color: "var(--ink-muted)",
+                    background: "transparent",
+                    cursor: revertMut.isPending ? "default" : "pointer",
+                  }}
+                >
+                  Revert
+                </button>
+              ) : null}
             </div>
           ))}
         </div>

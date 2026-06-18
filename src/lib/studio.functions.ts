@@ -22,6 +22,8 @@ import type { LoopStep } from "@/lib/ai/loop.server";
 import { applyHunkSelection } from "@/lib/ai/studio-hunks";
 import { callModel } from "@/lib/ai/runtime.server";
 import { humanizeText } from "@/lib/ai/humanize";
+import { revertChangesetToRevision } from "@/lib/ai/studio-revert.server";
+import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type StudioChangesetSummary = {
   id: string;
@@ -718,6 +720,47 @@ export const getChangesetRevisions = createServerFn({ method: "GET" })
       .order("revision_no", { ascending: false });
     if (error) throw new Error(error.message);
     return { revisions: (rows ?? []) as StudioRevision[] };
+  });
+
+/**
+ * K2: revert the changeset's branch to a prior revision's file state. Operator
+ * door for the rollback in `studio-revert.server.ts` (non-destructive: a forward
+ * commit restoring the target tree). Resolves GitHub auth for the changeset's
+ * workspace, then delegates to the shared helper. The operator initiating it IS
+ * the authorization (the same human-in-the-loop posture as the agent's gates).
+ */
+export const revertToRevision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ changesetId: z.string().uuid(), revisionId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const db = supabase as unknown as SupabaseClient;
+    const { data: csRow, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,workspace_id,branch,status")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!csRow) throw new Error("Changeset not found.");
+    const cs = csRow as { id: string; workspace_id: string | null; branch: string | null };
+    if (!cs.branch)
+      throw new Error("This changeset has no commits yet, so there is nothing to revert to.");
+    const { token, repo } = await resolveGitHub({
+      userId,
+      workspaceId: cs.workspace_id,
+      userClient: db,
+    });
+    return await revertChangesetToRevision({
+      supabase: db,
+      userId,
+      token,
+      repo,
+      changesetId: cs.id,
+      branch: cs.branch,
+      revisionId: data.revisionId,
+    });
   });
 
 /**
