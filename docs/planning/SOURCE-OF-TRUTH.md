@@ -1,8 +1,34 @@
 # Cadence, Single Source of Truth (SSOT)
 
-> **Founder: this is the ONE file to read.** Status, what we are building, what is deferred to you, findings, and progress all live here. Everything else (the feature dashboard, the build report, the strategy docs) is detail this file points to. The autonomous build loop keeps this file current every cycle.
+> **Founder: this is the ONE file to read.** The live cursor (section 0), status, what we are building, what is deferred to you, findings, and progress all live here. Everything else is **typed detail** this file points to (the map is in section 7). The autonomous build loop keeps this file current every cycle.
 >
-> **Last updated:** 2026-06-19 (added the Workspace / Accounts / Tenancy + Monetization initiative, WM-*; full plan [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md), board group G10 in [`feature-dashboard.md`](./feature-dashboard.md)). **Maintainer:** the autonomous build loop, every cycle.
+> **Last updated:** 2026-06-19 (folded the root `active-task.md` in as section 0; consolidated all work onto a single `main` branch; the doc map is now section 7). **Maintainer:** every tool, every unit of work.
+
+---
+
+## 0. The live cursor (NOW): read this first
+
+> This section replaces the old root `active-task.md` (folded in 2026-06-19). It is the single "what is in flight + what to pick next" cursor. Update it in the same unit of work as any change. Past work is in section 6 (progress log); the full dated history is in [`../../plan.md`](../../plan.md) section 4.
+
+**Current initiative:** Workspace, Accounts & Tenancy + Monetization (`WM-*`), founder-directed 2026-06-19. **Branch:** `main` (single-branch model as of 2026-06-19, branch consolidation). Build bible (per-ID specs): [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). Live board: group **G10** in [`feature-dashboard.md`](./feature-dashboard.md).
+
+**Status:** planning + docs landed (build bible, BYOK-removal cascade, MOAT canon `../strategy/moat.md`, credit engine `WM-M10`..`WM-M16` specified). No feature code yet.
+
+### Build next (critical path; build top-down per G10)
+- [ ] **WM-M1** - Entitlements core (5 account tiers + matrix). Effort S. No deps. `src/lib/entitlements.ts` (+ test).
+- [ ] **WM-F1** - Scope agent memory/runs/roster to workspace. Effort L. No deps. New migration + `src/lib/ai/memory.server.ts`.
+- [ ] **WM-M2** - accounts table + billing relocation + credit/decay migrations. Effort L. Needs WM-M1.
+- [ ] **WM-M10** - Credit unit + cost-to-credit conversion. Effort S. Needs WM-M1 (no DB). `src/lib/ai/pricing.ts` (+ test). First piece of the credit engine (plan §4.2.1).
+- then WM-F3 / WM-M5 / WM-F2 / WM-F9 (parallel) → WM-F4/F5 + WM-M3/M4 → WM-F7/F8 + WM-M6/M7/M8/M9 (M9 = remove self-serve BYOK) → WM-F6. Credit engine `WM-M10`..`WM-M16` builds on the `WM-M4` seam + `WM-M2` pool.
+
+### Hard gates (every tool, every commit)
+`bun run lint` + `tsc --noEmit` + `bun run build` green before commit. No em/en dashes. RLS-aware timestamped migrations. Commit explicit paths with a WHY. Single-branch model: commit to `main`.
+
+### Deferred (do NOT build now)
+`WM-S1`..`WM-S5` (showcase: sample workspace, guided tour, onboarding concierge, steward, demo population). Gate: platform ~50-60% complete.
+
+### Founder gates (need you; full list in section 4)
+Crescendo/Galaxy prices; Stripe secrets for `WM-M3`; flip `credits_enabled()` when the credit engine lands; confirm final tier display names + motif (Constellation is the default).
 
 ---
 
@@ -138,13 +164,21 @@ When you have a moment, these unblock the next tier. Each needs a decision/secre
 
 ---
 
-## 7. Where the detail lives (this file is the front door)
+## 7. The documentation map (this file is the front door)
 
-This SSOT is the founder-facing tracker. These remain as detail/machine views it supersedes for day-to-day tracking:
-- [`feature-dashboard.md`](./feature-dashboard.md), the per-feature status matrix (read by the session-start hook; kept for machine/loop use).
-- [`overnight-build-report.md`](./overnight-build-report.md), the autonomous-loop run log (dated cycle-by-cycle detail).
-- [`../../plan.md`](../../plan.md) §4, the append-only build log.
-- [`considerations.md`](./considerations.md), cross-cutting engineering gaps (source of the P0/P1 infra items in section 3).
-- [`v10_implementation-plan.md`](./v10_implementation-plan.md) + [`../strategy/`](../strategy/) (v10 blueprint, v9, v8), strategy/positioning canon.
+This SSOT is the one place for "where are we / what is next / what needs you" (sections 0-6). Everything else is **typed detail** it points to. Each doc owns ONE concern; never duplicate live status into them. The full operating doctrine (session-start steps, how to pick / mark / update a task, the new-initiative rule) is in [`../../AGENTS.md`](../../AGENTS.md) section "The Documentation Operating System".
 
-_Standing rule: every cycle updates THIS file (status + queue + progress) in the same unit of work as the change, then the detail views as needed._
+| When you need... | Go to |
+| --- | --- |
+| What is in flight + the next picks | **This file, section 0** |
+| What needs the founder (gated decisions/secrets) | **This file, section 4** |
+| Status of every feature (matrix + who-is-on-what claims) | [`feature-dashboard.md`](./feature-dashboard.md) |
+| Per-feature acceptance criteria / scope (F-IDs) | [`feature-backlog.md`](./feature-backlog.md) |
+| Current-initiative build specs (per-ID, cold-buildable) | [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) · [`byo-build-implementation-plan-2026-06-19.md`](./byo-build-implementation-plan-2026-06-19.md) (G11) |
+| Open bugs / blockers | [`known-issues.md`](./known-issues.md) |
+| Cross-cutting non-functional gaps | [`considerations.md`](./considerations.md) |
+| Dated build history (what shipped + why) | [`../../plan.md`](../../plan.md) section 4 |
+| Strategy / positioning / moat | [`../strategy/README.md`](../strategy/README.md) (the arbiter) |
+| Superseded snapshots / old run logs | [`archive/`](./archive/) |
+
+_Standing rule: every change updates THIS file (section 0 cursor + the relevant section) in the same unit of work, then the one typed ledger it touches. No status lives in two places._
