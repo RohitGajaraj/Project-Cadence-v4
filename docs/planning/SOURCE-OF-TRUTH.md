@@ -2,7 +2,7 @@
 
 > **Founder: this is the ONE file to read.** Status, what we are building, what is deferred to you, findings, and progress all live here. Everything else (the feature dashboard, the build report, the strategy docs) is detail this file points to. The autonomous build loop keeps this file current every cycle.
 >
-> **Last updated:** 2026-06-18 (post cycle-19 + full live verification + backlog reconciliation). **Maintainer:** the autonomous build loop, every cycle.
+> **Last updated:** 2026-06-18 (cycle 21: F-AGENTS-MENTIONABLE completed). **Maintainer:** the autonomous build loop, every cycle.
 
 ---
 
@@ -49,7 +49,7 @@ Strategic #1 (impact 7/10): it advances the binding P0 constraint (autonomous SE
 ### P2
 | ID | Title | Migration | Files / domain | Scope | Confidence |
 | --- | --- | --- | --- | --- | --- |
-| `F-AGENTS-MENTIONABLE` | @-mentionable agents → mission | no | mention parser in chat/card components + `chat.ts`/`missions.functions.ts` | Parse `@agentslug` → dispatch a mission (chat→mission spawn already exists, reuse it) | HIGH (thin reuse) |
+| `F-AGENTS-MENTIONABLE` ✅ shipped 2026-06-18 | @-mentionable agents → mission | no | `chat.ts` (server parse + single-step dispatch) + `_authenticated.chat.tsx` (composer @-picker) | SHIPPED: parse `@agentslug` → pre-planned single-step mission to that specialist; composer picker reuses `listAgents` | n/a (built) |
 | `U6-AUDIT` | Export audit log | yes | `projects.functions.ts` + new `export_log` migration + `DataExportCard.tsx` | Audit row per export + history view | PARTIAL |
 | `R3-PREFS` | Notification prefs + in-app digest | yes | `notifications.functions.ts` + new `notification_prefs` migration + Settings UI | Prefs table + toggle UI + in-app digest rollup (email SENDING is gated, excluded) | PARTIAL |
 | `F3-CRON` ✅ shipped 2026-06-18 (gated off) | Continuous auto-cluster cron | yes | `cluster-tick.ts` + `cluster.server.ts` + `discovery.functions.ts` + `SignalsPanel.tsx` + migration | SHIPPED gated off (see #1 above); activation is founder-gated (section 4) | n/a (built) |
@@ -64,9 +64,9 @@ Strategic #1 (impact 7/10): it advances the binding P0 constraint (autonomous SE
 | `O3` | Fact-currency / staleness flag | maybe | `lineage.functions.ts` / knowledge fns | Flag stale facts on the provenance graph (skill-pack-over-MCP half depends on Q1/Q2, excluded) | HIGH |
 
 **Strategic order (by impact vs the current P0 milestone), 2026-06-18 rank:**
-1. ✅ `F3-CRON` (7) shipped this cycle, gated off (above).
-2. `F-AGENTS-MENTIONABLE` (6), felt agentic-command, cheap reuse of the existing chat→mission spawn.
-3. `P5-ALERT` (6), drift threshold → in-app Attention/incident (completes a partial; trust/verification is the named investor metric).
+1. ✅ `F3-CRON` (7) shipped (cycle 20), gated off (above).
+2. ✅ `F-AGENTS-MENTIONABLE` (6) shipped. Felt agentic-command, deterministic single-step-DAG reuse of the chat→mission spawn. Server half auto-committed mid-build by a parallel process (mislabeled "cycle 19", `40646dce0a`); cycle 21 completed it (composer @-picker + case-insensitive parse) and reconciled the docs.
+3. **NEXT:** `P5-ALERT` (6), drift threshold → in-app Attention/incident (completes a partial; trust/verification is the named investor metric).
 4. `P4-GATE` (6), eval-regression as a hard merge gate (protects BUILD→SHIP autonomy).
 5. Then the rest as they become the binding constraint: `K2`, `D4-REPLAY`, `FND-0.5`, `F-BUILDER-MULTIFILE`, `R3-PREFS`, `U6-AUDIT`, `P7-COST-INCIDENT`.
 
@@ -110,6 +110,7 @@ When you have a moment, these unblock the next tier. Each needs a decision/secre
 
 ## 6. Progress log (append-only, newest first)
 
+- **2026-06-18, cycle 21, `F-AGENTS-MENTIONABLE` completed (strategic #2).** The server half (parse `@agentslug` → pre-planned single-step `mission_steps` dispatch via `advanceMissionCore`, deterministic completion via `steps.length > 0`) was auto-committed mid-build by a parallel process (mislabeled "cycle 19", `40646dce0a`/`ffbf5c50c0`) while the main loop was still working the same worktree. Reconciled cleanly: the committed `chat.ts` matched the main loop's server work; this cycle layered the genuinely-new value on top (the composer @-agent picker: keyboard nav + click, reuses `listAgents`, never hijacks Enter-to-send; and a case-insensitive parse fix so a manually-typed `@Strategist` resolves), plus the docs the parallel commit skipped (this SSOT, the feature doc [`../features/agents-mentionable.md`](../features/agents-mentionable.md), session-decisions). Gate green (tsc + build + lint + humanization); adversarial review surfaced the case-insensitivity gap. Recurring-incident note in session-decisions: a background process is committing/pushing autonomously again (same pattern as the F3 `c304bf6396` incident).
 - **2026-06-18, cycle 20 verified + closed.** Re-ran the full gate on the mid-flight `F3-CRON` tree: `tsc --noEmit` clean, `bun run build` green (the `cluster-tick` route bundles), `eslint` clean on all four touched files, and the F3 source + migration scan zero em/en dashes. Closed the feature-doc loop ([`../features/f3-continuous-discovery.md`](../features/f3-continuous-discovery.md): cron section, governance/activation, verification). Committed F3 + this close. Re-rank workflow confirmed complete (section 3 is impact-ordered). Next strategic pick: `F-AGENTS-MENTIONABLE`.
 - **2026-06-18, cycle 20, `F3-CRON` (strategic #1) shipped gated off.** A multi-agent strategic ranking (workflow `cadence-strategic-build-rank`, weighting v10>v9>v8>v7>v6) picked `F3-CRON` as the highest-impact buildable item vs the current P0 milestone (over the easy-but-low-impact `APP-HEALTH`). Built the auto-cluster mechanism (the `cluster-tick` hook + extracted `clusterSignalsCore` + an owner toggle + the `auto_cluster_enabled` migration), gated OFF; gate-green; adversarial review caught + fixed a service-role `workspace_id` NOT-NULL bug. Activation is founder-gated (section 4).
 - **2026-06-18, docs consolidation, `2e4421e800`.** Folded the siloed trackers into this SSOT, archived the three stale v7 docs, repointed 24 references, fixed the boot hook (v6→v10 + SSOT-first).

@@ -80,10 +80,12 @@ function xmlEscape(s: string): string {
  */
 function parseAgentMentions(text: string): string[] {
   const out: string[] = [];
-  const re = /(?:^|\s)@([a-z][a-z-]{1,30})/g;
+  // Case-insensitive so a manually-typed "@Strategist" still resolves; the
+  // candidate is lowercased to match the (lowercase) agents.slug values.
+  const re = /(?:^|\s)@([a-z][a-z-]{1,30})/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const slug = m[1].replace(/-+$/, ""); // drop a dangling hyphen
+    const slug = m[1].toLowerCase().replace(/-+$/, ""); // normalize + drop a dangling hyphen
     if (slug.length >= 2) out.push(slug);
   }
   return out;
@@ -96,7 +98,7 @@ function parseAgentMentions(text: string): string[] {
  */
 function stripMention(text: string, slug: string): string {
   return text
-    .replace(new RegExp(`(^|\\s)@${slug}\\b`), "$1")
+    .replace(new RegExp(`(^|\\s)@${slug}\\b`, "i"), "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
 }

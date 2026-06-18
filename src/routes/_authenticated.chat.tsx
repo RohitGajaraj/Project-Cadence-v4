@@ -52,6 +52,7 @@ import {
 import { getBrainStatus, rememberMessage } from "@/lib/brain.functions";
 import { createDecision } from "@/lib/decisions.functions";
 import { listProjects } from "@/lib/projects.functions";
+import { listAgents } from "@/lib/agents.functions";
 import { getProfile } from "@/lib/profile.functions";
 import { getMission } from "@/lib/missions.functions";
 import { listMissionSteps } from "@/lib/orchestrator.functions";
@@ -78,9 +79,23 @@ type Msg = {
 /** Errors safe to show in the thread verbatim — anything else gets a generic line. */
 class ChatUiError extends Error {}
 
+/**
+ * F-AGENTS-MENTIONABLE: if the caret sits inside an "@token" (an "@" at a word
+ * boundary with only slug-chars after it, no whitespace), return the partial
+ * slug being typed so the composer can offer the agent roster. Returns null the
+ * moment the token is closed (a space) or the caret leaves it, which is what
+ * keeps the menu from ever hijacking the Enter-to-send path.
+ */
+function detectMentionQuery(value: string, caret: number): string | null {
+  const upto = value.slice(0, caret);
+  const m = upto.match(/(?:^|\s)@([a-z-]*)$/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
 function ChatPage() {
   const qc = useQueryClient();
   const fProjects = useServerFn(listProjects);
+  const fAgents = useServerFn(listAgents);
   const fProfile = useServerFn(getProfile);
   const fList = useServerFn(listConversations);
   const fGet = useServerFn(getConversation);
@@ -89,12 +104,17 @@ function ChatPage() {
   const { activeWorkspace } = useWorkspace();
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
+  const agentsQ = useQuery({ queryKey: ["agents"], queryFn: () => fAgents() });
   const profile = useQuery({ queryKey: ["profile"], queryFn: () => fProfile() });
   const convs = useQuery({ queryKey: ["conversations"], queryFn: () => fList() });
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [model, setModel] = useState<string>("google/gemini-3-flash-preview");
   const [input, setInput] = useState("");
+  // F-AGENTS-MENTIONABLE: the partial "@token" under the caret (null = no menu)
+  // and the highlighted row in the agent picker.
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIdx, setMentionIdx] = useState(0);
   const [streaming, setStreaming] = useState(false);
   const [liveMessages, setLiveMessages] = useState<Msg[]>([]);
   // Research-progress events for the in-flight reply (protocol v2 status events).
@@ -338,8 +358,43 @@ function ChatPage() {
     const content = input.trim();
     if (!content || streaming) return;
     setInput("");
+    setMentionQuery(null);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     void sendMessage(content);
+  }
+
+  // F-AGENTS-MENTIONABLE: the agent picker. Specialists only (the orchestrator
+  // is the implicit default), filtered by the partial slug/name under the caret.
+  const mentionMatches =
+    mentionQuery === null
+      ? []
+      : (agentsQ.data?.agents ?? [])
+          .filter(
+            (a) =>
+              a.enabled !== false &&
+              a.slug !== "orchestrator" &&
+              (a.slug.toLowerCase().includes(mentionQuery) ||
+                (a.name ?? "").toLowerCase().includes(mentionQuery)),
+          )
+          .slice(0, 6);
+  const mentionOpen = mentionMatches.length > 0;
+
+  /** Replace the partial "@token" before the caret with "@slug " and refocus. */
+  function acceptMention(slug: string) {
+    const el = textareaRef.current;
+    const caret = el?.selectionStart ?? input.length;
+    const before = input.slice(0, caret).replace(/(^|\s)@([a-z-]*)$/i, `$1@${slug} `);
+    const next = before + input.slice(caret);
+    setInput(next);
+    setMentionQuery(null);
+    setMentionIdx(0);
+    requestAnimationFrame(() => {
+      const node = textareaRef.current;
+      if (node) {
+        node.focus();
+        node.setSelectionRange(before.length, before.length);
+      }
+    });
   }
 
   /** "Replay with…" — re-asks the question with the chosen model in this thread. */
@@ -581,75 +636,166 @@ function ChatPage() {
               }}
               style={{ maxWidth: 720, margin: "0 auto" }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  gap: 8,
-                  border: "1px solid var(--hairline)",
-                  borderRadius: 14,
-                  background: "var(--canvas)",
-                  padding: "10px 10px 10px 16px",
-                  boxShadow: "0 1px 3px oklch(0.2 0.02 60 / 6%)",
-                }}
-              >
-                <textarea
-                  ref={textareaRef}
-                  rows={1}
-                  value={input}
-                  placeholder="Message Cadence…"
-                  onChange={(e) => {
-                    setInput(e.target.value);
-                    const el = e.currentTarget;
-                    el.style.height = "auto";
-                    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    border: 0,
-                    outline: "none",
-                    background: "transparent",
-                    resize: "none",
-                    fontSize: 13.5,
-                    lineHeight: 1.5,
-                    maxHeight: 120,
-                  }}
-                />
-                {/* Production addition: model switching lives in the composer. */}
-                <ModelSwitcher value={model} onChange={setModel} />
-                {streaming ? (
-                  <button
-                    type="button"
-                    onClick={stopStreaming}
-                    aria-label="Stop generating"
-                    className="btn btn-ghost"
-                    style={{ borderRadius: 10, padding: "7px 9px" }}
+              <div style={{ position: "relative" }}>
+                {/* F-AGENTS-MENTIONABLE: the @agent picker, floated above the
+                    composer. Click or Enter/Tab inserts "@slug "; the dispatched
+                    message starts a mission led by that specialist. */}
+                {mentionOpen && (
+                  <div
+                    role="listbox"
+                    aria-label="Assign an agent"
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 8px)",
+                      left: 0,
+                      right: 0,
+                      maxHeight: 248,
+                      overflowY: "auto",
+                      border: "1px solid var(--hairline)",
+                      borderRadius: 12,
+                      background: "var(--canvas)",
+                      boxShadow: "0 8px 24px oklch(0.2 0.02 60 / 12%)",
+                      padding: 4,
+                      zIndex: 20,
+                    }}
                   >
-                    <Square size={14} fill="currentColor" />
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={!input.trim()}
-                    aria-label="Send"
-                    className="btn btn-primary"
-                    style={{ borderRadius: 10, padding: "7px 9px" }}
-                  >
-                    <ArrowUp size={14} />
-                  </button>
+                    {mentionMatches.map((a, i) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        role="option"
+                        aria-selected={i === mentionIdx}
+                        onMouseDown={(e) => {
+                          // mousedown + preventDefault keeps the textarea focused
+                          // so the insertion lands before any blur.
+                          e.preventDefault();
+                          acceptMention(a.slug);
+                        }}
+                        onMouseEnter={() => setMentionIdx(i)}
+                        style={{
+                          display: "flex",
+                          alignItems: "baseline",
+                          gap: 8,
+                          width: "100%",
+                          textAlign: "left",
+                          border: 0,
+                          borderRadius: 8,
+                          padding: "7px 10px",
+                          background: i === mentionIdx ? "var(--surface-2)" : "transparent",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontSize: 13, color: "var(--agent)" }}>
+                          @{a.slug}
+                        </span>
+                        <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>{a.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-end",
+                    gap: 8,
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 14,
+                    background: "var(--canvas)",
+                    padding: "10px 10px 10px 16px",
+                    boxShadow: "0 1px 3px oklch(0.2 0.02 60 / 6%)",
+                  }}
+                >
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    value={input}
+                    placeholder="Message Cadence… type @ to assign an agent"
+                    onChange={(e) => {
+                      const el = e.currentTarget;
+                      setInput(el.value);
+                      setMentionQuery(
+                        detectMentionQuery(el.value, el.selectionStart ?? el.value.length),
+                      );
+                      setMentionIdx(0);
+                      el.style.height = "auto";
+                      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      // The agent picker drives these keys only while it is open;
+                      // when it is closed the send path below is byte-identical to
+                      // before, so message-sending can never be hijacked.
+                      if (mentionOpen) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          setMentionIdx((i) => (i + 1) % mentionMatches.length);
+                          return;
+                        }
+                        if (e.key === "ArrowUp") {
+                          e.preventDefault();
+                          setMentionIdx(
+                            (i) => (i - 1 + mentionMatches.length) % mentionMatches.length,
+                          );
+                          return;
+                        }
+                        if (e.key === "Enter" || e.key === "Tab") {
+                          e.preventDefault();
+                          acceptMention(
+                            mentionMatches[Math.min(mentionIdx, mentionMatches.length - 1)].slug,
+                          );
+                          return;
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          setMentionQuery(null);
+                          return;
+                        }
+                      }
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        send();
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      border: 0,
+                      outline: "none",
+                      background: "transparent",
+                      resize: "none",
+                      fontSize: 13.5,
+                      lineHeight: 1.5,
+                      maxHeight: 120,
+                    }}
+                  />
+                  {/* Production addition: model switching lives in the composer. */}
+                  <ModelSwitcher value={model} onChange={setModel} />
+                  {streaming ? (
+                    <button
+                      type="button"
+                      onClick={stopStreaming}
+                      aria-label="Stop generating"
+                      className="btn btn-ghost"
+                      style={{ borderRadius: 10, padding: "7px 9px" }}
+                    >
+                      <Square size={14} fill="currentColor" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!input.trim()}
+                      aria-label="Send"
+                      className="btn btn-primary"
+                      style={{ borderRadius: 10, padding: "7px 9px" }}
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               <div
                 className="mono-label"
                 style={{ fontSize: 9, marginTop: 6, textAlign: "center" }}
               >
-                Enter to send · goals become missions · gates always come back to you
+                Enter to send · @ an agent or describe a goal · gates always come back to you
               </div>
             </form>
           </div>

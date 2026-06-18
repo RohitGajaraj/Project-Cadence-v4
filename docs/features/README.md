@@ -58,6 +58,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | F-SHARE-TEARDOWN | Shareable Critic-teardown links (the viral loop)        | ✅ Shipped 2026-06-17 (migration pending sync)  | `/t/$slug` (public)                               | [`shareable-teardowns.md`](./shareable-teardowns.md)                 |
 | W6        | Persona onboarding tracks (Solo / Founding PM / Tech Founder)   | ✅ Shipped 2026-06-17 (live-verify on next publish) | `/onboarding`                                 | [`onboarding-tracks.md`](./onboarding-tracks.md)                     |
 | ENG-06    | Cost per outcome (calm-front chip + Engine Room unit-economics) | ◐ B1+B3 built 2026-06-17 (tsc/lint/build green; live-verify on next publish; B2 deferred) | Today · `/govern?tab=analytics` | [`cost-per-outcome.md`](./cost-per-outcome.md)                       |
+| F-AGENTS-MENTIONABLE | @-mention an agent in chat to dispatch it directly | ✅ Shipped 2026-06-18 (server cycle 19 commit; composer picker + case-insensitive parse cycle 21; live-verify on next publish) | `/chat` (Ask) | [`agents-mentionable.md`](./agents-mentionable.md) |
 
 ## Rules
 
