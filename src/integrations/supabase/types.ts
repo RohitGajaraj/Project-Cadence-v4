@@ -2649,6 +2649,7 @@ export type Database = {
           goal: string
           hop_count: number
           id: string
+          replayed_from_mission_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2662,6 +2663,7 @@ export type Database = {
           goal: string
           hop_count?: number
           id?: string
+          replayed_from_mission_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2675,13 +2677,22 @@ export type Database = {
           goal?: string
           hop_count?: number
           id?: string
+          replayed_from_mission_id?: string | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "missions_replayed_from_mission_id_fkey"
+            columns: ["replayed_from_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes: {
         Row: {
