@@ -15,9 +15,10 @@ import { createServerFn } from "@tanstack/react-start";
  * scripts/check-migrations.sh enforces the inverse (every file applied).
  */
 const REQUIRED_VERSIONS = [
-  "20260617150000", // Q1 MCP tokens + audit
-  "20260617160000", // DEC-02-LOOP critic.evaluate registered as agent tool
-  "20260617191502", // Reapplied MCP + critic (after deleted_at fix)
+  // Match by 8-char date prefix (YYYYMMDD) because Supabase records its own
+  // timestamp on apply, which drifts a few seconds from the filename version.
+  // Keep this list to the date the migration shipped, not the exact filename.
+  "20260617", // Q1 MCP tokens + audit, critic.evaluate, reapply combo
 ] as const;
 
 export type BackendHealth = {
@@ -44,7 +45,10 @@ export const checkBackendHealth = createServerFn({ method: "GET" }).handler(
       const applied = new Set<string>(
         ((data ?? []) as Array<{ version: string }>).map((r) => r.version),
       );
-      const pending = REQUIRED_VERSIONS.filter((v) => !applied.has(v));
+      const appliedPrefixes = new Set<string>(
+        [...applied].map((v) => v.slice(0, 8)),
+      );
+      const pending = REQUIRED_VERSIONS.filter((v) => !appliedPrefixes.has(v));
       return { ok: pending.length === 0, pending: [...pending], checkedAt };
     } catch (err) {
       return {
