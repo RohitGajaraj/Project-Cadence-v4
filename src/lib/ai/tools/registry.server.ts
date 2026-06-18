@@ -24,6 +24,7 @@ import { studioBranchName } from "@/lib/ai/studio-branch";
 import { mergeReadinessFromCi, overallFromChecks } from "@/lib/ai/studio-ci";
 import { evalRegressionReadiness, type SuiteScorePair } from "@/lib/ai/eval-gate";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
+import { runRollbackRelease } from "@/lib/studio-rollbacks";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -1779,6 +1780,46 @@ const studioPrMerge = def({
   },
 });
 
+/**
+ * K2: roll back a merged release by synthesizing an inverse changeset.
+ * The revert flows through the existing commit → PR → CI gate → merge rails.
+ * Review-gated (operator approval required). Returns the revert mission ID.
+ */
+const studioRevert = def({
+  name: "studio.revert",
+  description:
+    "Studio: roll back a merged release by synthesizing an inverse changeset. The revert changeset flows through the existing commit → PR → CI gate → merge rails. Review-gated (operator approval required). Returns the revert mission ID and PR URL.",
+  category: "write",
+  argsSchema: z.object({
+    changesetId: z.string().uuid(),
+    reason: z.string().min(1).max(500),
+  }),
+  preview: (a) =>
+    `Roll back changeset ${a.changesetId.slice(0, 8)} (reason: ${a.reason.slice(0, 40)})`,
+  run: async (a, ctx) => {
+    const { supabase, userId, missionId, runId } = ctx;
+    if (!missionId) throw new Error("studio.revert requires a mission (dispatch via Studio)");
+
+    // Wrap in idempotency to prevent duplicate rollback submissions
+    const outcome = await withIdempotency(
+      supabase,
+      "studio_revert",
+      a.changesetId,
+      userId,
+      runId ?? null,
+      async () => {
+        const { rollbackId, revertChangesetId, revertMissionId } = await runRollbackRelease(
+          supabase,
+          userId,
+          a,
+        );
+        return { rollbackId, revertChangesetId, revertMissionId };
+      },
+    );
+    return { ...outcome.result, cached: outcome.cached };
+  },
+});
+
 // ── PM lifecycle tools ────────────────────────────────────────────────
 const DRAFT_MODEL = "google/gemini-2.5-flash";
 
@@ -2328,6 +2369,7 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     studioCommit,
     studioPrOpen,
     studioPrMerge,
+    studioRevert,
     prdLinkIssue,
     researchSynthesize,
     prdDraft,

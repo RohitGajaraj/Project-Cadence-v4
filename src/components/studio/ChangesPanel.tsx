@@ -11,10 +11,14 @@ import {
   getChangesetRevisions,
   rejectStagedFile,
   revertToRevision,
+  rollbackRelease,
+  abandonChangeset,
+  getRollbacks,
+  generateRollbackNote,
   type StudioChangesetSummary,
 } from "@/lib/studio.functions";
 import { computeHunks } from "@/lib/ai/studio-hunks";
-import { useConfirm } from "@/hooks/use-confirm";
+import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { ChangesetChip } from "./studio-ui";
 import { fmtCompact } from "./studio-format";
 
@@ -194,6 +198,87 @@ export function ChangesPanel({
       toast.error(e instanceof Error ? e.message : "Could not draft the launch kit."),
   });
 
+  // K2: rollback controls (roll back merged release, kill in-flight change).
+  const promptDialog = usePrompt();
+  const fRollback = useServerFn(rollbackRelease);
+  const rollbackMut = useMutation({
+    mutationFn: (reason: string) =>
+      fRollback({
+        data: {
+          changesetId: changeset!.id,
+          reason,
+        },
+      }),
+    onSuccess: (result) => {
+      toast.success("Rollback initiated. Navigating to revert session...");
+      window.location.href = `/studio/${result.revertMissionId}`;
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Rollback failed."),
+  });
+
+  const fAbandon = useServerFn(abandonChangeset);
+  const abandonMut = useMutation({
+    mutationFn: (reason: string) =>
+      fAbandon({
+        data: {
+          changesetId: changeset!.id,
+          reason,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Change killed. PR closed and claims released.");
+      qc.invalidateQueries({ queryKey: ["studio-session"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not kill the change."),
+  });
+
+  const fRollbackHistory = useServerFn(getRollbacks);
+  const rollbackHistory = useQuery({
+    queryKey: ["studio-rollback-history", changeset?.product_id ?? null],
+    queryFn: () =>
+      fRollbackHistory({
+        data: { productId: changeset!.product_id! },
+      }),
+    enabled: !!changeset?.product_id,
+    staleTime: 10_000,
+  });
+  const rollbacks = rollbackHistory.data?.rollbacks ?? [];
+
+  const fGenRollbackNote = useServerFn(generateRollbackNote);
+  const noteMut = useMutation({
+    mutationFn: (rollbackId: string) => fGenRollbackNote({ data: { rollbackId } }),
+    onSuccess: () => {
+      toast.success("Rollback note generated.");
+      rollbackHistory.refetch();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not generate the note."),
+  });
+
+  const triggerRollback = async () => {
+    const reason = await promptDialog({
+      title: "Roll back this release",
+      body: "Opens a revert PR that restores the touched paths to their pre-merge state. It still passes CI and your review before it merges.",
+      label: "Reason (optional)",
+      placeholder: "Why are you rolling this back?",
+      confirmLabel: "Open revert PR",
+    });
+    if (reason !== null) {
+      rollbackMut.mutate(reason || "Operator-initiated rollback");
+    }
+  };
+
+  const triggerAbandon = async () => {
+    const ok = await confirm({
+      title: "Kill this change?",
+      body: "Closes the PR and releases file claims. This cannot be undone.",
+      confirmLabel: "Kill change",
+      destructive: true,
+    });
+    if (ok) abandonMut.mutate("Operator-abandoned");
+  };
+
   if (!changeset) {
     return (
       <div
@@ -246,6 +331,47 @@ export function ChangesPanel({
             {changeset.branch}
           </span>
         ) : null}
+        {/* K2: Roll back button (merged changesets only) */}
+        {changeset.status === "merged" && (
+          <button
+            type="button"
+            onClick={triggerRollback}
+            disabled={rollbackMut.isPending}
+            style={{
+              marginLeft: "auto",
+              padding: "4px 10px",
+              fontSize: 11.5,
+              borderRadius: 6,
+              border: "1px solid var(--hairline)",
+              background: "transparent",
+              color: "var(--ink-muted)",
+              cursor: rollbackMut.isPending ? "default" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {rollbackMut.isPending ? "Rolling back..." : "Roll back"}
+          </button>
+        )}
+        {/* K2: Kill button (pre-merge changesets only) */}
+        {changeset.status && ["staged", "committed", "pr_open"].includes(changeset.status) && (
+          <button
+            type="button"
+            onClick={triggerAbandon}
+            disabled={abandonMut.isPending}
+            style={{
+              padding: "4px 10px",
+              fontSize: 11.5,
+              borderRadius: 6,
+              border: "1px solid var(--hairline)",
+              background: "transparent",
+              color: "var(--ink-muted)",
+              cursor: abandonMut.isPending ? "default" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {abandonMut.isPending ? "Killing..." : "Kill"}
+          </button>
+        )}
       </div>
 
       {/* K1 release notes: the ship artifact for this changeset (factual, AI-drafted). */}
@@ -390,6 +516,100 @@ export function ChangesPanel({
               </span>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {/* K2: Rollback history card (if any rollbacks exist for this product) */}
+      {rollbacks.length > 0 ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: "1px solid var(--hairline)",
+            }}
+          >
+            <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+              Rollback history ({rollbacks.length})
+            </span>
+          </div>
+          {rollbacks.map((rb, i) => (
+            <div
+              key={rb.id}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "10px 18px",
+                borderBottom: i < rollbacks.length - 1 ? "1px solid var(--hairline)" : "none",
+                flexDirection: "column",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+                <span style={{ fontSize: 11.5, color: "var(--ink-muted)" }}>
+                  {rb.status === "reverted" ? "done" : "open"}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: 12,
+                    color: "var(--ink)",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {rb.reason}
+                </span>
+                {rb.revert_pr_number && (
+                  <a
+                    href={`https://github.com/${changeset.repo}/pull/${rb.revert_pr_number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-link)",
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    PR #{rb.revert_pr_number}
+                  </a>
+                )}
+              </div>
+              {rb.note ? (
+                <p
+                  style={{
+                    fontSize: 11.5,
+                    color: "var(--ink-muted)",
+                    fontStyle: "italic",
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {rb.note}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => noteMut.mutate(rb.id)}
+                  disabled={noteMut.isPending}
+                  style={{
+                    fontSize: 11,
+                    color: "var(--ink-link)",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: noteMut.isPending ? "default" : "pointer",
+                  }}
+                >
+                  {noteMut.isPending && noteMut.variables === rb.id
+                    ? "Generating note..."
+                    : "Generate note"}
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       ) : null}
 

@@ -32,7 +32,7 @@ const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "stu
 /** Safety floor (not overridable by the autonomy dial): at least `confirm`. */
 const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
 /** Safety floor: always `review`. */
-const HIGH_RISK_FORCE_REVIEW = new Set(["studio.pr.merge"]);
+const HIGH_RISK_FORCE_REVIEW = new Set(["studio.pr.merge", "studio.revert"]);
 /**
  * Orchestrator control-flow tools that ALWAYS execute inline, exempt from
  * arc-gating and any seeded mode. These four tools are pure internal control

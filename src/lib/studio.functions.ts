@@ -19,15 +19,18 @@ import { createMission } from "@/lib/ai/handoff.server";
 import { recordLineage } from "@/lib/lineage.functions";
 import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
+import { runAgentLoop } from "@/lib/ai/loop.server";
 import { applyHunkSelection } from "@/lib/ai/studio-hunks";
 import { summarizeInspection } from "@/lib/ai/studio-inspection";
 import { callModel } from "@/lib/ai/runtime.server";
 import { humanizeText } from "@/lib/ai/humanize";
 import { revertChangesetToRevision } from "@/lib/ai/studio-revert.server";
+import { runRollbackRelease, ghHeaders } from "@/lib/studio-rollbacks";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type StudioChangesetSummary = {
   id: string;
+  product_id: string | null;
   status: "staged" | "committed" | "pr_open" | "merged" | "abandoned";
   repo: string;
   branch: string | null;
@@ -295,7 +298,9 @@ export const listStudioSessions = createServerFn({ method: "GET" })
           .in("id", missionIds),
         db
           .from("studio_changesets")
-          .select("id,mission_id,status,repo,branch,pr_url,pr_number,title,summary,created_at")
+          .select(
+            "id,product_id,mission_id,status,repo,branch,pr_url,pr_number,title,summary,created_at",
+          )
           .in("mission_id", missionIds)
           .neq("status", "abandoned")
           .order("created_at", { ascending: false }),
@@ -507,7 +512,7 @@ export const getStudioSession = createServerFn({ method: "GET" })
     const { data: csRow } = await db
       .from("studio_changesets")
       .select(
-        "id,status,repo,branch,base_sha,pr_url,pr_number,title,summary,release_notes,release_notes_at,updated_at",
+        "id,product_id,status,repo,branch,base_sha,pr_url,pr_number,title,summary,release_notes,release_notes_at,updated_at",
       )
       .eq("mission_id", data.missionId)
       .neq("status", "abandoned")
@@ -771,6 +776,337 @@ export const revertToRevision = createServerFn({ method: "POST" })
       branch: cs.branch,
       revisionId: data.revisionId,
     });
+  });
+
+/**
+ * K2: roll back a merged release by synthesizing an inverse changeset.
+ * Reads touched paths from the merge commit's parent (GitHub parent SHA),
+ * reconstructs the undo (create->delete, update->restore, delete->create),
+ * and creates a new rollback mission + revert changeset. The revert flows
+ * through the existing commit->PR->J2-gated-merge rails. Returns the rollback
+ * mission ID so the UI can navigate to it.
+ */
+export const rollbackRelease = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        changesetId: z.string().uuid(),
+        reason: z.string().min(1).max(500),
+      })
+      .parse(i),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ rollbackId: string; revertChangesetId: string; revertMissionId: string }> => {
+      const { supabase, userId } = context;
+      const db = supabase as unknown as SupabaseClient;
+      const result = await runRollbackRelease(db, userId, data);
+
+      // Drive the staged revert through the existing Build rails: a Build agent
+      // run on the rollback mission calls studio.commit -> studio.pr.open (each
+      // confirm-gated for the operator). Mirrors build.functions.ts dispatch.
+      // The loop returns once it hits the first approval gate; the operator then
+      // clears the gates from the revert mission's build session.
+      const goal = [
+        "A revert changeset has already been staged on this mission (the inverse of a merged release).",
+        "Commit the staged changes with studio.commit, then open a pull request with studio.pr.open.",
+        "Do not stage new edits or modify any files - only commit what is already staged and open the PR.",
+      ].join(" ");
+      await runAgentLoop(db, userId, {
+        agentSlug: "builder",
+        goal,
+        missionId: result.revertMissionId,
+      });
+
+      return result;
+    },
+  );
+
+/**
+ * K2 R3: kill an in-flight changeset (staged/committed/pr_open).
+ * Closes any open PR, releases builder_file_claims, and marks the changeset abandoned.
+ * Idempotent: safe to call multiple times.
+ */
+export const abandonChangeset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        changesetId: z.string().uuid(),
+        reason: z.string().min(1).max(500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<{ success: boolean }> => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const userId = context.userId;
+
+    // Fetch changeset
+    const { data: csRow } = await db
+      .from("studio_changesets")
+      .select("id,status,repo,pr_number,branch,mission_id,workspace_id")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (!csRow) throw new Error("Changeset not found.");
+    const cs = csRow as {
+      id: string;
+      status: string;
+      repo: string;
+      pr_number: number | null;
+      branch: string | null;
+      mission_id: string | null;
+      workspace_id: string | null;
+    };
+    if (!["staged", "committed", "pr_open"].includes(cs.status)) {
+      throw new Error(`Cannot abandon a ${cs.status} changeset.`);
+    }
+
+    // Resolve GitHub auth via the connector chain (same as studio.commit), only
+    // when we actually touch GitHub. Avoids the wrong process.env.GITHUB_TOKEN path.
+    const headers =
+      cs.pr_number || cs.branch
+        ? ghHeaders(
+            (await resolveGitHub({ userId, workspaceId: cs.workspace_id, userClient: db })).token,
+          )
+        : null;
+
+    // Close PR if open
+    if (cs.pr_number && headers) {
+      const prUrl = `https://api.github.com/repos/${cs.repo}/pulls/${cs.pr_number}`;
+      try {
+        await fetch(prUrl, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ state: "closed" }),
+        });
+      } catch (error) {
+        console.error("Failed to close PR (best effort):", error);
+      }
+    }
+
+    // Delete branch (best effort)
+    if (cs.branch && headers) {
+      const branchUrl = `https://api.github.com/repos/${cs.repo}/git/refs/heads/${encodeURIComponent(cs.branch)}`;
+      try {
+        await fetch(branchUrl, { method: "DELETE", headers });
+      } catch (error) {
+        console.error("Failed to delete branch (best effort):", error);
+      }
+    }
+
+    // Release file claims
+    if (cs.mission_id) {
+      const { error: claimsErr } = await db
+        .from("builder_file_claims")
+        .update({
+          status: "released",
+          released_reason: "rollback_abandon",
+          released_at: new Date().toISOString(),
+        })
+        .eq("mission_id", cs.mission_id)
+        .eq("status", "held");
+      if (claimsErr) console.error("Failed to release claims:", claimsErr.message);
+    }
+
+    // Abandon the changeset
+    const { error: upErr } = await db
+      .from("studio_changesets")
+      .update({ status: "abandoned", updated_at: new Date().toISOString() })
+      .eq("id", cs.id);
+    if (upErr) throw new Error(upErr.message);
+
+    return { success: true };
+  });
+
+/**
+ * K2 R2: fetch rollback history for a product.
+ * Pre-migration tolerant: returns empty array if table doesn't exist yet.
+ */
+export const getRollbacks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        productId: z.string().uuid(),
+      })
+      .parse(i),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{
+      rollbacks: Array<{
+        id: string;
+        original_changeset_id: string;
+        original_pr_number: number | null;
+        revert_changeset_id: string | null;
+        revert_pr_number: number | null;
+        reason: string;
+        status: string;
+        note: string | null;
+        created_at: string;
+      }>;
+    }> => {
+      const db = context.supabase as unknown as SupabaseClient;
+
+      // Pre-migration tolerance: a missing table/column resolves to an empty list,
+      // not a throw. PostgREST returns PGRST205 (missing table) / PGRST204 (missing
+      // column); direct Postgres returns 42P01. None of these contain "does not exist".
+      const isMissingRelation = (code: string | undefined | null) =>
+        code === "42P01" || code === "PGRST205" || code === "PGRST204";
+
+      try {
+        // Two FKs to the same table must be aliased and disambiguated by the FK
+        // name; PostgREST returns each under its alias as a to-one object (not a
+        // positional array on a shared `studio_changesets` key).
+        const { data: rows, error } = await db
+          .from("studio_rollbacks")
+          .select(
+            `id,
+            original_changeset_id,
+            revert_changeset_id,
+            reason,
+            status,
+            note,
+            created_at,
+            original:studio_changesets!original_changeset_id(pr_number),
+            revert:studio_changesets!revert_changeset_id(pr_number,status)`,
+          )
+          .eq("product_id", data.productId)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          if (isMissingRelation(error.code)) return { rollbacks: [] };
+          throw new Error(error.message);
+        }
+
+        type CsEmbed = { pr_number: number | null; status?: string | null };
+        type RollbackRow = {
+          id: string;
+          original_changeset_id: string;
+          revert_changeset_id: string | null;
+          reason: string;
+          status: string;
+          note: string | null;
+          created_at: string;
+          // PostgREST returns a to-one embed as an object, but supabase-js types
+          // embeds as arrays; accept either shape and normalize with one().
+          original?: CsEmbed | CsEmbed[] | null;
+          revert?: CsEmbed | CsEmbed[] | null;
+        };
+        const one = (v: CsEmbed | CsEmbed[] | null | undefined): CsEmbed | null =>
+          Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
+        const rollbacks = ((rows ?? []) as unknown as RollbackRow[]).map((r) => {
+          const revert = one(r.revert);
+          return {
+            id: r.id,
+            original_changeset_id: r.original_changeset_id,
+            original_pr_number: one(r.original)?.pr_number ?? null,
+            revert_changeset_id: r.revert_changeset_id,
+            revert_pr_number: revert?.pr_number ?? null,
+            reason: r.reason,
+            // Show 'reverted' only when the revert changeset has actually merged;
+            // otherwise the stored status ('initiated' / 'failed'). Avoids claiming
+            // a revert shipped when it is still staged or in review.
+            status: revert?.status === "merged" ? "reverted" : r.status,
+            note: r.note,
+            created_at: r.created_at,
+          };
+        });
+
+        return { rollbacks };
+      } catch (error) {
+        if (isMissingRelation((error as { code?: string } | null)?.code)) {
+          return { rollbacks: [] };
+        }
+        throw error;
+      }
+    },
+  );
+
+/**
+ * K2 R2: generate (or regenerate) a humanized rollback note via the AI chokepoint.
+ * Mirrors generateReleaseNotes pattern: factual, under 150 words, no em-dashes or fingerprints.
+ */
+export const generateRollbackNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        rollbackId: z.string().uuid(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<{ note: string }> => {
+    const { supabase, userId } = context;
+    const db = supabase as unknown as SupabaseClient;
+
+    // Fetch rollback + original + revert changesets
+    const { data: rbRow, error: rbErr } = await db
+      .from("studio_rollbacks")
+      .select("id,original_changeset_id,reason,workspace_id")
+      .eq("id", data.rollbackId)
+      .maybeSingle();
+    if (rbErr) throw new Error(rbErr.message);
+    if (!rbRow) throw new Error("Rollback not found.");
+    const rb = rbRow as {
+      id: string;
+      original_changeset_id: string;
+      reason: string;
+      workspace_id: string | null;
+    };
+
+    const { data: origCS } = await db
+      .from("studio_changesets")
+      .select("id,title,pr_number")
+      .eq("id", rb.original_changeset_id)
+      .maybeSingle();
+    const oc = origCS as { title?: string | null; pr_number?: number | null } | null;
+    const origTitle = oc?.title || "Untitled";
+    const origPr = oc?.pr_number || "?";
+
+    const { data: changes } = await db
+      .from("studio_changes")
+      .select("path,op")
+      .eq("changeset_id", rb.original_changeset_id);
+    const fileList = ((changes ?? []) as Array<{ path: string; op: string }>)
+      .map((c) => `${c.op} ${c.path}`)
+      .join(", ");
+
+    const system =
+      "You write concise, factual rollback summaries. Output GitHub-flavored markdown: one line stating the revert, then a short 'Reverted' section listing the paths and their ops (created/updated/deleted). Note any caveats (hard restore, may conflict). Under 150 words. No marketing tone.";
+    const user = [
+      `Reversing PR #${origPr}: "${origTitle}"`,
+      `Reason: ${rb.reason}`,
+      `Files: ${fileList}`,
+    ].join("\n");
+
+    const result = await callModel(supabase, userId, {
+      surface: "studio",
+      surface_ref: `rollback-note:${rb.id}`,
+      model: "google/gemini-2.5-flash",
+      workspaceId: rb.workspace_id,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+    if (result.status !== "ok" || !result.output.trim()) {
+      throw new Error(result.error || "Rollback-note generation failed.");
+    }
+    const note = result.output.trim();
+
+    const { error: upErr } = await db
+      .from("studio_rollbacks")
+      .update({ note, updated_at: new Date().toISOString() })
+      .eq("id", rb.id);
+    if (upErr) throw new Error(upErr.message);
+
+    return { note };
   });
 
 /**
