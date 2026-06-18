@@ -16,6 +16,9 @@
 | **What to build next, why, how it should look and behave, priority + lane** | [**v10 master blueprint**](./v10-master-blueprint-2026-06-17.md) | the blueprint (pick first) |
 | **How we execute it** (build order, per-item discipline, milestone gates) | [**v10_implementation-plan.md**](../planning/v10_implementation-plan.md) | the how |
 | **Live status of every feature** (the cursor) | [**feature-dashboard.md**](../planning/feature-dashboard.md) | the status board |
+| **The workspace / accounts / tenancy + monetization build (current initiative)** | [**workspace-tenancy-and-monetization-plan.md**](../planning/workspace-tenancy-and-monetization-plan.md) | the cross-tool build bible (per-ID specs; live board group G10) |
+| **What is our moat, who do we compete with (YC + interview prep)** | [**moat.md**](./moat.md) | the moat / competition / defensibility canon (decision-layer thesis; memory is one layer; objection Q&A; ripple-review process) |
+| **The BYO repo model + all-in-one platform** (provider-agnostic repos, autonomous Build to Ship, managed runtime) | [**byo-build-and-cadence-cloud-2026-06-18.md**](./byo-build-and-cadence-cloud-2026-06-18.md) (spec) + [**byo-build-implementation-plan-2026-06-19.md**](../planning/byo-build-implementation-plan-2026-06-19.md) (all-phase plan; board group G11) | the repo/platform reframe |
 | Positioning / market / pricing / GTM / investor | [v7](./v7-agentic-product-os-2026-06-14.md) | positioning canon |
 | Surfaces / IA / structure / the hybrid Build spine | [v8](./v8-calm-front-deep-engine-2026-06-16.md) | structure canon |
 | The launch wedge / competitor posture | [v9](./v9-decision-wedge-and-build-next-2026-06-17.md) | decision lens |
@@ -79,8 +82,13 @@ If the current version of strategy changes:
 4. Review and update `../../docs/planning/feature-backlog.md` (new features section if features change)
 5. Review and update `../../plan.md` (persona descriptions if they change)
 6. Update the tool-specific configs if framing language changes: `../../CLAUDE.md`, `../../GEMINI.md`, `../../.lovable-config.txt`
+7. Update [`moat.md`](./moat.md) (the moat / competition / positioning canon) and run the **Repositioning Ripple Review** in its §11 (pricing/gating, feature priority, IA/messaging, build-next, tests), so a positioning change ripples across the platform, not just the docs.
 
 This cascade is mandatory. A positioning change that does not propagate to the live docs is not real. It will drift immediately.
+
+## Documentation bar (standing, founder 2026-06-19) - applies to ALL strategy and decision docs
+
+Every strategy doc, decision record, information-gathering note, and answer to an important question is captured **comprehensively and thought-process-oriented**: the reasoning, the insights, and how we decided, not just the conclusion. The goal is that these docs directly serve YC / accelerator / investor applications and let any future question be answered by reference without re-deriving. Whenever a chat produces a non-obvious answer, an analysis, an insight, or an important decision, write it into the relevant canon doc **in the same session**: decisions to [`session-decisions.md`](./session-decisions.md); raw reasoning + insights to [`strategic-inputs-log.md`](./strategic-inputs-log.md); moat / competition to [`moat.md`](./moat.md); positioning to the current vX canon. Brief, high-level capture is not enough; capture the why and the how-we-decided. This bar is not specific to any one file; it governs all of them.
 
 ## References
 

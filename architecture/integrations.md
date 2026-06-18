@@ -29,7 +29,7 @@ Pasted secrets live in `connection_secrets` as ciphertext + IV only — encrypte
 
 ## BYO keys
 
-`user_api_keys`: provider, encrypted key (app-layer AES-256-GCM under `CONNECTOR_SECRETS_KEY` — ciphertext + IV columns; replaces the earlier pgsodium design), optional base_url, label, last-test result. UI masks the key (`sk-***…last4`), supports Test (1-token completion), Rotate, Delete. Service-role client is the only decrypt path. Adding a provider = adding a chokepoint adapter (see [`runtime.md`](./runtime.md)), not touching call sites.
+`user_api_keys`: provider, encrypted key (app-layer AES-256-GCM under `CONNECTOR_SECRETS_KEY` — ciphertext + IV columns; replaces the earlier pgsodium design), optional base_url, label, last-test result. UI masks the key (`sk-***…last4`), supports Test (1-token completion), Rotate, Delete. Service-role client is the only decrypt path. Adding a provider = adding a chokepoint adapter (see [`runtime.md`](./runtime.md)), not touching call sites. _(Positioning update 2026-06-19: the self-serve `user_api_keys` (BYOK) path is RETIRED (enterprise-only); self-serve runs on managed credits. Model-agnostic provider routing via our keys remains. Removal tracked as WM-M9. See [`../docs/strategy/moat.md`](../docs/strategy/moat.md) §7.)_
 
 ## Why managed connectors over hand-rolled OAuth
 

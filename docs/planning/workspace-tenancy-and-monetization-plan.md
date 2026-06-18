@@ -1,0 +1,401 @@
+# Workspace, Accounts, Tenancy & Monetization, Cross-Tool Implementation Plan (the build bible)
+
+> **What this is.** The single, self-contained source of truth for the account / workspace / product tenancy redesign and the monetization model it carries. It holds the strategy, the justifications, the quantified model, and a build spec for every work item, written so **any tool (Claude Code, Antigravity, Gemini, Lovable, a fresh session) can pick up a single `WM-*` ID and build it from this doc alone**, with no dependence on the conversation that produced it.
+>
+> **Status:** PLAN (2026-06-19). Foundation lane is buildable now; Showcase lane is deferred. No feature code written yet; this doc + its registration are step one.
+> **Maintainer rule:** update the item's status here, in `feature-dashboard.md`, and in `SOURCE-OF-TRUTH.md` in the same unit of work as any change (the closed-doc loop).
+> **Owns the decision record with:** [`../strategy/session-decisions.md`](../strategy/session-decisions.md) (the decision) + [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (the reasoning) + [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5 (the monetization canon this aligns to).
+
+---
+
+## 0. How to use this document (any tool, any session)
+
+1. **To build something:** find its `WM-*` ID in the index (Section 4.0), jump to its spec. Each spec has: why, current state with file paths, what to build, files to touch, the migration, gotchas, acceptance criteria, verification, and dependencies. That is everything needed to build it cold.
+2. **Pick order:** follow Section 5 (build order + dependencies). Respect `Depends on`. Claim the row in `feature-dashboard.md` before you start (flip to In Dev, add an Active-claims line) so parallel tools do not collide.
+3. **Hard gates every tool MUST honor** (non-negotiable, from [`../../AGENTS.md`](../../AGENTS.md) and the SSOT standing rules):
+   - **Build gate:** `bun run lint` + `tsc --noEmit` + `bun run build` all green before any commit. Never commit red.
+   - **Humanized output:** zero em/en dashes and zero AI-cliche phrasing in anything authored or generated (the runtime sanitizer is the hard gate; authored docs follow it too). See [`../conventions/humanized-output.md`](../conventions/humanized-output.md).
+   - **Migrations:** timestamped SQL in `supabase/migrations/`, RLS-aware, additive/forward-only, idempotent where possible; the migration-safety hook enforces this.
+   - **Tenancy correctness:** every new table that holds tenant data carries the right scope column and an RLS policy; never trust client-side role checks.
+   - **Commits:** explicit paths, a one-line WHY; branch off `main` (do not commit straight to the default branch); use a worktree for parallel work.
+   - **Package manager is bun** (`bun install`, `bun run ...`). Not npm.
+4. **Naming is presentation-only.** The database, Stripe, and RLS key on the **slugs** `free | pro | max | team | enterprise`. The **display names** (Constellation: Star / Cluster / Constellation / Galaxy / Cosmos) and the motif live only in `planPresentation()` + UI, so any tier can be renamed or re-themed later with a one-file edit, no migration. Build against slugs.
+5. **Status truth** lives in [`feature-dashboard.md`](./feature-dashboard.md) (per-item board) and [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (front-door queue). This doc is the *how*; those are the *where it stands*.
+
+---
+
+## 1. Context and problem
+
+Cadence's workspace layer was scaffolded but never given product thought: switching, settings, roles, ownership transfer, and "what a new user sees" are vague, and the moat object (decision memory) is scoped to the user, one level above the boundary the product sells. The investor-ready, fully-populated experience exists only for two `demo@` accounts, not for real signups.
+
+This plan makes the **account -> workspace -> product** model the deliberate spine of the product, scopes the compounding memory so the moat and the implicit lock-in are enforced data facts, lands the team primitives (RBAC, invites, ownership transfer, move-product), defines a clean settings information architecture, and carries the account-level monetization model (with the credit engine arriving from a parallel thread onto a dormant seam). The seeded "showcase" experience for every new user is designed but deferred until the platform is roughly 50 to 60 percent complete and fine-tuned.
+
+---
+
+## 2. The locked model (decisions + justifications)
+
+### 2.1 Boundary: Account -> Workspace -> Product (three levels)
+
+- **Account / Org** owns billing, the plan tier, the AI credit pool, members/seats, and is the boundary memory pools across. A solo user has a personal account (one member); a team is the same structure with many members. One table models both.
+- **Workspace** is a pooled container under the account (a company, a product area, a client, an initiative). Tenant data (signals, opportunities, PRDs, decisions, tasks, docs, conversations, traces, evals, memory) is workspace-scoped for isolation.
+- **Product** (DB table `projects`, UI label "Product") is the unit of work under a workspace; products share the account's credit pool and are count-limited by tier.
+
+### 2.2 Billing attaches at the ACCOUNT level (the flywheel)
+
+Plan, credits, and Stripe billing live on the **account**, not the workspace. Per-workspace billing would tax the one thing that makes the product un-leaveable: if a new workspace cost a new plan, users would make fewer, less context would accrue, and the moat would be shallower. Account-level pooling means the more a user puts in, the deeper the moat. Workspace count is gated only at the free line (free = 1 workspace); past it, workspaces are generous/pooled, never per-workspace-billed. (Reconciled with the parallel credits/monetization thread and [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5.)
+
+### 2.3 The moat is the decision layer; memory is one layer of it
+
+The moat is **owning the decision layer of the product org** (what to build, and was it right), which has no fast oracle, while vibe-coding tools own the build layer (how to build), which is racing to zero. **Memory is one layer of that moat, not the headline.** Full articulation, competition map, and objection Q&A: [`../strategy/moat.md`](../strategy/moat.md). The layers, deepest first: (1) the no-fast-oracle asymmetry; (2) outcome-labeled judgment (the closed decision -> shipped -> outcome -> was-it-right loop, which is what "memory" really is); (3) system-of-record (continuous, org-scoped, cross-tool); (4) the orchestration position (above and dispatching the build tools, ours or Lovable/Cursor); (5) governance and accountability.
+
+For this plan's mechanics: scope decision memory to the workspace for isolation, and **pool recall across the account's workspaces for paid accounts** so it compounds. Lock-in is **gravity, not a wall**: a full data export does not export the tuned judgment + accrued memory, so keep export easy (it raises trust and word of mouth) and stay effectively un-leaveable. **Memory persistence is the primary charge lever** (free memory decays on a 30-day rolling window; paid persists); usage credits ride on top.
+
+### 2.4 The tier ladder and quantified matrix
+
+Display theme: **Constellation** (your product knowledge, mapped). Slugs are canonical; names are a skin (Section 2.8).
+
+| Slug | Name | Workspaces | Products | AI credits | Memory | Collaboration |
+|---|---|---|---|---|---|---|
+| `free` | **Star** | 1 | 2 | base (1x), starter, sized for the "aha"; no top-ups | 30-day rolling decay | solo |
+| `pro` | **Cluster** | generous/pooled | 3 | 5x; capped top-ups | persistent + pooled | solo |
+| `max` | **Constellation** | pooled | ~5 | 20x; capped top-ups | persistent + pooled | solo |
+| `team` | **Galaxy** | pooled, many | generous | pooled; capped top-ups | persistent + cross-workspace pooled | members + seats + RBAC + approval lanes; transparent per-seat price |
+| `enterprise` | **Cosmos** | custom | custom | custom credit model (see notes) | persistent + pooled | SSO, SCIM, audit, residency, SLA; contact sales |
+
+Notes:
+- **We price the decision layer; build/host is never a value driver.** The reason-to-pay at every tier is a decision-layer capability (persistent + cross-workspace memory, Critic everywhere, the outcome/was-it-right loop, governance/approval lanes). AI credits are only the meter. We do NOT gate or price on build minutes, deploys, or hosting (build is dispatched and receded).
+- **AI credits are the upgrade lever; product counts are secondary and tunable.** Free 2 / Pro 3 / Max ~5 are deliberately modest and NOT the headline. A solo PM upgrades Pro -> Max for **more AI credits (5x -> 20x) + priority**, not for products. Free gets 2 products specifically so the user feels cross-product memory carry.
+- **Top-ups are a capped add-on, not an unlimited spigot** (Anthropic-style): paid tiers only, drawn from a separate purchased balance, with a per-cycle ceiling, and **off by default**. Free has no top-ups (running low = upgrade). This protects margin and keeps the one-subscription promise honest.
+- **The primary free limiter is AI credits** (sized for the aha, not a full project), with 30-day rolling memory decay as the second pull toward upgrade.
+- **Cross-workspace memory pooling** is a property of any **paid account** with more than one workspace, not a Team-only bolt-on.
+- **Enterprise (Cosmos) credit models, pick per deal:** (a) seat-based pooled (per-seat allowance, pooled org-wide); (b) committed org pool (annual credit commitment, volume discount); (c) postpaid usage (metered, invoiced monthly, true-up); (d) BYOK or dedicated capacity (their keys / isolated, COGS off our book). Plus the non-credit value that is the real reason they pay enterprise: SSO/SCIM, audit, residency, SLA, support. Outcome-based pricing (charging on shipped outcomes) is credible here later given the moat, but deferred for now.
+
+### 2.5 Lock-in / monetization / evangelization
+
+Lock-in is value depth, ranked: (1) compounding decision memory (the product gets smarter about your product over time); (2) persistence as a subtle paywall (free decays, paying keeps it); (3) record-of-record (decision, then shipped, then outcome, then was-the-reasoning-right becomes the team's audit trail); (4) system-of-record-and-action (connected sources, tuned brief/voice/guardrails). Deliberate non-move: keep "export anytime." Evangelization rides on the shareable Critic teardown (already built), the visible memory ("look how much it knows my product"), and outcome proof.
+
+### 2.6 No self-serve BYOK, COGS, one-subscription, capped top-ups
+
+**BYOK (user-supplied model keys) is removed from all self-serve tiers** (founder ruling 2026-06-19). All self-serve usage flows through our AI credits + capped top-ups, so 100 percent of value is monetized and the UX is one clean path. **"Model-agnostic" is preserved and is NOT the same as BYOK:** we still route across providers (Anthropic, Google, and others) with OUR keys, so we are never locked to one lab; only USER-supplied keys are retired. BYOK / data residency / their-own-provider-contract is offered ONLY as a negotiated **enterprise** option (Cosmos), never a self-serve toggle. See WM-M9 for the removal.
+
+One-subscription "calm" model: each tier carries a generous included allowance plus cheap fair-use **capped** top-ups (paid tiers only, per-cycle ceiling, off by default), never a literally-unlimited flat fee, because the product eats both LLM and hosting COGS. Because there is no self-serve BYOK, margin discipline (credits sized right, small-model routing, caching) is essential, not optional. The upgrade driver is more AI credits (Pro -> Max) and collaboration / multi-workspace / persistent memory (-> Team), never credit starvation.
+
+### 2.7 Division of ownership with the parallel credits thread
+
+This plan owns: tenancy (accounts/workspaces/products), the billing **boundary** (account-level schema), the entitlements **structure**, the pricing **surfaces**, settings IA, and the dormant credit **seam**. The credits thread owns: the credit **engine** (what one credit is, per-tier amounts, top-up pricing, the metering math, margin levers like small-model routing and caching). They meet only at three objects: the `accounts` table, the entitlements matrix, and the `assertAccountCredits` / `debitAccountCredits` seam.
+
+The parallel **G11 (BYO repo + Cadence Cloud, all-in-one build/host)** initiative is **receded to a convenience, not the pitch** (founder ruling 2026-06-19): we lead with the decision layer and DISPATCH the build (to our engine or to Lovable/Cursor/Devin), rather than competing with vibe-coding on building. G10 and G11 still meet only at the accounts table + entitlements matrix + the credit seam.
+
+### 2.8 Naming and motif system (Constellation)
+
+The thought process: name tiers after **what the product does to your knowledge** (connects scattered points into a navigable map that gets richer with use), so the name is the value and the depth is visible. Star (one point) -> Cluster (connecting) -> Constellation (a full pattern) -> Galaxy (shared, many) -> Cosmos (org-wide, governed). Brand-independent (survives the product itself being renamed; "Cadence" is a placeholder). Motif: a small starfield glyph beside the plan name that gains stars, connecting lines, and glow per tier; subtle drift + occasional twinkle; respects `prefers-reduced-motion` (static richer-per-tier states); tier accent hue from a dedicated palette that excludes the reserved status colors. Distinct from Kimi (notes) and Claude (tree). Built as **WM-M8**. Rename-anytime is guaranteed by the slug/display decoupling.
+
+### 2.9 Decision journey (forks resolved, compact)
+
+| Fork | Options weighed | Choice + why |
+|---|---|---|
+| Tenant boundary | product-first (flat) / workspace=tenant / account>workspace>product | **Account>Workspace>Product.** Memory pools at the account; products are the metered unit. Serves the moat + the founder's "plan at the top, products under it." |
+| Billing level | per-workspace / per-account | **Per-account, pooled.** Per-workspace billing taxes the moat (the flywheel argument). |
+| Solo to team | separate personal/team / scratch+team / graduate-in-place | **Graduate in place;** the line is members and seats, not workspace count. Personal side-projects use a separate signup. |
+| Memory persistence charge vs usage credits | one or the other | **Both, layered.** Persistence is the primary charge (free decays); credits ride on top + protect margin via top-ups. |
+| BYOK (user keys) | keep self-serve / remove | **Removed from self-serve; enterprise-only.** Model-agnostic routing (our keys) preserved. Cleaner monetization; credits are the only self-serve path. |
+| Moat / positioning lead | memory / decision-layer | **Decision layer leads; memory is one layer.** System of record + accountability for product decisions, above and dispatching the build tools. See [`../strategy/moat.md`](../strategy/moat.md). |
+| All-in-one build (G11) | co-lead / recede | **Receded to a convenience.** Do not compete with vibe-coding on building; dispatch it. |
+| Tier naming | musical (Kimi-taken) / abstract vibe / value-mapped | **Constellation** (value-mapped, brand-independent, rename-able). |
+| Showcase timing | now / deferred | **Deferred** until ~50-60% platform maturity; tracked + resurfaced. |
+| Cross-thread ownership | merge / split at interface / credits owns all pricing | **Split at the interface** (accounts table + entitlements matrix + seam). |
+
+---
+
+## 3. Architecture overview (target schema + interfaces)
+
+**New / changed schema**
+- `accounts` (id, owner_id, plan_tier, stripe_customer_id, stripe_subscription_id, plan_updated_at, created_at) + `account_members` (account_id, user_id, role). Solo = one member.
+- `workspaces.account_id uuid -> accounts(id)`. Plan/billing reads move from `workspaces` to `accounts` (keep `workspaces.plan_tier` as a derived compat shim during transition only).
+- `agent_memory`, `agent_runs`, `agents` (+ `agent_tools`, `agent_approvals`) gain `workspace_id` (today user-scoped).
+- `account_credits` (account_id PK, balance_credits, monthly_grant_credits, cycle_anchor) + `credit_ledger` (account_id, user_id, delta_credits, reason, surface, ai_event_id, created_at), service-role-write only.
+- `workspace_invitations` (token, email, role, expiry, status). `workspace_audit_log` (transfer/role events).
+- Scope leaks fixed: `meetings`, `notes`, `daily_briefs`, `copilot_messages` gain `workspace_id` + RLS.
+
+**Helpers / interfaces**
+- RLS helpers (SECURITY DEFINER, recursion-safe): existing `is_workspace_member(ws)`, plus new `is_account_member(account)`, `has_workspace_role(ws, roles[])`, `has_account_role(account, roles[])`.
+- Recall: `match_agent_memory` + `recent_agent_reflections` rewritten to filter on `workspace_id` + membership (preserve the existing expiry predicate) with a paid-account pooled-recall branch over the account's workspaces.
+- Entitlements: pure map in `src/lib/entitlements.ts` (the structure both threads read).
+- Credit seam: `assertAccountCredits` (pre-call) + `debitAccountCredits` (post-call) in `src/lib/ai/runtime.server.ts`, dormant behind `credits_enabled()`; credits-only (no self-serve BYOK; see WM-M9).
+- Dormancy flags mirror the existing `memory_expiry_enabled()` pattern: `credits_enabled()` returns false until the engine lands; `memory_expiry_enabled()` stays founder-gated.
+
+**Reused as-is:** the RLS pattern in `supabase/migrations/20260530120200_tenancy_c_tighten_policies.sql` (mirror it), `resolveProviderAuth`, the agent loop + trust arc + approvals, the AI gateway chokepoint + `ai_events` cost capture, the dormant pricing rails (`entitlements.ts`, `billing.functions.ts`, the Stripe webhook), the dormant memory-expiry engine (`memory-tick.ts`), `pricing.tsx`, the Settings BillingTab.
+
+---
+
+## 4. Work items (ID-addressable build specs)
+
+### 4.0 Index
+
+| ID | Title | Lane | Status | Depends on |
+|---|---|---|---|---|
+| WM-M1 | Entitlements core (5 account-level tiers + matrix) | Monetize | Pending | none |
+| WM-F1 | Scope agent memory / runs / roster to workspace | Foundation | Pending | none (account-pooled recall needs WM-M2) |
+| WM-M2 | `accounts` table + billing relocation + credit/decay migrations | Monetize | Pending | WM-M1 |
+| WM-F2 | Account-level memory pooling (paid) | Foundation | Pending | WM-M2, WM-F1 |
+| WM-F3 | RBAC enforcement (owner/admin/member/viewer) | Foundation | Pending | WM-M2 |
+| WM-F4 | Ownership transfer | Foundation | Pending | WM-F3 |
+| WM-F5 | Invites (account/workspace) | Foundation | Pending | WM-F3, WM-M2 |
+| WM-F6 | Move product between workspaces | Foundation | Pending | WM-M2 |
+| WM-F7 | Settings IA (Account / Workspace / Personal) | Foundation | Pending | WM-M2, WM-F3 |
+| WM-F8 | Workspace switch hardening | Foundation | Pending | WM-F1 |
+| WM-F9 | Isolation audit + scope leak fixes | Foundation | Pending | none (do before WM-F5) |
+| WM-M3 | Billing rails (account-level Stripe + webhook map) | Monetize | Pending | WM-M1, WM-M2 |
+| WM-M4 | Runtime credit seam (dormant) | Monetize | Pending | WM-M2 |
+| WM-M5 | Tier limit gates (product + workspace) | Monetize | Pending | WM-M1, WM-M2 |
+| WM-M6 | Pricing surfaces (pricing page + Settings Plan + Usage) | Monetize | Pending | WM-M1, WM-M3 |
+| WM-M7 | Upgrade nudges (value-framed) | Monetize | Pending | WM-M5, WM-M6 |
+| WM-M8 | Tier identity motif (Constellation starfield glyph) | Monetize | Pending | WM-M1, WM-M6 |
+| WM-M9 | Remove BYOK from self-serve (enterprise-only) | Monetize | Pending | WM-M1 |
+| WM-S1 | Sample workspace for every new account | Showcase | Deferred | foundation done |
+| WM-S2 | Guided tour | Showcase | Deferred | WM-S1 |
+| WM-S3 | Onboarding Concierge agent | Showcase | Deferred | WM-S1 |
+| WM-S4 | Workspace Steward agent | Showcase | Deferred | WM-S3 |
+| WM-S5 | Investor-demo rich population + reset | Showcase | Deferred | WM-S1 |
+| WM-D | Docs, registration, cross-link, cascade | Docs | In progress | none |
+
+### 4.1 Lane F, Foundation / Tenancy
+
+#### WM-F1 · Scope agent memory / runs / roster to workspace
+- **Why:** the moat (decision memory) is user-scoped today, one level above the boundary we sell; scope it so it compounds per workspace/account and the lock-in is an enforced data fact.
+- **Current state:** `agents` (user_id, slug, enabled, autonomy), `agent_runs` (user_id, agent_id), `agent_memory` (user-scoped) carry no `workspace_id`. Recall is `match_agent_memory(query_embedding vector(1536), for_user uuid, for_agent_slug text, match_count int)` with an `expires_at IS NULL OR expires_at > now()` filter; `recent_agent_reflections` has the same shape. The sole recall caller is `src/lib/ai/memory.server.ts` (around lines 55, 67). The loop already threads `workspaceId` (`src/lib/ai/loop.server.ts`; `ToolContext.workspaceId` in `src/lib/ai/tools/registry.server.ts`); `rememberOutcome` / `autoReflect` / `createMission` already receive it (today only in metadata).
+- **Build:** (1) migration adds `workspace_id` to `agent_memory`, `agent_runs`, `agents`, `agent_tools`, `agent_approvals`; deterministic backfill from the owning user's default workspace (`current_user_default_workspace()` or a `ORDER BY created_at, id LIMIT 1` CTE for users owning >1); add index; assert no nulls; set NOT NULL; add membership RLS mirroring tenancy_c. (2) Rewrite `match_agent_memory` + `recent_agent_reflections`: drop the exact old signature, recreate with a `for_workspace uuid` parameter, add `is_workspace_member(workspace_id)`, **preserve the expiry predicate**, re-GRANT. (3) Make the roster workspace-scoped: dedupe `(user_id, slug)` rows first, then swap `UNIQUE(user_id, slug)` -> `UNIQUE(workspace_id, slug)`. (4) Update `memory.server.ts` to pass the active workspace.
+- **Files:** new `supabase/migrations/<ts>_wm_f1_agent_workspace_scope.sql`; `src/lib/ai/memory.server.ts`; verify `src/lib/ai/loop.server.ts` + `registry.server.ts` pass workspace through.
+- **Gotchas:** preserve EVERY predicate in the recall rewrite and re-GRANT or recall silently breaks; drop-before-recreate the exact 4-arg signature; backfill must leave zero orphan/null; do not break existing single-user accounts (keep `user_id`, keep the DEFAULT bridge); use SECURITY DEFINER helpers to avoid RLS recursion; dedupe before the unique-key swap.
+- **Acceptance:** a member of workspace A cannot recall workspace B's memory; recall still returns within a workspace; `tsc`/build/lint green; an existing single-user account is unaffected.
+- **Verify:** RLS test (cross-workspace recall returns nothing); recall smoke test; migration applies cleanly on a Supabase branch.
+
+#### WM-F2 · Account-level memory pooling (paid)
+- **Why:** for paid accounts, memory should compound across all the account's workspaces (the flywheel); free stays single-workspace.
+- **Build:** with `workspaces.account_id` in place (WM-M2), add `is_account_member(account)` helper and a pooled-recall branch in `match_agent_memory` that spans the account's workspaces when the account's tier has `crossWorkspaceMemory` (any paid tier). Gate read-side only; writes stay workspace-scoped.
+- **Files:** migration (helper + recall branch update); no app change beyond passing `account_id`/entitlement to the recall call in `memory.server.ts`.
+- **Gotchas:** free accounts have one workspace so pooling is a no-op; do not leak across accounts; keep the single-workspace path identical.
+- **Acceptance:** a paid account with two workspaces recalls across both; a free account does not; cross-account never pools.
+- **Verify:** RLS/recall test across two workspaces under one paid account vs a free account.
+
+#### WM-F3 · RBAC enforcement (owner / admin / member / viewer)
+- **Why:** roles exist in `workspace_members.role` but only `owner` is enforced; a team needs real permissions.
+- **Build:** add `has_workspace_role(ws, roles[])` and `has_account_role(account, roles[])` SECURITY DEFINER helpers; swap domain RLS policies to role-keyed checks per the matrix below; add a `prevent_owner_demotion` trigger.
+- **Permission matrix:** owner = account billing/plan, delete account/workspace, transfer ownership, manage members; admin = manage members (not billing), create/delete workspace + product, approve agent actions, edit brief/guardrails; member = create/edit content, run missions, no member/billing management; viewer = read-only.
+- **Files:** migration (helpers + policy swaps + trigger); UI affordances gated by role where relevant (later, in WM-F7).
+- **Gotchas:** RLS recursion (helpers must be DEFINER); do not lock the owner out; keep service-role paths intact.
+- **Acceptance:** a viewer cannot write; a member cannot manage members/billing; an admin cannot change billing; the owner cannot be demoted to orphan the account.
+- **Verify:** RLS tests per role.
+
+#### WM-F4 · Ownership transfer
+- **Why:** `leaveWorkspace` blocks the owner with "transfer it first," but no transfer exists.
+- **Build:** a transactional SECURITY DEFINER RPC that reassigns `accounts.owner_id` (and/or workspace owner), adjusts `account_members`/`workspace_members` roles atomically, and writes a `workspace_audit_log` row; surface it in Settings (Account); remove the dead-end block in `src/lib/workspaces.functions.ts`.
+- **Files:** migration (RPC + `workspace_audit_log`); `src/lib/workspaces.functions.ts`; Settings UI (`src/routes/_authenticated.settings.tsx`).
+- **Gotchas:** atomic (all writes or none); guard that the new owner is a member; audit every transfer.
+- **Acceptance:** owner can transfer to another member; old owner becomes admin; an audit row is written; non-owners cannot transfer.
+- **Verify:** Playwright transfer flow + audit row check.
+
+#### WM-F5 · Invites (account / workspace)
+- **Why:** there is no invite flow; membership is manual.
+- **Build:** `workspace_invitations` table (token, email, role, expiry, status); `inviteMember` / `listInvitations` / `revokeInvitation` server fns; an `accept_workspace_invitation` RPC (the invitee is not a member yet, so accept cannot rely on membership RLS); a pluggable `src/lib/email.server.ts` that no-ops gracefully when no provider env is set and always returns a copy-paste link; an accept route `src/routes/join.$token.tsx`; Settings (members) UI.
+- **Files:** migration; new `src/lib/email.server.ts`; `src/lib/workspaces.functions.ts`; new `src/routes/join.$token.tsx`; Settings UI.
+- **Gotchas:** token single-use + expiry; accept RPC is SECURITY DEFINER; do not leak workspace data pre-accept; email send is gated (link fallback always works).
+- **Acceptance:** invite -> email/link -> accept -> member with the assigned role; revoke works; expired tokens rejected.
+- **Verify:** Playwright invite + accept; RLS check on pre-accept access.
+
+#### WM-F6 · Move product between workspaces
+- **Why:** products cannot move; cross-workspace consolidation needs it (paid/team).
+- **Build:** a transactional `move_product` RPC reassigning the product + all child rows that carry `product_id`/`workspace_id` (signals, themes, opportunities, prds, docs, tasks, decisions, conversations, rag_chunks, ai_events) to the destination workspace; guard with admin-in-both + same-account. Harden product-level scoping first (product_id has no RLS on those ~10 tables today). Memory stays at the workspace (does not move).
+- **Files:** migration (RPC + product-scope RLS hardening); `src/lib/projects.functions.ts`; UI action.
+- **Gotchas:** one atomic RPC (partial moves corrupt tenancy); permission both sides; do not move across accounts.
+- **Acceptance:** moving a product relocates all its child data; permissions enforced; no orphan rows.
+- **Verify:** move a seeded product across two workspaces; assert child-row counts move.
+
+#### WM-F7 · Settings IA (Account / Workspace / Personal)
+- **Why:** settings have no rubric (voice/model are user-global, brief is workspace, plan is workspace).
+- **Build:** regroup into three levels. **Account/Org:** plan, billing, credits/usage, members, seats. **Workspace:** brief, voice anchor, guardrails, connected sources, agents/autonomy. **Personal:** profile, personal BYO keys, notifications. Move voice anchor + default-model to workspace-level with a per-user override (resolution: user -> workspace -> system default).
+- **Files:** `src/routes/_authenticated.settings.tsx` (+ the brief/voice/model server fns for the scope change); migration if the voice/model scope columns move.
+- **Gotchas:** preserve existing values on the scope migration; the override resolution must be deterministic and tested.
+- **Acceptance:** the three levels render; voice/model resolve user -> workspace -> default; nothing lost on migration.
+- **Verify:** unit test the resolution; Playwright the three settings groups.
+
+#### WM-F8 · Workspace switch hardening
+- **Why:** `use-workspace.tsx` never resets the query cache on switch, causing a stale-data flash that reads like a leak; agents/runs/memory now switch too (after WM-F1).
+- **Build:** add `activeWorkspaceId` to all workspace-scoped TanStack Query keys (now including agents, runs, memory, approvals); reset/invalidate workspace-scoped queries on switch in `src/hooks/use-workspace.tsx`; keep the AppShell switcher; add account context where needed.
+- **Files:** `src/hooks/use-workspace.tsx`; any query hook missing the workspace key.
+- **Gotchas:** do not over-invalidate global/user queries; ensure no stale render between switch and refetch.
+- **Acceptance:** switching shows no stale data; agents/runs/memory reflect the new workspace immediately.
+- **Verify:** Playwright switch between two seeded workspaces; assert no cross-bleed and no stale flash.
+
+#### WM-F9 · Isolation audit + scope leak fixes
+- **Why:** `meetings`, `notes`, `daily_briefs`, `copilot_messages` are still `auth.uid() = user_id` with no `workspace_id`; a real cross-member leak the moment invites ship.
+- **Build:** migration adds `workspace_id` + backfill + membership RLS to each; audit for any other domain table missing scope.
+- **Files:** migration; any reads of those tables that should now be workspace-scoped.
+- **Gotchas:** backfill correctness; do this BEFORE WM-F5 (invites) so a second member cannot see the owner's notes.
+- **Acceptance:** a second member cannot read the owner's meetings/notes/briefs/chat.
+- **Verify:** RLS test per table.
+
+### 4.2 Lane M, Monetization wiring (credit ENGINE owned by the parallel thread; only the boundary + dormant seam here)
+
+#### WM-M1 · Entitlements core (5 account-level tiers + matrix)
+- **Why:** entitlements are a 3-tier feature-flag map today; expand to the 5-tier account model.
+- **Current state:** `src/lib/entitlements.ts` (`PlanTier` = free|pro|team; `entitlementsFor`, `planPresentation`, `FREE_MEMORY_RETENTION_DAYS = 14`); tested in `src/lib/entitlements.test.ts` (which asserts `isPlanTier("enterprise") === false`).
+- **Build:** expand `PlanTier`/`PLAN_TIERS`/`isPlanTier` to `free|pro|max|team|enterprise`; bump retention 14 -> 30; extend the `Entitlements` type + `entitlementsFor` with the full matrix (workspaceLimit [free=1, paid generous/null], productLimit, memoryPersists, memoryDecayDays=30, crossWorkspaceMemory [true for paid], seats, rbac, approvalLanes, criticEverywhere, shareLinks, creditMultiplier, creditMonthlyBase, creditTopUps (capped: paid-only, per-cycle ceiling, none on free), topUpCapPerCycle, productLimit (Free 2 / Pro 3 / Max ~5), enterpriseCreditModel, priority, export), keeping legacy fields as aliases; NO `byokBypassesCredits` (self-serve BYOK is removed, see WM-M9); rewrite `planPresentation` with the Constellation display names + price/credit/limit lines; add `limitFor(tier, kind)`; update `entitlements.test.ts` (flip the enterprise assertion; assert 5 tiers + the new fields).
+- **Files:** `src/lib/entitlements.ts`, `src/lib/entitlements.test.ts`.
+- **Gotchas:** keep legacy field names as aliases so nothing downstream breaks; `normalizePlanTier` must still fail safe to `free`.
+- **Acceptance:** 5 tiers typed + tested; `bun test` green for entitlements.
+- **Verify:** `bun test src/lib/entitlements.test.ts`.
+
+#### WM-M2 · `accounts` table + billing relocation + credit/decay migrations
+- **Why:** relocate billing from workspace to account; add the credit pool shell and the rolling decay.
+- **Current state:** `workspaces.plan_tier` (CHECK `free|pro|team`, set only by the Stripe webhook + `protect_workspace_billing_columns` trigger); `stripe_*` on `workspaces`. `ai_budgets` is user-scoped (not the pool). Memory-expiry engine dormant at 14 days (`set_agent_memory_expiry`, `memory_expiry_enabled()`).
+- **Build:** create `accounts` + `account_members`; add `workspaces.account_id`; backfill one account per existing workspace-owner and relink; move `plan_tier`/`stripe_*` reads to the account (keep `workspaces.plan_tier` as a derived compat shim during transition); widen the tier CHECK to add `max`/`enterprise`; extend the expiry trigger's paid-tier IN-list to all paid slugs; create `account_credits` + `credit_ledger` with a service-role-only protect trigger/RLS; add `credits_enabled()` flag (returns false); change memory decay 14 -> 30 and make it roll off `last_used_at` (refresh `expires_at` on recall).
+- **Files:** new migration(s) in `supabase/migrations/`; `src/lib/billing.functions.ts` (read plan from account).
+- **Gotchas:** the CHECK widen is a DROP+ADD in a DO block (match the existing style); do not break the dormant rails (no secret -> 200 no-op / default free); the credit tables are write-protected to service-role so a user cannot self-grant.
+- **Acceptance:** accounts exist + every workspace linked; tiers accept 5 values; credit tables exist + protected; decay is 30-day rolling; dormant billing still inert.
+- **Verify:** migration applies on a branch; backfill leaves no orphan workspace; `get_advisors` clean.
+
+#### WM-M3 · Billing rails (account-level Stripe + webhook map)
+- **Why:** checkout/webhook are 3-tier and hardcode `"pro"`; move to the account + 5 tiers + seats.
+- **Build:** Stripe customer/subscription on the account; checkout price map `STRIPE_PRICE_{PRO,MAX,TEAM}` + seat `quantity` for Galaxy/team; replace the webhook's hardcoded `"pro"` with a `price_id -> tier` map writing the account; enrich `BillingState` with account credit balance + seatCount (null-tolerant). Stays a 200 no-op until secrets are set.
+- **Files:** `src/lib/billing.functions.ts`; `src/routes/api/stripe/webhook.ts`.
+- **Gotchas:** keep the no-secret no-op; map unknown prices to `free` via `normalizePlanTier`.
+- **Acceptance:** with test price IDs, each tier checks out + the webhook sets the right account tier; without secrets, inert.
+- **Verify:** unit-test the price->tier map; dormant-path smoke.
+
+#### WM-M4 · Runtime credit seam (dormant)
+- **Why:** give the credit engine a clean place to plug in without re-plumbing.
+- **Current state:** `src/lib/ai/runtime.server.ts` `callModel` (~line 689) and `callModelStream` (~1038) already do per-user budget check + `incrementBudget` + `estimateCostUsd` + `ai_events` insert, and already carry `workspaceId` on `CallOpts`.
+- **Build:** add `assertAccountCredits(supabase, accountId, surface)` right after the existing budget check, and `debitAccountCredits(...)` next to `incrementBudget`; resolve the account from `workspaceId` (fallback to the user's default account); add a typed `CreditExhaustedError`; gate both behind `credits_enabled()` (no-op while false). There is no self-serve BYOK bypass (BYOK removed in WM-M9); an enterprise BYOK case, if ever enabled, is handled by the enterprise credit model, not a self-serve skip.
+- **Files:** `src/lib/ai/runtime.server.ts`.
+- **Gotchas:** must be a pure seam (no behavior change while dormant); account resolution must never throw on the hot path.
+- **Acceptance:** dormant = zero behavior change; when enabled (test), a platform call debits the account pool.
+- **Verify:** unit-test the seam with the flag on/off.
+
+#### WM-M5 · Tier limit gates (product + workspace)
+- **Why:** enforce free/paid caps; the client writes products directly so server-only checks are bypassable.
+- **Current state:** `createProject` in `src/lib/projects.functions.ts` (~line 165) has no limit; `AppShell.tsx` (~lines 406, 446) inserts/deletes products directly from the browser; `ensureDefaultWorkspace` is the only workspace-create path.
+- **Build:** `assertCanCreateProduct(supabase, workspaceId)` in `createProject`; `assertCanCreateWorkspace(supabase, accountId)` for the future create-workspace fn (never gate the first workspace); DB triggers `enforce_product_limit` / `enforce_workspace_limit` as the authoritative guard; a shared `LimitReachedError { kind, currentTier, limit, upsellTier }`.
+- **Files:** `src/lib/projects.functions.ts`; new `src/lib/limits.functions.ts` (or inline); migration (the triggers).
+- **Gotchas:** the DB trigger is the real guard (client bypasses server fns); never gate `ensureDefaultWorkspace`.
+- **Acceptance:** free account blocked at product #3 and workspace #2 (via the trigger, not just the server fn); paid generous.
+- **Verify:** attempt the over-limit insert directly; assert the trigger blocks it.
+
+#### WM-M6 · Pricing surfaces (pricing page + Settings Plan + Usage)
+- **Why:** the founder wants the new model reflected in all three pricing surfaces.
+- **Current state:** `src/routes/pricing.tsx` (SSR, maps `planPresentation` over the tiers) + the Settings BillingTab in `src/routes/_authenticated.settings.tsx` (maps `PLAN_TIERS`) both auto-expand to 5 tiers.
+- **Build:** (a) finalize `entitlements.ts` presentations + `billing.functions.ts` + webhook (from M1/M3); (b) Settings -> Account -> Plan: render 5 tiers + a Usage panel (account credits vs grant, products vs limit, members vs seats) + generalized upgrade buttons + a Contact-sales card for Cosmos; (c) public `pricing.tsx`: 5 tiers + transparent per-seat Galaxy + Contact-sales Cosmos + a hero ("one subscription, export anytime, credits stay generous"). Align copy with `byo-build-and-cadence-cloud-2026-06-18.md` (memory persistence is the charge; credits ride on top).
+- **Files:** `src/routes/pricing.tsx`; `src/routes/_authenticated.settings.tsx` (BillingTab + Usage); `docs/features/pricing.md`.
+- **Gotchas:** Usage panel renders gracefully pre-engine ("-"); the Contact-sales tier has no checkout CTA.
+- **Acceptance:** both surfaces show 5 Constellation tiers with correct limits/credits; Usage panel reads account state.
+- **Verify:** Playwright the pricing page + Settings Plan.
+
+#### WM-M7 · Upgrade nudges (value-framed)
+- **Why:** convert at the natural moments without being punitive.
+- **Build:** a reusable `UpgradeNudge` driven by `useEntitlements()` (reads `BillingState`), placed at: hit product limit (on `createProject` `LimitReachedError`), want a second workspace, memory about to decay (Star only, within ~5 days of `expires_at`), credits low (below a soft threshold). All gain-framed; hard blocks only server-side and always point to a path.
+- **Files:** new `src/components/plg/UpgradeNudge.tsx`; the four call sites.
+- **Gotchas:** never punitive copy; the decay nudge only shows once expiry is live.
+- **Acceptance:** each trigger renders the right gain-framed nudge linking to Plan.
+- **Verify:** unit/Playwright each placement.
+
+#### WM-M8 · Tier identity motif (Constellation starfield glyph)
+- **Why:** the unique, ownable animated plan identity (Section 2.8); the founder explicitly wants this planned.
+- **Build:** a reusable `TierGlyph` component rendering an SVG starfield per tier (stars + connecting lines + glow scaling with the tier), subtle drift + occasional twinkle via motion, `prefers-reduced-motion` static fallback, tier accent hue from a dedicated palette excluding the reserved status colors (ember/green/blue/red). Use beside the plan name in `pricing.tsx`, the Settings Plan cards, and the in-app current-plan badge.
+- **Files:** new `src/components/plg/TierGlyph.tsx`; consumed in `pricing.tsx`, `_authenticated.settings.tsx`, the plan badge in the app shell.
+- **Gotchas:** no layout shift; reduced-motion respected; keep it subtle (calm-front doctrine); colors must not collide with status semantics.
+- **Acceptance:** each tier shows a richer glyph than the one below; reduced-motion shows static states; lint/tsc/build green.
+- **Verify:** visual check across the 5 tiers + reduced-motion.
+- **Note:** this is design-polish; sequence it with WM-M6. The design-last rule is waived for this item per the founder's explicit ask.
+
+#### WM-M9 · Remove BYOK from self-serve (enterprise-only)
+- **Why:** founder ruling 2026-06-19. All self-serve usage flows through our credits; user-supplied keys weaken monetization and confuse the UX. Model-agnostic provider routing (our keys) stays.
+- **Current state:** BYOK is built: `user_api_keys` (encrypted), `byokeys.functions.ts`, the Settings BYO-keys UI, and a BYO routing branch in `src/lib/ai/runtime.server.ts` (routes to the user's key when the model prefix matches a known provider). Documented in `architecture/integrations.md` (BYO keys), `runtime.md`, `deployment.md`, `api.md`, `data.md`, `threat-model.md`, `observability.md`.
+- **Build:** remove the Settings BYO-keys UI from self-serve; retire the self-serve `byokeys.functions.ts` surface; remove the self-serve BYO routing branch in `runtime.server.ts` while KEEPING provider routing via our gateway/keys (model-agnostic stays) and the local-dev gateway fallback; keep `user_api_keys` + the routing behind an enterprise-only flag, or remove entirely if no enterprise path is wired yet. Re-correct the BYOK mentions across the docs (the cascade).
+- **Files:** `src/routes/_authenticated.settings.tsx` (remove BYO UI), `src/lib/byokeys.functions.ts`, `src/lib/ai/runtime.server.ts` (BYO branch), the architecture docs.
+- **Gotchas:** do NOT remove model-agnostic provider routing (our keys); only the user-key path. Keep the local-dev gateway fallback. No client bundle should reference user keys.
+- **Acceptance:** no self-serve BYO-keys UI; provider routing via our gateway still works; tsc/build/lint green; no stale self-serve "BYOK" copy left.
+- **Verify:** `rg -i "byok|bring your own"` shows only enterprise-context or model-agnostic mentions; a non-BYO call still routes correctly.
+
+### 4.3 Lane S, Showcase (DEFERRED, gate: platform ~50 to 60 percent complete and fine-tuned)
+
+These are specified now and **resurfaced at every milestone gate**; do not build until the gate.
+
+#### WM-S1 · Sample workspace for every new account
+- **Why:** every new user (and investors) should land in something fully populated, not just two `demo@` accounts.
+- **Build:** a richly seeded, branded sample/explore workspace (reuse + rebrand the existing `seed_demo_workspace` Lumen narrative; proposed name "Northwind"), present alongside the user's own clean workspace; resettable sandbox; provisioned per signup.
+- **Files:** the seed function (migration) + onboarding provisioning (`src/lib/onboarding.functions.ts`).
+- **Acceptance:** a new signup has a populated sample workspace + an empty real one.
+
+#### WM-S2 · Guided tour
+- **Build:** an interactive walkthrough overlaid only on the sample workspace (where to start, the loop, where it ends); the user's own workspace is free play (no tour).
+- **Acceptance:** the tour runs in the sample, not in the real workspace.
+
+#### WM-S3 · Onboarding Concierge agent
+- **Build:** an agent that connects the user's sources and seeds their REAL workspace from real context on day one (cold start -> warm start), reusing the Watch/Research/Listen mesh.
+- **Acceptance:** with a connected source, the concierge seeds real signals into the real workspace.
+
+#### WM-S4 · Workspace Steward agent
+- **Build:** an agent that nudges when the brief is stale or decisions lack a logged outcome (which feeds the memory moat).
+- **Acceptance:** stale brief / outcome-less decisions surface a nudge.
+
+#### WM-S5 · Investor-demo rich population + reset
+- **Build:** ensure every surface in the sample is populated and current (more eval runs, longer drift history); a self-serve "Reset sample" in settings.
+- **Acceptance:** every demo surface is populated; reset works.
+
+### 4.4 Lane D, Docs / registration / cascade
+
+#### WM-D · Documentation, registration, cross-link, cascade (this deliverable)
+- Register all `WM-*` in `feature-dashboard.md` (new group, Foundation active/Next, Showcase Deferred) + a build-queue section in `SOURCE-OF-TRUTH.md`, both pointing here.
+- Cascade: a `session-decisions.md` entry + a `strategic-inputs-log.md` entry; a `strategy/README.md` role-map row; cross-link `byo-build-and-cadence-cloud-2026-06-18.md` both ways.
+- Create `docs/features/workspaces.md`; update `docs/features/pricing.md`.
+- Update `architecture/data.md` + `architecture/security.md`.
+- Update `active-task.md` + `plan.md` Section 4.
+- Cross-reference this plan from `AGENTS.md`, `CLAUDE.md`, `README.md`, and the Lovable config so every tool finds it.
+
+---
+
+## 5. Build order, phases, dependencies
+
+1. **Critical path:** `WM-M1` (entitlements core, no DB) and `WM-F1` (memory scoping) first.
+2. **`WM-M2`** (accounts table + migrations) next; it unblocks billing relocation, pooling, and limit gates.
+3. **Parallel after M2:** `WM-F3` (RBAC), `WM-M5` (limit gates), `WM-F2` (account pooling), `WM-F9` (leak fixes, do before invites).
+4. **Then:** `WM-F4`/`WM-F5` (transfer, invites), `WM-M3`/`WM-M4` (billing rails, credit seam), `WM-F7`/`WM-F8` (settings IA, switch hardening), `WM-M6`/`WM-M7`/`WM-M8` (surfaces, nudges, motif), `WM-M9` (remove self-serve BYOK; sequence with the monetization surfaces).
+5. **Then:** `WM-F6` (move product) and full cross-account features.
+6. **Deferred:** `WM-S*` behind the maturity gate.
+
+Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are last and founder-gated. The AI credit engine arrives from the parallel thread onto the `WM-M4` seam.
+
+---
+
+## 6. Verification and acceptance (global)
+
+- **Hard gate:** `bun run lint` + `tsc --noEmit` + `bun run build` green before any commit; no secret/service-role leak into the client bundle.
+- **Tests:** `entitlements.test.ts` (5 tiers); RLS tests (member of A cannot read B; recall pools across an account's workspaces only when paid); the limit triggers block over-limit direct inserts; the credit seam debits only when enabled and only for non-BYOK.
+- **Migrations:** apply cleanly on a Supabase branch; accounts backfill leaves no orphan; single-user accounts still work; `get_advisors` clean.
+- **Playwright (hosted):** second workspace blocked on Star / allowed on a paid account; product limit on Star; invite + accept; ownership transfer + audit row; switch with no stale flash + paid pooling; Settings shows Account/Workspace/Personal; pricing + BillingTab show 5 Constellation tiers; BYOK call does not debit.
+- **Regression:** seeded `demo@` accounts + new-user onboarding still work.
+
+---
+
+## 7. Open founder decisions (defaults chosen; non-blocking)
+
+1. Crescendo (`max`) and Galaxy (`team`) per-seat prices, defaults are placeholders.
+2. Credit unit, per-tier amounts, top-up pricing, owned by the credits thread; this plan consumes the interface.
+3. Workspace generosity past the free line, default generous/unlimited pooled.
+4. Workspace-scoped agent roster, default yes.
+5. Sample workspace name, default "Northwind."
+6. Memory-decay + credits flip timing, default dormant until first-win is reliable.
+7. Final tier display names + motif, default Constellation (rename-able anytime via the slug decoupling).
+8. Whether to keep an enterprise BYOK / residency path long-term, or remove BYOK entirely later (default: enterprise-only, negotiated).
+
+---
+
+## 8. Cross-links and cascade map
+
+- Status: [`feature-dashboard.md`](./feature-dashboard.md) (per-item board), [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (front door).
+- Execution context: [`v10_implementation-plan.md`](./v10_implementation-plan.md), [`considerations.md`](./considerations.md).
+- Strategy: [`../strategy/moat.md`](../strategy/moat.md) (the moat / competition / positioning canon, the source for §2.3), [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) (Section 5.5 monetization canon), [`../strategy/session-decisions.md`](../strategy/session-decisions.md), [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md), [`../strategy/README.md`](../strategy/README.md) (role map).
+- Architecture: [`../../architecture/data.md`](../../architecture/data.md), [`../../architecture/security.md`](../../architecture/security.md).
+- Feature specs: [`../features/workspaces.md`](../features/workspaces.md), [`../features/pricing.md`](../features/pricing.md).
+- Conventions: [`../conventions/humanized-output.md`](../conventions/humanized-output.md), [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md).
+- Entry points that reference this plan: [`../../AGENTS.md`](../../AGENTS.md), [`../../CLAUDE.md`](../../CLAUDE.md), [`../../README.md`](../../README.md), the Lovable config.

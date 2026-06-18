@@ -2,7 +2,7 @@
 
 > **Founder: this is the ONE file to read.** Status, what we are building, what is deferred to you, findings, and progress all live here. Everything else (the feature dashboard, the build report, the strategy docs) is detail this file points to. The autonomous build loop keeps this file current every cycle.
 >
-> **Last updated:** 2026-06-18 (cycle 25: D4-REPLAY replay-and-branch). **Maintainer:** the autonomous build loop, every cycle.
+> **Last updated:** 2026-06-19 (added the Workspace / Accounts / Tenancy + Monetization initiative, WM-*; full plan [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md), board group G10 in [`feature-dashboard.md`](./feature-dashboard.md)). **Maintainer:** the autonomous build loop, every cycle.
 
 ---
 
@@ -17,6 +17,7 @@ These are permanent operating rules. The loop follows them without being reminde
 5. **Context authority.** The loop may compact / clear / roll its own context whenever it is heavy, on its own judgement, and note the roll in the handoff (`.remember/remember.md`). Roll only at clean boundaries between items, never mid-build. _(Founder ruling 2026-06-18.)_
 6. **This file is the single source of truth.** Reconcile new status, decisions, deferrals, findings, and progress HERE. If a tracking file becomes redundant, fold it in and remove it. _(Founder ruling 2026-06-18.)_
 7. **The non-negotiables that already governed the loop still hold:** never self-pause/idle (only a real usage limit pauses, with a sub-5-min recheck); only the founder ends the run; humanized output (no em/en dashes in anything authored or generated); gate every change on `tsc --noEmit` + `bun run build` + lint + adversarial review; commit explicit paths with a WHY; work in the worktree and fast-forward push to `main`. Full operating manual: [`../../AGENTS.md`](../../AGENTS.md); loop playbook: [`../operations/autonomous-build-loop.md`](../operations/autonomous-build-loop.md).
+8. **Capture everything important, comprehensively.** Every strategy doc, decision, analysis, insight, and answer to an important question is written comprehensive and thought-process-oriented (the reasoning + the why, not just the conclusion), in the same session, so the docs serve YC / accelerator / investor applications and answer questions by reference. **This file (sections 3 + 4) is the work-inventory single source of truth:** section 3 = what gets built next (autonomous queue), section 4 = the founder to-do list (what needs you). Check here first to know what to pick up. _(Founder ruling 2026-06-19.)_
 
 ---
 
@@ -72,7 +73,15 @@ Strategic #1 (impact 7/10): it advances the binding P0 constraint (autonomous SE
 6. ◐ `D4-REPLAY` (replay-and-branch) shipped (cycle 25): re-run a finished mission with a chosen model + a `replayed_from_mission_id` branch link (additive migration). Deferred `D4b`: the rich checkpoint-diff (side-by-side).
 7. **NEXT:** `FND-0.5` (prompt pre-filter on tool allow-list + product scoping), then `F-BUILDER-MULTIFILE`, `R3-PREFS`, `U6-AUDIT`, `P7-COST-INCIDENT`, `K2b`, `D4b`.
 
+### Workspace, Accounts & Tenancy + Monetization (WM-*), NEW 2026-06-19 (founder-directed)
+The current founder-directed initiative: the Account -> Workspace -> Product tenancy redesign + account-level monetization (credits-only self-serve; BYOK removed from self-serve, enterprise-only; the moat is the decision layer, memory is one layer, see [`../strategy/moat.md`](../strategy/moat.md)). Full strategy + per-ID build instructions (context, files, migrations, steps, acceptance, verification): [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). The live pick-order + effort + status board is group **G10** in [`feature-dashboard.md`](./feature-dashboard.md).
+
+**What to build next here:** `WM-M1` (entitlements core, effort S) and `WM-F1` (scope agent memory to workspace, effort L) are the critical path (no dependencies), then `WM-M2` (accounts table + migrations, L). Build straight down the G10 pick-order. This initiative carries/expands the legacy `A6/ENG-08` (RBAC/invites) and `M-C-PRICE`/`M-C-EXPIRY` (pricing/decay) items, so build from the WM rows, not those. Founder-gated flips (Stripe secrets, `credits_enabled()`, prices, final tier names) are in section 4.
+
 **Pruned (off the current milestone, do NOT build now), 2026-06-18 rank:** `APP-HEALTH` (generic ops, near-zero strategic impact now), `PLAN-ENFORCE` (monetization plumbing, gated behind M-C), `DATA-RETENTION` (team/enterprise, M-D), `PROVIDER-FALLBACK` (resilience hygiene; a single fallback already exists), `MODEL-REGISTRY-DEPRECATION` (catalog hygiene, no current breakage), `KI-16` (high-scale-only), `O3` (depends on the unbuilt O1 graph). These re-enter the queue when their milestone arrives.
+
+### BYO Repo + All-in-One Platform (BYO-*), NEW 2026-06-19 (founder-directed)
+Provider-agnostic repos (GitHub/GitLab/Bitbucket) + managed infrastructure so a user runs their whole product org on Cadence (discovery to launch, one subscription). Spec [`byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md); all-phase plan [`byo-build-implementation-plan-2026-06-19.md`](./byo-build-implementation-plan-2026-06-19.md); live board group **G11** in [`feature-dashboard.md`](./feature-dashboard.md). Build order: **BYO-P1a keystone first** (RepoProvider interface), then P1b/P1c parallel, P1d, then P2-P5. **Phase 1 awaits founder greenlight (no product code until approved).** Overlap: **BYO-P4 (managed AI credits) IS the WM credits work** (G10) - built there, cross-referenced, not duplicated. BYO-P1b depends on the WM Product/tenancy model + must honor the workspace session's `agent_memory` RLS isolation.
 
 ---
 
@@ -84,7 +93,8 @@ When you have a moment, these unblock the next tier. Each needs a decision/secre
 - **`F-CONN`**, register ≥1 OAuth client (GitHub/Linear) to unblock a 2nd live ingest source (`SEN-01`).
 - **`SEN-05` / `F-ANALYTICS-1/2`**, product-analytics connector OAuth + recurring spend.
 - **`M-C-PRICE`**, set Stripe secrets + price IDs to flip billing live.
-- **`M-C-EXPIRY`**, flip `memory_expiry_enabled()` (monetization-timing / product-tasting call).
+- **`M-C-EXPIRY`**, flip `memory_expiry_enabled()` (monetization-timing / product-tasting call). WM-M2 reworks this to a 30-day rolling window.
+- **WM initiative founder gates** (full list in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) §7): set the Crescendo (`max`) and Galaxy (`team`) per-seat prices; set Stripe secrets + price IDs for `WM-M3` (account-level checkout); flip `credits_enabled()` once the parallel credit engine lands on the `WM-M4` seam; confirm the final tier display names + motif (Constellation is the default, rename-able anytime via the slug decoupling).
 - **`SANDBOX` / `BLD-05`**, pick a sandbox provider (Cloudflare Sandbox SDK / E2B / Vercel); infra + spend.
 - **`BLD-04`**, delegate-out to external coding agents (BYO-key + governance posture).
 - **`Q2`**, external A2A server (outward-facing surface, scopes/audit posture).

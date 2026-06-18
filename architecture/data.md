@@ -28,6 +28,7 @@ Every signed-in profile must have at least one workspace membership. `current_us
 - **Integrations:** `docs_links`, `calendar_events`, `user_api_keys` (pgsodium-encrypted), agent `schedule_cron`.
 - **AI trust stack:** `ai_events`, `ai_traces`, `ai_evals`, `ai_feedback`, `tool_calls`, `guardrail_rules`, `guardrail_hits`, `eval_suites`/`eval_cases`/`eval_runs`/`eval_case_results`, `prompt_templates`/`prompt_versions`, `agent_memory`, `rag_chunks`, `ai_budgets`, `model_pricing`.
 - **Planned (Ph7-9):** `mcp_tokens`, `mcp_servers`, `mcp_server_tools`, `a2a_tasks`, `a2a_messages`, `a2a_peers`, `protocol_audit`; `graph_nodes`/`graph_edges`, `skill_packs`, `policies`; `hypotheses`.
+- **Planned (WM initiative, 2026-06-19):** `accounts`, `account_members`, `account_credits`, `credit_ledger`, `workspace_invitations`, `workspace_audit_log`; `workspace_id` added to `agent_memory`/`agent_runs`/`agents` (+ `agent_tools`/`agent_approvals`); `workspaces.account_id`. Billing/plan/credits move from `workspaces` to `accounts`; decision memory scopes to the workspace and pools across the account for paid tiers. Spec: [`../docs/planning/workspace-tenancy-and-monetization-plan.md`](../docs/planning/workspace-tenancy-and-monetization-plan.md) §3.
 
 ## Vectors (pgvector)
 

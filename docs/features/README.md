@@ -59,6 +59,8 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | W6        | Persona onboarding tracks (Solo / Founding PM / Tech Founder)   | ✅ Shipped 2026-06-17 (live-verify on next publish) | `/onboarding`                                 | [`onboarding-tracks.md`](./onboarding-tracks.md)                     |
 | ENG-06    | Cost per outcome (calm-front chip + Engine Room unit-economics) | ◐ B1+B3 built 2026-06-17 (tsc/lint/build green; live-verify on next publish; B2 deferred) | Today · `/govern?tab=analytics` | [`cost-per-outcome.md`](./cost-per-outcome.md)                       |
 | F-AGENTS-MENTIONABLE | @-mention an agent in chat to dispatch it directly | ✅ Shipped 2026-06-18 (server cycle 19 commit; composer picker + case-insensitive parse cycle 21; live-verify on next publish) | `/chat` (Ask) | [`agents-mentionable.md`](./agents-mentionable.md) |
+| LIFECYCLE | Build->Ship lifecycle gap map (audit + capture model + build plan) | 📋 Audit 2026-06-18 (no code yet; founder review pending) | n/a (planning doc) | [`lifecycle-gap-map.md`](./lifecycle-gap-map.md) |
+| WM | Workspaces, accounts & tenancy + monetization (initiative) | 📋 Plan 2026-06-19 (build pending; board G10) | Settings · workspace switcher | [`workspaces.md`](./workspaces.md) |
 
 ## Rules
 

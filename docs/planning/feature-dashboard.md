@@ -84,6 +84,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G7 Cockpit, IA & Observability | 8 | 2 | 0 | 6 |
 | G8 Governance, Trust & Safety | 6 | 5 | 0 | 1 |
 | G9 Platform & Foundation | 6 | 0 | 1 | 1 |
+| G10 Workspace, Accounts & Tenancy (WM) | 0 | 0 | 5 | 17 |
 
 > ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
 
@@ -191,8 +192,8 @@ _First paying PMs; a viral share loop._
 | ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
 | --- | --- | --- | --- | --- |
 | F-SHARE | Shareable-decision link | ✅ (2026-06-16) | The viral acquisition surface (also in G2) | [`features/shareable-decisions.md`](../features/shareable-decisions.md) |
-| M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only) | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
-| M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing | migration `20260616210000` |
+| M-C-PRICE | Pricing + entitlements (plan_tier, billing fns, Stripe webhook, Settings→Plan) | ◐ Built, needs secrets | The revenue rails; cannot be self-granted (service-role write only). **Relocated to account-level + expanded to 5 tiers via WM-M1/M2/M3 (G10).** | [`features/pricing.md`](../features/pricing.md) · **founder sets Stripe secrets to go live** |
+| M-C-EXPIRY | Memory-expiry enforcement engine | ⏸️ Dormant | Free memory expiry is built but gated **off** (`memory_expiry_enabled()`); flip on when monetizing. **WM-M2 changes it to a 30-day rolling window off `last_used_at` (G10).** | migration `20260616210000` |
 | PLG | PLG funnel (public onboarding → first-win → upgrade) | ◐ Phases 1, 2, 4 ✅ (2026-06-17) · public `/pricing` + pre-signup CTA on share links + source-aware signup continuity + post-teardown viral nudge; Phase 3 (memory-expiry banner — touches Today/Brain) queued behind the autonomous loop | Turns share-link traffic into activated, paying users | Public onboarding + W6 |
 | W6 | Persona onboarding tracks (Solo / Founding PM / Tech Founder) | ✅ Shipped 2026-06-17 (live-verify on next publish) | Per-track sample data + first-win moment; cold-start fuel for WEDGE | [`onboarding-tracks.md`](../features/onboarding-tracks.md) |
 
@@ -206,7 +207,7 @@ _Dual-user: external agents plug in; teams land._
 | F-A2A | Internal A2A handoff contract | ✅ | Agents hand off missions with structured payloads | [`features/a2a-handoff.md`](../features/a2a-handoff.md) |
 | Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals (signals/opps/PRDs · append decision) | ◐ (Phases 1-3 done 2026-06-17) | Other agents/tools use Cadence as a tool; the interop moat | Phase 1 foundation + Phase 2 tool dispatch + **Phase 3 token UI** (Settings → Integrations: issue/revoke + connect snippets) all done. Remaining (Q2/Phase 4): full MCP streamable-HTTP transport + external discovery. Detail: [`features/q1-mcp.md`](../features/q1-mcp.md) |
 | Q2 | A2A server/client + Agent Cards + scopes/audit (external) | ⬜ (M-D) | Peer agents discover and call us, governed | Extend A2A card + scopes |
-| A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) | Teams can actually use it together; per-persona approval lanes | Membership tables + RLS roles |
+| A6 / ENG-08 | Roles + RBAC + invites (owner/admin/member/viewer) | ⬜ (M-D) → carried by **WM-F3/F4/F5** | Teams can actually use it together; per-persona approval lanes. **Superseded/expanded by the WM initiative (G10); build from the WM rows.** | [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) §4.1 |
 | U6 | Full data-portability / export wizard | ◐ (2026-06-18) | Trust + escape hatch: Settings > Data exports the whole workspace (signals, opportunities/decisions, specs, tasks, outcomes, agent memory) as one RLS-scoped JSON, now with per-section selection (pick what to include). No migration. Remaining: an export audit-log | `exportWorkspace` (`projects.functions.ts`) + `DataExportCard.tsx` · [`u6-data-export.md`](../features/u6-data-export.md) |
 
 ---
@@ -269,6 +270,94 @@ _Load-bearing infra. Feature-relevant items only; pure perf/optimization is inte
 | F-HUMANIZE-HOOK | Pre-commit dash/invisible-char trace hook | ✅ (2026-06-18) | Build-time backstop for the humanization rule: `scripts/check-humanized.sh` (already built) is now wired as a pre-commit hook by `install-git-hooks.sh` (warn-only by default; `HUMANIZE_STRICT=1` to gate). Run `bash scripts/install-git-hooks.sh` to activate | `scripts/check-humanized.sh` + `scripts/install-git-hooks.sh` |
 | KI-15 / KI-16 | Stale zero-step-mission completion · advance 20/tick cap | ⬜ (low) | Rare edge cases; high-scale only | [`known-issues.md`](./known-issues.md) |
 | HUMAN-SWEEP | Full-product humanization sweep (UI strings, seed data) | ⏭️ Deferred | Pre-launch gate; deferred so screen churn doesn't force a re-sweep | Founder-prompted at the launch gate |
+
+---
+
+## G10 - Workspace, Accounts & Tenancy (the WM initiative, founder-directed 2026-06-19)
+_Account -> Workspace -> Product tenancy + account-level monetization (managed credits default, BYOK optional). Full strategy + per-ID build instructions (context, files, migrations, steps, acceptance, verification) live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). This initiative **carries and expands** the older `A6/ENG-08` (roles/RBAC/invites) and `M-C-PRICE`/`M-C-EXPIRY` (pricing/entitlements/decay) rows above; build from the WM rows, not those._
+
+**What to build next (pick top-down; effort: S = hours, M = 1-2 days, L = multi-day / migration-heavy):**
+
+| Order | ID | Title | Effort | Depends on |
+| --- | --- | --- | --- | --- |
+| 1 | WM-M1 | Entitlements core (5 account tiers + matrix) | S | none |
+| 1 | WM-F1 | Scope agent memory/runs/roster to workspace | L | none |
+| 2 | WM-M2 | accounts table + billing relocation + credit/decay migrations | L | WM-M1 |
+| 3 | WM-F3 | RBAC enforcement (owner/admin/member/viewer) | M | WM-M2 |
+| 3 | WM-M5 | Tier limit gates (DB triggers) | M | WM-M1, WM-M2 |
+| 3 | WM-F2 | Account-level memory pooling (paid) | M | WM-M2, WM-F1 |
+| 3 | WM-F9 | Isolation leak fixes (meetings/notes/briefs/chat) | S | none (do before WM-F5) |
+| 4 | WM-F4 | Ownership transfer | M | WM-F3 |
+| 4 | WM-F5 | Invites (account/workspace) | M | WM-F3, WM-M2 |
+| 4 | WM-M3 | Billing rails (account Stripe + webhook map) | M | WM-M1, WM-M2 |
+| 4 | WM-M4 | Runtime credit seam (dormant) | S | WM-M2 |
+| 5 | WM-F7 | Settings IA (Account/Workspace/Personal) | M | WM-M2, WM-F3 |
+| 5 | WM-F8 | Workspace switch hardening | S | WM-F1 |
+| 5 | WM-M6 | Pricing surfaces (5 tiers + Usage panel) | M | WM-M1, WM-M3 |
+| 6 | WM-M7 | Upgrade nudges (value-framed) | S | WM-M5, WM-M6 |
+| 6 | WM-M8 | Tier identity motif (Constellation glyph) | S | WM-M1, WM-M6 |
+| 6 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | S | WM-M1 |
+| 6 | WM-F6 | Move product between workspaces | M | WM-M2 |
+| later | WM-S1..S5 | Showcase (sample ws + tour + concierge + steward + demo) | L | gate: platform ~50-60% complete |
+
+**Status rows:**
+
+| ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
+| --- | --- | --- | --- | --- |
+| WM-M1 | Entitlements core (5 account-level tiers) | ⬜ | The tier model + limits both threads read; unblocks all pricing/limit work | plan §4.2 WM-M1 |
+| WM-F1 | Scope agent memory/runs/roster to workspace | ⬜ | The moat compounds per workspace/account (today user-scoped) | plan §4.1 WM-F1 |
+| WM-M2 | accounts table + billing/credit/decay migrations | ⬜ | Moves billing to the account; adds credit-pool shell + 30d rolling decay | plan §4.2 WM-M2 |
+| WM-F2 | Account-level memory pooling (paid) | ⬜ | Paid accounts compound memory across workspaces (the flywheel) | plan §4.1 WM-F2 |
+| WM-F3 | RBAC enforcement | ⬜ | Real owner/admin/member/viewer permissions for teams | plan §4.1 WM-F3 |
+| WM-F4 | Ownership transfer | ⬜ | Transfer an account/workspace; unblocks owner-leaves | plan §4.1 WM-F4 |
+| WM-F5 | Invites (account/workspace) | ⬜ | Add teammates (no invite flow today) | plan §4.1 WM-F5 |
+| WM-F6 | Move product between workspaces | ⬜ | Relocate a product + its data across workspaces | plan §4.1 WM-F6 |
+| WM-F7 | Settings IA (Account/Workspace/Personal) | ⬜ | A clear rubric for where each setting lives | plan §4.1 WM-F7 |
+| WM-F8 | Workspace switch hardening | ⬜ | No stale-data flash on switch; agents/memory switch too | plan §4.1 WM-F8 |
+| WM-F9 | Isolation audit + scope leak fixes | ⬜ | Close cross-member leaks (meetings/notes/briefs/chat) before invites | plan §4.1 WM-F9 |
+| WM-M3 | Billing rails (account Stripe + webhook map) | ⬜ | 5-tier checkout + seats; webhook price->tier (dormant until secrets) | plan §4.2 WM-M3 |
+| WM-M4 | Runtime credit seam (dormant) | ⬜ | The seam the parallel credit engine plugs into; credits-only (no self-serve BYOK) | plan §4.2 WM-M4 |
+| WM-M5 | Tier limit gates (product + workspace) | ⬜ | Enforce caps at the DB (client writes direct, so triggers are the guard) | plan §4.2 WM-M5 |
+| WM-M6 | Pricing surfaces (pricing page + Settings Plan + Usage) | ⬜ | The new model shown in all three surfaces | plan §4.2 WM-M6 |
+| WM-M7 | Upgrade nudges (value-framed) | ⬜ | Convert at natural moments, never punitive | plan §4.2 WM-M7 |
+| WM-M8 | Tier identity motif (Constellation starfield glyph) | ⬜ | The unique animated plan identity (rename-able via slug decoupling) | plan §4.2 WM-M8 |
+| WM-M9 | Remove BYOK from self-serve (enterprise-only) | ⬜ | Credits-only self-serve; retire the user-key path; model-agnostic routing (our keys) stays | plan §4.2 WM-M9 |
+| WM-S1 | Sample workspace for every new account | ⏭️ Deferred | Every signup + investors land in a populated space (gate ~50-60%) | plan §4.3 WM-S1 |
+| WM-S2 | Guided tour | ⏭️ Deferred | Teaches the loop in the sample workspace | plan §4.3 WM-S2 |
+| WM-S3 | Onboarding Concierge agent | ⏭️ Deferred | Seeds the real workspace from real context day one | plan §4.3 WM-S3 |
+| WM-S4 | Workspace Steward agent | ⏭️ Deferred | Nudges stale brief / outcome-less decisions (feeds the moat) | plan §4.3 WM-S4 |
+| WM-S5 | Investor-demo rich population + reset | ⏭️ Deferred | Every demo surface populated; self-serve reset | plan §4.3 WM-S5 |
+
+---
+
+## G11 - BYO Repo + Cadence Cloud (the BYO initiative, awaiting founder greenlight)
+_Provider-agnostic repos (GitHub/GitLab/Bitbucket) + managed infrastructure: run a whole product org on Cadence. Spec: [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md); all-phase plan: [`byo-build-implementation-plan-2026-06-19.md`](./byo-build-implementation-plan-2026-06-19.md). Build order: **BYO-P1a keystone first** (RepoProvider interface), then P1b/P1c parallel, P1d, then P2-P5. Phase 1 awaits founder greenlight; no code until approved. **Overlap:** BYO-P4 (managed AI credits) IS the WM credits work (G10) - build it there, cross-referenced, not duplicated._
+
+**What to build next (pick top-down; effort S = hours, M = 1-2 days, L = multi-day):**
+
+| Order | ID | Title | Effort | Depends on |
+| --- | --- | --- | --- | --- |
+| 1 | BYO-P1a | RepoProvider interface + GitHub adapter (behavior-preserving refactor) | M | none |
+| 1 | BYO-P1b | Product-level repo binding + per-Product RLS | M | none (parallel P1a) |
+| 2 | BYO-P1c | Managed / auto-create repo (user's own org) | M | BYO-P1a, BYO-P1b |
+| 3 | BYO-P1d | Calm-front Build surface (outcome-first; git behind Engine Room) | M | BYO-P1a, BYO-P1b |
+| 4 | BYO-P2 | Multi-provider (GitLab; Bitbucket demand-gated) | M | BYO-P1a |
+| 5 | BYO-P3 | Autonomy + capture (trust-graduated single-pause, deploy capture, changelog, PRD join) | L | BYO-P1d |
+| 6 | BYO-P4 | Managed AI credits (= WM credits work; allowance + overage) | S | WM-M2 |
+| 7 | BYO-P5 | Managed end-to-end runtime (DB + auth + hosting; founder-gated) | L | BYO-P3 (+ loop proven) |
+
+**Status rows:**
+
+| ID | Feature | Status | Why it matters | Cue / detail |
+| --- | --- | --- | --- | --- |
+| BYO-P1a | RepoProvider interface + GitHub refactor | ⬜ Pending greenlight | Keystone: lifts GitHub calls behind a provider-agnostic interface; unblocks P1b/P1c/P2 | plan §Phase 1 |
+| BYO-P1b | Product-level repo binding + RLS | ⬜ Pending greenlight | Binding moves workspace -> product (reserved `connection_bindings.product_id`); per-Product UI + RLS | plan §Phase 1 |
+| BYO-P1c | Managed repo + auto-create | ⬜ Pending greenlight | User creates repo in own account/org; portable (value-locked, not hostage) | spec §2, §5.5 |
+| BYO-P1d | Calm-front Build surface | ⬜ Pending greenlight | One product-framed decision on a new repo, graduates to silent; git behind Engine Room | spec §4 + plan §Phase 1 |
+| BYO-P2 | Multi-provider (GitLab + Bitbucket) | ⬜ Pending greenlight | GitLab launch pair; Bitbucket demand-gated; each adapter bounded by the interface | spec §3 |
+| BYO-P3 | Autonomous Build to Ship + capture | ⬜ Pending greenlight | Agent runs the whole chain; deploy capture + in-app changelog; closes the gap-map seam | spec §4 + [`../features/lifecycle-gap-map.md`](../features/lifecycle-gap-map.md) |
+| BYO-P4 | Managed AI credits (= WM credits) | ⬜ See G10 | Metered AI; included allowance + fair-use overage; BYOK optional. Built under WM, not duplicated here | spec §5.5 |
+| BYO-P5 | Managed end-to-end runtime | ⬜ Founder-gated | DB + auth + hosting so the user launches without leaving Cadence; the all-in-one North Star (sequenced last) | spec §5-7 |
 
 ---
 

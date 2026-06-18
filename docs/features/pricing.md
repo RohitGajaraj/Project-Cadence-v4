@@ -16,6 +16,8 @@ The tiers (v7 section 9):
 
 The core charge is **memory persistence**: free memory expires, paid memory compounds. That is the founder's course-correction #3 (charge for memory, not per-seat).
 
+> **Update 2026-06-19 (WM initiative):** this model is being expanded to **account-level billing** with **5 tiers** (Constellation: Star / Cluster / Constellation / Galaxy / Cosmos over the stable slugs `free|pro|max|team|enterprise`), generous credit allowances + cheap fair-use top-ups, managed AI credits as the only self-serve path (BYOK removed from self-serve, enterprise-only; model-agnostic routing via our keys preserved), and a 30-day rolling memory decay on free. Full model + build items: [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md) (§2.4 the tier matrix; WM-M1 / M2 / M3 / M6).
+
 ## Why it exists
 
 The proof gauntlet (v7 section 8) requires paying PMs. M-C names "plan tier + memory-expiry on free" as the mechanism. This foundation puts the plan tier and entitlement model in place so the rest (enforcement, the PLG funnel) can build on it.

@@ -259,7 +259,7 @@ The platform must support:
 - User-selected model routing
 - Cost-aware and performance-aware routing
 - Multi-model collaboration and ensemble workflows
-- **Bring Your Own Key (BYOK)** — users can connect their own API keys
+- **Bring Your Own Key (BYOK)** — users can connect their own API keys _(positioning update 2026-06-19: model-agnostic STAYS as the principle, but user-supplied BYOK is RETIRED from self-serve and kept as an enterprise-only negotiated option. Self-serve runs on our managed credits; we still route across providers with our keys. See [`docs/strategy/moat.md`](./docs/strategy/moat.md) §7 and [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) §2.6.)_
 - Enterprise key management
 - Future provider integrations without platform rebuilds
 

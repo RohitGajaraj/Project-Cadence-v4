@@ -1,8 +1,8 @@
 # Cadence ⚡
 
-> **The B2B Enterprise Product Cockpit.** An agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle, discover, definition, plan, build, test, ship, GTM launch, support, cohort analytics, and learning loop, continuously, in parallel, under your governance. You set intent. Agents run the org.
+> **The decision layer for the product org.** Cadence owns the part with no fast oracle, what to build and whether the call was right, as a governed, continuously-learning system of record and action. It senses signal, red-teams and ranks the calls (the Critic), drafts cited specs, then **dispatches the build** (its own engine or Lovable / Cursor / Devin) and learns from the outcome. Vibe-coding makes building cheap; Cadence makes the decision right. You set intent and own the calls that matter; agents run the loop.
 >
-> One-line: **your product org, running itself.**
+> One-line: **the system of record, and accountability, for product decisions.**
 
 ---
 
@@ -13,7 +13,7 @@
 
 ## What this is, in one paragraph
 
-Building software is no longer the bottleneck. The bottleneck is running the _whole_ product lifecycle as one coherent, governed, closed loop, not a dozen disconnected tools held together by a human doing manual glue work. **Cadence** is that loop. A swarm of specialist agents takes an intent ("turn this customer signal into a shipped, launched feature") and carries it end to end: ingests feedback, transcribes syncs (WhisperFlow), defines the spec, plans the issues, writes and tests the code (Cursor/Lovable sandbox), ships the release, drafts GTM copy, handles customer support, evaluates outcomes, and feeds what it learned back into the next decision cycle. Every action is cited, observable in a live trace, and reversible; the human governs only at approval gates. **Agents execute. Humans govern.** The platform runs continuously, learning and compounding with every mission.
+Building software is no longer the bottleneck; **deciding what to build is.** Code has a fast oracle (it compiles or it does not, in seconds), so building commoditizes. "What to build, and was it right" has no fast oracle (the feedback lands in weeks to quarters), so it does not. **Cadence owns that decision layer** as one coherent, governed, closed loop, not a dozen disconnected tools held together by a human doing manual glue work. A swarm of specialist agents takes an intent ("turn this customer signal into the right shipped outcome") and carries it end to end: ingests feedback, transcribes syncs, ranks and red-teams the opportunity (the Critic), defines the cited spec, then **dispatches the build** (its own engine or Lovable / Cursor / Devin), drafts GTM copy, triages support, evaluates the outcome, and feeds the result back into the next decision. Every action is cited, observable in a live trace, and reversible; the human sets intent and owns the calls that matter. **Agents execute; the human decides and is accountable.** The platform runs continuously, and the judgment compounds with every outcome. The moat: [`docs/strategy/moat.md`](./docs/strategy/moat.md).
 
 Operating rules for anyone (human or agent) building this: [`AGENTS.md`](./AGENTS.md). **The felt product / wedge (v5): [`docs/strategy/v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md). Cadence lands as the senior PM's Chief of Staff (the daily evidence-to-decision ritual); the cockpit below is the expansion.** Expansion scope, agent mesh, and milestones: [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md). Build order + build log: [`plan.md`](./plan.md). Design contract: [`design.md`](./design.md). Architecture: [`architecture/`](./architecture/). Market evidence: [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md). Founding constitution (AI co-founder role, north star, mandates): [`Ai_Cofounder.md`](./Ai_Cofounder.md).
 
@@ -40,24 +40,25 @@ A product operator today doesn't just do discovery and specs. They own the whole
 
 **The cost of switching, reconciling, re-explaining, and hand-holding the work across those seams now exceeds the cost of the work itself.** Point AI tools make one seam faster (a better spec, a faster PR) but leave the operator as the glue. To remove the glue, the _substrate_ has to own the whole lifecycle, and agents must _run_ it, not just assist it.
 
-**The deeper problem:** even AI tools that claim "automation" still put the human in the middle of every step. That is not automation. That is a faster typewriter. The autonomous shift means agents carry the mission from start to finish; the human appears only at governance gates.
+**The deeper problem:** the scarce skill is no longer building; it is deciding what to build and knowing whether you were right. AI build tools make the cheap part cheaper and leave the operator as the glue and the sole keeper of undocumented, unaccountable judgment. Cadence removes the glue AND makes the judgment compound, defensible, and governed, and it dispatches the build rather than racing to be a builder.
 
-**Cadence is that substrate.** One data model, one autonomous agent runtime, one orchestration layer, one governance/trust layer, spanning the entire lifecycle, running continuously.
+**Cadence is that substrate, the decision layer.** One data model, one governed agent runtime, one orchestration layer that drives the build tools, one trust layer, spanning sense to decide to learn, running continuously. The build is the dispatched last mile, not the pitch.
 
 ---
 
 ## Positioning: the closed product loop
 
-Four statements that should never drift:
+Five statements that should never drift:
 
-1. **Agents execute. Humans govern.** Cadence agents don't suggest. They _execute_: multi-step missions across discovery, build, test, ship, and launch, in parallel, and report back. Humans set intent, approve governance gates, and make judgment calls.
-2. **The closed loop.** Cadence owns the whole loop. factory.ai/Devin own autonomous _engineering_; Linear/Jira own _issue tracking_; Notion owns _docs_. None owns the closed loop of customer signals $\rightarrow$ build $\rightarrow$ GTM $\rightarrow$ metrics $\rightarrow$ learnings.
-3. **Governed autonomy.** Every autonomous action is cited, observable in a live trace, approval-gated where it touches the outside world, and reversible. Autonomy without governance is a liability; Cadence ships both.
-4. **Continuous, not project-based.** Products never finish. Cadence is the operating cockpit that runs the product org. The platform gets more valuable the longer it runs because Product Memory compounds.
+1. **The moat is the decision layer.** Cadence owns "what to build, and was it right" (no fast oracle, does not commoditize); vibe-coding owns "how to build" (racing to zero). We sit above the build tools and dispatch them. Memory is one layer of the moat, not the headline. Full canon: [`docs/strategy/moat.md`](./docs/strategy/moat.md).
+2. **Agents execute; the human decides and is accountable.** Cadence agents don't just suggest; they _execute_ multi-step missions and report back. The human sets intent, approves the gates, and owns the call. Accountability is structurally human; it does not automate away.
+3. **The closed DECISION loop.** Cadence owns the loop of customer signal $\rightarrow$ ranked + red-teamed decision $\rightarrow$ cited spec $\rightarrow$ dispatched build $\rightarrow$ outcome $\rightarrow$ learning. factory.ai/Devin own autonomous _engineering_; Linear/Jira own _issues_; Notion owns _docs_; Lovable/Cursor own _building_. None owns the decision loop and the record of whether the call was right.
+4. **Governed autonomy.** Every autonomous action is cited, observable in a live trace, approval-gated where it touches the outside world, and reversible. Autonomy without governance is a liability; Cadence ships both, which is what makes autonomy sellable to an enterprise.
+5. **Continuous, and a force-multiplier, not a replacement.** Products never finish. Cadence makes one PM operate like a team and their judgment compound; it does not replace the PM. It gets more valuable the longer it runs (the decision memory compounds), and we monetize the decision work (credits), so we grow as decisioning gets cheaper.
 
 ### The USP
 
-> **Cadence is the B2B Enterprise Product Cockpit where a swarm of specialist agents runs your entire product lifecycle, discover, spec, plan, build, test, ship, launch, support, learn, continuously and in parallel, governed by you at the calls that matter. Not a tool you use. An operating system that runs your product org.**
+> **Cadence is the decision layer for the product org: the system of record, and accountability, for what to build and whether the call was right. A swarm of specialist agents senses signal, red-teams and ranks the calls, defines cited specs, dispatches the build (its own engine or Lovable / Cursor / Devin), and learns from the outcome, governed by you at the calls that matter. Vibe-coding makes building cheap; Cadence makes the decision right.**
 
 ### The portability commitment
 
@@ -67,7 +68,7 @@ Four statements that should never drift:
 
 ## The MOAT: why a frontier-model launch does not kill us
 
-The model is **not** the moat. Neither is raw data. Cadence is model-agnostic. When a lab ships a horizontal "PM agent", that is a _capability we plug in_. The defensibility is five things a model release cannot replicate:
+**The moat is the decision layer: what to build, and whether the call was right.** Vibe-coding tools (Lovable, Cursor) own the build layer, how to build, which is racing to zero; we own the decision layer, which has no fast oracle and does not commoditize, and we dispatch the build to them (Lovable builds the wrong thing beautifully; Cadence decides and proves). The model is **not** the moat; neither is raw data; Cadence is model-agnostic, so a lab's horizontal "PM agent" is a _capability we plug in_. **Memory is one layer of the moat, not the headline.** Full articulation, competition map (integrate / absorb / race / ignore), the PM/two-phase positioning, and the YC objection Q&A: **[`docs/strategy/moat.md`](./docs/strategy/moat.md)**. The defensibility is five layers a model release cannot replicate:
 
 1. **End-to-end lifecycle orchestration.** Owning and orchestrating the entire loop, discover $\rightarrow$ build $\rightarrow$ ship $\rightarrow$ launch $\rightarrow$ support $\rightarrow$ learn, as one governed system.
 2. **The trust & governance layer.** Approval gates, full audit trail, citations, evals, guardrails, budgets, and reversibility: the part enterprises require before they let agents touch real systems.
@@ -95,7 +96,7 @@ We serve B2B Enterprise product organizations, establishing a collaborative envi
 
 ## Six stations, one loop (the platform offering)
 
-The engine runs a 12-stage loop internally; the operator sees **six stations**, each run by named specialist agents (full mesh: 19 agents, sub-agents, handoff contract, HITL gates, in [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md)):
+The decision loop is the hero. The engine runs a 12-stage loop internally; the operator sees **six stations**, each run by named specialist agents (full mesh: 19 agents, sub-agents, handoff contract, HITL gates, in [`docs/strategy/v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md)). **BUILD is dispatched, not the pitch** (own engine or Lovable / Cursor / Devin); the un-commoditizable ends (SENSE, DECIDE, LEARN) are where the moat lives:
 
 1. **SENSE:** Scout, Listener, Researcher, Quant ingest everything users feel, say, and do (support, meetings, reviews, analytics, competitor moves) into one cited signal stream.
 2. **DECIDE:** Strategist keeps a living, re-scored opportunity queue; Critic red-teams every candidate before the human ever sees it.
@@ -108,7 +109,7 @@ The user-facing app is **seven surfaces** (Home · Chat · Missions · Product �
 
 ### GTM posture (decided 2026-06-11)
 
-**PLG wedge → enterprise.** Land with the individual senior PM (self-serve, 10-minute wow: connect a source → themes → cited spec + task graph), expand team → org. Enterprise governance (SSO, audit, roles, budgets) is built into the architecture from day 1 and sold at milestone M4. Pain-point-first; investor framing secondary.
+**PLG wedge → enterprise.** Land with the individual senior PM via the **Critic teardown** (the 10-minute wow: point Cadence at a feature you believe in, get an evidence-backed red-team, "why your pet feature is wrong, with receipts"), then expand team → org. Self-serve is **credits-only** (managed AI credits + capped top-ups; BYOK is enterprise-only); pricing is **account-level** and gates the **decision layer** (persistent memory, Critic everywhere, governance), never the build. Enterprise governance (SSO, audit, roles, budgets) is built into the architecture from day 1. Pain-point-first; investor framing secondary. Full model: [`docs/strategy/moat.md`](./docs/strategy/moat.md) + [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md).
 
 ---
 
@@ -123,43 +124,41 @@ To maintain high reasoning quality while optimizing cost, Cadence’s **AI Choke
 | **Surgical Code Generation**    | DeepSeek-Coder-V2 / Claude 3.5 Sonnet | Executing branch code changes and self-correcting compile errors            |
 | **Fast Intent Classification**  | Gemini 1.5 Flash / GPT-4o-mini        | Chat intent routing and real-time dashboard updates                         |
 
-- **BYO Key Protocol:** Securely encrypts client keys in Supabase (`pgsodium`), allowing enterprises to use their custom endpoints and VPC configurations.
+- **BYO Key Protocol:** Securely encrypts client keys in Supabase (`pgsodium`), allowing enterprises to use their custom endpoints and VPC configurations. _(Positioning update 2026-06-19: BYOK is removed from self-serve and is an enterprise-only negotiated option; managed AI credits are the only self-serve path. Model-agnostic routing across providers with our keys is preserved. See [`docs/strategy/moat.md`](./docs/strategy/moat.md) §7 and [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) §2.6.)_
 
 ---
 
 ## Architecture at a glance
 
-A request enters at the **client**, passes the **auth/tenancy** gate, is planned by the **orchestration layer**, every model call funnels through the **AI chokepoint**, and state lives in one **database**.
+A request enters at the **client**, passes the **account / workspace / product tenancy** gate (where decision memory pools at the account, the compounding moat), is planned by the **orchestration layer** (which dispatches the build), every model call funnels through the **AI chokepoint** (credits-metered), and state lives in one **database**.
 
 ```text
-╔════════════════════════════════════════════════════════════════════════════════╗
-║  1. CLIENT (the light, calm, fast surface)                                     ║
-║     Command Center · Builder Console · Swarm HUD · Traces Observe              ║
-║     Stack: TanStack Start (React 19 + Vite) · Tailwind v4 · shadcn/ui          ║
-╚════════════════════════════════════════════════════════════════════════════════╝
-        │                                                  │
-    server functions (typed RPC)                  /api/public/hooks/*
-        │                                                  │
-╔═══════▼══════════════════════════════════════════════════▼═════════════════════╗
-║  2. AUTH & TENANCY (isolation gate)                                            ║
-║     Supabase Auth (email + Google OAuth) -> RLS scoped by user+workspace+product║
-║     Contract: architecture/security.md                                         ║
-╠════════════════════════════════════════════════════════════════════════════════╣
-║  3. ORCHESTRATION LAYER (runs autonomous missions)                            ║
-║     workflow engine · parallel sub-agents · governance gates · checkpoints     ║
-║     Contract: architecture/orchestration.md                                    ║
-╠════════════════════════════════════════════════════════════════════════════════╣
-║  4. AI CHOKEPOINT (src/lib/ai/runtime.server.ts — EVERY model call)            ║
-║     budget -> cache -> pre-guard -> retrieve(RAG) -> PROVIDER -> post-guard    ║
-║     Contract: architecture/runtime.md                                          ║
-╚═══════╤══════════════════════════════════════════════════╤═════════════════════╝
-        │                                                  │
-╔═══════▼═══════════════════════════╗      ╔═══════════════▼════════════════════╗
-║  5a. MODELS (pluggable substrate) ║      ║  5b. DATA (one store)              ║
-║      Claude · Gemini · GPT ·      ║      ║      Supabase Postgres:            ║
-║      DeepSeek · BYO keys          ║      ║      RLS · pgvector (RAG) · pg_cron║
-║      Contract: dynamic chokepoint ║      ║      Contract: architecture/data.md║
-╚═══════════════════════════════════╝      ╚════════════════════════════════════╝
+1. CLIENT  (calm front; the decision loop is the hero)
+   Home · Chat · Missions · Product · Knowledge · Learn · Govern + Settings
+   Stack: TanStack Start (React 19 + Vite) · Tailwind v4 · shadcn/ui
+        |  server functions (typed RPC)        |  /api/public/hooks/*
+        v                                      v
+2. ACCOUNT / WORKSPACE / PRODUCT TENANCY  (isolation gate + the moat)
+   Supabase Auth -> RLS scoped by account + workspace + product
+   decision memory pools at the account (the compounding moat)
+   Contract: architecture/security.md, architecture/data.md
+        |
+        v
+3. ORCHESTRATION  (runs the sense -> decide -> learn loop)
+   workflow engine · parallel sub-agents · the Critic · governance gates
+   dispatches the BUILD (own engine, or Lovable / Cursor / Devin)
+   Contract: architecture/orchestration.md
+        |
+        v
+4. AI CHOKEPOINT  (src/lib/ai/runtime.server.ts; EVERY model call)
+   budget -> credits -> cache -> pre-guard -> RAG -> PROVIDER -> post-guard
+   Contract: architecture/runtime.md
+        |
+        v
+5a. MODELS (model-agnostic): Claude · Gemini · GPT · DeepSeek
+    our keys, credits-metered (BYOK is enterprise-only)
+5b. DATA (one store): Supabase Postgres; RLS · pgvector (RAG) · pg_cron
+    Contract: architecture/data.md
 ```
 
 Where each layer lives in detail: [`architecture/`](./architecture/). Stack rationale and the open-source posture: [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md).
@@ -171,9 +170,9 @@ Where each layer lives in detail: [`architecture/`](./architecture/). Stack rati
 | If you are…                                                               | Read                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Evaluating Cadence                                                        | **README.md** (here)                                                                                                                                                                                                                                |
-| **What to build next + how it should look and behave (CURRENT, pick first)** | **[`docs/strategy/v10-master-blueprint-2026-06-17.md`](./docs/strategy/v10-master-blueprint-2026-06-17.md)** (the master blueprint: every feature with pain + how it functions, IA, screen-by-screen, the analytical engine, priority + disjoint lanes) · execution order: [`docs/planning/v10_implementation-plan.md`](./docs/planning/v10_implementation-plan.md) · live status: [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) · which-doc-to-pick role map: [`docs/strategy/README.md`](./docs/strategy/README.md) |
+| **What to build next + how it should look and behave (CURRENT, pick first)** | **[`docs/strategy/v10-master-blueprint-2026-06-17.md`](./docs/strategy/v10-master-blueprint-2026-06-17.md)** (the master blueprint: every feature with pain + how it functions, IA, screen-by-screen, the analytical engine, priority + disjoint lanes) · execution order: [`docs/planning/v10_implementation-plan.md`](./docs/planning/v10_implementation-plan.md) · live status: [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) · which-doc-to-pick role map: [`docs/strategy/README.md`](./docs/strategy/README.md) · **current build initiative:** [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) (workspace / accounts / tenancy + monetization, the cross-tool build bible; live board group G10 in feature-dashboard) |
 | Understanding positioning (CURRENT source of truth)                       | **[`docs/strategy/v7-agentic-product-os-2026-06-14.md`](./docs/strategy/v7-agentic-product-os-2026-06-14.md)** (positioning + market) · **[`v8-calm-front-deep-engine-2026-06-16.md`](./docs/strategy/v8-calm-front-deep-engine-2026-06-16.md)** (structure + hybrid Build spine) · **[`v9-decision-wedge-and-build-next-2026-06-17.md`](./docs/strategy/v9-decision-wedge-and-build-next-2026-06-17.md)** (decision lens: Critic-teardown wedge, competitor posture, own-the-autonomous-engine, build-next) · engine/expansion: [`v4-feature-map-2026-06-11.md`](./docs/strategy/v4-feature-map-2026-06-11.md) · wedge UX: [`v5-chief-of-staff-2026-06-11.md`](./docs/strategy/v5-chief-of-staff-2026-06-11.md) · personas: [`v3-positioning-cadence-2026-06-10.md`](./docs/strategy/v3-positioning-cadence-2026-06-10.md) · index+archive: [`docs/strategy/README.md`](./docs/strategy/README.md) |
-| Strategy reasoning + fundraising source narrative (YC / investor)         | [`docs/strategy/strategic-inputs-log.md`](./docs/strategy/strategic-inputs-log.md): the raw brainstorm reasoning + evidence behind the canon (operator/PM/investor/marketer lenses), the source narrative for accelerator/investor applications · decisions: [`docs/strategy/session-decisions.md`](./docs/strategy/session-decisions.md) |
+| Strategy reasoning + fundraising source narrative (YC / investor)         | [`docs/strategy/strategic-inputs-log.md`](./docs/strategy/strategic-inputs-log.md): the raw brainstorm reasoning + evidence behind the canon (operator/PM/investor/marketer lenses), the source narrative for accelerator/investor applications · decisions: [`docs/strategy/session-decisions.md`](./docs/strategy/session-decisions.md) · **moat / competition / defensibility (YC + interview prep):** [`docs/strategy/moat.md`](./docs/strategy/moat.md) |
 | Founding constitution (AI co-founder posture, north star, mandates)       | [`Ai_Cofounder.md`](./Ai_Cofounder.md): its Repo Concordance maps its 13 mandated docs onto this repo's canon                                                                                                                                      |
 | Market & competitor evidence                                              | [`docs/references/competitive-landscape-2026-06-11.md`](./docs/references/competitive-landscape-2026-06-11.md)                                                                                                                                      |
 | Resuming the v4 rebuild session                                           | [`docs/planning/archive/v4-rebuild-handoff-2026-06-11.md`](./docs/planning/archive/v4-rebuild-handoff-2026-06-11.md)                                                                                                                                                |
