@@ -92,6 +92,23 @@ _(none yet)_
 | --- | --- | --- |
 | F3 auto-cluster cron (continuous incremental re-cluster) | It commits **recurring AI spend** for every workspace (a `discovery-tick` that auto-clusters new signals on a schedule). Per the autonomous contract, spend posture is founder-gated, so I did not enable it unilaterally. The always-fresh feed half (cycle 11) shipped without it. | A yes on "enable always-on auto-clustering" (it is the same governed loop-cost model as the existing ticks, bounded by your spend caps + kill-switch). On your OK I will build the `discovery-tick` hook reusing the proven `clusterSignals` core, gated off until you wire its schedule. Also pairs with per-product clustering scope. |
 
+## Live verification (2026-06-18 12:35) — founder published cycles 1-16, I verified on the live app
+
+The founder published everything through cycle 16; I logged into the published app (`cadence-flow-beta.lovable.app`, demo account) and verified the shipped features render and behave correctly. Result: **everything checked is working.** One minor copy gap found and fixed (below).
+
+| Feature (cycle) | Result | Evidence |
+| --- | --- | --- |
+| R3 global Attention bell (15) | OK Works | TopBar shows "Attention: 5 things need you" with the count badge, links to `/govern?tab=attention`. Correctly reads lower than the Trust-row "Approvals · 9 pending" (the bell's feed excludes expired approvals), the documented distinct-surfaces behavior. |
+| R3 Attention feed (2) | OK Works | Engine Room > Attention renders 5 severity-coded "Needs you" cards, matching the bell count exactly (bell and feed consistent), each links to its home. |
+| P7 Incidents log (3) | OK Works | Engine Room > Incidents renders an Execution incident ("mission.dispatch failed" + detail + timestamp + working "View trace"). |
+| P7 guardrail source (16) | OK Deployed, behaves right | The throughput card shows "5 guardrail hits" but Incidents shows no guardrail card, correct: those hits are `warn`/`redact`, not `block`, and the block-only filter is working as designed. A real `block` event is needed to see the card. |
+| C4/E7 Agent inspector + memory (4, 5) | OK Works | Missions > Agents > inspector renders the agent selector, "Recent runs" (status · mission · step · time), and "What this agent knows" (private reflection memory). |
+| D4 mission cancel control (10) | OK Works | A running mission shows status "running" with a "Cancel mission" button beside it (shown only while active). Not clicked (destructive on shared demo data); presence confirmed. |
+
+**Minor finding (fixed 2026-06-18 12:35):** the Engine Room's **Incidents tab description** still read "failed tool executions and errored auto-pipelines" and did not mention guardrail blocks after cycle 16 added them. This was the govern route's tab-description map (not the panel, which cycle 16 did update). Fixed the copy to include "guardrail blocks". `tsc` + build green.
+
+**Not yet spot-checked live (same publish pipeline, high confidence; will check on request):** U6 export, U6 selective, O1 provenance, F3 always-fresh feed, LCH-01 launch kit. F3 per-product clustering (cycle 17) is unpublished, so it stays in the publish-queue below.
+
 ## Pending published-app verification (needs you to publish, then I verify)
 
 The live app does not reflect this run's changes until you publish them. These items are code-complete and gate-green (tsc + build + lint + adversarial review) but not yet verified on the live app. Per playbook section 13, I do not test this run's unpublished changes against the live app (I may test behavior already deployed). Each item is dated and classified: "needs publish first" (this run's new work) or "quick-check now" (already-live behavior you can verify in a moment). When you publish, tell me and I will run the checks.

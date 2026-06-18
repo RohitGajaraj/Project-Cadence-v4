@@ -82,7 +82,7 @@ const GOVERN_DESC: Record<Tab, string> = {
   traces: "Step-by-step replay of each agent run, with timing and tool calls.",
   drift: "Quality shifts against baseline. Flags when answers start changing.",
   incidents:
-    "What went wrong: failed tool executions and errored auto-pipelines, newest first, linked to traces.",
+    "What went wrong: failed tool executions, errored auto-pipelines, and guardrail blocks, newest first, linked to traces.",
 };
 
 export const Route = createFileRoute("/_authenticated/govern")({
