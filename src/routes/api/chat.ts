@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { callModelStream, callModel } from "@/lib/ai/runtime.server";
 import { createMission } from "@/lib/ai/handoff.server";
 import { runAgentLoop } from "@/lib/ai/loop.server";
+import { advanceMissionCore } from "@/lib/ai/mission-advance.server";
 import { retrieve } from "@/lib/rag/retriever.server";
 import { indexFinding } from "@/lib/rag/findings.server";
 import { estimateCostUsd } from "@/lib/ai/pricing";
@@ -68,6 +69,36 @@ function byoKeyMissingMessage(providerLabel: string): string {
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * F-AGENTS-MENTIONABLE: extract candidate @agentslug tokens from a message.
+ * A mention is an "@" at a word boundary followed by an agents.slug-shaped
+ * token (lowercase letters + hyphens). Returns lowercased candidates in order;
+ * the caller resolves them against the enabled roster. The leading boundary
+ * keeps email addresses (no preceding whitespace) from ever matching.
+ */
+function parseAgentMentions(text: string): string[] {
+  const out: string[] = [];
+  const re = /(?:^|\s)@([a-z][a-z-]{1,30})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const slug = m[1].replace(/-+$/, ""); // drop a dangling hyphen
+    if (slug.length >= 2) out.push(slug);
+  }
+  return out;
+}
+
+/**
+ * Remove the first "@slug" token so the dispatched goal reads as a clean
+ * instruction (the agent is already chosen). Collapses the freed whitespace.
+ * Slugs are constrained to [a-z-], so interpolating one into the regex is safe.
+ */
+function stripMention(text: string, slug: string): string {
+  return text
+    .replace(new RegExp(`(^|\\s)@${slug}\\b`), "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 export const Route = createFileRoute("/api/chat")({
@@ -159,6 +190,54 @@ export const Route = createFileRoute("/api/chat")({
           user: profileRes.data,
         }).slice(0, 6000);
 
+        // F-AGENTS-MENTIONABLE: an explicit @agentslug names the specialist to
+        // run. A resolved mention is an unambiguous command, so it skips the
+        // classifier entirely (no extra model call) and dispatches a single-step
+        // mission straight to that agent. The orchestrator's planning round-trip
+        // is unnecessary when the user already named the lead.
+        let mentionedAgent: { id: string; slug: string; name: string } | null = null;
+        const mentionCandidates = parseAgentMentions(body.content);
+        if (mentionCandidates.length > 0) {
+          const { data: roster } = await supabase
+            .from("agents")
+            .select("id,slug,name")
+            .eq("user_id", userId)
+            .eq("enabled", true)
+            .neq("slug", "orchestrator");
+          const bySlug = new Map(
+            ((roster ?? []) as { id: string; slug: string; name: string }[]).map((a) => [
+              a.slug,
+              a,
+            ]),
+          );
+          for (const cand of mentionCandidates) {
+            const hit = bySlug.get(cand);
+            if (hit) {
+              mentionedAgent = hit;
+              break;
+            }
+          }
+        }
+
+        let isMission = false;
+        let missionTitle = "";
+        let missionGoal = "";
+        let researchMode: ResearchMode = "chat";
+        let subQueries: string[] = [];
+
+        if (mentionedAgent) {
+          const stripped = stripMention(body.content, mentionedAgent.slug);
+          if (stripped) {
+            // Direct specialist dispatch: the named agent IS the mission.
+            isMission = true;
+            missionGoal = stripped;
+            missionTitle = stripped.slice(0, 60);
+          } else {
+            // Bare "@agent" with no task, so fall back to regular chat.
+            mentionedAgent = null;
+          }
+        }
+
         // 1. Classifier v3 (one call): mission gating + research-mode routing.
         const classificationSystem = `You are the intent classifier for Cadence, an agent-native product operating system.
 Your job is to analyze the user's latest input and decide if it is a request to perform a multi-agent execution mission (e.g. drafting a PRD, building code, doing research, running analyses, creating tasks, generating syncs) or a general chat query (e.g. explaining a concept, asking for info, chatting, greeting).
@@ -182,41 +261,39 @@ You must output a JSON object EXACTLY in this format:
   "sub_queries": ["search query", ...]
 }`;
 
-        let isMission = false;
-        let missionTitle = "";
-        let missionGoal = "";
-        let researchMode: ResearchMode = "chat";
-        let subQueries: string[] = [];
+        if (!mentionedAgent) {
+          try {
+            const classResult = await callModel(supabase, userId, {
+              surface: "chat",
+              surface_ref: body.conversationId,
+              model: "google/gemini-3-flash-preview",
+              responseFormat: "json_object",
+              guardrails: false,
+              messages: [
+                { role: "system", content: classificationSystem },
+                { role: "user", content: body.content },
+              ],
+            });
 
-        try {
-          const classResult = await callModel(supabase, userId, {
-            surface: "chat",
-            surface_ref: body.conversationId,
-            model: "google/gemini-3-flash-preview",
-            responseFormat: "json_object",
-            guardrails: false,
-            messages: [
-              { role: "system", content: classificationSystem },
-              { role: "user", content: body.content },
-            ],
-          });
-
-          if (classResult.status === "ok" && classResult.output) {
-            const parsed = JSON.parse(classResult.output);
-            if (parsed && typeof parsed === "object") {
-              isMission = !!parsed.is_mission;
-              missionTitle = parsed.suggested_title || "";
-              missionGoal = parsed.goal || "";
-              if (parsed.mode === "web" || parsed.mode === "internal" || parsed.mode === "both")
-                researchMode = parsed.mode;
-              if (Array.isArray(parsed.sub_queries))
-                subQueries = parsed.sub_queries
-                  .filter((q: unknown): q is string => typeof q === "string" && q.trim().length > 0)
-                  .slice(0, 3);
+            if (classResult.status === "ok" && classResult.output) {
+              const parsed = JSON.parse(classResult.output);
+              if (parsed && typeof parsed === "object") {
+                isMission = !!parsed.is_mission;
+                missionTitle = parsed.suggested_title || "";
+                missionGoal = parsed.goal || "";
+                if (parsed.mode === "web" || parsed.mode === "internal" || parsed.mode === "both")
+                  researchMode = parsed.mode;
+                if (Array.isArray(parsed.sub_queries))
+                  subQueries = parsed.sub_queries
+                    .filter(
+                      (q: unknown): q is string => typeof q === "string" && q.trim().length > 0,
+                    )
+                    .slice(0, 3);
+              }
             }
+          } catch (e) {
+            console.error("[chat] intent classification failed (falling back to chat):", e);
           }
-        } catch (e) {
-          console.error("[chat] intent classification failed (falling back to chat):", e);
         }
 
         // 2. Resolve default workspace & check pre-flight constraints
@@ -228,35 +305,45 @@ You must output a JSON object EXACTLY in this format:
 
         if (isMission) {
           try {
-            // Seed orchestrator (idempotent)
-            const { error: seedErr } = await supabase.rpc("seed_orchestrator_agent", {
-              p_user_id: userId,
-            });
-            if (seedErr) {
-              preflightError = `seed orchestrator failed: ${seedErr.message}`;
-            } else if (!workspaceId) {
-              preflightError = "No default workspace found for user";
-            } else {
-              const { data: agent } = await supabase
-                .from("agents")
-                .select("id")
-                .eq("user_id", userId)
-                .eq("slug", "orchestrator")
-                .maybeSingle();
-              if (!agent) {
-                preflightError = "Orchestrator agent not found after seeding";
+            if (mentionedAgent) {
+              // F-AGENTS-MENTIONABLE: the agent was already resolved as enabled
+              // in the user's roster, so only the workspace is still required.
+              if (!workspaceId) {
+                preflightError = "No default workspace found for user";
               } else {
-                startingAgent = agent;
-                // Pre-flight specialists check
-                const { count: specialists } = await supabase
+                startingAgent = { id: mentionedAgent.id };
+              }
+            } else {
+              // Seed orchestrator (idempotent)
+              const { error: seedErr } = await supabase.rpc("seed_orchestrator_agent", {
+                p_user_id: userId,
+              });
+              if (seedErr) {
+                preflightError = `seed orchestrator failed: ${seedErr.message}`;
+              } else if (!workspaceId) {
+                preflightError = "No default workspace found for user";
+              } else {
+                const { data: agent } = await supabase
                   .from("agents")
-                  .select("id", { count: "exact", head: true })
+                  .select("id")
                   .eq("user_id", userId)
-                  .eq("enabled", true)
-                  .neq("slug", "orchestrator");
-                if ((specialists ?? 0) === 0) {
-                  preflightError =
-                    "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Build) in the Agents roster before starting a mission.";
+                  .eq("slug", "orchestrator")
+                  .maybeSingle();
+                if (!agent) {
+                  preflightError = "Orchestrator agent not found after seeding";
+                } else {
+                  startingAgent = agent;
+                  // Pre-flight specialists check
+                  const { count: specialists } = await supabase
+                    .from("agents")
+                    .select("id", { count: "exact", head: true })
+                    .eq("user_id", userId)
+                    .eq("enabled", true)
+                    .neq("slug", "orchestrator");
+                  if ((specialists ?? 0) === 0) {
+                    preflightError =
+                      "No specialist agents enabled. Please enable at least one specialist agent (Discovery, Strategist, Build) in the Agents roster before starting a mission.";
+                  }
                 }
               }
             }
@@ -292,19 +379,52 @@ You must output a JSON object EXACTLY in this format:
             });
             if (userInsErr) return json({ error: userInsErr.message }, 500);
 
-            // Fire-and-forget the orchestrator loop asynchronously
-            runAgentLoop(supabase, userId, {
-              agentSlug: "orchestrator",
-              goal: missionGoal || body.content,
-              model: model,
-              missionId: mission.id,
-              workspaceId,
-            }).catch((err) => {
-              console.error("[chat] runAgentLoop async dispatch failed:", err);
-            });
+            if (mentionedAgent) {
+              // F-AGENTS-MENTIONABLE: pre-plan a single-step DAG for the named
+              // agent (the same row shape mission.plan persists), then let the
+              // deterministic advance machinery dispatch + finalize it. No
+              // planning model-call; maybeCompleteMission closes the mission once
+              // the step is terminal (it keys off steps.length > 0).
+              const { error: stepErr } = await supabase.from("mission_steps").insert({
+                mission_id: mission.id,
+                user_id: userId,
+                workspace_id: workspaceId,
+                idx: 0,
+                agent_slug: mentionedAgent.slug,
+                sub_goal: (missionGoal || body.content).slice(0, 4000),
+                depends_on: [],
+                rationale: `Directly invoked by @${mentionedAgent.slug} in chat.`,
+                status: "planned",
+              });
+              if (stepErr) return json({ error: stepErr.message }, 500);
+              // Dispatch the ready step now (idempotent; the resume-runs cron also
+              // advances it). Fire-and-forget, so it never blocks the reply.
+              advanceMissionCore(supabase, {
+                id: mission.id,
+                user_id: userId,
+                workspace_id: workspaceId,
+                goal: missionGoal || body.content,
+                status: "running",
+              }).catch((err) => {
+                console.error("[chat] advanceMissionCore async dispatch failed:", err);
+              });
+            } else {
+              // Fire-and-forget the orchestrator loop asynchronously
+              runAgentLoop(supabase, userId, {
+                agentSlug: "orchestrator",
+                goal: missionGoal || body.content,
+                model: model,
+                missionId: mission.id,
+                workspaceId,
+              }).catch((err) => {
+                console.error("[chat] runAgentLoop async dispatch failed:", err);
+              });
+            }
 
             // Return custom SSE stream yielding content + mission_id instantly
-            const text = `I've planned and dispatched a new orchestrated mission: **${mission.title}**.\n\nYou can track the progress of the specialist agents and approve their decisions inline below.`;
+            const text = mentionedAgent
+              ? `On it. I've dispatched **${mission.title}** to ${mentionedAgent.name}.\n\nYou can track its progress and approve decisions inline below.`
+              : `I've planned and dispatched a new orchestrated mission: **${mission.title}**.\n\nYou can track the progress of the specialist agents and approve their decisions inline below.`;
             const encoder = new TextEncoder();
             const stream = new ReadableStream({
               async start(controller) {
