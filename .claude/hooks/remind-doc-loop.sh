@@ -24,7 +24,7 @@ if [ "$HAS_CODE_CHANGES" = true ]; then
   HAS_DOC_CHANGES=false
   while read -r line; do
     file=$(echo "$line" | awk '{print $2}')
-    if [[ "$file" == "docs/feature-backlog.md" ]] || [[ "$file" == "plan.md" ]]; then
+    if [[ "$file" == "docs/planning/feature-backlog.md" ]] || [[ "$file" == "plan.md" ]]; then
       HAS_DOC_CHANGES=true
       break
     fi
@@ -36,14 +36,14 @@ if [ "$HAS_CODE_CHANGES" = true ]; then
 ================================================================================
 ⚠️  [CLOSED DOCUMENTATION LOOP WARNING]
 You modified code (in src/ or supabase/migrations/) but did NOT update:
-- docs/feature-backlog.md (the Live status board) OR
+- docs/planning/feature-backlog.md (the Live status board) OR
 - plan.md (the active build log)
 
 Remember the rule from AGENTS.md §5:
 "A change is not 'done' until its documentation is true. An agent that ships
 code without updating docs has left the loop open."
 
-Please update docs/feature-backlog.md and plan.md before ending your session!
+Please update docs/planning/feature-backlog.md and plan.md before ending your session!
 ================================================================================
 
 MSG

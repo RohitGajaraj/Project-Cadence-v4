@@ -1,5 +1,7 @@
 # Feature Dashboard - the single live status board (master sheet)
 
+> **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the per-feature status matrix + live In-Dev claims (machine/loop view) it points to, not the tracker to follow day-to-day.
+
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
 > **Last updated:** 2026-06-18 (cycle 19: O1 provenance in the shared Lineage drawer ◐ · O1 on spec/PRD detail ◐ · F3 per-product clustering ◐ · P7 guardrail source ◐ · R3 global bell ◐ · D4 ◐ · H1-TASKS ✅ · LCH-01 launch-kit ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
@@ -19,7 +21,7 @@ Every tool (Claude Code · Antigravity · Gemini · Lovable · a future session)
 > This is the same shared-cursor discipline as the Live status board in [`feature-backlog.md`](./feature-backlog.md); this page is the human-readable master view of it. When they disagree, fix both in the same commit.
 
 ### How to pick something up
-Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent resolves the ID here → reads the **Cue** → opens the linked detail → builds. The IDs are stable and shared with [`feature-backlog.md`](./feature-backlog.md) and [`v7-build-status.md`](./v7-build-status.md).
+Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent resolves the ID here → reads the **Cue** → opens the linked detail → builds. The IDs are stable and shared with [`feature-backlog.md`](./feature-backlog.md).
 
 ### Status legend
 | Mark | Meaning |
@@ -84,7 +86,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 > ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
 
-The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`v7-build-status.md`](./v7-build-status.md) (M-0 to M-D).
+The engine (Sense → Decide → Plan, memory, governance) is **built and verified live**. The pending frontier is the **execution half** of the lifecycle (Build → QA → Ship → Launch → Learn), **monetization/PLG**, and **interop/team**. Milestone narrative: [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3).
 
 ---
 
@@ -103,7 +105,7 @@ _The autonomous spine. Built and code/live-verified. Do not rebuild; extend via 
 | W1 | Memory-compounding loop | ✅ | Outcomes distil into recallable memory across agents (the moat wired) | `src/lib/ai/outcome-memory.ts` |
 | W2 | Executed-unattended audit | ✅ | The cockpit shows what the loop ran without you | `ExecutedCard` · Missions |
 | W3 | A2A hardening + moat on cockpit | ✅ | Handoffs validate memory refs; outcomes-remembered count shown | `enqueueHandoff` · Swarm HUD |
-| M-0 | Loop runs end-to-end on live data | ✅ (2026-06-15) | Plan → dispatch → specialist execution confirmed live (hollow-completion fixed) | [`v7-build-status.md`](./v7-build-status.md) |
+| M-0 | Loop runs end-to-end on live data | ✅ (2026-06-15) | Plan → dispatch → specialist execution confirmed live (hollow-completion fixed) | [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3) |
 
 ---
 
@@ -270,11 +272,11 @@ _Load-bearing infra. Feature-relevant items only; pure perf/optimization is inte
 ---
 
 ## Status reconciliation note
-Statuses here are reconciled from [`v7-build-status.md`](./v7-build-status.md) (milestone tags), [`../../active-task.md`](../../active-task.md) (latest shipped/dormant/parked detail), and [`feature-backlog.md`](./feature-backlog.md) (granular ledger). Where those docs conflict on a "done" claim, the row is marked **⚠️ Verify** rather than assumed - confirm against the live build before building. **The four ⚠️-Verify rows from the first cut were reconciled against the live code on 2026-06-16 (with file:line evidence): DEC-02 confirmed Done; FND-0.7, I1, and J2 confirmed Partial, with the specific remaining work noted in each row.** Granular acceptance criteria and "How to use / verify" blocks live in [`feature-backlog.md`](./feature-backlog.md); milestone exit criteria live in [`v7-build-status.md`](./v7-build-status.md); open bugs live in [`known-issues.md`](./known-issues.md).
+Statuses here are reconciled from [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3, milestone tags), [`../../active-task.md`](../../active-task.md) (latest shipped/dormant/parked detail), and [`feature-backlog.md`](./feature-backlog.md) (granular ledger). Where those docs conflict on a "done" claim, the row is marked **⚠️ Verify** rather than assumed - confirm against the live build before building. **The four ⚠️-Verify rows from the first cut were reconciled against the live code on 2026-06-16 (with file:line evidence): DEC-02 confirmed Done; FND-0.7, I1, and J2 confirmed Partial, with the specific remaining work noted in each row.** Granular acceptance criteria and "How to use / verify" blocks live in [`feature-backlog.md`](./feature-backlog.md); milestone exit criteria live in [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3); open bugs live in [`known-issues.md`](./known-issues.md).
 
 ## Related
 - [`feature-backlog.md`](./feature-backlog.md) - granular ledger + Build-order rollup (this dashboard is its master view)
-- [`v7-build-status.md`](./v7-build-status.md) - "what next" milestone narrative (M-0 to M-D)
+- [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3) - status + build queue + milestone narrative
 - [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
 - [`strategic-tasks.md`](./archive/strategic-tasks.md) - P0-P3 strategic buckets
 - [`../../active-task.md`](../../active-task.md) - the current session cursor

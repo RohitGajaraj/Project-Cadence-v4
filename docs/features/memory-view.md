@@ -47,11 +47,11 @@ Sidebar nav, "Loop" section, the "Memory" row (route `/memory`). It is a separat
 
 - Read-only by design: no editing, pinning, or deleting of memories here.
 - The window is the most recent 60 rows; the strip shows the true all-time total and notes when it is showing a capped window. No search or per-kind filter yet.
-- Measuring the moat (NDR, retention, Critic as a loop step) is the rest of milestone M-B and is tracked separately in [`../planning/v7-build-status.md`](../planning/v7-build-status.md).
+- Measuring the moat (NDR, retention, Critic as a loop step) is the rest of milestone M-B and is tracked separately in [`../planning/SOURCE-OF-TRUTH.md`](../planning/SOURCE-OF-TRUTH.md).
 
 ## Related
 
 - `plan.md` §4 (the build-log entry for this surface)
 - [`loop-runs-itself.md`](./loop-runs-itself.md) and [`f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md) - how memory is written and recalled
-- [`../planning/v7-build-status.md`](../planning/v7-build-status.md) - milestone M-B status
+- [`../planning/SOURCE-OF-TRUTH.md`](../planning/SOURCE-OF-TRUTH.md) - milestone M-B status
 - Knowledge > Memory (the `learnings` audit feed) - the complementary human-facing view

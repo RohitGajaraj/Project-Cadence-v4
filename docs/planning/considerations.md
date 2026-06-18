@@ -1,5 +1,7 @@
 # docs/considerations.md — Holistic gap review (enterprise-architect lens)
 
+> **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the cross-cutting engineering gap register it points to, not the tracker to follow day-to-day.
+
 > Status: **STANDING REVIEW.** A deliberate, multi-stakeholder pass over what the rest of the docs have _not_ yet called out — written wearing the hats of enterprise architect, CISO, SRE, data/privacy officer, finance, legal, GTM, support, and founder. Goal: surface what an enterprise-grade build needs so nothing blindsides us later. Operating rules: [`AGENTS.md`](../AGENTS.md). Feature scope: [`../plan.md`](../plan.md). Architecture: [`../architecture/`](../architecture/).
 >
 > **How to use this:** each item is a _gap to close_, not a feature already built. Pull each into [`../plan.md`](../plan.md) (sections 2/3) as it becomes relevant.

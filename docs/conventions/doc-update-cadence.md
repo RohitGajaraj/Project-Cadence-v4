@@ -45,7 +45,7 @@ The architecture and reference docs. These describe structure, not progress, so 
 Any "what are we building next?" question is answered by reading one chain, in order, so the answer is never guesswork:
 
 1. `active-task.md` (the live session cursor): the current Now-building and Next-up. Read this first, every session.
-2. `docs/planning/v7-build-status.md` (the roadmap and build-state tracker): the milestone view. For each milestone M-0 to M-D it shows a status (Done, In progress, Next, or Later), the exit criteria, and a rollup of the feature-level status (Built, Partial, Missing) pulled from the feature map. It ends with one explicit NEXT PICK and a queued task list.
+2. `docs/planning/SOURCE-OF-TRUTH.md` (section 2 status + section 3 build queue), the build-state tracker: the live status and what the loop builds next. It carries the current status, the explicit build queue (top pick first), the founder pickup list, open findings, and the milestone framing folded in.
 3. `docs/planning/feature-backlog.md` (the granular ledger): the per-feature board with how-to-verify blocks.
 
 The milestones are defined in the v7 canon (`docs/strategy/v7-agentic-product-os-2026-06-14.md` section 12). The feature statuses come from `docs/planning/v7-feature-map-*.md`. The priorities come from `docs/planning/v7-prd-*.md`. The tracker is the synthesis layer that joins them.

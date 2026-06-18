@@ -9,7 +9,7 @@ import { callModel } from "@/lib/ai/runtime.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
-// so operators can see the lifecycle they were sold. See docs/feature-backlog.md F-OUTCOME-SURFACE.
+// so operators can see the lifecycle they were sold. See docs/planning/feature-backlog.md F-OUTCOME-SURFACE.
 
 const SUPPORT_SOURCES = [
   "support",

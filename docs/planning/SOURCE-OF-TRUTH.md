@@ -25,6 +25,7 @@ These are permanent operating rules. The loop follows them without being reminde
 - **Cycles 1-19 shipped AND live-verified on the published app** (`cadence-flow-beta.lovable.app`). All checked features work. The core loop (Sense → Decide → Plan → Build → Launch → Learn), the Engine Room (approvals, attention, incidents, spend, trust dial), the 13-agent mesh with handoffs + memory-as-moat, discovery + per-product clustering, provenance, and missions are all live.
 - **Approx completion:** ~55+ of ~101 tracked feature rows done, but true completion is higher than the dashboard shows (several ⬜ rows are already built, see section 5). The remaining work splits into the autonomous queue (section 3) and the founder pickup list (section 4).
 - **Two open findings from the live sweep** (neither a code bug), section 5.
+- Milestone framing (legacy M-0 to M-D): M-0/M-A (loop on real data) and M-B (moat visible) are met (the loop is live-verified, /memory + Gauntlet shipped); M-C (monetize) and M-D (dual-user/scale) map to the founder pickup list (section 4).
 
 ---
 

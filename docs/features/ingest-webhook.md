@@ -2,7 +2,7 @@
 
 **Status:** Shipped (webhook endpoint deployed 2026-06-11 · KI-10 rate limiting added 2026-06-16)  
 **Unblocks:** M-0 (one live ingest source) · M-A (real data loop)  
-**Related:** [`../operations/demo-credentials.md`](../operations/demo-credentials.md) (test tokens), [`../planning/v7-trd-2026-06-14.md`](../planning/v7-trd-2026-06-14.md) (architecture), [`../planning/known-issues.md`](../planning/known-issues.md) (KI-10)
+**Related:** [`../operations/demo-credentials.md`](../operations/demo-credentials.md) (test tokens), [`../planning/archive/v7-trd-2026-06-14.md`](../planning/archive/v7-trd-2026-06-14.md) (architecture; archived, superseded by v10), [`../planning/known-issues.md`](../planning/known-issues.md) (KI-10)
 
 ---
 
@@ -201,5 +201,5 @@ curl -X POST https://cadence-flow-beta.lovable.app/api/public/ingest-signals \
 ## Related docs
 
 - [`docs/operations/demo-credentials.md`](../operations/demo-credentials.md) — demo workspace logins
-- [`docs/planning/v7-trd-2026-06-14.md`](../planning/v7-trd-2026-06-14.md) — B.4 · Connector activation
+- [`docs/planning/archive/v7-trd-2026-06-14.md`](../planning/archive/v7-trd-2026-06-14.md) (archived, superseded by v10), B.4 · Connector activation
 - [`docs/planning/known-issues.md`](../planning/known-issues.md) — KI-10, KI-12 (OAuth setup)

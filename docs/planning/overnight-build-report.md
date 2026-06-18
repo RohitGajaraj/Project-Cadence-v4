@@ -1,5 +1,7 @@
 # Overnight Build Report (live)
 
+> **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the dated cycle-by-cycle autonomous-loop run log it points to, not the tracker to follow day-to-day.
+
 > Live status of the autonomous overnight build run. Rewritten every cycle by the loop. The rules behind it: [`../operations/autonomous-build-loop.md`](../operations/autonomous-build-loop.md).
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.

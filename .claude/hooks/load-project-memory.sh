@@ -30,9 +30,9 @@ if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-dashboard.md" ]; then
   echo ""
 fi
 
-if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" ]; then
-  echo "=== ACTIVE BUILD TASK ==="
-  grep -E "Now building|Next up" "$CLAUDE_PROJECT_DIR/docs/planning/feature-backlog.md" | sed 's/|/ /g' | sed 's/^ *//' | sed 's/ *$//'
+if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/SOURCE-OF-TRUTH.md" ]; then
+  echo "=== ACTIVE BUILD TASK (from SSOT section 3 build queue) ==="
+  grep -A2 "### Build next" "$CLAUDE_PROJECT_DIR/docs/planning/SOURCE-OF-TRUTH.md" | sed 's/^- //'
   echo ""
 fi
 
