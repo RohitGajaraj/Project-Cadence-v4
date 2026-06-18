@@ -24,6 +24,16 @@
 
 ## Decision log
 
+### 2026-06-18 · R3 global bell badges the whole Attention feed, not a subset, and keeps the existing Approvals badge
+
+**Decision:** The new global Attention bell in the TopBar (cycle 15) badges the **entire** Attention feed count (approvals + spend alerts + stalled loop) and links to `/govern?tab=attention`. The pre-existing Trust-row "Approvals" badge (`getNeedsYou`, linking to `?tab=approvals`) is kept as-is, not merged into or replaced by the bell.
+
+**Why:** A generic bell icon universally reads as "something needs you," so badging the whole feed keeps its meaning honest and matches the feed it opens. The two indicators are deliberately different surfaces: the Trust-row badge is a count on the Approvals *nav item*; the bell is the global doorway to the *whole* Attention feed. When only approvals exist the two numbers agree (reinforcement, not contradiction); when a spend or stall alert also exists the bell reads higher, correctly signalling there is more than approvals to see.
+
+**Tradeoffs considered:** (1) Badge only the non-approval alerts (budget + health) to avoid any overlap with the Approvals badge, rejected: a bell that ignores approvals under-signals (it could read "all clear" while approvals wait), which is worse than a benign agreement of two counts. (2) Merge the two into one indicator and delete the Approvals badge, rejected: an invasive refactor of working, tested chrome for no real gain, and it violates the surgical "every line traces to the task" rule.
+
+**Impact:** `src/components/cadence/AttentionBell.tsx` (new) + `src/components/cadence/TopBar.tsx`. R3 stays ◐ (remaining: email + digests + per-user prefs). Detail: [`../features/r3-notifications.md`](../features/r3-notifications.md).
+
 ### 2026-06-18 · Split F3 by spend posture: ship the always-fresh feed, queue the auto-cluster cron for founder sign-off
 
 **Decision:** Build only the no-spend half of F3 (continuous discovery) unattended — the always-fresh feed (auto-refresh the discovery surface so continuously-ingested signals surface live). Queue the auto-cluster cron (a `discovery-tick` that re-clusters new signals on a schedule) for the founder, rather than enabling it.

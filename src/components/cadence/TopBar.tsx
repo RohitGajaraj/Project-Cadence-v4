@@ -10,6 +10,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Calendar, ChevronRight } from "lucide-react";
 import { AmbientChip } from "./AmbientChip";
+import { AttentionBell } from "./AttentionBell";
 import { CookingBanner, ConstructionPill } from "./CookingBanner";
 
 export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactNode }) {
@@ -71,6 +72,7 @@ export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactN
         <ConstructionPill />
         <span style={{ flex: 1 }} />
         {actions}
+        <AttentionBell />
         <span
           className="mono-label"
           style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
