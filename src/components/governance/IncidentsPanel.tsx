@@ -3,12 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { getIncidents, type Incident } from "@/lib/incidents.functions";
 
 // P7 · Incidents, read-only "what went wrong" log on the Engine Room: failed
-// tool executions and errored auto-pipeline events, newest first. Engine-Room:
-// names the outcome ("what went wrong"); each execution incident links to its trace.
+// tool executions, errored auto-pipeline events, and guardrail blocks, newest
+// first. Engine-Room: names the outcome ("what went wrong"); each execution
+// incident links to its trace.
 
 const KIND_LABEL: Record<Incident["kind"], string> = {
   execution: "Execution",
   pipeline: "Pipeline",
+  guardrail: "Guardrail",
 };
 
 function fmt(at: string | null): string {
@@ -35,8 +37,8 @@ export function IncidentsPanel() {
       <div className="bento" style={{ padding: 24 }}>
         <div className="mono-label">No incidents</div>
         <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8, maxWidth: 460 }}>
-          Nothing has gone wrong recently. Failed tool executions and errored auto-pipeline events
-          will be recorded here, newest first.
+          Nothing has gone wrong recently. Failed tool executions, errored auto-pipeline events, and
+          guardrail blocks will be recorded here, newest first.
         </p>
       </div>
     );

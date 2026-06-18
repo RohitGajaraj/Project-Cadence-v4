@@ -1,14 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// P7 · Incidents, a read-only "what went wrong" record: failed tool executions
-// and errored auto-pipeline events, newest first, each linked to its trace where
-// available. Derived live from confirmed logs (no new table): agent_approvals
-// (status = failed) and event_queue (rows carrying an error). RLS-scoped; a null
-// or errored query yields no rows, so the log can never break its surface.
+// P7 · Incidents, a read-only "what went wrong" record: failed tool executions,
+// errored auto-pipeline events, and guardrail blocks, newest first, each linked
+// to its trace where available. Derived live from confirmed logs (no new table):
+// agent_approvals (status = failed), event_queue (rows carrying an error), and
+// guardrail_hits (action = block, a rule that stopped an AI call). RLS-scoped; a
+// null or errored query yields no rows, so the log can never break its surface.
 // Engine-Room: names the outcome ("what went wrong"), not the mechanism.
 
-export type IncidentKind = "execution" | "pipeline";
+export type IncidentKind = "execution" | "pipeline" | "guardrail";
 
 export type Incident = {
   id: string;
@@ -71,6 +72,33 @@ export const getIncidents = createServerFn({ method: "GET" })
           traceId: null,
         });
       }
+    }
+
+    // Guardrail blocks: a rule that stopped an AI call. Only action = "block"
+    // is an incident; "warn" and "redact" are routine governance (the call still
+    // runs), so they are intentionally excluded. We surface the rule and side,
+    // never the raw matched payload, so nothing sensitive lands in the list.
+    const { data: blocks } = await supabase
+      .from("guardrail_hits")
+      .select("id,rule_name,side,created_at")
+      .eq("user_id", userId)
+      .eq("action", "block")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    for (const h of blocks ?? []) {
+      const rule = (h.rule_name as string | null) ?? "a guardrail rule";
+      const side = (h.side as string | null) === "output" ? "output" : "input";
+      out.push({
+        id: `guard:${h.id}`,
+        kind: "guardrail",
+        title: `Blocked by guardrail: ${rule}`,
+        detail:
+          side === "output"
+            ? "A guardrail rule blocked a model response from being returned."
+            : "A guardrail rule blocked a prompt before the call ran.",
+        at: (h.created_at as string | null) ?? null,
+        traceId: null,
+      });
     }
 
     out.sort((x, y) => (y.at ?? "").localeCompare(x.at ?? ""));
