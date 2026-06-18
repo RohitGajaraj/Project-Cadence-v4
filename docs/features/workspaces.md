@@ -21,6 +21,8 @@
 
 Decision memory scopes to the workspace for isolation, and **pools across the account's workspaces for paid accounts** so it compounds (`WM-F1`, `WM-F2`). Lock-in is gravity, not a wall: free memory decays on a 30-day rolling window, paid persists, and export stays open. The product gets smarter about your product the longer you use it; that is the implicit lock-in.
 
+AI usage is metered as **account-level credits** by the credit engine (build SoT §4.2.1 / `WM-M10` to `WM-M16`): a generous included allowance per tier plus cheap capped top-ups, pooled across the account's products with per-product attribution, and a legibility layer (approximate per-action ranges, not a raw per-call counter) so the meter stays calm.
+
 ## Tiers (presentation; offerings in the plan)
 
 Five tiers over stable slugs (`free|pro|max|team|enterprise`) with the **Constellation** display theme (Star / Cluster / Constellation / Galaxy / Cosmos), rename-able anytime. Managed AI credits are the only self-serve path; BYOK is removed from self-serve (enterprise-only); model-agnostic routing via our keys is preserved. Full matrix + pricing: [`pricing.md`](./pricing.md) and the build bible. The moat (the decision layer, of which memory is one part): [`../strategy/moat.md`](../strategy/moat.md).

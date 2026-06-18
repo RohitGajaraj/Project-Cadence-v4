@@ -84,7 +84,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G7 Cockpit, IA & Observability | 8 | 2 | 0 | 6 |
 | G8 Governance, Trust & Safety | 6 | 5 | 0 | 1 |
 | G9 Platform & Foundation | 6 | 0 | 1 | 1 |
-| G10 Workspace, Accounts & Tenancy (WM) | 0 | 0 | 5 | 17 |
+| G10 Workspace, Accounts & Tenancy (WM) | 0 | 0 | 5 | 24 |
 
 > ✅ **G3 Build → QA → Ship complete (2026-06-16):** I3 · J1 · J2 · I1 · I1b · K1 · I2 all ✅. Build is a Cursor-grade hero (live cockpit + Phase-2 polish). The remaining build frontier is the sandbox/preview spine (v8 Phase 3) + delegate-out. IA/cockpit lanes (N3, F-TODAY-LOOPPULSE, E8) in/landed.
 
@@ -274,7 +274,7 @@ _Load-bearing infra. Feature-relevant items only; pure perf/optimization is inte
 ---
 
 ## G10 - Workspace, Accounts & Tenancy (the WM initiative, founder-directed 2026-06-19)
-_Account -> Workspace -> Product tenancy + account-level monetization (managed credits default, BYOK optional). Full strategy + per-ID build instructions (context, files, migrations, steps, acceptance, verification) live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). This initiative **carries and expands** the older `A6/ENG-08` (roles/RBAC/invites) and `M-C-PRICE`/`M-C-EXPIRY` (pricing/entitlements/decay) rows above; build from the WM rows, not those._
+_Account -> Workspace -> Product tenancy + account-level monetization (managed credits only on self-serve, BYOK enterprise-only; the **credit engine** is WM-M10 to WM-M16, plan §4.2.1). Full strategy + per-ID build instructions (context, files, migrations, steps, acceptance, verification) live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). This initiative **carries and expands** the older `A6/ENG-08` (roles/RBAC/invites) and `M-C-PRICE`/`M-C-EXPIRY` (pricing/entitlements/decay) rows above; build from the WM rows, not those._
 
 **What to build next (pick top-down; effort: S = hours, M = 1-2 days, L = multi-day / migration-heavy):**
 
@@ -298,6 +298,13 @@ _Account -> Workspace -> Product tenancy + account-level monetization (managed c
 | 6 | WM-M8 | Tier identity motif (Constellation glyph) | S | WM-M1, WM-M6 |
 | 6 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | S | WM-M1 |
 | 6 | WM-F6 | Move product between workspaces | M | WM-M2 |
+| 2 | WM-M10 | Credit unit + cost-to-credit conversion + legibility | S | WM-M1 |
+| 3 | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | M | WM-M2, WM-M10 |
+| 3 | WM-M15 | Margin levers (cost-aware routing + cache) | M | WM-M10 |
+| 5 | WM-M12 | Credit debit engine (fills the WM-M4 seam) | M | WM-M4, WM-M10, WM-M11 |
+| 5 | WM-M13 | Capped top-up purchase (Stripe credit packs) | M | WM-M3, WM-M12 |
+| 5 | WM-M14 | Per-product / per-member attribution + caps | M | WM-M12 |
+| 6 | WM-M16 | Credit / usage UI (balance, legibility, attribution) | M | WM-M6, WM-M12, WM-M14 |
 | later | WM-S1..S5 | Showcase (sample ws + tour + concierge + steward + demo) | L | gate: platform ~50-60% complete |
 
 **Status rows:**
@@ -322,6 +329,13 @@ _Account -> Workspace -> Product tenancy + account-level monetization (managed c
 | WM-M7 | Upgrade nudges (value-framed) | ⬜ | Convert at natural moments, never punitive | plan §4.2 WM-M7 |
 | WM-M8 | Tier identity motif (Constellation starfield glyph) | ⬜ | The unique animated plan identity (rename-able via slug decoupling) | plan §4.2 WM-M8 |
 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | ⬜ | Credits-only self-serve; retire the user-key path; model-agnostic routing (our keys) stays | plan §4.2 WM-M9 |
+| WM-M10 | Credit unit + cost-to-credit conversion + legibility | ⬜ | What one credit is + the calm per-action legibility layer (no meter-anxiety) | plan §4.2.1 WM-M10 |
+| WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | ⬜ | Included resets, top-ups persist; the account credit pool | plan §4.2.1 WM-M11 |
+| WM-M12 | Credit debit engine (fills the WM-M4 seam) | ⬜ | Meters credits from the account pool; halts clean when empty | plan §4.2.1 WM-M12 |
+| WM-M13 | Capped top-up purchase (Stripe credit packs) | ⬜ | Paid-only capped fair-use top-ups; per-cycle ceiling, off by default | plan §4.2.1 WM-M13 |
+| WM-M14 | Per-product / per-member attribution + caps | ⬜ | See + cap spend per product/member on the pooled account | plan §4.2.1 WM-M14 |
+| WM-M15 | Margin levers (cost-aware routing + cache) | ⬜ | Keeps credits margin-positive (no self-serve BYOK to lean on) | plan §4.2.1 WM-M15 |
+| WM-M16 | Credit / usage UI (balance, legibility, attribution) | ⬜ | Calm balance + action ranges + attribution in Settings | plan §4.2.1 WM-M16 |
 | WM-S1 | Sample workspace for every new account | ⏭️ Deferred | Every signup + investors land in a populated space (gate ~50-60%) | plan §4.3 WM-S1 |
 | WM-S2 | Guided tour | ⏭️ Deferred | Teaches the loop in the sample workspace | plan §4.3 WM-S2 |
 | WM-S3 | Onboarding Concierge agent | ⏭️ Deferred | Seeds the real workspace from real context day one | plan §4.3 WM-S3 |

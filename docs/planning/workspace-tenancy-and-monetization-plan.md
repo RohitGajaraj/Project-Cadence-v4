@@ -1,8 +1,8 @@
-# Workspace, Accounts, Tenancy & Monetization, Cross-Tool Implementation Plan (the build bible)
+# Workspace, Accounts, Tenancy, Monetization & the Credit Engine, Cross-Tool Implementation Plan (the build bible)
 
-> **What this is.** The single, self-contained source of truth for the account / workspace / product tenancy redesign and the monetization model it carries. It holds the strategy, the justifications, the quantified model, and a build spec for every work item, written so **any tool (Claude Code, Antigravity, Gemini, Lovable, a fresh session) can pick up a single `WM-*` ID and build it from this doc alone**, with no dependence on the conversation that produced it.
+> **What this is.** The single, self-contained source of truth for the account / workspace / product tenancy redesign, the monetization model it carries, AND the credit engine that powers it. It holds the strategy, the justifications, the quantified model, and a build spec for every work item, written so **any tool (Claude Code, Antigravity, Gemini, Lovable, a fresh session) can pick up a single `WM-*` ID and build it from this doc alone**, with no dependence on the conversation that produced it. As of 2026-06-19 it also carries the **credit engine** (the cost-to-credit conversion math, per-tier amounts, grant/reset, top-ups, the debit logic, per-product attribution, and the margin levers), merged in from the parallel credits thread and segregated under §4.2.1 (`WM-M10` to `WM-M16`); see §2.7 for the merge.
 >
-> **Status:** PLAN (2026-06-19). Foundation lane is buildable now; Showcase lane is deferred. No feature code written yet; this doc + its registration are step one.
+> **Status:** PLAN (2026-06-19). Foundation lane is buildable now; Showcase lane is deferred. No feature code written yet; this doc + its registration are step one. **Credit engine (`WM-M10` to `WM-M16`) added 2026-06-19** (the two parallel threads, tenancy and credits, merged into this one source of truth per founder ruling; §4.2.1).
 > **Maintainer rule:** update the item's status here, in `feature-dashboard.md`, and in `SOURCE-OF-TRUTH.md` in the same unit of work as any change (the closed-doc loop).
 > **Owns the decision record with:** [`../strategy/session-decisions.md`](../strategy/session-decisions.md) (the decision) + [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (the reasoning) + [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5 (the monetization canon this aligns to).
 
@@ -44,6 +44,8 @@ This plan makes the **account -> workspace -> product** model the deliberate spi
 
 Plan, credits, and Stripe billing live on the **account**, not the workspace. Per-workspace billing would tax the one thing that makes the product un-leaveable: if a new workspace cost a new plan, users would make fewer, less context would accrue, and the moat would be shallower. Account-level pooling means the more a user puts in, the deeper the moat. Workspace count is gated only at the free line (free = 1 workspace); past it, workspaces are generous/pooled, never per-workspace-billed. (Reconciled with the parallel credits/monetization thread and [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5.)
 
+**Market evidence for the account-level call (2026-06-19 benchmark).** This is not a contrarian bet; it is the dominant pattern among products whose value compounds with usage. Lovable's per-project billing is the **outlier** and the wrong comp for us (it is a build tool, not a memory-compounding decision OS): it taxes the exact behavior, more products and workspaces, that deepens our moat, so users consolidate and the silos thin. Every platform whose value compounds with use pools at the org/account level and treats the sub-container as **cost attribution, not a separate bill**: Anthropic (Organization -> Workspaces), OpenAI (Organization -> Projects), Vercel/v0, Bolt (account token pool), Replit Pro (pooled). The per-seat-per-workspace billers, Linear and Notion, deliberately do the opposite, but they have **no per-workspace moat**; a workspace there is an admin silo, the inverse of our case. The reasoning + full benchmark are logged in [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-19) and feed [`../strategy/moat.md`](../strategy/moat.md) §7.
+
 ### 2.3 The moat is the decision layer; memory is one layer of it
 
 Cadence's **scope** is end-to-end (it runs the whole product lifecycle as one governed loop); its **moat** is **owning the decision layer** (what to build, and was it right), which has no fast oracle, while vibe-coding tools own one station (the build), which is racing to zero. We out-scope the build tools (the whole loop) rather than out-building them; the build is a governed station within the loop (own or dispatched). **Memory is one layer of the moat, not the headline.** Full articulation, competition map, and objection Q&A: [`../strategy/moat.md`](../strategy/moat.md). The layers, deepest first: (1) the no-fast-oracle asymmetry; (2) outcome-labeled judgment (the closed decision -> shipped -> outcome -> was-it-right loop, which is what "memory" really is); (3) system-of-record (continuous, org-scoped, cross-tool); (4) the orchestration position (above and dispatching the build tools, ours or Lovable/Cursor); (5) governance and accountability.
@@ -82,7 +84,7 @@ One-subscription "calm" model: each tier carries a generous included allowance p
 
 ### 2.7 Division of ownership with the parallel credits thread
 
-This plan owns: tenancy (accounts/workspaces/products), the billing **boundary** (account-level schema), the entitlements **structure**, the pricing **surfaces**, settings IA, and the dormant credit **seam**. The credits thread owns: the credit **engine** (what one credit is, per-tier amounts, top-up pricing, the metering math, margin levers like small-model routing and caching). They meet only at three objects: the `accounts` table, the entitlements matrix, and the `assertAccountCredits` / `debitAccountCredits` seam.
+This plan owns: tenancy (accounts/workspaces/products), the billing **boundary** (account-level schema), the entitlements **structure**, the pricing **surfaces**, settings IA, the credit **seam**, AND, **as of 2026-06-19 (founder ruling to combine the two threads into one source of truth), the credit ENGINE itself**, now specified in §4.2.1 (`WM-M10` to `WM-M16`): what one credit is, the cost-to-credit conversion, per-tier amounts + grant/reset, the debit draw-down, capped top-up purchase, per-product/member attribution + caps, and the margin levers (small-model routing + caching). The credits thread no longer exists as a separate doc; its reasoning is preserved in [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-19). The three integration objects, the `accounts` table, the entitlements matrix, and the `assertAccountCredits` / `debitAccountCredits` seam, remain the contract the BYO / Cadence-Cloud thread (**G11**, whose `BYO-P4` managed-credits work IS this engine, not a duplicate) plugs into.
 
 The parallel **G11 (BYO repo + Cadence Cloud, all-in-one build/host)** is **part of the end-to-end scope/vision** (run your whole product org on Cadence), sequenced after the loop is proven (founder ruling 2026-06-19, refined): we lead with the decision-layer moat and deliver the build as a governed station (own engine or dispatched to Lovable/Cursor/Devin), out-scoping vibe-coding (the whole loop) rather than out-building it. The moat stays the decision layer, not the hosting. G10 and G11 meet only at the accounts table + entitlements matrix + the credit seam.
 
@@ -122,6 +124,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - Recall: `match_agent_memory` + `recent_agent_reflections` rewritten to filter on `workspace_id` + membership (preserve the existing expiry predicate) with a paid-account pooled-recall branch over the account's workspaces.
 - Entitlements: pure map in `src/lib/entitlements.ts` (the structure both threads read).
 - Credit seam: `assertAccountCredits` (pre-call) + `debitAccountCredits` (post-call) in `src/lib/ai/runtime.server.ts`, dormant behind `credits_enabled()`; credits-only (no self-serve BYOK; see WM-M9).
+- Credit engine (§4.2.1, `WM-M10` to `WM-M16`): `creditsForCost` / `estimateCreditsForCall` / `actionCreditRange` in `src/lib/ai/pricing.ts` (the cost-to-credit math + the calm legibility layer); `grantMonthlyAllowance` / `resetCreditCycle` / `getCreditAttribution` in a new `src/lib/credits.functions.ts`; the debit draw-down (included -> top-up -> halt) + per-product/member caps inside the seam; capped top-up checkout on `billing.functions.ts` + the Stripe webhook; the margin levers (cost-aware routing + cache) at the chokepoint. The pool is the **account**; the ledger is service-role-write-only; the whole engine stays dormant behind `credits_enabled()`.
 - Dormancy flags mirror the existing `memory_expiry_enabled()` pattern: `credits_enabled()` returns false until the engine lands; `memory_expiry_enabled()` stays founder-gated.
 
 **Reused as-is:** the RLS pattern in `supabase/migrations/20260530120200_tenancy_c_tighten_policies.sql` (mirror it), `resolveProviderAuth`, the agent loop + trust arc + approvals, the AI gateway chokepoint + `ai_events` cost capture, the dormant pricing rails (`entitlements.ts`, `billing.functions.ts`, the Stripe webhook), the dormant memory-expiry engine (`memory-tick.ts`), `pricing.tsx`, the Settings BillingTab.
@@ -152,6 +155,13 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M7 | Upgrade nudges (value-framed) | Monetize | Pending | WM-M5, WM-M6 |
 | WM-M8 | Tier identity motif (Constellation starfield glyph) | Monetize | Pending | WM-M1, WM-M6 |
 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | Monetize | Pending | WM-M1 |
+| WM-M10 | Credit unit + cost-to-credit conversion + legibility layer | Monetize (Credit engine) | Pending | WM-M1 |
+| WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | Pending | WM-M2, WM-M10 |
+| WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | Pending | WM-M4, WM-M10, WM-M11 |
+| WM-M13 | Capped top-up purchase (Stripe credit packs) | Monetize (Credit engine) | Pending | WM-M3, WM-M12 |
+| WM-M14 | Per-product / per-member attribution + caps | Monetize (Credit engine) | Pending | WM-M12 |
+| WM-M15 | Margin levers (cost-aware routing + cache) | Monetize (Credit engine) | Pending | WM-M10 |
+| WM-M16 | Credit / usage UI (balance, legibility, attribution) | Monetize (Credit engine) | Pending | WM-M6, WM-M12, WM-M14 |
 | WM-S1 | Sample workspace for every new account | Showcase | Deferred | foundation done |
 | WM-S2 | Guided tour | Showcase | Deferred | WM-S1 |
 | WM-S3 | Onboarding Concierge agent | Showcase | Deferred | WM-S1 |
@@ -316,6 +326,79 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Acceptance:** no self-serve BYO-keys UI; provider routing via our gateway still works; tsc/build/lint green; no stale self-serve "BYOK" copy left.
 - **Verify:** `rg -i "byok|bring your own"` shows only enterprise-context or model-agnostic mentions; a non-BYO call still routes correctly.
 
+### 4.2.1 Credit engine (WM-M10 to WM-M16), the metering math, owned by this plan as of 2026-06-19
+
+The credit **engine**, what one credit is, the cost-to-credit conversion, per-tier amounts, grant/reset, the debit logic, top-ups, attribution, and the margin levers, merged in from the parallel credits thread per the founder ruling 2026-06-19 (§2.7). It plugs into three things this plan already builds: the entitlements matrix (`WM-M1`), the `accounts` / `account_credits` / `credit_ledger` tables (`WM-M2`), and the dormant `assertAccountCredits` / `debitAccountCredits` seam (`WM-M4`). **The pool is the account** (the flywheel, §2.2); the ledger is service-role-write-only; **there is no self-serve BYOK bypass** (removed in `WM-M9`); and the whole engine stays dormant behind `credits_enabled()` until the founder flips it (§4 founder gates). Charging is on the decision layer; credits are only the meter (`../strategy/moat.md` §7). The user-facing unit is calm and abundant, never a raw provider cost.
+
+#### WM-M10 · Credit unit definition + cost-to-credit conversion + legibility layer
+- **Why:** a credit must be a stable user-facing unit abstracting blended managed COGS (inference + infra), priced with margin so the user never sees raw provider cost and the meter stays calm. This is the "what is one credit" the `WM-M4` seam was left waiting for.
+- **Current state:** `src/lib/ai/pricing.ts` has `estimateCostUsd(tokens, model)` (per-model USD); `ai_events.est_cost_usd` records per-call cost already; `WM-M1` adds `creditMultiplier` / `creditMonthlyBase` to entitlements; `WM-M2` adds `account_credits`. No credit unit exists yet.
+- **Build:** in `pricing.ts` add `CREDIT_COGS_USD` (the USD of blended COGS one credit represents; margin lives in grant-sizing, not the per-credit price; founder-tunable, §7) + an optional per-model `creditRateMultiplier`; `creditsForCost(estCostUsd, model): number = ceil(estCostUsd / CREDIT_COGS_USD * rate)`, never 0 for a billable call; `estimateCreditsForCall(model, promptTokens, completionTokens)` composing the existing estimator. Add the **legibility layer**: `actionCreditRange(actionKind)` returning an approximate per-action credit range (for example "a PRD draft is about 40 to 120 credits") computed from historical `ai_events` averages, for calm UI display only (the real debit stays metered and honest). Unit-test in `pricing.test.ts`.
+- **Files:** `src/lib/ai/pricing.ts`, `src/lib/ai/pricing.test.ts`.
+- **Gotchas:** deterministic + margin-positive; the numbers are placeholders (§7) but the mechanism is final; the legibility range is display-only and must never be rendered as a flat per-action charge.
+- **Acceptance:** `creditsForCost` is model-aware and never returns 0 for a billable call; `bun test` green for pricing.
+- **Verify:** `bun test src/lib/ai/pricing.test.ts` (free / cheap / premium model costs).
+- **Depends on:** `WM-M1`. Parallel-safe with `WM-F1`.
+
+#### WM-M11 · Per-tier credit amounts + monthly grant + cycle reset
+- **Why:** each tier's included allowance must be granted and reset per billing cycle; included resets, purchased top-ups persist. This is the logic behind `account_credits.monthly_grant_credits` / `cycle_anchor`.
+- **Current state:** `WM-M2` creates `account_credits(account_id, balance_credits, monthly_grant_credits, cycle_anchor)`; `WM-M1` carries `creditMonthlyBase` / `creditMultiplier` per tier; the dormant memory-expiry cron (`src/routes/api/public/hooks/memory-tick.ts`) is the model for a scheduled tick.
+- **Build:** `grantMonthlyAllowance(accountId, tier)` + `resetCreditCycle(accountId)` in a new `src/lib/credits.functions.ts`; a `credit-tick` hook under `src/routes/api/public/hooks/` (mirror `memory-tick.ts`) or a Stripe-cycle-driven reset; grant on account creation (the starter free grant) and on plan change; reset zeroes the included balance, re-grants the tier allowance, and **preserves the purchased top-up balance**. All writes go through the service-role `credit_ledger` (kind `grant` / `reset`), never the client.
+- **Files:** new `src/lib/credits.functions.ts`; new `src/routes/api/public/hooks/credit-tick.ts`; reads `entitlements.ts`.
+- **Gotchas:** included vs top-up are distinct balances / ledger reasons; reset must not wipe top-ups; dormant behind `credits_enabled()`.
+- **Acceptance:** a new free account gets the starter grant; a cycle reset re-grants included and keeps top-ups; the ledger reconciles to the balance.
+- **Verify:** simulate signup + a cycle rollover on a Supabase branch; assert balances + ledger sum.
+- **Depends on:** `WM-M2`, `WM-M10`.
+
+#### WM-M12 · Credit debit engine (fills the WM-M4 seam)
+- **Why:** `WM-M4` added the dormant `assertAccountCredits` / `debitAccountCredits` seam; this fills the bodies so a real call meters credits from the account pool and halts cleanly when empty.
+- **Current state:** `WM-M4` placed both seam fns in `src/lib/ai/runtime.server.ts` (after the per-user budget check; next to `incrementBudget`), gated by `credits_enabled()`, resolving the account from `workspaceId`. The `ai_events` insert + `estimateCostUsd` already run on every call (`callModel` and `callModelStream`).
+- **Build:** `assertAccountCredits` pre-check projects the call's credits (`estimateCreditsForCall`) and compares to (included + top-up) balance; if insufficient and overage is not permitted, it throws the typed `CreditExhaustedError` (the call is NOT made) and logs a blocked `ai_events` row (mirror the existing governance-halt pattern). `debitAccountCredits` post-call converts the actual `est_cost_usd` via `creditsForCost`, draws down **included first, then top-up**, writes a `credit_ledger` debit tagged `account_id` + `user_id` + `surface` + `ai_event_id` + `product_id`, and decrements `account_credits.balance` atomically (an RPC). The pool is account-level; per-product attribution rides on the tag (surfaced in `WM-M14`). No self-serve BYOK bypass (`WM-M9` removed it); any enterprise BYOK case is handled by the enterprise credit model, not a hot-path skip.
+- **Files:** `src/lib/ai/runtime.server.ts`; the debit/assert RPCs (migration); `src/lib/credits.functions.ts`.
+- **Gotchas:** the debit is atomic (no partial spend); account resolution must never throw on the hot path (fall back to the user's default account); dormant = zero behavior change; the draw-down order is included-then-top-up.
+- **Acceptance:** with the flag on, every managed call writes a debit and decrements the pool; a drained pool halts with `CreditExhaustedError` (surfaced as a calm message, not a raw 500); with the flag off, zero behavior change.
+- **Verify:** unit-test the seam with the flag on/off; drain a test pool and assert the next call halts; assert the ledger sum equals the balance delta.
+- **Depends on:** `WM-M4`, `WM-M10`, `WM-M11`.
+
+#### WM-M13 · Capped top-up purchase (Stripe credit packs)
+- **Why:** paid tiers can buy capped fair-use top-ups (Anthropic-style: a separate purchased balance, a per-cycle ceiling, off by default), which protects the one-subscription promise and margin (§2.6).
+- **Current state:** `WM-M3` puts Stripe checkout/webhook on the account; `src/lib/billing.functions.ts` + `src/routes/api/stripe/webhook.ts` exist (dormant until secrets).
+- **Build:** a credit-pack checkout in `billing.functions.ts` (`createTopUpCheckout(accountId, packId)`, paid-tiers-only, gated by `topUpCapPerCycle` from entitlements + an off-by-default flag); handle `checkout.session.completed` for credit packs in the webhook -> a `credit_ledger` grant (kind `topup`) to the account's top-up balance; enforce the per-cycle ceiling server-side. Stays a 200 no-op until secrets exist.
+- **Files:** `src/lib/billing.functions.ts`; `src/routes/api/stripe/webhook.ts`; reads `entitlements.ts`.
+- **Gotchas:** the ceiling is enforced server-side (a user cannot exceed it by replaying checkout); free tier has no top-ups; off by default.
+- **Acceptance:** with test price IDs, a paid account buys a pack and the top-up balance rises (ledger `topup`); the per-cycle ceiling blocks the next over-cap purchase; free tier cannot reach the flow.
+- **Verify:** a Stripe test-mode pack purchase; a ceiling-block unit test.
+- **Depends on:** `WM-M3`, `WM-M12`.
+
+#### WM-M14 · Per-product / per-member attribution + caps
+- **Why:** the pool is account-level, but owners need to see and optionally cap spend per product and per member (the `credit_ledger` already carries `product_id` / `user_id`; nothing surfaces or caps it yet).
+- **Build:** `getCreditAttribution(accountId, { range })` in `credits.functions.ts` grouping the ledger by `product_id` + `user_id`; optional per-product / per-member credit caps (extend the existing per-user / per-surface `ai_budgets` / `ai_surface_budgets` pattern) enforced inside `assertAccountCredits`; a typed cap signal (mirror `LimitReachedError`).
+- **Files:** `src/lib/credits.functions.ts`; `src/lib/ai/runtime.server.ts` (the cap check in the assert); a migration if a per-product cap table is needed.
+- **Gotchas:** attribution sums must reconcile to total debits; caps are optional and owner-set; reads are RLS-scoped to account membership.
+- **Acceptance:** a 3-product account shows correct per-product and per-member spend; a per-product cap halts only that product while the account pool still has credits.
+- **Verify:** seed multi-product / multi-member debits and assert the rollup; set a product cap, exceed it, and assert a scoped halt.
+- **Depends on:** `WM-M12`.
+
+#### WM-M15 · Margin levers (cost-aware routing + cache)
+- **Why:** because there is no self-serve BYOK, the platform eats LLM + infra COGS, so margin discipline is structural, not optional (§2.6). Cheap models for familiar patterns, premium only for hard reasoning, plus caching, keep credits margin-positive.
+- **Current state:** `src/lib/ai/models.ts` is the catalog; `runtime.server.ts` routes; the queued `PROVIDER-FALLBACK` extends the fallback chain. No cost-aware routing or response cache today.
+- **Build:** a routing helper that picks the cheapest adequate model per task class (a small model for routine / precedented steps, premium for novel reasoning), wired at the chokepoint; a response / embedding cache (content-hash keyed) for repeated calls; both observable in `ai_events` (which model ran, cache hit). Conservative and behind config so it never degrades quality on the hard path.
+- **Files:** `src/lib/ai/runtime.server.ts`, `src/lib/ai/models.ts`, a cache helper.
+- **Gotchas:** never route a genuinely-hard reasoning step to a weak model (a quality gate); cache-invalidation correctness; measure the margin effect via `ai_events`.
+- **Acceptance:** routine steps route to a cheaper model; a repeated identical call hits cache; no quality regression on the hard path.
+- **Verify:** unit-test the route picker per task class; a cache-hit test.
+- **Depends on:** `WM-M10`. Parallel-safe with most of Lane F.
+
+#### WM-M16 · Credit / usage UI (balance, legibility, attribution)
+- **Why:** the user needs a calm, honest view of credits (balance, what actions cost, where they went) without meter-anxiety (engine-room-doctrine: name the outcome, not the meter).
+- **Current state:** `WM-M6` builds the Settings Account Plan + Usage panel; `WM-M7` builds the value-framed upgrade nudges. This item fills the credit specifics.
+- **Build:** in the `WM-M6` Usage panel, render the account credit balance vs grant (+ the top-up balance), the `actionCreditRange` legibility hints, and the `WM-M14` per-product / per-member attribution; wire the low-credit nudge (`WM-M7`) at a soft threshold; keep it calm and dismissible. Pre-engine it renders "-" gracefully.
+- **Files:** `src/routes/_authenticated.settings.tsx` (the Usage panel), `src/components/plg/*` (the nudge); consumes `credits.functions.ts`.
+- **Gotchas:** calm-front (no anxiety meters); graceful pre-engine; humanized copy (the sanitizer).
+- **Acceptance:** the Usage panel shows balance + action ranges + attribution; the low-credit nudge is gain-framed; it renders gracefully before the engine is live.
+- **Verify:** Playwright the Settings Usage panel on a seeded account.
+- **Depends on:** `WM-M6`, `WM-M12`, `WM-M14`.
+
 ### 4.3 Lane S, Showcase (DEFERRED, gate: platform ~50 to 60 percent complete and fine-tuned)
 
 These are specified now and **resurfaced at every milestone gate**; do not build until the gate.
@@ -356,14 +439,15 @@ These are specified now and **resurfaced at every milestone gate**; do not build
 
 ## 5. Build order, phases, dependencies
 
-1. **Critical path:** `WM-M1` (entitlements core, no DB) and `WM-F1` (memory scoping) first.
-2. **`WM-M2`** (accounts table + migrations) next; it unblocks billing relocation, pooling, and limit gates.
-3. **Parallel after M2:** `WM-F3` (RBAC), `WM-M5` (limit gates), `WM-F2` (account pooling), `WM-F9` (leak fixes, do before invites).
+1. **Critical path:** `WM-M1` (entitlements core, no DB) and `WM-F1` (memory scoping) first. `WM-M10` (credit unit + conversion, no DB) can build in parallel here too; it only needs `WM-M1`.
+2. **`WM-M2`** (accounts table + migrations) next; it unblocks billing relocation, pooling, limit gates, and the credit pool (`account_credits`).
+3. **Parallel after M2:** `WM-F3` (RBAC), `WM-M5` (limit gates), `WM-F2` (account pooling), `WM-F9` (leak fixes, do before invites), `WM-M11` (per-tier credit amounts + grant/reset).
 4. **Then:** `WM-F4`/`WM-F5` (transfer, invites), `WM-M3`/`WM-M4` (billing rails, credit seam), `WM-F7`/`WM-F8` (settings IA, switch hardening), `WM-M6`/`WM-M7`/`WM-M8` (surfaces, nudges, motif), `WM-M9` (remove self-serve BYOK; sequence with the monetization surfaces).
-5. **Then:** `WM-F6` (move product) and full cross-account features.
-6. **Deferred:** `WM-S*` behind the maturity gate.
+5. **The credit engine (after the `WM-M4` seam + the `WM-M2` pool exist), §4.2.1:** `WM-M12` (the debit engine that fills the seam) is the keystone; then `WM-M13` (top-ups, after `WM-M3`), `WM-M14` (attribution + caps), `WM-M16` (credit / usage UI, with `WM-M6`). `WM-M15` (margin levers) can build any time after `WM-M10`.
+6. **Then:** `WM-F6` (move product) and full cross-account features.
+7. **Deferred:** `WM-S*` behind the maturity gate.
 
-Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are last and founder-gated. The AI credit engine arrives from the parallel thread onto the `WM-M4` seam.
+Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are last and founder-gated. The AI credit **engine is specified here** (§4.2.1, `WM-M10` to `WM-M16`), no longer a separate thread; it plugs onto the `WM-M4` seam and goes live only when the founder flips `credits_enabled()`.
 
 ---
 
@@ -380,7 +464,7 @@ Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are l
 ## 7. Open founder decisions (defaults chosen; non-blocking)
 
 1. Crescendo (`max`) and Galaxy (`team`) per-seat prices, defaults are placeholders.
-2. Credit unit, per-tier amounts, top-up pricing, owned by the credits thread; this plan consumes the interface.
+2. **Credit numbers (the engine is now specified here in §4.2.1; only the values are open):** `CREDIT_COGS_USD` + the per-model rate (`WM-M10`); the per-tier monthly credit amounts + the starter free grant (`WM-M11`); the top-up pack prices + the per-cycle ceiling (`WM-M13`). The mechanism is final and stays dormant behind `credits_enabled()`; only these numbers need the founder, and not until the engine goes live.
 3. Workspace generosity past the free line, default generous/unlimited pooled.
 4. Workspace-scoped agent roster, default yes.
 5. Sample workspace name, default "Northwind."
