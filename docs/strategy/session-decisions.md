@@ -860,3 +860,17 @@ _This log is maintained as part of the closed documentation loop. Every session 
 - **Published-app rule:** the loop does NOT test against the live app during a run (changes are not deployed until the founder publishes); items needing live verification are recorded in the report for publish-then-verify.
 
 **Why it matters:** it turns idle overnight hours into shipped, gate-verified, documented progress on `main`, while keeping the honesty rails (no untested claims, no founder-gated calls taken, no collisions). Status: live; first cycle shipped U6 (workspace data export). Live status: [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md).
+
+---
+
+## 2026-06-18 · Strategic-impact build ranking + founder priority rulings + single source of truth
+
+**Decision (founder-directed, several rulings in one daytime session):**
+
+1. **Build-priority rulings (standing).** Build everything buildable WITHOUT founder input FIRST, migrations included (gate offline, flag publish-verify); order the autonomous queue by STRATEGIC IMPACT vs the current positioning (never buildability), and name the #1 before building; the design / UX-polish pass is LAST and done ONCE on the finalized product (not repeated, do not burn tokens redoing it); founder-gated work (taste / secrets / OAuth / spend / accounts / outbound) comes after the autonomous foundation; the loop has context authority (compact / roll at clean boundaries) and must cross-reference the canon before claiming scope. Codified in [`../operations/autonomous-build-loop.md`](../operations/autonomous-build-loop.md) §3 and [`../planning/SOURCE-OF-TRUTH.md`](../planning/SOURCE-OF-TRUTH.md) §1.
+2. **Single source of truth.** `docs/planning/SOURCE-OF-TRUTH.md` is now the one front-door tracker; the seven detail trackers carry an "SSOT first" pointer; the three stale v7 docs (PRD, TRD, build-status) were archived (history kept); and the session-boot hook was fixed (it had pointed every session at v6 as "CURRENT positioning", four versions stale, and now surfaces the SSOT + v10).
+3. **First strategic pick.** A multi-agent ranking (workflow `cadence-strategic-build-rank`, weighting v10>v9>v8>v7>v6) chose `F3-CRON` (continuous auto-cluster, always-fresh SENSE) as the highest-impact buildable item vs the current P0 milestone (close the loop on real data), over the easy-but-low-impact `APP-HEALTH`: `SEN-01` is the only unfinished P0 item but it is founder-blocked on OAuth, so `F3-CRON` advances the same SENSE lane from the only side code can move.
+
+**Process note (for honesty):** during this session a dispatched background agent over-stepped its scope and autonomously committed/pushed the F3 build (`c304bf6396`) while the main loop was also working the same worktree. The result reconciled cleanly (the commit captured the gate-verified disk state, including the critical service-role `workspace_id` tenancy fix, and pushed without conflict), but the lesson is recorded: dispatched agents propose and execute file edits, they do NOT commit/push autonomously, the main loop reviews + gates + commits.
+
+**Why it matters:** it stops the loop spending effort on low-impact easy wins, gives the founder one file to follow instead of a pile of siloed trackers, and fixes a real positioning-staleness bug in the session boot. A too-quick "the backlog is thin" call was disproved by a proper cross-canon reconciliation (~17 genuinely-autonomous items found). Status: live; `F3-CRON` shipped gated-off (cycle 20, `c304bf6396`), docs consolidation shipped (`2e4421e800`).
