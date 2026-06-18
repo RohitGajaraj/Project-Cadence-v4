@@ -26,6 +26,7 @@ import {
   generateTaskGraph,
   type CriticReview,
 } from "@/lib/discovery.functions";
+import { getProvenance } from "@/lib/lineage.functions";
 import { CriticBadge } from "@/components/governance/CriticBadge";
 import { CitationsCard, type Citation } from "@/components/product/CitationsCard";
 import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
@@ -53,6 +54,16 @@ function PrdEditor() {
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const prdQ = useQuery({ queryKey: ["prd", id], queryFn: () => fGet({ data: { id } }) });
+
+  // O1 (provenance): "why is this spec being built?" — walk the lineage graph up
+  // to the root source signals the spec ultimately rests on. Reuses getProvenance
+  // (already used on the opportunity drill); a spec inherits the chain through its
+  // opportunity → theme → signals.
+  const fProvenance = useServerFn(getProvenance);
+  const provQ = useQuery({
+    queryKey: ["provenance", "prd", id],
+    queryFn: () => fProvenance({ data: { kind: "prd", id } }),
+  });
 
   const fTasks = useServerFn(listTasks);
   const fTeams = useServerFn(listLinearTeams);
@@ -432,6 +443,46 @@ function PrdEditor() {
           <CitationsCard
             citations={(prdQ.data.prd as { citations?: Citation[] | null }).citations ?? null}
           />
+        </div>
+
+        {/* O1 provenance — why this spec is being built, traced to source signals */}
+        <div className="mt-6 rounded-lg border hairline bg-card p-6">
+          <div className="mono-label mb-3">Why this spec · source evidence</div>
+          {provQ.isLoading ? (
+            <p className="text-xs text-muted-foreground">Tracing the chain…</p>
+          ) : (provQ.data?.signal_count ?? 0) === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No source signals traced. This spec was added directly, not generated from clustered
+              signals.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Traces back to {provQ.data!.signal_count} source signal
+                {provQ.data!.signal_count === 1 ? "" : "s"} through {provQ.data!.node_count} step
+                {provQ.data!.node_count === 1 ? "" : "s"} of the discovery chain.
+              </p>
+              {provQ.data!.source_signals.slice(0, 8).map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() =>
+                    navigate({ to: "/product", search: { tab: "signals", signal: s.id } })
+                  }
+                  className="text-left text-xs link-action inline-flex items-baseline gap-2"
+                >
+                  <span className="mono-label text-[10px] text-muted-foreground shrink-0">
+                    {s.source ?? "signal"}
+                  </span>
+                  <span>{(s.title ?? s.content ?? "signal").slice(0, 80)} →</span>
+                </button>
+              ))}
+              {provQ.data!.truncated ? (
+                <span className="mono-label text-[10px] text-muted-foreground">
+                  chain truncated at the depth cap
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
 
         <div className="mt-6">
