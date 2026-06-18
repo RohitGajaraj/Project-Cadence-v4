@@ -29,8 +29,8 @@ describe("agentLabel", () => {
     expect(agentLabel("   ")).toBe("the loop");
   });
   test("maps a known slug to its catalog name, title-cases the rest", () => {
-    expect(agentLabel("scout")).toBe("Scout");
-    expect(agentLabel("discovery-scout")).toBe("Scout"); // catalog display name, not the raw slug
+    expect(agentLabel("scout")).toBe("Watch");
+    expect(agentLabel("discovery-scout")).toBe("Watch"); // catalog display name (Option B: name-what-it-does), not the raw slug
     expect(agentLabel("growth-agent")).toBe("Growth Agent");
     expect(agentLabel("memory_keeper")).toBe("Memory Keeper");
   });
