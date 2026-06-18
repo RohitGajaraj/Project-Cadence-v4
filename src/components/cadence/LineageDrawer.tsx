@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, GitBranch, X } from "lucide-react";
+import { ArrowDown, ArrowUp, GitBranch, Radar, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { getLineage, type ArtifactKind } from "@/lib/lineage.functions";
+import { getLineage, getProvenance, type ArtifactKind } from "@/lib/lineage.functions";
 
 const ROUTES: Partial<
   Record<ArtifactKind, (id: string) => { to: string; params?: Record<string, string> }>
@@ -74,8 +74,21 @@ export function LineageDrawer({
     enabled: open && Boolean(id),
   });
 
+  // O1 provenance: the deep root of the chain (the source signals this artifact
+  // ultimately rests on), beyond the immediate "Came from" parents. Reuses
+  // getProvenance; shown only when the chain is deeper than one hop (so it never
+  // just duplicates "Came from" for a theme, whose immediate parents are signals).
+  const fProvenance = useServerFn(getProvenance);
+  const provQ = useQuery({
+    queryKey: ["provenance", kind, id],
+    queryFn: () => fProvenance({ data: { kind, id: id as string } }),
+    enabled: open && Boolean(id),
+  });
+
   const ancestors = q.data?.ancestors ?? [];
   const descendants = q.data?.descendants ?? [];
+  const prov = provQ.data;
+  const showProvenance = Boolean(prov && prov.signal_count > 0 && prov.depth > 1);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -122,6 +135,43 @@ export function LineageDrawer({
               ))}
             </ul>
           </section>
+
+          {showProvenance && (
+            <section>
+              <h4 className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-1.5 mb-2">
+                <Radar className="h-3 w-3" /> Traces back to
+              </h4>
+              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+                {prov!.signal_count} source signal{prov!.signal_count === 1 ? "" : "s"} through{" "}
+                {prov!.node_count} step{prov!.node_count === 1 ? "" : "s"} of the discovery chain.
+              </p>
+              <ul className="space-y-2">
+                {prov!.source_signals.slice(0, 8).map((s) => (
+                  <li key={s.id} className="text-xs flex items-start gap-2">
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider shrink-0">
+                      {s.source ?? "signal"}
+                    </span>
+                    <PeerLink
+                      kind="signal"
+                      id={s.id}
+                      title={(s.title ?? s.content ?? "signal").slice(0, 80)}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {prov!.source_signals.length > 8 && (
+                <div className="text-[10px] text-muted-foreground mt-1.5">
+                  +{prov!.source_signals.length - 8} more source signal
+                  {prov!.source_signals.length - 8 === 1 ? "" : "s"}
+                </div>
+              )}
+              {prov!.truncated && (
+                <div className="text-[10px] text-muted-foreground italic mt-1">
+                  chain truncated at the depth cap
+                </div>
+              )}
+            </section>
+          )}
 
           <section>
             <h4 className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-1.5 mb-2">

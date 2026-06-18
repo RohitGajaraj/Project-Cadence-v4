@@ -1,6 +1,6 @@
 # O1 (provenance slice) - "why is this on the roadmap?"
 
-**Status:** ◐ Partial (provenance on the opportunity drill shipped 2026-06-18; extended to the spec/PRD detail 2026-06-18 12:48; a full typed-graph explorer + O3 drift/skill-packs remain). **Lane:** G1 Sense & Discovery.
+**Status:** ◐ Partial (provenance on the opportunity drill shipped 2026-06-18; extended to the spec/PRD detail 2026-06-18 12:48; surfaced in the shared Lineage drawer 2026-06-18 cycle 19; a full typed-graph explorer + O3 drift/skill-packs remain). **Lane:** G1 Sense & Discovery.
 
 ## What it delivers
 
@@ -8,6 +8,7 @@ A **"Why this · source evidence"** card traces an artifact all the way back to 
 
 - The **opportunity drill** (`/product?opp=<id>`) — "why is this on the roadmap?".
 - The **spec/PRD detail** (`/prds/<id>`, card "Why this spec · source evidence") — "why is this spec being built?". A spec inherits the chain through its opportunity → theme → signals; the same `getProvenance` walks from `kind:"prd"`.
+- The **shared Lineage drawer** (`LineageDrawer`, a "Traces back to" section) — wherever the drawer opens for any artifact kind, it shows the deep root signals beneath the immediate "Came from" parents. Shown only when the chain is deeper than one hop (`signal_count > 0 && depth > 1`), so it never just duplicates "Came from" for a theme (whose immediate parents already are signals). Lists up to 8, with a "+N more" overflow line.
 
 ## How it works
 
@@ -20,19 +21,21 @@ No new graph tables: it reuses the existing `artifact_lineage` edge table (signa
 - Returns `{ source_signals, signal_count, depth, node_count, truncated }`.
 - RLS-scoped: the user-scoped Supabase client means only edges + signals the caller owns are walked.
 
-UI: `OpportunityDetail.tsx` (`["provenance","opportunity",id]`) and `_authenticated.prds.$id.tsx` (`["provenance","prd",id]`) each call it in a `useQuery` and render the card; every source signal links to `/product?tab=signals&signal=<id>`.
+UI: `OpportunityDetail.tsx` (`["provenance","opportunity",id]`), `_authenticated.prds.$id.tsx` (`["provenance","prd",id]`), and `LineageDrawer.tsx` (`["provenance",kind,id]`) each call it in a `useQuery` and render the card; every source signal links to `/product?tab=signals&signal=<id>`.
 
 ## Files
 
 - `src/lib/lineage.functions.ts` - `getProvenance` server fn + `ProvenanceSignal` type.
 - `src/components/product/OpportunityDetail.tsx` - the "Why this · source evidence" card on the opportunity drill.
 - `src/routes/_authenticated.prds.$id.tsx` - the "Why this spec · source evidence" card on the spec/PRD detail.
+- `src/components/cadence/LineageDrawer.tsx` - the "Traces back to" section in the shared Lineage drawer.
 
 ## Verify (live, after publish)
 
 1. Open an opportunity promoted from a clustered theme. The card shows "Traces back to N source signals through M steps" and lists them; each links to the signal.
 2. An opportunity added directly (no lineage) shows "No source signals traced."
 3. Open a spec (`/prds/<id>`) generated from such an opportunity. The "Why this spec · source evidence" card traces through the opportunity to the same root signals; a spec authored from scratch shows "No source signals traced."
+4. Open the Lineage drawer on a deep artifact (a spec or task). Below "Came from", a "Traces back to" section lists the root source signals; it is absent on a theme (immediate parents already are signals, depth 1). With more than 8 root signals, a "+N more" line appears.
 
 ## Not built (O1 / O3 remainder)
 
