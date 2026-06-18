@@ -28,10 +28,11 @@ describe("agentLabel", () => {
     expect(agentLabel(undefined)).toBe("the loop");
     expect(agentLabel("   ")).toBe("the loop");
   });
-  test("title-cases a real slug, spacing kebab/snake", () => {
+  test("maps a known slug to its catalog name, title-cases the rest", () => {
     expect(agentLabel("scout")).toBe("Scout");
-    expect(agentLabel("growth-agent")).toBe("Growth agent");
-    expect(agentLabel("memory_keeper")).toBe("Memory keeper");
+    expect(agentLabel("discovery-scout")).toBe("Scout"); // catalog display name, not the raw slug
+    expect(agentLabel("growth-agent")).toBe("Growth Agent");
+    expect(agentLabel("memory_keeper")).toBe("Memory Keeper");
   });
 });
 

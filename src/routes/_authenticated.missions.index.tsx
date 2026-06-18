@@ -4,7 +4,7 @@
 // functionality rides the reference layout: the ?tab= search-param contract,
 // the orchestrated-mission composer (MissionsPanel) and the swarm telemetry
 // panels (AgentsPanel). Sibling /missions/$missionId remains the deep link.
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Activity } from "lucide-react";
@@ -13,29 +13,24 @@ import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
-import { AgentsPanel } from "@/components/cockpit/AgentsPanel";
 import { MissionsPanel } from "@/components/cockpit/MissionsPanel";
 import { LoopHealthBanner } from "@/components/cockpit/LoopHealthBanner";
 
-type Tab = "missions" | "agents";
-
 export const Route = createFileRoute("/_authenticated/missions/")({
-  validateSearch: (search: Record<string, unknown>): { tab: Tab } => ({
-    tab: search.tab === "agents" ? "agents" : "missions",
+  // AGENT-EXP: the Agents tab is retired (the roster lives in Engine Room > Team).
+  // validateSearch stays lenient so any old ?tab= link still resolves to Missions.
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
   component: MissionsPage,
   head: () => ({ meta: [{ title: "Missions · Cadence" }] }),
 });
 
 function MissionsPage() {
-  const { tab } = Route.useSearch();
-  const navigate = useNavigate({ from: "/missions/" });
-  const { activeWorkspace, activeWorkspaceId } = useWorkspace();
+  const { activeWorkspace } = useWorkspace();
 
   const fProjects = useServerFn(listProjects);
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
-
-  const setTab = (next: Tab) => navigate({ search: { tab: next } });
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
@@ -57,42 +52,10 @@ function MissionsPage() {
         {/* E8 · Loop Health Monitor — catch a stalled loop before it bites. */}
         <LoopHealthBanner />
 
-        <div
-          style={{
-            display: "flex",
-            gap: 2,
-            borderBottom: "1px solid var(--hairline)",
-            marginBottom: 18,
-          }}
-        >
-          {(
-            [
-              ["missions", "Missions"],
-              ["agents", "Agents"],
-            ] as [Tab, string][]
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              style={{
-                padding: "7px 13px",
-                fontSize: 12.5,
-                marginBottom: -1,
-                color: tab === id ? "var(--ink)" : "var(--ink-subtle)",
-                borderBottom: `2px solid ${tab === id ? "var(--ember)" : "transparent"}`,
-                fontWeight: tab === id ? 500 : 400,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "missions" ? (
-          <MissionsPanel />
-        ) : (
-          <AgentsPanel activeWorkspaceId={activeWorkspaceId} />
-        )}
+        {/* AGENT-EXP: the Agents tab (the roster grid) is retired. The roster +
+            trust dials live in Engine Room > Team; agents appear in motion as the
+            relay on each mission. */}
+        <MissionsPanel />
       </div>
     </AppShell>
   );

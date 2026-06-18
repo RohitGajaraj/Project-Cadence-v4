@@ -25,6 +25,7 @@
 | Milestone exit criteria | [../planning/SOURCE-OF-TRUTH.md](../planning/SOURCE-OF-TRUTH.md) (sections 2-3) + [../planning/v10_implementation-plan.md](../planning/v10_implementation-plan.md) | milestone narrative |
 | Open bugs | [known-issues.md](../planning/known-issues.md) | bug list |
 | Engine / 19-agent mesh / handoff contract detail | [v4-feature-map](./v4-feature-map-2026-06-11.md) | engine reference |
+| **Agent roster model, faces, identity, and how agents are shown (the relay)** | [agent-experience](../features/agent-experience.md) | agent-experience canon (resolves 19 -> 6 -> cast/crew) |
 | Requirements / technical contracts | [v7-prd](../planning/archive/v7-prd-2026-06-14.md) / [v7-trd](../planning/archive/v7-trd-2026-06-14.md) (archived, superseded by v10) | requirements reference |
 | **Superseded - do not use; archived 2026-06-17 to docs/planning/archive/** | `strategic-tasks.md` (use v10 pick-list), `v7-feature-map` + `v7-functionality-map` (use v10), `v4-rebuild-handoff` (stale) | historical |
 

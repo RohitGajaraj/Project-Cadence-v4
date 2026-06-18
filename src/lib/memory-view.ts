@@ -8,6 +8,8 @@
 // a run (rememberOutcome writes agent_slug = null on those by design), so its
 // source reads "the loop", never a fabricated agent name.
 
+import { agentDisplayName } from "./agent-vocabulary";
+
 /** The display shape of one agent_memory row. Deliberately omits the 1536-float
  *  embedding and the metadata blob - neither is shown, so neither is shipped. */
 export type MemoryRow = {
@@ -79,9 +81,10 @@ export function scopeLabel(scope: string): string {
 export function agentLabel(slug: string | null | undefined): string {
   const s = slug?.trim();
   if (!s) return "the loop";
-  // Title-case a kebab/snake slug: "growth-agent" -> "Growth agent".
-  const spaced = s.replace(/[-_]+/g, " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  // Delegate to the agent catalog so a memory's source reads as the agent's
+  // display name (e.g. "discovery-scout" -> "Scout"), with a title-cased
+  // fallback for any slug the catalog does not know.
+  return agentDisplayName(s);
 }
 
 /** Roll a window of rows into counts the header shows honestly (no estimates). */

@@ -43,6 +43,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
+| AGENT-EXP | Agent experience (roster model · faces · identity · relay) | Claude Code · `worktree-agent-experience` | 2026-06-18 | Off the overnight tip; forward-integrate only. Owns `agent-vocabulary.ts`, the agent routes, `govern`, `AgentsPanel`, `orchestrator`, new migrations, `docs/features/agent-experience.md`. Phase 1 (catalog model + migrations + prompts + station-aware planning) and Phase 2 (relay UI + station spine + Engine Room Team) BOTH BUILT, gate green (tsc + build clean; lint-clean on changed files); pushed to the branch; pending merge to main + the signup smoke-test. Detail: [`../features/agent-experience.md`](../features/agent-experience.md) |
 
 ---
 
