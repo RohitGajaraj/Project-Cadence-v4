@@ -2,7 +2,7 @@
 
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
-> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ · F3 always-fresh feed ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ · F3 always-fresh feed ◐ · O1 provenance ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
 
 ---
 
@@ -72,7 +72,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | Group | ✅ Done | ◐ Partial | ⏸️/⏭️/🚧 | ⬜ Pending |
 | --- | --- | --- | --- | --- |
 | G0 Core loop & memory (engine) | 11 | 0 | 0 | 0 |
-| G1 Sense & Discovery | 4 | 1 | 1 | 6 |
+| G1 Sense & Discovery | 4 | 2 | 1 | 5 |
 | G2 Decide & Plan | 8 | 1 | 0 | 0 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
 | G4 Launch & Learn | 2 | 1 | 0 | 5 |
@@ -118,7 +118,7 @@ _Get real signal in, cluster it, keep it fresh._
 | SEN-01 | Connector dock: 2nd live ingest (Slack / GitHub issues / support) | ⬜ (M-A) | The loop needs ≥2 real sources to close on real data | Register one provider OAuth client → adapter in `src/lib/connectors/` |
 | F3 | Continuous discovery feed | ◐ Partial (2026-06-18) | **Always-fresh feed shipped:** the discovery surface (`/product?tab=signals`) now auto-refreshes signals (30s poll, pauses when the tab is unfocused), so the continuously-ingested signals (webhook → reactor) appear live without a manual reload. Remaining: **auto-cluster cron** (continuous incremental re-cluster — queued as a founder spend decision, since it commits recurring AI cost) + per-product clustering scope. | `SignalsPanel.tsx` (`refetchInterval`) + `clusterSignals` (`discovery.functions.ts`) |
 | N2 | Re-score + insight memo + daily brief | ✅ (2026-06-16) | Re-score loop + daily brief already existed; this added the missing **insight memo** — the daily brief now ingests the recent `learnings` (re-scored outcomes: verdict + summary + ICE shift) and synthesizes a "what the loop learned" beat. ⚠️ Wiring + build verified; the AI-generated brief output needs a live re-verify on the deployed app (local dev has no AI key) | `copilot.functions.ts` (`ensureTodayBrief`) → Today's brief |
-| O1 | Knowledge graph + query | ⬜ | Typed signals→themes→opps→decisions→outcomes; "why is this on the roadmap?" | New graph tables + query fn |
+| O1 | Knowledge graph + query | ◐ (2026-06-18) | **Provenance slice shipped:** `getProvenance` walks the full ancestor chain up the existing `artifact_lineage` graph to the ROOT source signals (the existing lineage view stops at the immediate theme), answering "why is this on the roadmap?" with the raw evidence. A "Why this · source evidence" card on the opportunity drill lists + links the source signals. No new tables (reuses `artifact_lineage`), bounded walk (depth + node caps, cycle-safe). Remaining: a typed graph explorer + drift/skill-pack export (O3). | `getProvenance` (`lineage.functions.ts`) + `OpportunityDetail.tsx` · [`o1-provenance.md`](../features/o1-provenance.md) |
 | O3 | Fact currency/drift + skill packs | ⬜ | Flag stale facts; export versioned skill bundles over MCP | Depends on O1 + Q1 |
 | SEN-04 | Researcher watchtower (competitor crawl briefs) | ⬜ (M2) | Ambient competitive signal without manual research | Firecrawl crawl + scheduled brief |
 | SEN-05 | Quant analytics inbound (PostHog/Amplitude/Mixpanel) | ⬜ (M2) | Product metrics as first-class signal | Connector adapter + `product_analytics` |

@@ -161,6 +161,89 @@ export const getLineage = createServerFn({ method: "GET" })
     return { ancestors, descendants };
   });
 
+export type ProvenanceSignal = {
+  id: string;
+  title: string | null;
+  content: string | null;
+  source: string | null;
+  sentiment: string | null;
+  created_at: string;
+};
+
+/**
+ * O1 (provenance slice) - "why is this on the roadmap?". getLineage shows only
+ * the IMMEDIATE parents (an opportunity's theme); this walks the whole ancestor
+ * chain up the artifact_lineage graph to the ROOT source signals - the raw user
+ * evidence the decision rests on. Bounded (depth + node cap) so a cyclic or huge
+ * graph can never run away. RLS-scoped: only edges + signals the caller owns.
+ */
+export const getProvenance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ kind: KindSchema.default("opportunity"), id: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const MAX_NODES = 80;
+    const MAX_DEPTH = 8;
+
+    const seen = new Set<string>([`${data.kind}:${data.id}`]);
+    let frontier: { kind: ArtifactKind; id: string }[] = [{ kind: data.kind, id: data.id }];
+    const signalIds = new Set<string>();
+    let depth = 0;
+    let truncated = false;
+
+    while (frontier.length && depth < MAX_DEPTH && seen.size < MAX_NODES) {
+      depth++;
+      const byKind = new Map<ArtifactKind, string[]>();
+      for (const n of frontier) {
+        const arr = byKind.get(n.kind) ?? [];
+        arr.push(n.id);
+        byKind.set(n.kind, arr);
+      }
+      const next: { kind: ArtifactKind; id: string }[] = [];
+      for (const [kind, ids] of byKind) {
+        const { data: rows } = await supabase
+          .from("artifact_lineage")
+          .select("parent_kind,parent_id")
+          .eq("child_kind", kind)
+          .in("child_id", ids);
+        for (const e of (rows ?? []) as { parent_kind: ArtifactKind; parent_id: string }[]) {
+          const key = `${e.parent_kind}:${e.parent_id}`;
+          if (seen.has(key)) continue;
+          if (seen.size >= MAX_NODES) {
+            truncated = true;
+            break;
+          }
+          seen.add(key);
+          if (e.parent_kind === "signal") signalIds.add(e.parent_id);
+          else next.push({ kind: e.parent_kind, id: e.parent_id });
+        }
+      }
+      frontier = next;
+    }
+    if (frontier.length > 0) truncated = true;
+
+    let source_signals: ProvenanceSignal[] = [];
+    const ids = [...signalIds];
+    if (ids.length) {
+      const { data: sigs } = await supabase
+        .from("signals")
+        .select("id,title,content,source,sentiment,created_at")
+        .in("id", ids)
+        .order("created_at", { ascending: false });
+      source_signals = (sigs ?? []) as ProvenanceSignal[];
+    }
+
+    return {
+      source_signals,
+      signal_count: source_signals.length,
+      depth,
+      node_count: seen.size - 1, // exclude the starting node itself
+      truncated,
+    };
+  });
+
 /** AI: split a PRD into 5-8 atomic tasks; record lineage prd → task[]. */
 export const promotePrdToTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

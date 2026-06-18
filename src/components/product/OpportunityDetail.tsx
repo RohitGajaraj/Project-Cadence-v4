@@ -14,7 +14,7 @@ import { toast } from "@/lib/notify";
 import { DrillHeader, MonoLabel } from "@/components/cadence/Primitives";
 import { listOpportunities, generatePrd } from "@/lib/discovery.functions";
 import { listLearnings } from "@/lib/outcome.functions";
-import { getLineage, type ArtifactKind } from "@/lib/lineage.functions";
+import { getLineage, getProvenance, type ArtifactKind } from "@/lib/lineage.functions";
 
 type OppRow = {
   id: string;
@@ -79,6 +79,12 @@ export function OpportunityDetail({ id }: { id: string }) {
   const lineageQ = useQuery({
     queryKey: ["lineage", "opportunity", id],
     queryFn: () => fLineage({ data: { kind: "opportunity", id } }),
+  });
+  // O1 (provenance): walk the full ancestor chain back to the root source signals.
+  const fProvenance = useServerFn(getProvenance);
+  const provQ = useQuery({
+    queryKey: ["provenance", "opportunity", id],
+    queryFn: () => fProvenance({ data: { kind: "opportunity", id } }),
   });
 
   const all = (opps.data?.opportunities ?? []) as OppRow[]; // ice_score DESC
@@ -321,6 +327,44 @@ export function OpportunityDetail({ id }: { id: string }) {
               {o.problem}
             </p>
           ) : null}
+        </div>
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <MonoLabel style={{ marginBottom: 10 }}>Why this · source evidence</MonoLabel>
+          {provQ.isLoading ? (
+            <div style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>Tracing the chain…</div>
+          ) : (provQ.data?.signal_count ?? 0) === 0 ? (
+            <div style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
+              No source signals traced. This was added directly, not promoted from clustered
+              signals.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12.5 }}>
+              <p style={{ fontSize: 12, color: "var(--ink-subtle)", lineHeight: 1.5 }}>
+                Traces back to {provQ.data!.signal_count} source signal
+                {provQ.data!.signal_count === 1 ? "" : "s"} through {provQ.data!.node_count} step
+                {provQ.data!.node_count === 1 ? "" : "s"} of the discovery chain.
+              </p>
+              {provQ.data!.source_signals.slice(0, 8).map((s) => (
+                <button
+                  key={s.id}
+                  style={{ ...LINK_STYLE, display: "flex", gap: 8, alignItems: "baseline" }}
+                  onClick={() =>
+                    navigate({ to: "/product", search: { tab: "signals", signal: s.id } })
+                  }
+                >
+                  <span className="mono-label" style={{ flexShrink: 0, color: "var(--ink-faint)" }}>
+                    {s.source ?? "signal"}
+                  </span>
+                  <span>{(s.title ?? s.content ?? "signal").slice(0, 80)} →</span>
+                </button>
+              ))}
+              {provQ.data!.truncated ? (
+                <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                  chain truncated at the depth cap
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
     </div>
