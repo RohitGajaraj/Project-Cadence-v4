@@ -162,6 +162,10 @@ The revision history (one row per `studio.commit`) carries a **Revert** button o
 - **Today → "Needs you"**: Studio gates surface in the existing calls queue automatically (they are ordinary `agent_approvals`).
 - **PRD detail / Specs panel**: "Send to Studio".
 
+### BLD-05: Inspector gate (test + preview before merge)
+
+Before the operator clears the merge gate, the PR/Checks tab shows an **Inspector card**: total files, test files, an "includes tests" / "no tests" badge, and the CI verdict (ran / passed). It answers "is this change tested, and what is about to merge?" at the moment the human decides. The logic is the pure, unit-tested `summarizeInspection` (`src/lib/ai/studio-inspection.ts`); `getStudioSession` computes the summary from the changeset's touched paths + the CI verdict and returns it as `inspection`; `CiPanel` renders the card. "Preview" here is the pre-merge inspection summary, not a deploy preview (deploy is external). **Warn-only:** a change with no test files is flagged prominently but never hard-blocked (founder ruling 2026-06-18) since docs/config changes legitimately ship no tests. It complements, and does not duplicate, the J2 CI gate and the P4 eval-regression gate.
+
 ## Trust & governance (operator terms)
 
 | Action | Gate | Who can change it |

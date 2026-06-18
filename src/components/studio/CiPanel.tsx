@@ -9,6 +9,7 @@ import {
 } from "@/lib/studio.functions";
 import { MonoLabel, StatusBadge, StepDot, VerdictChip } from "@/components/cadence/Primitives";
 import { ChangesetChip } from "./studio-ui";
+import type { Inspection } from "@/lib/ai/studio-inspection";
 
 /** Per-check StepDot vocabulary — live = running, outcomes = moss/madder. */
 function checkDotStatus(conclusion: string | null, status: string): string {
@@ -40,12 +41,14 @@ export function CiPanel({
   missionId,
   changeset,
   ci,
+  inspection,
   mergeGatePending,
   onRefreshed,
 }: {
   missionId: string;
   changeset: StudioChangesetSummary | null;
   ci: StudioCi;
+  inspection: Inspection | null;
   mergeGatePending: boolean;
   onRefreshed: () => void;
 }) {
@@ -78,6 +81,65 @@ export function CiPanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* BLD-05 Inspector gate: test + preview bar before the operator clears the merge. */}
+      {inspection ? (
+        <div className="bento" style={{ padding: "var(--card-pad)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <MonoLabel>Inspector</MonoLabel>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 11,
+                fontWeight: 600,
+                color: inspection.has_tests ? "var(--emerald)" : "var(--coral)",
+              }}
+            >
+              {inspection.has_tests ? null : <ShieldAlert size={11} />}
+              {inspection.has_tests ? "includes tests" : "no tests"}
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              marginTop: 10,
+              flexWrap: "wrap",
+              fontSize: 12.5,
+              color: "var(--ink-muted)",
+            }}
+          >
+            <span>
+              <strong style={{ color: "var(--ink)" }}>{inspection.total_files}</strong> file
+              {inspection.total_files === 1 ? "" : "s"}
+            </span>
+            <span>
+              <strong style={{ color: "var(--ink)" }}>{inspection.test_files}</strong> test file
+              {inspection.test_files === 1 ? "" : "s"}
+            </span>
+            <span>
+              {inspection.ci_ran
+                ? inspection.ci_passed
+                  ? "CI passed"
+                  : "CI not green"
+                : "CI not run"}
+            </span>
+          </div>
+          {inspection.has_tests ? null : (
+            <p
+              style={{
+                marginTop: 8,
+                fontSize: 11.5,
+                color: "var(--ink-faint)",
+                lineHeight: 1.4,
+              }}
+            >
+              This change ships no test files. Review the diff before you clear the merge.
+            </p>
+          )}
+        </div>
+      ) : null}
       <div className="bento" style={{ padding: "var(--card-pad)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <a

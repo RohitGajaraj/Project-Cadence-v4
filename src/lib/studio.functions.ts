@@ -20,6 +20,7 @@ import { recordLineage } from "@/lib/lineage.functions";
 import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
 import { applyHunkSelection } from "@/lib/ai/studio-hunks";
+import { summarizeInspection } from "@/lib/ai/studio-inspection";
 import { callModel } from "@/lib/ai/runtime.server";
 import { humanizeText } from "@/lib/ai/humanize";
 import { revertChangesetToRevision } from "@/lib/ai/studio-revert.server";
@@ -615,6 +616,14 @@ export const getStudioSession = createServerFn({ method: "GET" })
       };
     });
 
+    // BLD-05 Inspector gate: the test + preview summary the operator sees before
+    // clearing the merge gate (warn-only on no tests; never hard-blocks).
+    const inspection = summarizeInspection({
+      paths: changes.map((c) => c.path),
+      ciOverall: ci?.overall ?? null,
+      ciCheckCount: ci?.checks.length ?? 0,
+    });
+
     return {
       mission,
       runs: runsDetailed,
@@ -624,6 +633,7 @@ export const getStudioSession = createServerFn({ method: "GET" })
       changes,
       approvals: (approvals ?? []) as StudioApproval[],
       ci,
+      inspection,
       steers: (
         (steers ?? []) as Array<{
           id: string;

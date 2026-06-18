@@ -29,6 +29,7 @@ import {
 import { SessionTimeline } from "@/components/studio/SessionTimeline";
 import { ChangesPanel } from "@/components/studio/ChangesPanel";
 import { CiPanel } from "@/components/studio/CiPanel";
+import type { Inspection } from "@/lib/ai/studio-inspection";
 import { CostPanel } from "@/components/studio/CostPanel";
 import { StatusChip } from "@/components/studio/studio-ui";
 import { fmtCost } from "@/components/studio/studio-format";
@@ -331,6 +332,7 @@ function BuildSessionPage() {
   const changes = (data?.changes ?? []) as ChangeRow[];
   const approvals = (data?.approvals ?? []) as StudioApproval[];
   const ci = (data?.ci ?? null) as StudioCi;
+  const inspection = (data?.inspection ?? null) as Inspection | null;
   const steers = (data?.steers ?? []) as Steer[];
   const totalCost = data?.total_cost_usd ?? 0;
 
@@ -500,6 +502,7 @@ function BuildSessionPage() {
                   missionId={missionId}
                   changeset={changeset}
                   ci={ci}
+                  inspection={inspection}
                   mergeGatePending={mergeGatePending}
                   onRefreshed={invalidate}
                 />
