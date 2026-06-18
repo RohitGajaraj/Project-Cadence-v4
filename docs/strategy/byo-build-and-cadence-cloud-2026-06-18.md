@@ -45,7 +45,7 @@ interface RepoProvider {
 - **Adapters:** GitHub (exists, refactor behind the interface), **GitLab** and **Bitbucket** (new). Adding a provider = one adapter, no Build-engine changes.
 - **Attachment options on a Product:** (a) connect an existing repo, any provider (BYO); (b) Cadence creates one (managed) either in the user's own connected account/org, or in a Cadence-owned org (see open decision O4).
 - **Two-way sync:** on connect, deep-read the repo; thereafter sync on change (provider webhooks inbound; agent actions outbound). The continuous mirror is a Phase deliverable, not day one.
-- **Credential chain unchanged** (`resolveProviderAuth`: workspace/user connection first), plus a **hard guardrail: a real customer can never fall through to the dev/env token** — if unconnected, we prompt to connect, we do not borrow ours. The env token stays a local/demo fallback only.
+- **Credential chain unchanged** (`resolveProviderAuth`: workspace/user connection first), plus a **hard guardrail: a real customer can never fall through to the dev/env token**; if unconnected, we prompt to connect, we do not borrow ours. The env token stays a local/demo fallback only.
 - **Binding granularity moves from workspace-level to Product-level** using the `connection_bindings.product_id` column that is already reserved for exactly this.
 
 ---
@@ -78,7 +78,7 @@ Three layers, very different scope. Conflating them is the trap.
 | **L2 - Managed PM data** | The user's products / decisions / PRDs / memory live in our Supabase already. | None (already true). | **Position it**, no build. "Plan everything, migrate nothing" is already real for the PM work. |
 | **L3 - Managed runtime for the user's shipped app** | DB + auth + hosting for the app the agent builds (literal Lovable Cloud, and beyond). | Very high: ops, cost, security, compliance, on-call. | **In scope, sequenced late** (founder ruling: the all-in-one North Star). Build after the loop + BYO path is proven. |
 
-A **managed repo** (Cadence creates the repo) sits between L2 and L3 and is already part of the repo model (D2 / auto-create) — reasonable to include now.
+A **managed repo** (Cadence creates the repo) sits between L2 and L3 and is already part of the repo model (D2 / auto-create); reasonable to include now.
 
 ### Positioning ruling (founder, 2026-06-18): the all-in-one platform
 
@@ -120,7 +120,7 @@ Two guardrails so the ambition stays buildable and honest:
 - Connector registry + `resolveProviderAuth` + the connections / bindings tables.
 - The agent loop, the trust arc, and the approval system (D3 rides directly on these).
 - `studio_changesets` / `studio_changes` / `studio_changeset_revisions` / `studio_rollbacks`; missions / mission_steps.
-- The Ship -> Learn outcome loop (`prds.outcome` -> `learnings` -> ICE re-score -> memory) — strong, leave it; the work is to FEED it (close the gap-map seam).
+- The Ship -> Learn outcome loop (`prds.outcome` -> `learnings` -> ICE re-score -> memory); strong, leave it; the work is to FEED it (close the gap-map seam).
 - The AI gateway (becomes the metering point for L1 managed credits).
 
 **Changed:**
