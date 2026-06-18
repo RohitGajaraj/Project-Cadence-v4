@@ -12,7 +12,7 @@
 
 ## 1. The one-line thesis
 
-**Cadence owns the decision layer of the product org: what to build, and whether the call was right. Vibe-coding tools own the build layer: how to build. Building is racing to zero; deciding well is not. We sit above the build tools and dispatch them.**
+**Cadence is the end-to-end product operating system: it runs your whole product lifecycle (discover to decide to define to build to ship to launch to learn) as one governed loop. Its moat is the decision layer, what to build and whether the call was right, the part with no fast oracle. Vibe-coding tools own one station (the build); Cadence owns the whole loop, and out-scopes them rather than out-building them. The build is a governed station within the loop (our engine, or dispatched to Lovable / Cursor / Devin under the same governance).**
 
 The PM does not lack a builder. They lack a decision system. Lovable will build you the wrong feature, beautifully, in ten minutes. Cadence stops you from building the wrong thing, and proves which thing was right.
 
@@ -40,7 +40,7 @@ We say this explicitly because "memory is the moat" sounds copyable. Memory matt
 
 | Posture | Players | Why | Our move |
 |---|---|---|---|
-| **Different layer, dispatch them** | Lovable, Cursor, Bolt, v0, Replit Agent (vibe-coding) | They own "how to build" (racing to zero, billions invested). We own "what to build / was it right." | Do NOT compete on building. Orchestrate them: dispatch build to our engine or to them. Build/host is a convenience, not the pitch. |
+| **Different layer, dispatch them** | Lovable, Cursor, Bolt, v0, Replit Agent (vibe-coding) | They own "how to build" (racing to zero, billions invested). We own "what to build / was it right." | Out-scope them (own the whole end-to-end loop), do not out-build them. Deliver the build as a governed station (own engine or dispatched to them); build/host is part of the offering, not the moat. |
 | **Integrate and orchestrate** | Linear, Jira, GitHub, Figma, Notion (docs) | They own a workspace or execution surface we cannot dislodge. | Be the decision/memory brain that drives them over MCP/A2A. Sit above; do not fight for the surface. |
 | **Absorb as a feature** | ChatPRD, generic AI-PRD writers, prompt-library PM GPTs | Their whole product is one step in our DECIDE/DEFINE station. | Out-feature them by connecting the PRD to the signal that justified it and the outcome that judged it, which they structurally cannot. |
 | **Race on the moat** | Productboard (Spark), Atlassian Rovo, Dovetail / Enterpret, Notion AI | The real fight: they have data + distribution we lack. | Our only durable edge is the outcome-memory flywheel + being cross-tool-neutral. Pull interop (MCP/A2A) forward; obsess over the memory loop now. |
@@ -88,10 +88,10 @@ A user can go to Lovable/Cursor, describe an app, get a preview, tests, a deploy
 The decision-layer reposition changes more than the workspace layer. These are the standing consequences; re-run them on every reposition (Section 11).
 
 - **Pricing / value metric:** price judgment metered by credits; gate decision-layer value (memory, Critic, outcomes, governance), never build/host; free gets the wedge + limited memory, paid gets the compounding; enterprise can move to outcome-based later.
-- **Feature priority + hard-gating:** prioritize the un-commoditizable ends, **SENSE (ingestion), DECIDE (Critic, decision record), LEARN (outcomes, memory)**; recede **BUILD** as a differentiator (dispatch it). Hard-gate decision-layer capabilities, not build features. Re-rank the dashboard lanes through this lens (A/B/C are the moat; D is convenience). The build loop picks decision-layer work first.
+- **Feature priority + hard-gating:** prioritize the un-commoditizable ends, **SENSE (ingestion), DECIDE (Critic, decision record), LEARN (outcomes, memory)**, as the moat; **deliver BUILD end-to-end as a governed station** (own engine or dispatched), but do not position or price it as the differentiator. Hard-gate decision-layer capabilities, not build features. The build loop picks decision-layer work first.
 - **IA / surfaces / messaging:** the hero path is the decision loop (sense -> decide -> learn); build is calm and recessed; messaging is "the decision system," not "the AI builder." (Visual/IA polish stays under the design-last rule, a tracked future pass.)
 - **What to test:** that the wedge + Critic + outcome loop + memory are the prominent path, and build is dispatched, not the hero.
-- **Adjacent initiatives:** the all-in-one build/host ambition (G11, [`byo-build-and-cadence-cloud-2026-06-18.md`](./byo-build-and-cadence-cloud-2026-06-18.md)) is receded to a convenience; the decision layer leads.
+- **Adjacent initiatives:** the all-in-one build/host vision (G11, [`byo-build-and-cadence-cloud-2026-06-18.md`](./byo-build-and-cadence-cloud-2026-06-18.md)) is **part of the end-to-end scope** (run your whole org on Cadence), sequenced after the loop is proven; it is the offering, but the moat stays the decision layer, not the hosting.
 
 ---
 
@@ -165,7 +165,7 @@ How we reached each position, so this is a reasoning reference, not a list of co
 
 **Tenancy and the billing boundary.** Account > Workspace > Product. Billing, credits, and memory pool at the account, not the workspace, because per-workspace billing taxes the moat (more workspaces = more compounding). The billing-boundary move is a one-time cheap moment while billing is dormant (insight 5). Solo graduates to team in place (members/seats, not workspace count); a personal side-project is a separate signup.
 
-**Coordinating two threads.** A parallel session owns the BYO-repo / Cadence-Cloud plan (G11). Rather than merge or duplicate, the two threads split at an interface (insight 6): G10 owns tenancy + the billing boundary + entitlements + the seam; G11 owns the repo model + managed runtime + the credit packaging. G11 (all-in-one build/host) is receded to a convenience so we do not compete with vibe-coding on its turf.
+**Coordinating two threads.** A parallel session owns the BYO-repo / Cadence-Cloud plan (G11). Rather than merge or duplicate, the two threads split at an interface (insight 6): G10 owns tenancy + the billing boundary + entitlements + the seam; G11 owns the repo model + managed runtime + the credit packaging. G11 (all-in-one build/host) is **part of the end-to-end scope/vision** (sequenced after the loop is proven); we out-scope vibe-coding (the whole loop) rather than competing on building, and the moat stays the decision layer.
 
 **Naming.** Musical names were rejected (Kimi owns that motif). Constellation names tiers after the product's job (insight 8) and is brand-independent (insight 7), which matters while the product name is a placeholder. The motif (a starfield that gains stars/links/glow per tier) encodes the ladder.
 
