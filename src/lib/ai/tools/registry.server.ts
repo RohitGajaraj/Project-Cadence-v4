@@ -22,6 +22,7 @@ import { runCriticTool } from "@/lib/ai/critic.server";
 import { autoReflect } from "@/lib/ai/reflection.server";
 import { studioBranchName } from "@/lib/ai/studio-branch";
 import { mergeReadinessFromCi, overallFromChecks } from "@/lib/ai/studio-ci";
+import { evalRegressionReadiness, type SuiteScorePair } from "@/lib/ai/eval-gate";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 
 export type ToolCtx = {
@@ -1679,6 +1680,55 @@ const studioPrMerge = def({
         ];
         const gate = mergeReadinessFromCi(overallFromChecks(ciChecks));
         if (!gate.allowed) throw new Error(`MergeBlocked: ${gate.reason}`);
+
+        // P4-GATE: eval-regression merge gate (the J2 pattern applied to the
+        // eval trend instead of CI). Refuse the merge if the latest completed
+        // eval run for any suite is >=10 points below the prior one. Evals run
+        // on a schedule, so this reads the already-measured trend; it never
+        // triggers a run. Explicitly user-scoped (and RLS-scoped), read-only,
+        // and degrades to allowed when no suite has a two-run history. The
+        // operator can still merge from GitHub directly; this gates only the
+        // agent's studio.pr.merge tool.
+        const { data: evalRunRows } = await supabase
+          .from("eval_runs")
+          .select("suite_id,avg_score,created_at")
+          .eq("user_id", userId)
+          .eq("status", "completed")
+          .not("avg_score", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(80);
+        const latestTwoBySuite = new Map<string, number[]>();
+        for (const r of evalRunRows ?? []) {
+          const sid = (r as { suite_id: string | null }).suite_id;
+          if (!sid) continue;
+          const arr = latestTwoBySuite.get(sid) ?? [];
+          if (arr.length < 2) {
+            arr.push(Number((r as { avg_score: number | string | null }).avg_score));
+            latestTwoBySuite.set(sid, arr);
+          }
+        }
+        const pairedSuiteIds = [...latestTwoBySuite.entries()]
+          .filter(([, v]) => v.length === 2)
+          .map(([id]) => id);
+        if (pairedSuiteIds.length > 0) {
+          const { data: suiteRows } = await supabase
+            .from("eval_suites")
+            .select("id,name")
+            .eq("user_id", userId)
+            .in("id", pairedSuiteIds);
+          const nameById = new Map(
+            (suiteRows ?? []).map((s) => [
+              (s as { id: string }).id,
+              (s as { name: string | null }).name ?? "an eval suite",
+            ]),
+          );
+          const pairs: SuiteScorePair[] = pairedSuiteIds.map((id) => {
+            const [latest, prior] = latestTwoBySuite.get(id)!;
+            return { suite_name: nameById.get(id) ?? "an eval suite", latest, prior };
+          });
+          const evalGate = evalRegressionReadiness(pairs);
+          if (!evalGate.allowed) throw new Error(`MergeBlocked: ${evalGate.reason}`);
+        }
       }
     }
 
