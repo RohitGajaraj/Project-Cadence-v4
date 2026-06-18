@@ -1,12 +1,23 @@
 # D4 (cancellation slice) - the per-mission brake pedal
 
-**Status:** ◐ Partial (cancellation shipped 2026-06-18; replay-and-branch + checkpoint-diff remain). **Lane:** G2 Decide & Plan / autonomous-spine control. **Pairs with:** [`trust-and-autonomy.md`](./trust-and-autonomy.md) (FND-0.6 kill-switch is the global brake; this is the per-mission brake).
+**Status:** ◐ Partial (cancellation shipped 2026-06-18; replay-and-branch shipped 2026-06-18 cycle 25; the rich checkpoint-diff remains as D4b). **Lane:** G2 Decide & Plan / autonomous-spine control. **Pairs with:** [`trust-and-autonomy.md`](./trust-and-autonomy.md) (FND-0.6 kill-switch is the global brake; this is the per-mission brake).
 
 ## What it delivers
 
 A "Cancel mission" control on the mission detail page (`/missions/$missionId`). When a mission is still active, the operator can stop it: it will not advance further, its in-flight steps and child runs stop, any held Build file locks release, and its pending approvals clear. Work already done is kept; the mission reads `cancelled` (not `failed`, not `completed`). This is the honest mid-run brake that complements the global kill-switch.
 
-D4's full scope is "cancellation + replay-and-branch + checkpoint-diff". This slice is the cancellation half. Replay (re-run a run with a different model/prompt) and checkpoint-diff are not built yet.
+D4's full scope is "cancellation + replay-and-branch + checkpoint-diff". The cancellation and replay-and-branch halves are shipped (below). The rich checkpoint-diff (side-by-side original vs replay) remains as D4b.
+
+## Replay-and-branch (cycle 25)
+
+Re-run a finished mission's goal as a NEW mission, optionally with a different model. On `/missions/$missionId`:
+
+- A **model picker + "Replay" button** in the header for a terminal, non-failed mission (completed / cancelled). Failed/halted missions keep the contextual "Replay" button in the failure panel (default model).
+- Both call `startOrchestratedMission({ goal, title, model, replayedFrom: missionId })`. The server already accepted `model` (it threads to `runAgentLoop`); D4 added `replayedFrom`, which it writes to the new mission's `replayed_from_mission_id` in a separate, pre-migration-tolerant update (so chat's `createMission` path is untouched and the replay still runs if the column is not there yet).
+- The new mission shows a **"Replayed from an earlier mission"** link (back to the parent). `getMission` resolves `replayed_from_mission_id` in a separate error-tolerant read, so the detail page keeps working before the migration applies.
+- **Migration** `20260618160000_d4_replay_branch_link.sql`: `missions.replayed_from_mission_id uuid REFERENCES missions(id) ON DELETE SET NULL` + a partial index. Additive, idempotent, zero behavior change on apply; `ON DELETE SET NULL` so deleting an original never orphans or cascades into its replays.
+
+Replay re-plans from the goal via the orchestrator (a fresh DAG), so a different model affects both planning and execution: the natural way to A/B a goal across models. The branch link is the lightweight diff affordance (open both missions); the rich side-by-side checkpoint-diff is D4b.
 
 ## How it works (and why it needs no loop surgery)
 

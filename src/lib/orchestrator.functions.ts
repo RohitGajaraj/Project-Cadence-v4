@@ -29,6 +29,9 @@ const StartSchema = z.object({
   goal: z.string().min(4).max(4000),
   title: z.string().max(200).optional(),
   model: z.string().max(120).optional(),
+  // D4-REPLAY: when this start is a replay of an existing mission, the parent's
+  // id, recorded on the new mission as the branch link.
+  replayedFrom: z.string().uuid().optional(),
 });
 
 export const startOrchestratedMission = createServerFn({ method: "POST" })
@@ -72,6 +75,18 @@ export const startOrchestratedMission = createServerFn({ method: "POST" })
       goal: data.goal,
       starting_agent_id: (agent as { id: string }).id,
     });
+
+    // D4-REPLAY: record the branch link separately from createMission so chat's
+    // mission path stays untouched. Pre-migration tolerant: if the column is not
+    // there yet, the update errors and we skip it (the replay still runs; only
+    // the parent link is absent until the migration applies).
+    if (data.replayedFrom) {
+      const { error: linkErr } = await supabase
+        .from("missions")
+        .update({ replayed_from_mission_id: data.replayedFrom } as never)
+        .eq("id", mission.id);
+      if (linkErr) console.warn("[startOrchestratedMission] replay link skipped:", linkErr.message);
+    }
 
     // 5. Run the orchestrator loop. It will plan + dispatch on this call;
     //    specialists run async via the resume-runs sweeper. The operator can
