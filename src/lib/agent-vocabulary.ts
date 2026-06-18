@@ -162,7 +162,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Sense ---
   {
     slug: "discovery-scout",
-    name: "Scout",
+    name: "Watch",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -174,7 +174,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "researcher",
-    name: "Researcher",
+    name: "Research",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -186,7 +186,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "customer-insights",
-    name: "Voice",
+    name: "Listen",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -199,7 +199,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Decide ---
   {
     slug: "strategist",
-    name: "Strategist",
+    name: "Prioritize",
     station: "decide",
     face: "strategist",
     tier: "cast",
@@ -211,7 +211,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "critic",
-    name: "Critic",
+    name: "Challenge",
     station: "decide",
     face: "critic",
     tier: "cast",
@@ -224,7 +224,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Define ---
   {
     slug: "prd-writer",
-    name: "Scribe",
+    name: "Draft",
     station: "define",
     face: "scribe",
     tier: "cast",
@@ -236,7 +236,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "ux-architect",
-    name: "Sketch",
+    name: "Design",
     station: "define",
     face: "scribe",
     tier: "cast",
@@ -248,7 +248,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "sprint-planner",
-    name: "Planner",
+    name: "Plan",
     station: "define",
     face: "strategist",
     tier: "cast",
@@ -261,7 +261,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Build ---
   {
     slug: "builder",
-    name: "Maker",
+    name: "Engineer",
     station: "build",
     face: "scribe",
     tier: "cast",
@@ -273,7 +273,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "qa",
-    name: "Reviewer",
+    name: "Review",
     station: "build",
     face: "critic",
     tier: "cast",
@@ -286,7 +286,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Ship ---
   {
     slug: "release",
-    name: "Herald",
+    name: "Announce",
     station: "ship",
     face: "scribe",
     tier: "cast",
@@ -299,7 +299,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   // --- CAST: Learn ---
   {
     slug: "data-analyst",
-    name: "Echo",
+    name: "Measure",
     station: "learn",
     face: "strategist",
     tier: "cast",
@@ -389,7 +389,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "growth-strategist",
-    name: "Strategist",
+    name: "Prioritize",
     station: "decide",
     face: "strategist",
     tier: "cast",
@@ -401,7 +401,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "quant",
-    name: "Strategist",
+    name: "Prioritize",
     station: "decide",
     face: "strategist",
     tier: "cast",
@@ -413,7 +413,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "pricer",
-    name: "Strategist",
+    name: "Prioritize",
     station: "decide",
     face: "strategist",
     tier: "cast",
@@ -425,7 +425,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "discovery",
-    name: "Scout",
+    name: "Watch",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -437,7 +437,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "scout",
-    name: "Scout",
+    name: "Watch",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -449,7 +449,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "listener",
-    name: "Scout",
+    name: "Watch",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -461,7 +461,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "research",
-    name: "Researcher",
+    name: "Research",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -473,7 +473,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "competitor-watcher",
-    name: "Scout",
+    name: "Watch",
     station: "sense",
     face: "scout",
     tier: "cast",
@@ -485,7 +485,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "historian",
-    name: "Echo",
+    name: "Measure",
     station: "learn",
     face: "strategist",
     tier: "cast",
@@ -497,7 +497,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "planner",
-    name: "Planner",
+    name: "Plan",
     station: "define",
     face: "strategist",
     tier: "cast",
@@ -509,7 +509,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "designer",
-    name: "Sketch",
+    name: "Design",
     station: "define",
     face: "scribe",
     tier: "cast",
@@ -521,7 +521,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "scribe",
-    name: "Scribe",
+    name: "Draft",
     station: "define",
     face: "scribe",
     tier: "cast",
@@ -533,7 +533,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "engineer",
-    name: "Maker",
+    name: "Engineer",
     station: "build",
     face: "scribe",
     tier: "cast",
@@ -545,7 +545,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "studio",
-    name: "Maker",
+    name: "Engineer",
     station: "build",
     face: "scribe",
     tier: "cast",
@@ -557,7 +557,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "inspector",
-    name: "Reviewer",
+    name: "Review",
     station: "build",
     face: "critic",
     tier: "cast",
@@ -569,7 +569,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "releaser",
-    name: "Herald",
+    name: "Announce",
     station: "ship",
     face: "scribe",
     tier: "cast",
@@ -581,7 +581,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "marketer",
-    name: "Herald",
+    name: "Announce",
     station: "ship",
     face: "scribe",
     tier: "cast",
@@ -593,7 +593,7 @@ export const SPECIALIST_CATALOG: CatalogEntry[] = [
   },
   {
     slug: "stakeholder",
-    name: "Herald",
+    name: "Announce",
     station: "ship",
     face: "scribe",
     tier: "cast",

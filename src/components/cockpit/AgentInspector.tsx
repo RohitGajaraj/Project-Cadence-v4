@@ -7,13 +7,14 @@ import {
   type AgentRun,
   type AgentMemory,
 } from "@/lib/agent-runs.functions";
+import { agentDisplayName } from "@/lib/agent-vocabulary";
 
 // C4/E7 · Agent inspector, pick an agent, see its recent run history and what it
 // knows (its private memories plus the shared/global pool it draws on). Read-only,
 // RLS-scoped. Engine-Room: names the outcome ("what this agent has been doing and
 // knows").
 
-type AgentLite = { agent_id: string; name: string; role: string };
+type AgentLite = { agent_id: string; slug: string; name: string; role: string };
 
 const HAIRLINE = "color-mix(in oklab, var(--ink-faint) 22%, transparent)";
 
@@ -115,7 +116,7 @@ export function AgentInspector({ agents }: { agents: AgentLite[] }) {
         >
           {agents.map((a) => (
             <option key={a.agent_id} value={a.agent_id}>
-              {a.name} ({a.role})
+              {agentDisplayName(a.slug, a.name)} ({a.role})
             </option>
           ))}
         </select>

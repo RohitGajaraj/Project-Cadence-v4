@@ -198,24 +198,34 @@ export const Route = createFileRoute("/api/chat")({
         // mission straight to that agent. The orchestrator's planning round-trip
         // is unnecessary when the user already named the lead.
         let mentionedAgent: { id: string; slug: string; name: string } | null = null;
+        let mentionToken = "";
         const mentionCandidates = parseAgentMentions(body.content);
         if (mentionCandidates.length > 0) {
+          // Include the orchestrator so the conductor can be invoked explicitly
+          // via @cos / @chief-of-staff (otherwise it is the implicit default).
           const { data: roster } = await supabase
             .from("agents")
             .select("id,slug,name")
             .eq("user_id", userId)
-            .eq("enabled", true)
-            .neq("slug", "orchestrator");
+            .eq("enabled", true);
           const bySlug = new Map(
             ((roster ?? []) as { id: string; slug: string; name: string }[]).map((a) => [
               a.slug,
               a,
             ]),
           );
+          // Short, typeable aliases for the long-named conductor (case handled by
+          // the lowercased parse): @cos / @chief / @chief-of-staff -> Chief of Staff.
+          const MENTION_ALIASES: Record<string, string> = {
+            cos: "orchestrator",
+            chief: "orchestrator",
+            "chief-of-staff": "orchestrator",
+          };
           for (const cand of mentionCandidates) {
-            const hit = bySlug.get(cand);
+            const hit = bySlug.get(MENTION_ALIASES[cand] ?? cand);
             if (hit) {
               mentionedAgent = hit;
+              mentionToken = cand;
               break;
             }
           }
@@ -228,7 +238,7 @@ export const Route = createFileRoute("/api/chat")({
         let subQueries: string[] = [];
 
         if (mentionedAgent) {
-          const stripped = stripMention(body.content, mentionedAgent.slug);
+          const stripped = stripMention(body.content, mentionToken);
           if (stripped) {
             // Direct specialist dispatch: the named agent IS the mission.
             isMission = true;

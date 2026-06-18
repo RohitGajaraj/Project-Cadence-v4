@@ -53,6 +53,7 @@ import { getBrainStatus, rememberMessage } from "@/lib/brain.functions";
 import { createDecision } from "@/lib/decisions.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listAgents } from "@/lib/agents.functions";
+import { agentDisplayName } from "@/lib/agent-vocabulary";
 import { getProfile } from "@/lib/profile.functions";
 import { getMission } from "@/lib/missions.functions";
 import { listMissionSteps } from "@/lib/orchestrator.functions";
@@ -363,19 +364,23 @@ function ChatPage() {
     void sendMessage(content);
   }
 
-  // F-AGENTS-MENTIONABLE: the agent picker. Specialists only (the orchestrator
-  // is the implicit default), filtered by the partial slug/name under the caret.
+  // F-AGENTS-MENTIONABLE: the agent picker, filtered by the partial slug / plain
+  // display name under the caret. The orchestrator is the implicit default, so it
+  // only surfaces when the user is clearly reaching for it (@cos / @chief / "chief
+  // of staff"); typing the full "chief of staff" is never required.
   const mentionMatches =
     mentionQuery === null
       ? []
       : (agentsQ.data?.agents ?? [])
-          .filter(
-            (a) =>
-              a.enabled !== false &&
-              a.slug !== "orchestrator" &&
-              (a.slug.toLowerCase().includes(mentionQuery) ||
-                (a.name ?? "").toLowerCase().includes(mentionQuery)),
-          )
+          .filter((a) => {
+            if (a.enabled === false) return false;
+            const q = mentionQuery;
+            const display = agentDisplayName(a.slug, a.name).toLowerCase();
+            if (a.slug === "orchestrator") {
+              return "cos".startsWith(q) || "chief".startsWith(q) || display.includes(q);
+            }
+            return a.slug.toLowerCase().includes(q) || display.includes(q);
+          })
           .slice(0, 6);
   const mentionOpen = mentionMatches.length > 0;
 
@@ -688,7 +693,9 @@ function ChatPage() {
                         <span style={{ fontWeight: 600, fontSize: 13, color: "var(--agent)" }}>
                           @{a.slug}
                         </span>
-                        <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>{a.name}</span>
+                        <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>
+                          {agentDisplayName(a.slug, a.name)}
+                        </span>
                       </button>
                     ))}
                   </div>
