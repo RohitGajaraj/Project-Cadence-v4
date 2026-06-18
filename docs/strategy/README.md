@@ -32,7 +32,7 @@
 | Requirements / technical contracts | [v7-prd](../planning/archive/v7-prd-2026-06-14.md) / [v7-trd](../planning/archive/v7-trd-2026-06-14.md) (archived, superseded by v10) | requirements reference |
 | **Superseded - do not use; archived 2026-06-17 to docs/planning/archive/** | `strategic-tasks.md` (use v10 pick-list), `v7-feature-map` + `v7-functionality-map` (use v10), `v4-rebuild-handoff` (stale) | historical |
 
-> **De-dup status (2026-06-17):** the superseded docs above are flagged here rather than moved yet, because each is still linked from operational files (AGENTS.md, ENTRY.md, TASKS.md, plan.md, hooks). Archiving them cleanly means updating those references in a dedicated pass so nothing breaks. Until then, **this role map is the single arbiter of which doc to pick.**
+> **De-dup status (updated 2026-06-19):** the superseded docs above (`strategic-tasks.md`, `v7-feature-map`, `v7-functionality-map`, `v4-rebuild-handoff`) have now been moved to [`../planning/archive/`](../planning/archive/). Use v10 (and the SSOT / `feature-backlog.md`) instead. **This role map remains the single arbiter of which doc to pick.**
 
 ---
 

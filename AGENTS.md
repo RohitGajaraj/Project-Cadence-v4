@@ -29,28 +29,50 @@ Three principles govern every decision in this repo:
 
 ---
 
-> ## STANDING ORDER — keep the Live status board & active-task.md current (every tool, every session)
+> ## THE DOCUMENTATION OPERATING SYSTEM (read first, every tool, every session)
 >
-> **This is a continuous obligation, not a one-time setup.** On **every** session, in **every** tool — Claude Code · Antigravity · Gemini · Lovable · any future tool — you **must** check for in-progress tasks and update the status boards:
+> **One front door, typed ledgers behind it, status in exactly ONE place.** This is the standing rule for how this repo's docs work, for every tool (Claude Code · Antigravity · Gemini · Lovable · any future tool). It exists so you never hunt across files, nothing drifts or gets orphaned, and a session starts without re-reading the whole corpus.
 >
-> - **At session start:**
->   1. Check if `active-task.md` exists in the project root. If it does, you MUST read it to resume the exact sub-steps currently in-flight.
->   2. Read the **Live status board** at the top of [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) to align on the broader feature context.
-> - **While working:** Set **Now building** in [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) and update checked/unchecked items in `active-task.md` as you make progress.
-> - **Before you end or pause — non-negotiable:** Leave the status boards true. If work on a feature is not 100% complete, verify that `active-task.md` details exactly what is left so the next tool/agent can pick it up. If the feature is complete, delete `active-task.md` from the project root and flip status checkmarks in the backlog.
-> - **Session handoff file (`.remember/remember.md`) — read first, overwrite last.** At session start, read it (the boot hook surfaces it) for the conversational context the boards don't carry. During the session, overwrite it at every major milestone; before ending or when the operator signals wrap-up, write the full handoff: what shipped (with F-IDs), open work in priority order, founder-gated items, environment notes (keys, running servers, gotchas), and method notes. This is what lets the next session start without re-deriving context — saving tokens is part of the job.
+> ### The one source of truth
+> [`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md) (SSOT) is the ONLY place for "where are we / what is next / what needs the founder." It carries: section 0 the live cursor (what is in flight + the next picks; this folded in the old root `active-task.md` on 2026-06-19), section 1 founder rulings, section 2 status, section 3 the build queue, section 4 the founder pickup list, section 5 findings, section 6 the dated progress log, section 7 the doc map. The boot hook surfaces it first.
 >
-> This shared Git-tracked cursor ensures seamless handoffs between co-developing engines. If you only remember one rule, remember this one.
+> ### Which doc owns what (never duplicate status into these)
+> | Concern | Owner |
+> | --- | --- |
+> | In-flight + next picks, status, founder to-do, progress | **SSOT** (sections 0-6) |
+> | Per-feature status matrix + who-is-on-what claims | [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) |
+> | Per-feature acceptance criteria / scope (F-IDs) | [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) |
+> | Current-initiative build specs (per-ID, cold-buildable) | the initiative's build bible in `docs/planning/` (G10 workspace-tenancy, G11 byo-build) |
+> | Open bugs / blockers | [`docs/planning/known-issues.md`](./docs/planning/known-issues.md) |
+> | Cross-cutting non-functional gaps | [`docs/planning/considerations.md`](./docs/planning/considerations.md) |
+> | Dated build history (what shipped + why) | [`plan.md`](./plan.md) section 4 |
+> | Strategy / positioning / moat | [`docs/strategy/README.md`](./docs/strategy/README.md) (the arbiter) |
+>
+> ### The session loop (do this, in order)
+> 1. **Start:** read the SSOT (the boot hook surfaces it) for the live cursor + queue + founder list, and `.remember/remember.md` for the conversational context the docs do not carry. That is enough to know where things stand. Do not re-read the whole corpus.
+> 2. **Before picking work:** take the next item from SSOT section 0 (cursor) or section 3 (queue). Check the Active-claims table in the dashboard so you do not collide with a parallel session.
+> 3. **On claim (before writing code, same commit):** add an Active-claims line in the dashboard (`<tool>`, date) and set the SSOT section 0 cursor to the pick.
+> 4. **On done (same unit of work as the change):** update (a) the SSOT (section 0 cursor + section 6 progress log) and (b) the ONE typed ledger you touched (the build-bible row, known-issues, etc.), then run [`docs/conventions/doc-closure-checklist.md`](./docs/conventions/doc-closure-checklist.md). A change is not done until its docs are true.
+> 5. **Before you pause or end:** leave the boards true; write the handoff to `.remember/remember.md` (what shipped with IDs, open work in priority order, founder-gated items, env notes). This is what lets the next session start without re-deriving context. Saving tokens is part of the job.
+>
+> ### The new-initiative rule (when a new feature or strategy spawns several sub-items)
+> A new initiative that decomposes into multiple build items (e.g. 4-5 features) is logged as ONE unit, never scattered: (1) a **build bible** at `docs/planning/<initiative>-plan.md` with per-ID specs (context, files, migration, steps, acceptance, verify); (2) a **board group** in the dashboard (e.g. G10/G11) with the pick-order; (3) an **SSOT section 3** queue entry pointing to the bible; (4) the reasoning in [`docs/strategy/strategic-inputs-log.md`](./docs/strategy/strategic-inputs-log.md) and the decision in [`docs/strategy/session-decisions.md`](./docs/strategy/session-decisions.md). Sub-items live in the bible, mirrored as dashboard rows. Never create new root files; placement policy: [`docs/README.md`](./docs/README.md).
+>
+> ### Keep the hierarchy thin (anti-rot: so this cleanup is the LAST one)
+> The doc set must stay thin and purpose-driven: ONE doc per purpose, each serving its full purpose, no duplicates, no orphans, no redirect stubs. This repo has been cleaned up repeatedly; these rules exist so it does not rot again. Every tool, every session:
+> - **Extend, do not create.** Before creating any doc, check the map above and [`docs/README.md`](./docs/README.md). If a doc already serves the purpose, ADD to it. Create a new file ONLY for a genuinely new purpose, in the right subfolder, linked from that folder's index in the same commit.
+> - **No duplicated status or content.** Status lives only in the SSOT. Never copy a status board, queue, or canon paragraph into a second file; link instead.
+> - **Merge on sight.** If two docs drift toward the same job, merge them immediately: overwrite the survivor with the union of the content, then archive or delete the other. Do not "deal with it later".
+> - **Archive, do not orphan.** When a doc is superseded, move it to the nearest `archive/` (`docs/planning/archive/`, `docs/strategy/archive/`) and remove inbound links. Delete outright only when it has zero unique data (capture anything unique into the survivor first).
+> - **Check before you commit.** Run `bun run docs:check` (wraps `scripts/docs-doctor.sh`) to catch rot early: stray files at repo root or `docs/` top level, macOS " 2" duplicates, more than one "single source of truth" / "Live status board" claim, orphaned docs (in `docs/` but linked from nowhere), and broken relative links. Fix what it flags in the same commit.
+>
+> If you remember one rule, remember this: **status lives only in the SSOT; everything else is typed detail it points to. One purpose per doc, extend before you create, archive before you orphan.**
 
 ---
 
 ## 1. Pre-action protocol (run before any non-trivial task)
 
-0. **Resolving "what is currently in-flight or next to build":**
-   - **Master Dashboard Check (do this FIRST, before any feature work):** `git pull origin main`, then read [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) - the single live status board. It tells you what is already Done, In Dev (claimed by a parallel/other session - **do not collide**), Partial, Paused, Deferred, Blocked, or Pending. On pickup, flip the row to `🔨 In Dev (<tool>, date)` + add an Active-claims line and push, in the same commit, before writing feature code. On completion, flip to `✅` and clear the claim. This is non-negotiable and exists so concurrent sessions never duplicate or clobber work. The current founder-directed initiative (workspace / accounts / tenancy + monetization) has per-ID build specs in [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) (board group G10).
-   - **Active Task Check:** Check if `active-task.md` exists in the repository root. If yes, read it and immediately resume work from the listed checklist.
-   - **Backlog Check:** If no `active-task.md` exists, go to the **Build-order rollup** in [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md#build-order-rollup-status--build-sequence): take the lowest-numbered step still `◑`/`☐` → expand its Key IDs to the feature entries above → pick the first whose `[status]` isn't `☑` → open its ticket in [`docs/planning/foundation-audit.md`](./docs/planning/foundation-audit.md) (step 1) or its entry (later steps).
-   - **Task Initialization:** Once you identify the next task, create `active-task.md` in the project root with the detailed checklist of implementation sub-steps before writing code.
+0. **Resolving "what is in flight or next to build":** `git pull origin main`, then read [`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md): section 0 (the live cursor) for what is in flight, section 3 for the build queue, section 4 for founder-gated items. Check the Active-claims table in [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) so you do not collide with a parallel/other session. On pickup, flip the dashboard row to `🔨 In Dev (<tool>, date)` + an Active-claims line AND set the SSOT section 0 cursor, in the same commit, before writing feature code. On completion, flip the row to `✅`, clear the claim, and update the SSOT (section 0 + section 6). The full model is the **Documentation Operating System** block above. This is non-negotiable so concurrent sessions never duplicate or clobber work.
 1. **State the request in one sentence.** If ambiguous, ask before acting.
 2. **Scan skills and agents first, and then available plugins and tools (MCP, etc.) then act.** Surface candidate skills ([`docs/operations/skills.md`](./docs/operations/skills.md)) and subagents ([`docs/operations/subagents.md`](./docs/operations/subagents.md)) with a one-line "why," before invoking. Never reason from scratch when a skill exists. This is non-negotiable.
 3. **Invoke the smallest set that fits.** One or two skills, justified in one line. No invoking five overlapping skills "for completeness."

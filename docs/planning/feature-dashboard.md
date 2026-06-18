@@ -376,12 +376,12 @@ _Provider-agnostic repos (GitHub/GitLab/Bitbucket) + managed infrastructure: run
 ---
 
 ## Status reconciliation note
-Statuses here are reconciled from [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3, milestone tags), [`../../active-task.md`](../../active-task.md) (latest shipped/dormant/parked detail), and [`feature-backlog.md`](./feature-backlog.md) (granular ledger). Where those docs conflict on a "done" claim, the row is marked **⚠️ Verify** rather than assumed - confirm against the live build before building. **The four ⚠️-Verify rows from the first cut were reconciled against the live code on 2026-06-16 (with file:line evidence): DEC-02 confirmed Done; FND-0.7, I1, and J2 confirmed Partial, with the specific remaining work noted in each row.** Granular acceptance criteria and "How to use / verify" blocks live in [`feature-backlog.md`](./feature-backlog.md); milestone exit criteria live in [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3); open bugs live in [`known-issues.md`](./known-issues.md).
+Statuses here are reconciled from [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3, milestone tags; section 0 the live cursor for latest shipped/dormant/parked detail), and [`feature-backlog.md`](./feature-backlog.md) (granular ledger). Where those docs conflict on a "done" claim, the row is marked **⚠️ Verify** rather than assumed - confirm against the live build before building. **The four ⚠️-Verify rows from the first cut were reconciled against the live code on 2026-06-16 (with file:line evidence): DEC-02 confirmed Done; FND-0.7, I1, and J2 confirmed Partial, with the specific remaining work noted in each row.** Granular acceptance criteria and "How to use / verify" blocks live in [`feature-backlog.md`](./feature-backlog.md); milestone exit criteria live in [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3); open bugs live in [`known-issues.md`](./known-issues.md).
 
 ## Related
 - [`feature-backlog.md`](./feature-backlog.md) - granular ledger + Build-order rollup (this dashboard is its master view)
 - [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 2-3) - status + build queue + milestone narrative
 - [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
 - [`strategic-tasks.md`](./archive/strategic-tasks.md) - P0-P3 strategic buckets
-- [`../../active-task.md`](../../active-task.md) - the current session cursor
+- [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) section 0 (the live cursor) - the current session cursor
 - [`../../AGENTS.md`](../../AGENTS.md) §1 (pre-action) + §5 (doc-update protocol) - where the standing rule is enforced

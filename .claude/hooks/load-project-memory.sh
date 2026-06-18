@@ -31,14 +31,9 @@ if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/feature-dashboard.md" ]; then
 fi
 
 if [ -f "$CLAUDE_PROJECT_DIR/docs/planning/SOURCE-OF-TRUTH.md" ]; then
-  echo "=== ACTIVE BUILD TASK (from SSOT section 3 build queue) ==="
-  grep -A2 "### Build next" "$CLAUDE_PROJECT_DIR/docs/planning/SOURCE-OF-TRUTH.md" | sed 's/^- //'
-  echo ""
-fi
-
-if [ -f "$CLAUDE_PROJECT_DIR/active-task.md" ]; then
-  echo "=== IN-FLIGHT TASK (active-task.md exists, read it before doing anything) ==="
-  head -6 "$CLAUDE_PROJECT_DIR/active-task.md"
+  echo "=== LIVE CURSOR + BUILD NEXT (SSOT section 0, the in-flight work) ==="
+  grep -A6 "### Build next" "$CLAUDE_PROJECT_DIR/docs/planning/SOURCE-OF-TRUTH.md" | sed 's/^- //'
+  echo "  (full cursor + queue + founder list: docs/planning/SOURCE-OF-TRUTH.md)"
   echo ""
 fi
 

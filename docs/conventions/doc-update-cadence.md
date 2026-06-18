@@ -13,7 +13,7 @@
 The live cursors, logs, and trackers. Update these in the SAME commit as the change that touched them. Never let them go stale; a stale Tier-1 doc is worse than none.
 
 - `plan.md` section 4 (the build log): one line per shipped change.
-- `active-task.md`: the live cursor, at the start and end of every session.
+- `docs/planning/SOURCE-OF-TRUTH.md` section 0 (the live cursor): the current Now-building and Next-up, at the start and end of every session.
 - `docs/planning/feature-backlog.md`: the live status board.
 - `docs/planning/known-issues.md`: bugs and blockers as they open and close.
 - `docs/strategy/session-decisions.md`: every major decision or tradeoff.
@@ -23,12 +23,12 @@ The live cursors, logs, and trackers. Update these in the SAME commit as the cha
 
 The product-facing maps and specs. Refresh these when a feature set lands or a feature's status changes (Built, Partial, Missing), at a milestone boundary (each M-0 to M-D completion) or after roughly two weeks of progress, whichever comes first. Do not rewrite them on every small build.
 
-- `docs/planning/v7-feature-map-*.md`: the feature catalog (what we offer plus status).
-- `docs/planning/v7-functionality-map-*.md`: how features behave.
-- `docs/planning/v7-prd-*.md`: product requirements and priorities.
+- `docs/strategy/v10-master-blueprint-2026-06-17.md`: the current master blueprint (what we build, how it should look and behave, priority). See `docs/strategy/README.md` (the arbiter) for which strategy doc governs what.
+- `docs/planning/v10_implementation-plan.md`: the execution order (build loop, sprints, milestone gates).
+- `docs/planning/feature-dashboard.md`: the live board (status, board groups).
 - `docs/features/*`: per-feature operator specs.
 
-The refresh pass at each feature-milestone: update each feature's status in the feature map, update any flow whose behavior changed in the functionality map, and re-rank priorities in the PRD if the roadmap moved. Add a one-line note to `plan.md` section 4 that the refresh happened.
+The refresh pass at each feature-milestone: update each feature's status on the board, refresh the blueprint and implementation plan if scope or priority moved, and re-check the execution order against the milestone gates. Add a one-line note to `plan.md` section 4 that the refresh happened.
 
 ### Tier 3, per structural change (only on a real architectural change, or as a deliberate refresh once a build settles)
 
@@ -44,11 +44,11 @@ The architecture and reference docs. These describe structure, not progress, so 
 
 Any "what are we building next?" question is answered by reading one chain, in order, so the answer is never guesswork:
 
-1. `active-task.md` (the live session cursor): the current Now-building and Next-up. Read this first, every session.
-2. `docs/planning/SOURCE-OF-TRUTH.md` (section 2 status + section 3 build queue), the build-state tracker: the live status and what the loop builds next. It carries the current status, the explicit build queue (top pick first), the founder pickup list, open findings, and the milestone framing folded in.
-3. `docs/planning/feature-backlog.md` (the granular ledger): the per-feature board with how-to-verify blocks.
+1. `docs/planning/SOURCE-OF-TRUTH.md` section 0 (the live cursor): the current Now-building and Next-up. Read this first, every session.
+2. `docs/planning/SOURCE-OF-TRUTH.md` section 3 (the build queue): the explicit build queue (top pick first), plus the founder pickup list, open findings, and the milestone framing folded in.
+3. `docs/planning/feature-backlog.md` (the granular ledger, F-ID scope): the per-feature board with how-to-verify blocks.
 
-The milestones are defined in the v7 canon (`docs/strategy/v7-agentic-product-os-2026-06-14.md` section 12). The feature statuses come from `docs/planning/v7-feature-map-*.md`. The priorities come from `docs/planning/v7-prd-*.md`. The tracker is the synthesis layer that joins them.
+The milestone gates and execution order are defined in `docs/planning/v10_implementation-plan.md`; the build/structure canon is `docs/strategy/v10-master-blueprint-2026-06-17.md` (with `docs/strategy/README.md` as the arbiter of which strategy doc governs what). The feature statuses come from `docs/planning/feature-dashboard.md` and the granular `docs/planning/feature-backlog.md`. The tracker (the SSOT) is the synthesis layer that joins them.
 
 Rules:
 - The tracker and the cursor are Tier 1: update them in the same commit as any change that ships a feature, moves a status, or completes a milestone.

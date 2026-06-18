@@ -5,7 +5,7 @@
 1. **Audit / feature doc** — add a "How to use / verify" block: route + nav path, what each control does, server enforcement points, verification checklist.
 2. **`architecture/*.md`** — add or update the relevant contract (frontend pattern, security invariant, data shape, runtime hook).
 3. **`design.md`** — add or update the token / voice / UI-contract entry if the feature touches visual or copy rules.
-4. **`docs/feature-backlog.md`** Live status board — flip the status mark, update "Last updated", append a "Recent log" one-liner.
+4. **Trackers** — update `docs/planning/SOURCE-OF-TRUTH.md` (section 0 the live cursor + section 6 progress) and the relevant board `docs/planning/feature-dashboard.md` (flip the status mark, board group), plus the granular `docs/planning/feature-backlog.md` (flip the status, update "Last updated", append a "Recent log" one-liner).
 5. **`plan.md` §4** — append a dated one-liner with a clear WHY (not just WHAT).
 6. **`docs/strategy/session-decisions.md`** — add an entry if a strategic decision or tradeoff was resolved.
 7. **`docs/conventions/`** — write a new convention file if the learning is a durable rule. Reference it from [`../../AGENTS.md`](../../AGENTS.md) §3 if it is a hard engineering rule.

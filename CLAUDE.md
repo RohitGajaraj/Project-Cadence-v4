@@ -27,7 +27,9 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 
 ## Read order for Claude Code
 
--1. **`git pull origin main`** — before anything else, sync the latest from all other tools. Never work on a stale codebase. The repository is the single source of truth; this file is orientation only. 0. **`active-task.md`** (if present in root) — active sub-steps and checklist currently building. Read first!
+-1. **`git pull origin main`** - before anything else, sync the latest from all other tools. Never work on a stale codebase. The repository is the single source of truth; this file is orientation only.
+
+0. **[`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md)** - the ONE file to read first. Section 0 is the live cursor (what is in flight + the next picks; this folded in the old root `active-task.md` on 2026-06-19), then the build queue (section 3) and the founder pickup list (section 4). The full doc model (the map, the session loop, the new-initiative rule) is in [`AGENTS.md`](./AGENTS.md) "The Documentation Operating System".
 
 0.5. [`Ai_Cofounder.md`](./Ai_Cofounder.md) — the **founding constitution**: co-founder operating posture, north star, agentic-first + model-agnostic (BYOK) mandates, documentation-first development. Its **Repo Concordance** section maps its 13 mandated living docs onto this repo's canon — never create those root files; update the mapped equivalents. For scope/agents/IA/sequencing, the v4 feature map (1.5) governs.
 

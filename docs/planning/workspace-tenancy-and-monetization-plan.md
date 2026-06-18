@@ -432,7 +432,7 @@ These are specified now and **resurfaced at every milestone gate**; do not build
 - Cascade: a `session-decisions.md` entry + a `strategic-inputs-log.md` entry; a `strategy/README.md` role-map row; cross-link `byo-build-and-cadence-cloud-2026-06-18.md` both ways.
 - Create `docs/features/workspaces.md`; update `docs/features/pricing.md`.
 - Update `architecture/data.md` + `architecture/security.md`.
-- Update `active-task.md` + `plan.md` Section 4.
+- Update the SSOT section 0 (the live cursor) + `plan.md` Section 4.
 - Cross-reference this plan from `AGENTS.md`, `CLAUDE.md`, `README.md`, and the Lovable config so every tool finds it.
 
 ---

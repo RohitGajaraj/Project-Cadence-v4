@@ -143,4 +143,4 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 
 ## How this feeds the plan
 
-[`../plan.md`](../plan.md) section 2 carries the _product_ features; this doc carries the _cross-cutting non-functional_ requirements. The build order ([`../plan.md`](../plan.md) section 3) should pull P0 items into the foundation (especially agent blast-radius, cost controls, injection defense, provider fallback, and runtime durability) — they are architecture, not afterthoughts. [`TASKS.md`](../TASKS.md) P3 points back here. Revisit this review whenever scope expands.
+[`../plan.md`](../plan.md) section 2 carries the _product_ features; this doc carries the _cross-cutting non-functional_ requirements. The build order ([`../plan.md`](../plan.md) section 3) should pull P0 items into the foundation (especially agent blast-radius, cost controls, injection defense, provider fallback, and runtime durability) — they are architecture, not afterthoughts. The SSOT task queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md)) and the F-ID scope ledger ([`feature-backlog.md`](./feature-backlog.md)) point back here. Revisit this review whenever scope expands.

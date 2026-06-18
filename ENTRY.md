@@ -55,7 +55,7 @@
 | Adding a route / server fn / surface                       | [`architecture/frontend.md`](./architecture/frontend.md)                                                                                                                                                                                            |
 | Adding a connector / BYO key / MCP / A2A                   | [`architecture/integrations.md`](./architecture/integrations.md)                                                                                                                                                                                    |
 | Feature scope + build order + build log                    | [`plan.md`](./plan.md)                                                                                                                                                                                                                              |
-| **Asking "what should I build next / where did we stop?"** | [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md) — **Live status board** (top) + Build-order rollup (bottom). Resolution rule: [`AGENTS.md`](./AGENTS.md) §1.                                                               |
+| **Asking "what should I build next / where did we stop?"** | [`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md) - **the single front-door tracker**: section 0 (the live cursor / NOW), what is next, what needs the founder. F-ID scope ledger: [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md). Resolution rule: [`AGENTS.md`](./AGENTS.md) §1. |
 | Picking a subagent / skill; tool + hook conventions        | [`docs/operations/subagents.md`](./docs/operations/subagents.md) · [`docs/operations/skills.md`](./docs/operations/skills.md) · [`docs/operations/tools.md`](./docs/operations/tools.md) · [`docs/operations/hooks.md`](./docs/operations/hooks.md) |
 | Cross-cutting gaps an enterprise build needs               | [`docs/planning/considerations.md`](./docs/planning/considerations.md)                                                                                                                                                                              |
 | Deciding the stack or the name                             | [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md) · [`docs/decisions/naming.md`](./docs/decisions/naming.md)                                                                                                                         |
@@ -101,7 +101,6 @@ Cadence/
 ├── GEMINI.md             <- Antigravity + Gemini CLI pointer to AGENTS.md
 ├── plan.md               <- feature scope + granular catalog + build order + logs
 ├── design.md             <- design system + AI UI contract
-├── active-task.md        <- active in-flight task tracker (if present)
 ├── architecture/
 │   ├── runtime.md        <- AI chokepoint contract
 │   ├── orchestration.md  <- missions, parallel agents/sessions, automation, multi-product
@@ -137,11 +136,11 @@ Cadence/
     │   ├── subagents.md
     │   └── tools.md
     ├── planning/         <- backlog & roadmap trackers
+    │   ├── SOURCE-OF-TRUTH.md  <- the single front-door tracker (section 0 = the live cursor / NOW)
     │   ├── considerations.md
-    │   ├── feature-backlog.md
-    │   ├── foundation-audit.md
+    │   ├── feature-backlog.md  <- F-ID scope ledger
     │   ├── known-issues.md
-    │   └── archive/  (superseded docs: strategic-tasks, v7 maps, v4-rebuild-handoff; see v10 blueprint)
+    │   └── archive/  (superseded docs: foundation-audit, overnight-build-report, strategic-tasks, v7 maps, v4-rebuild-handoff; see v10 blueprint)
     ├── references/       <- market research & competitive inputs
     └── strategy/         <- versioned strategic positioning
 ```

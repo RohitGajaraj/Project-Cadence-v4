@@ -193,7 +193,7 @@ F1.2 Signal card can ship. Tests all passing locally."
 1. **Read [`AGENTS.md`](../AGENTS.md) section 5** — the closed documentation loop.
 2. **Apply git discipline to every interaction**, whether you're committing, pushing, or pulling.
 3. **Include task context** (ticket ID, epic, feature name) in every message.
-4. **When you hand off** (pause or finish work), update `active-task.md` and `docs/feature-backlog.md` with the same rigor — future tools depend on clarity.
+4. **When you hand off** (pause or finish work), update the SSOT section 0 (the live cursor, `docs/planning/SOURCE-OF-TRUTH.md`) and `docs/planning/feature-dashboard.md` with the same rigor — future tools depend on clarity.
 
 ---
 
@@ -238,7 +238,7 @@ F1.2 Signal card can ship. Tests all passing locally."
 | **Pull**          | ✓ Yes                 | `git pull — <reason for sync> · <what to check after>`                                |
 | **Merge**         | ✓ Yes                 | `git merge <branch> — <why needed>` + note any breaking changes                       |
 | **Branch create** | ✓ Yes                 | `git checkout -b <branch> — <purpose>`                                                |
-| **Rebase**        | ✓ Yes (with approval) | Ask first, include reason, document in active-task.md                                 |
+| **Rebase**        | ✓ Yes (with approval) | Ask first, include reason, document in the SSOT section 0 (the live cursor)            |
 | **Force-push**    | ✗ No (to main)        | Refuse. Allow to feature branches with dated approval only.                           |
 | **Reset --hard**  | ✗ No (to main)        | Refuse. Allow to local branches with confirmation.                                    |
 
