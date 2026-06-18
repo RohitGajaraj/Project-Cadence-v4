@@ -143,7 +143,7 @@ There is a standing founder ruling (SSOT section 1, 2026-06-18) that the design 
 
 **Phase 2, agent experience UX (greenlit now; builds after Phase 1's foundation lands):**
 6. The `<AgentRelay>` component (full + mini) with the ephemeral-line, collapse-to-artifact behavior.
-7. The 6-station loop spine on Product.
+7. The 6-station loop spine on **Today** (the command-center home, so the cross-surface loop map sits higher than any single surface; founder ruling 2026-06-18). Product keeps its tabs. The agent palette is the brand orchid family (warm oklch, disjoint from the status colors), and a running agent's name carries a motion-gated brand-orchid shimmer (`.agent-live`).
 8. The Today mini relay (replacing the standing agent rail).
 9. Engine Room > Team (relocate roster, trust dial, inspector, throughput).
 10. Retire the missions Agents tab + the roster grid; repoint the `/agents` redirect to `/govern?tab=team`.

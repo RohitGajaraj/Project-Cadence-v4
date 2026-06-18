@@ -8,7 +8,6 @@ import {
   Sparkles,
   Plus,
   RefreshCw,
-  Bot,
   Rocket,
   ShieldAlert,
   Check,
@@ -28,7 +27,7 @@ import { listTasks, createTask, updateTask, deleteTask } from "@/lib/tasks.funct
 import { listProjects } from "@/lib/projects.functions";
 import { generateDailyBrief } from "@/lib/copilot.functions";
 import { listAgentRuns } from "@/lib/agents.functions";
-import { AgentRelay } from "@/components/agents/AgentRelay";
+import { LoopStations } from "@/components/product/LoopStations";
 import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou, getColdStart, getLoopPulse } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
@@ -950,23 +949,10 @@ function Dashboard() {
           )}
         </section>
 
-        {/* AGENT-EXP: Today shows one calm live line of what is running now, not a
-            roster of chips. The full relay (the mission) and the team (Engine Room)
-            are one click away. */}
-        <section style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "0 2px",
-              marginBottom: 10,
-            }}
-          >
-            <MonoLabel icon={Bot}>Running now</MonoLabel>
-            {activeAgents > 0 ? <span className="mono-label">{activeAgents} running</span> : null}
-          </div>
-          <AgentRelay variant="mini" workspaceId={activeWorkspace?.id ?? null} />
-        </section>
+        {/* AGENT-EXP: the loop spine lives on Today (the command center) as the
+            cross-surface map; each station shows its live state and links to its
+            surface. The full relay lives on each mission. */}
+        <LoopStations workspaceId={activeWorkspace?.id ?? null} />
 
         {/* TODAY'S TASKS: light personal planning, demoted to a quiet aside.
             The Overview / Agent-activity dashboards moved to their stations:

@@ -1556,3 +1556,35 @@ html.flow main > header:hover {
 .flow-pulse {
   animation: flowBreathe 3.6s var(--ease-in-out) infinite;
 }
+
+/* AGENT-EXP: a flowing sheen on a live/running agent's name (Claude-Code-style),
+   in the brand orchid. Gated by data-motion + reduced-motion like all motion. */
+@keyframes agent-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.agent-live {
+  background: linear-gradient(
+    90deg,
+    var(--agent),
+    color-mix(in oklab, var(--agent) 42%, white),
+    var(--agent)
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: agent-shimmer 2.6s linear infinite;
+}
+html[data-motion="off"] .agent-live {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-live {
+    animation: none;
+  }
+}

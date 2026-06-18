@@ -70,9 +70,9 @@ export function AgentMark({ slug, size = 22 }: { slug: string | null | undefined
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.3),
-        // hue is a 6-digit hex from the catalog; append alpha for tint + border.
-        background: `${hue}1F`,
-        border: `1px solid ${hue}40`,
+        // hue is an oklch from the warm agent palette; mix for the tint + border.
+        background: `color-mix(in oklab, ${hue} 14%, transparent)`,
+        border: `1px solid color-mix(in oklab, ${hue} 30%, transparent)`,
         color: hue,
         flexShrink: 0,
       }}
@@ -88,6 +88,7 @@ export function AgentBadge({
   verb,
   size = 22,
   showVerb = false,
+  live = false,
   fallbackName,
 }: {
   slug: string | null | undefined;
@@ -95,6 +96,8 @@ export function AgentBadge({
   verb?: string | null;
   size?: number;
   showVerb?: boolean;
+  /** When true, the name shimmers (a live/running agent), respecting motion settings. */
+  live?: boolean;
   fallbackName?: string | null;
 }) {
   const name = agentDisplayName(slug, fallbackName);
@@ -105,10 +108,11 @@ export function AgentBadge({
       <AgentMark slug={slug} size={size} />
       <span style={{ display: "inline-flex", flexDirection: "column", minWidth: 0 }}>
         <span
+          className={live ? "agent-live" : undefined}
           style={{
             fontSize: 13,
             fontWeight: 540,
-            color: hue,
+            color: live ? undefined : hue,
             lineHeight: 1.2,
             whiteSpace: "nowrap",
             overflow: "hidden",

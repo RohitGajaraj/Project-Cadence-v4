@@ -85,7 +85,14 @@ function FullRelay({ missionId }: { missionId: string }) {
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}
                     >
-                      <span style={{ fontSize: 13, fontWeight: 540, color: "var(--ink)" }}>
+                      <span
+                        className={s.status === "running" ? "agent-live" : undefined}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 540,
+                          color: s.status === "running" ? undefined : "var(--ink)",
+                        }}
+                      >
                         {s.name}
                       </span>
                       <StepDot status={dotFor(s.status)} />

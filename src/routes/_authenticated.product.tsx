@@ -28,7 +28,6 @@ import { SpecsPanel } from "@/components/product/SpecsPanel";
 import { ReleasesPanel } from "@/components/product/ReleasesPanel";
 import { RoadmapBoard } from "@/components/product/RoadmapBoard";
 import { PortfolioBoard } from "@/components/product/PortfolioBoard";
-import { LoopStations } from "@/components/product/LoopStations";
 
 // v6 Phase 0 / W1: the Roadmap (sprint planner + capacity) and Tasks (To-Do/
 // Doing/Done kanban) tabs are deleted — they wear the clothes of a human-PM
@@ -124,8 +123,6 @@ function ProductPage() {
         {/* B3 Portfolio + B5 lifecycle — run many products without losing the
             thread; switch, archive / restore, export, and delete on each card. */}
         <PortfolioBoard />
-        {/* AGENT-EXP: the six-station loop spine, the standing map the user navigates. */}
-        <LoopStations workspaceId={activeWorkspace?.id ?? null} />
         <TabRow tabs={TABS} active={tab} onSet={setTab} desc={PRODUCT_DESC} />
 
         {tab === "signals" && (signal ? <SignalDetail id={signal} /> : <SignalsPanel />)}
