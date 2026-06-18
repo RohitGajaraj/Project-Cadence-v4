@@ -40,6 +40,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
 | D4 | Mission cancellation (per-mission brake) | ◐ Cancellation shipped 2026-06-18 | `/missions/$id` | [`d4-mission-cancellation.md`](./d4-mission-cancellation.md) |
 | O1 | Provenance ("why is this on the roadmap?") | ◐ Provenance shipped 2026-06-18 | `/product?opp=` | [`o1-provenance.md`](./o1-provenance.md) |
+| LCH-01 | Launch-kit drafting (changelog/blog/email/social/docs) | ◐ Drafting shipped 2026-06-18 | `/build/$missionId` Changes | [`lch-01-launch-kit.md`](./lch-01-launch-kit.md) |
 | F-AGENT-1 | Orchestrator + multi-agent missions                            | ✅ Shipped 2026-06-06                           | `/missions`, `/missions/$id`                      | [`f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md)           |
 | F-AGENT-2 | Persistent agent memory + self-reflection + trust auto-advance | ✅ Shipped 2026-06-06                           | `/agents`                                         | [`f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md) |
 | F-AGENT-3 | Event reactor + auto-pipelines                                 | ✅ Shipped 2026-06-06                           | `/governance` (Auto-pipelines · Reactor activity) | [`f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md)         |

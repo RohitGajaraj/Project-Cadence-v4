@@ -2,7 +2,7 @@
 
 > **What this is.** The one canonical, at-a-glance status of **every** feature: what is built, in development, paused, deferred, or pending, each with a one-line "why it matters" and a build cue so any session can pick it up cold. This is the **front door** to status. Detail lives elsewhere (links below); this page is the index that stays true.
 >
-> **Last updated:** 2026-06-18 (D4 cancellation ◐ · H1-TASKS ✅ · F3 always-fresh feed ◐ · O1 provenance ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
+> **Last updated:** 2026-06-18 (D4 ◐ · H1-TASKS ✅ · F3 ◐ · O1 provenance ◐ · LCH-01 launch-kit ◐) · **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change).
 
 ---
 
@@ -75,7 +75,7 @@ Say **"pick `<ID>`"** (e.g. "pick I-2", "start K1", "do F-IA-V4") and the agent 
 | G1 Sense & Discovery | 4 | 2 | 1 | 5 |
 | G2 Decide & Plan | 8 | 1 | 0 | 0 |
 | G3 Build → QA → Ship | 8 | 0 | 1 | 5 |
-| G4 Launch & Learn | 2 | 1 | 0 | 5 |
+| G4 Launch & Learn | 2 | 2 | 0 | 4 |
 | G5 Monetize & Growth | 2 | 0 | 2 | 2 |
 | G6 Interop & Team | 0 | 2 | 0 | 3 |
 | G7 Cockpit, IA & Observability | 8 | 2 | 0 | 6 |
@@ -172,7 +172,7 @@ _Close the loop: ship to market, learn from outcomes, feed it back._
 | ID | Feature | Status | Why it matters / what it delivers | Cue / detail |
 | --- | --- | --- | --- | --- |
 | LRN-04 | Product Memory consult/write runtime visibility | ◐ Partial | The memory loop is wired (W1); surfacing it per mission is N3 | `/memory` + Missions |
-| LCH-01 / L1 | Launch-kit mission (changelog/blog/email/social/docs from diff + spec) | ⬜ (M2) | One mission drafts the whole launch, human-approved | New mission template + outbound send |
+| LCH-01 / L1 | Launch-kit mission (changelog/blog/email/social/docs from diff + spec) | ◐ (2026-06-18) | **Launch-kit drafting shipped:** `generateLaunchKit` turns a shipped changeset (release notes + title + work order + files) into 5 human-approved artifacts (changelog, blog, email, social, docs) in one AI pass, each run through `humanizeText`; a "Launch kit" panel on the Build Changes tab drafts + lets the operator copy them. Ephemeral, no migration, **never sends** (outbound delivery is a separate founder-gated step). Remaining: a launch MISSION template + governed outbound send. | `generateLaunchKit` (`studio.functions.ts`) + `ChangesPanel.tsx` · [`lch-01-launch-kit.md`](../features/lch-01-launch-kit.md) |
 | L2 | Customer pages / announcements (`p.$slug`) | ⬜ (M2) | Public-facing announcement pages, approval to publish | `src/routes/p.$slug.tsx` |
 | M1 / LRN-01 | Support triage loop (tickets → drafted replies → bug clusters → signals) | ⬜ (M2) | Support feeds back into Discover; the loop closes | Inbound channel + Analyst learn loop |
 | LRN-02 | Outcome reviews (predicted vs actual, Historian verdicts) | ✅ (2026-06-17) | Honest scorekeeping that trains the next decision. Core was already built (`recordOutcome`: human verdict + ICE rescore + `learnings` + W1-AUTO `rememberOutcome`); this added the missing **Historian verdict (predicted vs actual)**: `suggestOutcomeVerdict` reads the opportunity's prediction (problem/hypothesis/predicted-ICE + H2 roadmap outcome/measure when synced) and the actual signal, then drafts a verdict + summary on the OutcomeCard for the human to confirm (reuses `surface:"judge"`; output enum-clamped; human-gated write). Adversarially reviewed (APPROVE; 1 MED + 1 LOW folded) | `outcome.functions.ts` (`suggestOutcomeVerdict`) + `OutcomeCard.tsx` |

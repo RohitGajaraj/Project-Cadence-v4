@@ -5,6 +5,8 @@ import { toast } from "@/lib/notify";
 import {
   applyStagedHunkSelection,
   generateReleaseNotes,
+  generateLaunchKit,
+  type LaunchKit,
   getChangesetDiff,
   getChangesetRevisions,
   rejectStagedFile,
@@ -160,6 +162,19 @@ export function ChangesPanel({
       toast.error(e instanceof Error ? e.message : "Could not generate release notes."),
   });
 
+  // LCH-01: draft a launch kit from the shipped changeset (ephemeral, no send).
+  const [launchKit, setLaunchKit] = useState<LaunchKit | null>(null);
+  const fGenKit = useServerFn(generateLaunchKit);
+  const genKitMut = useMutation({
+    mutationFn: () => fGenKit({ data: { changesetId: changeset!.id } }),
+    onSuccess: (kit: LaunchKit) => {
+      setLaunchKit(kit);
+      toast.success("Launch kit drafted. Review and copy what you need.");
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not draft the launch kit."),
+  });
+
   if (!changeset) {
     return (
       <div
@@ -261,6 +276,99 @@ export function ChangesPanel({
               }}
             >
               {changeset.release_notes}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* LCH-01 launch kit: human-approved launch artifacts drafted from the ship (no send). */}
+      {changeset.release_notes || revisions.length > 0 ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: launchKit ? "1px solid var(--hairline)" : "none",
+            }}
+          >
+            <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+              Launch kit
+            </span>
+            <button
+              type="button"
+              onClick={() => genKitMut.mutate()}
+              disabled={genKitMut.isPending}
+              className="mono-label"
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 6,
+                padding: "3px 10px",
+                background: "transparent",
+                color: "var(--ink-muted)",
+                cursor: genKitMut.isPending ? "default" : "pointer",
+              }}
+            >
+              {genKitMut.isPending ? "Drafting…" : launchKit ? "Redraft" : "Draft launch kit"}
+            </button>
+          </div>
+          {launchKit ? (
+            <div
+              style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 12 }}
+            >
+              {(
+                [
+                  ["Changelog", "changelog"],
+                  ["Blog", "blog"],
+                  ["Email", "email"],
+                  ["Social", "social"],
+                  ["Docs", "docs"],
+                ] as const
+              ).map(([label, key]) =>
+                launchKit[key] ? (
+                  <div key={key}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span className="mono-label" style={{ flex: 1, color: "var(--ink-muted)" }}>
+                        {label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigator.clipboard
+                            ?.writeText(launchKit[key])
+                            .then(() => toast.success(`${label} copied`))
+                            .catch(() => toast.error("Could not copy"))
+                        }
+                        className="mono-label"
+                        style={{
+                          border: "1px solid var(--hairline)",
+                          borderRadius: 6,
+                          padding: "2px 8px",
+                          background: "transparent",
+                          color: "var(--ink-muted)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        copy
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        lineHeight: 1.6,
+                        color: "var(--ink)",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {launchKit[key]}
+                    </div>
+                  </div>
+                ) : null,
+              )}
+              <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+                Drafts only. Nothing is sent, so copy what you want to use.
+              </span>
             </div>
           ) : null}
         </div>

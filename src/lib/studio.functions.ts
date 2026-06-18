@@ -21,6 +21,7 @@ import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
 import { applyHunkSelection } from "@/lib/ai/studio-hunks";
 import { callModel } from "@/lib/ai/runtime.server";
+import { humanizeText } from "@/lib/ai/humanize";
 
 export type StudioChangesetSummary = {
   id: string;
@@ -812,6 +813,109 @@ export const generateReleaseNotes = createServerFn({ method: "POST" })
       .eq("id", cs.id);
     if (upErr) throw new Error(upErr.message);
     return { release_notes: notes };
+  });
+
+export type LaunchKit = {
+  changelog: string;
+  blog: string;
+  email: string;
+  social: string;
+  docs: string;
+};
+
+/**
+ * LCH-01 / L1: draft a launch kit from a shipped changeset. One AI pass turns the
+ * release notes + title + work order + file list into five human-approved
+ * artifacts (changelog, blog, email, social, docs) in plain markdown. It NEVER
+ * sends anything - outbound delivery is a separate, founder-gated step; this only
+ * drafts copy for the operator to review and use. Ephemeral by design (no
+ * persistence, no migration); regenerate any time. Every artifact is run through
+ * humanizeText so the JSON-mode output still clears the no-AI-fingerprint gate.
+ */
+export const generateLaunchKit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ changesetId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }): Promise<LaunchKit> => {
+    const { supabase, userId } = context;
+    const db = supabase as unknown as SupabaseClient;
+
+    const { data: csRow, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,workspace_id,mission_id,title,summary,release_notes")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!csRow) throw new Error("Changeset not found.");
+    const cs = csRow as {
+      id: string;
+      workspace_id: string | null;
+      mission_id: string | null;
+      title: string | null;
+      summary: string | null;
+      release_notes: string | null;
+    };
+
+    const { data: fileRows } = await db
+      .from("studio_changes")
+      .select("path,op")
+      .eq("changeset_id", cs.id)
+      .order("path");
+    const files = (fileRows ?? []) as Array<{ path: string; op: string }>;
+    if (!cs.release_notes && !cs.title && files.length === 0)
+      throw new Error(
+        "Nothing to announce yet: commit the changeset (and generate release notes) first.",
+      );
+
+    let workOrder = "";
+    if (cs.mission_id) {
+      const { data: m } = await db
+        .from("missions")
+        .select("title,goal")
+        .eq("id", cs.mission_id)
+        .maybeSingle();
+      const mm = m as { title?: string | null; goal?: string | null } | null;
+      workOrder = (mm?.goal ?? mm?.title ?? "").slice(0, 2000);
+    }
+    const fileList = files.map((f) => `${f.op} ${f.path}`).join("\n") || "(none recorded)";
+
+    const system =
+      "You are a product marketer drafting a launch kit for a shipped change. Ground EVERY claim ONLY in the provided release notes, title, work order, and file list. Never invent features, numbers, or benefits. Return STRICT JSON only with exactly these string fields: changelog (one or two factual lines), blog (120 to 180 words: who it helps and why, with one soft call to action), email (a subject line on the first line, then an 80 to 120 word body), social (three short variants for Twitter, LinkedIn, and a team channel, each under 280 characters, separated by a blank line), docs (a 100 to 150 word 'How to use it' section). Plain language, no hype, no em dashes.";
+    const user = [
+      cs.title ? `Title: ${cs.title}` : "",
+      cs.summary ? `Summary: ${cs.summary}` : "",
+      workOrder ? `Work order:\n${workOrder}` : "",
+      cs.release_notes ? `Release notes:\n${cs.release_notes.slice(0, 3000)}` : "",
+      `Files changed:\n${fileList}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const result = await callModel(supabase, userId, {
+      surface: "studio",
+      surface_ref: `launch-kit:${cs.id}`,
+      model: "google/gemini-2.5-pro",
+      fallbackModel: "google/gemini-2.5-flash",
+      responseFormat: "json_object",
+      workspaceId: cs.workspace_id,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+    if (result.status !== "ok") throw new Error(result.error || "Launch-kit generation failed.");
+
+    const parsed = (result.json ?? {}) as Record<string, unknown>;
+    const pick = (k: string) => humanizeText(String(parsed[k] ?? "").trim());
+    const kit: LaunchKit = {
+      changelog: pick("changelog"),
+      blog: pick("blog"),
+      email: pick("email"),
+      social: pick("social"),
+      docs: pick("docs"),
+    };
+    if (!kit.changelog && !kit.blog && !kit.email && !kit.social && !kit.docs)
+      throw new Error("Launch kit came back empty, try again.");
+    return kit;
   });
 
 /**
