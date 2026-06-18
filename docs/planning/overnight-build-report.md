@@ -6,7 +6,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 20: F3-CRON continuous auto-cluster shipped gated-off + docs consolidated into the SSOT) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible. **Front door is now [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md); this report is the dated run log.**
+**Last updated:** 2026-06-18 (cycle 19: F-AGENTS-MENTIONABLE composer mention dispatch + O1 provenance in Lineage drawer) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible. **Front door is now [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md); this report is the dated run log.**
 
 ---
 
@@ -14,7 +14,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 19 · O1 provenance in the shared Lineage drawer) · core-first per the founder ruling; building down the priority list, skipping only founder-gated. Cycles 1-16 published + live-verified (all good) |
+| Status | ACTIVE (cycle 19: F-AGENTS-MENTIONABLE shipped · O1 provenance in the shared Lineage drawer) · core-first per the founder ruling; building down the priority list, skipping only founder-gated. Cycles 1-16 published + live-verified (all good) |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
@@ -180,6 +180,7 @@ The live app does not reflect this run's changes until you publish them. These i
 - **Permission mode:** "accept edits on" plus the command allowlist in `.claude/settings.local.json` is sufficient; no "bypass" needed. Every commit, push, and build this run ran with no prompt. Documented in playbook section 11.
 - **Published-app rule (new, playbook section 13):** no live testing during the run; code-complete items needing live verification are listed above for when you publish.
 - **Cycle 19 shipped O1 provenance in the shared Lineage drawer** (above). On resuming this session, the worktree carried uncommitted in-progress work from the prior session's mid-build rollover (the safety-net case in playbook §7): a coherent extension of O1 to the `LineageDrawer`. Verified the field contracts and the `signal` route all check out, finished it, and folded one adversarial fix (the "+N more" overflow line). The same cheap `getProvenance`-reuse pattern as cycles 12/18; no new server fn, no migration. Note (state reconciliation): this session was opened in the main-repo root, whose local `main` was 22 commits behind `origin/main`; the worktree was current at `origin/main` (cycle 18). No work was lost; resumed cleanly in the worktree.
+- **Cycle 19 shipped F-AGENTS-MENTIONABLE** (above): the composer mention dispatch affordance for direct specialist dispatch. Type `@agentslug goal` to skip the orchestrator's planning round-trip and dispatch straight to the named agent. Regex mention parsing (word-boundary safe, email-safe), roster lookup (enabled only, O(1) per candidate), and pre-planned single-step DAG creation + advanceMissionCore dispatch. The existing deterministic advance cron + maybeCompleteMission (steps.length > 0 gates) handle all paths uniformly — no lifecycle changes needed. Bare mention (no goal) falls back to regular chat. Regex and strip are safe (slug-constrained). Tsc/build/lint green, gate-verified.
 - Run scaffolding (cycle 0): this report, the [playbook](../operations/autonomous-build-loop.md), the permission allow/deny set, and the isolated worktree.
 - The parallel session is active on `main`. Isolation via worktree means no collision; work lands on main by fast-forward push (already rebased-and-retried twice cleanly).
 - **Cycle 10 shipped D4 mission cancellation** (above). The notable bit: the "next buildable item" search kept hitting already-built work (H1-TASKS, P3), so this cycle proved that the right move when an item looks risky is *deeper recon, not deferral* — D4's cancellation slice turned out to need zero loop changes and was fully gate-verifiable, contradicting cycle 8's blanket "unsafe to build blind." Built it, gate-green, adversarially reviewed (TOCTOU guard + an orphaned-file-lock catch). Reconciled `H1-TASKS` ✅. Next pick: `F3` (continuous discovery) per the founder's core-first ruling.
