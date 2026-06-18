@@ -2,11 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // R3 · Notifications, one "what needs you" feed derived live from the loop's
-// own state: tool calls waiting on a human, spend nearing or over a cap, and a
-// stalled loop. Read-only, RLS-scoped (every table keyed on user_id); each probe
-// degrades to a safe default (a null or errored query yields no items) so the
-// feed can never break the surface it sits on. No new table: it reads
-// agent_approvals, agent_runs, and ai_budgets directly.
+// own state: tool calls waiting on a human, spend nearing or over a cap, a
+// stalled loop, and output drift that tripped a threshold. Read-only, RLS-scoped
+// (every table keyed on user_id); each probe degrades to a safe default (a null
+// or errored query yields no items) so the feed can never break the surface it
+// sits on. No new table: it reads agent_approvals, agent_runs, ai_budgets, and
+// drift_incidents directly.
 // Engine-Room: names the outcome ("what needs you"), not the mechanism.
 
 const STALL_MINUTES = 30;
@@ -15,13 +16,26 @@ export type NotificationSeverity = "action" | "warning" | "info";
 
 export type AppNotification = {
   id: string;
-  kind: "approval" | "health" | "budget";
+  kind: "approval" | "health" | "budget" | "drift";
   severity: NotificationSeverity;
   title: string;
   detail: string;
   href: string;
   created_at: string | null;
 };
+
+// P5-ALERT: human-readable labels for the drift detector's metric keys.
+const DRIFT_METRIC_LABELS: Record<string, string> = {
+  avg_latency_ms: "latency",
+  p95_latency_ms: "p95 latency",
+  avg_total_tokens: "token use",
+  avg_cost_usd: "cost",
+  error_rate: "error rate",
+  avg_eval_score: "quality score",
+};
+function driftMetricLabel(metric: string | null): string {
+  return (metric && DRIFT_METRIC_LABELS[metric]) || "a metric";
+}
 
 const SEVERITY_RANK: Record<NotificationSeverity, number> = { action: 0, warning: 1, info: 2 };
 
@@ -110,6 +124,37 @@ export const getNotifications = createServerFn({ method: "GET" })
       };
       pushBudget(budget.daily_usd_used, budget.daily_usd_cap, "Daily");
       pushBudget(budget.monthly_usd_used, budget.monthly_usd_cap, "Monthly");
+    }
+
+    // 4. Output drift that tripped a threshold (P5-ALERT). The detector opens a
+    // drift_incidents row when a metric crosses the user's baseline; surfacing
+    // the open ones here means a regression shows up in "what needs you", not
+    // only on the Drift page. Capped so a noisy week can't flood the feed; the
+    // Drift page holds the full list. Uses the (user_id, status, detected_at)
+    // index. Degrades to no items on error.
+    const { data: driftIncidents } = await supabase
+      .from("drift_incidents")
+      .select("id,surface,model,metric,delta_pct,severity,detected_at")
+      .eq("user_id", userId)
+      .eq("status", "open")
+      .order("detected_at", { ascending: false })
+      .limit(6);
+    for (const d of driftIncidents ?? []) {
+      const metric = driftMetricLabel(d.metric as string | null);
+      const deltaNum = typeof d.delta_pct === "number" ? d.delta_pct : Number(d.delta_pct);
+      const delta = Number.isFinite(deltaNum) ? deltaNum : 0;
+      const sign = delta >= 0 ? "+" : "";
+      const surface = (d.surface as string | null) ?? "a surface";
+      const model = (d.model as string | null) ?? "model";
+      out.push({
+        id: `drift:${d.id}`,
+        kind: "drift",
+        severity: d.severity === "critical" ? "warning" : "info",
+        title: `Drift detected: ${metric}`,
+        detail: `${sign}${delta.toFixed(0)}% vs baseline on ${surface} · ${model}.`,
+        href: "/drift",
+        created_at: (d.detected_at as string | null) ?? null,
+      });
     }
 
     out.sort((x, y) => {
