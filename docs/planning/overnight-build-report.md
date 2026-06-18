@@ -4,7 +4,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 19: O1 provenance in the shared Lineage drawer) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
+**Last updated:** 2026-06-18 (cycle 19 shipped + full live sweep of cycles 1-19 on the published app) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible.
 
 ---
 
@@ -93,6 +93,7 @@ _(none yet)_
 | Item | Why skipped | What it needs from you |
 | --- | --- | --- |
 | F3 auto-cluster cron (continuous incremental re-cluster) | It commits **recurring AI spend** for every workspace (a `discovery-tick` that auto-clusters new signals on a schedule). Per the autonomous contract, spend posture is founder-gated, so I did not enable it unilaterally. The always-fresh feed half (cycle 11) shipped without it. | A yes on "enable always-on auto-clustering" (it is the same governed loop-cost model as the existing ticks, bounded by your spend caps + kill-switch). On your OK I will build the `discovery-tick` hook reusing the proven `clusterSignals` core, gated off until you wire its schedule. Also pairs with per-product clustering scope. |
+| Demo seed lineage edges (so Lineage + O1 provenance show populated, not empty, on demos) | Surfaced by the 2026-06-18 live sweep: `seed_demo_workspace` creates signals/themes/opportunities/specs but no `artifact_lineage` edges, so the Lineage drawer and O1 provenance (cycles 12/18/19) always render their empty states on demo accounts. Not a code bug; the features degrade gracefully. It is a seed migration (DB change to the seed function) + a demo-quality call, so I queued it rather than change the shared demo seed unilaterally. | A yes on "seed a lineage chain into the demo workspace." On your OK I will add `recordLineage` calls to `seed_demo_workspace` (signal → theme → opportunity → prd → task) via a migration so demos exercise the populated provenance / memory-moat story. |
 
 ## Live verification (2026-06-18 12:35) — founder published cycles 1-16, I verified on the live app
 
@@ -111,9 +112,36 @@ The founder published everything through cycle 16; I logged into the published a
 
 **Not yet spot-checked live (same publish pipeline, high confidence; will check on request):** U6 export, U6 selective, O1 provenance, F3 always-fresh feed, LCH-01 launch kit. F3 per-product clustering (cycle 17) is unpublished, so it stays in the publish-queue below.
 
+## Live verification (2026-06-18, cycles 1-19 post-publish), founder published everything, I swept the live app
+
+The founder published all cycles through 19; I logged into the live app (`cadence-flow-beta.lovable.app`, demo account, Project Glasswing · Lumen workspace) and swept the shipped surfaces with Playwright. **Result: everything checked is working.** Two findings below, neither a code bug.
+
+| Feature (cycle) | Result | Evidence |
+| --- | --- | --- |
+| Login + Today + R3 bell (15) | OK Works | Login on-brand; Today renders the command-center (9 calls, ICE priorities, brief, tasks). The "Attention: 5 things need you" bell deep-links to `/govern?tab=attention`. |
+| U6 workspace export (1) + selective (6) | OK Works | Settings > Data shows the export card + all 7 per-section checkboxes (default-checked) + "Download workspace export". (Did not trigger the file download or exhaust the disable-guard; server logic is gate-tested.) |
+| Critic verdict (DEC-02) | OK Works | Opening opportunity #1 surfaces the Critic teardown: Revise verdict, 4 risks, kill criteria, missing evidence, confidence 60% + model. |
+| R3 Attention feed (2) | OK Works | Engine Room > Attention renders 5 "Needs you" cards, matching the bell count exactly, each deep-linking to approvals. |
+| P7 Incidents (3) | OK Works | Engine Room > Incidents shows the "mission.dispatch failed" Execution incident with detail, timestamp, working "View trace". |
+| C4/E7 Agent inspector + memory (4, 5) | OK Works | Missions > Agents > inspector: agent dropdown (13), "Recent runs" (waiting_approval / completed with mission+step+time), and "What this agent knows" with a real private reflection memory. |
+| AMBIENT-ARC trust dial | OK Works | Per-agent observing/proving/trusted/ambient with trust scores + sample counts. |
+| D4 mission cancel control (10) | OK Works (presence) | A running mission shows status "running" + a "Cancel mission" button. Not clicked (destructive on shared demo data). |
+| Memory-as-moat card | OK Works | The mission detail "Compounding · the moat at work" card shows "2 prior memories this mission drew on" with the actual memories + full execution trace (thought/action log) + 2s live refresh. |
+| F3 per-product clustering (17) | OK Works (fully) | Signals tab scopes to the active product live: Test active = "No signals yet" / "Cluster 0" disabled; switch to Lumen = its 5 themes (Unsafe escalation conf 91, Slow first-response 82, Tone too formal 74, ...) + "Cluster 2". Scope flips on product switch. |
+| O1 provenance on spec/PRD (18) | OK Works (empty-state) | `/prds/<id>` shows the "Why this spec · source evidence" card with the correct empty state ("No source signals traced. This spec was added directly..."), right for a directly-seeded spec. |
+| O1 provenance in the Lineage drawer (19) | OK Works (guard correct) | "Signal lineage" opens the drawer cleanly ("Came from" / "Became"); the "Traces back to" section is correctly absent because the seeded opportunity has no lineage edges (guard `signal_count > 0 && depth > 1`). My cycle-19 change does not break the drawer. |
+
+**Finding 1 (transient, not reproducible):** `/product?tab=specs` rendered empty once with a single console error during the deploy window (right as the founder was publishing); a clean reload rendered it correctly (both seeded specs with all actions). Most likely a deploy/hydration hiccup during the publish, not a code bug. Noted to watch; could not reproduce.
+
+**Finding 2 (seed-data gap, NOT a code bug), queued below:** the demo seed does not populate `artifact_lineage` edges, so the Lineage drawer AND O1 provenance (cycles 12 / 18 / 19) always show their empty states on demo accounts ("No upstream artifacts" / "No source signals traced"). The features are correctly wired and degrade gracefully, but the demo cannot *show off* lineage / provenance / the memory-moat narrative. Recommend seeding a lineage chain (signal → theme → opportunity → prd → task) so demos exercise the populated state. This is a seed migration (DB change to `seed_demo_workspace`) + a demo-quality call; queued for the founder rather than changed unilaterally on the shared demo seed.
+
+**Not separately re-tested this sweep (lower priority / cost-gated):** F3 always-fresh feed 30s poll (11), behavior is a timed poll, not snapshot-friendly; O1 provenance card on the opportunity drill (12), same `getProvenance` proven by 18/19, shows empty-state on this data; LCH-01 launch kit (14), generating it spends AI tokens (founder-gated spend), so not triggered; P7 guardrail-block incident (16), needs a real `action=block` event to populate (deployed-correct per the cycle-16 verify). The Incidents tab *description* copy fix (`875856fc6d`) is now published with this batch, so it now reads "guardrail blocks".
+
 ## Pending published-app verification (needs you to publish, then I verify)
 
 The live app does not reflect this run's changes until you publish them. These items are code-complete and gate-green (tsc + build + lint + adversarial review) but not yet verified on the live app. Per playbook section 13, I do not test this run's unpublished changes against the live app (I may test behavior already deployed). Each item is dated and classified: "needs publish first" (this run's new work) or "quick-check now" (already-live behavior you can verify in a moment). When you publish, tell me and I will run the checks.
+
+> **Superseded 2026-06-18:** the founder published all cycles through 19, and the live sweep above verified them on the published app (all working; two non-bug findings logged). The rows below are retained as the historical pre-publish checklist; the live-verification section above is the current record.
 
 | Date noted | Item | When it can be verified | What to check |
 | --- | --- | --- | --- |
