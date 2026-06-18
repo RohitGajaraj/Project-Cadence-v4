@@ -25,7 +25,10 @@ import {
   promoteThemeToOpportunity,
   promoteSignalToOpportunity,
   generatePrd,
+  getWorkspaceClusterSettings,
+  toggleAutoCluster,
 } from "@/lib/discovery.functions";
+import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/cadence/Primitives";
 import { LineageDrawer } from "@/components/cadence/LineageDrawer";
 import type { ArtifactKind } from "@/lib/lineage.functions";
@@ -67,6 +70,17 @@ export function SignalsPanel() {
   const mPromote = useServerFn(promoteThemeToOpportunity);
   const mPromoteSignal = useServerFn(promoteSignalToOpportunity);
   const mGen = useServerFn(generatePrd);
+  const fClusterSettings = useServerFn(getWorkspaceClusterSettings);
+  const mToggleAutoCluster = useServerFn(toggleAutoCluster);
+  const clusterSettings = useQuery({
+    queryKey: ["cluster-settings"],
+    queryFn: () => fClusterSettings(),
+  });
+  const toggleCluster = useMutation({
+    mutationFn: (enabled: boolean) => mToggleAutoCluster({ data: { enabled } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cluster-settings"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   // F3 (always-fresh feed): signals stream in continuously through the ingest
   // webhook + reactor, so poll while this surface is open so newly-ingested
@@ -319,6 +333,37 @@ export function SignalsPanel() {
               {bulk.isPending ? "Importing…" : "Import lines · land as signals"}
             </button>
           </div>
+        </div>
+      ) : null}
+
+      {clusterSettings.data?.is_owner ? (
+        <div
+          className="bento"
+          style={{
+            padding: "12px 16px",
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 500 }}>Auto-cluster new signals</div>
+            <div className="mono-label" style={{ marginTop: 2, color: "var(--ink-faint)" }}>
+              {clusterSettings.data.enabled
+                ? clusterSettings.data.last_run_at
+                  ? `On · last run ${relTime(clusterSettings.data.last_run_at)}`
+                  : "On · awaiting first run"
+                : "Off · Scout keeps themes fresh on a schedule when on"}
+            </div>
+          </div>
+          <Switch
+            checked={clusterSettings.data.enabled}
+            disabled={toggleCluster.isPending}
+            onCheckedChange={(v) => toggleCluster.mutate(v)}
+            aria-label="Toggle auto-cluster new signals"
+          />
         </div>
       ) : null}
 

@@ -33,10 +33,10 @@ These are permanent operating rules. The loop follows them without being reminde
 
 Everything here needs **no founder input** and can be built, gated offline, and flagged for publish-verify. Source: 2026-06-18 backlog reconciliation (cross-referenced canon vs `src/`).
 
-> **Re-ordering in progress (2026-06-18):** the order below is the first cut (buildability/file-disjointness). Per the founder ruling, it is being re-ranked by **strategic impact against the current positioning** (workflow `cadence-strategic-build-rank`); the #1 highest-impact item and the corrected order land here when that completes. Do not assume the top row below is the #1 until this note is removed.
+**Ordered by STRATEGIC IMPACT vs the current positioning** (workflow `cadence-strategic-build-rank`, 2026-06-18; founder ruling: highest-impact first, never buildability). Scoring lens = the current v10 milestone gate (Sprint P0: close the loop on REAL DATA + land the wedge). The catalog tables below are the buildable set; the strategic order + the pruned (off-milestone) set are at the end of this section.
 
-### Build next (top pick)
-- **`APP-HEALTH`, app health/status endpoint** · P1 · no migration · new `src/routes/api/health.ts`. A `/api/health` route that pings Supabase and returns `{ok, version, migrations}` (distinct from `health.functions.ts`, which is a migration-drift server fn, not an HTTP endpoint). Closes a P0 `considerations.md` gap, brand-new file (collides with nothing), follows the `api/chat.ts` pattern. **Confidence unbuilt: HIGH.**
+### #1 (shipped this cycle), `F3-CRON` continuous auto-cluster (always-fresh SENSE)
+Strategic #1 (impact 7/10): it advances the binding P0 constraint (autonomous SENSE on real data) from the only side code can move, since SEN-01 is founder-blocked on an OAuth registration. Today `clusterSignals` only runs when a human pokes it, so the front of the loop is not autonomous; a scheduled incremental re-cluster is what the North Star demands at SENSE. **Shipped 2026-06-18 (cycle 20), gated OFF** so it commits zero AI spend until activated: a `cluster-tick` hook + an extracted `clusterSignalsCore` + an owner opt-in toggle + the `auto_cluster_enabled` migration. **Activation is founder-gated (section 4):** apply the migration on publish, owner enables the toggle, then wire the cron schedule. Detail: [`../features/f3-continuous-discovery.md`](../features/f3-continuous-discovery.md).
 
 ### P1
 | ID | Title | Migration | Files / domain | Scope | Confidence unbuilt |
@@ -52,7 +52,7 @@ Everything here needs **no founder input** and can be built, gated offline, and 
 | `F-AGENTS-MENTIONABLE` | @-mentionable agents → mission | no | mention parser in chat/card components + `chat.ts`/`missions.functions.ts` | Parse `@agentslug` → dispatch a mission (chat→mission spawn already exists, reuse it) | HIGH (thin reuse) |
 | `U6-AUDIT` | Export audit log | yes | `projects.functions.ts` + new `export_log` migration + `DataExportCard.tsx` | Audit row per export + history view | PARTIAL |
 | `R3-PREFS` | Notification prefs + in-app digest | yes | `notifications.functions.ts` + new `notification_prefs` migration + Settings UI | Prefs table + toggle UI + in-app digest rollup (email SENDING is gated, excluded) | PARTIAL |
-| `F3-CRON` | Continuous auto-cluster cron | yes (cron) | new `api/public/hooks/discovery-tick.ts` + `discovery.functions.ts` | Scheduled incremental re-cluster. NOTE: commits recurring AI cost, build gated OFF, flag founder publish-verify | HIGH |
+| `F3-CRON` ✅ shipped 2026-06-18 (gated off) | Continuous auto-cluster cron | yes | `cluster-tick.ts` + `cluster.server.ts` + `discovery.functions.ts` + `SignalsPanel.tsx` + migration | SHIPPED gated off (see #1 above); activation is founder-gated (section 4) | n/a (built) |
 | `P7-COST-INCIDENT` | Cost-incident source + persistent incidents table | yes | `incidents.functions.ts` + new `incidents` migration | Cost-threshold incident derivation + persistent table | PARTIAL |
 | `K2` | Rollback / revert-to-revision + flag kill | no | `studio.functions.ts` + `registry.server.ts` (`studio.revert`) + `ChangesPanel.tsx` | Revert path off `studio_changeset_revisions` (table exists) via GitHub Data API; documented rollback + revert button | HIGH |
 | `F-BUILDER-MULTIFILE` | Pre-declared touch-list + max-N scope | maybe | `studio.functions.ts` + `registry.server.ts` + `builder_file_claims` | Up-front declared touch list + per-mission file-count cap | PARTIAL |
@@ -63,7 +63,14 @@ Everything here needs **no founder input** and can be built, gated offline, and 
 | `KI-16` | Per-tick advance cap | no | `mission-advance.server.ts`/`resume-runs.ts` | Per-tick dispatch cap (only a global `MAX_RUNNING_PER_WORKSPACE=5` exists) | HIGH |
 | `O3` | Fact-currency / staleness flag | maybe | `lineage.functions.ts` / knowledge fns | Flag stale facts on the provenance graph (skill-pack-over-MCP half depends on Q1/Q2, excluded) | HIGH |
 
-**Disjoint build order:** APP-HEALTH → DATA-RETENTION → PROVIDER-FALLBACK → MODEL-REGISTRY-DEPRECATION → PLAN-ENFORCE → then the lane-disjoint P2 set: F-AGENTS-MENTIONABLE, U6-AUDIT, R3-PREFS, F3-CRON, P7-COST-INCIDENT, the Build-lane set (K2 → F-BUILDER-MULTIFILE → P4-GATE, sequenced, all touch studio/registry), D4-REPLAY, KI-16, O3, P5-ALERT, FND-0.5.
+**Strategic order (by impact vs the current P0 milestone), 2026-06-18 rank:**
+1. ✅ `F3-CRON` (7) shipped this cycle, gated off (above).
+2. `F-AGENTS-MENTIONABLE` (6), felt agentic-command, cheap reuse of the existing chat→mission spawn.
+3. `P5-ALERT` (6), drift threshold → in-app Attention/incident (completes a partial; trust/verification is the named investor metric).
+4. `P4-GATE` (6), eval-regression as a hard merge gate (protects BUILD→SHIP autonomy).
+5. Then the rest as they become the binding constraint: `K2`, `D4-REPLAY`, `FND-0.5`, `F-BUILDER-MULTIFILE`, `R3-PREFS`, `U6-AUDIT`, `P7-COST-INCIDENT`.
+
+**Pruned (off the current milestone, do NOT build now), 2026-06-18 rank:** `APP-HEALTH` (generic ops, near-zero strategic impact now), `PLAN-ENFORCE` (monetization plumbing, gated behind M-C), `DATA-RETENTION` (team/enterprise, M-D), `PROVIDER-FALLBACK` (resilience hygiene; a single fallback already exists), `MODEL-REGISTRY-DEPRECATION` (catalog hygiene, no current breakage), `KI-16` (high-scale-only), `O3` (depends on the unbuilt O1 graph). These re-enter the queue when their milestone arrives.
 
 ---
 
@@ -71,6 +78,7 @@ Everything here needs **no founder input** and can be built, gated offline, and 
 
 When you have a moment, these unblock the next tier. Each needs a decision/secret/account from you.
 
+- **`F3-CRON` activation** (mechanism shipped 2026-06-18, gated off), to turn on always-fresh SENSE: (1) the migration applies on your next publish; (2) a workspace owner flips the "Auto-cluster new signals" toggle in the Signals tab; (3) wire a scheduler to POST `/api/public/hooks/cluster-tick` every ~6h (pg_cron snippet + publish-verify checklist in [`../features/f3-continuous-discovery.md`](../features/f3-continuous-discovery.md)). It commits recurring AI spend, so the on switch stays your call.
 - **`F-CONN`**, register ≥1 OAuth client (GitHub/Linear) to unblock a 2nd live ingest source (`SEN-01`).
 - **`SEN-05` / `F-ANALYTICS-1/2`**, product-analytics connector OAuth + recurring spend.
 - **`M-C-PRICE`**, set Stripe secrets + price IDs to flip billing live.
@@ -102,7 +110,10 @@ When you have a moment, these unblock the next tier. Each needs a decision/secre
 
 ## 6. Progress log (append-only, newest first)
 
-- **2026-06-18, backlog reconciliation + this SSOT.** Cross-referenced v10/v9/v8 + dashboard + considerations vs `src/`; disproved the "thin backlog" read; produced the section-3 queue (~17 autonomous items). Created this single source of truth and codified the founder's standing rulings (section 1). Next: build down the queue from `APP-HEALTH`.
+- **2026-06-18, cycle 20 verified + closed.** Re-ran the full gate on the mid-flight `F3-CRON` tree: `tsc --noEmit` clean, `bun run build` green (the `cluster-tick` route bundles), `eslint` clean on all four touched files, and the F3 source + migration scan zero em/en dashes. Closed the feature-doc loop ([`../features/f3-continuous-discovery.md`](../features/f3-continuous-discovery.md): cron section, governance/activation, verification). Committed F3 + this close. Re-rank workflow confirmed complete (section 3 is impact-ordered). Next strategic pick: `F-AGENTS-MENTIONABLE`.
+- **2026-06-18, cycle 20, `F3-CRON` (strategic #1) shipped gated off.** A multi-agent strategic ranking (workflow `cadence-strategic-build-rank`, weighting v10>v9>v8>v7>v6) picked `F3-CRON` as the highest-impact buildable item vs the current P0 milestone (over the easy-but-low-impact `APP-HEALTH`). Built the auto-cluster mechanism (the `cluster-tick` hook + extracted `clusterSignalsCore` + an owner toggle + the `auto_cluster_enabled` migration), gated OFF; gate-green; adversarial review caught + fixed a service-role `workspace_id` NOT-NULL bug. Activation is founder-gated (section 4).
+- **2026-06-18, docs consolidation, `2e4421e800`.** Folded the siloed trackers into this SSOT, archived the three stale v7 docs, repointed 24 references, fixed the boot hook (v6→v10 + SSOT-first).
+- **2026-06-18, backlog reconciliation.** Cross-referenced v10/v9/v8 + dashboard + considerations vs `src/`; disproved the "thin backlog" read; produced the section-3 queue (~17 autonomous items) and codified the founder's standing rulings (section 1).
 - **2026-06-18, full live verification (cycles 1-19), `40b24cf972`.** Founder published everything; Playwright-swept the live app; all checked features work; logged 2 non-bug findings (section 5).
 - **2026-06-18, cycle 19, `d8ee421d43`.** O1 provenance in the shared Lineage drawer (recovered from a mid-build rollover, finished, gate-green, one adversarial fix).
 - Earlier cycles (1-18): see the build report and `plan.md` §4 for the full dated history.

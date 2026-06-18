@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
+import { clusterSignalsCore } from "@/lib/ai/cluster.server";
 import { runCritic } from "@/lib/ai/critic.server";
 import { recordLineage } from "@/lib/lineage.functions";
 import { retrieve } from "@/lib/rag/retriever.server";
@@ -313,87 +314,55 @@ export const clusterSignals = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    // Delegates to the shared core (also driven by the cluster-tick cron). The
+    // manual path is RLS-scoped to the caller, so workspaceId is null; productId
+    // scopes to the active product (F3 per-product), exactly as before.
+    return clusterSignalsCore(supabase, userId, null, data.productId ?? null);
+  });
 
-    // F3: when a product is active, cluster only that product's unclustered
-    // signals (and stamp the new themes with it), so each product gets its own
-    // themes. With no product active, cluster the user's unclustered signals as
-    // before. Unassigned signals (no product) cluster in the all-products view.
-    let sigQuery = supabase.from("signals").select("id,content,source").is("theme_id", null);
-    if (data.productId) sigQuery = sigQuery.eq("project_id", data.productId);
-    const { data: sigs, error } = await sigQuery
-      .order("created_at", { ascending: false })
-      .limit(80);
-    if (error) throw new Error(error.message);
-    if (!sigs?.length) return { themes: 0, message: "No unclustered signals." };
+// ---------- F3: AUTO-CLUSTER OPT-IN (workspace owner) ----------
+// The cluster-tick cron only processes workspaces where auto_cluster_enabled is
+// true, so unattended SENSE is OFF by default and the owner turns it on
+// explicitly (it commits recurring AI spend, so it stays founder/owner-gated).
 
-    const indexed = sigs
-      .map((s, i) => `[${i}] (${s.source}) ${s.content.slice(0, 400)}`)
-      .join("\n");
-
-    const system = `You are a senior product researcher. Cluster raw user signals into 3-7 distinct themes.
-For each theme provide: title (max 60 chars), summary (max 200 chars), severity (1-5), confidence (0-1), and the indexes of member signals.
-Return STRICT JSON only — no prose, no markdown fences.`;
-
-    const user = `Signals:\n${indexed}\n\nReturn JSON:\n{"themes":[{"title":"...","summary":"...","severity":3,"confidence":0.7,"members":[0,2,5]}]}`;
-
-    const result = await callModel(supabase, userId, {
-      surface: "discovery",
-      surface_ref: "cluster_signals",
-      model: "google/gemini-2.5-pro",
-      fallbackModel: "google/gemini-2.5-flash",
-      responseFormat: "json_object",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    });
-    const parsed = (result.json ?? {}) as {
-      themes?: Array<{
-        title: string;
-        summary?: string;
-        severity?: number;
-        confidence?: number;
-        members?: number[];
-      }>;
+export const getWorkspaceClusterSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    // RLS ("ws owner manage") scopes this to a workspace the caller owns.
+    // If the column is not migrated yet, the select soft-fails and we report
+    // not-owner so the toggle simply stays hidden.
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("auto_cluster_enabled, last_auto_cluster_at")
+      .eq("owner_id", userId)
+      .limit(1)
+      .maybeSingle();
+    return {
+      is_owner: Boolean(ws),
+      enabled: ws?.auto_cluster_enabled ?? false,
+      last_run_at: ws?.last_auto_cluster_at ?? null,
     };
-    if (!parsed.themes) throw new Error("AI returned invalid JSON");
-    const themes = (parsed.themes ?? []).slice(0, 10);
+  });
 
-    let created = 0;
-    for (const t of themes) {
-      const members = (t.members ?? []).filter(
-        (n) => Number.isInteger(n) && n >= 0 && n < sigs.length,
-      );
-      if (!members.length || !t.title) continue;
-      const { data: theme, error: tErr } = await supabase
-        .from("themes")
-        .insert({
-          user_id: userId,
-          project_id: data.productId ?? null,
-          title: t.title.slice(0, 120),
-          summary: (t.summary ?? "").slice(0, 400),
-          severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),
-          confidence: Math.min(1, Math.max(0, t.confidence ?? 0.5)),
-          frequency: members.length,
-        })
-        .select()
-        .single();
-      if (tErr || !theme) continue;
-      const ids = members.map((n) => sigs[n].id);
-      await supabase.from("signals").update({ theme_id: theme.id }).in("id", ids);
-      for (const sid of ids) {
-        await recordLineage(supabase, userId, {
-          parent_kind: "signal",
-          parent_id: sid,
-          child_kind: "theme",
-          child_id: theme.id,
-          rationale: "Clustered into theme",
-          created_by_agent: "discovery-scout",
-        });
-      }
-      created++;
-    }
-    return { themes: created, message: `Created ${created} themes from ${sigs.length} signals.` };
+export const toggleAutoCluster = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ enabled: z.boolean() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", userId)
+      .limit(1)
+      .maybeSingle();
+    if (!ws) throw new Error("Only the workspace owner can change auto-cluster settings.");
+    const { error } = await supabase
+      .from("workspaces")
+      .update({ auto_cluster_enabled: data.enabled })
+      .eq("id", ws.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, enabled: data.enabled };
   });
 
 // ---------- OPPORTUNITIES ----------
