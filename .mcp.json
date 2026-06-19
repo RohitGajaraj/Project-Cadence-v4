@@ -18,10 +18,6 @@
         "-y",
         "@playwright/mcp@latest"
       ]
-    },
-    "lovable": {
-      "type": "http",
-      "url": "https://mcp.lovable.dev"
     }
   }
 }
