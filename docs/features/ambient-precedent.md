@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-20 · Last updated: 2026-06-20_
 
-> **What this is.** The buildable design for the first increment of the Decision Brain (H1). Brainstormed and founder-approved 2026-06-20. Strategic home: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (H1) and [`decision-brain.md`](./decision-brain.md). This is the granular design; the sequenced build plan follows from it.
+> **What this is.** The buildable design for the first increment of the Decision Brain (H1). Brainstormed and founder-approved 2026-06-20. Strategic home: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (H1) and [`decision-brain.md`](./decision-brain.md). The granular, task-by-task implementation plan is [`../planning/ambient-precedent-plan.md`](../planning/ambient-precedent-plan.md).
 
 ---
 
