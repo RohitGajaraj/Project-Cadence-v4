@@ -312,7 +312,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     }
     const { data, error } = await supabase
       .from("workspaces")
-      .insert({ name: name.trim(), owner_id: uid })
+      // account_id is auto-filled by the trg_set_workspace_account DB trigger.
+      .insert({ name: name.trim(), owner_id: uid } as never)
       .select()
       .single();
     if (error || !data) {
