@@ -26,6 +26,16 @@
 
 ## Decision log
 
+### 2026-06-19 · WM-M1 build calls: placeholder prices + verified-not-pending status
+
+**Decision:** While shipping WM-M1 (entitlements core) autonomously: (1) set placeholder display prices for the two founder-gated tiers, Max `$99/mo` and Galaxy `$25/seat/mo` (free `$0` and Pro `$39/mo` are the already-committed numbers; Cosmos is "Contact sales"); (2) named the data-export field `dataExport` (not the `export` keyword) and kept the retention field as `memoryRetentionDays` (free now 30); (3) marked the dashboard row `✅` (verified), not `◐`.
+
+**Why:** (1) The build bible §7.1 explicitly sanctions placeholder price numbers and defers only the final values to the founder; `planPresentation` is presentation-only and the prices are trivially changed in one file, so shipping placeholders unblocks WM-M3/M6 without making an irreversible pricing call. (2) `export` is awkward as a property name; `dataExport` is clearer and no consumer reads the field yet. (3) A pure, side-effect-free module is fully behaviorally verified by its own unit tests run locally (14 tests, 115 asserts, all passing) plus tsc/build/lint, so `✅` is honest here, unlike a feature that needs a live key/publish to verify (which would be `◐`).
+
+**Tradeoffs considered:** leave Max/Galaxy prices blank or "Custom" (rejected: the surfaces render a price line, and blank reads as broken) vs labelled placeholders flagged founder-gated (chosen). Mark `◐` to be conservative (rejected: it would understate genuinely-verified work and violate the honesty rule in the other direction; the rule reserves `◐` for unable-to-verify-locally).
+
+**Impact:** `src/lib/entitlements.ts` + `src/lib/entitlements.test.ts`; the founder-gates list (SSOT §4 + bible §7) already tracks the final-price decision; no behavior change to billing/webhook (placeholders are display-only). Interim surface asymmetry (Settings shows 5 tiers, `pricing.tsx` shows 3) is resolved by WM-M6.
+
 ### 2026-06-19 · Single-branch + single-source-of-truth documentation consolidation
 
 **Decision:** Consolidate all work onto one `main` branch and collapse the scattered tracking docs into one front door. The SSOT (`../planning/SOURCE-OF-TRUTH.md`) owns ALL live status: a new section 0 "live cursor" folds in the deleted root `active-task.md`, and every other doc owns exactly one typed concern (feature-dashboard = status matrix + claims, feature-backlog = F-ID scope, known-issues = bugs, considerations = cross-cutting gaps, plan.md section 4 = dated history, the per-initiative build bibles = per-ID specs). Deleted the dead `TASKS.md` stub + the `feature-dashboard 2.md` duplicate; archived `foundation-audit.md` + `overnight-build-report.md`. Authored one "Documentation Operating System" doctrine in `../../AGENTS.md` (doc map + session loop + new-initiative rule); all entry points (CLAUDE/GEMINI/the SessionStart hook/docs-README/conventions) point to it.

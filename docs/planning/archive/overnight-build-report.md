@@ -6,7 +6,7 @@
 >
 > **How to check:** `git pull`, then read this file. Second view: `git log --oneline` for the commit trail.
 
-**Last updated:** 2026-06-18 (cycle 25: D4-REPLAY, re-run a finished mission with a different model + a branch link) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible. **Front door is now [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md); this report is the dated run log.**
+**Last updated:** 2026-06-19 13:50 (cycle 26: WM-M1 entitlements core, the first feature code of the Workspace/Accounts/Monetization initiative) · **Maintainer:** the autonomous loop, every cycle. Entries are dated so multiple nights stay legible. **Front door is now [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md); this report is the dated run log.**
 
 ---
 
@@ -14,11 +14,11 @@
 
 | Field | Value |
 | --- | --- |
-| Status | ACTIVE (cycle 25: D4-REPLAY, re-run a finished mission with a different model + branch link) · core-first per the founder ruling; building down the priority list, skipping only founder-gated. Cycles 1-16 published + live-verified (all good). Next strategic pick: FND-0.5 (prompt pre-filter on tool allow-list + product scoping) |
+| Status | ACTIVE (cycle 26: WM-M1 entitlements core shipped, first WM feature code). Now building the founder-directed **Workspace / Accounts / Tenancy + Monetization (WM-\*)** initiative down the G10 pick-order (SSOT §0). Next: WM-F1 (scope agent memory to workspace). Earlier cycles 1-25 (loop, Engine Room, agents, K2, D4) below; the WM lane is the current focus. |
 | Mode | build + commit + push |
 | Scope | whole backlog minus founder-gated |
 | Blocked-item policy | skip and queue (below) |
-| Isolation | worktree branch `worktree-overnight-build`, fast-forward push to `main` |
+| Isolation | worktree branch `overnight/wm`, fast-forward push to `main` |
 | Started | 2026-06-17, late session |
 
 ## How this works (the contract)
@@ -37,15 +37,15 @@ This run operates under the [autonomous build loop playbook](../operations/auton
 
 ## Completion snapshot (live)
 
-Per the feature dashboard At-a-glance (groups G0 to G9), approximate:
+Per the feature dashboard At-a-glance (the full 141-row register), as of cycle 26 (2026-06-19 13:50):
 
 | Bucket | Count |
 | --- | --- |
-| Done | ~55 |
-| Partial | ~12 |
-| Paused / deferred / blocked | ~5 |
-| Pending | ~29 |
-| **Approx completion** | **~55 of ~101 tracked rows (~54%); true completion is higher, the board is stale (see Recommendation). D4 → ◐ and H1-TASKS → ✅ this cycle.** |
+| ✅ Done | 60 |
+| ◐ Partial | 18 |
+| ⏭️ Deferred / ⏸️ Paused | 10 |
+| ⬜ Open (ready to pick up) | 53 |
+| **Overall completion** | **60 of 141 done (43%); ~48% counting partials as half. The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. WM-M1 → ✅ this cycle.** |
 
 Focus this run: close P1/P2 buildable, file-disjoint items first (v10), then mine v9 and v8 for relevant work.
 
@@ -66,6 +66,7 @@ What shipped earlier this run (U6 + selective, R3 Attention, P7 Incidents, C4/E7
 
 | Date | Item | Lane | Commit | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-06-19 13:50 | WM-M1 entitlements core (cycle 26) | G10 Monetize | `(this push)` | First WM feature code. Expanded `src/lib/entitlements.ts` to the 5-tier account model (`free|pro|max|team|enterprise`) with the full matrix (workspace/product limits, `crossWorkspaceMemory`, seats/`rbac`/`approvalLanes`, the credit fields, `priority`, `dataExport`), `limitFor`, and the Constellation `planPresentation` (placeholder credit/price numbers, founder-gated §7). Legacy fields kept as aliases so billing/pricing/settings/webhook are untouched. Rewrote `entitlements.test.ts` (14 tests). **Verification (ran):** `bun test` 14/14; `tsc --noEmit` 0; eslint 0 on both files; `bun run build` ✓; humanization scan clean. Adversarial review: webhook only derives `"pro"`/`"free"`, so the widened `normalizePlanTier` cannot violate the `plan_tier` CHECK pre-WM-M2. **UI breadcrumb:** `Settings > Account > Plan` + `/pricing`. **Interim (expected, not a defect):** Settings BillingTab auto-shows 5 tiers, `pricing.tsx` still shows 3 renamed tiers until WM-M6; TS retention constant 30 while the dormant DB trigger still reads 14 until WM-M2. **No publish needed to verify (pure module, fully unit-tested).** |
 | 2026-06-18 | D4-REPLAY replay-and-branch (cycle 25) | G2 Decide | `(this push)` | Strategic #6 (replay shipped; checkpoint-diff D4b deferred). Re-run a finished mission's goal as a new mission with a chosen model: a model picker + "Replay" button on `/missions/$id` (the server already accepted `model`; the retry button just never offered it). Branch link `replayed_from_mission_id` (additive migration, `ON DELETE SET NULL`) set + read pre-migration-tolerantly, with a "Replayed from" link. `tsc` + build + lint + humanization + migration-safety hook green. Adversarial review found no real fix. Clean sync. **Pending your publish + live verify (migration + dispatch + UI).** |
 | 2026-06-18 | K2 operator revert-to-revision (cycle 24) | G3 Build | `d57d9c6b48` | Strategic #5 (operator path; agent tool K2b deferred). One-action rollback in the Build Changes tab: a confirm-gated "Revert" button on every prior revision. Non-destructive (new `studio-revert.server.ts` helper: forward commit restoring the target revision's tree via the GitHub Data API, `force:false`, so history only moves forward and the revert is itself revertible) + `revertToRevision` server fn + ChangesPanel button (live non-latest revisions only). No migration. `tsc` + build + lint + humanization green. Adversarial review found no real fix (non-destructive by construction, changeset-scoped lookup, record-failure tolerant, RLS-scoped). Clean sync. **Pending your publish + live verify (GitHub mutation + UI).** |
 | 2026-06-18 | P4-GATE eval-regression merge gate (cycle 23) | G4 Govern | `fa2f31fca0` | Strategic #4. `studio.pr.merge` is now hard-gated on eval regression as well as CI. New pure module `eval-gate.ts` (mirrors the J2 `studio-ci.ts`): a ≥10pt drop in the latest completed eval run vs the prior, per suite, blocks the agent's merge (0-100 scale). The merge tool reads the user's completed `eval_runs` (latest two per suite, user-scoped, capped), names the worst-regressed suite, throws `MergeBlocked`. Reads the scheduled eval trend (no run triggered), read-only, no-op until a suite has two runs; operator can still merge from GitHub. No migration. `tsc` + build + lint + humanization green. Adversarial review found no real fix (scale/direction correct, NaN/null-safe, user-scoped). Clean sync, no parallel commit. **Pending your publish + live verify.** |

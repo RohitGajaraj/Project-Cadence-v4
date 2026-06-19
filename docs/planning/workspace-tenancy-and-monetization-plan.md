@@ -139,7 +139,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 
 | ID | Title | Lane | Status | Depends on |
 |---|---|---|---|---|
-| WM-M1 | Entitlements core (5 account-level tiers + matrix) | Monetize | Pending | none |
+| WM-M1 | Entitlements core (5 account-level tiers + matrix) | Monetize | ✅ Done 2026-06-19 | none |
 | WM-F1 | Scope agent memory / runs / roster to workspace | Foundation | Pending | none (account-pooled recall needs WM-M2) |
 | WM-M2 | `accounts` table + billing relocation + credit/decay migrations | Monetize | Pending | WM-M1 |
 | WM-F2 | Account-level memory pooling (paid) | Foundation | Pending | WM-M2, WM-F1 |
@@ -257,6 +257,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** keep legacy field names as aliases so nothing downstream breaks; `normalizePlanTier` must still fail safe to `free`.
 - **Acceptance:** 5 tiers typed + tested; `bun test` green for entitlements.
 - **Verify:** `bun test src/lib/entitlements.test.ts`.
+- **✅ Shipped 2026-06-19 (overnight cycle 26).** Built exactly to spec. Field naming notes: the export field is `dataExport` (avoids the `export` keyword), and the retention field stayed `memoryRetentionDays` (the consumed name) rather than `memoryDecayDays` (free now = 30). All legacy fields (`memoryPersists`, `memoryRetentionDays`, `sharedWorkspaceMemory`, `perRoleApprovalLanes`, `criticEverywhere`, `shareLinks`) retained so the 6 consumers compile untouched; new fields added: `crossWorkspaceMemory`, `workspaceLimit`, `productLimit`, `seats`, `rbac`, `approvalLanes`, `dataExport`, `creditMultiplier`, `creditMonthlyBase`, `creditTopUps`, `topUpCapPerCycle`, `enterpriseCreditModel`, `priority`. Added `limitFor` + `FREE_MONTHLY_CREDITS` (500, placeholder) + `TOP_UP_CAP_PER_CYCLE` (5000, placeholder). `planPresentation` now returns the Constellation names + value-framed highlights; prices are placeholders (free $0, pro $39/mo committed, max $99/mo + team $25/seat/mo founder-gated §7.1, enterprise Contact sales). 14 tests (115 asserts) pass; tsc/build/lint clean. **Interim, expected:** Settings BillingTab now maps 5 tiers (WM-M6 finalizes), `pricing.tsx` still hardcodes 3 (renamed) tiers until WM-M6, and the dormant memory-expiry DB trigger still reads 14d until WM-M2 widens it.
 
 #### WM-M2 · `accounts` table + billing relocation + credit/decay migrations
 - **Why:** relocate billing from workspace to account; add the credit pool shell and the rolling decay.
