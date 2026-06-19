@@ -1,15 +1,21 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // F-V5-INGEST-WEBHOOK — per-workspace ingest-token management for the public
 // /api/public/ingest-signals webhook. One active token per workspace
-// (active = revoked_at IS NULL); rotation revokes before inserting.
+// (active = revoked_at IS NULL); rotation revokes before inserting. Tokens are
+// stored as SHA-256 hashes (+ short prefix for UI preview); the plaintext is
+// shown ONCE in the rotate response and never persisted in the database.
 // public.ingest_tokens is not yet in the generated Database types, so these
 // handlers use the untyped-client cast precedent (see outcome.functions.ts).
 
-const TOKEN_COLUMNS = "id,token,label,created_at";
+const TOKEN_COLUMNS = "id,token_prefix,label,created_at";
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 /** The workspace's active ingest token (newest, revoked_at IS NULL), or null. */
 export const getIngestToken = createServerFn({ method: "GET" })
@@ -40,14 +46,17 @@ export const rotateIngestToken = createServerFn({ method: "POST" })
     if (revokeError) throw new Error(revokeError.message);
 
     const token = randomBytes(32).toString("hex");
+    const token_hash = hashToken(token);
+    const token_prefix = token.slice(0, 8);
     // workspace_id lands via the current_user_default_workspace() column default.
     const { data, error } = await db
       .from("ingest_tokens")
-      .insert({ user_id: context.userId, token })
+      .insert({ user_id: context.userId, token_hash, token_prefix })
       .select(TOKEN_COLUMNS)
       .single();
     if (error) throw new Error(error.message);
-    return { token: data };
+    // Return the plaintext token ONCE so the user can copy it; never persisted.
+    return { token: { ...(data as Record<string, unknown>), token } };
   });
 
 /** Revoke the active token without minting a replacement. */
