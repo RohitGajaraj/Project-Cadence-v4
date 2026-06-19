@@ -350,7 +350,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     if (!activeWorkspace) return;
     const ok = await confirm({
       title: `Delete "${activeWorkspace.name}"?`,
-      body: "This removes the workspace and every product, doc, mission, and run inside it. Can't be undone.",
+      body: "This permanently deletes the workspace and everything in it: products, docs, missions, runs, plus your meetings, notes, daily briefs, chat history, and prototypes scoped to it. Can't be undone.",
       destructive: true,
       confirmLabel: "Delete workspace",
       typedConfirm: activeWorkspace.name,

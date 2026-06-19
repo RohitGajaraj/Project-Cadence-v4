@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 18:45 (pricing-strategy packaging: added 3 deferred rows WM-M17/M18/M19 - Anthropic-style usage variants, plan-card states, enterprise usage model; register 141 → 144, recomputed 42% strict / 55% weighted on top of WM-M15); 2026-06-19 18:09 (WM-M15 → ◐: cost-aware model routing margin lever, config-gated default-off, overnight cycle 34; WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 18:49 (WM-F9 → ◐: tenancy isolation hardening, workspace_id + dual-key membership RLS on 10 tables, overnight cycle 35; pricing-strategy packaging: added 3 deferred rows WM-M17/M18/M19 (Anthropic-style usage variants, plan-card states, enterprise usage model), register 141 → 144; WM-M15 → ◐: cost-aware model routing margin lever, config-gated default-off, overnight cycle 34; WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
 
 ---
 
@@ -78,14 +78,14 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 18:45 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
+> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 18:49 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
 - ### Overall completion: **42% (strict) / 55% (weighted)**
   - **Strict** = fully-done rows / total = **61 / 144 = 42%** (the honest floor).
-  - **Weighted** = sum of every row's Item % / total = **79.0 / 144 = 55%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Weighted** = sum of every row's Item % / total = **79.8 / 144 = 55%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
   - **Remaining: 58% open** - **83 of 144** rows not fully done.
-  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 42%. The 144 total now includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19), which add planned scope, not regression._
-- **Total features = 144** · **Done = 61** · **Not done = 83** (⬜ 45 open + ◐ 25 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
+  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 42%. The 144 total includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19), which add planned scope, not regression._
+- **Total features = 144** · **Done = 61** · **Not done = 83** (⬜ 44 open + ◐ 26 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
 - _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **42 of the 83** not-done rows._
 
 - **By status (of 144 total), with weighted contribution to the 55% roll-up:**
@@ -93,13 +93,13 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
 | ✅ Done | 61 | 100% | 61.0 |
-| ◐ Partial | 25 | per-row `[~NN%]` (avg ~66%) | 16.5 |
+| ◐ Partial | 26 | per-row `[~NN%]` (avg ~66%) | 17.3 |
 | ⏸️ Paused | 3 | 50% | 1.5 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
-| ⬜ Open (ready to pick up) | 45 | 0% | 0.0 |
+| ⬜ Open (ready to pick up) | 44 | 0% | 0.0 |
 | ⏭️ Deferred | 10 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **144** | - | **79.0 / 144 = 55%** |
+| **Total** | **144** | - | **79.8 / 144 = 55%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -114,7 +114,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Credit | 7 | 1 | 6 | 52% |
 | Sense | 12 | 3 | 9 | 45% |
 | Launch | 8 | 2 | 6 | 39% |
-| Monetization | 30 | 2 | 28 | 21% |
+| Monetization | 30 | 2 | 28 | 24% |
 | BYO | 8 | 0 | 8 | 0% |
 | **Total** | **144** | **61** | **83** | **55%** |
 
@@ -180,7 +180,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 47 | ⬜ | WM-F3 | RBAC enforcement | Real owner/admin/member/viewer permissions for teams | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2 |
 | 48 | ⬜ | WM-M5 | Tier limit gates (DB triggers) | Enforce per-product/workspace caps at the DB (clients write direct, so triggers guard) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M1, WM-M2 |
 | 49 | ⬜ | WM-F2 | Account-level memory pooling (paid) | Paid accounts compound memory across workspaces (the flywheel) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2, WM-F1 |
-| 50 | ⬜ | WM-F9 | Isolation audit + scope leak fixes | Close cross-member leaks (meetings/notes/briefs/chat) before invites | Monetization | WM-3 | 2026-06-19 | effort S, no deps; do before WM-F5 |
+| 50 | ◐ | WM-F9 | Isolation audit + scope leak fixes | Close cross-member leaks (meetings/notes/briefs/chat) before invites | Monetization | WM-3 | 2026-06-19 18:33 | CORE shipped (overnight cycle 35): migration `20260619190000_wm_f9_isolation_scope.sql` adds workspace_id + deterministic backfill + a NEW.user_id BEFORE-INSERT trigger (service-role-safe) + NOT NULL + index + DUAL-KEY membership RLS (`auth.uid()=user_id AND is_workspace_member(workspace_id)`; keeps user-private per the acceptance, never widens) to **10 tables**: the named 4 (meetings/notes/daily_briefs/copilot_messages) + the 6 the adversarial audit found (prototypes + 3 children, scheduler_proposals, ritual_sessions). Public-share policies preserved; sync_mappings documented-deferred; CASCADE delete-confirm copy fixed (AppShell). Behaviorally dry-run-verified on the live prod DB (0 nulls, NOT NULL, trigger fill, old policies removed, dual-key created), rolled back. 239/239, tsc/build/lint/humanization green; 3-lens review (reader-breakage clean), all real fixes folded. Live isolation activates on publish. Follow-up WM-F9b: active-workspace read-filtering + sync_mappings verdict [~80%] |
 | 51 | ◐ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 16:31 | CORE shipped (overnight cycle 31): new `credits.functions.ts` (pure `monthlyGrantCredits`/`resetDelta` + dormant `grantMonthlyAllowance`/`resetCreditCycle`) + `credit-tick` cron hook (grants un-granted, resets due accounts, preserves top-ups). Gated behind `credits_enabled()` (dormant). 7 unit tests; tsc/build/lint green, 208/208. Grant math verified; the DB writes + tick activate on publish + flag + pg_cron [~70%] |
 | 52 | ◐ | WM-M15 | Margin levers (cost-aware routing) | Keeps credits margin-positive (no self-serve BYOK to lean on) | Credit | WM-3 | 2026-06-19 18:09 | CORE shipped (overnight cycle 34): pure `src/lib/ai/routing.ts` (blendedPrice / cheapestLiveModel / costRoutedModel) wired at the AI chokepoint behind the `AI_COST_ROUTING` env flag (default OFF = byte-identical to today). Narrow safe routable set {brief, scheduler, test} + a tier guard that never downgrades a deliberate reasoning/premium/code/vision model. 5-lens adversarial review caught a real quality-gate hole and was fixed: judge (the Critic wedge), eval (benchmark), embed (chat-model trap) excluded; the credit pre-check + debit now track the model actually run. 12 routing tests, 239/239, tsc/build/lint green. **Cache half split to WM-M15b (queued).** Live routing activates on the founder's `AI_COST_ROUTING` flag [~70%] |
 | 53 | ⬜ | WM-F4 | Ownership transfer | Transfer an account/workspace; unblocks owner-leaves | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3 |
