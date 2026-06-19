@@ -169,7 +169,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-F3 | RBAC enforcement (owner/admin/member/viewer) | Foundation | Pending | WM-M2 |
 | WM-F4 | Ownership transfer | Foundation | Pending | WM-F3 |
 | WM-F5 | Invites (account/workspace) | Foundation | Pending | WM-F3, WM-M2 |
-| WM-F6 | Move product between workspaces | Foundation | Pending | WM-M2 |
+| WM-F6 | Move product between workspaces | Foundation | Core ◐ (cycle 46) | WM-M2 |
 | WM-F7 | Settings IA (Account / Workspace / Personal) | Foundation | Pending | WM-M2, WM-F3 |
 | WM-F8 | Workspace switch hardening | Foundation | Core ◐ (cycle 45) | WM-F1 |
 | WM-F9 | Isolation audit + scope leak fixes | Foundation | Pending | none (do before WM-F5) |
@@ -262,6 +262,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** one atomic RPC (partial moves corrupt tenancy); permission both sides; do not move across accounts.
 - **Acceptance:** moving a product relocates all its child data; permissions enforced; no orphan rows.
 - **Verify:** move a seeded product across two workspaces; assert child-row counts move.
+- **Status (cycle 46, ◐ CORE):** shipped the transactional `move_product` RPC + `moveProduct` server fn. **Key finding:** the spec's "harden product-level scoping first (product_id has no RLS)" is ALREADY satisfied - all product-scoped tables are read-gated by `is_workspace_member(workspace_id)` (verified live), so reassigning `workspace_id` IS the move (access follows; no RLS-hardening migration needed). The RPC reassigns the product + 13 product-scoped tables: 10 direct children + 3 grandchildren (doc_versions/messages/learnings, scoped through their parent so none orphan). Untyped-client trap handled: the product FK is `project_id` on 8 tables but `product_id` on ai_events/connection_bindings/rag_chunks/studio_changesets. Guard = owner/admin-in-both (WM-F3 `can_manage_workspace`) + same-account (WM-M2 `account_id`). **Behaviorally dry-run-verified on prod** (BEGIN..ROLLBACK, stubbing unpublished WM-M2/F3/F9): a real product's 9 signals / 2 prds / 10 tasks / 3 decisions / 8 messages all moved, 0 orphans; cross-account + non-manager both blocked; rolled back. tsc/build/lint/274-tests green. **UI deferred** to the design pass (founder ruling); live move activates on publish. **Follow-up WM-F6b:** `artifact_lineage` + other generic-provenance tables (their product linkage is via generic artifact ids, deferred to avoid a wrong remap).
 
 #### WM-F7 · Settings IA (Account / Workspace / Personal)
 - **Why:** settings have no rubric (voice/model are user-global, brief is workspace, plan is workspace).

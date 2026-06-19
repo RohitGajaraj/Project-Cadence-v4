@@ -240,6 +240,26 @@ export const updateProject = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// WM-F6 · Move a product (and all its product-scoped child rows) to another
+// workspace in the SAME account. All the work - the atomic reassignment plus the
+// owner/admin-in-both + same-account guard - lives in the `move_product`
+// SECURITY DEFINER RPC; this is the thin, validated entry point. Called via
+// context.supabase so the RPC's auth.uid()-based `can_manage_workspace` checks
+// apply to the real caller. Memory stays at the workspace (not moved).
+export const moveProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ productId: z.string().uuid(), destWorkspaceId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.rpc("move_product", {
+      _product_id: data.productId,
+      _dest_workspace_id: data.destWorkspaceId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // B5 · Soft archive (reversible). Hides the product from the active set without
 // touching its data; restore clears the stamp. The user_id scope + .select()
 // make a blocked or no-match write fail loudly instead of returning a phantom
