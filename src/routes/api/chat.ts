@@ -25,7 +25,7 @@ type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
  */
 type ChatMeta = {
   model: string;
-  via: "gateway" | "byo";
+  via: "gateway" | "byo" | "cache";
   latency_ms: number;
   tokens_in: number;
   tokens_out: number;

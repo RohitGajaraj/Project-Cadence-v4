@@ -22,6 +22,15 @@ import { retrieve, formatContextBlock, type RetrievedChunk } from "../rag/retrie
 import { resolvePrompt, logPromptRun, withHumanizeDirective } from "./prompts.server";
 import { humanizeText, isFenceOpen } from "./humanize";
 
+import {
+  generateCacheKey,
+  shouldCacheCall,
+  formatCachedResponse,
+  cacheTtlSeconds,
+  readCache,
+  writeCache,
+  type CacheEntry,
+} from "./cache.server";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 // Local-dev fallback (KI-06): the cloud injects LOVABLE_API_KEY automatically,
 // but a local .env may not have it. When it is absent, google/* models route
@@ -275,7 +284,7 @@ export type CallResult = {
   eventId: string | null;
   status: "ok" | "error" | "blocked";
   hits: { rule_name: string; side: "input" | "output"; action: string }[];
-  via: "gateway" | "byo";
+  via: "gateway" | "byo" | "cache";
   provider: string;
   prompt_tokens: number;
   completion_tokens: number;
@@ -1132,7 +1141,7 @@ export async function callModel(
 
   const t0 = Date.now();
   let providerOut: { text: string; in_tok: number; out_tok: number; latency: number };
-  let via: "gateway" | "byo" = "gateway";
+  let via: "gateway" | "byo" | "cache" = "gateway";
   let provider = "lovable";
   let status: "ok" | "error" | "blocked" = "ok";
   let errMsg: string | undefined;
@@ -1140,6 +1149,25 @@ export async function callModel(
   let modelUsed = effectiveModel;
 
   const maxRetries = opts.maxRetries ?? 2;
+
+  // WM-M15b: Response cache check
+  let cacheHit = false;
+  const shouldCache = shouldCacheCall(opts.surface, opts.retrieval, opts.guardrails, opts.responseFormat);
+  let cacheKey: string | null = null;
+  if (shouldCache) {
+    cacheKey = await generateCacheKey(effectiveModel, messages, opts.responseFormat);
+    const cached = await readCache(supabaseAdmin, userId, effectiveModel, cacheKey);
+    if (cached) {
+      cacheHit = true;
+      providerOut = formatCachedResponse(cached);
+      via = "cache";
+      provider = "cache";
+      modelUsed = effectiveModel;
+      status = "ok";
+      errMsg = undefined;
+    }
+  }
+
   const attempt = async (model: string) => {
     if (opts.byoOverride) {
       via = "byo";
@@ -1191,6 +1219,24 @@ export async function callModel(
       lastErr = e;
     }
   }
+  // WM-M15b: Write to cache if successful (non-cache, non-error response)
+  if (!cacheHit && !lastErr && cacheKey && shouldCacheCall(opts.surface, opts.retrieval, opts.guardrails, opts.responseFormat)) {
+    try {
+      await writeCache(
+        supabaseAdmin,
+        userId,
+        modelUsed,
+        cacheKey,
+        providerOut.text,
+        providerOut.in_tok,
+        providerOut.out_tok,
+      );
+    } catch (e) {
+      // Cache write errors are ignored
+      console.error("cache write failed:", e);
+    }
+  }
+
   if (lastErr) {
     status = "error";
     errMsg = lastErr instanceof Error ? lastErr.message : String(lastErr);
@@ -1328,7 +1374,7 @@ export async function logAiEvent(
     surface_ref?: string | null;
     model: string;
     provider?: string;
-    via?: "gateway" | "byo";
+    via?: "gateway" | "byo" | "cache";
     prompt_tokens?: number;
     completion_tokens?: number;
     latency_ms?: number;
@@ -1387,7 +1433,7 @@ export async function callModelStream(
   opts: CallOpts,
 ): Promise<{
   stream: ReadableStream<Uint8Array>;
-  via: "gateway" | "byo";
+  via: "gateway" | "byo" | "cache";
   provider: string;
   model: string;
 }> {
@@ -1492,7 +1538,7 @@ export async function callModelStream(
     keyRow = await loadBYOKey(supabase, userId, byo.provider);
   }
 
-  let via: "gateway" | "byo" = "gateway";
+  let via: "gateway" | "byo" | "cache" = "gateway";
   let provider = "lovable";
   let status: "ok" | "error" | "blocked" = "ok";
   let errMsg: string | undefined;
