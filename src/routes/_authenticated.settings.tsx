@@ -44,6 +44,7 @@ import { getBillingState, createCheckoutSession, type BillingState } from "@/lib
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
+import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
 
 type SectionId =
   | "connections"
@@ -167,7 +168,12 @@ function SettingsPage() {
         {active === "billing" && <BillingTab checkout={checkout} />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
-        {active === "data" && <DataExportCard workspaceId={activeWorkspace?.id} />}
+        {active === "data" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <DataExportCard workspaceId={activeWorkspace?.id} />
+            <SubprocessorsCard />
+          </div>
+        )}
       </div>
     </AppShell>
   );
