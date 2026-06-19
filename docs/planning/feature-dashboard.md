@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:17 (WM-M4 → ◐: dormant runtime credit seam wired into the AI chokepoint, overnight cycle 30; WM-M10 → ✅ cycle 29; WM-M2 → ◐ cycle 28; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:31 (WM-M11 → ◐: per-tier credit grant + monthly cycle reset + credit-tick hook, overnight cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
 
 ---
 
@@ -66,7 +66,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 - **Total features = 142** · **Open = 81** · **Done = 61**
   ("Open" = every row not ✅: ⬜ open + 🔨 in dev + ◐ partial + ⏸️ paused + ⏭️ deferred + 🚧 blocked.)
-- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30.)_
+- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30; WM-M11 → ◐ credit grant + cycle reset, cycle 31.)_
 - **By status (of 141 total):**
 
 | Status | Count |
@@ -160,7 +160,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 48 | ⬜ | WM-M5 | Tier limit gates (DB triggers) | Enforce per-product/workspace caps at the DB (clients write direct, so triggers guard) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M1, WM-M2 |
 | 49 | ⬜ | WM-F2 | Account-level memory pooling (paid) | Paid accounts compound memory across workspaces (the flywheel) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2, WM-F1 |
 | 50 | ⬜ | WM-F9 | Isolation audit + scope leak fixes | Close cross-member leaks (meetings/notes/briefs/chat) before invites | Monetization | WM-3 | 2026-06-19 | effort S, no deps; do before WM-F5 |
-| 51 | ⬜ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 | effort M; needs WM-M2, WM-M10 |
+| 51 | ◐ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 16:31 | CORE shipped (overnight cycle 31): new `credits.functions.ts` (pure `monthlyGrantCredits`/`resetDelta` + dormant `grantMonthlyAllowance`/`resetCreditCycle`) + `credit-tick` cron hook (grants un-granted, resets due accounts, preserves top-ups). Gated behind `credits_enabled()` (dormant). 7 unit tests; tsc/build/lint green, 208/208. Grant math verified; the DB writes + tick activate on publish + flag + pg_cron |
 | 52 | ⬜ | WM-M15 | Margin levers (cost-aware routing + cache) | Keeps credits margin-positive (no self-serve BYOK to lean on) | Credit | WM-3 | 2026-06-19 | effort M; needs WM-M10 |
 | 53 | ⬜ | WM-F4 | Ownership transfer | Transfer an account/workspace; unblocks owner-leaves | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3 |
 | 54 | ⬜ | WM-F5 | Invites (account/workspace) | Add teammates (no invite flow today) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3, WM-M2 |

@@ -26,6 +26,14 @@
 
 ## Decision log
 
+### 2026-06-19 · WM-M11 build calls: tick-driven grants, ledger reconciliation, test-safe pure helpers
+**Context.** WM-M11 builds the credit-engine grant side (`credits.functions.ts` + a `credit-tick` hook).
+- **The cron tick is the single driver (grant + reset).** Rather than wire grants into the signup flow and the Stripe webhook (other items' territory), the dormant `credit-tick` hook grants un-granted accounts and resets due ones on each run, so the engine is self-contained while dormant. An immediate signup grant can be layered on at activation (calling `grantMonthlyAllowance` from onboarding / WM-M3); for a dormant engine, grant-on-next-tick is fine.
+- **Ledger reconciliation by construction.** Grant and reset write `amount - currentIncluded` (not a flat `+amount`), so the sum of an account's ledger deltas always equals its included balance; top-ups are a separate balance a reset never touches. This makes the acceptance ("the ledger reconciles to the balance") true by design.
+- **Test-safe pure helpers.** `monthlyGrantCredits` and `resetDelta` import only `./entitlements` (relative), so `credits.test.ts` resolves under bun with no path-alias or server-client dependency; the lazy `supabaseAdmin` Proxy is never constructed by the test (it only calls the pure helpers).
+- **Enterprise gets no base grant.** `creditMonthlyBase` is null for enterprise (a negotiated custom model), so `monthlyGrantCredits` returns 0 and the engine skips it; enterprise credit is the `enterpriseCreditModel`, not the per-tier base.
+- **Marked ◐ not ✅.** The grant math is unit-verified, but the DB writes + the scheduled tick are dormant and DB-coupled, so the full feature activates only on publish + the flag flip + a pg_cron schedule.
+
 ### 2026-06-19 · WM-M4 build calls: a dormant flag-gated seam is the safer unattended pick; minimal-functional v1
 **Context.** WM-M4 adds the account-level credit seam to the AI chokepoint (`runtime.server.ts`).
 - **Picked WM-M4 over the cursor's WM-F1b this cycle, on safety.** Both are high-impact, but a seam gated behind `credits_enabled()` (false) is the safer thing to build unattended: a bug in dormant code literally cannot run, whereas WM-F1b swaps RLS + adds NOT NULL on the LIVE core agent-memory tables (no flag) where a blind mistake breaks the running loop and is not behaviorally verifiable until publish. WM-M4 also unblocks WM-M12 (the debit keystone).

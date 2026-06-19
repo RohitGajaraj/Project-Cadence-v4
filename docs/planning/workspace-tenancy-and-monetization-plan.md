@@ -159,7 +159,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M8 | Tier identity motif (Constellation starfield glyph) | Monetize | Pending | WM-M1, WM-M6 |
 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | Monetize | Pending | WM-M1 |
 | WM-M10 | Credit unit + cost-to-credit conversion + legibility layer | Monetize (Credit engine) | ✅ Done 2026-06-19 | WM-M1 |
-| WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | Pending | WM-M2, WM-M10 |
+| WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M2, WM-M10 |
 | WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | Pending | WM-M4, WM-M10, WM-M11 |
 | WM-M13 | Capped top-up purchase (Stripe credit packs) | Monetize (Credit engine) | Pending | WM-M3, WM-M12 |
 | WM-M14 | Per-product / per-member attribution + caps | Monetize (Credit engine) | Pending | WM-M12 |
@@ -373,6 +373,7 @@ The credit **engine**, what one credit is, the cost-to-credit conversion, per-ti
 - **Acceptance:** a new free account gets the starter grant; a cycle reset re-grants included and keeps top-ups; the ledger reconciles to the balance.
 - **Verify:** simulate signup + a cycle rollover on a Supabase branch; assert balances + ledger sum.
 - **Depends on:** `WM-M2`, `WM-M10`.
+- **◐ CORE shipped 2026-06-19 (overnight cycle 31).** New `src/lib/credits.functions.ts` (pure `monthlyGrantCredits(tier)` + `resetDelta`, dormant `grantMonthlyAllowance` + `resetCreditCycle`) + new `src/routes/api/public/hooks/credit-tick.ts` (mirrors `memory-tick.ts`: `requireHookCaller` auth, grants un-granted accounts, resets accounts past ~30 days since `cycle_anchor`, preserving top-ups). Per-tier amounts come from `entitlements.creditMonthlyBase` (free 500 / pro 2500 / max 10000 / team 10000 / enterprise null -> 0, the negotiated model). All writes via the service-role `supabaseAdmin`; gated behind `credits_enabled()` -> strict no-op while dormant; pre-migration tolerant. The ledger reconciles (writes `amount - currentIncluded`, so the sum of deltas equals the included balance); top-ups are never touched by a reset. **Verification (ran):** `bun test credits.test.ts` 7/7 (24 asserts), full `bun test` 208/208, tsc 0, eslint 0 on all 3 files, build ✓ (registers the new route), humanization clean. Adversarial review: no real fix. **◐ not ✅:** the pure grant math is unit-verified, but the grant/reset DB writes + the scheduled tick are dormant and DB-coupled, activating only on publish + the flag flip + a pg_cron schedule. The immediate signup grant (vs the tick's grant on the next run) can be wired into onboarding/WM-M3 when the engine is activated.
 
 #### WM-M12 · Credit debit engine (fills the WM-M4 seam)
 - **Why:** `WM-M4` added the dormant `assertAccountCredits` / `debitAccountCredits` seam; this fills the bodies so a real call meters credits from the account pool and halts cleanly when empty.
