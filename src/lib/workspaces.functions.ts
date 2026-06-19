@@ -113,18 +113,16 @@ export const inviteMember = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { data: inv, error } = await context.supabase
-      .from("workspace_invitations")
-      .insert({
-        workspace_id: data.workspaceId,
-        email: data.email,
-        role: data.role,
-        invited_by: context.userId,
-      })
-      .select("token")
-      .single();
+    const { data: inv, error } = await context.supabase.rpc("create_workspace_invitation", {
+      _workspace_id: data.workspaceId,
+      _email: data.email,
+      _role: data.role,
+    });
     if (error) throw new Error(error.message);
-    const link = `/join/${(inv as { token: string }).token}`;
+    const row = Array.isArray(inv) ? inv[0] : inv;
+    const token = (row as { token: string } | null)?.token;
+    if (!token) throw new Error("Failed to create invitation.");
+    const link = `/join/${token}`;
     const { sent } = await sendInviteEmail({ to: data.email, inviteLink: link });
     // Always return the link so the inviter can share it even when email is not wired.
     return { ok: true, link, emailed: sent };
