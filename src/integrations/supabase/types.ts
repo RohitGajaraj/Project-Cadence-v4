@@ -4537,7 +4537,7 @@ export type Database = {
       }
       user_api_keys: {
         Row: {
-          api_key: string
+          api_key: string | null
           api_key_prefix: string | null
           base_url: string | null
           created_at: string
@@ -4548,7 +4548,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          api_key: string
+          api_key?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
@@ -4559,7 +4559,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          api_key?: string
+          api_key?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
@@ -4942,6 +4942,13 @@ export type Database = {
           _run_id: string
         }
         Returns: string
+      }
+      create_workspace_invitation: {
+        Args: { _email: string; _role?: string; _workspace_id: string }
+        Returns: {
+          id: string
+          token: string
+        }[]
       }
       credits_enabled: { Args: never; Returns: boolean }
       current_kill_state: {
