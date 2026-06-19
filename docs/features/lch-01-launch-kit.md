@@ -1,5 +1,7 @@
 # LCH-01 / L1 (launch-kit drafting)
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 **Status:** ◐ Partial (drafting shipped 2026-06-18; a full launch *mission* template + governed outbound send remain). **Lane:** G4 Launch & Learn.
 
 ## What it delivers

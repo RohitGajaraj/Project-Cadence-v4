@@ -1,5 +1,7 @@
 # Agent Trust Score & Autonomy Dial
 
+> _Created: 2026-06-04 · Last updated: 2026-06-17_
+
 > Canonical explanation of what the Trust score on `/agents` means, how it is
 > computed, what the four arc levels (Observing → Proving → Trusted → Ambient)
 > do at the approval gate, and how operators should think about moving the
@@ -136,8 +138,8 @@ AutonomyCard when an agent crosses into a new arc.
 ## 8. Related
 
 - A2A handoff (how receiver-arc gating applies on handoff): [`a2a-handoff.md`](./a2a-handoff.md)
-- Orchestration contract (approval modes, sweeper, mission lifecycle): [`../architecture/orchestration.md`](../architecture/orchestration.md)
-- Governance & approval gates (kill-switch, caps, Decision Queue): [`../architecture/security.md`](../architecture/security.md)
-- AI runtime chokepoint (where the gate is enforced server-side): [`../architecture/runtime.md`](../architecture/runtime.md)
-- Feature ticket (C6, Trust score + Autonomy dial): [`feature-backlog.md`](./feature-backlog.md)
+- Orchestration contract (approval modes, sweeper, mission lifecycle): [`../../architecture/orchestration.md`](../../architecture/orchestration.md)
+- Governance & approval gates (kill-switch, caps, Decision Queue): [`../../architecture/security.md`](../../architecture/security.md)
+- AI runtime chokepoint (where the gate is enforced server-side): [`../../architecture/runtime.md`](../../architecture/runtime.md)
+- Feature ticket (C6, Trust score + Autonomy dial): [`feature-backlog.md`](../planning/feature-backlog.md)
 - Parent index: [`README.md`](./README.md)

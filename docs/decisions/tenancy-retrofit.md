@@ -1,6 +1,8 @@
 # Decision + design: three-key tenancy retrofit
 
-> Status: **DESIGN NOTE (ready to implement).** Date: 2026-05-30. Owner: founder. Implements `FND-TENANCY` (backlog [`../feature-backlog.md`](../feature-backlog.md) 0.1) per the [`../foundation-audit.md`](../foundation-audit.md) finding that the DB is single-key (`user_id`) today. Stack/Lovable context: [`tech-stack.md`](./tech-stack.md). Data rules (forward-only, additive migrations): [`../../architecture/data.md`](../../architecture/data.md).
+> _Created: 2026-06-03 · Last updated: 2026-06-11_
+
+> Status: **DESIGN NOTE (ready to implement).** Date: 2026-05-30. Owner: founder. Implements `FND-TENANCY` (backlog [`../planning/feature-backlog.md`](../planning/feature-backlog.md) 0.1) per the [`../planning/archive/foundation-audit.md`](../planning/archive/foundation-audit.md) finding that the DB is single-key (`user_id`) today. Stack/Lovable context: [`tech-stack.md`](./tech-stack.md). Data rules (forward-only, additive migrations): [`../../architecture/data.md`](../../architecture/data.md).
 >
 > **Purpose:** make the actual migration safe to hand to either Claude Code or Lovable — table-by-table scope (now vs later), the RLS pattern, the backfill shape, and the convention new code must follow so the debt doesn't re-accumulate.
 >
@@ -201,4 +203,4 @@ create policy "<name> write" on public.<name> for all    using (public.is_worksp
 - **O2 — App-layer context plumbing:** where does "current workspace/product" live? Proposed: a server-side context resolved from the request (header or session) + a client `WorkspaceProvider`; the workspace/product switcher (backlog B1/B3) writes it. Needed so server functions can set the keys.
 - **O3 — Include `conversations`/`messages` in the NOW set?** Yes if AI Chat stays active in the first slice.
 
-> When A/B/C land, flip 0.1 in [`../foundation-audit.md`](../foundation-audit.md) to ✅ and add the entry to [`../../plan.md`](../../plan.md) §4.
+> When A/B/C land, flip 0.1 in [`../planning/archive/foundation-audit.md`](../planning/archive/foundation-audit.md) to ✅ and add the entry to [`../../plan.md`](../../plan.md) §4.

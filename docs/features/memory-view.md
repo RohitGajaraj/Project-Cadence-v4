@@ -1,5 +1,7 @@
 # M-B · Compounding-memory view
 
+> _Created: 2026-06-14 · Last updated: 2026-06-18_
+
 > Status · Shipped 2026-06-14 · Route `/memory` · Source: the agent loop (no single owner agent)
 
 ## What it does

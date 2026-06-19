@@ -1,5 +1,7 @@
 # Decision — Durable runtime for long / parallel agent missions (FND-RUNTIME 0.9)
 
+> _Created: 2026-06-03 · Last updated: 2026-06-11_
+
 **Date:** 2026-06-03
 **Status:** Accepted
 **Scope:** Step 1 of the Agentic Proof Platform foundation. Enables Bundle #4 (A2A handoff) and #5 (Mission Graph) to survive Cloudflare Worker eviction mid-step.

@@ -1,5 +1,7 @@
 # Convention: Data minimalism — every field earns its place
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 **Status: standing rule, founder ruling 2026-06-18.** Applies to every captured field, stored column, and pixel of screen real estate, across the whole build. It is the data-and-input sibling of the [Engine-Room Doctrine](./engine-room-doctrine.md): the doctrine keeps the _machinery_ off the front; this rule keeps _unearned data capture and clutter_ off it.
 
 > Shorthand: **capture nothing by default.** A field exists only because a named consumer needs it. If the honest answer to "where is this used?" is "it just gets stored," the field does not ship.

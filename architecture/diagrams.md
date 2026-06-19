@@ -1,6 +1,8 @@
 # architecture/diagrams.md: the visual companion to the architecture contracts
 
-> **What this is.** The picture book for Cadence (the project formerly known as Cadence). Every diagram here is Mermaid, lives in git as text, and renders the wiring described in prose by the sibling contracts: [`runtime.md`](./runtime.md) (the AI chokepoint), [`orchestration.md`](./orchestration.md) (missions and the loop), [`data.md`](./data.md) (tables and RLS), [`security.md`](./security.md) (tenancy, kill switch, secrets), [`integrations.md`](./integrations.md) (the connector platform), and [`frontend.md`](./frontend.md) (the app shell). Strategy canon for what we are building and why: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). Rules: [`../AGENTS.md`](../AGENTS.md).
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
+> **What this is.** The picture book for Cadence (the project formerly known as Cadence). Every diagram here is Mermaid, lives in git as text, and renders the wiring described in prose by the sibling contracts: [`runtime.md`](./runtime.md) (the AI chokepoint), [`orchestration.md`](./orchestration.md) (missions and the loop), [`data.md`](./data.md) (tables and RLS), [`security.md`](./security.md) (tenancy, kill switch, secrets), [`integrations.md`](./integrations.md) (the connector platform), and [`frontend.md`](./frontend.md) (the app shell). Strategy canon for what we are building and why: [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). Rules: [`../AGENTS.md`](../AGENTS.md).
 >
 > **Honesty rule (claim-never-outruns-wiring).** Each diagram is tagged against `main` as of 2026-06-14. A node is **Built** when it runs in code, **Partial** when it exists but is gated or incomplete, **Missing/Planned** when it is roadmap. The legend in each section calls out what is not yet real, so a screenshot of this doc never over-promises. The verified state of the engine is in v7 §2.
 
@@ -478,5 +480,5 @@ stateDiagram-v2
 - [`security.md`](./security.md): tenancy, the two-level kill switch, KI-17 anon grants, secrets, idempotency.
 - [`integrations.md`](./integrations.md): the connector registry and the `resolveProviderAuth` credential chain.
 - [`frontend.md`](./frontend.md): the app shell, routes, and the Today queue that renders the decision cards.
-- [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md): the current positioning and build canon, including the verified state and the four blockers.
+- [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md): the current positioning and build canon, including the verified state and the four blockers.
 - [`../plan.md`](../plan.md): the build log and milestone roadmap.

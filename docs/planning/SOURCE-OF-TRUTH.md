@@ -2,7 +2,7 @@
 
 > **Founder: this is the ONE file to read.** The live cursor (section 0), status, what we are building, what is deferred to you, findings, and progress all live here. Everything else is **typed detail** this file points to (the map is in section 7). The autonomous build loop keeps this file current every cycle.
 >
-> **Last updated:** 2026-06-19 (folded the root `active-task.md` in as section 0; consolidated all work onto a single `main` branch; the doc map is now section 7). **Maintainer:** every tool, every unit of work.
+> **Created:** 2026-06-18 · **Last updated:** 2026-06-19 05:30 IST (folded the root `active-task.md` in as section 0; consolidated all work onto a single `main` branch; the doc map is now section 7). **Maintainer:** every tool, every unit of work.
 
 ---
 
@@ -107,7 +107,7 @@ The current founder-directed initiative: the Account -> Workspace -> Product ten
 **Pruned (off the current milestone, do NOT build now), 2026-06-18 rank:** `APP-HEALTH` (generic ops, near-zero strategic impact now), `PLAN-ENFORCE` (monetization plumbing, gated behind M-C), `DATA-RETENTION` (team/enterprise, M-D), `PROVIDER-FALLBACK` (resilience hygiene; a single fallback already exists), `MODEL-REGISTRY-DEPRECATION` (catalog hygiene, no current breakage), `KI-16` (high-scale-only), `O3` (depends on the unbuilt O1 graph). These re-enter the queue when their milestone arrives.
 
 ### BYO Repo + All-in-One Platform (BYO-*), NEW 2026-06-19 (founder-directed)
-Provider-agnostic repos (GitHub/GitLab/Bitbucket) + managed infrastructure so a user runs their whole product org on Cadence (discovery to launch, one subscription). Spec [`byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md); all-phase plan [`byo-build-implementation-plan-2026-06-19.md`](./byo-build-implementation-plan-2026-06-19.md); live board group **G11** in [`feature-dashboard.md`](./feature-dashboard.md). Build order: **BYO-P1a keystone first** (RepoProvider interface), then P1b/P1c parallel, P1d, then P2-P5. **Phase 1 awaits founder greenlight (no product code until approved).** Overlap: **BYO-P4 (managed AI credits) IS the WM credits work** (G10) - built there, cross-referenced, not duplicated. BYO-P1b depends on the WM Product/tenancy model + must honor the workspace session's `agent_memory` RLS isolation.
+Provider-agnostic repos (GitHub/GitLab/Bitbucket) + managed infrastructure so a user runs their whole product org on Cadence (discovery to launch, one subscription). Spec [`byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md); all-phase plan [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md); live board group **G11** in [`feature-dashboard.md`](./feature-dashboard.md). Build order: **BYO-P1a keystone first** (RepoProvider interface), then P1b/P1c parallel, P1d, then P2-P5. **Phase 1 awaits founder greenlight (no product code until approved).** Overlap: **BYO-P4 (managed AI credits) IS the WM credits work** (G10) - built there, cross-referenced, not duplicated. BYO-P1b depends on the WM Product/tenancy model + must honor the workspace session's `agent_memory` RLS isolation.
 
 ---
 
@@ -174,7 +174,7 @@ This SSOT is the one place for "where are we / what is next / what needs you" (s
 | What needs the founder (gated decisions/secrets) | **This file, section 4** |
 | Status of every feature (matrix + who-is-on-what claims) | [`feature-dashboard.md`](./feature-dashboard.md) |
 | Per-feature acceptance criteria / scope (F-IDs) | [`feature-backlog.md`](./feature-backlog.md) |
-| Current-initiative build specs (per-ID, cold-buildable) | [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) · [`byo-build-implementation-plan-2026-06-19.md`](./byo-build-implementation-plan-2026-06-19.md) (G11) |
+| Current-initiative build specs (per-ID, cold-buildable) | [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) · [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11) |
 | Open bugs / blockers | [`known-issues.md`](./known-issues.md) |
 | Cross-cutting non-functional gaps | [`considerations.md`](./considerations.md) |
 | Dated build history (what shipped + why) | [`../../plan.md`](../../plan.md) section 4 |

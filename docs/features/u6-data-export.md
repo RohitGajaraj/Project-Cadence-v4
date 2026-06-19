@@ -1,5 +1,7 @@
 # U6 · Workspace data export (data portability)
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Status · Core shipped 2026-06-18 (autonomous overnight cycle 1) · Route: `/settings?section=data` · Owner: operator-triggered
 
 ## What it does

@@ -1,5 +1,7 @@
 # Build-in-public insight feed (one way → the build-in-public repo)
 
+> _Created: 2026-06-15 · Last updated: 2026-06-18_
+
 This is the single capture point for postable insights from building Cadence. As we build (any tool, any session), real, non-obvious, public-safe moments get appended here: a decision, a mechanism, a real number, a lesson, a launch reaction, a screenshot worth grabbing. The private **build-in-public** repo's weekly engine and real-time watch read this file first, before scouting, so the posts are grounded in what actually happened.
 
 ## What these become, and the mix (context for whoever captures here)

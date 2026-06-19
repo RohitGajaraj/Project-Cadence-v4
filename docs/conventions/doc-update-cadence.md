@@ -1,6 +1,8 @@
 # Convention: documentation update cadence
 
-> **What this is.** Which docs update continuously, which update at feature milestones, and which update only when the structure actually changes. The point is to keep the living docs true without churning the stable architecture docs on every build. This complements the per-feature [`doc-closure-checklist.md`](./doc-closure-checklist.md) and the closed-doc loop in [`../../AGENTS.md`](../../AGENTS.md) section 5.
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
+> **What this is.** Which docs update continuously, which update at feature milestones, and which update only when the structure actually changes, plus the per-feature 8-step closure checklist that closes the loop on every shipped change. The point is to keep the living docs true without churning the stable architecture docs on every build. This complements the closed-doc loop in [`../../AGENTS.md`](../../AGENTS.md) section 5.
 >
 > **The principle.** Split docs by the rate of change of what they describe, not by document type. A feature map describes progress and changes constantly. An ERD describes structure and changes rarely. Tie each doc's update trigger to how fast its subject actually moves.
 
@@ -23,7 +25,7 @@ The live cursors, logs, and trackers. Update these in the SAME commit as the cha
 
 The product-facing maps and specs. Refresh these when a feature set lands or a feature's status changes (Built, Partial, Missing), at a milestone boundary (each M-0 to M-D completion) or after roughly two weeks of progress, whichever comes first. Do not rewrite them on every small build.
 
-- `docs/strategy/v10-master-blueprint-2026-06-17.md`: the current master blueprint (what we build, how it should look and behave, priority). See `docs/strategy/README.md` (the arbiter) for which strategy doc governs what.
+- `docs/strategy/v10-master-blueprint.md`: the current master blueprint (what we build, how it should look and behave, priority). See `docs/strategy/README.md` (the arbiter) for which strategy doc governs what.
 - `docs/planning/v10_implementation-plan.md`: the execution order (build loop, sprints, milestone gates).
 - `docs/planning/feature-dashboard.md`: the live board (status, board groups).
 - `docs/features/*`: per-feature operator specs.
@@ -48,13 +50,30 @@ Any "what are we building next?" question is answered by reading one chain, in o
 2. `docs/planning/SOURCE-OF-TRUTH.md` section 3 (the build queue): the explicit build queue (top pick first), plus the founder pickup list, open findings, and the milestone framing folded in.
 3. `docs/planning/feature-backlog.md` (the granular ledger, F-ID scope): the per-feature board with how-to-verify blocks.
 
-The milestone gates and execution order are defined in `docs/planning/v10_implementation-plan.md`; the build/structure canon is `docs/strategy/v10-master-blueprint-2026-06-17.md` (with `docs/strategy/README.md` as the arbiter of which strategy doc governs what). The feature statuses come from `docs/planning/feature-dashboard.md` and the granular `docs/planning/feature-backlog.md`. The tracker (the SSOT) is the synthesis layer that joins them.
+The milestone gates and execution order are defined in `docs/planning/v10_implementation-plan.md`; the build/structure canon is `docs/strategy/v10-master-blueprint.md` (with `docs/strategy/README.md` as the arbiter of which strategy doc governs what). The feature statuses come from `docs/planning/feature-dashboard.md` and the granular `docs/planning/feature-backlog.md`. The tracker (the SSOT) is the synthesis layer that joins them.
 
 Rules:
 - The tracker and the cursor are Tier 1: update them in the same commit as any change that ships a feature, moves a status, or completes a milestone.
 - The resolution of NEXT is mechanical: the first not-done item in the current (earliest not-done) milestone. No interpretation needed.
 - Every item carries a status: Built, In progress, Next, Blocked, or Later. Nothing is left undescribed.
 - So when asked "what next", any tool or session reads the cursor and the tracker and answers exactly: what is built, what is in between, what is the next pick, and why.
+
+## The per-feature closure checklist
+
+**Rule.** After any shipped feature or strategic decision, in the SAME turn, run this 8-step checklist. A change is not done until every step is true.
+
+1. **Audit / feature doc** - add a "How to use / verify" block: route + nav path, what each control does, server enforcement points, verification checklist.
+2. **`architecture/*.md`** - add or update the relevant contract (frontend pattern, security invariant, data shape, runtime hook).
+3. **`design.md`** - add or update the token / voice / UI-contract entry if the feature touches visual or copy rules.
+4. **Trackers** - update `docs/planning/SOURCE-OF-TRUTH.md` (section 0 the live cursor + section 6 progress) and the relevant board `docs/planning/feature-dashboard.md` (flip the status mark, board group), plus the granular `docs/planning/feature-backlog.md` (flip the status, update "Last updated", append a "Recent log" one-liner).
+5. **`plan.md` §4** - append a dated one-liner with a clear WHY (not just WHAT).
+6. **`docs/strategy/session-decisions.md`** - add an entry if a strategic decision or tradeoff was resolved.
+7. **`docs/conventions/`** - write a new convention file if the learning is a durable rule. Reference it from [`../../AGENTS.md`](../../AGENTS.md) §3 if it is a hard engineering rule.
+8. **Cross-links** - add a "Related" block at the bottom of any new doc.
+
+**Optional.** Mirror to tool-private memory (`mem://`, Claude project memory, etc.) only as a _thin pointer_ (≤ 2 lines, "see `docs/conventions/<file>.md`"). Never duplicate body - that creates drift.
+
+**Why.** The loop has historically closed at steps 4-5 and stopped, leaving contracts silent. The next session then reintroduces the exact thing the feature removed (a `confirm()`, an em dash, a settings-route-for-rename). This checklist is the antidote.
 
 ## How to apply
 
@@ -70,7 +89,7 @@ Living docs (the feature set, status, known issues) lose all value the moment th
 
 ## Related
 
-- [`doc-closure-checklist.md`](./doc-closure-checklist.md): the per-feature 8-step loop closer.
 - [`humanized-output.md`](./humanized-output.md): the zero-fingerprint voice rule.
-- [`../../AGENTS.md`](../../AGENTS.md) section 5: the closed-doc loop and the cross-document update protocol.
+- [`../../AGENTS.md`](../../AGENTS.md) section 5: the closed-doc loop and the cross-document update protocol (matrix view of the same idea).
+- [`./README.md`](./README.md): how to add a new convention.
 - [`../strategy/README.md`](../strategy/README.md): the strategy cascade rule (when the canon changes).

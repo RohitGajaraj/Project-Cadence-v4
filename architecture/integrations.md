@@ -1,5 +1,7 @@
 # architecture/integrations.md — Connectors, BYO keys & agent interop
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > External systems and the "built for agents" surface. Rules: [`AGENTS.md`](../AGENTS.md). Runtime: [`runtime.md`](./runtime.md). Data: [`data.md`](./data.md).
 
 ## Principle
@@ -12,8 +14,8 @@ Cadence is **agent-first**: built to be operated by agents over open protocols, 
 - **Notion** — import to prds/opportunities/signals; export PRD → page; DB-row linking.
 - **Linear** — paginated GraphQL pull → `tasks` (`external_ref`, `external_source='linear'`); push via mutation; Sync Inbox resolves conflicts (keep-local / keep-remote / merge); PRD → Linear cycle.
 - **Google Calendar** — read + write (create/edit/delete, optimistic upsert into `calendar_events`); Scheduler agent proposes slots within working hours.
-- **Firecrawl (web access)** — powers `web.search` / `web.fetch` / `web.map` / `web.crawl` agent tools (see [`../docs/web-access.md`](../docs/web-access.md)). Single chokepoint in `src/lib/ai/tools/firecrawl.server.ts`; results re-enter the loop as untrusted input and run through pre-guardrails on the next `callModel`. `web.crawl` defaults to `confirm` (spends real credits).
-- **GitHub (issue write)** — `github.issue.create` + `prd.link_issue` agentic tools (write / `confirm`), allow-listed to a single repo resolved through `resolveGitHub` (workspace binding → user connection → `GITHUB_REPO`/`GITHUB_TOKEN` env fallback — see Connections & bindings below). Wrapped in `withIdempotency('github_issue', idempotency_key, …)` so retries / sweeper-resumes never double-create. Canonical operator guide: [`../docs/github-issue-approval-flow.md`](../docs/github-issue-approval-flow.md).
+- **Firecrawl (web access)** — powers `web.search` / `web.fetch` / `web.map` / `web.crawl` agent tools (see [`../docs/features/web-access.md`](../docs/features/web-access.md)). Single chokepoint in `src/lib/ai/tools/firecrawl.server.ts`; results re-enter the loop as untrusted input and run through pre-guardrails on the next `callModel`. `web.crawl` defaults to `confirm` (spends real credits).
+- **GitHub (issue write)** — `github.issue.create` + `prd.link_issue` agentic tools (write / `confirm`), allow-listed to a single repo resolved through `resolveGitHub` (workspace binding → user connection → `GITHUB_REPO`/`GITHUB_TOKEN` env fallback — see Connections & bindings below). Wrapped in `withIdempotency('github_issue', idempotency_key, …)` so retries / sweeper-resumes never double-create. Canonical operator guide: [`../docs/features/github-issue-approval-flow.md`](../docs/features/github-issue-approval-flow.md).
 
 ## Connections & bindings (F-CONN)
 

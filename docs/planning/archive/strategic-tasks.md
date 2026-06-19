@@ -1,6 +1,8 @@
-> ARCHIVED 2026-06-17. Superseded by [the v10 master blueprint](../../strategy/v10-master-blueprint-2026-06-17.md) and governed by the [role map](../../strategy/README.md). Kept for history only; do not use for current decisions. Internal links may be stale.
+> ARCHIVED 2026-06-17. Superseded by [the v10 master blueprint](../../strategy/v10-master-blueprint.md) and governed by the [role map](../../strategy/README.md). Kept for history only; do not use for current decisions. Internal links may be stale.
 
 # Cadence — Strategic Task Tracker
+
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
 
 > **▶ Looking for the concrete next task to build?** This file is the **strategic** P0–P3 view. The canonical, addressable task queue is the **[Build-order rollup in `docs/feature-backlog.md`](./docs/feature-backlog.md#build-order-rollup-status--build-sequence)** — resolve "what's next" there (lowest-numbered `◑`/`☐` step → its feature IDs → its ticket in [`docs/foundation-audit.md`](./docs/foundation-audit.md)). The deterministic rule lives in [`AGENTS.md`](./AGENTS.md) §1. Do **not** treat the buckets below as the task queue.
 >
@@ -56,4 +58,4 @@ Make one full vertical slice bulletproof before widening — proves the loop + g
 ## Notes
 
 - Positioning: independent AI-native product company; **fully autonomous super-agents**, governed; agent-first; no "40/60 split," no "wedge," no MVP-phase gating language.
-- The earlier positioning history is archived in [`docs/strategy/archive/v1-positioning-2026-05-26.md`](./docs/strategy/archive/v1-positioning-2026-05-26.md) (frozen).
+- The earlier positioning history is archived in [`docs/strategy/archive/v1-positioning.md`](./docs/strategy/archive/v1-positioning.md) (frozen).

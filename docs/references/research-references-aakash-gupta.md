@@ -1,3 +1,5 @@
+> _Created: 2026-06-03 · Last updated: 2026-06-11_
+
 ## ## A very explicit and strict instruction: even before reading this, The below data inputs are the research that I have done through an agent. I know that it is not extensive or could be helpful, but I'm attaching all the dump of data that I've got through. I want you to take a look at it at a very high level. I don't want you to go through every hyperlink here. Do your own research and spend some time and tokens on that part. ## Strict Note to agents/ AI whoever is seeing it: This is just for references. Whatever is necessary, please decide on your hand and do it, but I don't want it to have a detailed planning stage and researching and spending time and sitting on this and burning our tokens here. I don't want to do that.
 
 Just a small caveat: the below research is purely from a guy called Akash Gupta, who runs the product growth and has his presence on LinkedIn, YouTube (for several podcasts) and Twitter. He majorly focuses on EIA product management, bringing the right stakeholders from this domain and speaking to them, positioning, and also he has his business around this. Below information, just consider it from a reference point. It should not be a sole decision maker, and you shouldn't be influenced by it. Whatever is the right information and market trends and whatever he is calling out, please pick out from that, but it should not be just derived based out of this whole agenda thesis on Akash Gupta.
@@ -26,6 +28,8 @@ doc_purpose: "Agent-readable intelligence + build recommendation. Read top-to-bo
 ---
 
 # Aakash Gupta PM-Content Intelligence → Build Brief
+
+> _Created: 2026-06-03 · Last updated: 2026-06-11_
 
 > **How to use this doc (for agents & humans):** Sections 0 / 6 / 7 are the decision core. Section 0 is a machine-ingestible TL;DR. Sections 2–5 are evidence. Section 7 is the recommended build with an MVP and a starter spec. Section 9 lists the human-confirmation gates. Every quantitative claim traces to the 225-thread dataset (see companion webpage + CSV).
 

@@ -1,5 +1,7 @@
 # Demo credentials
 
+> _Created: 2026-06-04 · Last updated: 2026-06-14_
+
 Two pre-provisioned demo accounts ship with the database. Use them for YC / investor / customer demos, screen recordings, and any application that asks for a working login. Same password for both — easy to share, easy to remember.
 
 | #   | Email                  | Password           |
@@ -59,6 +61,6 @@ These accounts are public knowledge by design. Do not store any real customer or
 
 ## Related
 
-- [`AGENTS.md`](../AGENTS.md) — operating manual
+- [`AGENTS.md`](../../AGENTS.md) — operating manual
 - [`README.md`](../README.md) — product thesis
-- [`docs/feature-backlog.md`](./feature-backlog.md) — live status board
+- [`docs/planning/feature-backlog.md`](../planning/feature-backlog.md) — live status board

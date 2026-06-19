@@ -1,5 +1,7 @@
 # Migration drift check
 
+> _Created: 2026-06-17 · Last updated: 2026-06-17_
+
 Automated gate that verifies every file under `supabase/migrations/` has a
 matching row in `supabase_migrations.schema_migrations`. Blocks deploys when
 anything is pending.

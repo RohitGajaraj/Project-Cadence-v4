@@ -1,5 +1,7 @@
 # architecture/runtime.md — The AI chokepoint contract
 
+> _Created: 2026-06-03 · Last updated: 2026-06-14_
+
 > Every AI call in Cadence goes through one function. This file is its contract. Rules: [`AGENTS.md`](../AGENTS.md). Build history: [`plan.md`](../plan.md).
 
 ## The one rule

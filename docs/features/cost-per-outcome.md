@@ -1,5 +1,7 @@
 # ENG-06 — Cost per outcome
 
+> _Created: 2026-06-17 · Last updated: 2026-06-19_
+
 > The Engine-Room-Doctrine-safe answer to "how much are the agents consuming." Split across two surfaces by audience: a calm **cost-per-outcome line** on Today for the PM, and a **unit-economics roll-up** behind the Engine Room door for the operator. Born from the 2026-06-17 "agent manager" framing decision ([`../strategy/session-decisions.md`](../strategy/session-decisions.md)).
 
 **Engine-Room:** per-run AI spend + outcome counts -> calm front shows one "shipped this week for $X" line on Today -> full per-window cost-per-outcome lives behind Engine Room > Analytics.
@@ -51,7 +53,7 @@ The founder's instinct to make the "agent manager" role explicit was right, but 
 
 ## Related
 
-- Decision + reasoning: [`../strategy/session-decisions.md`](../strategy/session-decisions.md) · [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-17 "year of the agent manager") · [`../strategy/v9-decision-wedge-and-build-next-2026-06-17.md`](../strategy/v9-decision-wedge-and-build-next-2026-06-17.md) §2.
+- Decision + reasoning: [`../strategy/session-decisions.md`](../strategy/session-decisions.md) · [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-17 "year of the agent manager") · [`../strategy/v9-decision-wedge-and-build-next.md`](../strategy/v9-decision-wedge-and-build-next.md) §2.
 - Doctrine: [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md).
 - Backlog: `ENG-06 / F-GOV-COST-SURFACE` in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) and [`../planning/feature-backlog.md`](../planning/feature-backlog.md).
 - Build log: [`../../plan.md`](../../plan.md) §4.

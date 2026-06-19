@@ -1,10 +1,12 @@
 # Future of AI: Perspectives for Startups 2025 — Google Cloud (reference digest)
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > **What this is.** A faithful, page-cited digest of Google Cloud's **"Future of AI: Perspectives for Startups 2025"** (75 pp) — a startup-building playbook with 20+ named VC and founder voices. Founder-supplied 2026-06-14 as standing reference for product strategy, moats, pricing, and the **fundraising narrative.** **Read this instead of re-opening the PDF.** Source file (not committed — 23 MB binary): `~/Downloads/google_cloud_future_of_ai_perspectives_for_startups_2025.pdf`.
 >
-> **Why it matters to us.** This is the VC/founder consensus on *how to build a durable AI company in 2025–26.* It validates our moat thesis (data/memory over models), our ambient-+-HITL stance, model-agnostic infra, and value/outcome pricing — and it hands us a fundraising spine. Convergence write-up: [`external-strategy-synthesis-2026-06-14.md`](./external-strategy-synthesis-2026-06-14.md).
+> **Why it matters to us.** This is the VC/founder consensus on *how to build a durable AI company in 2025–26.* It validates our moat thesis (data/memory over models), our ambient-+-HITL stance, model-agnostic infra, and value/outcome pricing — and it hands us a fundraising spine. Convergence write-up: [`external-strategy-synthesis.md`](./external-strategy-synthesis.md).
 >
-> **Cross-references.** Companion enterprise-trends digest → [`ai-agent-trends-2026-gcp.md`](./ai-agent-trends-2026-gcp.md). Our market scan → [`competitive-landscape-2026-06-11.md`](./competitive-landscape-2026-06-11.md). Positioning canon → [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md). Constitution (model-agnostic/BYOK mandate) → [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md).
+> **Cross-references.** Companion enterprise-trends digest → [`ai-agent-trends-2026-gcp.md`](./ai-agent-trends-2026-gcp.md). Our market scan → [`competitive-landscape.md`](./competitive-landscape.md). Positioning canon → [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md). Constitution (model-agnostic/BYOK mandate) → [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md).
 
 ---
 
@@ -92,4 +94,4 @@ AI is in its **earliest** innings (Elad Gil: *"AI is massively underhyped"*). Th
 
 ---
 
-**Related:** [`ai-agent-trends-2026-gcp.md`](./ai-agent-trends-2026-gcp.md) · [`external-strategy-synthesis-2026-06-14.md`](./external-strategy-synthesis-2026-06-14.md) · [`competitive-landscape-2026-06-11.md`](./competitive-landscape-2026-06-11.md) · [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md)
+**Related:** [`ai-agent-trends-2026-gcp.md`](./ai-agent-trends-2026-gcp.md) · [`external-strategy-synthesis.md`](./external-strategy-synthesis.md) · [`competitive-landscape.md`](./competitive-landscape.md) · [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md)

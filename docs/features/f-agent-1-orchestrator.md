@@ -1,5 +1,7 @@
 # F-AGENT-1: Orchestrator + multi-agent missions
 
+> _Created: 2026-06-06 · Last updated: 2026-06-14_
+
 > **Status:** ✅ Shipped 2026-06-06 · **Routes:** `/missions`, `/missions/$id` · **Owner agent:** `orchestrator` (seeded per user)
 
 ## What it does
@@ -61,6 +63,6 @@ The substrate (chokepoint, agent runs, A2A handoffs, trust gates) had been in pl
 
 - [`../../plan.md`](../../plan.md) §4, 2026-06-06 F-AGENT-1 entry
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md), orchestration contract (F-AGENT-1 bullet)
-- [`../a2a-handoff.md`](../a2a-handoff.md), A2A handoff contract used by `mission.dispatch`
-- [`../trust-and-autonomy.md`](../trust-and-autonomy.md), arcs that gate the specialists
+- [`./a2a-handoff.md`](./a2a-handoff.md), A2A handoff contract used by `mission.dispatch`
+- [`./trust-and-autonomy.md`](./trust-and-autonomy.md), arcs that gate the specialists
 - [`./f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md), [`./f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md), [`./f-agent-4-swarm-hud.md`](./f-agent-4-swarm-hud.md)

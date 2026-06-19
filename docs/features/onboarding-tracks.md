@@ -1,5 +1,7 @@
 # W6 — Persona onboarding tracks
 
+> _Created: 2026-06-17 · Last updated: 2026-06-18_
+
 > Status · Shipped 2026-06-17 · OAuth first-run gate fix + 4-step UI redesign 2026-06-17 · **RLS seed hotfix 2026-06-18** (track-pick crashed every new user with a `projects` RLS error; now self-heals the workspace) · **Basic-details step + credentials-only signup 2026-06-18** (single name/role capture shared by email + Google; fixes the `abc.def` display-name) · (on `main`; live UI walkthrough on next publish) · Route: `/onboarding` · Owner agent(s): none (setup flow); seeds Scout/Critic material
 
 ## What it does

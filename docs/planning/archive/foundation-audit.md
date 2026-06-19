@@ -1,5 +1,7 @@
 # docs/foundation-audit.md — Foundation gap audit (2026-05-30)
 
+> _Created: 2026-06-11 · Last updated: 2026-06-19_
+
 > **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the point-in-time 2026-05-30 foundation audit it points to, not the tracker to follow day-to-day.
 
 > **What this is.** A point-in-time grade of the **Epic 0 — Foundation** items in [`feature-backlog.md`](./feature-backlog.md) against the _actual code_ (migrations, AI runtime, auth, frontend, CI). Method: three parallel read-only code audits over `supabase/migrations/*`, `src/lib/ai/*`, `src/lib/*.functions.ts`, `src/routes/*`, `src/styles.css`, `.github/workflows/*`, `wrangler.jsonc`, `supabase/config.toml`. Evidence is `file:line`.

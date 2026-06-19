@@ -1,12 +1,14 @@
 # v7 build status and roadmap tracker (the "what next" source of truth)
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > ARCHIVED 2026-06-18. The live build-state tracker role moved to [`../SOURCE-OF-TRUTH.md`](../SOURCE-OF-TRUTH.md) (status in section 2, build queue in section 3); its milestone framing (M-0 to M-D) is folded into that file's section 2. Kept for history only; do not use for current decisions. Internal links below may be stale.
 
 > **What this is.** The single, always-current answer to "what is built, what is in progress, and what do we build next." Read [`../../active-task.md`](../../active-task.md) first (the session cursor), then the master **[Feature Dashboard](./feature-dashboard.md)** (every feature's live status + In-Dev claims - check it before starting any feature work), then this for the milestone narrative. Milestones are defined in the v7 canon section 12; feature statuses roll up from the v7 feature map; priorities come from the PRD.
 >
 > **Update cadence: Tier 1 (continuous).** Update this in the same commit as any change that ships a feature, moves a status, or completes a milestone. See [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md). The NEXT pick is mechanical: the first not-done item in the earliest not-done milestone.
 >
-> **Cross-links.** Canon: [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md). Feature catalog + status: [`v7-feature-map-2026-06-14.md`](./archive/v7-feature-map-2026-06-14.md). Requirements + priorities: [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md). Granular ledger: [`feature-backlog.md`](./feature-backlog.md). Open bugs: [`known-issues.md`](./known-issues.md).
+> **Cross-links.** Canon: [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md). Feature catalog + status: [`v7-feature-map.md`](./archive/v7-feature-map.md). Requirements + priorities: [`v7-prd.md`](./v7-prd.md). Granular ledger: [`feature-backlog.md`](./feature-backlog.md). Open bugs: [`known-issues.md`](./known-issues.md).
 
 ---
 
@@ -64,4 +66,4 @@ Tier 1, continuous. On any status change or milestone completion, update the tab
 
 ## Related
 
-- [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md) (this tracker is the "what next" source of truth it names) · [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) · [`v7-feature-map-2026-06-14.md`](./archive/v7-feature-map-2026-06-14.md) · [`v7-prd-2026-06-14.md`](./v7-prd-2026-06-14.md) · [`feature-backlog.md`](./feature-backlog.md) · [`../../active-task.md`](../../active-task.md)
+- [`../conventions/doc-update-cadence.md`](../conventions/doc-update-cadence.md) (this tracker is the "what next" source of truth it names) · [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) · [`v7-feature-map.md`](./archive/v7-feature-map.md) · [`v7-prd.md`](./v7-prd.md) · [`feature-backlog.md`](./feature-backlog.md) · [`../../active-task.md`](../../active-task.md)

@@ -1,11 +1,13 @@
 # WEDGE — the Critic-teardown first-run
 
+> _Created: 2026-06-17 · Last updated: 2026-06-19_
+
 > **Status:** ✅ Shipped to `main` (2026-06-17). The v10 launch wedge (P0 #2). Lane C (DECIDE).
 > **One line:** point Cadence at a feature you believe in and get an evidence-backed teardown in your first session, with no setup.
 
 ## Why it exists
 
-The felt entry. Pain #2 in the v10 map is "a PM cannot defend their calls." The wedge answers that in the first ten minutes: a brand-new account names a feature it believes in and gets an honest, adversarial red-team back, with the risks, the conditions that would kill the bet, and what the operator cannot prove yet. It needs no connected source and no seeded data, so the first win lands before any wiring. Strategy canon: [`v9-decision-wedge-and-build-next`](../strategy/v9-decision-wedge-and-build-next-2026-06-17.md) (the Critic-teardown wedge), [`v10-master-blueprint`](../strategy/v10-master-blueprint-2026-06-17.md) §15.
+The felt entry. Pain #2 in the v10 map is "a PM cannot defend their calls." The wedge answers that in the first ten minutes: a brand-new account names a feature it believes in and gets an honest, adversarial red-team back, with the risks, the conditions that would kill the bet, and what the operator cannot prove yet. It needs no connected source and no seeded data, so the first win lands before any wiring. Strategy canon: [`v9-decision-wedge-and-build-next`](../strategy/v9-decision-wedge-and-build-next.md) (the Critic-teardown wedge), [`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15.
 
 ## What it does
 
@@ -39,10 +41,10 @@ Local dev has no AI key, so the full cited verdict only renders on the deployed 
 
 - The Critic currently red-teams the idea in isolation. Feeding **connected signals** into the teardown ("with receipts" from the operator's own data) is the natural next step and ties into MOAT-VIS.
 - The intake is cold-start only (the build-accept is the first-run). A "tear down any idea, any time" entry for existing users is a fast-follow.
-- The shareable teardown (`F-SHARE-TEARDOWN`, the viral loop) reuses this verdict on the public `/t/$slug` card — full detail in [`shareable-teardowns.md`](./shareable-teardowns.md).
+- The shareable teardown (`F-SHARE-TEARDOWN`, the viral loop) reuses this verdict on the public `/t/$slug` card — full detail in [`shareable-teardowns.md`](./shareable-links.md).
 
 ## Related
 
 - [`critic-agent.md`](./critic-agent.md) — the Critic engine the wedge wires (DEC-02 / DEF-03).
-- [`shareable-decisions.md`](./shareable-decisions.md) — the share rails `F-SHARE-TEARDOWN` will reuse.
+- [`shareable-decisions.md`](./shareable-links.md) — the share rails `F-SHARE-TEARDOWN` will reuse.
 - [Feature dashboard](../planning/feature-dashboard.md) · [v10 implementation plan](../planning/v10_implementation-plan.md).

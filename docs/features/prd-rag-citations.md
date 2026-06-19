@@ -1,5 +1,7 @@
 # Scribe RAG citations (F-SCRIBE-CITATIONS, v4 station SCR-01)
 
+> _Created: 2026-06-11 · Last updated: 2026-06-14_
+
 The Scribe (PRD generation) now retrieves workspace evidence (signals, docs, meetings, notes) and cites it inline. Every generated PRD body contains `[n]`-style markers wherever the model drew from a chunk, and the PRD detail page renders a Citations card linking each entry back to its source row.
 
 ## What ships

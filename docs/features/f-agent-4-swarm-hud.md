@@ -1,5 +1,7 @@
 # F-AGENT-4: Swarm HUD
 
+> _Created: 2026-06-06 · Last updated: 2026-06-14_
+
 > **Status:** ✅ Shipped 2026-06-06 · **Route:** `/swarm` · **Owner agents:** all (read-only HUD)
 
 ## What it does
@@ -25,7 +27,7 @@ F-AGENT-1 made Cadence plan, F-AGENT-2 made it learn, F-AGENT-3 made it react. T
 
 ## Demo script (≤ 90 seconds)
 
-1. Sign in as `demo@redcadence.app` (see [`../demo-credentials.md`](../demo-credentials.md)).
+1. Sign in as `demo@redcadence.app` (see [`../operations/demo-credentials.md`](../operations/demo-credentials.md)).
 2. Click **Agents → Swarm HUD** in the sidebar.
 3. "This is the governor's cockpit. Every panel refreshes every two seconds."
 4. Point at the **Throughput strip**: "Last hour the swarm made N AI calls for $X at p50 Yms, and we caught Z guardrail hits."
@@ -78,7 +80,7 @@ F-AGENT-1 made Cadence plan, F-AGENT-2 made it learn, F-AGENT-3 made it react. T
 
 - [`../../plan.md`](../../plan.md) §4: 2026-06-06 F-AGENT-4 entry
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md): agent orchestration contract (Swarm HUD bullet)
-- [`../feature-backlog.md`](../feature-backlog.md): F-AGENT-4 ledger row
+- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): F-AGENT-4 ledger row
 - [`./f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md), [`./f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md), [`./f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md)
-- [`../trust-and-autonomy.md`](../trust-and-autonomy.md): what the arc pills on the Agents grid mean
-- [`../a2a-handoff.md`](../a2a-handoff.md): the contract behind the Handoff feed
+- [`./trust-and-autonomy.md`](./trust-and-autonomy.md): what the arc pills on the Agents grid mean
+- [`./a2a-handoff.md`](./a2a-handoff.md): the contract behind the Handoff feed

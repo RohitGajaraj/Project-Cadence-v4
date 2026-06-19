@@ -1,5 +1,7 @@
 # Task graph (H1: PRD → engineering plan)
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > Status · Shipped 2026-06-14 (migration `20260614190000` applies on next Lovable sync) · Route `/prds/$id` · Owner: the Planner (Strategist face)
 
 ## What it does
@@ -8,7 +10,7 @@ The Planner step of the golden path: it decomposes an approved spec (PRD) into a
 
 ## Why it exists
 
-Completes the M1 demo path: signals → opportunity → spec → **task graph** → Builder PR + CI. Spec H1 in [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md); build-log [`../../plan.md`](../../plan.md) §4 (2026-06-14 · H1).
+Completes the M1 demo path: signals → opportunity → spec → **task graph** → Builder PR + CI. Spec H1 in [`../strategy/archive/v4-feature-map.md`](../strategy/archive/v4-feature-map.md); build-log [`../../plan.md`](../../plan.md) §4 (2026-06-14 · H1).
 
 ## Where to find it
 

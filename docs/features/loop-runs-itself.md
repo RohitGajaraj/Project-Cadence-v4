@@ -1,14 +1,16 @@
 # v6 Phase 1: The Loop Runs Itself
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > Status · Shipped 2026-06-14 (code on `main`; two migrations apply on the next Lovable sync) · Routes `/missions`, `/missions/$id` · Owner agent `orchestrator` (+ every specialist)
 
 ## What it does
 
-A multi-hop orchestrated mission now runs **unattended**. Once the orchestrator plans the DAG and dispatches the first wave, the system carries the mission to completion on its own: it notices when a specialist finishes, dispatches the steps whose dependencies just cleared, retries a hop that failed transiently, and finalizes when every step is terminal, without the operator pressing **Advance** and without re-invoking the orchestrator LLM each wave. This closes the gap the runtime audit named (Appendix B of the [v6 doc](../strategy/v6-agentic-product-os-2026-06-13.md)): *"mid-loop hops need the orchestrator re-invoked; hop failure stops the mission, no retry."*
+A multi-hop orchestrated mission now runs **unattended**. Once the orchestrator plans the DAG and dispatches the first wave, the system carries the mission to completion on its own: it notices when a specialist finishes, dispatches the steps whose dependencies just cleared, retries a hop that failed transiently, and finalizes when every step is terminal, without the operator pressing **Advance** and without re-invoking the orchestrator LLM each wave. This closes the gap the runtime audit named (Appendix B of the [v6 doc](../strategy/archive/v6-agentic-product-os.md)): *"mid-loop hops need the orchestrator re-invoked; hop failure stops the mission, no retry."*
 
 ## Why it exists
 
-Phase 0 made the Chief of Staff real but left autonomy *claimed* ahead of *wired*: missions stalled after wave-0 because nothing re-fired the orchestrator, a single failed hop killed the branch, the step budget was static, and the `memory_refs[]` contract field added in W5 was never populated. Phase 1 wires all four, the honest next step on the North Star (genuine autonomous end-to-end execution under governance), per [`plan.md`](../../plan.md) §4 (2026-06-14 entry) and [v6 §9](../strategy/v6-agentic-product-os-2026-06-13.md).
+Phase 0 made the Chief of Staff real but left autonomy *claimed* ahead of *wired*: missions stalled after wave-0 because nothing re-fired the orchestrator, a single failed hop killed the branch, the step budget was static, and the `memory_refs[]` contract field added in W5 was never populated. Phase 1 wires all four, the honest next step on the North Star (genuine autonomous end-to-end execution under governance), per [`plan.md`](../../plan.md) §4 (2026-06-14 entry) and [v6 §9](../strategy/archive/v6-agentic-product-os.md).
 
 ## Where to find it
 
@@ -58,5 +60,5 @@ Phase 0 made the Chief of Staff real but left autonomy *claimed* ahead of *wired
 
 - [`../../plan.md`](../../plan.md) §4: 2026-06-14 build-log entry
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md): orchestration contract
-- [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md) §9 (Phase 1) + Appendix B
+- [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md) §9 (Phase 1) + Appendix B
 - Siblings: [`f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md) · [`f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md)

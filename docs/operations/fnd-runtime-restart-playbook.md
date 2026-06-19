@@ -1,5 +1,7 @@
 # FND-RUNTIME 0.9 — Forced-restart verification playbook
 
+> _Created: 2026-06-06 · Last updated: 2026-06-11_
+
 > **Purpose.** Prove, with an operator's own hands, that a long Cadence mission survives a Cloudflare Worker restart mid-loop: the run resumes from its last checkpoint, every idempotent external write (GitHub PR, follow-up commit, CI read, issue create) returns its cached result instead of double-acting, and the operator sees one continuous mission timeline. This is the test that flips foundation-audit row **0.9 Durable runtime** from 🟡 → ✅.
 
 ## What's already in place (substrate)
@@ -53,7 +55,7 @@ On a clean pass, in one commit:
 
 - Flip foundation-audit row **0.9** to ✅ with the run date and a one-line note.
 - Flip the Live status board's "Step 1 forced-restart test still ◑" → ✅.
-- Append a one-liner to [`../plan.md`](../plan.md) §4 with the run date and WHY.
+- Append a one-liner to [`../../plan.md`](../../plan.md) §4 with the run date and WHY.
 
 ## Out of scope
 
@@ -63,6 +65,6 @@ On a clean pass, in one commit:
 
 ## Related
 
-- Foundation audit: [`./foundation-audit.md`](./foundation-audit.md) row 0.9.
-- Bundle 9 (the mission this playbook runs against): [`./features/bundle-9-builder.md`](./features/bundle-9-builder.md).
-- Runtime architecture: [`../architecture/runtime.md`](../architecture/runtime.md).
+- Foundation audit: [`../planning/archive/foundation-audit.md`](../planning/archive/foundation-audit.md) row 0.9.
+- Bundle 9 (the mission this playbook runs against): [`../features/bundle-9-builder.md`](../features/archive/bundle-9-builder.md).
+- Runtime architecture: [`../../architecture/runtime.md`](../../architecture/runtime.md).

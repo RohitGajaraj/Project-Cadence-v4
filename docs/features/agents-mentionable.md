@@ -1,5 +1,7 @@
 # F-AGENTS-MENTIONABLE: @-mention an agent in chat
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Type `@strategist draft a PRD for off-hours routing` in Ask and the mission starts with the Strategist directly, skipping the orchestrator's planning step. The named specialist is the lead; the rest of the mission machinery (dispatch, handoffs, approvals, completion, decision capture) is unchanged.
 
 **Status:** ✅ Shipped 2026-06-18 (server) + 2026-06-18 cycle 21 (composer picker + case-insensitive parse). Live-verify on the next publish. **Surface:** `/chat` (Ask). **Spec source:** SSOT §3 (strategic rank #2, "felt agentic command"); v10 master blueprint Missions row ("@-mentionable agents").

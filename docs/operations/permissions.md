@@ -1,5 +1,7 @@
 # Permissions policy (how the agent gets hands-off access, safely)
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > The standing rule for how an agent (Claude Code or any tool) runs without a permission prompt on every read, edit, and command, while a hard deny list still blocks destructive actions. This applies to **both** modes: the overnight autonomous loop **and** a regular daytime build. Set it once per machine and it carries forward.
 
 ## The two-layer model
@@ -61,4 +63,4 @@ Read/Edit/Write/Glob/Grep on all paths; WebSearch + WebFetch; and the safe shell
 
 - [`autonomous-build-loop.md`](./autonomous-build-loop.md) §11 (how to run the loop hands-off) points here for the permission detail.
 - [`hooks.md`](./hooks.md) — the hooks that enforce commit/migration invariants (a separate guard rail from permissions).
-- [`git-discipline.md`](./git-discipline.md) — why the deny list blocks force-push / hard-reset (parallel sessions share a working tree).
+- [`git-discipline.md`](./commits.md) — why the deny list blocks force-push / hard-reset (parallel sessions share a working tree).

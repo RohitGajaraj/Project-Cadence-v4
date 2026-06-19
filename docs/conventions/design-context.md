@@ -1,10 +1,12 @@
 # Convention: design context loads by default
 
+> _Created: 2026-06-16 · Last updated: 2026-06-18_
+
 **Status: standing rule, founder ruling 2026-06-16.** Any time we touch design work (a new surface, a redesign, a visual or interaction change), this context is loaded and considered automatically. It is the standing design brief, not re-litigated each time.
 
 ## Load these, every design task
 
-1. **The Ember Editorial system (the system of record):** [`../../design.md`](../../design.md) + `src/styles.css` tokens. Warm parchment canvas, espresso/cacao ink, the role-color law (ember = needs-human only; indigo = live/links; orchid = agent; moss/madder = outcomes), Newsreader serif display, Schibsted Grotesk UI, JetBrains Mono metadata, verdict chips, hand-sketched data marks. Reuse `.bento` / `.hero-editorial` / `.mono-label`; invent no colors.
+1. **The Ember Editorial system (the system of record):** [`../../DESIGN.md`](../../DESIGN.md) + `src/styles.css` tokens. Warm parchment canvas, espresso/cacao ink, the role-color law (ember = needs-human only; indigo = live/links; orchid = agent; moss/madder = outcomes), Newsreader serif display, Schibsted Grotesk UI, JetBrains Mono metadata, verdict chips, hand-sketched data marks. Reuse `.bento` / `.hero-editorial` / `.mono-label`; invent no colors.
 2. **The design-craft skills (consult for taste + interaction):** `impeccable` (design quality + the AI-slop bans: no identical card grids, no hero-metric template), `emil-design-eng` (Emil Kowalski's interaction-craft: easing, timing, restraint), and the taste skills (`gpt-taste`, `design-taste-frontend`, `make-interfaces-feel-better`).
 3. **The reference north-stars (the founder's chosen bar):**
    - **interfacecraft.dev** - "designing with uncommon care", reduce until clear, timeless restraint, generous whitespace, color from a crafted object not from UI chrome. The bar for restraint.
@@ -34,4 +36,4 @@ At the start of any design work, hold all three (system + skills + references) i
 ## Related
 
 - [`home-and-today-ia.md`](./home-and-today-ia.md) · [`humanized-output.md`](./humanized-output.md) · [`ui-voice.md`](./ui-voice.md) · [`ui-chrome.md`](./ui-chrome.md).
-- [`../../design.md`](../../design.md) (Ember Editorial system of record).
+- [`../../DESIGN.md`](../../DESIGN.md) (Ember Editorial system of record).

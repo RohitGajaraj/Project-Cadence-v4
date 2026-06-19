@@ -1,5 +1,7 @@
 # P7 · Incidents log
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Status · Core shipped 2026-06-18 (autonomous overnight cycle 3) · Guardrail source added 2026-06-18 (cycle 16) · Route: `/govern?tab=incidents` · Owner: operator-facing, read-only
 
 ## What it does

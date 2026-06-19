@@ -1,5 +1,7 @@
 # Workspaces, Accounts & Tenancy
 
+> _Created: 2026-06-19 · Last updated: 2026-06-19_
+
 > **Status: SPEC (2026-06-19), build pending.** Operator-facing description of the account / workspace / product model and its lifecycle. The **build source of truth** (per-ID specs, migrations, files, acceptance, verification) is [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md); the live status board is group **G10** in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md). This doc does not duplicate the plan; it links to it.
 
 ## The model (three levels)
@@ -36,5 +38,5 @@ Every new account will land in a richly seeded sample workspace (proposed "North
 - Build SoT: [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md)
 - Status board: [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (group G10)
 - Pricing: [`pricing.md`](./pricing.md)
-- Monetization canon: [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) §5.5
+- Monetization canon: [`../strategy/byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md) §5.5
 - Security / RLS: [`../../architecture/security.md`](../../architecture/security.md) · Data model: [`../../architecture/data.md`](../../architecture/data.md)

@@ -1,6 +1,8 @@
 # docs/auth-flows.md: Authentication flows
 
-> How users sign in, sign up, recover access, and manage their session. Tightly coupled to [`architecture/security.md`](../architecture/security.md).
+> _Created: 2026-06-06 · Last updated: 2026-06-18_
+
+> How users sign in, sign up, recover access, and manage their session. Tightly coupled to [`architecture/security.md`](../../architecture/security.md).
 
 ## Supported methods
 
@@ -86,10 +88,10 @@ Below the password field, a "Forgot password?" link routes to `/forgot-password`
 
 ## Demo accounts
 
-See [`demo-credentials.md`](./demo-credentials.md) for pre-provisioned accounts used in demos and screen recordings.
+See [`demo-credentials.md`](../operations/demo-credentials.md) for pre-provisioned accounts used in demos and screen recordings.
 
 ## Related
 
-- [`architecture/security.md`](../architecture/security.md): Auth, tenancy, RLS, and governance.
-- [`architecture/frontend.md`](../architecture/frontend.md): Route and loader patterns.
-- [`demo-credentials.md`](./demo-credentials.md): Demo login details.
+- [`architecture/security.md`](../../architecture/security.md): Auth, tenancy, RLS, and governance.
+- [`architecture/frontend.md`](../../architecture/frontend.md): Route and loader patterns.
+- [`demo-credentials.md`](../operations/demo-credentials.md): Demo login details.

@@ -1,5 +1,7 @@
 # C4 / E7 · Agent inspector (run history)
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Status · Shipped 2026-06-18 (autonomous overnight cycles 4 to 5) · Route: `/missions?tab=agents` · Owner: operator-facing, read-only
 
 ## What it does

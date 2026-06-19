@@ -1,5 +1,7 @@
 # O1 (provenance slice) - "why is this on the roadmap?"
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 **Status:** ◐ Partial (provenance on the opportunity drill shipped 2026-06-18; extended to the spec/PRD detail 2026-06-18 12:48; surfaced in the shared Lineage drawer 2026-06-18 cycle 19; a full typed-graph explorer + O3 drift/skill-packs remain). **Lane:** G1 Sense & Discovery.
 
 ## What it delivers

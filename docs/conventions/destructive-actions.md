@@ -1,5 +1,7 @@
 # Convention: Destructive action pattern
 
+> _Created: 2026-06-06 · Last updated: 2026-06-11_
+
 **Rule.**
 
 | Action class                                                                                  | Pattern                                                                                                                                   |
@@ -10,7 +12,7 @@
 
 **Copy pattern.** Name the effect. _"This deletes 3 missions. Continue?"_ — not _"Are you sure you want to proceed?"_.
 
-**Why.** One operator-typed string is the difference between "I deleted the wrong workspace" and a non-issue. Cheap insurance. "Are you sure?" on reversible actions is an anti-pattern (see [`../../design.md`](../../design.md) anti-patterns) — Undo respects flow.
+**Why.** One operator-typed string is the difference between "I deleted the wrong workspace" and a non-issue. Cheap insurance. "Are you sure?" on reversible actions is an anti-pattern (see [`../../DESIGN.md`](../../DESIGN.md) anti-patterns) — Undo respects flow.
 
 **How to apply.** When introducing a delete/remove flow:
 

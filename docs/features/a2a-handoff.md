@@ -1,5 +1,7 @@
 # Agent-to-Agent (A2A) Handoff
 
+> _Created: 2026-06-04 · Last updated: 2026-06-14_
+
 > Canonical guide to **Bundle 4 (E1 to E5)**, the moment Cadence stops being a
 > single-agent loop and becomes a multi-agent system. This is where claim
 > **C2** ("agent-to-agent handoff is first-class, no human in the routing

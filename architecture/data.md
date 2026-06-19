@@ -1,5 +1,7 @@
 # architecture/data.md — Data layer contract
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > Supabase Postgres + RLS + pgvector + pg_cron. Rules: [`AGENTS.md`](../AGENTS.md). Runtime: [`runtime.md`](./runtime.md).
 
 ## The one rule

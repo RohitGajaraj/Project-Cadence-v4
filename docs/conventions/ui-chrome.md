@@ -1,5 +1,7 @@
 # Convention: No native browser chrome
 
+> _Created: 2026-06-06 · Last updated: 2026-06-19_
+
 **Rule.** Never use `window.alert`, `window.confirm`, `window.prompt`, `window.open`, `window.onbeforeunload`, or the native HTML `<dialog>` element anywhere in `src/**`. ESLint enforces this in [`../../eslint.config.js`](../../eslint.config.js) (`no-restricted-globals` + `no-restricted-syntax`). Allow-listed exception: [`../../src/lib/error-page.ts`](../../src/lib/error-page.ts) (pre-bootstrap fallback only).
 
 **Use instead.**
@@ -33,4 +35,4 @@ Should return zero hits outside the allow-list.
 
 - [`../../architecture/frontend.md`](../../architecture/frontend.md) — "Confirmation, toasts & dialogs" (contract restatement + primitive paths).
 - [`./destructive-actions.md`](./destructive-actions.md) — typed-name match pattern for irreversible deletes.
-- [`../strategy/archive/v3-audit-language-voice-2026-06-06.md`](../strategy/archive/v3-audit-language-voice-2026-06-06.md) §4 — the popup sweep (12 call sites replaced).
+- [`../strategy/archive/v3-audit-language-voice.md`](../strategy/archive/v3-audit-language-voice.md) §4 — the popup sweep (12 call sites replaced).

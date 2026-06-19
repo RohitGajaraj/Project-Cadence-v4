@@ -321,7 +321,7 @@ update positioning, update the latest docs/strategy/vN file and cascade to READM
 
 FINDING THE LATEST POSITIONING:
 Always open docs/strategy/README.md first — it indexes all versions and marks
-which is current. As of writing the canon is layered: v10 governs build-next, v7 positioning, v8 structure/IA, v9 the decision wedge; v5-chief-of-staff-2026-06-11.md holds wedge UX detail; v4-feature-map-2026-06-11.md is the expansion/engine map (personas in v3-positioning-cadence-2026-06-10.md; superseded iterations in docs/strategy/archive/ and docs/planning/archive/).
+which is current. As of writing the canon is layered: v10 governs build-next, v7 positioning, v8 structure/IA, v9 the decision wedge; v5-chief-of-staff.md holds wedge UX detail; v4-feature-map.md is the expansion/engine map (personas in v3-positioning-cadence.md; superseded iterations in docs/strategy/archive/ and docs/planning/archive/).
 A newer version may exist by the time you read this. Always read the latest.
 
 ================================================================================

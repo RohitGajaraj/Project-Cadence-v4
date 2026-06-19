@@ -1,5 +1,7 @@
 # M-C: Pricing, plans, and entitlements (the monetization foundation)
 
+> _Created: 2026-06-16 · Last updated: 2026-06-19_
+
 > Status · Foundation built 2026-06-16 (migration `20260616200000` applies on the next Lovable sync). Live charging waits on the founder provisioning Stripe keys. Route: Settings -> Plan (`/settings?section=billing`).
 
 ## What it does
@@ -62,5 +64,5 @@ Point the Stripe webhook at `https://<app>/api/stripe/webhook` for the `checkout
 
 ## Related
 
-- [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) section 9 (pricing) + section 8 (the gauntlet).
+- [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) section 9 (pricing) + section 8 (the gauntlet).
 - [`../../plan.md`](../../plan.md) section 4 build log.

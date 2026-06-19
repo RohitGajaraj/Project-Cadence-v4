@@ -1,17 +1,19 @@
 # subagents.md — Working with engineering subagents
 
-> How to pick, brief, and trust the agents you (Claude / Codex / Antigravity / Gemini) delegate to. Operating rules: [`AGENTS.md`](./AGENTS.md). Skills: [`skills.md`](./skills.md).
+> _Created: 2026-06-11 · Last updated: 2026-06-11_
+
+> How to pick, brief, and trust the agents you (Claude / Codex / Antigravity / Gemini) delegate to. Operating rules: [`AGENTS.md`](../../AGENTS.md). Skills: [`skills.md`](./skills.md).
 >
-> **Note on naming:** this file is `subagents.md`, not `agents.md`, to avoid a case-insensitive collision with the cross-tool standard [`AGENTS.md`](./AGENTS.md). Two different concepts; two different files.
+> **Note on naming:** this file is `subagents.md`, not `agents.md`, to avoid a case-insensitive collision with the cross-tool standard [`AGENTS.md`](../../AGENTS.md). Two different concepts; two different files.
 
 ## Two kinds of "agent" — do not confuse them
 
 | Kind                      | What it is                                                                                                                                                                                                                                                                                                                                          | Where it lives                                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Product agents**        | The in-product specialists Cadence runs for the user — 6 outcome-focused durable agents (Orchestrator, Discovery, Strategist, Builder, Growth, Analyst) plus ephemeral specialists spawned by Orchestrator per task. Each agent owns a clear lifecycle band; fixed seats for micro-roles are avoided. Full roster with persona mapping: plan.md §6. | Seeded in the `agents` table. Configured via `system_prompt`, `tool_allowlist`, `default_model`, `temperature`, `approval_mode`, `memory_enabled`. Full roster and rationale: [`plan.md`](./plan.md) §6. |
+| **Product agents**        | The in-product specialists Cadence runs for the user — 6 outcome-focused durable agents (Orchestrator, Discovery, Strategist, Builder, Growth, Analyst) plus ephemeral specialists spawned by Orchestrator per task. Each agent owns a clear lifecycle band; fixed seats for micro-roles are avoided. Full roster with persona mapping: plan.md §6. | Seeded in the `agents` table. Configured via `system_prompt`, `tool_allowlist`, `default_model`, `temperature`, `approval_mode`, `memory_enabled`. Full roster and rationale: [`plan.md`](../../plan.md) §6. |
 | **Engineering subagents** | The ones you delegate to via the `Agent`/Task tool.                                                                                                                                                                                                                                                                                                 | Provided by the harness + plugins. Active list appears in the session reminder.                                                                                                                          |
 
-This doc is meta-guidance for **engineering agents & subagents**. Product agents are a product capability — schema changes need a migration and a [`plan.md`](./plan.md) update.
+This doc is meta-guidance for **engineering agents & subagents**. Product agents are a product capability — schema changes need a migration and a [`plan.md`](../../plan.md) update.
 
 ## When to delegate
 

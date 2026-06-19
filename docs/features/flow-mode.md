@@ -1,5 +1,7 @@
 # Flow mode (OPS-01)
 
+> _Created: 2026-06-16 · Last updated: 2026-06-17_
+
 > A calm operating stance you turn on from the sidebar footer. The chrome
 > recedes, an ambient soundscape plays, a focus timer runs, and non-urgent
 > notifications wait quietly until you come back. Status: shipped 2026-06-16.

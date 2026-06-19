@@ -1,5 +1,7 @@
 # Auth + backend ownership runbook (leave Lovable Cloud, own Supabase + Google OAuth)
 
+> _Created: 2026-06-17 · Last updated: 2026-06-17_
+
 > **Status: DEFERRED, staying on Lovable Cloud for now.** Written 2026-06-17. Founder decided on
 > 2026-06-17 to stay on Lovable for now and migrate later when ready, to avoid friction before the
 > first demo. Keep this runbook current; execute when the founder gives the signal. This is the

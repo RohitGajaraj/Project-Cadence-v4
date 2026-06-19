@@ -1,5 +1,7 @@
 # Q1-MCP · Read-only Model Context Protocol (MCP) server
 
+> _Created: 2026-06-17 · Last updated: 2026-06-17_
+
 **Status:** ◐ Partial (Phases 1-3 complete: backend + token UI shipped; Phase 4 / Q2 future)  
 **Lanes:** F (INTEROP / the neutral brain)  
 **P-tier:** P1 (pull forward — the neutral-brain moat)  

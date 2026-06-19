@@ -1,5 +1,7 @@
 # Decision: Tech stack — keep, change, and the open-source question
 
+> _Created: 2026-06-03 · Last updated: 2026-06-11_
+
 > Status: **DECISION BRIEF (for the founder to confirm).** Date: 2026-05-29. Owner: founder. Rules: [`../../AGENTS.md`](../../AGENTS.md), section 9 (open-source discipline). Stack as implemented: [`../../plan.md`](../../plan.md).
 
 This brief answers four questions you asked directly:

@@ -1,5 +1,7 @@
 ---
 version: 2.0
+created: 2026-06-12
+updated: 2026-06-12
 name: cadence-ember-editorial
 product: "Project Cadence — agentic product-operations platform"
 description: >
@@ -50,6 +52,8 @@ motion:
 ---
 
 # Cadence Design — "Ember Editorial" · Source of Truth
+
+> _Created: 2026-06-12 · Last updated: 2026-06-12_
 
 Cadence is a platform where a swarm of specialist agents (Scout, Scribe,
 Builder, Marketer, Historian…) runs the product loop — signals → opportunities

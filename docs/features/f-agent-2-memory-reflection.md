@@ -1,5 +1,7 @@
 # F-AGENT-2: Persistent agent memory + self-reflection + trust auto-advance
 
+> _Created: 2026-06-06 · Last updated: 2026-06-14_
+
 > **Status:** ✅ Shipped 2026-06-06 · **Route:** `/agents` (Recent reflections panel) · **Owner agents:** all
 
 ## What it does
@@ -57,5 +59,5 @@ Without memory, every run started from scratch and trust never moved. F-AGENT-2 
 
 - [`../../plan.md`](../../plan.md) §4, 2026-06-06 F-AGENT-2 entry
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md), orchestration contract (F-AGENT-2 bullet)
-- [`../trust-and-autonomy.md`](../trust-and-autonomy.md), the trust arcs and how they gate approvals
+- [`./trust-and-autonomy.md`](./trust-and-autonomy.md), the trust arcs and how they gate approvals
 - [`./f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md), [`./f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md), [`./f-agent-4-swarm-hud.md`](./f-agent-4-swarm-hud.md)

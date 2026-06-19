@@ -1,6 +1,8 @@
 # architecture/threat-model.md: v7 threat model (STRIDE)
 
-> **What this is.** The adversary's view of Cadence: the assets worth attacking, how each could be spoofed, tampered with, disclosed, denied, or escalated, and the control that stops it today (Built) or is owed (Partial / Planned). It is the security companion to [`security.md`](./security.md), which holds the auth, RLS, tenancy, secrets, and governance *model*. This file does not restate that model, it stress-tests it. Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). Rules: [`../AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
+> **What this is.** The adversary's view of Cadence: the assets worth attacking, how each could be spoofed, tampered with, disclosed, denied, or escalated, and the control that stops it today (Built) or is owed (Partial / Planned). It is the security companion to [`security.md`](./security.md), which holds the auth, RLS, tenancy, secrets, and governance *model*. This file does not restate that model, it stress-tests it. Strategy canon: [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). Rules: [`../AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
 Honesty rule (claim-never-outruns-wiring): a threat model that overstates its defenses is worse than none. Every control below is tagged **Built** (wired in `main`), **Partial** (wired but with a known gap), or **Planned** (designed, not yet wired). The §13 honesty ruling in the v7 canon makes this a legal stance, not just an engineering one.
 
@@ -212,5 +214,5 @@ Threat-surface change (new anon table, new tool, new inbound route, new secret, 
 - [`orchestration.md`](./orchestration.md): the agent loop, approval gates, and mission lifecycle.
 - [`runtime.md`](./runtime.md): the AI chokepoint, guardrails, and the humanized-output sanitizer.
 - [`integrations.md`](./integrations.md): connector credential chain, capability scopes, rate limits.
-- [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md): the positioning, the honesty ruling, and the M-0 unblock the live gaps map to.
+- [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md): the positioning, the honesty ruling, and the M-0 unblock the live gaps map to.
 - [`../docs/conventions/humanized-output.md`](../docs/conventions/humanized-output.md): the voice rule this document is written to.

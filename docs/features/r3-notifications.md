@@ -1,5 +1,7 @@
 # R3 · Notifications (in-app Attention feed)
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Status · Core feed shipped 2026-06-18 (autonomous overnight cycle 2) · Global bell shipped 2026-06-18 (cycle 15) · Drift alerts (P5-ALERT) shipped 2026-06-18 (cycle 22) · Route: `/govern?tab=attention` · Owner: operator-facing, read-only
 
 ## What it does

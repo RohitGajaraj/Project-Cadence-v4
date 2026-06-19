@@ -1,5 +1,7 @@
 # Convention: UI voice & language
 
+> _Created: 2026-06-06 · Last updated: 2026-06-19_
+
 **Voice anchor.** Human, clear, lightly playful in safe places (empty states, success toasts). Dry in governance, errors, and destructive flows. Contractions on. Active voice. One idea per sentence. Linear-leaning, warmer in empty states.
 
 **Length budgets.**
@@ -33,6 +35,6 @@ rg -i "seamless|leverage|empower|unlock|delve|at the intersection" <changed file
 
 ## Related
 
-- [`../../design.md`](../../design.md) — "Voice & language" contract section (restatement that authors hit when designing).
-- [`../strategy/archive/v3-audit-language-voice-2026-06-06.md`](../strategy/archive/v3-audit-language-voice-2026-06-06.md) — full AI-tell audit + P1 sweep targets.
-- [`../strategy/archive/v3-audit-language-2026-06-06.md`](../strategy/archive/v3-audit-language-2026-06-06.md) — naming integrity matrix, tooltip audit.
+- [`../../DESIGN.md`](../../DESIGN.md) — "Voice & language" contract section (restatement that authors hit when designing).
+- [`../strategy/archive/v3-audit-language-voice.md`](../strategy/archive/v3-audit-language-voice.md) — full AI-tell audit + P1 sweep targets.
+- [`../strategy/archive/v3-audit-language.md`](../strategy/archive/v3-audit-language.md) — naming integrity matrix, tooltip audit.

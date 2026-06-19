@@ -1,5 +1,7 @@
 # Tab icon tones
 
+> _Created: 2026-06-06 · Last updated: 2026-06-11_
+
 Tabbed surfaces (Observe, Governance, and any future grouped page) get a small colored icon chip per tab so each section has a distinct spotlight.
 
 ## Pattern

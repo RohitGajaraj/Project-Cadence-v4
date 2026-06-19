@@ -1,10 +1,12 @@
 # AI Agent Trends 2026 — Google Cloud + DeepMind (reference digest)
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > **What this is.** A faithful, page-cited digest of the Google Cloud / Google DeepMind report **"AI Agent Trends 2026"** (49 pp, published 2025 for 2026 readiness). Founder-supplied 2026-06-14 as standing reference for positioning, product, and GTM planning. **Read this instead of re-opening the PDF.** Source file (not committed — 13 MB binary): `~/Downloads/AI Agent Trends 2026.pdf`.
 >
-> **Why it matters to us.** This is the enterprise-buyer worldview for agentic AI in 2026. It independently names the role we productize ("Chief of Staff for AI"), and its core prescriptions — grounding, human-in-the-loop, specialized agent rosters, augmentation-not-replacement — line up with our v6 direction. The convergence write-up is in [`external-strategy-synthesis-2026-06-14.md`](./external-strategy-synthesis-2026-06-14.md).
+> **Why it matters to us.** This is the enterprise-buyer worldview for agentic AI in 2026. It independently names the role we productize ("Chief of Staff for AI"), and its core prescriptions — grounding, human-in-the-loop, specialized agent rosters, augmentation-not-replacement — line up with our v6 direction. The convergence write-up is in [`external-strategy-synthesis.md`](./external-strategy-synthesis.md).
 >
-> **Cross-references.** Companion startup-playbook digest → [`future-of-ai-startups-2025-gcp.md`](./future-of-ai-startups-2025-gcp.md). Our market scan → [`competitive-landscape-2026-06-11.md`](./competitive-landscape-2026-06-11.md). Current positioning canon → [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md).
+> **Cross-references.** Companion startup-playbook digest → [`future-of-ai-startups-2025-gcp.md`](./future-of-ai-startups-2025-gcp.md). Our market scan → [`competitive-landscape.md`](./competitive-landscape.md). Current positioning canon → [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md).
 
 ---
 
@@ -74,4 +76,4 @@ Agentic AI (systems that *understand a goal, make a plan, and take actions acros
 
 ---
 
-**Related:** [`future-of-ai-startups-2025-gcp.md`](./future-of-ai-startups-2025-gcp.md) · [`external-strategy-synthesis-2026-06-14.md`](./external-strategy-synthesis-2026-06-14.md) · [`competitive-landscape-2026-06-11.md`](./competitive-landscape-2026-06-11.md) · [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md)
+**Related:** [`future-of-ai-startups-2025-gcp.md`](./future-of-ai-startups-2025-gcp.md) · [`external-strategy-synthesis.md`](./external-strategy-synthesis.md) · [`competitive-landscape.md`](./competitive-landscape.md) · [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md)

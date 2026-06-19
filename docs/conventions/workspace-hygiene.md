@@ -1,5 +1,7 @@
 # Convention: working-tree hygiene (no clutter at the root)
 
+> _Created: 2026-06-16 · Last updated: 2026-06-16_
+
 > Standing rule. The repo working tree stays clean: no images at the root or `docs/` top level, and no macOS FS-duplication artifacts anywhere. Every captured image has one logical home by scenario with a retention window, and stray images + `" 2"`-style duplicates are swept by one janitor. This is enforced, not advisory.
 
 ## Why this exists

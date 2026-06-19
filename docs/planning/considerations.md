@@ -1,16 +1,18 @@
 # docs/considerations.md — Holistic gap review (enterprise-architect lens)
 
+> _Created: 2026-06-11 · Last updated: 2026-06-19_
+
 > **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the cross-cutting engineering gap register it points to, not the tracker to follow day-to-day.
 
-> Status: **STANDING REVIEW.** A deliberate, multi-stakeholder pass over what the rest of the docs have _not_ yet called out — written wearing the hats of enterprise architect, CISO, SRE, data/privacy officer, finance, legal, GTM, support, and founder. Goal: surface what an enterprise-grade build needs so nothing blindsides us later. Operating rules: [`AGENTS.md`](../AGENTS.md). Feature scope: [`../plan.md`](../plan.md). Architecture: [`../architecture/`](../architecture/).
+> Status: **STANDING REVIEW.** A deliberate, multi-stakeholder pass over what the rest of the docs have _not_ yet called out — written wearing the hats of enterprise architect, CISO, SRE, data/privacy officer, finance, legal, GTM, support, and founder. Goal: surface what an enterprise-grade build needs so nothing blindsides us later. Operating rules: [`AGENTS.md`](../../AGENTS.md). Feature scope: [`../../plan.md`](../../plan.md). Architecture: [`../architecture/`](../architecture/).
 >
-> **How to use this:** each item is a _gap to close_, not a feature already built. Pull each into [`../plan.md`](../plan.md) (sections 2/3) as it becomes relevant.
+> **How to use this:** each item is a _gap to close_, not a feature already built. Pull each into [`../../plan.md`](../../plan.md) (sections 2/3) as it becomes relevant.
 >
 > **Priority precedence — P0 is highest, P2 is lowest. Do P0 first.** **P0** = needed for a credible first real user (build into the foundation now); **P1** = needed before/at the first enterprise sale; **P2** = scale/maturity. When in doubt, sequence P0 → P1 → P2.
 
 ## Already covered (don't duplicate — pointers)
 
-Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../architecture/security.md`](../architecture/security.md). Orchestration, parallelism, multi-product isolation → [`../architecture/orchestration.md`](../architecture/orchestration.md). AI telemetry, evals, guardrails, budgets, drift → [`../architecture/runtime.md`](../architecture/runtime.md). Data model, migrations, pgvector → [`../architecture/data.md`](../architecture/data.md). a11y, design states → [`../design.md`](../design.md). Stack/OSS/lock-in → [`decisions/tech-stack.md`](./decisions/tech-stack.md). The items below are the _gaps beyond_ those.
+Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../../architecture/security.md`](../../architecture/security.md). Orchestration, parallelism, multi-product isolation → [`../../architecture/orchestration.md`](../../architecture/orchestration.md). AI telemetry, evals, guardrails, budgets, drift → [`../../architecture/runtime.md`](../../architecture/runtime.md). Data model, migrations, pgvector → [`../../architecture/data.md`](../../architecture/data.md). a11y, design states → [`../../design.md`](../../design.md). Stack/OSS/lock-in → [`../decisions/tech-stack.md`](../decisions/tech-stack.md). The items below are the _gaps beyond_ those.
 
 ## The five that will blindside us first (read these if nothing else)
 
@@ -32,13 +34,13 @@ This is the core role Cadence is built for and the lens that _generates_ the fea
 
 | Gap / need (from the PM's day)                                      | Why it matters                                                                                         | Priority |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------- |
-| The whole day runnable end-to-end by agents (inbox → ship → report) | This _is_ the product; every lifecycle stage in [`../plan.md`](../plan.md) section 2 maps to a PM task | P0       |
+| The whole day runnable end-to-end by agents (inbox → ship → report) | This _is_ the product; every lifecycle stage in [`../../plan.md`](../../plan.md) section 2 maps to a PM task | P0       |
 | "Why is this on the roadmap?" answerable with cited evidence        | The recurring senior-PM justification burden; the Product Memory + decisions graph answers it          | P0/P1    |
 | One-keystroke status/stakeholder updates from live state            | Coordination overhead is the #1 PM time-sink                                                           | P1       |
 | Outcome-oriented roadmap (not feature lists)                        | Anti-feature-factory; ties work to measurable outcomes                                                 | P1       |
 | The PM stays the approver/orchestrator, never the bottleneck        | Trust + control without doing the mechanical work                                                      | P0       |
 
-Personas detail (P1-founder, P2-lead PM, P3-technical founder) and the derived feature list: [`../plan.md`](../plan.md) section 1-2.
+Personas detail (P1-founder, P2-lead PM, P3-technical founder) and the derived feature list: [`../../plan.md`](../../plan.md) section 1-2.
 
 ### Engineering manager / lead (secondary, but real)
 
@@ -51,7 +53,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | Visibility into what agents changed and why (diffs, traces)        | Trust in autonomous engineering                   | P0       |
 | Respect for branch protection, CI gates, review policy             | Fits existing eng process, not around it          | P1       |
 
-### Security / CISO (beyond [`security.md`](../architecture/security.md))
+### Security / CISO (beyond [`security.md`](../../architecture/security.md))
 
 | Gap                                            | Why it matters                                                             | Priority |
 | ---------------------------------------------- | -------------------------------------------------------------------------- | -------- |
@@ -136,11 +138,11 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | ToS, privacy policy, AUP, DPA                  | Required to sell                                 | P1       |
 | IP ownership of agent-generated code/content   | Who owns what the agent makes?                   | P1       |
 | Liability for autonomous actions               | The governance gates are part of the answer      | P1       |
-| OSS license compliance of agent-installed deps | Ties to [`../AGENTS.md`](../AGENTS.md) section 9 | P1       |
+| OSS license compliance of agent-installed deps | Ties to [`../../AGENTS.md`](../../AGENTS.md) section 9 | P1       |
 | SOC 2 / ISO 27001 / ISO 42001 (AI) path        | Enterprise gate; substrate exists in security.md | P2       |
 
 ---
 
 ## How this feeds the plan
 
-[`../plan.md`](../plan.md) section 2 carries the _product_ features; this doc carries the _cross-cutting non-functional_ requirements. The build order ([`../plan.md`](../plan.md) section 3) should pull P0 items into the foundation (especially agent blast-radius, cost controls, injection defense, provider fallback, and runtime durability) — they are architecture, not afterthoughts. The SSOT task queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md)) and the F-ID scope ledger ([`feature-backlog.md`](./feature-backlog.md)) point back here. Revisit this review whenever scope expands.
+[`../../plan.md`](../../plan.md) section 2 carries the _product_ features; this doc carries the _cross-cutting non-functional_ requirements. The build order ([`../../plan.md`](../../plan.md) section 3) should pull P0 items into the foundation (especially agent blast-radius, cost controls, injection defense, provider fallback, and runtime durability) — they are architecture, not afterthoughts. The SSOT task queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md)) and the F-ID scope ledger ([`feature-backlog.md`](./feature-backlog.md)) point back here. Revisit this review whenever scope expands.

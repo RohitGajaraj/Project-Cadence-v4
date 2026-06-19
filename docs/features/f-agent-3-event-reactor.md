@@ -1,5 +1,7 @@
 # F-AGENT-3: Event reactor + auto-pipelines
 
+> _Created: 2026-06-06 · Last updated: 2026-06-14_
+
 > **Status:** ✅ Shipped 2026-06-06 · **Route:** `/governance` (Auto-pipelines · Reactor activity) · **Owner agents:** any agent named as a target in a subscription
 
 ## What it does

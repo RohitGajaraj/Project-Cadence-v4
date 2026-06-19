@@ -1,6 +1,8 @@
 # memory.md — Memory layers (User Memory + Project Memory)
 
-> Cadence's work spans two distinct memory stores. They sound similar ("memory" vs "remember") — so this file names them clearly and says exactly **where each lives and what goes in it.** Operating rules: [`AGENTS.md`](./AGENTS.md). Session boot via hooks: [`hooks.md`](./hooks.md).
+> _Created: 2026-06-11 · Last updated: 2026-06-11_
+
+> Cadence's work spans two distinct memory stores. They sound similar ("memory" vs "remember") — so this file names them clearly and says exactly **where each lives and what goes in it.** Operating rules: [`AGENTS.md`](../../AGENTS.md). Session boot via hooks: [`hooks.md`](./hooks.md).
 
 ## The two layers at a glance
 
@@ -26,7 +28,7 @@ Persistent across sessions and projects. Four types: `user`, `feedback`, `projec
 | `project`   | Cross-project initiatives, deadlines, motivations. Convert relative dates to absolute.                                                  |
 | `reference` | Pointers to external systems (Linear projects, Slack channels, dashboards).                                                             |
 
-**Do not save:** code patterns, conventions, architecture, file paths (read current state instead); git history (use `git log`/`blame`); debugging recipes (the fix is in the code); anything already in [`AGENTS.md`](./AGENTS.md) or its linked docs; ephemeral task state (use tasks). These hold even when asked — if asked to save a list, ask what was _surprising_ or _non-obvious_.
+**Do not save:** code patterns, conventions, architecture, file paths (read current state instead); git history (use `git log`/`blame`); debugging recipes (the fix is in the code); anything already in [`AGENTS.md`](../../AGENTS.md) or its linked docs; ephemeral task state (use tasks). These hold even when asked — if asked to save a list, ask what was _surprising_ or _non-obvious_.
 
 **Before recommending from User Memory:** records can be stale. A claim that file X exists or flag Y is set was true _when written_ — verify against current code/git before acting.
 
@@ -42,7 +44,7 @@ Visible at session start (via the SessionStart hook). Append after non-trivial w
 | `archive.md`          | Older history.                       |
 | `core-memories.md`    | Pivotal, identity-shaping decisions. |
 
-Append after shipping a non-trivial change, discovering a non-obvious fact future-you will want, or a framing shift. This is part of the **closed documentation loop** ([`AGENTS.md`](./AGENTS.md), section 5): learnings get logged, not lost. When in doubt, search `.remember/` before re-deriving knowledge a past session produced.
+Append after shipping a non-trivial change, discovering a non-obvious fact future-you will want, or a framing shift. This is part of the **closed documentation loop** ([`AGENTS.md`](../../AGENTS.md), section 5): learnings get logged, not lost. When in doubt, search `.remember/` before re-deriving knowledge a past session produced.
 
 ## Memory vs plans/tasks
 

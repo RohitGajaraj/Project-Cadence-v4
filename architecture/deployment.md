@@ -1,6 +1,8 @@
 # architecture/deployment.md: Deployment and operations contract
 
-> **What this is.** How Cadence gets from source to a running production system, and how it is kept running. Build path, runtime topology, secrets, the per-minute cron loop, the migration model, environments, rollback, and the known operational risks. Rules: [`AGENTS.md`](../AGENTS.md). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint it deploys: [`runtime.md`](./runtime.md). The data layer it deploys: [`data.md`](./data.md). The mission engine the cron drives: [`orchestration.md`](./orchestration.md).
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
+> **What this is.** How Cadence gets from source to a running production system, and how it is kept running. Build path, runtime topology, secrets, the per-minute cron loop, the migration model, environments, rollback, and the known operational risks. Rules: [`AGENTS.md`](../AGENTS.md). Strategy canon: [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). The AI chokepoint it deploys: [`runtime.md`](./runtime.md). The data layer it deploys: [`data.md`](./data.md). The mission engine the cron drives: [`orchestration.md`](./orchestration.md).
 
 This doc does not restate the chokepoint or the schema. It covers the wiring around them: how the worker is built, where secrets live, what runs on a schedule, and how a migration reaches the live database. Where a claim touches an unfinished part of the system, it is marked **Built**, **Partial**, or **Missing/Planned** so the operational picture never outruns the wiring (the §13 founder ruling).
 
@@ -212,4 +214,4 @@ The migration-sync dependency and KI-13 are the load-bearing operational risks: 
 - [`../docs/operations/hooks.md`](../docs/operations/hooks.md). The Claude Code hooks that enforce migration safety and commit policy.
 - [`../docs/operations/demo-credentials.md`](../docs/operations/demo-credentials.md). Demo logins and the re-seed caveat (KI-14).
 - [`../docs/planning/known-issues.md`](../docs/planning/known-issues.md). KI-13, KI-16, and the full known-issues register.
-- [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The strategy canon (M-0 unblock, claim-never-outruns-wiring).
+- [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). The strategy canon (M-0 unblock, claim-never-outruns-wiring).

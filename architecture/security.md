@@ -1,11 +1,13 @@
 # architecture/security.md — Auth, tenancy & governance
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > Where authentication, multi-tenancy, secrets, and agent governance live. Rules: [`AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
 ## Authentication
 
 - **Supabase Auth** — email/password + Google OAuth (more providers via the same path). Email verification on by default; never auto-confirm without explicit ask.
-- **Password reset** — self-service via `/forgot-password` (request link) → `/reset-password` (set new password). Documented in [`../docs/auth-flows.md`](../docs/auth-flows.md).
+- **Password reset** — self-service via `/forgot-password` (request link) → `/reset-password` (set new password). Documented in [`../docs/features/auth-flows.md`](../docs/features/auth-flows.md).
 - **Sessions** — bearer token carried automatically on every server-fn RPC via the global `attachSupabaseAuth` middleware. SSE streams resume with `Last-Event-ID`.
 - **Realtime broadcasts** — user data tables are not published unless channel access is scoped to workspace membership. `messages` stays out of the realtime publication; chat history is read through authenticated queries / streams instead of raw row-change broadcasts.
 - **Logout** — sign-out everywhere; token revocation.
@@ -31,7 +33,7 @@ Three nested scopes, enforced at every layer:
 
 This is the trust layer that makes autonomy sellable to enterprises — and a core part of the moat ([`README.md`](../README.md)):
 
-- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval. Approvals carry a TTL (`agent_approvals.expires_at`, default 24h) and `escalation_state`; a per-minute cron (`/api/public/hooks/approvals-tick`) auto-expires stale ones so missions cannot stall forever. Per-agent autonomy arcs (Observing → Proving → Trusted → Ambient) modulate the effective approval mode at the gate — operator-facing explanation in [`../docs/trust-and-autonomy.md`](../docs/trust-and-autonomy.md). Multi-agent handoffs respect the receiver's arc; see [`../docs/a2a-handoff.md`](../docs/a2a-handoff.md).
+- **Approval gates** — `auto | confirm | review` per agent and per side-effecting tool; the Decision Queue holds runs awaiting human approval. Approvals carry a TTL (`agent_approvals.expires_at`, default 24h) and `escalation_state`; a per-minute cron (`/api/public/hooks/approvals-tick`) auto-expires stale ones so missions cannot stall forever. Per-agent autonomy arcs (Observing → Proving → Trusted → Ambient) modulate the effective approval mode at the gate — operator-facing explanation in [`../docs/features/trust-and-autonomy.md`](../docs/features/trust-and-autonomy.md). Multi-agent handoffs respect the receiver's arc; see [`../docs/features/a2a-handoff.md`](../docs/features/a2a-handoff.md).
 - **Guardrails** — input + output: PII, prompt-injection, secret-leak, custom rules; `block | warn | redact`. External/MCP/A2A results are treated as untrusted input and re-guarded. See [`runtime.md`](./runtime.md).
 - **Audit trail** — every AI call (`ai_events`), tool call (`tool_calls`), mission node, guardrail hit, and protocol action (`protocol_audit`) is logged and traceable.
 - **Budgets** — per-user/workspace/product daily + monthly token + USD caps, enforced server-side before spend.
@@ -40,7 +42,7 @@ This is the trust layer that makes autonomy sellable to enterprises — and a co
 - **Capability scopes** — per MCP token / A2A peer; per-tool rate limits. See [`integrations.md`](./integrations.md).
 - **Reversibility** — checkpoints + cancellation + replay; side effects gated so they can be reviewed before they happen.
 
-**Governance surface (operator UI).** The user-facing controls for everything above live at `/_authenticated/governance` (sidebar → AI Ops → Governance): kill-switch toggle (with paused-banner in `AppShell`), per-mission token/spend caps with live usage, and the stale-approvals panel (extend / approve / reject). Operator walkthrough + verification checklist: [`../docs/feature-backlog.md`](../docs/feature-backlog.md) §0.6 "How to use / verify".
+**Governance surface (operator UI).** The user-facing controls for everything above live at `/_authenticated/governance` (sidebar → AI Ops → Governance): kill-switch toggle (with paused-banner in `AppShell`), per-mission token/spend caps with live usage, and the stale-approvals panel (extend / approve / reject). Operator walkthrough + verification checklist: [`../docs/planning/feature-backlog.md`](../docs/planning/feature-backlog.md) §0.6 "How to use / verify".
 
 ## Compliance posture (future, designed-for-now)
 

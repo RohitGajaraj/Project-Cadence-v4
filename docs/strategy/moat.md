@@ -1,5 +1,7 @@
 # Cadence: Moat, Competition & Defensibility (the founder + YC reference)
 
+> _Created: 2026-06-19 · Last updated: 2026-06-19_
+
 > **What this is.** The standing reference on what our moat is, who our competition is, why we win, and how the moat ripples into pricing, features, and the platform. Written for three uses: (1) the founder's Y Combinator application + interview prep, (2) the founder's day-to-day "what is our moat / who do we compete with" reference, (3) the canon every tool reads before any positioning, pricing, or feature-priority call.
 >
 > **Status:** LIVING canon. Current positioning (2026-06-19): **the moat is the decision layer; memory is one layer of it** (evolved from the earlier "memory is the moat").
@@ -92,7 +94,7 @@ The decision-layer reposition changes more than the workspace layer. These are t
 - **Feature priority + hard-gating:** prioritize the un-commoditizable ends, **SENSE (ingestion), DECIDE (Critic, decision record), LEARN (outcomes, memory)**, as the moat; **deliver BUILD end-to-end as a governed station** (own engine or dispatched), but do not position or price it as the differentiator. Hard-gate decision-layer capabilities, not build features. The build loop picks decision-layer work first.
 - **IA / surfaces / messaging:** the hero path is the decision loop (sense -> decide -> learn); build is calm and recessed; messaging is "the decision system," not "the AI builder." (Visual/IA polish stays under the design-last rule, a tracked future pass.)
 - **What to test:** that the wedge + Critic + outcome loop + memory are the prominent path, and build is dispatched, not the hero.
-- **Adjacent initiatives:** the all-in-one build/host vision (G11, [`byo-build-and-cadence-cloud-2026-06-18.md`](./byo-build-and-cadence-cloud-2026-06-18.md)) is **part of the end-to-end scope** (run your whole org on Cadence), sequenced after the loop is proven; it is the offering, but the moat stays the decision layer, not the hosting.
+- **Adjacent initiatives:** the all-in-one build/host vision (G11, [`byo-build-and-cadence-cloud.md`](./byo-build-and-cadence-cloud.md)) is **part of the end-to-end scope** (run your whole org on Cadence), sequenced after the loop is proven; it is the offering, but the moat stays the decision layer, not the hosting.
 
 ---
 
@@ -177,9 +179,9 @@ How we reached each position, so this is a reasoning reference, not a list of co
 ## 14. Related
 
 - Build / tenancy / monetization plan: [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md)
-- Monetization canon (one-subscription, COGS): [`byo-build-and-cadence-cloud-2026-06-18.md`](./byo-build-and-cadence-cloud-2026-06-18.md) §5.5
-- Positioning canon: [`v7-agentic-product-os-2026-06-14.md`](./v7-agentic-product-os-2026-06-14.md)
-- Decision lens / wedge / competitor posture: [`v9-decision-wedge-and-build-next-2026-06-17.md`](./v9-decision-wedge-and-build-next-2026-06-17.md)
+- Monetization canon (one-subscription, COGS): [`byo-build-and-cadence-cloud.md`](./byo-build-and-cadence-cloud.md) §5.5
+- Positioning canon: [`v7-agentic-product-os.md`](./v7-agentic-product-os.md)
+- Decision lens / wedge / competitor posture: [`v9-decision-wedge-and-build-next.md`](./v9-decision-wedge-and-build-next.md)
 - Reasoning history (fundraising source narrative): [`strategic-inputs-log.md`](./strategic-inputs-log.md)
 - Decisions: [`session-decisions.md`](./session-decisions.md)
 - Product thesis + MOAT summary: [`../../README.md`](../../README.md)

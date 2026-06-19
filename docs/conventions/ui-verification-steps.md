@@ -1,5 +1,7 @@
 # Convention: after each build, give the founder UI-verification steps
 
+> _Created: 2026-06-16 · Last updated: 2026-06-16_
+
 **Rule.** Every time a build or change is finished, end the report with a short, numbered "see it for yourself" walkthrough: the exact clicks the founder makes to reach the change, what he will see, and a one-line _why it changed_. Keep it brief (usually 3 to 5 steps). This is in addition to the technical summary, not a replacement for it.
 
 When a change has **no visible UI** (backend, schema, a server function, a guardrail, a cron), say that plainly and give the closest thing he _can_ check: a behavior that now differs, a value on a trace/log/Gauntlet surface, or "nothing visible, here is what it affects and how I verified it." Never imply a UI change exists when it does not.

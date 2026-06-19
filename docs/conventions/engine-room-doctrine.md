@@ -1,5 +1,7 @@
 # Convention: The Engine-Room Doctrine
 
+> _Created: 2026-06-16 · Last updated: 2026-06-19_
+
 **Status: standing rule, founder ruling 2026-06-16. This is the product's first UX law. It outranks any single surface, feature, or metric. Where a design, a spec, or an architecture decision would expose the machinery to the user, this rule wins.**
 
 > Shorthand: **calm front, deep engine.** The user meets the OUTPUT of the machine, never the machine.
@@ -62,5 +64,5 @@ On any new surface, panel, metric, label, field, or architecture decision: run t
 - [`design-context.md`](./design-context.md) - the design brief that loads by default on any design work; this doctrine is its first law.
 - [`home-and-today-ia.md`](./home-and-today-ia.md) - the surface-placement rubric this extends (the engine-room-vs-front axis).
 - [`ui-voice.md`](./ui-voice.md) and [`humanized-output.md`](./humanized-output.md) - outcome-naming and calm copy are how rule 2 is executed in strings.
-- [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md) ("Complexity exists in the engine, not in the user experience") and [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) ("simple front, powerful engine; hide the engine room").
+- [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md) ("Complexity exists in the engine, not in the user experience") and [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) ("simple front, powerful engine; hide the engine room").
 - [`../../AGENTS.md`](../../AGENTS.md) §3 (engineering rules, where this is wired as a non-negotiable).

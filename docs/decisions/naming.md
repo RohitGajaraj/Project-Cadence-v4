@@ -1,5 +1,7 @@
 # Decision: Product name — status & candidate log
 
+> _Created: 2026-06-03 · Last updated: 2026-06-17_
+
 > Status: **PAUSED — working name is Cadence.** Updated: 2026-06-16.
 > Founder decision (2026-06-16): the 2026-06-10 rename experiment was **reverted**; the retired name is removed everywhere and must not be reintroduced (full reasoning in the reversal entry of [`../strategy/session-decisions.md`](../strategy/session-decisions.md)). **The working name is "Cadence"** for now, accepted with eyes open on the trademark note below. A fresh, distinctive brand is still wanted but is explicitly the **last activity before launch**, not a mid-build distraction. Do not block or rename anything until this file's status reads DECIDED.
 > Founder decision (2026-06-11, retained): none of the shortlisted names felt right; renaming is the **last activity** of the pre-launch sequence.

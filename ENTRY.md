@@ -1,5 +1,7 @@
 # ENTRY.md — Where do I start?
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > You just opened Cadence. This file routes you. Cadence is the **B2B Enterprise Product Cockpit** — an agent-native system of record and action where a swarm of specialist agents runs the entire product lifecycle (discover → definition → plan → build → test → ship → GTM launch → support → cohort analytics → learning loop) and a human governs the calls that matter. Agents execute. Humans govern. Full thesis: [`README.md`](./README.md). Strategic positioning: [`docs/strategy/`](./docs/strategy/) — always read the latest version file there before any positioning, feature, or UX work.
 
 ---

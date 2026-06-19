@@ -1,6 +1,8 @@
 # tools.md — Tool conventions
 
-> When to use which tool. Keeps tool calls cheap, correct, and reviewable. Operating rules: [`AGENTS.md`](./AGENTS.md). This file was referenced across the docs but missing — it now exists.
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
+> When to use which tool. Keeps tool calls cheap, correct, and reviewable. Operating rules: [`AGENTS.md`](../../AGENTS.md). This file was referenced across the docs but missing — it now exists.
 
 ## File and search tools (use the dedicated tool, not Bash)
 
@@ -17,9 +19,9 @@ Reserve `Bash` for actually running things (installs, builds, tests, migrations,
 
 ## Read/Edit/Write discipline
 
-- **Read before Edit/Write on existing files.** The tools track read-state by absolute path. After any `mv`/`git mv`, re-Read at the new path (see [`AGENTS.md`](./AGENTS.md), section 7).
+- **Read before Edit/Write on existing files.** The tools track read-state by absolute path. After any `mv`/`git mv`, re-Read at the new path (see [`AGENTS.md`](../../AGENTS.md), section 7).
 - **Prefer `Edit` over `Write` for changes** — it sends only the diff. Use `Write` for new files or full rewrites.
-- **Surgical edits only.** Every changed line traces to the task ([`AGENTS.md`](./AGENTS.md), section 3).
+- **Surgical edits only.** Every changed line traces to the task ([`AGENTS.md`](../../AGENTS.md), section 3).
 
 ## Bash discipline
 
@@ -31,7 +33,7 @@ Reserve `Bash` for actually running things (installs, builds, tests, migrations,
 ## Tasks
 
 - Create tasks for any multi-step work; set `in_progress` when starting, `completed` when done.
-- Do not batch-complete at the end — update as you go ([`AGENTS.md`](./AGENTS.md), section 1).
+- Do not batch-complete at the end — update as you go ([`AGENTS.md`](../../AGENTS.md), section 1).
 - Include a verification step for non-trivial work (tests, screenshots, diff review).
 
 ## Subagents (Agent/Task tool)
@@ -47,4 +49,4 @@ Reserve `Bash` for actually running things (installs, builds, tests, migrations,
 
 ## Product / runtime tools (inside the app)
 
-Tool calls _the product's agents_ make (e.g. `search_workspace`, `create_task`, `create_linear_issue`, `write_doc`, `run_eval`, `delegate_to_agent`) are a product capability with their own allow-list and audit log. Their contract lives in [`architecture/runtime.md`](./architecture/runtime.md) and [`architecture/integrations.md`](./architecture/integrations.md) — not here.
+Tool calls _the product's agents_ make (e.g. `search_workspace`, `create_task`, `create_linear_issue`, `write_doc`, `run_eval`, `delegate_to_agent`) are a product capability with their own allow-list and audit log. Their contract lives in [`architecture/runtime.md`](../../architecture/runtime.md) and [`architecture/integrations.md`](../../architecture/integrations.md) — not here.

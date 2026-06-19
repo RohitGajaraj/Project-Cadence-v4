@@ -1,5 +1,7 @@
 # D4 (cancellation slice) - the per-mission brake pedal
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 **Status:** ◐ Partial (cancellation shipped 2026-06-18; replay-and-branch shipped 2026-06-18 cycle 25; the rich checkpoint-diff remains as D4b). **Lane:** G2 Decide & Plan / autonomous-spine control. **Pairs with:** [`trust-and-autonomy.md`](./trust-and-autonomy.md) (FND-0.6 kill-switch is the global brake; this is the per-mission brake).
 
 ## What it delivers

@@ -1,6 +1,8 @@
 # architecture/observability.md: what we can see, and the bars we hold
 
-> **What this is.** The observability surfaces Cadence already runs (cost, traces, evals, drift, guardrails, the proof gauntlet, logging) and the non-functional requirements that govern them (latency, scale, availability, the inference-cost and margin model, rate limits, retention). Strategy canon: [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md). The AI chokepoint that produces most of this telemetry: [`runtime.md`](./runtime.md). Orchestration and the loop: [`orchestration.md`](./orchestration.md). Security and the kill switch: [`security.md`](./security.md). Build history and roadmap: [`../plan.md`](../plan.md).
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
+> **What this is.** The observability surfaces Cadence already runs (cost, traces, evals, drift, guardrails, the proof gauntlet, logging) and the non-functional requirements that govern them (latency, scale, availability, the inference-cost and margin model, rate limits, retention). Strategy canon: [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). The AI chokepoint that produces most of this telemetry: [`runtime.md`](./runtime.md). Orchestration and the loop: [`orchestration.md`](./orchestration.md). Security and the kill switch: [`security.md`](./security.md). Build history and roadmap: [`../plan.md`](../plan.md).
 >
 > Every item is marked **Built**, **Partial**, or **Missing/Planned**. The rule is the v7 rule: claim never outruns wiring. Where a surface exists in code but cannot read real numbers yet (signup 500s, slug bug, connectors not live), it says so.
 
@@ -186,6 +188,6 @@ The observability layer is the strong part of the system. Cost, traces, evals, d
 - [`security.md`](./security.md): the kill switch, the sacred caps, prompt-injection defense, and the anon-read threat model.
 - [`data.md`](./data.md): the data model and RAG chunks behind retrieval and the indexer tick.
 - [`deployment.md`](./deployment.md): the Cloudflare Worker, env split, and migration model the cron hooks and availability story sit on.
-- [`../docs/strategy/v7-agentic-product-os-2026-06-14.md`](../docs/strategy/v7-agentic-product-os-2026-06-14.md): the canon, the gauntlet metrics, the latency and time-to-value bars, the margin model, and the unblock gates.
+- [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md): the canon, the gauntlet metrics, the latency and time-to-value bars, the margin model, and the unblock gates.
 - [`../docs/features/trust-and-autonomy.md`](../docs/features/trust-and-autonomy.md): the trust score and the four autonomy arcs the gauntlet measures.
 - [`../plan.md`](../plan.md): build log and the proof-gated roadmap (M-0 through M-D).

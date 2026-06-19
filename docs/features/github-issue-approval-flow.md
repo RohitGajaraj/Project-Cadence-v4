@@ -1,8 +1,10 @@
 # GitHub issue approval flow (Bundle 6 lifecycle close)
 
+> _Created: 2026-06-04 · Last updated: 2026-06-14_
+
 > Operator-facing reference for the `github.issue.create` → `prd.link_issue` slice. This is the exit ramp where the Discover → Define → Plan loop leaves Cadence and lands as a real GitHub issue against the engineering system of record, under an explicit human approval gate.
 >
-> Operating rules: [`../AGENTS.md`](../AGENTS.md). Orchestration contract: [`../architecture/orchestration.md`](../architecture/orchestration.md). Connector contract: [`../architecture/integrations.md`](../architecture/integrations.md). Trust + autonomy: [`./trust-and-autonomy.md`](./trust-and-autonomy.md). A2A handoff: [`./a2a-handoff.md`](./a2a-handoff.md).
+> Operating rules: [`../../AGENTS.md`](../../AGENTS.md). Orchestration contract: [`../../architecture/orchestration.md`](../../architecture/orchestration.md). Connector contract: [`../../architecture/integrations.md`](../../architecture/integrations.md). Trust + autonomy: [`./trust-and-autonomy.md`](./trust-and-autonomy.md). A2A handoff: [`./a2a-handoff.md`](./a2a-handoff.md).
 
 ---
 
@@ -96,9 +98,9 @@ If the rotation was emergency (suspected leak), also revoke the old PAT in the G
 
 ## Related
 
-- [`./feature-backlog.md`](./feature-backlog.md): Bundle 6 entry with the "How to use / verify" cross-pointer.
+- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): Bundle 6 entry with the "How to use / verify" cross-pointer.
 - [`./trust-and-autonomy.md`](./trust-and-autonomy.md): why `confirm` mode is the floor for write tools and how the autonomy dial composes with it.
 - [`./a2a-handoff.md`](./a2a-handoff.md): how the Discovery → Strategist → Planner mission reaches this approval gate in the first place.
-- [`../architecture/orchestration.md`](../architecture/orchestration.md): Lifecycle-close paragraph references this doc as the canonical operator guide.
-- [`../architecture/integrations.md`](../architecture/integrations.md): connectors that route through the chokepoint and the approval gate.
-- [`../architecture/runtime.md`](../architecture/runtime.md): `withIdempotency` wrapper that protects against double-creates on retry/resume.
+- [`../../architecture/orchestration.md`](../../architecture/orchestration.md): Lifecycle-close paragraph references this doc as the canonical operator guide.
+- [`../../architecture/integrations.md`](../../architecture/integrations.md): connectors that route through the chokepoint and the approval gate.
+- [`../../architecture/runtime.md`](../../architecture/runtime.md): `withIdempotency` wrapper that protects against double-creates on retry/resume.

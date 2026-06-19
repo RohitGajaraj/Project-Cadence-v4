@@ -1,5 +1,7 @@
 # docs/feature-backlog.md — The granular feature backlog (build-ready)
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the granular acceptance-criteria and scope ledger (the F-ID detail) it points to, not the tracker to follow day-to-day.
 
 > **What this is.** The exhaustive, sub-feature-level enumeration of _everything Cadence is built to ship_ — the dev-ready expansion of [`../plan.md`](../../plan.md) §2 (granular catalog). Every feature has a **stable ID** (e.g. `F2.3`) so it can become an issue/PR/spec and be referenced by traces, decisions, and the build log without re-describing scope.
@@ -22,7 +24,7 @@
 
 ## ▶ v4 Feature Map overlay (2026-06-11) — the binding scope layer
 
-> **The v4 feature map ([`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md)) is now the binding scope source.** This overlay maps its station catalogs onto this backlog. The 8-Pillar grouping below remains as historical organization for existing F-IDs; new work is filed under v4 IDs. Where a v4 ID and a legacy F-ID cover the same thing, the row notes it — do not double-build.
+> **The v4 feature map ([`../strategy/archive/v4-feature-map.md`](../strategy/archive/v4-feature-map.md)) is now the binding scope source.** This overlay maps its station catalogs onto this backlog. The 8-Pillar grouping below remains as historical organization for existing F-IDs; new work is filed under v4 IDs. Where a v4 ID and a legacy F-ID cover the same thing, the row notes it — do not double-build.
 
 **New v4 feature IDs (station · ID · status · maps-to-legacy):**
 
@@ -97,7 +99,7 @@ Each bundle composes existing backlog IDs; nothing here is a parallel scope. Bun
 | 6      | **Lifecycle slice — Discover → Define → Plan on real data**                                                                                | Real signals → real PRD → real sprint plan → one approval-gated item → on approval, **real GitHub issue created via MCP**. End-to-end, no human routing.                                                                                                                                                                                                 | F1, F2, F3, G1, H1 + **N1** (new, GitHub-issues sync)                   | C3         | ◑ (legacy parts reusable)    |
 | 7      | **Decision Queue + approval gates UX**                                                                                                     | Every gate the agents hit lands in the queue with context (what, why, cost-if-approved, who proposed); approve/reject changes downstream agent behavior.                                                                                                                                                                                                 | D3, P-approvals                                                         | C1, C4     | ◑ (reusable)                 |
 | 8      | **Product Memory + lineage + full data export**                                                                                            | Every artifact (signal → theme → opportunity → PRD → decision) has lineage backward to its source; "Export everything" produces a complete, re-importable archive.                                                                                                                                                                                       | O1, O2, U6 (new)                                                        | C3         | ☐                            |
-| **9**  | **Build + Test bundle** — Builder agent + scoped PR + CI read + parallel-safe conflict guard                                               | Builder opens a **real PR** on the connected repo for one planned task; reads CI status; on red proposes a one-file fix commit; two missions can't race on the same file. All gated by approval mode. **Shipped 2026-06-04 (Slice 1) + 2026-06-06 (Slices 2 + 3).** Per-feature doc: [`./features/bundle-9-builder.md`](../features/bundle-9-builder.md). | **I-thin (S4)**, **J-thin (S5)** + GitHub MCP write scope               | C2, C3     | ✅                           |
+| **9**  | **Build + Test bundle** — Builder agent + scoped PR + CI read + parallel-safe conflict guard                                               | Builder opens a **real PR** on the connected repo for one planned task; reads CI status; on red proposes a one-file fix commit; two missions can't race on the same file. All gated by approval mode. **Shipped 2026-06-04 (Slice 1) + 2026-06-06 (Slices 2 + 3).** Per-feature doc: [`./features/bundle-9-builder.md`](../features/archive/bundle-9-builder.md). | **I-thin (S4)**, **J-thin (S5)** + GitHub MCP write scope               | C2, C3     | ✅                           |
 | **10** | **Ship bundle** — approval-gated merge + deploy webhook ingest                                                                             | Operator approves merge → real merge → existing deploy webhook lands → Ship node lights up on Mission Graph with deploy URL + commit SHA.                                                                                                                                                                                                                | **K-thin (S6)** + deploy webhook ingest                                 | C1, C3     | ☐                            |
 | **11** | **Launch bundle** — changelog + one outbound channel                                                                                       | Growth agent drafts changelog + outbound message on ship; operator approves; message is **really sent** to one real channel (Slack or email).                                                                                                                                                                                                            | **L-thin** (changelog + one outbound integration)                       | C3         | ☐                            |
 | **12** | **Support → Learn loop** — one inbound channel + Analyst learn loop                                                                        | Real ticket arrives via one channel → Support agent triages and links to source PRD/opportunity → Analyst attaches outcome and re-scores → next Discovery cycle reflects it. **The loop closes.**                                                                                                                                                        | **M-thin** (one inbound channel) + **Z1** (Analyst learn loop) on O1/O2 | C2, C3, C4 | ☐                            |
@@ -875,7 +877,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 
 ## New features — v2 Positioning Session (2026-06-02)
 
-_Derived from strategic repositioning to "autonomous product OS." Full reasoning: [`strategy/product-positioning-v2.md`](../strategy/archive/v2-positioning-2026-06-02.md)._
+_Derived from strategic repositioning to "autonomous product OS." Full reasoning: [`strategy/product-positioning-v2.md`](../strategy/archive/v2-positioning.md)._
 
 **C5 — Strategic Briefing surface** `[status: ☑ shipped 2026-06-04]` · `P0` · `X1`
 
@@ -943,7 +945,7 @@ _Derived from strategic repositioning to "autonomous product OS." Full reasoning
 
 ## v3 Audit Triage (2026-06-06)
 
-_Derived from [`./strategy/archive/v3-audit-2026-06-06.md`](../strategy/archive/v3-audit-2026-06-06.md) (22 product RECs) and [`./strategy/archive/v3-audit-language-2026-06-06.md`](../strategy/archive/v3-audit-language-2026-06-06.md) (10 LANG + tooltip + IA + outcome + chip recs). Operator-approved A→C→B sequence; this triage **is** Phase C. Each F-ID below is a thin entry pointing back to the audit doc for full body + impact/effort/horizon scoring — do not duplicate that prose here._
+_Derived from [`./strategy/archive/v3-audit.md`](../strategy/archive/v3-audit.md) (22 product RECs) and [`./strategy/archive/v3-audit-language.md`](../strategy/archive/v3-audit-language.md) (10 LANG + tooltip + IA + outcome + chip recs). Operator-approved A→C→B sequence; this triage **is** Phase C. Each F-ID below is a thin entry pointing back to the audit doc for full body + impact/effort/horizon scoring — do not duplicate that prose here._
 
 **Owner column:** any tool may pick a row whose own status isn't `☑`. Update Live status board's "Now building" before starting. Cross-tool rules: [`../AGENTS.md`](../../AGENTS.md) §10.
 

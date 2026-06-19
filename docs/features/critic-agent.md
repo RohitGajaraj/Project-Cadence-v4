@@ -1,5 +1,7 @@
 # Critic agent (F-CRITIC-AGENT, v4 stations DEC-02 · DEF-03)
 
+> _Created: 2026-06-11 · Last updated: 2026-06-19_
+
 The Critic is an adversarial reviewer that red-teams every new opportunity and every freshly drafted PRD before it reaches a human approval gate. It is the demo moment the Strategist → operator-approval handoff needs: instead of approving a raw ICE score, the operator approves a score plus a verdict, top risks, kill criteria, and a list of missing evidence.
 
 **Two lenses (same infra).** Opportunities get the **bet-evaluation** lens (DEC-02). Specs get a **spec-specific red-team** lens (DEF-03): ambiguity, untestable/unmeasurable acceptance criteria, scope creep, unstated assumptions, and missing edge cases, guard-railed to judge only what the spec actually says, never to invent requirements.
@@ -46,5 +48,5 @@ Beyond the inline auto-attach, the Critic is a **registered agent-loop tool**: `
 ## Related
 
 - [`prd-rag-citations.md`](./prd-rag-citations.md): the companion slice that gives the Scribe its evidence trail.
-- [`../strategy/v4-feature-map-2026-06-11.md`](../strategy/v4-feature-map-2026-06-11.md): DEC-02 (opportunities) + DEF-03 (specs) entries.
+- [`../strategy/archive/v4-feature-map.md`](../strategy/archive/v4-feature-map.md): DEC-02 (opportunities) + DEF-03 (specs) entries.
 - [`../planning/feature-backlog.md`](../planning/feature-backlog.md): live status board entry.

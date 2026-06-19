@@ -1,5 +1,7 @@
 # v6 P3 T2: The Gauntlet (proof metrics)
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > Status · Shipped 2026-06-14 (ritual_sessions migration applies on next Lovable sync) · Memory-compounds moat metric added 2026-06-14 (M-B) · Route `/govern?tab=gauntlet` · Owner: the loop (no single agent)
 
 ## What it does
@@ -61,4 +63,4 @@ Govern surface → **Gauntlet** tab (inserted after Analytics). Direct link: `/g
 - [`../../plan.md`](../../plan.md) §4: build log entry
 - [`loop-runs-itself.md`](./loop-runs-itself.md): the v6 P1 autonomous loop these metrics measure
 - [`trust-and-autonomy.md`](./trust-and-autonomy.md): per-agent trust score (Acceptance rate's per-agent sibling)
-- [`../strategy/v6-agentic-product-os-2026-06-13.md`](../strategy/v6-agentic-product-os-2026-06-13.md): the North Star these metrics prove
+- [`../strategy/archive/v6-agentic-product-os.md`](../strategy/archive/v6-agentic-product-os.md): the North Star these metrics prove

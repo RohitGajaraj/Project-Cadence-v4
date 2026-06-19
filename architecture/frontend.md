@@ -1,5 +1,7 @@
 # architecture/frontend.md — Frontend patterns contract
 
+> _Created: 2026-06-03 · Last updated: 2026-06-19_
+
 > TanStack Start patterns. Rules: [`AGENTS.md`](../AGENTS.md). UI/visual contract: [`design.md`](../design.md). Data: [`data.md`](./data.md).
 
 ## Stack
@@ -101,7 +103,7 @@ Use instead:
 - **Non-blocking feedback** — `toast.success` / `toast.error` from `sonner`. Never use toasts for errors that require attention (use an inline `Alert` instead — see [`design.md`](../design.md) anti-patterns).
 - **Unsaved-changes guards** — TanStack Router `useBlocker` wired to `useConfirm`.
 
-`ConfirmProvider` is mounted once in `src/routes/__root.tsx` inside `ThemeProvider`. Voice rules for the strings these primitives render live in [`../design.md`](../design.md) and the audit at [`../docs/strategy/archive/v3-audit-language-voice-2026-06-06.md`](../docs/strategy/archive/v3-audit-language-voice-2026-06-06.md).
+`ConfirmProvider` is mounted once in `src/routes/__root.tsx` inside `ThemeProvider`. Voice rules for the strings these primitives render live in [`../design.md`](../design.md) and the audit at [`../docs/strategy/archive/v3-audit-language-voice.md`](../docs/strategy/archive/v3-audit-language-voice.md).
 
 ## Inline workspace & product management
 

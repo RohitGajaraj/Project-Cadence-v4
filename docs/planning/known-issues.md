@@ -1,5 +1,7 @@
 # Known issues — live tracker
 
+> _Created: 2026-06-11 · Last updated: 2026-06-19_
+
 > **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the live KI- bug/blocker tracker it points to, not the tracker to follow day-to-day.
 
 > **What this is.** The live register of open bugs, blockers, and workarounds — with stable `KI-` IDs. This is the repo's `KNOWN_ISSUES.md` (per the constitution concordance in [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md)) and, until 2026-06-22, it doubles as the **M1 Golden Path demo punch list**.

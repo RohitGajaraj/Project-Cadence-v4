@@ -1,5 +1,7 @@
 # Convention: humanized output, zero AI fingerprints
 
+> _Created: 2026-06-14 · Last updated: 2026-06-19_
+
 > **What this is.** The master rule that no text we ship carries a machine fingerprint. It governs two levels (see **Priority and scope** below for how strictly each is enforced, and apply it at authoring time):
 >
 > 1. **What we author.** Every string a human or tool writes into this repo: UI copy, code comments, docs, commit messages, error text, seed data, marketing copy. Applies to every co-development tool equally (Claude Code, Lovable, Gemini, Antigravity, and any future one).
@@ -85,6 +87,6 @@ Two reasons, both load-bearing. First, trust: AI fingerprints make a product rea
 ## Related
 
 - [`ui-voice.md`](./ui-voice.md) - the UI-string application (length budgets, buzzword denylist).
-- [`../../design.md`](../../design.md) - the "Voice & language" contract section.
+- [`../../DESIGN.md`](../../DESIGN.md) - the "Voice & language" contract section.
 - [`../operations/hooks.md`](../operations/hooks.md) - where the build-time trace check plugs in.
-- [`../strategy/v7-agentic-product-os-2026-06-14.md`](../strategy/v7-agentic-product-os-2026-06-14.md) - the "look different, not one in a thousand" positioning this serves.
+- [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) - the "look different, not one in a thousand" positioning this serves.

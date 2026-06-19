@@ -1,6 +1,8 @@
 # Autonomous Build Loop (standing playbook)
 
-> Reusable operating procedure for an unattended or semi-attended build run. It is the canonical source of the contract, the per-item loop, the gates, the doc-loop, collision safety, context continuity, and the retry/resilience rules. The live status of any active run lives in [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md).
+> _Created: 2026-06-17 · Last updated: 2026-06-18_
+
+> Reusable operating procedure for an unattended or semi-attended build run. It is the canonical source of the contract, the per-item loop, the gates, the doc-loop, collision safety, context continuity, and the retry/resilience rules. The live status of any active run lives in [`../planning/archive/overnight-build-report.md`](../planning/archive/overnight-build-report.md).
 >
 > **Invoke it** with `/overnight-build` (see section 11), any night, going forward. This file is the rules; the report is the run.
 
@@ -93,7 +95,7 @@ For each item:
 
 ## 10. Status reporting
 
-- Live report: [`../planning/overnight-build-report.md`](../planning/overnight-build-report.md), rewritten every cycle: completion %, items done with notes, in-progress, skipped with reason, comments.
+- Live report: [`../planning/archive/overnight-build-report.md`](../planning/archive/overnight-build-report.md), rewritten every cycle: completion %, items done with notes, in-progress, skipped with reason, comments.
 - Check it: `git pull`, then open the report. The commit trail (`git log --oneline`) is the second view.
 - **Date AND time every entry (contract, project-wide).** Every row in the report (done, skipped, pending-verification), every `plan.md` build-log entry, and every dashboard status flip carries its date and time (`YYYY-MM-DD HH:MM`, 24h, read from `date "+%Y-%m-%d %H:%M"`) and the cycle, so the record is a timestamped audit trail of what was done and exactly when (the git commit also carries its own timestamp). Capture the build-start or commit time. Accumulate across runs; never erase a prior night's entries. **This date-plus-time rule applies project-wide, not only to the overnight loop (founder ruling, 2026-06-18); the mirror lives in `docs/operations/git-discipline.md` under "Timestamp Discipline".** Forward-only: apply it to entries written from 2026-06-18 onward; do NOT retro-stamp the day-one history (founder ruling, 2026-06-18), spend no tokens backfilling old rows; a date-only past is fine.
 - **UI breadcrumb per item (contract).** Every shipped item in the report (and in its feature doc) carries a one-line "where to see it" navigation path so the founder can verify it from the UI at a glance: just the path, no explanation. For example `Settings > Data > Download workspace export`, or `Engine Room > Attention`, or `Missions > Agents > Agent inspector`.
@@ -152,4 +154,4 @@ When no buildable backlog item is left (v10 through v8 mined, founder-gated item
 
 ---
 
-_Related: [`../../AGENTS.md`](../../AGENTS.md) (operating rules, doc-update protocol), [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (the master status board), [`git-discipline.md`](./git-discipline.md), [`commits.md`](./commits.md), [`memory.md`](./memory.md)._
+_Related: [`../../AGENTS.md`](../../AGENTS.md) (operating rules, doc-update protocol), [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (the master status board), [`git-discipline.md`](./commits.md), [`commits.md`](./commits.md), [`memory.md`](./memory.md)._

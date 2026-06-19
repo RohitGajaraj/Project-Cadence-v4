@@ -1,5 +1,7 @@
 # F3 · Continuous discovery feed
 
+> _Created: 2026-06-18 · Last updated: 2026-06-18_
+
 > Status · Always-fresh feed shipped 2026-06-18 (autonomous overnight cycle 11) · Per-product clustering shipped 2026-06-18 12:20 (cycle 17) · Auto-cluster cron built 2026-06-18 (opt-in, off by default; recurring-spend activation is a founder step) · Surface: `/product?tab=signals` · Owner: operator-facing
 
 ## What it does

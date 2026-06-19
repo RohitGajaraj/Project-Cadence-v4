@@ -1,10 +1,12 @@
 # Workspace, Accounts, Tenancy, Monetization & the Credit Engine, Cross-Tool Implementation Plan (the build bible)
 
+> _Created: 2026-06-19 · Last updated: 2026-06-19_
+
 > **What this is.** The single, self-contained source of truth for the account / workspace / product tenancy redesign, the monetization model it carries, AND the credit engine that powers it. It holds the strategy, the justifications, the quantified model, and a build spec for every work item, written so **any tool (Claude Code, Antigravity, Gemini, Lovable, a fresh session) can pick up a single `WM-*` ID and build it from this doc alone**, with no dependence on the conversation that produced it. As of 2026-06-19 it also carries the **credit engine** (the cost-to-credit conversion math, per-tier amounts, grant/reset, top-ups, the debit logic, per-product attribution, and the margin levers), merged in from the parallel credits thread and segregated under §4.2.1 (`WM-M10` to `WM-M16`); see §2.7 for the merge.
 >
 > **Status:** PLAN (2026-06-19). Foundation lane is buildable now; Showcase lane is deferred. No feature code written yet; this doc + its registration are step one. **Credit engine (`WM-M10` to `WM-M16`) added 2026-06-19** (the two parallel threads, tenancy and credits, merged into this one source of truth per founder ruling; §4.2.1).
 > **Maintainer rule:** update the item's status here, in `feature-dashboard.md`, and in `SOURCE-OF-TRUTH.md` in the same unit of work as any change (the closed-doc loop).
-> **Owns the decision record with:** [`../strategy/session-decisions.md`](../strategy/session-decisions.md) (the decision) + [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (the reasoning) + [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5 (the monetization canon this aligns to).
+> **Owns the decision record with:** [`../strategy/session-decisions.md`](../strategy/session-decisions.md) (the decision) + [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (the reasoning) + [`../strategy/byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md) Section 5.5 (the monetization canon this aligns to).
 
 ---
 
@@ -42,7 +44,7 @@ This plan makes the **account -> workspace -> product** model the deliberate spi
 
 ### 2.2 Billing attaches at the ACCOUNT level (the flywheel)
 
-Plan, credits, and Stripe billing live on the **account**, not the workspace. Per-workspace billing would tax the one thing that makes the product un-leaveable: if a new workspace cost a new plan, users would make fewer, less context would accrue, and the moat would be shallower. Account-level pooling means the more a user puts in, the deeper the moat. Workspace count is gated only at the free line (free = 1 workspace); past it, workspaces are generous/pooled, never per-workspace-billed. (Reconciled with the parallel credits/monetization thread and [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) Section 5.5.)
+Plan, credits, and Stripe billing live on the **account**, not the workspace. Per-workspace billing would tax the one thing that makes the product un-leaveable: if a new workspace cost a new plan, users would make fewer, less context would accrue, and the moat would be shallower. Account-level pooling means the more a user puts in, the deeper the moat. Workspace count is gated only at the free line (free = 1 workspace); past it, workspaces are generous/pooled, never per-workspace-billed. (Reconciled with the parallel credits/monetization thread and [`../strategy/byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md) Section 5.5.)
 
 **Market evidence for the account-level call (2026-06-19 benchmark).** This is not a contrarian bet; it is the dominant pattern among products whose value compounds with usage. Lovable's per-project billing is the **outlier** and the wrong comp for us (it is a build tool, not a memory-compounding decision OS): it taxes the exact behavior, more products and workspaces, that deepens our moat, so users consolidate and the silos thin. Every platform whose value compounds with use pools at the org/account level and treats the sub-container as **cost attribution, not a separate bill**: Anthropic (Organization -> Workspaces), OpenAI (Organization -> Projects), Vercel/v0, Bolt (account token pool), Replit Pro (pooled). The per-seat-per-workspace billers, Linear and Notion, deliberately do the opposite, but they have **no per-workspace moat**; a workspace there is an admin silo, the inverse of our case. The reasoning + full benchmark are logged in [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-19) and feed [`../strategy/moat.md`](../strategy/moat.md) §7.
 
@@ -294,7 +296,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 #### WM-M6 · Pricing surfaces (pricing page + Settings Plan + Usage)
 - **Why:** the founder wants the new model reflected in all three pricing surfaces.
 - **Current state:** `src/routes/pricing.tsx` (SSR, maps `planPresentation` over the tiers) + the Settings BillingTab in `src/routes/_authenticated.settings.tsx` (maps `PLAN_TIERS`) both auto-expand to 5 tiers.
-- **Build:** (a) finalize `entitlements.ts` presentations + `billing.functions.ts` + webhook (from M1/M3); (b) Settings -> Account -> Plan: render 5 tiers + a Usage panel (account credits vs grant, products vs limit, members vs seats) + generalized upgrade buttons + a Contact-sales card for Cosmos; (c) public `pricing.tsx`: 5 tiers + transparent per-seat Galaxy + Contact-sales Cosmos + a hero ("one subscription, export anytime, credits stay generous"). Align copy with `byo-build-and-cadence-cloud-2026-06-18.md` (memory persistence is the charge; credits ride on top).
+- **Build:** (a) finalize `entitlements.ts` presentations + `billing.functions.ts` + webhook (from M1/M3); (b) Settings -> Account -> Plan: render 5 tiers + a Usage panel (account credits vs grant, products vs limit, members vs seats) + generalized upgrade buttons + a Contact-sales card for Cosmos; (c) public `pricing.tsx`: 5 tiers + transparent per-seat Galaxy + Contact-sales Cosmos + a hero ("one subscription, export anytime, credits stay generous"). Align copy with `byo-build-and-cadence-cloud.md` (memory persistence is the charge; credits ride on top).
 - **Files:** `src/routes/pricing.tsx`; `src/routes/_authenticated.settings.tsx` (BillingTab + Usage); `docs/features/pricing.md`.
 - **Gotchas:** Usage panel renders gracefully pre-engine ("-"); the Contact-sales tier has no checkout CTA.
 - **Acceptance:** both surfaces show 5 Constellation tiers with correct limits/credits; Usage panel reads account state.
@@ -429,7 +431,7 @@ These are specified now and **resurfaced at every milestone gate**; do not build
 
 #### WM-D · Documentation, registration, cross-link, cascade (this deliverable)
 - Register all `WM-*` in `feature-dashboard.md` (new group, Foundation active/Next, Showcase Deferred) + a build-queue section in `SOURCE-OF-TRUTH.md`, both pointing here.
-- Cascade: a `session-decisions.md` entry + a `strategic-inputs-log.md` entry; a `strategy/README.md` role-map row; cross-link `byo-build-and-cadence-cloud-2026-06-18.md` both ways.
+- Cascade: a `session-decisions.md` entry + a `strategic-inputs-log.md` entry; a `strategy/README.md` role-map row; cross-link `byo-build-and-cadence-cloud.md` both ways.
 - Create `docs/features/workspaces.md`; update `docs/features/pricing.md`.
 - Update `architecture/data.md` + `architecture/security.md`.
 - Update the SSOT section 0 (the live cursor) + `plan.md` Section 4.
@@ -478,7 +480,7 @@ Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are l
 
 - Status: [`feature-dashboard.md`](./feature-dashboard.md) (per-item board), [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (front door).
 - Execution context: [`v10_implementation-plan.md`](./v10_implementation-plan.md), [`considerations.md`](./considerations.md).
-- Strategy: [`../strategy/moat.md`](../strategy/moat.md) (the moat / competition / positioning canon, the source for §2.3), [`../strategy/byo-build-and-cadence-cloud-2026-06-18.md`](../strategy/byo-build-and-cadence-cloud-2026-06-18.md) (Section 5.5 monetization canon), [`../strategy/session-decisions.md`](../strategy/session-decisions.md), [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md), [`../strategy/README.md`](../strategy/README.md) (role map).
+- Strategy: [`../strategy/moat.md`](../strategy/moat.md) (the moat / competition / positioning canon, the source for §2.3), [`../strategy/byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md) (Section 5.5 monetization canon), [`../strategy/session-decisions.md`](../strategy/session-decisions.md), [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md), [`../strategy/README.md`](../strategy/README.md) (role map).
 - Architecture: [`../../architecture/data.md`](../../architecture/data.md), [`../../architecture/security.md`](../../architecture/security.md).
 - Feature specs: [`../features/workspaces.md`](../features/workspaces.md), [`../features/pricing.md`](../features/pricing.md).
 - Conventions: [`../conventions/humanized-output.md`](../conventions/humanized-output.md), [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md).
