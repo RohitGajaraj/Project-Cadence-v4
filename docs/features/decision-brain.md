@@ -20,7 +20,10 @@ Cadence already remembers, but it remembers *flatly*. Memory is stored as embedd
 2. **It cannot walk a chain.** "This signal led to this assumption led to this decision led to this outcome" is invisible to a pile of vectors.
 3. **It cannot retire a belief.** When an outcome proves an assumption wrong, nothing marks the old assumption as superseded.
 
-And critically, the loop that would make memory *compound* is currently **stubbed**: the code that detects a shipped PRD exists, the code that would write its outcome into memory exists, but nothing connects them. Outcomes are noticed and thrown away. The Decision Brain closes that loop and gives it a shape.
+Two real consequences follow, and a code-state review (2026-06-20) sharpened them (correcting an earlier draft that wrongly called the outcome loop "stubbed"):
+
+- **The outcome loop IS closed, and correctly human-gated.** `recordOutcome` already writes an outcome-labeled memory via `rememberOutcome` (`outcome.functions.ts`), and it is human-gated by design, because a verdict (validated / missed) is only knowable weeks *after* ship, not at ship-detection time. So memory does compound; it just compounds *flatly* (text plus an embedding), with no typed relationships and no supersession.
+- **The Critic, the launch wedge, is blind to all of it.** `runCritic` red-teams only the target row's own fields; it reads no past outcomes. So it cannot say "we shipped a similar bet and it missed." The Decision Brain fixes both: it gives the flat memory a typed, time-aware shape, and it feeds that history to the Critic so the verdict carries receipts (the first step, DBR-0, does the latter today, see the build roadmap).
 
 ---
 
@@ -91,7 +94,7 @@ One graph in, every surface out.
 
 ## Build roadmap (topmost priority; gated)
 
-- **DBR-0 (first, small, highest-leverage):** close the loop. Wire `rememberOutcome()` into `outcome.functions` ship-detection so a shipped PRD writes an outcome-labeled memory the loop later recalls. Proves the moat loop closes (the M-B milestone gate). Gates: tsc + build + tests + prod migration dry-run.
+- **DBR-0 (DONE 2026-06-20, ◐):** give the Critic decision precedent. The outcome loop was already closed (`recordOutcome` → `rememberOutcome`), but the Critic (the wedge) red-teamed in a vacuum. Shipped: a pure, TDD'd `formatDecisionPrecedent` helper (`src/lib/ai/outcome-memory.ts`, +5 tests) plus a best-effort workspace-outcomes query wired into `runCritic` (`src/lib/ai/critic.server.ts`), so the Critic now cites the workspace's own shipped outcomes. tsc 0 / 303 tests / build green; fail-safe (an empty precedent block leaves the prompt unchanged). ◐ because the live LLM/DB path is not behaviorally verified unattended (verify on next publish). This is the read-side seam DBR-2 deepens once the graph (DBR-1) exists.
 - **DBR-1:** the typed bi-temporal decision graph over Supabase/pgvector (nodes, edges, validity), auto-extracted from PRDs/discovery/decisions; hybrid retrieval (vectors stay for fuzzy recall). Absorbs and elevates the partial `O1` (knowledge graph + query).
 - **DBR-2:** the Critic reads the graph (multi-hop contradiction and precedent context).
 - **DBR-3:** the Brain surface becomes the **visual graph** (Obsidian-style explorer) plus provenance, freshness, and governing-decision retrieval. Absorbs `O3` (fact drift + skill packs).

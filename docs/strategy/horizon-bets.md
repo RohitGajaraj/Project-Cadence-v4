@@ -135,7 +135,7 @@ H1 and H2 are the engine and the front of the same product instinct. A knowledge
 
 **The decisive interconnect findings (current code state):**
 
-- **The outcome loop is stubbed.** `rememberOutcome()` exists, `buildOutcomeMemory()` exists, and `checkPrdShipped()` detects shipped PRDs via GitHub, but **no code calls `rememberOutcome()`**. Outcomes are detected and discarded. The moat's core loop is one wiring step from closing.
+- **The outcome loop is closed, but the memory is flat and the Critic is blind to it** (corrected 2026-06-20 after a code read; an earlier draft wrongly called the loop "stubbed"). `recordOutcome` already writes an outcome-labeled memory via `rememberOutcome`, and it is correctly human-gated (a verdict lands weeks after ship). The real gaps: the memory is flat (text plus an embedding), not a typed graph; and `runCritic` reads none of it.
 - **The Critic is context-blind.** `critic.server.ts` reads no memory and its verdict is not outcome-labeled; it red-teams the spec, not the institutional record.
 - **The A2A `memory_refs` contract exists but is never populated** by the loop.
 - **MCP is a read-only foundation** (`searchSignals`/`searchOpportunities`/`getPRD`/`appendDecision`), with no outcome feedback.
@@ -145,7 +145,7 @@ These gaps *are* the two bets. Wiring map:
 
 | What | Today | Bet | Action |
 | --- | --- | --- | --- |
-| Outcome to memory pipeline | Stubbed (no caller) | H1 | **BUILD first (small):** call `rememberOutcome()` from `outcome.functions` ship-detection. Closes the loop the moat claims. |
+| Outcome to memory loop | Closed (human-gated) but flat + Critic-blind | H1 | **DBR-0 DONE (2026-06-20, ◐):** fed past outcomes to the Critic (`formatDecisionPrecedent` + a best-effort workspace-outcomes query in `runCritic`). Flat to typed graph is DBR-1. |
 | `O1` knowledge graph + query | Partial (provenance only) | H1 | **REPOSITION + elevate** P2 to moat-tier; becomes the typed decision graph. |
 | `O3` fact drift + skill packs | Pending | H1 | **ABSORB** into H1 (freshness/provenance + MCP export). |
 | Brain surface (`brain.functions.ts`, `brain.md`) | Status dashboard | H1 | **REPOSITION** into a navigable decision graph (Glean "trace why" + Guru governing-decision retrieval). |
@@ -182,7 +182,7 @@ These gaps *are* the two bets. Wiring map:
 
 **H1 Decision Brain** (Lane B/LEARN + G2 Decide + G6 Interop; serves milestones M-A/M-B):
 
-- **DBR-0 (now, small, highest-leverage):** wire `rememberOutcome()` into `outcome.functions` ship-detection. Fits the knowledge lane immediately; makes outcome-labeling real. Gates: tsc + build + tests + prod dry-run.
+- **DBR-0 (DONE 2026-06-20, ◐):** gave the Critic decision precedent. The outcome to memory loop was already closed via `recordOutcome`, so the real first win was making the wedge cite history: a pure, TDD'd `formatDecisionPrecedent` (`src/lib/ai/outcome-memory.ts`, +5 tests) plus a best-effort workspace-outcomes query in `runCritic` (`src/lib/ai/critic.server.ts`). tsc 0 / 303 tests / build green; fail-safe; live-verify on publish.
 - **DBR-1:** typed bi-temporal decision graph over Supabase/pgvector (nodes, edges, validity windows), auto-extracted from PRDs/discovery/decisions; hybrid retrieval (vectors stay). Absorbs `O1`.
 - **DBR-2:** Critic reads the graph (multi-hop contradiction and precedent context); upgrades the wedge.
 - **DBR-3:** Brain surface becomes a navigable graph plus provenance plus freshness plus governing-decision retrieval. Absorbs `O3`.

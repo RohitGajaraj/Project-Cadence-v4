@@ -62,3 +62,53 @@ export function buildOutcomeMemory(input: OutcomeMemoryInput): string {
   }
   return parts.join(" ").slice(0, MAX_LEN);
 }
+
+// ---------------------------------------------------------------------------
+// DBR-0 (the Decision Brain's first step). The Critic (the launch wedge) was
+// context-blind: it red-teamed only the target row's own fields, never the
+// outcomes recordOutcome already records. This turns past outcomes into a
+// compact "decision precedent" block the Critic can cite, so its verdict
+// carries receipts ("we shipped a similar bet and it MISSED") instead of being
+// a generic, history-free red-team. Pure + DB-free; the workspace query lives
+// in critic.server.ts. This is the read-side seam the typed graph (DBR-1) later
+// upgrades from recency to true multi-hop/contradiction precedent.
+
+/** Max outcomes shown to the Critic, so the prompt never bloats. */
+const MAX_PRECEDENT = 8;
+/** Per-outcome summary cap, so one verbose outcome cannot dominate the block. */
+const MAX_PRECEDENT_SUMMARY = 200;
+
+export type DecisionPrecedentRow = {
+  title?: string | null;
+  verdict: OutcomeVerdict;
+  summary: string;
+  priorIce?: number | null;
+  newIce?: number | null;
+};
+
+/**
+ * Format past outcomes into a compact precedent block for the Critic prompt.
+ * Empty input returns "" (the caller omits the block entirely). Bullets are
+ * capped and summaries truncated so the block stays bounded regardless of how
+ * much history a workspace has.
+ */
+export function formatDecisionPrecedent(rows: DecisionPrecedentRow[]): string {
+  if (!rows.length) return "";
+  const bullets = rows.slice(0, MAX_PRECEDENT).map((r) => {
+    const title = r.title?.trim() || "an untitled spec";
+    const summary = (r.summary ?? "").trim().slice(0, MAX_PRECEDENT_SUMMARY);
+    let ice = "";
+    if (
+      typeof r.priorIce === "number" &&
+      typeof r.newIce === "number" &&
+      round1(r.priorIce) !== round1(r.newIce)
+    ) {
+      ice = ` (ICE ${round1(r.priorIce)}→${round1(r.newIce)})`;
+    }
+    return `- [${r.verdict.toUpperCase()}] "${title}": ${summary}${ice}`;
+  });
+  return [
+    "Decision precedent (past shipped outcomes in this workspace, most recent first):",
+    ...bullets,
+  ].join("\n");
+}
