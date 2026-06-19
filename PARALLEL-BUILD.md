@@ -1,3 +1,4 @@
+
 # Parallel build - how to run the lanes
 
 > Plain operating manual for running the backlog in parallel across several worktrees at once. Placed at the repo root on founder request so it is easy to find. The deep rules live in `docs/operations/autonomous-build-loop.md` (sections 15-16); this is the "just tell me how to run it" page.
@@ -60,13 +61,37 @@ It opens a new macOS terminal window per lane (iTerm if running, else Terminal.a
 
 ## Running a lane from another tool (Antigravity, Gemini, Codex) - to spare Claude Code tokens
 
-Honest note: the `/overnight-build-*` **skills are Claude-Code-specific** (they live in `.claude/skills` and `~/.claude/skills` and only Claude Code reads them). To run a lane from another tool without burning Claude Code tokens, use the **portable layer that every tool can read**:
+### First: where ARE the lane folders? (the "I can't see them" problem)
 
-1. Open the lane's worktree folder in that tool (e.g. open `cadence-cockpit` in Antigravity).
-2. Tell its agent: "Run the lane build" - it follows `AGENTS.md` + the worktree's `.remember/LANE.md` + `docs/operations/autonomous-build-loop.md` sections 15-16 (all tool-agnostic).
-3. Or just run `bash <repo>/scripts/parallel-build.sh <lane>` in that tool's terminal.
+The lane folders are NOT inside this repo. They are **sibling folders** next to it, all under `~/Projects/My Projects/My Builds/`:
 
-That tool's session uses **its own** model and token budget, so the parallel lanes do not draw down this Claude Code account.
+```
+My Builds/
+  Project-Cadence-v4/   <- this repo (what you usually open; you only see THIS)
+  cadence-cockpit/      <- Lane 1     one level UP from the repo
+  cadence-knowledge/    <- Lane 2
+  cadence-safety/       <- Lane 3
+  cadence-build/        <- Lane 4
+  overnight-build/      <- Lane 0 (WM)
+```
+
+So opening `Project-Cadence-v4` in any tool hides the lanes. Three ways to open a lane folder:
+
+1. **See them all at once (best):** open `cadence-parallel.code-workspace` (at this repo's root) - in VS Code / Antigravity: File > Open Workspace from File. All six folders appear in the Explorer; right-click any one -> "Open in Integrated Terminal".
+2. **Open one directly:** File > Open Folder, navigate UP to `My Builds`, pick e.g. `cadence-cockpit`. Full path: `/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-cockpit`.
+3. **Open the parent:** open the `My Builds` folder - all siblings are visible.
+
+### Then: start the lane (the `/overnight-build` skill does NOT exist in other tools)
+
+You are right - the `/overnight-build-*` skills are **Claude-Code-only** (they live in `.claude/skills` / `~/.claude/skills`; only Claude Code reads them). But the loop is just markdown instructions any agent can read. Open a terminal in the lane folder (or point the tool's agent at it) and paste this **kickoff prompt** - it is the portable equivalent of the skill, and the agent then "knows everything":
+
+> You are in a scoped parallel build lane of the Cadence repo. Read `.remember/LANE.md` and `docs/operations/autonomous-build-loop.md` (sections 15 and 16) in full, then run it as a self-paced autonomous build loop: build this lane's queued items one after another; on each, run the gate (tsc + build + tests) and a skeptical self-review, then commit explicit paths with a one-line WHY and fast-forward push to main, then pick the next queued item and continue. Stay strictly inside this lane's OWNED files; never touch its FORBIDDEN files. Stop and report only when the queue is dry.
+
+That tool's session uses **its own** model and token budget, so it does not draw down this Claude Code account.
+
+### Honest note on autonomy (so you are not surprised)
+
+The deepest unattended, build-feature-after-feature loop is in **Claude Code** - the playbook self-schedules each cycle, so it genuinely runs back-to-back while you sleep. **Antigravity and Gemini are agentic and WILL follow the kickoff prompt** (read everything, build, gate, commit, push), but how relentlessly they auto-continue from one item to the NEXT, unattended, depends on that tool: some pause between turns or hit a turn/quota cap, where you nudge with "continue". The instructions are identical across tools; the loop persistence is the tool's, not ours. **Try one lane in Antigravity first** to see how far it auto-continues on your plan, then decide which lanes to run where.
 
 ## Why lanes never collide (one line)
 

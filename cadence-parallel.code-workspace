@@ -1,0 +1,12 @@
+{
+  "//": "Open this file (File > Open Workspace from File) in VS Code or Antigravity to see ALL parallel build lanes in one window. The lane folders are siblings of this repo, so a plain 'Open Folder' on the repo hides them. Each folder here has its own right-click 'Open in Integrated Terminal'. See PARALLEL-BUILD.md.",
+  "folders": [
+    { "name": "main (Project-Cadence-v4)", "path": "." },
+    { "name": "Lane 1 - Cockpit (cadence-cockpit)", "path": "../cadence-cockpit" },
+    { "name": "Lane 2 - Knowledge (cadence-knowledge)", "path": "../cadence-knowledge" },
+    { "name": "Lane 3 - Safety (cadence-safety)", "path": "../cadence-safety" },
+    { "name": "Lane 4 - Build (cadence-build)", "path": "../cadence-build" },
+    { "name": "Lane 0 - WM / overnight (overnight-build)", "path": "../overnight-build" }
+  ],
+  "settings": {}
+}
