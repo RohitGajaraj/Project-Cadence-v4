@@ -267,7 +267,8 @@ function SyncInboxPage() {
 
 type IngestToken = {
   id: string;
-  token: string;
+  token_prefix: string | null;
+  token?: string; // present only in the rotate response
   label: string | null;
   created_at: string;
 };
@@ -285,6 +286,7 @@ function WebhookIngestCard() {
   const [revealed, setRevealed] = useState(false);
   const [rotateArmed, setRotateArmed] = useState(false);
   const [curlOpen, setCurlOpen] = useState(false);
+  const [freshToken, setFreshToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (!rotateArmed) return;
@@ -297,9 +299,11 @@ function WebhookIngestCard() {
 
   const mRotate = useMutation({
     mutationFn: () => fRotate(),
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast.success(token ? "Token rotated" : "Token generated");
-      setRevealed(false);
+      const plaintext = (res?.token as { token?: string } | null)?.token ?? null;
+      setFreshToken(plaintext);
+      setRevealed(Boolean(plaintext));
       setRotateArmed(false);
       qc.invalidateQueries({ queryKey: ["ingest-token"] });
     },
@@ -313,6 +317,7 @@ function WebhookIngestCard() {
     onSuccess: () => {
       toast.success("Token revoked");
       setRevealed(false);
+      setFreshToken(null);
       qc.invalidateQueries({ queryKey: ["ingest-token"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Revoke failed"),
@@ -370,22 +375,32 @@ function WebhookIngestCard() {
           ) : token ? (
             <>
               <code className="min-w-0 flex-1 truncate rounded-md bg-secondary/40 px-2 py-1 text-xs">
-                {revealed ? token.token : `${token.token.slice(0, 8)}…`}
+                {revealed && freshToken
+                  ? freshToken
+                  : `${(token.token_prefix ?? "").slice(0, 8)}…`}
               </code>
-              <button
-                onClick={() => setRevealed((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
-              >
-                {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {revealed ? "Hide" : "Reveal"}
-              </button>
-              <button
-                onClick={() => copy(token.token, "Token")}
-                className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
-              >
-                <Copy className="h-3 w-3" />
-                Copy
-              </button>
+              {freshToken ? (
+                <>
+                  <button
+                    onClick={() => setRevealed((v) => !v)}
+                    className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {revealed ? "Hide" : "Reveal"}
+                  </button>
+                  <button
+                    onClick={() => copy(freshToken, "Token")}
+                    className="inline-flex items-center gap-1 rounded-md border hairline px-2 py-1 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Copy
+                  </button>
+                </>
+              ) : (
+                <span className="text-[10px] text-muted-foreground italic shrink-0">
+                  Full token shown only once at rotation
+                </span>
+              )}
               <button
                 disabled={mRotate.isPending}
                 onClick={() => (rotateArmed ? mRotate.mutate() : setRotateArmed(true))}
