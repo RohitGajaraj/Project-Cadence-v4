@@ -87,6 +87,6 @@ Two reasons, both load-bearing. First, trust: AI fingerprints make a product rea
 ## Related
 
 - [`ui-voice.md`](./ui-voice.md) - the UI-string application (length budgets, buzzword denylist).
-- [`../../DESIGN.md`](../../design.md) - the "Voice & language" contract section.
+- [`../../DESIGN.md`](../../DESIGN.md) - the "Voice & language" contract section.
 - [`../operations/hooks.md`](../operations/hooks.md) - where the build-time trace check plugs in.
 - [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) - the "look different, not one in a thousand" positioning this serves.

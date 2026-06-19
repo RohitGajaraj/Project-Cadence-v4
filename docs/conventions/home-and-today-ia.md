@@ -38,5 +38,5 @@ On any new surface or panel: run the placement rubric first; if it is not "needs
 
 - [`design-context.md`](./design-context.md) - the design brief (Ember system + design-craft skills + reference north-stars) that loads by default on any design work.
 - [`ui-voice.md`](./ui-voice.md) · [`humanized-output.md`](./humanized-output.md) · [`inline-management.md`](./inline-management.md).
-- [`../../DESIGN.md`](../../design.md) (Ember Editorial, "every element earns its place; three clicks max") · [`../../architecture/frontend.md`](../../architecture/frontend.md).
+- [`../../DESIGN.md`](../../DESIGN.md) (Ember Editorial, "every element earns its place; three clicks max") · [`../../architecture/frontend.md`](../../architecture/frontend.md).
 - Plan of record for the recompose: `.claude/plans/piped-brewing-knuth.md` (session 2026-06-16).

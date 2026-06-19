@@ -17,7 +17,7 @@ FAIL=0
 WARN=0
 
 # Root is reserved for SYSTEM-READ entry points (tools auto-load them from here, so they MUST stay at root).
-ROOT_WHITELIST=" AGENTS.md CLAUDE.md GEMINI.md README.md design.md ENTRY.md Ai_Cofounder.md plan.md "
+ROOT_WHITELIST=" AGENTS.md CLAUDE.md GEMINI.md README.md DESIGN.md ENTRY.md Ai_Cofounder.md plan.md "
 DOCS_TOP_WHITELIST=" README.md brand-feed.md "
 
 echo "== docs-doctor =="
@@ -79,7 +79,7 @@ MISS=0
 while IFS= read -r mdfile; do
   [ -z "$mdfile" ] && continue
   if ! head -12 "$mdfile" | grep -qiE 'Last updated|Created:'; then echo "  WARN no date header: $mdfile"; MISS=1; fi
-done < <( { find docs -name '*.md' 2>/dev/null; for r in AGENTS.md CLAUDE.md GEMINI.md README.md design.md ENTRY.md Ai_Cofounder.md plan.md; do [ -f "$r" ] && echo "$r"; done; } )
+done < <( { find docs -name '*.md' 2>/dev/null; for r in AGENTS.md CLAUDE.md GEMINI.md README.md DESIGN.md ENTRY.md Ai_Cofounder.md plan.md; do [ -f "$r" ] && echo "$r"; done; } )
 if [ "$MISS" -ne 0 ]; then echo "  (add '> _Created: YYYY-MM-DD · Last updated: YYYY-MM-DD_' under the H1)"; WARN=1; else echo "  ok"; fi
 
 echo ""

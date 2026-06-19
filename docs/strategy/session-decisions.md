@@ -360,13 +360,13 @@
 
 ### 2026-06-12, Verdict chips: the inline annotation pattern is a platform-wide design law
 
-**Decision:** Founder ruling (mid-session, reference image of design-review annotations: `KEEP` / `CORRECT` / `ADD NEXT`): whenever content carries a judgment, Cadence leads with an inline **verdict chip**, a mono-caps outline pill in the role color, instead of burying the verdict in prose. Codified as a standing section in root `design.md` ("Inline verdict chips: annotate, don't bury"), canonical primitive `VerdictChip` in `src/components/cadence/Primitives.tsx`. Applies to every current and future screen.
+**Decision:** Founder ruling (mid-session, reference image of design-review annotations: `KEEP` / `CORRECT` / `ADD NEXT`): whenever content carries a judgment, Cadence leads with an inline **verdict chip**, a mono-caps outline pill in the role color, instead of burying the verdict in prose. Codified as a standing section in root `DESIGN.md` ("Inline verdict chips: annotate, don't bury"), canonical primitive `VerdictChip` in `src/components/cadence/Primitives.tsx`. Applies to every current and future screen.
 
 **Why:** The founder wants the platform to feel prominent, premium, and edited, information highlighted, judgments legible at a glance, for the end consumer. A chip vocabulary (moss keep · ember correct · indigo next · orchid agent · saffron highlight · madder kill) extends the existing color-role law from live status to rendered judgments without inventing new colors.
 
 **Tradeoffs considered:** Reusing StatusBadge (rejected: dot+pulse means LIVE state; conflating judgment with state would erode the trust mechanism). Applying chips everywhere immediately (rejected: the no-filler rule holds; chips only render real, data-backed verdicts; remaining surfaces adopt on touch: evals, drift, rescore deltas, brief callouts).
 
-**Impact:** `design.md` (new section + production-mapping row; sync-back to the design project flagged), `Primitives.tsx` (`VerdictChip`), `CriticBadge` (ship/revise/kill), `OutcomeCard` (validated/mixed/missed). Commit `0cd80cabe3`.
+**Impact:** `DESIGN.md` (new section + production-mapping row; sync-back to the design project flagged), `Primitives.tsx` (`VerdictChip`), `CriticBadge` (ship/revise/kill), `OutcomeCard` (validated/mixed/missed). Commit `0cd80cabe3`.
 
 ### 2026-06-12, Every chat reply gets a judge score; meta is persisted (screen 3 hand-in-hand builds)
 
@@ -870,7 +870,7 @@ _This log is maintained as part of the closed documentation loop. Every session 
 
 ## 2026-06-12, Ember Editorial is the platform's design system; screens migrate one at a time from the runnable reference
 
-**Decision:** Adopt the **"Ember Editorial"** design system (Project Cadence Design v1: warm parchment canvas, cacao ink, ember copper accent, Newsreader/Schibsted Grotesk/JetBrains Mono, exclusive color roles) as the production UI layer, replacing the legacy Cohere-inspired generation (white canvas, Fraunces/Inter). Source of truth: root `design.md` + `design-reference/` (the frozen runnable prototype, committed as the design of record).
+**Decision:** Adopt the **"Ember Editorial"** design system (Project Cadence Design v1: warm parchment canvas, cacao ink, ember copper accent, Newsreader/Schibsted Grotesk/JetBrains Mono, exclusive color roles) as the production UI layer, replacing the legacy Cohere-inspired generation (white canvas, Fraunces/Inter). Source of truth: root `DESIGN.md` + `design-reference/` (the frozen runnable prototype, committed as the design of record).
 
 **Sub-decisions:**
 
@@ -894,7 +894,7 @@ _This log is maintained as part of the closed documentation loop. Every session 
 2. **Deterministic jitter**, seeded from the data series itself, so charts never wobble between renders and the underlying points stay exact. The sketch is a rendering style, not data distortion; the no-filler/honesty law is untouched.
 3. **Scope boundary:** data SERIES only. Single-value meters (budget burn, signal strength, eval score bars, progress rings) stay clean utility marks, a meter is an instrument, not an observation.
 4. **Role colors still govern**, the sketch changes the stroke, never the color meaning.
-5. Codified in `design.md` ("Hand-sketched data marks") with a production-mapping row; sync back to the design project's DESIGN.md on its next update (same path as the verdict-chip law).
+5. Codified in `DESIGN.md` ("Hand-sketched data marks") with a production-mapping row; sync back to the design project's DESIGN.md on its next update (same path as the verdict-chip law).
 
 **Applied immediately:** Govern · Drift metric trends (SketchLine), Govern · Analytics daily activity (SketchBar: conversion also fixed its card overflow), Missions · Agents telemetry HUD buckets (SketchBar).
 
