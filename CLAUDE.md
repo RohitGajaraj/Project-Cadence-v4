@@ -93,6 +93,7 @@ Before writing code: **Think. State assumptions. Surface tradeoffs.**
 While coding: **Surgical changes only — every line traces to the task.**
 Goals: **Minimum code. Simplicity first. Nothing speculative.**
 Success: **Define success criteria upfront. Verify before declaring done.**
+Velocity: **Ship features fast. Per cycle, gate on correctness only (tsc + build + tests + runtime-fatal review). Batch non-trivial deferrable quality passes (authored-content humanization scanning, lint/prettier style cleanup, AI-trace polish, deep prose-polish, design) to a founder-prompted pre-launch stage; do not burn time on them mid-build.** _(Founder velocity ruling 2026-06-19; canonical: [`AGENTS.md`](./AGENTS.md) §3.)_
 
 Full detail: [`AGENTS.md`](./AGENTS.md), section 4. These apply equally to Claude Code, Antigravity, Gemini, and Lovable.
 

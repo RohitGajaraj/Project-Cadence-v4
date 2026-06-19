@@ -57,7 +57,9 @@ For each item:
 
 ## 5. Gates (non-negotiable)
 
-`tsc --noEmit` + `bun run build` + `bun run lint` + adversarial review. A green gate is the definition of "verified". If the gate fails, route to section 8 (resilience), never to a silent commit.
+**Per-cycle correctness gate (always, the K2-incident floor):** `tsc --noEmit` + `bun run build` + the feature's tests + the adversarial RUNTIME-FATAL review + (for migrations) a prod dry-run. A green correctness gate is the definition of "verified". If it fails, route to section 8 (resilience), never to a silent commit.
+
+**Velocity ruling (founder, 2026-06-19): deferrable quality passes are batched to a founder-prompted end-stage, NOT run per cycle.** Do not spend per-cycle effort/tokens on: authored-content humanization scanning (em/en dashes, AI-template phrasing) in docs/comments/build-log prose (write clean by habit, Tier 2 in [`../conventions/humanized-output.md`](../conventions/humanized-output.md)); repo-wide lint / prettier / style cleanup and style-only lint findings (do not introduce NEW correctness lint errors, but do not chase the pre-existing backlog); AI-trace / observability polish; deep doc prose-polish; the §14 design pass. The runtime humanization sanitizer stays ON (it guards user-facing generated output). As launch nears, **prompt the founder** to kick off the deferred batch; do not auto-run it. Canonical: [`../../AGENTS.md`](../../AGENTS.md) §3 "Velocity ruling".
 
 ## 6. Doc-loop checklist (a build is not done until these are true)
 

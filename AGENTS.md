@@ -183,6 +183,23 @@ Full skill-selection logic & anti-patterns: [`docs/operations/skills.md`](./docs
 14. **Delete your own orphans.** Remove imports/vars your change made unused; do not delete pre-existing dead code without asking.
 15. **Comments default to none.** Comment only when the _why_ is non-obvious.
 
+### Velocity ruling: ship fast, batch deferrable quality passes to the end (founder ruling, 2026-06-19)
+
+Build the working product first. Any **non-trivial process that can be done correctly once at the end** (when the app is complete or near build-stage) is **batched to that final stage, not run every cycle**. It is never ignored: it is tracked and executed as a dedicated end-stage pass. This exists because per-cycle quality sweeps were slowing the build to a crawl.
+
+- **Deferred to the final pre-launch sweep (do NOT spend per-cycle effort here):**
+  - Humanized-output scanning of AUTHORED content (em/en dashes, AI-template phrasing, invisible Unicode) in docs, code comments, commit and build-log prose. This is Tier 2 in [`docs/conventions/humanized-output.md`](./docs/conventions/humanized-output.md), which already says it warrants no detect-fix-rescan pass: write clean by habit, do NOT scan-and-fix per cycle.
+  - AI-trace / observability / telemetry polish.
+  - Repo-wide lint / prettier / formatting cleanup and style-only lint findings (no-explicit-any, quote style). Do not introduce NEW correctness lint errors, but do not chase the pre-existing style backlog per cycle.
+  - Deep documentation prose-polish, cross-linking, de-duplication. The status doc-loop still runs every cycle (flip the dashboard row + one terse build-log line); only the heavy prose-polish defers.
+  - Design / UX polish (already the LAST, ONCE pass: playbook §14).
+- **NEVER deferred (every cycle, the 2026-06-18 K2-incident floor):** the correctness gates `bunx tsc --noEmit` + `bun run build` + the feature's tests; the adversarial review that hunts RUNTIME-FATAL bugs (Supabase column/table mismatch, missing NOT NULL on an insert, RLS referencing a non-existent column, claim-outruns-wiring); migration dry-run safety; honest status (◐ not ✅ unless behaviorally verified); worktree isolation + explicit-path commits with a WHY; never a red tree; never commit on `main` directly.
+- **The runtime humanization sanitizer (`humanizeText` at the AI chokepoint) stays ON always.** It is code that runs itself and protects user-facing GENERATED output, so it is not a manual per-cycle check and is not deferred.
+- **End-stage trigger is founder-gated (do NOT auto-run it).** As the app nears launch / build-stage, the loop does NOT kick off the deferred batch on its own. It **prompts the founder** ("we are near launch; the deferred quality passes are ready to run: humanization sweep, lint/prettier cleanup, AI-trace, §14 design pass") and waits for the founder to decide when to initiate them. The batch then runs as dedicated one-time activities.
+- **This is an operating instruction, not just documentation.** Going forward, do not spend effort or tokens chasing non-trivial deferrable items mid-build (a stray dash, a style-lint finding, prose polish). Note it, defer it to the end-stage checklist, and keep building.
+
+In one line: per cycle, gate on correctness (tsc + build + tests + runtime-fatal review) and move fast; batch the quality polish to one disciplined, founder-prompted end-stage pass.
+
 ### AI-specific
 
 16. **Budget caps are sacred.** Enforced server-side. See [`architecture/runtime.md`](./architecture/runtime.md).
