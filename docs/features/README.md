@@ -40,7 +40,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | P7 | Incidents log (read-only) | ◐ Core shipped 2026-06-18 | `/govern?tab=incidents` | [`p7-incidents.md`](./p7-incidents.md) |
 | R3 | Notifications (in-app Attention feed) | ✅ Shipped 2026-06-20 | `/govern?tab=attention` | [`r3-notifications.md`](./r3-notifications.md) |
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
-| SUBPROC-DISCLOSURE | Sub-processor disclosure registry (model providers + infra) | ◐ Backend shipped 2026-06-20 | (no UI yet; `getSubprocessors` fn) | [`subprocessor-disclosure.md`](./subprocessor-disclosure.md) |
+| SUBPROC-DISCLOSURE | Sub-processor disclosure ("Where your data goes") | ◐ Backend + Settings UI shipped 2026-06-20 | `/settings?section=data` | [`subprocessor-disclosure.md`](./subprocessor-disclosure.md) |
 | APP-HEALTH | App-level health/readiness endpoint (uptime monitors / LBs) | ◐ Endpoint shipped 2026-06-20 | `GET /api/public/health` | [`app-health.md`](./app-health.md) |
 | D4 | Mission cancellation (per-mission brake) | ◐ Cancellation shipped 2026-06-18 | `/missions/$id` | [`d4-mission-cancellation.md`](./d4-mission-cancellation.md) |
 | O1 | Provenance ("why is this on the roadmap?") | ◐ Provenance shipped 2026-06-18 | `/product?opp=` | [`o1-provenance.md`](./o1-provenance.md) |
