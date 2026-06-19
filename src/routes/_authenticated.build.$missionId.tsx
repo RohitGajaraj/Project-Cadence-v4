@@ -24,6 +24,8 @@ import {
   type StudioApproval,
   type StudioChangesetSummary,
   type StudioCi,
+  type StudioConstraints,
+  type StudioFileSetPolicy,
   type StudioRunDetail,
 } from "@/lib/studio.functions";
 import { SessionTimeline } from "@/components/studio/SessionTimeline";
@@ -330,6 +332,8 @@ function BuildSessionPage() {
     | (StudioChangesetSummary & { base_sha?: string | null; updated_at?: string | null })
     | null;
   const changes = (data?.changes ?? []) as ChangeRow[];
+  const fileSetPolicy = (data?.fileSetPolicy ?? null) as StudioFileSetPolicy | null;
+  const constraints = (data?.constraints ?? null) as StudioConstraints;
   const approvals = (data?.approvals ?? []) as StudioApproval[];
   const ci = (data?.ci ?? null) as StudioCi;
   const inspection = (data?.inspection ?? null) as Inspection | null;
@@ -496,7 +500,15 @@ function BuildSessionPage() {
                   navigate({ search: { tab: next } });
                 }}
               />
-              {tab === "changes" && <ChangesPanel changeset={changeset} changes={changes} />}
+              {tab === "changes" && (
+                <ChangesPanel
+                  changeset={changeset}
+                  changes={changes}
+                  missionId={missionId}
+                  fileSetPolicy={fileSetPolicy}
+                  constraints={constraints}
+                />
+              )}
               {tab === "pr" && (
                 <CiPanel
                   missionId={missionId}

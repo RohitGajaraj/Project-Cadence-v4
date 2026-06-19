@@ -15,7 +15,11 @@ import {
   abandonChangeset,
   getRollbacks,
   generateRollbackNote,
+  setChangesetConstraints,
+  enforceTouchList,
   type StudioChangesetSummary,
+  type StudioConstraints,
+  type StudioFileSetPolicy,
 } from "@/lib/studio.functions";
 import { computeHunks } from "@/lib/ai/studio-hunks";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
@@ -88,9 +92,15 @@ const spinnerBox = (
 export function ChangesPanel({
   changeset,
   changes,
+  missionId,
+  fileSetPolicy = null,
+  constraints = null,
 }: {
   changeset: StudioChangesetSummary | null;
   changes: ChangeRow[];
+  missionId?: string;
+  fileSetPolicy?: StudioFileSetPolicy | null;
+  constraints?: StudioConstraints;
 }) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const fDiff = useServerFn(getChangesetDiff);
@@ -172,6 +182,56 @@ export function ChangesPanel({
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "Could not drop the file."),
   });
+
+  // F-BUILDER-MULTIFILE: scope policy (touch list + max-files cap). The editor
+  // declares it; "Apply scope" drops the out-of-policy files before the commit.
+  const outOfPolicy = useMemo(
+    () => new Set(fileSetPolicy?.outOfPolicy ?? []),
+    [fileSetPolicy?.outOfPolicy],
+  );
+  const [editScope, setEditScope] = useState(false);
+  const [pathsDraft, setPathsDraft] = useState("");
+  const [capDraft, setCapDraft] = useState("");
+  const openScopeEditor = () => {
+    setPathsDraft((constraints?.allowed_paths ?? []).join("\n"));
+    setCapDraft(constraints?.max_files != null ? String(constraints.max_files) : "");
+    setEditScope(true);
+  };
+  const fSetConstraints = useServerFn(setChangesetConstraints);
+  const fEnforce = useServerFn(enforceTouchList);
+  const setScopeMut = useMutation({
+    mutationFn: (vars: { allowedPaths: string[]; maxFiles: number | null }) =>
+      fSetConstraints({ data: { missionId: missionId!, ...vars } }),
+    onSuccess: () => {
+      toast.success("Scope saved.");
+      setEditScope(false);
+      refetchAll();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not save the scope."),
+  });
+  const enforceMut = useMutation({
+    mutationFn: () => fEnforce({ data: { changesetId: changeset!.id } }),
+    onSuccess: (res) => {
+      const n = res.removed.length;
+      toast.success(
+        n ? `Dropped ${n} out-of-scope file${n === 1 ? "" : "s"}.` : "Already in scope.",
+      );
+      refetchAll();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not apply the scope."),
+  });
+  const saveScope = () => {
+    const allowedPaths = pathsDraft
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const parsed = parseInt(capDraft.trim(), 10);
+    const maxFiles =
+      capDraft.trim() === "" || !Number.isFinite(parsed) || parsed < 1 ? null : parsed;
+    setScopeMut.mutate({ allowedPaths, maxFiles });
+  };
 
   // K1: release notes for the changeset (generate/regenerate; persisted server-side).
   const fGenNotes = useServerFn(generateReleaseNotes);
@@ -721,6 +781,150 @@ export function ChangesPanel({
         </div>
       ) : null}
 
+      {/* F-BUILDER-MULTIFILE: scope policy. Pre-declared touch list + max-files
+          cap, with the live in/out-of-scope + over-cap read against the staged
+          files, and a one-click "stay in scope" before the gated commit. */}
+      {missionId ? (
+        <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 18px",
+              borderBottom: editScope ? "1px solid var(--hairline)" : "none",
+            }}
+          >
+            <span className="mono-label" style={{ flex: 1, minWidth: 0 }}>
+              Scope
+            </span>
+            {fileSetPolicy && (fileSetPolicy.hasTouchList || fileSetPolicy.hasCap) ? (
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: fileSetPolicy.clean ? "var(--ink-muted)" : "var(--amber)",
+                }}
+              >
+                {fileSetPolicy.clean
+                  ? `${fileSetPolicy.fileCount} file${fileSetPolicy.fileCount === 1 ? "" : "s"}, all in scope`
+                  : [
+                      fileSetPolicy.outOfPolicy.length
+                        ? `${fileSetPolicy.outOfPolicy.length} outside scope`
+                        : "",
+                      !fileSetPolicy.withinCap
+                        ? `${fileSetPolicy.overBy} over the cap of ${fileSetPolicy.maxFiles}`
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11.5, color: "var(--ink-faint)" }}>No scope set</span>
+            )}
+            {canCurate && fileSetPolicy?.hasTouchList && fileSetPolicy.outOfPolicy.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => enforceMut.mutate()}
+                disabled={enforceMut.isPending}
+                className="mono-label"
+                style={{
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 6,
+                  padding: "3px 10px",
+                  background: "transparent",
+                  color: "var(--ink-muted)",
+                  cursor: enforceMut.isPending ? "default" : "pointer",
+                }}
+              >
+                {enforceMut.isPending ? "Applying…" : "Apply scope"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => (editScope ? setEditScope(false) : openScopeEditor())}
+              className="mono-label"
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 6,
+                padding: "3px 10px",
+                background: "transparent",
+                color: "var(--ink-muted)",
+                cursor: "pointer",
+              }}
+            >
+              {editScope ? "Close" : "Edit"}
+            </button>
+          </div>
+          {editScope ? (
+            <div
+              style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 10 }}
+            >
+              <label className="mono-label" style={{ color: "var(--ink-muted)" }}>
+                Touch list: one path per line. A trailing / matches a folder; * and ** are globs.
+              </label>
+              <textarea
+                value={pathsDraft}
+                onChange={(e) => setPathsDraft(e.target.value)}
+                placeholder={"src/lib/\nsrc/components/studio/**"}
+                rows={4}
+                spellCheck={false}
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11.5,
+                  lineHeight: 1.6,
+                  color: "var(--ink)",
+                  background: "var(--surface-1)",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <label className="mono-label" style={{ color: "var(--ink-muted)" }}>
+                  Max files
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={capDraft}
+                  onChange={(e) => setCapDraft(e.target.value)}
+                  placeholder="none"
+                  style={{
+                    width: 90,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11.5,
+                    color: "var(--ink)",
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 6,
+                    padding: "5px 8px",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={saveScope}
+                  disabled={setScopeMut.isPending}
+                  className="mono-label"
+                  style={{
+                    marginLeft: "auto",
+                    border: "1px solid var(--hairline)",
+                    borderRadius: 6,
+                    padding: "4px 12px",
+                    background: "transparent",
+                    color: "var(--ink)",
+                    cursor: setScopeMut.isPending ? "default" : "pointer",
+                  }}
+                >
+                  {setScopeMut.isPending ? "Saving…" : "Save scope"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {/* File list — table-bento: padding 0, mono-label header, hairline rows. */}
       <div className="bento" style={{ padding: 0, overflow: "hidden" }}>
         <div
@@ -776,6 +980,22 @@ export function ChangesPanel({
               >
                 {c.path}
               </span>
+              {outOfPolicy.has(c.path) ? (
+                <span
+                  className="mono-label"
+                  title="Not in the declared touch list"
+                  style={{
+                    flexShrink: 0,
+                    color: "var(--amber)",
+                    border: "1px solid var(--amber)",
+                    borderRadius: 5,
+                    padding: "1px 6px",
+                    fontSize: 9.5,
+                  }}
+                >
+                  out of scope
+                </span>
+              ) : null}
               <span
                 className="mono-label"
                 style={{ width: 52, textAlign: "right", color: "var(--ink-muted)" }}

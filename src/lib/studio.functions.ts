@@ -20,7 +20,12 @@ import { recordLineage } from "@/lib/lineage.functions";
 import { TOOL_REGISTRY } from "@/lib/ai/tools/registry.server";
 import type { LoopStep } from "@/lib/ai/loop.server";
 import { runAgentLoop } from "@/lib/ai/loop.server";
-import { applyHunkSelection } from "@/lib/ai/studio-hunks";
+import {
+  applyHunkSelection,
+  evaluateFileSetPolicy,
+  matchesTouchList,
+  type FileSetPolicyReport,
+} from "@/lib/ai/studio-hunks";
 import { summarizeInspection } from "@/lib/ai/studio-inspection";
 import { callModel } from "@/lib/ai/runtime.server";
 import { humanizeText } from "@/lib/ai/humanize";
@@ -42,6 +47,15 @@ export type StudioChangesetSummary = {
   release_notes?: string | null;
   release_notes_at?: string | null;
 };
+
+/** F-BUILDER-MULTIFILE: the changeset's declared touch list + max-files cap. */
+export type StudioConstraints = {
+  allowed_paths: string[];
+  max_files: number | null;
+} | null;
+
+/** F-BUILDER-MULTIFILE: the staged file set evaluated against its policy. */
+export type StudioFileSetPolicy = FileSetPolicyReport;
 
 export type StudioSessionListItem = {
   mission_id: string;
@@ -124,6 +138,9 @@ export const dispatchStudioSession = createServerFn({ method: "POST" })
         opportunityId: z.string().uuid().optional(),
         prompt: z.string().min(4).max(8000).optional(),
         model: z.string().max(80).optional(),
+        // F-BUILDER-MULTIFILE: optional pre-declared touch list + max-files cap.
+        allowedPaths: z.array(z.string().max(400)).max(200).optional(),
+        maxFiles: z.number().int().min(1).max(1000).optional(),
       })
       .refine((v) => v.prdId || v.opportunityId || v.prompt, {
         message: "Pass a prdId, an opportunityId, or a prompt.",
@@ -231,6 +248,21 @@ export const dispatchStudioSession = createServerFn({ method: "POST" })
       model: data.model ?? null,
     });
     if (runErr) throw new Error(`Session enqueue failed: ${runErr.message}`);
+
+    // F-BUILDER-MULTIFILE: persist the pre-declared touch list + cap (mission-
+    // keyed, so it is in place before the agent lazily creates the changeset).
+    // Best-effort: if the constraints table has not been synced yet, dispatch
+    // must still succeed and the operator can re-declare on the Changes tab.
+    const declaredPaths = (data.allowedPaths ?? []).map((p) => p.trim()).filter(Boolean);
+    if (declaredPaths.length || (data.maxFiles ?? null) !== null) {
+      await db.from("studio_changeset_constraints").insert({
+        mission_id: mission.id,
+        workspace_id: workspaceId,
+        user_id: userId,
+        allowed_paths: declaredPaths,
+        max_files: data.maxFiles ?? null,
+      });
+    }
 
     if (prd) {
       await recordLineage(supabase, userId, {
@@ -552,6 +584,28 @@ export const getStudioSession = createServerFn({ method: "GET" })
       }));
     }
 
+    // F-BUILDER-MULTIFILE: the changeset's declared touch list + cap, evaluated
+    // against the staged files so the Changes tab can surface what is out of
+    // scope / over the cap. A missing constraints table (pre-sync) just yields
+    // an unconstrained policy rather than erroring the whole session read.
+    let constraints: StudioConstraints = null;
+    {
+      const { data: conRow, error: conErr } = await db
+        .from("studio_changeset_constraints")
+        .select("allowed_paths,max_files")
+        .eq("mission_id", data.missionId)
+        .maybeSingle();
+      if (!conErr && conRow) {
+        const c = conRow as { allowed_paths: string[] | null; max_files: number | null };
+        constraints = { allowed_paths: c.allowed_paths ?? [], max_files: c.max_files ?? null };
+      }
+    }
+    const fileSetPolicy: StudioFileSetPolicy = evaluateFileSetPolicy({
+      paths: changes.map((c) => c.path),
+      allowedPaths: constraints?.allowed_paths ?? null,
+      maxFiles: constraints?.max_files ?? null,
+    });
+
     // Latest CI snapshot for the changeset PR (loop reads + manual refreshes).
     let ci: StudioCi = null;
     const prNumber = (csRow as { pr_number?: number | null } | null)?.pr_number ?? null;
@@ -636,6 +690,8 @@ export const getStudioSession = createServerFn({ method: "GET" })
         ? { ...(csRow as Record<string, unknown>), file_count: changes.length }
         : null,
       changes,
+      constraints,
+      fileSetPolicy,
       approvals: (approvals ?? []) as StudioApproval[],
       ci,
       inspection,
@@ -1392,6 +1448,120 @@ export const rejectStagedFile = createServerFn({ method: "POST" })
       .eq("path", data.path);
     if (error) throw new Error(error.message);
     return { ok: true, path: data.path };
+  });
+
+/**
+ * F-BUILDER-MULTIFILE: declare (or clear) the touch list + max-files cap for a
+ * session. Mission-keyed, so it can be set before the agent creates the
+ * changeset; the Changes-tab policy report reads it back. Pass an empty
+ * allowedPaths and null maxFiles to clear the policy. RLS scopes the upsert to
+ * the workspace.
+ */
+export const setChangesetConstraints = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        missionId: z.string().uuid(),
+        allowedPaths: z.array(z.string().max(400)).max(200).default([]),
+        maxFiles: z.number().int().min(1).max(1000).nullable().default(null),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const db = supabase as unknown as SupabaseClient;
+    // Resolve the workspace from the session's active changeset, else the mission.
+    let workspaceId: string | null = null;
+    const { data: csRow } = await db
+      .from("studio_changesets")
+      .select("workspace_id")
+      .eq("mission_id", data.missionId)
+      .neq("status", "abandoned")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    workspaceId = (csRow as { workspace_id?: string | null } | null)?.workspace_id ?? null;
+    if (!workspaceId) {
+      const { data: m } = await db
+        .from("missions")
+        .select("workspace_id")
+        .eq("id", data.missionId)
+        .maybeSingle();
+      workspaceId = (m as { workspace_id?: string | null } | null)?.workspace_id ?? null;
+    }
+    if (!workspaceId) throw new Error("Could not resolve the workspace for this session.");
+    const allowed = data.allowedPaths.map((p) => p.trim()).filter(Boolean);
+    const { error } = await db.from("studio_changeset_constraints").upsert(
+      {
+        mission_id: data.missionId,
+        workspace_id: workspaceId,
+        user_id: userId,
+        allowed_paths: allowed,
+        max_files: data.maxFiles,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "mission_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true, allowed_paths: allowed, max_files: data.maxFiles };
+  });
+
+// NOTE: the changeset-wide "merge across files" primitive lives as the pure,
+// unit-tested applyChangesetHunkSelections() in src/lib/ai/studio-hunks.ts (the
+// spec's home for the merge logic). It is not re-exposed as a TanStack server fn
+// here because the operator path drives per-file curation via
+// applyStagedHunkSelection; a changeset-wide server endpoint would be an
+// un-driven surface. The agent/contract door can import the pure helper directly.
+
+/**
+ * F-BUILDER-MULTIFILE: apply the touch list. Drop every staged file that is NOT
+ * in the session's declared touch list (the one-click "stay in scope" before the
+ * gated commit). No-op when no touch list is declared. Only a staged changeset
+ * can be curated. RLS scopes the delete to the workspace.
+ */
+export const enforceTouchList = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ changesetId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: cs, error: csErr } = await db
+      .from("studio_changesets")
+      .select("id,status,mission_id")
+      .eq("id", data.changesetId)
+      .maybeSingle();
+    if (csErr) throw new Error(csErr.message);
+    if (!cs) throw new Error("Changeset not found.");
+    const csr = cs as { id: string; status: string; mission_id: string | null };
+    if (csr.status !== "staged")
+      throw new Error("Only a staged changeset can be curated; this one is already committed.");
+    let allowed: string[] = [];
+    if (csr.mission_id) {
+      const { data: con } = await db
+        .from("studio_changeset_constraints")
+        .select("allowed_paths")
+        .eq("mission_id", csr.mission_id)
+        .maybeSingle();
+      allowed = ((con as { allowed_paths?: string[] | null } | null)?.allowed_paths ?? []).filter(
+        Boolean,
+      );
+    }
+    if (allowed.length === 0) return { ok: true, removed: [] as string[] };
+    const { data: rows } = await db
+      .from("studio_changes")
+      .select("path")
+      .eq("changeset_id", data.changesetId);
+    const paths = ((rows ?? []) as Array<{ path: string }>).map((r) => r.path);
+    const removed = paths.filter((p) => !matchesTouchList(p, allowed));
+    if (removed.length) {
+      const { error } = await db
+        .from("studio_changes")
+        .delete()
+        .eq("changeset_id", data.changesetId)
+        .in("path", removed);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, removed };
   });
 
 /** Re-read CI for the session's PR (manual refresh from the PR & CI tab). */

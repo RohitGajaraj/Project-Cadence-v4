@@ -112,3 +112,132 @@ export function applyHunkSelection(
   }
   return out.join("\n");
 }
+
+/**
+ * F-BUILDER-MULTIFILE: file-set policy for a multi-file changeset.
+ *
+ * A Studio changeset can carry a pre-declared *touch list* (the only paths the
+ * operator sanctioned) and a *max-files cap*. These pure helpers evaluate the
+ * staged file set against that policy so the operator can see what is out of
+ * scope and over the cap, and curate it, before the confirm-gated commit. No
+ * I/O here; the server fns that read/mutate the changeset call these.
+ */
+
+/** Translate a touch-list glob into an anchored RegExp. A double-star matches
+ * across path segments; bounded by slashes (or leading / trailing) it collapses
+ * zero or more segments, so a globstar dir-prefix also matches files directly
+ * under it. A single star matches within one segment; every other metachar is
+ * literal. (Examples live in the test file to keep this block-comment safe.) */
+function globToRegExp(glob: string): RegExp {
+  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&"); // escape metachars; keep * and /
+  // One pass, longest star-forms first, so the regex fragments we emit are not
+  // themselves re-processed. A slash-bounded double star collapses zero or more
+  // path segments; a lone single star stays within one segment.
+  const body = escaped.replace(
+    /\/\*\*\/|\*\*\/|\/\*\*|\*\*|\*/g,
+    (m: string, offset: number, str: string) => {
+      if (m === "/**/") return "/(?:.*/)?";
+      if (m === "**/") return offset === 0 ? "(?:.*/)?" : ".*/";
+      if (m === "/**") return offset + m.length === str.length ? "(?:/.*)?" : "/.*";
+      if (m === "**") return ".*";
+      return "[^/]*";
+    },
+  );
+  return new RegExp(`^${body}$`);
+}
+
+/** Does `path` satisfy any touch-list entry? First match wins. Entry forms:
+ *   - exact: `src/lib/a.ts` matches only that path
+ *   - directory prefix: an entry ending in `/` matches everything beneath it
+ *   - glob: an entry containing `*` (`src/**`, `src/lib/*.ts`)
+ * Empty/whitespace entries never match. */
+export function matchesTouchList(path: string, allowedPaths: string[]): boolean {
+  for (const raw of allowedPaths) {
+    const entry = raw.trim();
+    if (!entry) continue;
+    if (entry === path) return true;
+    if (entry.endsWith("/") && path.startsWith(entry)) return true;
+    if (entry.includes("*") && globToRegExp(entry).test(path)) return true;
+  }
+  return false;
+}
+
+export interface FileSetPolicyReport {
+  /** A non-empty touch list was declared. */
+  hasTouchList: boolean;
+  /** A positive max-files cap was declared. */
+  hasCap: boolean;
+  /** Files currently staged. */
+  fileCount: number;
+  /** The declared cap, or null when uncapped. */
+  maxFiles: number | null;
+  /** fileCount <= maxFiles (true when uncapped). */
+  withinCap: boolean;
+  /** Files over the cap (0 when within or uncapped). */
+  overBy: number;
+  /** Staged paths in the touch list (all paths when no touch list). */
+  inPolicy: string[];
+  /** Staged paths NOT in the touch list (empty when no touch list). */
+  outOfPolicy: string[];
+  /** No touch-list violations AND within the cap. */
+  clean: boolean;
+}
+
+/** Evaluate a staged file set against its declared touch list + cap. */
+export function evaluateFileSetPolicy(input: {
+  paths: string[];
+  allowedPaths?: string[] | null;
+  maxFiles?: number | null;
+}): FileSetPolicyReport {
+  const allowed = (input.allowedPaths ?? []).filter((p) => p.trim() !== "");
+  const hasTouchList = allowed.length > 0;
+  const maxFiles =
+    typeof input.maxFiles === "number" && Number.isFinite(input.maxFiles) && input.maxFiles > 0
+      ? Math.floor(input.maxFiles)
+      : null;
+  const hasCap = maxFiles !== null;
+
+  const inPolicy: string[] = [];
+  const outOfPolicy: string[] = [];
+  for (const p of input.paths) {
+    if (!hasTouchList || matchesTouchList(p, allowed)) inPolicy.push(p);
+    else outOfPolicy.push(p);
+  }
+  const fileCount = input.paths.length;
+  const withinCap = maxFiles === null ? true : fileCount <= maxFiles;
+  const overBy = maxFiles === null ? 0 : Math.max(0, fileCount - maxFiles);
+
+  return {
+    hasTouchList,
+    hasCap,
+    fileCount,
+    maxFiles,
+    withinCap,
+    overBy,
+    inPolicy,
+    outOfPolicy,
+    clean: outOfPolicy.length === 0 && withinCap,
+  };
+}
+
+export interface ChangesetFileInput {
+  path: string;
+  base: string;
+  modified: string;
+  rejectedHunkIds: number[];
+}
+
+/**
+ * Merge a per-file hunk selection across every file of a changeset at once (the
+ * multi-file extension of applyHunkSelection). Each file is reconstructed
+ * independently, so a file with no rejections round-trips to its modified
+ * content exactly, mirroring the single-file behavior.
+ */
+export function applyChangesetHunkSelections(
+  files: ChangesetFileInput[],
+): Array<{ path: string; merged: string }> {
+  return files.map((f) => ({
+    path: f.path,
+    merged: applyHunkSelection(f.base, f.modified, f.rejectedHunkIds),
+  }));
+}
