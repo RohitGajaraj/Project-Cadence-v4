@@ -270,6 +270,7 @@ export async function dispatchReadySteps(
           mission.user_id,
           step.agent_slug,
           step.sub_goal,
+          mission.workspace_id ?? null,
           { touch: true, maxItems: 4 },
         );
         memoryRefs = recalled.refs.length ? recalled.refs : undefined;

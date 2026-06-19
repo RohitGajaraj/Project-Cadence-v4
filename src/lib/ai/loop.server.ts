@@ -109,12 +109,16 @@ async function recallMemory(
   userId: string,
   agentSlug: string,
   query: string,
+  workspaceId: string | null,
 ): Promise<string[]> {
   // Delegates to the shared recall (memory.server). `touch: true` writes
   // last_used_at on the recalled memories — every recall is a use, feeding the
   // decay sweep (v6 Phase 1). We keep only the lines for prompt injection;
   // mid-loop handoffs thread the {id} refs separately at dispatch time.
-  const { lines } = await recallMemoryRefs(supabase, userId, agentSlug, query, { touch: true });
+  // WM-F1: scope recall to the active workspace.
+  const { lines } = await recallMemoryRefs(supabase, userId, agentSlug, query, workspaceId, {
+    touch: true,
+  });
   return lines;
 }
 
@@ -252,7 +256,7 @@ export async function runAgentLoop(
     tools.map((t) => [t.tool_name as string, t.mode as string]),
   );
 
-  const memories = await recallMemory(supabase, userId, input.agentSlug, input.goal);
+  const memories = await recallMemory(supabase, userId, input.agentSlug, input.goal, workspaceId);
   const voiceBlock = await loadVoiceAnchorBlock(supabase, userId);
 
   // Workspace Strategic Brief (Bundle 2 / C5) — shared operating context.
@@ -927,7 +931,13 @@ export async function resumeAgentLoop(
     recalledMemories = Array.isArray(st.recalledMemories) ? st.recalledMemories : [];
     injectedApprovalIds = Array.isArray(st.injectedApprovalIds) ? st.injectedApprovalIds : [];
   } else {
-    const memories = await recallMemory(supabase, run.user_id, agent.slug, run.input);
+    const memories = await recallMemory(
+      supabase,
+      run.user_id,
+      agent.slug,
+      run.input,
+      run.workspace_id ?? null,
+    );
     recalledMemories = memories;
     const voiceBlock = await loadVoiceAnchorBlock(supabase, run.user_id);
     // Workspace brief + inbound handoff (Bundle 2 + Bundle 4).

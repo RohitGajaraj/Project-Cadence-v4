@@ -177,6 +177,20 @@ export async function autoReflect(
       console.error("autoReflect insert failed:", error);
       return null;
     }
+    // WM-F1: tag the reflection with its workspace so recall scopes to the active
+    // workspace (reflections are the highest-volume recalled memory kind). Done as
+    // a separate, error-tolerant update so it stays pre-migration safe: before the
+    // column exists the update no-ops, and an untagged row recalls as global.
+    if (input.workspaceId && (data as { id?: string } | null)?.id) {
+      try {
+        await supabase
+          .from("agent_memory")
+          .update({ workspace_id: input.workspaceId })
+          .eq("id", (data as { id: string }).id);
+      } catch {
+        /* column not present yet (pre-migration) — non-fatal */
+      }
+    }
     return data as ReflectionRow;
   } catch (e) {
     console.error("autoReflect failed:", e);

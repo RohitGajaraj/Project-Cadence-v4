@@ -140,7 +140,8 @@ The thought process: name tiers after **what the product does to your knowledge*
 | ID | Title | Lane | Status | Depends on |
 |---|---|---|---|---|
 | WM-M1 | Entitlements core (5 account-level tiers + matrix) | Monetize | ✅ Done 2026-06-19 | none |
-| WM-F1 | Scope agent memory / runs / roster to workspace | Foundation | Pending | none (account-pooled recall needs WM-M2) |
+| WM-F1 | Scope agent memory / runs / roster to workspace | Foundation | ◐ Core done 2026-06-19 | none (account-pooled recall needs WM-M2) |
+| WM-F1b | Agent-workspace hardening (NOT NULL + RLS swap + roster unique key + full insert-path tagging) | Foundation | Pending | WM-F1 |
 | WM-M2 | `accounts` table + billing relocation + credit/decay migrations | Monetize | Pending | WM-M1 |
 | WM-F2 | Account-level memory pooling (paid) | Foundation | Pending | WM-M2, WM-F1 |
 | WM-F3 | RBAC enforcement (owner/admin/member/viewer) | Foundation | Pending | WM-M2 |
@@ -181,6 +182,15 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** preserve EVERY predicate in the recall rewrite and re-GRANT or recall silently breaks; drop-before-recreate the exact 4-arg signature; backfill must leave zero orphan/null; do not break existing single-user accounts (keep `user_id`, keep the DEFAULT bridge); use SECURITY DEFINER helpers to avoid RLS recursion; dedupe before the unique-key swap.
 - **Acceptance:** a member of workspace A cannot recall workspace B's memory; recall still returns within a workspace; `tsc`/build/lint green; an existing single-user account is unaffected.
 - **Verify:** RLS test (cross-workspace recall returns nothing); recall smoke test; migration applies cleanly on a Supabase branch.
+- **◐ CORE shipped 2026-06-19 (overnight cycle 27); hardening split to WM-F1b.** Migration `20260619150000_wm_f1_agent_workspace_scope.sql`. **Deviations from the spec above, deliberate and safe (live-DB-verified via the Lovable MCP):**
+  - Live schema check found `agent_runs` + `agent_approvals` ALREADY had `workspace_id`; only `agents`/`agent_memory`/`agent_tools` needed the column.
+  - Column is **NULLABLE with no DEFAULT bridge** (NOT NULL deferred to WM-F1b). The spec's `current_user_default_workspace()` DEFAULT bridge ERRORS under service-role (`auth.uid()` is null → it would insert a null-owner workspace), and `agent_memory` has ~10 insert paths (several service-role) that omit `workspace_id`; forcing NOT NULL now would break them. Backfill uses `ensure_user_default_workspace(user_id)` (explicit arg, always returns a workspace, handled the 1 orphan account + 2 multi-workspace users).
+  - Recall membership guard is **service-role-safe** (`auth.uid() IS NULL OR m.workspace_id IS NULL OR is_workspace_member(...)`): an UNCONDITIONAL guard would silently empty background recall (the loop calls these as `service_role`). A NULL `workspace_id` recalls as global (no regression for untagged rows).
+  - **Security fix folded** (adversarial review): `recent_agent_reflections` now filters `m.user_id = coalesce(auth.uid(), for_user)` (was `= for_user`), closing a pre-existing cross-user reflection read.
+  - **Deploy-window fallback:** `recallMemoryRefs` retries the legacy call on `PGRST202` so recall never goes dark before the migration applies; falls back ONLY on function-not-found (a transient error must not widen recall).
+  - Tagged new `rememberOutcome` + `autoReflect` rows with `workspace_id` (pre-migration-tolerant post-insert update).
+  - **Verification (what ran):** `bunx tsc --noEmit` 0; eslint clean; `bun run build` ✓; humanization scan clean; a `BEGIN..ROLLBACK` dry-run of the full migration on the live prod DB applied clean, left **0 nulls** across all 5 tables, recreated both RPCs with the new signatures, then rolled back (prod unchanged). Live recall-isolation activates on the founder's next publish.
+- **WM-F1b (deferred hardening):** set `workspace_id` NOT NULL (after a per-insert-site audit + tagging the remaining ~6 `agent_memory` insert paths: `handoff.server.ts`, `registry.server.ts` tools, `agent_loop.functions.ts`, `swarm.functions.ts`, `gauntlet.functions.ts`, `agent-runs.functions.ts`/`memory.functions.ts`); swap the 5 tables' RLS to membership-keyed (mirror tenancy_c); swap `agents UNIQUE(user_id,slug)` -> `UNIQUE(workspace_id,slug)`; regenerate `src/integrations/supabase/types.ts` so the new `for_workspace` RPC arg is typed. Until then, recall is workspace-scoped for backfilled rows + new outcomes/reflections, and global (owner-scoped) for the other untagged kinds.
 
 #### WM-F2 · Account-level memory pooling (paid)
 - **Why:** for paid accounts, memory should compound across all the account's workspaces (the flywheel); free stays single-workspace.

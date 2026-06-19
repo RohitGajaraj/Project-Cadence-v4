@@ -31,6 +31,11 @@ export async function recallMemoryRefs(
   userId: string,
   agentSlug: string,
   query: string,
+  // WM-F1: the ACTIVE workspace. Recall is scoped to it (a multi-workspace user
+  // recalls only this workspace, not everything they own). null = no workspace
+  // filter (legacy / single-workspace behavior). The recall RPCs treat a NULL
+  // memory.workspace_id as global, so untagged rows stay recallable everywhere.
+  workspaceId: string | null,
   opts?: { maxItems?: number; touch?: boolean },
 ): Promise<RecalledMemory> {
   const maxItems = opts?.maxItems ?? 8;
@@ -52,24 +57,39 @@ export async function recallMemoryRefs(
 
   try {
     const v = await embedOne(query);
-    const { data } = await supabase.rpc("match_agent_memory", {
+    const matchArgs = {
       query_embedding: v as unknown as string,
       for_user: userId,
       for_agent_slug: agentSlug,
       match_count: 5,
+    };
+    let res = await supabase.rpc("match_agent_memory", {
+      ...matchArgs,
+      for_workspace: workspaceId,
     });
-    (data ?? []).forEach((m: { id?: string; content: string }) => push(m.id, m.content));
+    // Pre-migration tolerance: PGRST202 means the for_workspace overload does not
+    // exist yet (the deploy window before the WM-F1 migration applies). Retry the
+    // legacy call so recall never goes dark. Any OTHER error stays non-fatal and we
+    // do NOT fall back, so a transient error can never silently widen recall to all
+    // workspaces. Post-migration this branch never runs.
+    if (res.error?.code === "PGRST202") {
+      res = await supabase.rpc("match_agent_memory", matchArgs);
+    }
+    (res.data ?? []).forEach((m: { id?: string; content: string }) => push(m.id, m.content));
   } catch {
     /* embed/RPC failure is non-fatal */
   }
 
   try {
-    const { data } = await supabase.rpc("recent_agent_reflections", {
-      for_user: userId,
-      for_agent_slug: agentSlug,
-      match_count: 3,
+    const reflArgs = { for_user: userId, for_agent_slug: agentSlug, match_count: 3 };
+    let res = await supabase.rpc("recent_agent_reflections", {
+      ...reflArgs,
+      for_workspace: workspaceId,
     });
-    (data ?? []).forEach((m: { id?: string; content: string }) => push(m.id, m.content));
+    if (res.error?.code === "PGRST202") {
+      res = await supabase.rpc("recent_agent_reflections", reflArgs);
+    }
+    (res.data ?? []).forEach((m: { id?: string; content: string }) => push(m.id, m.content));
   } catch {
     /* non-fatal */
   }
@@ -168,6 +188,20 @@ export async function rememberOutcome(
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    // WM-F1: tag the row with its workspace (the column is nullable and has no
+    // DEFAULT bridge, so a plain insert leaves it null). Done as a separate,
+    // error-tolerant update so it stays pre-migration safe: before the column
+    // exists the update simply no-ops, and a null workspace_id recalls as global.
+    if (args.workspaceId && (data as { id?: string } | null)?.id) {
+      try {
+        await supabase
+          .from("agent_memory")
+          .update({ workspace_id: args.workspaceId })
+          .eq("id", (data as { id: string }).id);
+      } catch {
+        /* column not present yet (pre-migration) — non-fatal */
+      }
+    }
     return data as { id: string };
   } catch (e) {
     console.error("rememberOutcome failed:", e);

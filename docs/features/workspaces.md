@@ -23,6 +23,8 @@
 
 Decision memory scopes to the workspace for isolation, and **pools across the account's workspaces for paid accounts** so it compounds (`WM-F1`, `WM-F2`). Lock-in is gravity, not a wall: free memory decays on a 30-day rolling window, paid persists, and export stays open. The product gets smarter about your product the longer you use it; that is the implicit lock-in.
 
+> **WM-F1 core shipped 2026-06-19 (◐):** agent memory now carries `workspace_id` (all 5 agent tables, backfilled) and the recall RPCs (`match_agent_memory` + `recent_agent_reflections`) filter on an active `for_workspace`, so recall scopes to the current workspace; new outcomes + reflections are tagged. Service-role recall stays safe (the autonomous loop never goes dark), and a folded security fix closed a pre-existing cross-user reflection read. Migration verified by a `BEGIN..ROLLBACK` dry-run on the live DB. `NOT NULL` + the RLS-membership swap + tagging the remaining insert paths are `WM-F1b`; account-level pooling is `WM-F2`. Detail: the build bible WM-F1 spec.
+
 AI usage is metered as **account-level credits** by the credit engine (build SoT §4.2.1 / `WM-M10` to `WM-M16`): a generous included allowance per tier plus cheap capped top-ups, pooled across the account's products with per-product attribution, and a legibility layer (approximate per-action ranges, not a raw per-call counter) so the meter stays calm.
 
 ## Tiers (presentation; offerings in the plan)

@@ -64,17 +64,17 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-- **Total features = 141** · **Open = 81** · **Done = 60**
+- **Total features = 142** · **Open = 82** · **Done = 60**
   ("Open" = every row not ✅: ⬜ open + 🔨 in dev + ◐ partial + ⏸️ paused + ⏭️ deferred + 🚧 blocked.)
-- **Overall completion: 43% done** (60 of 141 fully done; ~48% counting partials as half-done). **57% remaining** (81 of 141 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open._
+- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐ this cycle; WM-F1b added as the hardening follow-up.)_
 - **By status (of 141 total):**
 
 | Status | Count |
 | --- | --- |
-| **Total** | **141** |
+| **Total** | **142** |
 | ✅ Done | 60 |
 | ⬜ Open (ready to pick up) | 53 |
-| ◐ Partial | 18 |
+| ◐ Partial | 19 |
 | ⏭️ Deferred | 7 |
 | ⏸️ Paused | 3 |
 | 🔨 In Dev | 0 |
@@ -152,7 +152,8 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 41 | ⬜ | KI-15 / KI-16 | Stale zero-step completion · advance-cap | Per-tick dispatch cap + stale zero-step-mission completion edge cases | Foundational | P2 | - | low: KI-15 done, KI-16 (per-tick cap) genuinely unbuilt; high-scale only |
 | 42 | ⏭️ | HUMAN-SWEEP | Full-product humanization sweep | Sweep all UI strings + seed data for AI fingerprints | Foundational | deferred | - | deferred: pre-launch gate, so screen churn does not force a re-sweep |
 | 43 | ✅ | WM-M1 | Entitlements core (5 account tiers + matrix) | The tier model + limits both threads read; unblocks all pricing/limit work | Monetization | WM-1 | 2026-06-19 13:50 | SHIPPED (overnight cycle 26): 5 slug tiers + full matrix (limits, credits, RBAC, collab) + `limitFor` + Constellation `planPresentation`; legacy fields kept as aliases; `src/lib/entitlements.ts` (+ 14 tests). tsc/build/lint/test green |
-| 44 | ⬜ | WM-F1 | Scope agent memory/runs/roster to workspace | The moat compounds per workspace/account (today user-scoped) | Monetization | WM-1 | 2026-06-19 | critical path, no deps; effort L (new migration + memory.server.ts) |
+| 44 | ◐ | WM-F1 | Scope agent memory/runs/roster to workspace | The moat compounds per workspace/account (today user-scoped) | Monetization | WM-1 | 2026-06-19 14:45 | CORE shipped (overnight cycle 27): nullable `workspace_id` on all 5 agent tables (backfilled) + recall RPCs rewritten with `for_workspace` (service-role-safe, null-tolerant) + a security fix (cross-user reflection leak) + recall threading + outcome/reflection tagging. Verified by a BEGIN..ROLLBACK dry-run on prod (0 nulls). NOT NULL + RLS swap + roster unique-swap + remaining insert-path tagging -> WM-F1b. Live recall-isolation activates on publish |
+| 44b | ⬜ | WM-F1b | Agent-workspace hardening (NOT NULL + RLS + roster key + full tagging) | Closes WM-F1's transitional gaps: NOT NULL on workspace_id, RLS membership swap, agents UNIQUE(workspace_id,slug), and tagging the remaining ~6 agent_memory insert paths (handoff/registry/swarm/gauntlet) so ALL new memory is workspace-isolated | Monetization | WM-1 | 2026-06-19 14:45 | needs a per-insert-site workspace_id audit (several service-role paths); follow-up to WM-F1 |
 | 45 | ⬜ | WM-M2 | accounts table + billing/credit/decay migrations | Moves billing to the account; adds the credit-pool shell + 30d rolling decay | Monetization | WM-2 | 2026-06-19 | effort L; needs WM-M1 |
 | 46 | ⬜ | WM-M10 | Credit unit + cost-to-credit conversion + legibility | What one credit is + the calm per-action legibility layer (no meter-anxiety) | Credit | WM-2 | 2026-06-19 | effort S, no DB; needs WM-M1; first piece of the credit engine |
 | 47 | ⬜ | WM-F3 | RBAC enforcement | Real owner/admin/member/viewer permissions for teams | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2 |
