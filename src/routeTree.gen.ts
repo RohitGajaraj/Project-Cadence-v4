@@ -34,6 +34,7 @@ import { Route as AuthenticatedOutcomeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated.opportunities'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedObserveRouteImport } from './routes/_authenticated.observe'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated.notifications'
 import { Route as AuthenticatedMemoryRouteImport } from './routes/_authenticated.memory'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated.learn'
@@ -60,6 +61,7 @@ import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedBuildIndexRouteImport } from './routes/_authenticated.build.index'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioMissionIdRouteImport } from './routes/_authenticated.studio.$missionId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
@@ -207,6 +209,12 @@ const AuthenticatedObserveRoute = AuthenticatedObserveRouteImport.update({
   path: '/observe',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMemoryRoute = AuthenticatedMemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
@@ -338,6 +346,11 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
 const ApiPublicIngestSignalsRoute = ApiPublicIngestSignalsRouteImport.update({
   id: '/api/public/ingest-signals',
   path: '/api/public/ingest-signals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTracesTraceIdRoute =
@@ -489,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/memory': typeof AuthenticatedMemoryRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/observe': typeof AuthenticatedObserveRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -513,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build/': typeof AuthenticatedBuildIndexRoute
@@ -561,6 +576,7 @@ export interface FileRoutesByTo {
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/memory': typeof AuthenticatedMemoryRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/observe': typeof AuthenticatedObserveRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -585,6 +601,7 @@ export interface FileRoutesByTo {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build': typeof AuthenticatedBuildIndexRoute
@@ -635,6 +652,7 @@ export interface FileRoutesById {
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/_authenticated/memory': typeof AuthenticatedMemoryRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/observe': typeof AuthenticatedObserveRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -660,6 +678,7 @@ export interface FileRoutesById {
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_authenticated/build/': typeof AuthenticatedBuildIndexRoute
@@ -711,6 +730,7 @@ export interface FileRouteTypes {
     | '/learn'
     | '/meetings'
     | '/memory'
+    | '/notifications'
     | '/observe'
     | '/onboarding'
     | '/opportunities'
@@ -735,6 +755,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/build/'
@@ -783,6 +804,7 @@ export interface FileRouteTypes {
     | '/learn'
     | '/meetings'
     | '/memory'
+    | '/notifications'
     | '/observe'
     | '/onboarding'
     | '/opportunities'
@@ -807,6 +829,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/build'
@@ -856,6 +879,7 @@ export interface FileRouteTypes {
     | '/_authenticated/learn'
     | '/_authenticated/meetings'
     | '/_authenticated/memory'
+    | '/_authenticated/notifications'
     | '/_authenticated/observe'
     | '/_authenticated/onboarding'
     | '/_authenticated/opportunities'
@@ -881,6 +905,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prds/$id'
     | '/_authenticated/studio/$missionId'
     | '/_authenticated/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/_authenticated/build/'
@@ -916,6 +941,7 @@ export interface RootRouteChildren {
   DSlugRoute: typeof DSlugRoute
   PSlugRoute: typeof PSlugRoute
   TSlugRoute: typeof TSlugRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
@@ -1112,6 +1138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedObserveRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/memory': {
       id: '/_authenticated/memory'
       path: '/memory'
@@ -1292,6 +1325,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ingest-signals'
       fullPath: '/api/public/ingest-signals'
       preLoaderRoute: typeof ApiPublicIngestSignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/traces/$traceId': {
@@ -1502,6 +1542,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
   AuthenticatedMemoryRoute: typeof AuthenticatedMemoryRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedObserveRoute: typeof AuthenticatedObserveRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
@@ -1545,6 +1586,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
   AuthenticatedMemoryRoute: AuthenticatedMemoryRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedObserveRoute: AuthenticatedObserveRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
@@ -1583,6 +1625,7 @@ const rootRouteChildren: RootRouteChildren = {
   DSlugRoute: DSlugRoute,
   PSlugRoute: PSlugRoute,
   TSlugRoute: TSlugRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
