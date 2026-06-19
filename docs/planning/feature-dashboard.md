@@ -82,14 +82,14 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-20 01:30 IST** (cycle 49: NEW row 146 SUBPROC-DISCLOSURE → ◐ [~60%], a catalog-derived sub-processor disclosure registry + read fn, Data/Privacy P1; the awk recompute also corrected drift in the hand-kept status counts, which now read the canonical awk values: ✅61 / ◐36 / ⬜36 / ⏸️3 / ⏭️10, strict 41.8% / weighted 87.00 = 59.6%. cycle 48: U6-AUDIT backend (row 36 U6) shipped — an append-only `export_log` audit table + per-export audit-write in `exportProduct`/`exportWorkspace` + a `listExportLog` read fn, behaviorally dry-run-verified on prod (append-only confirmed: insert+select policies only); U6 [~85%]→[~95%], weighted 83.06→83.16 (counts unchanged, U6 stays ◐ pending its history UI); earlier cycle 47: NEW row 145 DATA-RETENTION → ◐) from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
+> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-20 02:10 IST** (horizon bets: NEW rows 147 DBR (Decision Brain, H1) + 148 CMD (Command Canvas, H2), both ⬜ 0% horizon cues at TOP priority per the 2026-06-20 founder ruling, enrich-first; total 146→148, ⬜ 36→38, strict 61/148=41.2%, weighted 87.00/148=58.8%; the by-category table's per-category weighted %s refresh on the next awk recompute. cycle 49: NEW row 146 SUBPROC-DISCLOSURE → ◐ [~60%], a catalog-derived sub-processor disclosure registry + read fn, Data/Privacy P1; the awk recompute also corrected drift in the hand-kept status counts, which now read the canonical awk values: ✅61 / ◐36 / ⬜36 / ⏸️3 / ⏭️10, strict 41.8% / weighted 87.00 = 59.6%. cycle 48: U6-AUDIT backend (row 36 U6) shipped — an append-only `export_log` audit table + per-export audit-write in `exportProduct`/`exportWorkspace` + a `listExportLog` read fn, behaviorally dry-run-verified on prod (append-only confirmed: insert+select policies only); U6 [~85%]→[~95%], weighted 83.06→83.16 (counts unchanged, U6 stays ◐ pending its history UI); earlier cycle 47: NEW row 145 DATA-RETENTION → ◐) from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
-- ### Overall completion: **42% (strict) / 60% (weighted)**
-  - **Strict** = fully-done rows / total = **61 / 146 = 41.8%** (the honest floor).
-  - **Weighted** = sum of every row's Item % / total = **87.00 / 146 = 59.6%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
-  - **Remaining: 58% open** - **85 of 146** rows not fully done.
-  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 42%. The 146 total includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19), which add planned scope, not regression._
-- **Total features = 146** · **Done = 61** · **Not done = 85** (⬜ 36 open + ◐ 36 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
+- ### Overall completion: **41% (strict) / 59% (weighted)**
+  - **Strict** = fully-done rows / total = **61 / 148 = 41.2%** (the honest floor).
+  - **Weighted** = sum of every row's Item % / total = **87.00 / 148 = 58.8%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Remaining: 59% open** - **87 of 148** rows not fully done.
+  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 41%. The 148 total includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19) and the 2 new horizon cues (DBR/CMD, 0% pending enrichment), which add planned scope, not regression._
+- **Total features = 148** · **Done = 61** · **Not done = 87** (⬜ 38 open + ◐ 36 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
 - _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **42 of the 85** not-done rows._
 
 - **By status (of 146 total), with weighted contribution to the 60% roll-up:**
@@ -100,28 +100,28 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | ◐ Partial | 36 | per-row `[~NN%]` (avg ~68%) | 24.50 |
 | ⏸️ Paused | 3 | 50% | 1.5 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
-| ⬜ Open (ready to pick up) | 36 | 0% | 0.0 |
+| ⬜ Open (ready to pick up) | 38 | 0% | 0.0 |
 | ⏭️ Deferred | 10 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **146** | - | **87.00 / 146 = 60%** |
+| **Total** | **148** | - | **87.00 / 148 = 59%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
 | Category | Total | Done | Open | Weighted % |
 | --- | --- | --- | --- | --- |
 | Decide | 12 | 10 | 2 | 94% |
-| Foundational | 19 | 17 | 2 | 89% |
+| Foundational | 20 | 17 | 3 | 85% |
 | Governance | 12 | 8 | 4 | 81% |
 | Build | 14 | 8 | 6 | 68% |
 | Data/Privacy | 2 | 0 | 0 | 65% |
-| Cockpit | 17 | 9 | 8 | 62% |
+| Cockpit | 18 | 9 | 9 | 59% |
 | Interop | 5 | 1 | 4 | 52% |
 | Credit | 7 | 1 | 6 | 52% |
 | Sense | 12 | 3 | 9 | 45% |
 | Launch | 8 | 2 | 6 | 39% |
 | Monetization | 31 | 2 | 29 | 29% |
 | BYO | 8 | 0 | 8 | 0% |
-| **Total** | **145** | **61** | **84** | **56%** |
+| **Total** | **147** | **61** | **86** | **55%** |
 
 > **Priority rationale** lives in the v10 pick-list ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16, execution mechanics in [`v10_implementation-plan.md`](./v10_implementation-plan.md)) + the SSOT build queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0/§3/§4). The current founder-directed initiative is the WM tenancy + monetization + credit engine (WM-*, build top-down by the WM-1..WM-6 order below). BYO (BYO-*) awaits founder greenlight. This register does not restate that prose; the Priority column encodes it.
 
@@ -282,6 +282,8 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 144 | ⏭️ | WM-M19 | Enterprise usage model (per-seat + API-rate usage + per-user allocation) | Per-seat + metered API-rate usage + per-user credit allocation / spend limits (on WM-M14 caps) | Monetization | WM-7 (post-core) | 2026-06-19 | Deferred; needs WM-M3, WM-M14. Enterprise sequenced post-loop-proof. Spec: bible §4.2.2 |
 | 145 | ◐ | DATA-RETENTION | AI-telemetry retention purge (dormant) | Bounded retention for unbounded per-call telemetry (ai_events/prompt_runs/tool_calls); data-minimization for enterprise/GDPR | Data/Privacy | P1 | 2026-06-20 00:20 | CORE shipped (overnight cycle 47): migration `20260620000000_data_retention.sql` adds `data_retention_enabled()` (dormant flag, false) + a SECURITY DEFINER `purge_old_telemetry(_older_than_days int default 180)` that self-gates on the flag, applies a hard 30-day floor (a mis-call can't purge recent data), and deletes ai_events/prompt_runs/tool_calls older than the window (no inbound FKs - clean deletes); execute revoked from public/anon/authenticated, granted to service_role only. New `retention-tick` hook (`src/routes/api/public/hooks/retention-tick.ts`, requireHookCaller-gated, pre-migration-tolerant). **Behaviorally dry-run-verified on prod** (BEGIN..ROLLBACK, backdating real rows): dormant→no-op, active purge(180) deletes a 200d row + keeps a 50d row, floor purge(0) floors to 30 + deletes the 50d row; rolled back. tsc 0 / eslint 0 / build ✓ / 287 tests. **◐ not ✅:** built + dry-run-verified, but stays dormant until the founder flips `data_retention_enabled()` AND wires a pg_cron/scheduler to POST the hook; live purge activates then. Follow-up DATA-RETENTION-b: the right-to-be-forgotten per-account/workspace erase cascade (destructive + policy-coupled, deferred). UI breadcrumb: none (cron + DB plumbing) [~70%] |
 | 146 | ◐ | SUBPROC-DISCLOSURE | Sub-processor disclosure registry | Canonical list of the third parties that process customer data (model providers + gateway + infra) for enterprise security reviews + GDPR Art. 28 | Data/Privacy | P1 | 2026-06-20 01:30 | NEW row (overnight cycle 49, `considerations.md` Data/Privacy P1; completes the data-governance triad with DATA-RETENTION + U6-AUDIT). New pure `src/lib/compliance/subprocessors.ts`: a `SubProcessor` type + a curated infra list (Lovable gateway / Supabase / Cloudflare) + `modelProviderSubprocessors` DERIVED from the live model catalog so the disclosure cannot drift (a provider is `active` only when it has a `live` model; adapter-ready BYO providers listed inactive; `ollama` excluded as self-hosted = never a third-party processor) + `allSubprocessors`/`activeSubprocessors`; new `getSubprocessors` GET server fn (`compliance.functions.ts`). `PROVIDER_META: Record<Model['provider'],…>` makes tsc FAIL if a catalog provider lacks a disclosure entry (no silent staleness). tsc 0 / eslint 0 / build ✓ / 298 tests (11 new: shape, unique ids, infra-active, ollama-never-listed, active-only-when-live against an injected catalog, ordering, active=subset-of-all). **◐ not ✅:** the pure registry + read fn are built + unit-verified, but the trust-page UI and the legal-reviewed copy/regions/DPA are deferred to the design/legal pass, and the GET fn was not behaviorally run unattended (live-verify on publish). UI breadcrumb (once UI ships): public trust page / Settings > Account > Privacy [~60%] |
+| 147 | ⬜ | DBR (H1) | The Decision Brain (typed decision knowledge graph) | Evolve flat vector recall into a typed, bi-temporal, auto-built decision graph (nodes: signal/opportunity/assumption/decision/PRD/outcome; edges: cites/supersedes/validates/contradicts) with an Obsidian-style visual graph view; signature mechanic = outcome-labeled supersession | Foundational | **TOP (founder ruling 2026-06-20)** | 2026-06-20 | **HORIZON BET, enrich first** (schema/sequencing/lane). Spec [`../features/decision-brain.md`](../features/decision-brain.md); strategy [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md). Absorbs + elevates O1 (knowledge graph, partial) + O3 (drift/skill-packs, pending). First step DBR-0 = wire `rememberOutcome()` into ship-detection (closes the stubbed moat loop). 0% [not started] |
+| 148 | ⬜ | CMD (H2) | The Command Canvas (NL command bar + live preview) | A natural-language intent bar (Lovable/Cursor-like, NOT a syntax CLI) as the primary surface with a live preview/canvas pane on the right; calm-front compliant (Linear pattern); preview half first. Resolves the overlap with today's Ask (`/chat`): the Canvas is the evolution of Ask, not a second box | Cockpit | **TOP-2 (behind H1)** | 2026-06-20 | **HORIZON BET, enrich first.** Spec [`../features/command-canvas.md`](../features/command-canvas.md). Evolves the Ask/`CommandPalette.tsx` (⌘K nav → NL intent) + adds the canvas pane (CMD-0). GUI fallback preserved. 0% [not started] |
 
 ---
 

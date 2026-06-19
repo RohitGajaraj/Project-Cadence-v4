@@ -53,6 +53,8 @@
 
 Approvals are surfaced as "your calls" on Today plus a badge, not a separate technical surface. Connectors are one **Connect** button (OAuth, no key paste).
 
+> **Forward bets (2026-06-20, [`horizon-bets.md`](./horizon-bets.md)).** Two structure-relevant bets sit on top of this map. **H1 the Decision Brain** (topmost priority) reshapes the **Memory/Brain** surface from a status view into an auto-built, Obsidian-style visual decision graph (the engine under the moat); spec [`../features/decision-brain.md`](../features/decision-brain.md). **H2 the Command Canvas** adds a natural-language command bar plus live-preview interaction *altitude* over the calm GUI (an accelerator, never a primary-only path, so it stays inside Law #1); spec [`../features/command-canvas.md`](../features/command-canvas.md).
+
 ---
 
 ## 3. The one door — the Engine Room (recessed, not removed)

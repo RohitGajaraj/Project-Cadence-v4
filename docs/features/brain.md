@@ -3,6 +3,8 @@
 > _Created: 2026-06-12 · Last updated: 2026-06-19_
 
 > **What this is.** The conversational surface (rail label **Brain**, route `/chat`, threads = **Threads**) is two things fused deliberately: a **Perplexity-grade researcher** over the live web and your workspace, and the **company brain**, the asset that captures everything inward and outward, cited, and compounding. Tagline: *"Everything inward and outward, captured, cited, compounding."* Strategic grounding: company-brain positioning ratified 2026-06-12 ([`../strategy/session-decisions.md`](../strategy/session-decisions.md)). It surfaces moat pillar #4, **Compounding Product Memory**, from [`../strategy/archive/v4-feature-map.md`](../strategy/archive/v4-feature-map.md) (platform law #6, "Memory compounds") as the felt product. Mission dispatch ("run a mission to…") still routes through the same box, unchanged.
+>
+> **Forward direction (2026-06-20, TOPMOST priority).** This surface evolves from flat vector recall into the **Decision Brain**: a typed, bi-temporal, auto-built decision knowledge graph with an Obsidian-style visual graph view that "speaks everything." Full spec: [`decision-brain.md`](./decision-brain.md); strategy: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (bet H1). The current flat-recall behavior documented below is the substrate the graph layers over (hybrid retrieval; vectors stay for fuzzy recall).
 
 ## Part 1: The researcher (how a question is answered)
 

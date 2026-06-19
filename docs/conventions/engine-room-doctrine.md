@@ -62,6 +62,7 @@ On any new surface, panel, metric, label, field, or architecture decision: run t
 ## Related
 
 - [`design-context.md`](./design-context.md) - the design brief that loads by default on any design work; this doctrine is its first law.
+- [`../features/command-canvas.md`](../features/command-canvas.md) - the Command Canvas bet (2026-06-20), tested against this doctrine: a "command-line" front is compatible ONLY as a natural-language intent bar (not a syntax CLI) over a calm GUI, with a live preview as the legibility surface. The CLI feel is an optional accelerator, never the floor.
 - [`home-and-today-ia.md`](./home-and-today-ia.md) - the surface-placement rubric this extends (the engine-room-vs-front axis).
 - [`ui-voice.md`](./ui-voice.md) and [`humanized-output.md`](./humanized-output.md) - outcome-naming and calm copy are how rule 2 is executed in strings.
 - [`../../Ai_Cofounder.md`](../../Ai_Cofounder.md) ("Complexity exists in the engine, not in the user experience") and [`../strategy/v7-agentic-product-os.md`](../strategy/v7-agentic-product-os.md) ("simple front, powerful engine; hide the engine room").

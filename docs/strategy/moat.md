@@ -36,6 +36,8 @@ Each layer below is harder to copy than the one above it. Memory is layer 2, not
 
 We say this explicitly because "memory is the moat" sounds copyable. Memory matters because of **what** it remembers (outcome-labeled decisions, layer 2) and because the **system of record** (layer 3) is the only place that loop can close. A competitor cannot "add memory" and catch up, because the value is the accumulated, outcome-labeled judgment over calendar time inside the loop, not a feature flag. Make memory **visible** (the Memory/Brain surface) so the user both feels the stickiness and brags about it, but lead the pitch with the decision layer.
 
+**The engine under the memory layer (2026-06-20, current top build).** Memory becomes defensible in *form*, not just in accumulation, when it is a **typed, bi-temporal decision knowledge graph** (decision → evidence → outcome → supersession) rather than flat vector recall. A graph is what lets the Critic answer "what contradicts this" and "what happened last time," which flat similarity structurally cannot, and it is what makes the accumulated, outcome-labeled judgment literally un-backfillable (a competitor can copy the schema in a day and still not have your history). This is the **Decision Brain**, now the topmost build priority: spec [`../features/decision-brain.md`](../features/decision-brain.md), strategy [`horizon-bets.md`](./horizon-bets.md) (H1).
+
 ---
 
 ## 4. Competition map (integrate / absorb / race / ignore)

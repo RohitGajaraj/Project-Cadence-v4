@@ -36,4 +36,5 @@ At the start of any design work, hold all three (system + skills + references) i
 ## Related
 
 - [`home-and-today-ia.md`](./home-and-today-ia.md) · [`humanized-output.md`](./humanized-output.md) · [`ui-voice.md`](./ui-voice.md) · [`ui-chrome.md`](./ui-chrome.md).
+- [`../features/command-canvas.md`](../features/command-canvas.md) - the Command Canvas bet (NL command bar + live preview). Any work on it loads this brief + the Engine-Room Doctrine first: the split-pane layout and command interaction are new structural language for the design system to resolve (how the preview blocks obey Ember; motion as craft).
 - [`../../DESIGN.md`](../../DESIGN.md) (Ember Editorial system of record).
