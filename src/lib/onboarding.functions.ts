@@ -49,7 +49,8 @@ async function ensureDefaultWorkspace(
   } else {
     const { data: created, error: createWsError } = await supabase
       .from("workspaces")
-      .insert([{ owner_id: userId, name: "My Workspace" }])
+      // account_id is auto-filled by the trg_set_workspace_account DB trigger.
+      .insert([{ owner_id: userId, name: "My Workspace" } as never])
       .select("id")
       .single();
     if (createWsError) throw createWsError;
