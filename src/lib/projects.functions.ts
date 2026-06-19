@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCanCreateProduct } from "@/lib/limits.functions";
 
 export const listProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -185,6 +187,12 @@ export const createProject = createServerFn({ method: "POST" })
     if (!workspaceId) {
       throw new Error("No active workspace found for user.");
     }
+
+    // WM-M5: tier limit gate (nice path). Throws a typed LimitReachedError when the
+    // account is at/over its product cap so the UI can nudge to upgrade; the DB
+    // trigger enforce_product_limit is the authoritative, unbypassable backstop.
+    // A strict no-op until the founder flips limit_gates_enabled().
+    await assertCanCreateProduct(context.supabase as unknown as SupabaseClient, workspaceId);
 
     const { data: row, error } = await context.supabase
       .from("projects")
