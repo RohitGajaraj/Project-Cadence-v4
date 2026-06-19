@@ -146,16 +146,19 @@ Layers: client (TanStack Start/React 19/Vite, Cloudflare Worker) → auth+tenanc
 
 ---
 
-## 13. Pricing strategy (v7 section 9 governs)
+## 13. Pricing strategy (the build bible §2.4 governs the live model)
 
-| Tier | Price | Unlocks | State |
+The current model is the 5-tier **Constellation** ladder presented Anthropic-style as **two toggles** (Individual: Free / Pro / Max; Business: Team / Enterprise), with usage **variants inside Max and Team**. This table is a summary; the canonical matrix + the variant packaging live in [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md) §2.4 + §2.4.1.
+
+| Tier (toggle) | Price (founder-gated) | Sold on | State |
 | --- | --- | --- | --- |
-| Free | $0 | 1 workspace, ritual capped, webhook ingest, **memory expires ~14d** | built; expiry dormant |
-| Pro | ~$39/mo | unlimited ritual, **persistent memory**, Critic everywhere, share links | rails built; needs Stripe secrets |
-| Team | value/outcome-anchored (validate) | shared memory, per-role lanes; OpEx framing | entitlements built; price is a hypothesis (pilot fixed-fee) |
-| Enterprise | outcome-based (later) | SSO, audit, residency | architecture ready; M-D |
+| Free (Individual) | $0 | features; starter usage; memory decays ~30d | built; expiry dormant |
+| Pro (Individual) | ~$20/mo | features only (persistent memory, Critic everywhere, share links); no public usage number | rails built; needs Stripe secrets |
+| Max (Individual) | one card: "5x" / "20x more usage than Pro" (~$100 / ~$200) | the power-individual usage step; deepest memory + priority | WM-M17 (deferred, post-core) |
+| Team (Business) | one card: Standard (~$25-30/seat) / Premium seat | shared/pooled memory, per-role lanes, RBAC, per-member caps | entitlements built; WM-M17 seat variants deferred |
+| Enterprise (Business) | per-seat + API-rate usage + per-user allocation; contact sales | SSO, audit, residency, governance | WM-M19 (deferred); architecture ready |
 
-BYO-key keeps margin; outcome pricing stays a later experiment (unit unsolved); ship seat/usage first. Switch-on: founder sets Stripe secrets; flip memory-expiry only when first-win is reliable.
+Margin is held by **right-sized credit grants + cost-aware routing + caching** (WM-M15), not BYO-key (self-serve BYOK was removed 2026-06-19; enterprise-only). Usage multipliers show only on Max + Team seats; Free/Pro are feature-led (§2.4.1 copy rule). Outcome pricing stays a later experiment (unit unsolved); ship seat/usage first. Switch-on: founder sets Stripe secrets + the variant numbers (bible §7); flip memory-expiry only when first-win is reliable.
 
 ---
 

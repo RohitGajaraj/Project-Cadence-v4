@@ -74,6 +74,28 @@ Notes:
 - **Cross-workspace memory pooling** is a property of any **paid account** with more than one workspace, not a Team-only bolt-on.
 - **Enterprise (Cosmos) credit models, pick per deal:** (a) seat-based pooled (per-seat allowance, pooled org-wide); (b) committed org pool (annual credit commitment, volume discount); (c) postpaid usage (metered, invoiced monthly, true-up); (d) BYOK or dedicated capacity (their keys / isolated, COGS off our book). Plus the non-credit value that is the real reason they pay enterprise: SSO/SCIM, audit, residency, SLA, support. Outcome-based pricing (charging on shipped outcomes) is credible here later given the moat, but deferred for now.
 
+### 2.4.1 Usage-variant packaging (the Anthropic-style presentation, target model)
+
+Decision 2026-06-19 (founder): present the ladder the way Anthropic Claude does, tuned to our moat. The slugs and the entitlements engine do not change; this is a presentation + packaging layer over §2.4, plus two new priced variants. It is documented here and scheduled as WM-M17 / WM-M18 / WM-M19 (deferred behind the core builds, picked up once the core elemental work lands; §4.0, §4.2.2).
+
+**Two toggles, not one flat grid.**
+- **Individual:** Star (`free`), Cluster (`pro`), Constellation (`max`).
+- **Business:** Galaxy (`team`), Cosmos (`enterprise`).
+
+**The "one plan name, many variants" trick (the core of the ask), in two places.**
+- **Constellation (`max`)** is a single card with two usage variants chosen at checkout: "5x more usage than Pro" and "20x more usage than Pro" (a "Save" anchor on the higher one, the way Anthropic prices 20x at less-per-unit than 5x). It fills the documented Cluster-to-Galaxy gap: the power individual who has outgrown Pro but is not a team.
+- **Galaxy (`team`)** is a single card with two seat variants: a Standard seat and a Premium seat, carrying the same 5x / 20x usage principle per seat (Standard about 25 to 30 dollars per seat; Premium higher; founder-gated).
+
+**Copy rule (important).** A numeric usage multiplier ("Nx more usage than Pro") appears ONLY on Constellation and on Galaxy's seat variants. Star and Cluster are sold on features and benefits (persistent memory, Critic everywhere, share links, "higher usage" qualitatively), never a number, exactly like Anthropic's Pro card. Cluster's allowance is the silent reference unit that the Constellation and Galaxy multipliers multiply against.
+
+**Cosmos (`enterprise`)** is per-seat plus usage at API / pay-as-you-go rates (pooled), plus per-user credit allocation and spend limits for fine-grained admin control. The per-user allocation rides on the WM-M14 per-member caps that already shipped (2026-06-19), so it is wiring + an admin surface, not new engine design.
+
+**The Cadence tweak (the USP, not a copy).** Each tier's identity is the decision-layer capability (persistent + cross-workspace memory, Critic, the outcome / was-it-right loop, governance). The 5x / 20x and the seat variants are only the usage selector layered on top. We sell compounding judgment, not tokens; the variant is just how much of it you run. This protects margin (credits are sized in the grant, not the per-credit price; §2.6) and separates us from a pure usage reseller.
+
+**Why five tiers, not four.** Collapsing Constellation re-opens the Cluster-to-Galaxy gap and leaves the high-willingness power individual uncovered (money left on the table, a persona unserved). The two-toggle presentation already delivers the frictionless feel without dropping a tier. Keep five; present as two toggles. Persona coverage (the v3 personas): Star / Cluster to the solo PM and indie (P7); Constellation to the power individual; Galaxy seats to the PM, eng, design, GTM and support team (P2 to P6); Cosmos to the org / VP (P1). All seven covered.
+
+**Coherence gate (founder, §7).** The Constellation and Galaxy-seat multipliers and their "Nx more usage than Pro" labels must be chosen together so the math and the words agree (the engine is anchored to Free internally; the copy is framed against Pro). The structure supports any values; only the numbers are gated.
+
 ### 2.5 Lock-in / monetization / evangelization
 
 Lock-in is value depth, ranked: (1) compounding decision memory (the product gets smarter about your product over time); (2) persistence as a subtle paywall (free decays, paying keeps it); (3) record-of-record (decision, then shipped, then outcome, then was-the-reasoning-right becomes the team's audit trail); (4) system-of-record-and-action (connected sources, tuned brief/voice/guardrails). Deliberate non-move: keep "export anytime." Evangelization rides on the shareable Critic teardown (already built), the visible memory ("look how much it knows my product"), and outcome proof.
@@ -162,9 +184,12 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M2, WM-M10 |
 | WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M4, WM-M10, WM-M11 |
 | WM-M13 | Capped top-up purchase (Stripe credit packs) | Monetize (Credit engine) | Pending | WM-M3, WM-M12 |
-| WM-M14 | Per-product / per-member attribution + caps | Monetize (Credit engine) | Pending | WM-M12 |
+| WM-M14 | Per-product / per-member attribution + caps | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M12 |
 | WM-M15 | Margin levers (cost-aware routing + cache) | Monetize (Credit engine) | Pending | WM-M10 |
 | WM-M16 | Credit / usage UI (balance, legibility, attribution) | Monetize (Credit engine) | Pending | WM-M6, WM-M12, WM-M14 |
+| WM-M17 | Clubbed usage variants (Max 5x/20x + Team Standard/Premium seats) | Monetize | Deferred (post-core; P2/P3) | WM-M3, WM-M6, WM-M11 |
+| WM-M18 | Plan-card states + change flow (current/upgrade tags, downgrade guard) | Monetize | Deferred (post-core; P2) | WM-M6 |
+| WM-M19 | Enterprise usage model (per-seat + API-rate usage + per-user allocation) | Monetize | Deferred (post-core; P3) | WM-M3, WM-M14 |
 | WM-S1 | Sample workspace for every new account | Showcase | Deferred | foundation done |
 | WM-S2 | Guided tour | Showcase | Deferred | WM-S1 |
 | WM-S3 | Onboarding Concierge agent | Showcase | Deferred | WM-S1 |
@@ -322,6 +347,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** Usage panel renders gracefully pre-engine ("-"); the Contact-sales tier has no checkout CTA.
 - **Acceptance:** both surfaces show 5 Constellation tiers with correct limits/credits; Usage panel reads account state.
 - **Verify:** Playwright the pricing page + Settings Plan.
+- **Extends into (deferred):** the Anthropic-style two-toggle presentation, the Max / Team usage variants (`WM-M17`), and the "Current plan" tag + "Upgrade" calls to action + downgrade guard (`WM-M18`) build directly on these surfaces; see §2.4.1 + §4.2.2.
 
 #### WM-M7 · Upgrade nudges (value-framed)
 - **Why:** convert at the natural moments without being punitive.
@@ -437,6 +463,45 @@ The credit **engine**, what one credit is, the cost-to-credit conversion, per-ti
 - **Verify:** Playwright the Settings Usage panel on a seeded account.
 - **Depends on:** `WM-M6`, `WM-M12`, `WM-M14`.
 
+### 4.2.2 Usage-variant packaging + plan-state work (WM-M17 to WM-M19), deferred behind core builds
+
+These implement §2.4.1 (the Anthropic-style two-toggle presentation + the Max / Team variants + the plan-card states + the Enterprise usage model). Scheduled AFTER the core elemental builds, gated on the billing rails (`WM-M3`) + the pricing surfaces (`WM-M6`); the founder picks these up once core work lands. All numbers are founder-gated (§7). Column-additive, low risk, orthogonal to the dormant credit-engine internals; and the cheapest possible time to lock the model because billing is still dark (`credits_enabled()` = false, Stripe secrets unset, no paying customers, so zero churn / grandfathering risk).
+
+#### WM-M17 · Clubbed usage variants (Max 5x/20x + Team Standard/Premium seats)
+- **Why:** §2.4.1; the founder wants one plan name to hold multiple priced usage variants, the way Anthropic does (Max usage 5x / 20x; Team Standard / Premium seat), to capture the power individual and to segment seat intensity without a wall of cards.
+- **Current state:** `entitlements.ts` returns ONE price + ONE credit multiplier per slug; `planPresentation(tier)` has no variant param; `billing.functions.ts` `CheckoutInput` is `{tier, workspaceId}` with no variant; the Stripe webhook maps a single price per tier; `accounts` has `plan_tier` but no variant column. The data model can represent this additively (a nullable variant column + a variant param threaded through).
+- **Build:** (a) `entitlements.ts`: add a `PlanVariant` type; a Max variant table (`{ id, creditMultiplier, priceUsd }`, "5x" / "20x more usage than Pro") and a Team seat-variant table (Standard / Premium, the 5x / 20x principle per seat); thread an optional `variant` through `entitlementsFor(tier, variant?)` and `planPresentation(tier, variant?)` so the Max and Galaxy cards expand to two rows under one name; keep Pro / Free feature-framed (no public multiplier, per the §2.4.1 copy rule). (b) `billing.functions.ts`: `CheckoutInput` gains `variant?`; `createCheckoutSession` routes the variant to the right Stripe price ID (`STRIPE_PRICE_MAX_5X` / `STRIPE_PRICE_MAX_20X`, `STRIPE_PRICE_TEAM_STD` / `STRIPE_PRICE_TEAM_PREMIUM`); `BillingState` returns `planVariant`. (c) the Stripe webhook: set `metadata[plan_variant]` and reverse-map `price_id -> (tier, variant)`, then store both on the account. (d) `credits.functions.ts`: `monthlyGrantCredits(tier, variant?)` resolves the variant multiplier. (e) migration: `accounts.plan_variant text` (nullable, CHECK in the allowed set), backfill existing `max` / `team` rows to the default variant, extend `protect_account_billing_columns()` to guard the new column.
+- **Files:** `src/lib/entitlements.ts` (+ test), `src/lib/billing.functions.ts`, `src/routes/api/stripe/webhook.ts`, `src/lib/credits.functions.ts`, a new migration, config (the new `STRIPE_PRICE_*` secrets, founder-set).
+- **Gotchas:** the multiplier values + their "Nx more than Pro" labels must agree (the §2.4.1 coherence gate); the variant is meaningful only for `max` and `team` (null elsewhere); keep the no-secret no-op; the per-seat Team variant is per-seat, not per-account, so the grant math differs from Max.
+- **Acceptance:** the Max card shows two usage options and the Team card two seat options, each routes to the right price, the webhook stores the variant, and the monthly grant reflects the chosen variant; non-variant tiers unaffected; tsc / build / lint green.
+- **Verify:** unit-test the `price_id -> (tier, variant)` map + `entitlementsFor(tier, variant)`; dormant-path smoke (no secret = inert).
+- **Depends on:** `WM-M3`, `WM-M6`, `WM-M11`. **Priority:** M17a (Max, per-account) P2; M17b (Team seats, per-seat, higher complexity) P3.
+
+#### WM-M18 · Plan-card states + change flow (current/upgrade tags, downgrade guard)
+- **Why:** founder flag; today Settings -> Plan renders the current plan and the other plans identically, with no signal of which one the account is on, and there is no considered plan-change flow (the lone affordance is "Upgrade to Pro"). The user wants a clear "Current plan" tag, "Upgrade" calls to action on higher tiers, and a guarded downgrade.
+- **Current state:** `getBillingState()` returns `planTier` (and, after `WM-M17`, `planVariant`); the BillingTab in `_authenticated.settings.tsx` maps `PLAN_TIERS` but does not compare each card to the active plan; the only mutation is `upgrade.mutate("pro")`.
+- **Build:** (a) M18a, presentation states: in the BillingTab (and the public pricing page where relevant), compare each card to `billingState.planTier` (+ variant) and render one of, "Current plan" tag on the active tier, "Upgrade" on higher tiers, a quiet / disabled or "Downgrade" affordance on lower tiers, so the current and base plans never render identically. (b) M18b, change flow: upgrades proceed immediately; downgrades require an explicit confirm and reconcile entitlements (warn about memory moving to decay, products / seats over the new cap, the credit grant dropping), and either block with a "reduce usage first" message or defer the change to cycle end when current usage exceeds the target tier's limits. Define the policy in one place.
+- **Files:** `src/routes/_authenticated.settings.tsx` (BillingTab), `src/routes/pricing.tsx`, `src/lib/billing.functions.ts` (the change-flow + reconciliation helpers).
+- **Gotchas:** the downgrade reconciliation must be honest about what the user loses (calm, not alarmist, copy, per the humanized + engine-room doctrines); never silently destroy data on downgrade; the "Current plan" comparison must account for the variant (a Max-5x account viewing Max-20x sees "Upgrade", not "Current").
+- **Acceptance:** the active plan shows a "Current plan" tag, higher tiers show "Upgrade", downgrades require confirm + reconcile and block / defer when over-limit; no current/base duplication.
+- **Verify:** Playwright the BillingTab on accounts at different tiers; assert the right state per card; a downgrade-over-limit blocks / defers.
+- **Depends on:** `WM-M6` (and `WM-M17` for variant-aware "Current"). **Priority:** P2.
+
+#### WM-M19 · Enterprise usage model (per-seat + API-rate usage + per-user credit allocation)
+- **Why:** §2.4.1; Cosmos (enterprise) is per-seat plus usage at API / pay-as-you-go rates (pooled), plus per-user credit allocation and org / per-user spend limits for fine-grained governance (the founder's explicit ask). The per-user allocation substrate (per-member caps) shipped as `WM-M14` on 2026-06-19, so this is wiring + an admin surface, not new engine design.
+- **Current state:** `WM-M14` shipped `credit_caps` (account-scoped, scope product / member, cap + window) + `assertCreditCaps` + the attribution rollup; `credit_ledger` already tags `user_id`. Enterprise is "Contact sales" with a custom credit model (§2.4 note). No per-seat + API-rate billing model and no admin allocation surface yet.
+- **Build:** the enterprise credit model (one of the §2.4 options, default seat-based pooled + metered usage at API rates, invoiced) + an admin surface for per-user credit allocation / spend limits built on the `WM-M14` `credit_caps` member scope + a cap write path; org-level spend limits; surface per-user and per-product attribution (`WM-M14` `computeCreditAttribution`) in an admin view.
+- **Files:** `src/lib/credits.functions.ts` (the cap write path + allocation helpers), `src/lib/billing.functions.ts` (the enterprise model), an admin settings surface, a migration only if a new allocation table is needed beyond `credit_caps`.
+- **Gotchas:** enterprise is negotiated, so keep the model configurable per deal; build on `WM-M14` rather than a parallel mechanism; reads RLS-scoped to account membership; deferred per the GTM sequencing (enterprise comes after the loop is proven, §2.7).
+- **Acceptance:** an enterprise account can set per-user credit allocations + org spend limits, usage bills at the configured model, and the admin view shows per-user / per-product attribution.
+- **Verify:** seed an enterprise account, set a per-user allocation, exceed it, assert the scoped halt; assert the attribution rollup.
+- **Depends on:** `WM-M3`, `WM-M14`. **Priority:** P3 (enterprise deferred).
+
+#### Lovable handoff (ready-to-send, NOT yet sent)
+When the founder picks this up, send Lovable this as a `plan_mode=true` (spec, no build) message first, then convert it to a build prompt:
+
+> Spec only for now, do not implement. Adopt Anthropic Claude's two-toggle pricing presentation, tuned to Cadence. Individual toggle: Star (free) / Cluster (pro) / Constellation (max). Business toggle: Galaxy (team) / Cosmos (enterprise). Constellation is one card with two usage variants at checkout, "5x more usage than Pro" and "20x more usage than Pro" (a Save anchor on 20x). Galaxy is one card with two seat variants, Standard and Premium, the same 5x / 20x principle per seat. Star and Cluster are sold on features only, NEVER a usage number (Cluster is the silent reference unit the multipliers anchor to). Cosmos is per-seat + usage at API rates + per-user credit allocation (built on the shipped WM-M14 per-member caps). Column-additive only: add a nullable `accounts.plan_variant`, thread an optional variant through `entitlementsFor` / `planPresentation` / `createCheckoutSession` / the Stripe webhook (price -> tier+variant reverse-map) / `monthlyGrantCredits`. Settings -> Plan must tag the active plan "Current plan" and show "Upgrade" on higher tiers (no current/base duplication), and guard downgrades (confirm + entitlement reconciliation; block or defer when over-limit). Honor the humanized-output and engine-room doctrines. Prices, multipliers, and final names are founder-gated placeholders; do not invent them. Reference: docs/planning/workspace-tenancy-and-monetization-plan.md §2.4.1 + WM-M17/M18/M19.
+
 ### 4.3 Lane S, Showcase (DEFERRED, gate: platform ~50 to 60 percent complete and fine-tuned)
 
 These are specified now and **resurfaced at every milestone gate**; do not build until the gate.
@@ -509,6 +574,10 @@ Flip switches (`memory_expiry_enabled`, `credits_enabled`, Stripe secrets) are l
 6. Memory-decay + credits flip timing, default dormant until first-win is reliable.
 7. Final tier display names + motif, default Constellation (rename-able anytime via the slug decoupling).
 8. Whether to keep an enterprise BYOK / residency path long-term, or remove BYOK entirely later (default: enterprise-only, negotiated).
+9. **Usage-variant numbers + labels (§2.4.1, `WM-M17`):** the Constellation (`max`) variant multipliers + prices ("5x" / "20x more usage than Pro", Anthropic anchors about 100 / 200 dollars) and the Galaxy (`team`) seat-variant multipliers + prices (Standard about 25 to 30 dollars per seat, Premium higher). Each multiplier and its "Nx more usage than Pro" label must be set together so the math and the copy agree (the coherence gate). Default: placeholders; the structure supports any values.
+10. **Downgrade policy (`WM-M18`):** block-when-over-limit vs defer-to-cycle-end, and the memory / credit / seat reconciliation shown on downgrade. Default: confirm + reconcile, block or defer when current usage exceeds the target tier.
+11. **Enterprise usage model + per-user allocation (`WM-M19`):** the per-seat + API-rate model choice (the §2.4 options) and the per-user credit allocation / org spend-limit policy, built on the shipped `WM-M14` caps. Default: seat-based pooled + metered usage at API rates, per-user allocation via `credit_caps`.
+12. **Customer-facing naming (extends item 7):** plain names (Free / Pro / Max / Team / Enterprise = the slugs) for legibility vs the Constellation motif names (Star / Cluster / Constellation / Galaxy / Cosmos) as the primary label. The slug decoupling makes this a one-file change either way.
 
 ---
 

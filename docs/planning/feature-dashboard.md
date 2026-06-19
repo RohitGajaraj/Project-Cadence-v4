@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 18:09 (WM-M15 → ◐: cost-aware model routing margin lever, config-gated default-off, overnight cycle 34; WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 18:45 (pricing-strategy packaging: added 3 deferred rows WM-M17/M18/M19 - Anthropic-style usage variants, plan-card states, enterprise usage model; register 141 → 144, recomputed 42% strict / 55% weighted on top of WM-M15); 2026-06-19 18:09 (WM-M15 → ◐: cost-aware model routing margin lever, config-gated default-off, overnight cycle 34; WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
 
 ---
 
@@ -78,17 +78,17 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 18:09 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
+> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 18:45 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
-- ### Overall completion: **43% (strict) / 56% (weighted)**
-  - **Strict** = fully-done rows / total = **61 / 141 = 43%** (the honest floor).
-  - **Weighted** = sum of every row's Item % / total = **79.0 / 141 = 56%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
-  - **Remaining: 57% open** - **80 of 141** rows not fully done.
-  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 43%._
-- **Total features = 141** · **Done = 61** · **Not done = 80** (⬜ 45 open + ◐ 25 partial + ⏸️ 3 paused + ⏭️ 7 deferred + 🔨 0 in dev + 🚧 0 blocked).
-- _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **39 of the 80** not-done rows._
+- ### Overall completion: **42% (strict) / 55% (weighted)**
+  - **Strict** = fully-done rows / total = **61 / 144 = 42%** (the honest floor).
+  - **Weighted** = sum of every row's Item % / total = **79.0 / 144 = 55%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Remaining: 58% open** - **83 of 144** rows not fully done.
+  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 42%. The 144 total now includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19), which add planned scope, not regression._
+- **Total features = 144** · **Done = 61** · **Not done = 83** (⬜ 45 open + ◐ 25 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
+- _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **42 of the 83** not-done rows._
 
-- **By status (of 141 total), with weighted contribution to the 56% roll-up:**
+- **By status (of 144 total), with weighted contribution to the 55% roll-up:**
 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
@@ -97,9 +97,9 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | ⏸️ Paused | 3 | 50% | 1.5 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
 | ⬜ Open (ready to pick up) | 45 | 0% | 0.0 |
-| ⏭️ Deferred | 7 | 0% | 0.0 |
+| ⏭️ Deferred | 10 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **141** | - | **79.0 / 141 = 56%** |
+| **Total** | **144** | - | **79.0 / 144 = 55%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -114,9 +114,9 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Credit | 7 | 1 | 6 | 52% |
 | Sense | 12 | 3 | 9 | 45% |
 | Launch | 8 | 2 | 6 | 39% |
-| Monetization | 27 | 2 | 25 | 23% |
+| Monetization | 30 | 2 | 28 | 21% |
 | BYO | 8 | 0 | 8 | 0% |
-| **Total** | **141** | **61** | **80** | **56%** |
+| **Total** | **144** | **61** | **83** | **55%** |
 
 > **Priority rationale** lives in the v10 pick-list ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16, execution mechanics in [`v10_implementation-plan.md`](./v10_implementation-plan.md)) + the SSOT build queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0/§3/§4). The current founder-directed initiative is the WM tenancy + monetization + credit engine (WM-*, build top-down by the WM-1..WM-6 order below). BYO (BYO-*) awaits founder greenlight. This register does not restate that prose; the Priority column encodes it.
 
@@ -272,6 +272,9 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 139 | ✅ | P5 | Drift watch | Score/cost/latency drift per surface/model; open incidents surface in the Attention feed | Governance | shipped | 2026-06-18 | P5-ALERT cycle 22 |
 | 140 | ✅ | P3 | Prompt studio | Versioning + A/B + pin + rollback; runtime loads versioned prompts | Governance | shipped | 2026-06-18 | verified already built (was stale ⬜) |
 | 141 | ✅ | C4 / E7 | Agent detail + run history + memory inspector | Pick an agent and see its recent runs + its private and shared memory | Governance | shipped | 2026-06-18 | a dedicated detail route is optional polish |
+| 142 | ⏭️ | WM-M17 | Clubbed usage variants (Max 5x/20x + Team Standard/Premium seats) | One plan name, multiple priced usage variants (Anthropic-style), chosen at checkout | Monetization | WM-7 (post-core) | 2026-06-19 | Deferred behind core builds; needs WM-M3, WM-M6, WM-M11. M17a Max (per-account) P2; M17b Team seats (per-seat) P3. Spec: bible §2.4.1 + §4.2.2; numbers founder-gated |
+| 143 | ⏭️ | WM-M18 | Plan-card states + change flow (current/upgrade tags, downgrade guard) | "Current plan" tag + "Upgrade" CTAs (no current/base duplication) + guarded downgrade | Monetization | WM-7 (post-core) | 2026-06-19 | Deferred; needs WM-M6 (+ WM-M17 for variant-aware "Current"). Founder UX ask 2026-06-19. Spec: bible §4.2.2 |
+| 144 | ⏭️ | WM-M19 | Enterprise usage model (per-seat + API-rate usage + per-user allocation) | Per-seat + metered API-rate usage + per-user credit allocation / spend limits (on WM-M14 caps) | Monetization | WM-7 (post-core) | 2026-06-19 | Deferred; needs WM-M3, WM-M14. Enterprise sequenced post-loop-proof. Spec: bible §4.2.2 |
 
 ---
 
