@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 17:28 (WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 18:09 (WM-M15 → ◐: cost-aware model routing margin lever, config-gated default-off, overnight cycle 34; WM-M14 → ◐: per-product/member credit attribution + caps, overnight cycle 33; WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
 
 ---
 
@@ -78,28 +78,28 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 17:28 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
+> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 18:09 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
-- ### Overall completion: **43% (strict) / 55% (weighted)**
+- ### Overall completion: **43% (strict) / 56% (weighted)**
   - **Strict** = fully-done rows / total = **61 / 141 = 43%** (the honest floor).
-  - **Weighted** = sum of every row's Item % / total = **78.3 / 141 = 55%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Weighted** = sum of every row's Item % / total = **79.0 / 141 = 56%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
   - **Remaining: 57% open** - **80 of 141** rows not fully done.
   - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 43%._
-- **Total features = 141** · **Done = 61** · **Not done = 80** (⬜ 46 open + ◐ 24 partial + ⏸️ 3 paused + ⏭️ 7 deferred + 🔨 0 in dev + 🚧 0 blocked).
+- **Total features = 141** · **Done = 61** · **Not done = 80** (⬜ 45 open + ◐ 25 partial + ⏸️ 3 paused + ⏭️ 7 deferred + 🔨 0 in dev + 🚧 0 blocked).
 - _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **39 of the 80** not-done rows._
 
-- **By status (of 141 total), with weighted contribution to the 55% roll-up:**
+- **By status (of 141 total), with weighted contribution to the 56% roll-up:**
 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
 | ✅ Done | 61 | 100% | 61.0 |
-| ◐ Partial | 24 | per-row `[~NN%]` (avg ~66%) | 15.8 |
+| ◐ Partial | 25 | per-row `[~NN%]` (avg ~66%) | 16.5 |
 | ⏸️ Paused | 3 | 50% | 1.5 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
-| ⬜ Open (ready to pick up) | 46 | 0% | 0.0 |
+| ⬜ Open (ready to pick up) | 45 | 0% | 0.0 |
 | ⏭️ Deferred | 7 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **141** | - | **78.3 / 141 = 55%** |
+| **Total** | **141** | - | **79.0 / 141 = 56%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -111,12 +111,12 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Build | 14 | 8 | 6 | 68% |
 | Cockpit | 17 | 9 | 8 | 62% |
 | Interop | 5 | 1 | 4 | 52% |
+| Credit | 7 | 1 | 6 | 52% |
 | Sense | 12 | 3 | 9 | 45% |
-| Credit | 7 | 1 | 6 | 42% |
 | Launch | 8 | 2 | 6 | 39% |
 | Monetization | 27 | 2 | 25 | 23% |
 | BYO | 8 | 0 | 8 | 0% |
-| **Total** | **141** | **61** | **80** | **55%** |
+| **Total** | **141** | **61** | **80** | **56%** |
 
 > **Priority rationale** lives in the v10 pick-list ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16, execution mechanics in [`v10_implementation-plan.md`](./v10_implementation-plan.md)) + the SSOT build queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0/§3/§4). The current founder-directed initiative is the WM tenancy + monetization + credit engine (WM-*, build top-down by the WM-1..WM-6 order below). BYO (BYO-*) awaits founder greenlight. This register does not restate that prose; the Priority column encodes it.
 
@@ -182,7 +182,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 49 | ⬜ | WM-F2 | Account-level memory pooling (paid) | Paid accounts compound memory across workspaces (the flywheel) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2, WM-F1 |
 | 50 | ⬜ | WM-F9 | Isolation audit + scope leak fixes | Close cross-member leaks (meetings/notes/briefs/chat) before invites | Monetization | WM-3 | 2026-06-19 | effort S, no deps; do before WM-F5 |
 | 51 | ◐ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 16:31 | CORE shipped (overnight cycle 31): new `credits.functions.ts` (pure `monthlyGrantCredits`/`resetDelta` + dormant `grantMonthlyAllowance`/`resetCreditCycle`) + `credit-tick` cron hook (grants un-granted, resets due accounts, preserves top-ups). Gated behind `credits_enabled()` (dormant). 7 unit tests; tsc/build/lint green, 208/208. Grant math verified; the DB writes + tick activate on publish + flag + pg_cron [~70%] |
-| 52 | ⬜ | WM-M15 | Margin levers (cost-aware routing + cache) | Keeps credits margin-positive (no self-serve BYOK to lean on) | Credit | WM-3 | 2026-06-19 | effort M; needs WM-M10 |
+| 52 | ◐ | WM-M15 | Margin levers (cost-aware routing) | Keeps credits margin-positive (no self-serve BYOK to lean on) | Credit | WM-3 | 2026-06-19 18:09 | CORE shipped (overnight cycle 34): pure `src/lib/ai/routing.ts` (blendedPrice / cheapestLiveModel / costRoutedModel) wired at the AI chokepoint behind the `AI_COST_ROUTING` env flag (default OFF = byte-identical to today). Narrow safe routable set {brief, scheduler, test} + a tier guard that never downgrades a deliberate reasoning/premium/code/vision model. 5-lens adversarial review caught a real quality-gate hole and was fixed: judge (the Critic wedge), eval (benchmark), embed (chat-model trap) excluded; the credit pre-check + debit now track the model actually run. 12 routing tests, 239/239, tsc/build/lint green. **Cache half split to WM-M15b (queued).** Live routing activates on the founder's `AI_COST_ROUTING` flag [~70%] |
 | 53 | ⬜ | WM-F4 | Ownership transfer | Transfer an account/workspace; unblocks owner-leaves | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3 |
 | 54 | ⬜ | WM-F5 | Invites (account/workspace) | Add teammates (no invite flow today) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3, WM-M2 |
 | 55 | ⬜ | WM-M3 | Billing rails (account Stripe + webhook map) | 5-tier checkout + seats; webhook price-to-tier (dormant until secrets) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-M1, WM-M2; founder Stripe secrets to go live |

@@ -9,6 +9,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
+import { costRoutedModel } from "./routing";
 import {
   capExceeded,
   creditWindowStartIso,
@@ -42,6 +43,15 @@ function resolveGateway(model: string): { url: string; key: string; model: strin
       ? `AI is not configured for "${model}" (GEMINI_API_KEY only covers google/* models; set LOVABLE_API_KEY).`
       : "AI is not configured (missing LOVABLE_API_KEY; for local dev, set GEMINI_API_KEY to route google/* models directly).",
   );
+}
+
+// WM-M15: cost-aware routing is opt-in via the AI_COST_ROUTING env flag (default OFF, so
+// the chokepoint is byte-identical to today until the founder enables it). When on, a
+// routine surface's call may be routed to a cheaper model (see routing.ts; hard surfaces
+// are never downgraded). Read per call (cheap string compare); no caching needed.
+function costRoutingEnabled(): boolean {
+  const v = process.env.AI_COST_ROUTING;
+  return v === "1" || v === "true";
 }
 
 /**
@@ -720,6 +730,7 @@ async function assertAccountCredits(
   supabase: SupabaseClient,
   userId: string,
   opts: CallOpts,
+  effectiveModel: string,
 ): Promise<void> {
   if (!(await creditsEnabled(supabase))) return;
   const accountId = await resolveCreditAccountId(supabase, userId, opts.workspaceId ?? null);
@@ -743,7 +754,7 @@ async function assertAccountCredits(
   } catch {
     return;
   }
-  const projected = projectCallCredits(opts.model, opts.messages);
+  const projected = projectCallCredits(effectiveModel, opts.messages);
   if (balance <= 0 || balance < projected) {
     await logCreditExhausted(supabase, userId, opts, accountId, balance, projected);
     throw new CreditExhaustedError(
@@ -850,9 +861,12 @@ async function debitAccountCredits(
   opts: CallOpts,
   estCostUsd: number,
   aiEventId: string | null,
+  model: string,
 ): Promise<void> {
   if (!(await creditsEnabled(supabase))) return;
-  const credits = creditsForCost(estCostUsd, opts.model);
+  // WM-M15: meter the credit RATE on the model that ACTUALLY ran (cost-routed and/or
+  // fallback), matching the est_cost_usd basis, not the originally-requested opts.model.
+  const credits = creditsForCost(estCostUsd, model);
   if (credits <= 0) return;
   const accountId = await resolveCreditAccountId(supabase, userId, opts.workspaceId ?? null);
   if (!accountId) return;
@@ -1035,8 +1049,13 @@ export async function callModel(
   // 1. Budget
   await checkBudget(supabase, userId);
   await checkSurfaceBudget(supabase, userId, opts.surface);
+  // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
+  // on) up front, so the credit pre-check projects the model that will actually run.
+  const effectiveModel = costRoutingEnabled()
+    ? costRoutedModel(opts.surface, opts.model)
+    : opts.model;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
-  await assertAccountCredits(supabase, userId, opts);
+  await assertAccountCredits(supabase, userId, opts, effectiveModel);
 
   // 2. Pre-guardrails on the user content
   const rules = useGuards ? await loadGuardrails(supabase, userId) : [];
@@ -1102,8 +1121,9 @@ export async function callModel(
     messages = withHumanizeDirective(messages);
   }
 
-  // 3. Provider call
-  const byo = byoConfig(opts.model);
+  // 3. Provider call. effectiveModel (resolved above with the credit pre-check) is used for
+  // byo detection, the provider call, and the recorded modelUsed.
+  const byo = byoConfig(effectiveModel);
   let keyRow: { api_key: string } | null = null;
   if (byo && !opts.byoOverride) {
     const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
@@ -1117,7 +1137,7 @@ export async function callModel(
   let status: "ok" | "error" | "blocked" = "ok";
   let errMsg: string | undefined;
   let fallback = false;
-  let modelUsed = opts.model;
+  let modelUsed = effectiveModel;
 
   const maxRetries = opts.maxRetries ?? 2;
   const attempt = async (model: string) => {
@@ -1151,7 +1171,7 @@ export async function callModel(
   let lastErr: unknown = null;
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      providerOut = await attempt(opts.model);
+      providerOut = await attempt(effectiveModel);
       lastErr = null;
       break;
     } catch (e) {
@@ -1161,7 +1181,7 @@ export async function callModel(
       if (i < maxRetries) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
     }
   }
-  if (lastErr && opts.fallbackModel && opts.fallbackModel !== opts.model) {
+  if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
     try {
       providerOut = await attempt(opts.fallbackModel);
       modelUsed = opts.fallbackModel;
@@ -1244,7 +1264,7 @@ export async function callModel(
       await incrementSurfaceBudget(supabase, userId, opts.surface, est);
       await recordMissionUsage(supabase, opts.runId ?? null, totalTok, est);
       // WM-M4 seam + WM-M12 debit: dormant account-level credit metering (no-op while dormant).
-      await debitAccountCredits(supabase, userId, opts, est, eventId);
+      await debitAccountCredits(supabase, userId, opts, est, eventId, modelUsed);
     }
     if (resolvedPrompt && eventId) {
       await logPromptRun(supabase, userId, {
@@ -1388,8 +1408,13 @@ export async function callModelStream(
   // 1. Budget
   await checkBudget(supabase, userId);
   await checkSurfaceBudget(supabase, userId, opts.surface);
+  // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
+  // on) up front, so the credit pre-check projects the model that will actually run.
+  const effectiveModel = costRoutingEnabled()
+    ? costRoutedModel(opts.surface, opts.model)
+    : opts.model;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
-  await assertAccountCredits(supabase, userId, opts);
+  await assertAccountCredits(supabase, userId, opts, effectiveModel);
 
   // 2. Pre-guardrails on the user content
   const rules = useGuards ? await loadGuardrails(supabase, userId) : [];
@@ -1458,8 +1483,9 @@ export async function callModelStream(
     messages = withHumanizeDirective(messages);
   }
 
-  // 3. Provider call setup
-  const byo = byoConfig(opts.model);
+  // 3. Provider call setup. effectiveModel (resolved above with the credit pre-check) is
+  // used for byo detection, the stream, and the recorded modelUsed.
+  const byo = byoConfig(effectiveModel);
   let keyRow: { api_key: string } | null = null;
   if (byo && !opts.byoOverride) {
     const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
@@ -1471,7 +1497,7 @@ export async function callModelStream(
   let status: "ok" | "error" | "blocked" = "ok";
   let errMsg: string | undefined;
   let fallback = false;
-  let modelUsed = opts.model;
+  let modelUsed = effectiveModel;
 
   const attemptStream = async (model: string): Promise<Response> => {
     if (opts.byoOverride) {
@@ -1567,7 +1593,7 @@ export async function callModelStream(
 
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      response = await attemptStream(opts.model);
+      response = await attemptStream(effectiveModel);
       if (response.status === 429) {
         throw Object.assign(new Error("AI rate limit reached. Try again in a moment."), {
           code: "RATE_LIMIT",
@@ -1589,7 +1615,7 @@ export async function callModelStream(
     }
   }
 
-  if (lastErr && opts.fallbackModel && opts.fallbackModel !== opts.model) {
+  if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
     try {
       response = await attemptStream(opts.fallbackModel);
       if (!response.ok) throw new Error(`AI fallback error (${response.status})`);
@@ -1795,7 +1821,7 @@ export async function callModelStream(
             await incrementSurfaceBudget(supabase, userId, opts.surface, estCost);
             await recordMissionUsage(supabase, opts.runId ?? null, inTok + outTok, estCost);
             // WM-M4 seam + WM-M12 debit: dormant account-level credit metering (no-op while dormant).
-            await debitAccountCredits(supabase, userId, opts, estCost, eventId);
+            await debitAccountCredits(supabase, userId, opts, estCost, eventId, modelUsed);
           }
 
           if (resolvedPrompt && eventId) {
