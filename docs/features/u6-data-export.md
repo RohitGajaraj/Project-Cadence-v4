@@ -30,6 +30,7 @@ Settings (`/settings`) > the **Data** tab > "Download workspace export".
 - Gathers projects by `workspace_id`; signals / opportunities / specs (`prds`) / tasks by `project_id` across the workspace's projects (guarded so a workspace with no projects never issues an empty `in()` query); the user's own `learnings` and `agent_memory` by `user_id`.
 - Returns a JSON-safe shape with a `counts` map. RLS scopes every read to the caller, so it can only ever export the user's own rows.
 - `DataExportCard.tsx` in `src/components/settings/` consumes the fn, serializes to a Blob, and triggers a download; it toasts the total record count.
+- **Export history (front-end pivot, cycle 52):** the same card shows a "Recent exports" list (date+time · kind · row count) read from `listExportLog` (the append-only `export_log` audit table, U6-AUDIT cycle 48); a successful export refetches it (`invalidateQueries(["export-log"])`) so the new entry appears at once. The audit row is written best-effort by `exportProduct`/`exportWorkspace` (never fails the export). Live rows accrue on the founder's publish (the `export_log` migration applies then); pre-publish the list shows a calm empty state.
 
 ## Governance & guardrails
 

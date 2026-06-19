@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { toast } from "@/lib/notify";
-import { exportWorkspace } from "@/lib/projects.functions";
+import { exportWorkspace, listExportLog, type ExportLogRow } from "@/lib/projects.functions";
 
 // U6 · Data portability: export the whole workspace footprint as one JSON
 // snapshot. The trust escape-hatch: your signals, opportunities and decisions,
@@ -29,8 +30,17 @@ const SECTIONS: { id: string; label: string }[] = [
   { id: "memory", label: "Agent memory" },
 ];
 
+const KIND_LABEL: Record<ExportLogRow["kind"], string> = {
+  product: "Product",
+  workspace: "Workspace",
+};
+
 export function DataExportCard({ workspaceId }: { workspaceId?: string }) {
   const fExport = useServerFn(exportWorkspace);
+  const fLog = useServerFn(listExportLog);
+  const qc = useQueryClient();
+  const history = useQuery({ queryKey: ["export-log"], queryFn: () => fLog({ data: {} }) });
+  const exports = history.data?.exports ?? [];
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(SECTIONS.map((s) => s.id)));
   const toggle = (id: string) =>
@@ -51,6 +61,7 @@ export function DataExportCard({ workspaceId }: { workspaceId?: string }) {
       downloadJson(`cadence-workspace-export-${stamp}.json`, data);
       const total = Object.values(data.counts ?? {}).reduce((a, b) => a + b, 0);
       toast.success(`Exported ${total} records`);
+      qc.invalidateQueries({ queryKey: ["export-log"] });
     } catch (e) {
       toast.error((e as Error)?.message ?? "Export failed");
     } finally {
@@ -90,6 +101,45 @@ export function DataExportCard({ workspaceId }: { workspaceId?: string }) {
         <Download size={14} />
         {busy ? "Preparing your export" : "Download workspace export"}
       </button>
+
+      <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--hairline)" }}>
+        <div className="mono-label" style={{ fontSize: 11 }}>
+          Recent exports
+        </div>
+        {history.isLoading ? (
+          <p style={{ fontSize: 13, color: "var(--ink-faint)", marginTop: 12 }}>Loading</p>
+        ) : exports.length === 0 ? (
+          <p style={{ fontSize: 13, color: "var(--ink-faint)", marginTop: 12 }}>
+            Your past exports will appear here.
+          </p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0" }}>
+            {exports.map((e, i) => (
+              <li
+                key={e.id}
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  padding: "10px 0",
+                  borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+                }}
+              >
+                <span style={{ fontSize: 13, color: "var(--ink)" }}>
+                  {new Date(e.created_at).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+                <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>
+                  {KIND_LABEL[e.kind]} · {e.row_count} records
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
