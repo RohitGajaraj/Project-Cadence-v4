@@ -41,7 +41,7 @@ When you end a session, the next tool must be able to continue without asking yo
 | `docs/strategy/session-decisions.md`              | Major strategic decisions from sessions          | When a strategic decision is made            |
 | `docs/planning/feature-backlog.md`                | Feature state (◑/☑)                              | When feature is started or completed         |
 | Architecture docs (`architecture/`)               | How the system works                             | When architecture changes                    |
-| `design.md`                                       | Design tokens, component contracts               | When UI patterns change                      |
+| `DESIGN.md`                                       | Design tokens, component contracts               | When UI patterns change                      |
 
 ---
 
@@ -60,7 +60,7 @@ When you end a session, the next tool must be able to continue without asking yo
 - Commit every 5–15 minutes with a clear WHY message
 - Push immediately after every commit (so other tools see your work)
 - Update the SSOT section 0 (the live cursor) checkboxes as you complete sub-steps
-- If you change design tokens: update `design.md` in the same commit
+- If you change design tokens: update `DESIGN.md` in the same commit
 - If you change routing/architecture: update the relevant `architecture/*.md`
 
 ### Session end

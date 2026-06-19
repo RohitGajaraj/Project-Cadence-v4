@@ -6,7 +6,7 @@
 
 > **What this is.** The exhaustive, sub-feature-level enumeration of _everything Cadence is built to ship_ — the dev-ready expansion of [`../plan.md`](../../plan.md) §2 (granular catalog). Every feature has a **stable ID** (e.g. `F2.3`) so it can become an issue/PR/spec and be referenced by traces, decisions, and the build log without re-describing scope.
 >
-> **Relationship to other docs (no duplication of rules).** Product thesis + USP/MOAT: [`../README.md`](../README.md). Build _order_: [`../plan.md`](../../plan.md) §3. Cross-cutting non-functional rationale + P0/P1/P2 priorities: [`../docs/considerations.md`](./considerations.md). UI/IA/screen + AI-message contract: [`../design.md`](../../design.md). Architecture contracts: [`../architecture/`](../../architecture/). Operating rules: [`../AGENTS.md`](../../AGENTS.md).
+> **Relationship to other docs (no duplication of rules).** Product thesis + USP/MOAT: [`../README.md`](../README.md). Build _order_: [`../plan.md`](../../plan.md) §3. Cross-cutting non-functional rationale + P0/P1/P2 priorities: [`../docs/considerations.md`](./considerations.md). UI/IA/screen + AI-message contract: [`../design.md`](../../DESIGN.md). Architecture contracts: [`../architecture/`](../../architecture/). Operating rules: [`../AGENTS.md`](../../AGENTS.md).
 >
 > **This file adds detail; it does not replace `plan.md`.** `plan.md` stays the narrative + build order; this is the flat, addressable scope list. Keep both true (closed doc loop, [`../AGENTS.md`](../../AGENTS.md) §5).
 >
@@ -305,7 +305,7 @@ _Focus: Swarm steering, natural language intent routing, execution loops._
 
 - Build: `auto|confirm|review` per run; queue of `awaiting_review` runs with summary + proposed action; approve/reject; one-click resume from checkpoint.
 - States: approve → resume; reject → record + stop; timeout policy.
-- Done when: a `confirm` action pauses, appears in the queue, and resumes on approve. See `design.md` DecisionQueue card.
+- Done when: a `confirm` action pauses, appears in the queue, and resumes on approve. See `DESIGN.md` DecisionQueue card.
 - Depends: D2, P (trace).
 
 **D4 — Cancellation / replay-and-branch / checkpoints** `[reuse]` · `P1` · `X1`
@@ -334,7 +334,7 @@ _Focus: PRD writing, roadmapping, sprint planning, Linear/Jira connectors._
 
 - Build: Tiptap editor; inline `/ai` slash menu; 1.5s autosave to `prd_versions`; version diff; citation pills; side-anchored comments.
 - States: autosave conflict; offline edit; long doc.
-- Done when: edits autosave + version; `/ai` edits inline with citations; diff renders. See `design.md` DocEditor.
+- Done when: edits autosave + version; `/ai` edits inline with citations; diff renders. See `DESIGN.md` DocEditor.
 - Depends: G1.
 
 ---
@@ -381,7 +381,7 @@ _Focus: UI mockups, visual sandbox, design tokens, style audits._
 
 - Build: live per-session view — current step, files touched, tool calls, cost, status; pause/steer/approve mid-run; streaming.
 - States: many concurrent sessions; paused; errored step.
-- Done when: a building agent's steps/files/cost stream live and can be paused. See README capability surface + `design.md`.
+- Done when: a building agent's steps/files/cost stream live and can be paused. See README capability surface + `DESIGN.md`.
 - Depends: E6, I1, P.
 
 **I3 — Branch/worktree isolation per mission** `[new]` · `P1` · `S4`
@@ -520,7 +520,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 - What: OKLCH token system in `src/styles.css`; components consume tokens only.
 - Build: semantic colors, gradients, shadows, `--surface-*` palette, type ramp, motion tokens, radii; `prefers-reduced-motion` hook; dark-first theme; lint/review guard against hex literals.
 - Done when: a token edit changes the surface globally; a11y spot-check passes 4.5:1; no hex literals in components.
-- Depends: —. See [`../design.md`](../../design.md).
+- Depends: —. See [`../design.md`](../../DESIGN.md).
 
 **0.5 — Agent blast-radius limits** `[new]` · `P0` · `FND/NFR`
 
@@ -763,7 +763,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 **P6 — Budgets** `[reuse]` · `P0` · `X3`
 
 - Build: daily/monthly caps per workspace/product/mission; BudgetBar (today vs cap, month vs cap; muted→accent→destructive; per-surface popover); breach is friendly (not a crash).
-- Done when: a breach degrades gracefully and the BudgetBar reflects burn. See `design.md` BudgetBar.
+- Done when: a breach degrades gracefully and the BudgetBar reflects burn. See `DESIGN.md` BudgetBar.
 - Depends: 0.6, V1.
 
 **P7 — Incidents log** `[reuse]` · `P1` · `X3`
@@ -773,7 +773,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 **P8 — AI message UI contract** `[reuse]` · `P0` · `X3`
 
 - Build: one shared component rendering score/model+via/latency/tokens/cost/citations/feedback/view-trace/replay on every AI message; cache hit shows `$0.0000`; no citations box when `retrieval=false`.
-- Done when: every AI surface (chat, copilot, PRD `/ai`, Studio, agent summaries, brief) uses the one contract component. Non-negotiable per `design.md` + `AGENTS.md` rule 9.
+- Done when: every AI surface (chat, copilot, PRD `/ai`, Studio, agent summaries, brief) uses the one contract component. Non-negotiable per `DESIGN.md` + `AGENTS.md` rule 9.
 - Depends: P1, O2.
 
 ---
@@ -799,7 +799,7 @@ _The base every later stage is an addition to, not a rewrite of. Build order ste
 **R1 — Command palette (⌘K) + global search** `[reuse]` · `P0` · `X6`
 
 - Build: `cmdk`-based; resolves every destination/create-action/recent-artifact; keyboard-first.
-- Done when: ⌘K reaches every route + create action + recent artifact. See `design.md`.
+- Done when: ⌘K reaches every route + create action + recent artifact. See `DESIGN.md`.
 
 **R2 — Connectors / integrations** `[extend]` · `P1` · `X5`
 
@@ -1005,7 +1005,7 @@ _Derived from [`./strategy/archive/v3-audit.md`](../strategy/archive/v3-audit.md
 | F-ID              | What                                                                                                                                                                                                                                          | Source recs |        Status        |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | :------------------: |
 | `F-VOICE-DIALOGS` | `window.prompt()`/`window.confirm()` flows in `AppShell` (workspace + product creation/rename/delete) replaced with `useConfirm` / `usePrompt` dialogs + sentence-case labels; ESLint guardrail blocks `alert/confirm/prompt/onbeforeunload`. | LANG-07     | ☑ shipped 2026-06-06 |
-| `F-VOICE-GUIDE`   | One-page voice guide published as [`./conventions/ui-voice.md`](../conventions/ui-voice.md); linked from `design.md`, `AGENTS.md` §3, `CLAUDE.md` + `GEMINI.md` read-order step 1.6.                                                           | LANG-10     | ☑ shipped 2026-06-06 |
+| `F-VOICE-GUIDE`   | One-page voice guide published as [`./conventions/ui-voice.md`](../conventions/ui-voice.md); linked from `DESIGN.md`, `AGENTS.md` §3, `CLAUDE.md` + `GEMINI.md` read-order step 1.6.                                                           | LANG-10     | ☑ shipped 2026-06-06 |
 
 #### Security follow-up (ignored finding, tracked)
 

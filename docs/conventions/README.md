@@ -28,7 +28,7 @@
 ## How to add a new convention
 
 1. **Write the rule here first.** One file per rule, in this folder. Format: rule · why · how to apply · related.
-2. **Reference it from the canonical contracts** that already touch the topic (`architecture/*.md`, `design.md`, `docs/planning/feature-backlog.md`). The contract restates the rule and links here for the _why_.
+2. **Reference it from the canonical contracts** that already touch the topic (`architecture/*.md`, `DESIGN.md`, `docs/planning/feature-backlog.md`). The contract restates the rule and links here for the _why_.
 3. **Wire it into the entry points** so every tool lands on it: add a one-liner to [`../../AGENTS.md`](../../AGENTS.md) §3 (engineering rules) and a row to [`../../AGENTS.md`](../../AGENTS.md) §5 (cross-document update protocol).
 4. **Optional: mirror to tool memory** as a _thin pointer_ (≤ 2 lines, "see `docs/conventions/<file>.md`"). Never duplicate the body — drift will follow.
 5. **Update this index** with the new row.

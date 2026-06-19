@@ -165,7 +165,7 @@ The Agent Trust Score and Autonomy Dial (feature C6 in `docs/feature-backlog.md`
 | Trusted   | Agents run autonomously across most tasks; operator sees outcomes and exceptions | Sets intent, reviews summaries, not individual actions |
 | Ambient   | Agents run the product org continuously; operator provides strategic direction   | Approves major decisions, reviews periodic briefs       |
 
-Full UX design requirements for surfacing this arc (Trust Score, Autonomy Dial, Loop Health Monitor): [`../../design.md`](../../design.md), "The trust arc" section.
+Full UX design requirements for surfacing this arc (Trust Score, Autonomy Dial, Loop Health Monitor): [`../../design.md`](../../DESIGN.md), "The trust arc" section.
 
 **Why not Model C (Ambient OS / mobile-first)?** Model C is the eventual long-term destination for mature Cadence users (2+ years). It's worth designing for but not the day-one interaction model. Get to B first, design the B→A journey, let C emerge.
 

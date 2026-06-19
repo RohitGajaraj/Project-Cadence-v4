@@ -60,7 +60,7 @@ The effective approval mode at each gate is **not** read directly from `agent_to
 
 ## The live orchestration surface
 
-The UI ([`design.md`](../design.md), [`frontend.md`](./frontend.md)) renders the mission DAG live: per-node status, current step, files touched, tool calls, cost, and approval state — with pause / steer / approve controls. This is the "watch the agents build/ship" surface. It reads from `ai_traces` + a `missions`/`sessions` table set and Supabase Realtime.
+The UI ([`DESIGN.md`](../DESIGN.md), [`frontend.md`](./frontend.md)) renders the mission DAG live: per-node status, current step, files touched, tool calls, cost, and approval state — with pause / steer / approve controls. This is the "watch the agents build/ship" surface. It reads from `ai_traces` + a `missions`/`sessions` table set and Supabase Realtime.
 
 ## Data (new tables this layer needs)
 

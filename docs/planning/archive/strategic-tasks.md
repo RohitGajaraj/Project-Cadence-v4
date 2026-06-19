@@ -45,7 +45,7 @@ Make one full vertical slice bulletproof before widening — proves the loop + g
 
 ## P3 — Design + skills
 
-- [ ] Design system: use `/gstack-design-review` and the design skills in [`design.md`](./design.md); pilot Mission Control against the pillars.
+- [ ] Design system: use `/gstack-design-review` and the design skills in [`DESIGN.md`](./DESIGN.md); pilot Mission Control against the pillars.
 - [ ] Keep [`plan.md`](./plan.md) section 4 (active build log) updated as we ship; supersede legacy entries (section 5) as they're rebuilt.
 
 ---

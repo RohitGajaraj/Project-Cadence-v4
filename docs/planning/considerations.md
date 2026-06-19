@@ -12,7 +12,7 @@
 
 ## Already covered (don't duplicate — pointers)
 
-Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../../architecture/security.md`](../../architecture/security.md). Orchestration, parallelism, multi-product isolation → [`../../architecture/orchestration.md`](../../architecture/orchestration.md). AI telemetry, evals, guardrails, budgets, drift → [`../../architecture/runtime.md`](../../architecture/runtime.md). Data model, migrations, pgvector → [`../../architecture/data.md`](../../architecture/data.md). a11y, design states → [`../../design.md`](../../design.md). Stack/OSS/lock-in → [`../decisions/tech-stack.md`](../decisions/tech-stack.md). The items below are the _gaps beyond_ those.
+Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../../architecture/security.md`](../../architecture/security.md). Orchestration, parallelism, multi-product isolation → [`../../architecture/orchestration.md`](../../architecture/orchestration.md). AI telemetry, evals, guardrails, budgets, drift → [`../../architecture/runtime.md`](../../architecture/runtime.md). Data model, migrations, pgvector → [`../../architecture/data.md`](../../architecture/data.md). a11y, design states → [`../../design.md`](../../DESIGN.md). Stack/OSS/lock-in → [`../decisions/tech-stack.md`](../decisions/tech-stack.md). The items below are the _gaps beyond_ those.
 
 ## The five that will blindside us first (read these if nothing else)
 

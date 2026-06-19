@@ -105,7 +105,7 @@ Token names `--violet`, `--indigo-grid`, `.ring-glow-violet`, `.neural-*` are re
    - Approved palettes move into `src/styles.css` tokens immediately after review
 
 5. **Update documentation in the same commit**
-   - Add Pantone tone to `design.md` §Tokens (this section)
+   - Add Pantone tone to `DESIGN.md` §Tokens (this section)
    - Update `src/styles.css` with new `--color-*` tokens (never hardcoded hex)
    - Document in [`AGENTS.md`](./AGENTS.md) §4 if a new color selection pattern emerges
 

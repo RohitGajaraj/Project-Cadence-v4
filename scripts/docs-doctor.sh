@@ -82,6 +82,10 @@ while IFS= read -r mdfile; do
 done < <( { find docs -name '*.md' 2>/dev/null; for r in AGENTS.md CLAUDE.md GEMINI.md README.md DESIGN.md ENTRY.md Ai_Cofounder.md plan.md; do [ -f "$r" ] && echo "$r"; done; } )
 if [ "$MISS" -ne 0 ]; then echo "  (add '> _Created: YYYY-MM-DD · Last updated: YYYY-MM-DD_' under the H1)"; WARN=1; else echo "  ok"; fi
 
+echo "-- [8] design canon reference case (the file is DESIGN.md; links must match for case-sensitive systems) --"
+DCASE="$(grep -rIn -F -e '](design.md)' -e '](./design.md)' -e '](../design.md)' -e '](../../design.md)' -e '](../../../design.md)' -e '\`design.md\`' . --include='*.md' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=design-reference 2>/dev/null)"
+if [ -n "$DCASE" ]; then echo "$DCASE" | sed 's/^/  FAIL lowercase design.md ref (file is DESIGN.md; 404s on GitHub\/Linux): /'; FAIL=1; else echo "  ok"; fi
+
 echo ""
 if [ "$FAIL" -ne 0 ]; then echo "docs-doctor: ISSUES FOUND (hard rot). Fix the FAIL items in the same commit."; exit 1; fi
 [ "$WARN" -ne 0 ] && echo "docs-doctor: clean of hard rot; review the WARN items above." || echo "docs-doctor: clean."

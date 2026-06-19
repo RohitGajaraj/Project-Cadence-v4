@@ -15,7 +15,7 @@ callModel({ surface, traceId, parentEventId, model, messages, tools?, retrieval?
   -> { text, tool_calls, usage, latency_ms, ttft_ms }
 ```
 
-`surface` is one of the known surfaces (chat, agent, copilot, prd, discovery, studio, brief, eval, judge, embed, mcp_server, a2a). It drives per-surface defaults, color coding ([`design.md`](../design.md)), and analytics filters. `workspaceId` scopes the kill-switch check; `runId` ties the call to an `agent_runs` row for per-mission token/spend caps and atomic usage accounting.
+`surface` is one of the known surfaces (chat, agent, copilot, prd, discovery, studio, brief, eval, judge, embed, mcp_server, a2a). It drives per-surface defaults, color coding ([`DESIGN.md`](../DESIGN.md)), and analytics filters. `workspaceId` scopes the kill-switch check; `runId` ties the call to an `agent_runs` row for per-mission token/spend caps and atomic usage accounting.
 
 ## The pipeline (in order)
 

@@ -40,7 +40,7 @@
 7. Replace every `name?: "field"`/`window.prompt()` flow with proper dialogs + sentence-case labels (`LANG-07`, see `AppShell.tsx:195`).
 8. Sentence-case every UI string; kill `uppercase tracking-[0.16em]` mono-labels everywhere except true taxonomy chips (`LANG-08`).
 9. Approval-gate prompts must say _what will happen if I approve_ and _what gets rolled back if I reject_ (`LANG-09`).
-10. Publish a one-page voice guide and link it from `design.md` (`LANG-10`).
+10. Publish a one-page voice guide and link it from `DESIGN.md` (`LANG-10`).
 
 ---
 
@@ -76,7 +76,7 @@
 
 **Sentence case everywhere.** Page H1s, section headers, nav items, buttons, chip labels. The only legitimate ALL CAPS in the product is a 2-letter taxonomy tag (e.g. `T72` for trust score), and even those should be reconsidered.
 
-**AI-message chip copy spec** (formalizes `design.md`):
+**AI-message chip copy spec** (formalizes `DESIGN.md`):
 
 - Model+via: `gpt-5 · gateway` (lowercase via, no parens)
 - Score: `Eval 0.84` (not `Score: 84%`)
@@ -302,7 +302,7 @@ Canonical terms: pick once, hold the line everywhere.
 - `Approval requested` (not `Gate hit`)
 - `Finalized` (not `Completed`)
 
-**Model+via chip:** `gpt-5 · gateway` (already in `design.md`; enforce lowercase `via`).
+**Model+via chip:** `gpt-5 · gateway` (already in `DESIGN.md`; enforce lowercase `via`).
 
 **Score label:** `Eval 0.84` not `Score 84%`. Cost is `$0.014`.
 
@@ -352,7 +352,7 @@ Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the r
 
 | ID          | Change                                                                                                                               | I × E × H × S × B                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| `LANG-10`   | Publish one-page voice guide; link from `design.md`; add to onboarding for every tool (Lovable / Claude Code / Antigravity / Gemini) | 6 × 2 × Wk4 × 8 × Drift prevention |
+| `LANG-10`   | Publish one-page voice guide; link from `DESIGN.md`; add to onboarding for every tool (Lovable / Claude Code / Antigravity / Gemini) | 6 × 2 × Wk4 × 8 × Drift prevention |
 | `LANG-CHIP` | Enforce AI-message chip spec (§1) via component prop types, `<AiCallChip model via score latency tokens cost />`                    | 5 × 4 × Wk5 × 6 × Consistency      |
 
 ---
@@ -373,7 +373,7 @@ Each row: `Impact × Effort × Horizon × Strategic × Benefit`. Effort is the r
 - Current positioning: [`v2-positioning.md`](./v2-positioning.md)
 - Strategy index: [`README.md`](./README.md)
 - Decision log: [`session-decisions.md`](./session-decisions.md)
-- UI/AI-message contract: [`../../design.md`](../../design.md)
+- UI/AI-message contract: [`../../design.md`](../../DESIGN.md)
 - Sidebar nav source: [`../../src/components/cadence/AppShell.tsx`](../../src/components/cadence/AppShell.tsx)
 
 ---

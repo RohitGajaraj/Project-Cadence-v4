@@ -212,7 +212,7 @@ All calls through `runtime.server.ts` (the chokepoint). Routing is **task-class 
 
 ## 7. The IA: seven surfaces, one storyline
 
-> The founder's complaint and the stress-test F1 verdict resolve here. Navigation is the *story of the loop*, not the anatomy of the engine. Detailed UI contract: [`../../design.md`](../../design.md).
+> The founder's complaint and the stress-test F1 verdict resolve here. Navigation is the *story of the loop*, not the anatomy of the engine. Detailed UI contract: [`../../design.md`](../../DESIGN.md).
 
 | # | Surface | Contains (tabs/sections) | Absorbs current routes |
 | --- | --- | --- | --- |
