@@ -166,6 +166,26 @@ Several worktrees can build in parallel off `origin/main` at once (the WM/overni
 5. **Stop-and-report when the lane queue is DRY. This overrides section 9's never-stop rule for lane mode.** A scoped lane must NOT roam into another lane's category or into the chokepoint to find work; roaming is exactly how parallel sessions collide. When no buildable, non-forbidden, non-founder-gated item remains in the queue, write a final report entry ("lane dry, awaiting reassignment") and stop. The founder extends the queue or reassigns. The section 14 design pass is also off-limits in lane mode (it is a whole-product, single-owner activity).
 6. **One command.** Launch is identical to the WM lane: from inside the lane's worktree, `/overnight-build`. This section is what makes that single command self-scope to the lane.
 
+## 16. Worktree selection at launch (never auto-build outside a known lane)
+
+A bare `/overnight-build` first detects WHICH context it is in, with git, and routes by a POSITIVE ALLOWLIST: it BUILDS only in a known lane, and ASKS everywhere else. This is purely additive (the WM/overnight lane and the daytime manual `pick <ID>` mode are unchanged) and it composes with section 15.
+
+Resolve the worktree root first, so a call from a subdirectory still classifies correctly:
+`WT_ROOT="$(git rev-parse --show-toplevel)"` and `BR="$(git rev-parse --abbrev-ref HEAD)"` (note: a detached HEAD returns the literal string `HEAD`, not a branch name).
+
+Then, in order:
+
+1. **Manual override (highest precedence).** If THIS invocation carries an explicit `pick <ID>` (an operator-supplied item on this run), honor it: manual mode, build that item, skip the rest of this section. Ambient mentions of an ID in memory/context do NOT count; only an explicit `pick` argument on this run.
+2. **Scoped lane.** Else if `[ -f "$WT_ROOT/.remember/LANE.md" ]`, this is a scoped parallel lane: proceed per section 15 (read `LANE.md`, build its queue, stay in lane), silently, no prompt.
+3. **WM / overnight lane.** Else if `BR` is `overnight/wm`, this is the original overnight lane (no `LANE.md` by design): proceed with the full whole-product loop (sections 3 through 14).
+4. **Everything else: ASK, never auto-build.** Else (the primary `main` checkout, a detached `HEAD`, a `parallel/*` branch whose `LANE.md` is missing, or any ad-hoc branch): do NOT build here. Building on the shared primary, or on an unscoped branch, is the exact collision the lane model prevents. Instead:
+   - List the lanes + worktrees: `wm` (overnight-build), `cockpit` (cadence-cockpit), `knowledge` (cadence-knowledge), `safety` (cadence-safety), `build` (cadence-build).
+   - ASK the founder which lane to launch (one line; do not assume).
+   - On their pick, run `bash scripts/parallel-build.sh <lane>`, which opens that worktree's terminal and AUTO-STARTS its loop via a bootstrap prompt (a slash command cannot be passed at launch, so the script passes a natural-language instruction that invokes this skill). Then stop here.
+   - Never build directly on `main` or on an unscoped branch from this context.
+
+Why a positive allowlist (build only in cases 2 and 3): absence of `LANE.md` does NOT mean "not a lane" (the WM worktree is a real lane that lacks it), and the unhandled contexts (detached HEAD, a `parallel/*` branch whose `LANE.md` is missing) must fail safe to ASK, never to an implicit whole-product build on the wrong branch. Every lane worktree should carry its own `.remember/LANE.md` so case 2 catches it; case 4 is the safety net.
+
 ---
 
 _Related: [`../../AGENTS.md`](../../AGENTS.md) (operating rules, doc-update protocol), [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (the master status board), [`git-discipline.md`](./commits.md), [`commits.md`](./commits.md), [`memory.md`](./memory.md)._
