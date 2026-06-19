@@ -30,13 +30,13 @@ PRIMARY="$ROOT/Project-Cadence-v4"
 
 BOOTSTRAP='Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree. If a .remember/LANE.md exists you are a scoped parallel lane: read it and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate (tsc + build + tests), adversarially review, run the doc-loop, commit explicit paths with a WHY, and fast-forward push. Stay in lane; stop and report when the queue is dry.'
 
-# name|branch|worktree-dir|description
+# name|branch|worktree-dir|description   (ordered so the menu numbers match: 1=cockpit .. 4=build, then wm)
 LANES=(
-  "wm|overnight/wm|overnight-build|WM tenancy / billing / credit (the original overnight lane)"
-  "cockpit|parallel/cockpit|cadence-cockpit|R3-PREFS notification prefs + P7 incidents / cost-incident log"
-  "knowledge|parallel/knowledge|cadence-knowledge|O1 knowledge-graph explorer + O3 drift / skill-pack export"
-  "safety|parallel/safety|cadence-safety|FND-0.5 agent blast-radius + FND-0.7 injection classifier"
-  "build|parallel/build|cadence-build|F-BUILDER-MULTIFILE scoped multi-file build (touch list + max-N)"
+  "cockpit|parallel/cockpit|cadence-cockpit|Lane 1 - R3-PREFS notification prefs + P7 incidents / cost-incident log"
+  "knowledge|parallel/knowledge|cadence-knowledge|Lane 2 - O1 knowledge-graph explorer + O3 drift / skill-pack export"
+  "safety|parallel/safety|cadence-safety|Lane 3 - FND-0.5 agent blast-radius + FND-0.7 injection classifier"
+  "build|parallel/build|cadence-build|Lane 4 - F-BUILDER-MULTIFILE scoped multi-file build (touch list + max-N)"
+  "wm|overnight/wm|overnight-build|Lane 0 (already running) - WM tenancy / billing / credit, the original overnight lane"
 )
 
 lane_field() { # <name> <2branch|3dir|4desc>
@@ -187,6 +187,10 @@ do_menu() {
 }
 
 arg="${1:-}"
+# numeric aliases so `parallel-build.sh 1` works: 1=cockpit 2=knowledge 3=safety 4=build 0=wm
+case "$arg" in
+  1) arg=cockpit ;; 2) arg=knowledge ;; 3) arg=safety ;; 4) arg=build ;; 0) arg=wm ;;
+esac
 case "$arg" in
   "") do_menu ;;
   list) do_list ;;
@@ -194,6 +198,6 @@ case "$arg" in
   wm|cockpit|knowledge|safety|build) open_lane "$arg" ;;
   *)
     echo "Unknown arg: $arg"
-    echo "Valid: (none=menu) | list | a | wm | cockpit | knowledge | safety | build"
+    echo "Valid: (none=menu) | list | a | 1|2|3|4|0 | cockpit|knowledge|safety|build|wm"
     exit 1 ;;
 esac

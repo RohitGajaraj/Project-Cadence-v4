@@ -1,0 +1,52 @@
+{
+  "version": "2.0.0",
+  "_comment": "Parallel build lanes as VS Code integrated-terminal tabs. Cmd+Shift+P -> 'Tasks: Run Task' -> pick a lane (or 'Lanes 1-4: open all'). Each opens a dedicated terminal in its worktree and auto-starts the scoped loop. See PARALLEL-BUILD.md. The bootstrap arg is used because a slash command cannot be passed at launch.",
+  "tasks": [
+    {
+      "label": "Lane 1: Cockpit (R3-PREFS, P7)",
+      "type": "shell",
+      "command": "claude",
+      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-cockpit" },
+      "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lane 2: Knowledge (O1, O3)",
+      "type": "shell",
+      "command": "claude",
+      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-knowledge" },
+      "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lane 3: Safety (FND-0.5, FND-0.7)",
+      "type": "shell",
+      "command": "claude",
+      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-safety" },
+      "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lane 4: Build (F-BUILDER-MULTIFILE)",
+      "type": "shell",
+      "command": "claude",
+      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-build" },
+      "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lanes 1-4: open all",
+      "dependsOn": [
+        "Lane 1: Cockpit (R3-PREFS, P7)",
+        "Lane 2: Knowledge (O1, O3)",
+        "Lane 3: Safety (FND-0.5, FND-0.7)",
+        "Lane 4: Build (F-BUILDER-MULTIFILE)"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
