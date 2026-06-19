@@ -45,6 +45,7 @@ import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements"
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
+import { TeamCard } from "@/components/settings/TeamCard";
 
 type SectionId =
   | "connections"
@@ -964,6 +965,8 @@ function WorkspaceTab({ scrollToBrief }: { scrollToBrief: boolean }) {
           How your agents should sound and what stance they should take.
         </p>
       </div>
+
+      <TeamCard />
     </div>
   );
 }
