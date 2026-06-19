@@ -304,6 +304,33 @@ export type ProductExport = {
   exported_by: string;
 };
 
+// U6-AUDIT: append-only export audit trail. Records each data export (who, what,
+// how much, when) so a workspace owner can audit data egress. BEST-EFFORT by
+// design - the export is the user's data-portability right and must not fail
+// because the audit row could not be written (e.g. before `export_log` is
+// published, or a transient RLS hiccup), so the insert error is intentionally
+// not propagated. The trail is append-only (no update/delete policy).
+async function recordExport(
+  supabase: SupabaseClient,
+  row: {
+    workspace_id: string | null;
+    kind: "product" | "workspace";
+    target_id: string | null;
+    sections: string[] | null;
+    row_count: number;
+  },
+): Promise<void> {
+  // Best-effort: never let an audit-write failure (a missing table pre-publish, a
+  // transient error, or an unexpected throw) fail the user's export. supabase-js
+  // returns errors in the result object rather than throwing, but the try/catch
+  // guarantees the export proceeds even if that contract ever changes.
+  try {
+    await supabase.from("export_log").insert(row);
+  } catch {
+    // intentional: the export is the primary action; the audit row is secondary.
+  }
+}
+
 export const exportProduct = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
@@ -325,6 +352,18 @@ export const exportProduct = createServerFn({ method: "GET" })
     ]);
     const firstErr = signals.error || opportunities.error || prds.error || tasks.error;
     if (firstErr) throw new Error(firstErr.message);
+
+    await recordExport(supabase as unknown as SupabaseClient, {
+      workspace_id: (product as { workspace_id?: string | null }).workspace_id ?? null,
+      kind: "product",
+      target_id: data.id,
+      sections: null,
+      row_count:
+        (signals.data?.length ?? 0) +
+        (opportunities.data?.length ?? 0) +
+        (prds.data?.length ?? 0) +
+        (tasks.data?.length ?? 0),
+    });
 
     return {
       product,
@@ -448,6 +487,14 @@ export const exportWorkspace = createServerFn({ method: "GET" })
     if (want("learnings")) counts.learnings = lrn.length;
     if (want("memory")) counts.memory = mem.length;
 
+    await recordExport(supabase as unknown as SupabaseClient, {
+      workspace_id: workspaceId,
+      kind: "workspace",
+      target_id: workspaceId,
+      sections: data.sections && data.sections.length > 0 ? data.sections : null,
+      row_count: Object.values(counts).reduce((a, b) => a + b, 0),
+    });
+
     return {
       workspace_id: workspaceId,
       exported_by: userId,
@@ -461,4 +508,35 @@ export const exportWorkspace = createServerFn({ method: "GET" })
       learnings: want("learnings") ? lrn : [],
       memory: want("memory") ? mem : [],
     };
+  });
+
+// U6-AUDIT: read the export audit trail. RLS scopes it to the caller's own
+// exports plus those of any workspace they belong to (so an owner can see all
+// data egress from their workspace). Read-only; newest first; capped.
+export type ExportLogRow = {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  kind: "product" | "workspace";
+  target_id: string | null;
+  sections: string[] | null;
+  row_count: number;
+  created_at: string;
+};
+
+export const listExportLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ workspaceId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ exports: ExportLogRow[] }> => {
+    let query = (context.supabase as unknown as SupabaseClient)
+      .from("export_log")
+      .select("id, user_id, workspace_id, kind, target_id, sections, row_count, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (data.workspaceId) query = query.eq("workspace_id", data.workspaceId);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return { exports: (rows ?? []) as ExportLogRow[] };
   });
