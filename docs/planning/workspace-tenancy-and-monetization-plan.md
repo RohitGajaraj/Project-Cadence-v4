@@ -158,7 +158,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M7 | Upgrade nudges (value-framed) | Monetize | Pending | WM-M5, WM-M6 |
 | WM-M8 | Tier identity motif (Constellation starfield glyph) | Monetize | Pending | WM-M1, WM-M6 |
 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | Monetize | Pending | WM-M1 |
-| WM-M10 | Credit unit + cost-to-credit conversion + legibility layer | Monetize (Credit engine) | Pending | WM-M1 |
+| WM-M10 | Credit unit + cost-to-credit conversion + legibility layer | Monetize (Credit engine) | ✅ Done 2026-06-19 | WM-M1 |
 | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | Pending | WM-M2, WM-M10 |
 | WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | Pending | WM-M4, WM-M10, WM-M11 |
 | WM-M13 | Capped top-up purchase (Stripe credit packs) | Monetize (Credit engine) | Pending | WM-M3, WM-M12 |
@@ -361,6 +361,7 @@ The credit **engine**, what one credit is, the cost-to-credit conversion, per-ti
 - **Acceptance:** `creditsForCost` is model-aware and never returns 0 for a billable call; `bun test` green for pricing.
 - **Verify:** `bun test src/lib/ai/pricing.test.ts` (free / cheap / premium model costs).
 - **Depends on:** `WM-M1`. Parallel-safe with `WM-F1`.
+- **✅ SHIPPED 2026-06-19 (overnight cycle 29).** All in `src/lib/ai/pricing.ts` (+ new `pricing.test.ts`). **Built to spec, with one deliberate scope call:** `actionCreditRange` is a PURE function (no DB / no `ai_events` query) so the item stays "no DB, pricing.ts only" — the spec's "historical `ai_events` averages" is the future calibration source (WM-M16), not a live read; for now the range is computed by running calibrated representative token shapes (chat_reply / research / prd_draft / mission_step / embedding) through the SAME `estimateCreditsForCall`, so the displayed range can never contradict the real meter. `CREDIT_COGS_USD = 0.0002` and the empty `MODEL_CREDIT_RATE` (pure COGS pass-through, default rate 1) are §7 placeholders; the mechanism is final. `creditsForCost` returns 0 for a non-billable (zero/negative/non-finite) cost and >= 1 (rounds up, margin-positive) for any billable call. **Verification (ran):** `bun test` 15/15 (29 asserts), `tsc --noEmit` 0, `eslint` 0 on both files, `bun run build` ✓, humanization clean. Behaviorally verified by the unit tests (pure module, no publish), so ✅. **Drives nothing live yet** — the `WM-M4` seam fills these into the debit path in WM-M12.
 
 #### WM-M11 · Per-tier credit amounts + monthly grant + cycle reset
 - **Why:** each tier's included allowance must be granted and reset per billing cycle; included resets, purchased top-ups persist. This is the logic behind `account_credits.monthly_grant_credits` / `cycle_anchor`.
