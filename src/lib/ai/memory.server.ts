@@ -25,6 +25,10 @@ const SUMMARY_LEN = 140;
  * Recall memory for `agentSlug` relevant to `query`. Two sources, deduped by
  * content: semantic match across all memory kinds + the top recent reflections.
  * `opts.touch` writes `last_used_at = now()` on the recalled ids (decay input).
+ *
+ * WM-F2: account-level memory pooling (paid accounts only).
+ * - If accountId is provided, recall spans all workspaces in that account (paid tier only).
+ * - Otherwise, recall is scoped to the active workspaceId (WM-F1 behavior).
  */
 export async function recallMemoryRefs(
   supabase: SupabaseClient,
@@ -36,9 +40,10 @@ export async function recallMemoryRefs(
   // filter (legacy / single-workspace behavior). The recall RPCs treat a NULL
   // memory.workspace_id as global, so untagged rows stay recallable everywhere.
   workspaceId: string | null,
-  opts?: { maxItems?: number; touch?: boolean },
+  opts?: { maxItems?: number; touch?: boolean; accountId?: string | null },
 ): Promise<RecalledMemory> {
   const maxItems = opts?.maxItems ?? 8;
+  const accountId = opts?.accountId ?? null;
   const lines: string[] = [];
   const refs: MemoryRef[] = [];
   const seenContent = new Set<string>();
@@ -65,7 +70,7 @@ export async function recallMemoryRefs(
     };
     let res = await supabase.rpc("match_agent_memory", {
       ...matchArgs,
-      for_workspace: workspaceId,
+      ...(accountId ? { for_account: accountId } : { for_workspace: workspaceId }),
     });
     // Pre-migration tolerance: PGRST202 means the for_workspace overload does not
     // exist yet (the deploy window before the WM-F1 migration applies). Retry the
@@ -84,7 +89,7 @@ export async function recallMemoryRefs(
     const reflArgs = { for_user: userId, for_agent_slug: agentSlug, match_count: 3 };
     let res = await supabase.rpc("recent_agent_reflections", {
       ...reflArgs,
-      for_workspace: workspaceId,
+      ...(accountId ? { for_account: accountId } : { for_workspace: workspaceId }),
     });
     if (res.error?.code === "PGRST202") {
       res = await supabase.rpc("recent_agent_reflections", reflArgs);
