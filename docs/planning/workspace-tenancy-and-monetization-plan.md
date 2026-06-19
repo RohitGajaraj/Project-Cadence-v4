@@ -142,7 +142,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M1 | Entitlements core (5 account-level tiers + matrix) | Monetize | ✅ Done 2026-06-19 | none |
 | WM-F1 | Scope agent memory / runs / roster to workspace | Foundation | ◐ Core done 2026-06-19 | none (account-pooled recall needs WM-M2) |
 | WM-F1b | Agent-workspace hardening (NOT NULL + RLS swap + roster unique key + full insert-path tagging) | Foundation | Pending | WM-F1 |
-| WM-M2 | `accounts` table + billing relocation + credit/decay migrations | Monetize | Pending | WM-M1 |
+| WM-M2 | `accounts` table + billing relocation + credit/decay migrations | Monetize | ◐ Core done 2026-06-19 | WM-M1 |
 | WM-F2 | Account-level memory pooling (paid) | Foundation | Pending | WM-M2, WM-F1 |
 | WM-F3 | RBAC enforcement (owner/admin/member/viewer) | Foundation | Pending | WM-M2 |
 | WM-F4 | Ownership transfer | Foundation | Pending | WM-F3 |
@@ -277,6 +277,15 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** the CHECK widen is a DROP+ADD in a DO block (match the existing style); do not break the dormant rails (no secret -> 200 no-op / default free); the credit tables are write-protected to service-role so a user cannot self-grant.
 - **Acceptance:** accounts exist + every workspace linked; tiers accept 5 values; credit tables exist + protected; decay is 30-day rolling; dormant billing still inert.
 - **Verify:** migration applies on a branch; backfill leaves no orphan workspace; `get_advisors` clean.
+- **◐ CORE shipped 2026-06-19 (overnight cycle 28).** Migration `20260619160000_wm_m2_accounts_billing_credits.sql` + `src/lib/billing.functions.ts`. **Deviations / decisions, deliberate and safe (live-DB-verified via the Lovable MCP):**
+  - `accounts` mirrors `workspaces` billing exactly (owner_id → `auth.users` `ON DELETE CASCADE`, `protect_account_billing_columns` clone). The protect trigger is created **after** the backfill insert, else the migration role (no JWT → `auth.role() = ''` ≠ `service_role`) would clobber backfilled tiers to free.
+  - `workspaces.account_id` is **NOT NULL** here (not deferred like WM-F1's `agent_memory.workspace_id`): workspaces always carry `owner_id`, and a BEFORE-INSERT `set_workspace_account` trigger derives `account_id` from `owner_id` (never `auth.uid()`, so it is service-role-safe) on every future insert. `ensure_user_default_account(owner_id)` is the idempotent provisioner (mirrors `ensure_user_default_workspace`).
+  - Backfill: **one account per distinct workspace owner**, DISTINCT ON the highest tier (then any Stripe, then newest), with an owner `account_members` row + a zero `account_credits` shell. Current DB = 5 owners / 7 workspaces / all free, so a clean free backfill, but the SQL is correct on a paid DB.
+  - Credit shell carries a `topup_credits` column (the WM-M11/M12 included-vs-top-up split needs it). `credit_ledger` is RLS member-read + **no write policy** (service-role-write-only); `reason` ∈ grant/reset/debit/topup/adjustment; `ai_event_id`/`product_id` are plain uuid tags (no FK, to avoid coupling).
+  - `set_agent_memory_expiry` reworked to 30 days rolling off `last_used_at` (INSERT-OR-UPDATE so a recall touch refreshes the window), paid-list widened to `pro|max|team|enterprise`, **still gated behind `memory_expiry_enabled()` (= false) → zero live effect**. The paid-check keeps reading the `workspaces.plan_tier` shim (smallest correct change; WM-M3 can make it account-aware when the shim is retired).
+  - `billing.functions.ts` `getBillingState` now reads the plan **account-first** with a workspace-shim fallback, tolerant of both deploy-window edges (missing `account_id` column → known-columns read; missing `accounts` table → keep shim). Checkout stays 3-tier (WM-M3 reworks it).
+  - **Verification (what ran):** `bunx tsc --noEmit` 0; `bunx eslint` clean on the changed file; `bun run build` ✓; humanization scan 0 hits; a `BEGIN..ROLLBACK` dry-run of the full migration on the live prod DB applied clean (`accounts=5`, all 7 workspaces linked, **0 nulls**, `credits_enabled=false`), then rolled back (prod confirmed untouched). Live billing-from-account + the schema activate on the founder's next publish.
+  - **Follow-ups (not blocking):** regenerate `src/integrations/supabase/types.ts` so the new tables/columns are typed (currently reached via the untyped cast, same as WM-F1); WM-M3 moves the Stripe webhook to write the account (today it still writes the workspace shim, consistent while billing is dormant); the repo-wide `bun run lint` debt (~4340 pre-existing errors in untouched files) is unrelated to this diff.
 
 #### WM-M3 · Billing rails (account-level Stripe + webhook map)
 - **Why:** checkout/webhook are 3-tier and hardcode `"pro"`; move to the account + 5 tiers + seats.

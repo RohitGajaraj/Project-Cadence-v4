@@ -1,17 +1,21 @@
 /**
  * M-C billing: plan state + Stripe checkout (the monetization surface).
  *
- * The plan tier lives on workspaces.plan_tier and is changed ONLY by the Stripe
- * webhook (service-role, src/routes/api/stripe/webhook.ts). These authed server
- * functions READ the plan and START a checkout. Everything degrades gracefully
- * when Stripe is not configured yet (no STRIPE_SECRET_KEY / price ids), so the
+ * WM-M2: billing now attaches at the ACCOUNT level (accounts.plan_tier). The read
+ * prefers the account's plan and falls back to the workspaces.plan_tier compat shim
+ * while the account migration is still rolling out. The shim is still the only thing
+ * the Stripe webhook writes until WM-M3 moves the webhook to the account, so the two
+ * stay consistent during the dormant transition (no live billing writes yet).
+ *
+ * These authed server functions READ the plan and START a checkout. Everything degrades
+ * gracefully when Stripe is not configured yet (no STRIPE_SECRET_KEY / price ids), so the
  * surface ships before the founder provisions Stripe.
  *
  * No Stripe SDK dependency: checkout is created via Stripe's REST API over fetch,
  * which is the Cloudflare Workers friendly path.
  *
- * PRE-MIGRATION TOLERANT: plan_tier lands on the next Lovable sync. Until then the
- * read falls back to "free" and nothing throws.
+ * PRE-MIGRATION TOLERANT: account_id / accounts land on the next Lovable sync. Until then
+ * the read falls back to the workspace shim, then "free", and nothing throws.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
@@ -69,17 +73,54 @@ export const getBillingState = createServerFn({ method: "GET" })
 
     let planTier: PlanTier = "free";
     let isOwner = false;
+    let accountId: string | null = null;
     try {
-      const { data: row } = await supabase
+      // Post-migration: account_id is present. error (not throw) on a missing column,
+      // so re-throw to hit the known-columns fallback below.
+      const { data: row, error } = await supabase
         .from("workspaces")
-        .select("id,owner_id,plan_tier")
+        .select("id,owner_id,plan_tier,account_id")
         .eq("id", workspaceId)
         .maybeSingle();
-      const r = (row ?? {}) as { owner_id?: string; plan_tier?: string | null };
-      planTier = normalizePlanTier(r.plan_tier);
+      if (error) throw error;
+      const r = (row ?? {}) as {
+        owner_id?: string;
+        plan_tier?: string | null;
+        account_id?: string | null;
+      };
+      planTier = normalizePlanTier(r.plan_tier); // workspace shim
       isOwner = !!r.owner_id && r.owner_id === userId;
+      accountId = r.account_id ?? null;
     } catch {
-      // pre-migration (no plan_tier column) or transient error: default to free.
+      // pre-migration (no account_id column): read the known columns so isOwner still works.
+      try {
+        const { data: row } = await supabase
+          .from("workspaces")
+          .select("id,owner_id,plan_tier")
+          .eq("id", workspaceId)
+          .maybeSingle();
+        const r = (row ?? {}) as { owner_id?: string; plan_tier?: string | null };
+        planTier = normalizePlanTier(r.plan_tier);
+        isOwner = !!r.owner_id && r.owner_id === userId;
+      } catch {
+        // transient / no plan_tier column: default to free.
+      }
+    }
+
+    // WM-M2: the account's plan wins over the workspace shim once the migration lands.
+    // Pre-migration (no accounts table) or for a non-account-member, this is a no-op.
+    if (accountId) {
+      try {
+        const { data: acct } = await supabase
+          .from("accounts")
+          .select("plan_tier")
+          .eq("id", accountId)
+          .maybeSingle();
+        const a = (acct ?? {}) as { plan_tier?: string | null };
+        if (a.plan_tier != null) planTier = normalizePlanTier(a.plan_tier);
+      } catch {
+        // accounts not present yet: keep the workspace shim.
+      }
     }
 
     return {
