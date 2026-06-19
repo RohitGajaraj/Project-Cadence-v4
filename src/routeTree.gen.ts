@@ -60,6 +60,7 @@ import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedBuildIndexRouteImport } from './routes/_authenticated.build.index'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedTracesTraceIdRouteImport } from './routes/_authenticated.traces.$traceId'
 import { Route as AuthenticatedStudioMissionIdRouteImport } from './routes/_authenticated.studio.$missionId'
 import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated.prds.$id'
@@ -340,6 +341,11 @@ const ApiPublicIngestSignalsRoute = ApiPublicIngestSignalsRouteImport.update({
   path: '/api/public/ingest-signals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTracesTraceIdRoute =
   AuthenticatedTracesTraceIdRouteImport.update({
     id: '/$traceId',
@@ -513,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build/': typeof AuthenticatedBuildIndexRoute
@@ -585,6 +592,7 @@ export interface FileRoutesByTo {
   '/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/build': typeof AuthenticatedBuildIndexRoute
@@ -660,6 +668,7 @@ export interface FileRoutesById {
   '/_authenticated/prds/$id': typeof AuthenticatedPrdsIdRoute
   '/_authenticated/studio/$missionId': typeof AuthenticatedStudioMissionIdRoute
   '/_authenticated/traces/$traceId': typeof AuthenticatedTracesTraceIdRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_authenticated/build/': typeof AuthenticatedBuildIndexRoute
@@ -735,6 +744,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/build/'
@@ -807,6 +817,7 @@ export interface FileRouteTypes {
     | '/prds/$id'
     | '/studio/$missionId'
     | '/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/build'
@@ -881,6 +892,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prds/$id'
     | '/_authenticated/studio/$missionId'
     | '/_authenticated/traces/$traceId'
+    | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
     | '/_authenticated/build/'
@@ -916,6 +928,7 @@ export interface RootRouteChildren {
   DSlugRoute: typeof DSlugRoute
   PSlugRoute: typeof PSlugRoute
   TSlugRoute: typeof TSlugRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
@@ -1294,6 +1307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestSignalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/traces/$traceId': {
       id: '/_authenticated/traces/$traceId'
       path: '/$traceId'
@@ -1583,6 +1603,7 @@ const rootRouteChildren: RootRouteChildren = {
   DSlugRoute: DSlugRoute,
   PSlugRoute: PSlugRoute,
   TSlugRoute: TSlugRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,

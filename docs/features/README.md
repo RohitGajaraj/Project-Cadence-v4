@@ -41,6 +41,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | R3 | Notifications (in-app Attention feed) | ◐ Core shipped 2026-06-18 | `/govern?tab=attention` | [`r3-notifications.md`](./r3-notifications.md) |
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
 | SUBPROC-DISCLOSURE | Sub-processor disclosure registry (model providers + infra) | ◐ Backend shipped 2026-06-20 | (no UI yet; `getSubprocessors` fn) | [`subprocessor-disclosure.md`](./subprocessor-disclosure.md) |
+| APP-HEALTH | App-level health/readiness endpoint (uptime monitors / LBs) | ◐ Endpoint shipped 2026-06-20 | `GET /api/public/health` | [`app-health.md`](./app-health.md) |
 | D4 | Mission cancellation (per-mission brake) | ◐ Cancellation shipped 2026-06-18 | `/missions/$id` | [`d4-mission-cancellation.md`](./d4-mission-cancellation.md) |
 | O1 | Provenance ("why is this on the roadmap?") | ◐ Provenance shipped 2026-06-18 | `/product?opp=` | [`o1-provenance.md`](./o1-provenance.md) |
 | LCH-01 | Launch-kit drafting (changelog/blog/email/social/docs) | ◐ Drafting shipped 2026-06-18 | `/build/$missionId` Changes | [`lch-01-launch-kit.md`](./lch-01-launch-kit.md) |
