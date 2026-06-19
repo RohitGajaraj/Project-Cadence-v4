@@ -171,7 +171,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-F5 | Invites (account/workspace) | Foundation | Pending | WM-F3, WM-M2 |
 | WM-F6 | Move product between workspaces | Foundation | Pending | WM-M2 |
 | WM-F7 | Settings IA (Account / Workspace / Personal) | Foundation | Pending | WM-M2, WM-F3 |
-| WM-F8 | Workspace switch hardening | Foundation | Pending | WM-F1 |
+| WM-F8 | Workspace switch hardening | Foundation | Core ◐ (cycle 45) | WM-F1 |
 | WM-F9 | Isolation audit + scope leak fixes | Foundation | Pending | none (do before WM-F5) |
 | WM-M3 | Billing rails (account-level Stripe + webhook map) | Monetize | Pending | WM-M1, WM-M2 |
 | WM-M4 | Runtime credit seam (dormant) | Monetize | ◐ Core done 2026-06-19 | WM-M2 |
@@ -278,6 +278,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** do not over-invalidate global/user queries; ensure no stale render between switch and refetch.
 - **Acceptance:** switching shows no stale data; agents/runs/memory reflect the new workspace immediately.
 - **Verify:** Playwright switch between two seeded workspaces; assert no cross-bleed and no stale flash.
+- **Status (cycle 45, ◐ CORE):** shipped the single-site cache reset (the higher-leverage half): `setActiveWorkspaceId` now calls `queryClient.removeQueries({predicate})` on a real switch, clearing every workspace-scoped query (active AND inactive, so navigating after a switch never surfaces stale cross-workspace cache) while a pure, unit-tested allowlist (`src/hooks/workspace-query-scope.ts`) preserves user/account-global queries. Chosen over threading `activeWorkspaceId` into ~40 query keys because the single switch chokepoint catches every query (including un-keyed ones) in one surgical, offline-verifiable change. **Honest scope:** correct + gate-green + driven (AppShell switcher), but most server-fn reads are still user-scoped server-side today, so the user-visible "no cross-workspace flash" scales as reads become workspace-filtered (WM-F9b). Two-workspace Playwright check needs a publish. **Follow-up WM-F8b:** add `activeWorkspaceId` to the un-keyed workspace-scoped query keys (defense-in-depth + instant cached switch-back).
 
 #### WM-F9 · Isolation audit + scope leak fixes
 - **Why:** `meetings`, `notes`, `daily_briefs`, `copilot_messages` are still `auth.uid() = user_id` with no `workspace_id`; a real cross-member leak the moment invites ship.

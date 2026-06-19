@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isWorkspaceScopedQueryKey } from "./workspace-query-scope";
 
 export type Workspace = {
   id: string;
@@ -37,6 +38,7 @@ const WORKSPACE_STORAGE_KEY = "cadence.workspace.active";
 const PRODUCT_STORAGE_KEY = "cadence.product.active";
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [activeWorkspaceId, setActiveWorkspaceState] = useState<string | null>(null);
   const [activeProductId, setActiveProductState] = useState<string | null>(null);
 
@@ -112,6 +114,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [products, isLoadingProducts, activeWorkspaceId]);
 
   const setActiveWorkspaceId = (id: string | null) => {
+    // WM-F8: on a real switch, clear every workspace-scoped query so no stale
+    // data from the previous workspace flashes before the refetch (which reads
+    // like a cross-workspace leak). Active observers refetch automatically
+    // under the new workspace context; user/account-global queries (the
+    // workspaces list, profile, billing, connections) are preserved.
+    if (id !== activeWorkspaceId) {
+      queryClient.removeQueries({
+        predicate: (query) => isWorkspaceScopedQueryKey(query.queryKey),
+      });
+    }
     setActiveWorkspaceState(id);
     if (id) {
       localStorage.setItem(WORKSPACE_STORAGE_KEY, id);
