@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { embedOne } from "@/lib/rag/embed.server";
 import { OUTCOME_MEMORY_KIND } from "./outcome-memory";
+import { entitlementsFor, normalizePlanTier } from "@/lib/entitlements";
 
 export type MemoryRef = { id: string; summary?: string };
 export type RecalledMemory = { lines: string[]; refs: MemoryRef[] };
@@ -22,13 +23,46 @@ export type RecalledMemory = { lines: string[]; refs: MemoryRef[] };
 const SUMMARY_LEN = 140;
 
 /**
+ * WM-F2: which account (if any) to pool recall across. Returns the account id when the
+ * active workspace's account is on a paid tier (crossWorkspaceMemory) — so the agent
+ * recalls decision memory compounded across ALL the account's workspaces (the moat
+ * flywheel) — and null otherwise (free / single-workspace: recall stays scoped to the
+ * active workspace, byte-identical to WM-F1). `entitlements.ts` is the single source of
+ * truth for which tiers pool. Resolved INTERNALLY (not threaded through callers) so the
+ * pooling is actually driven without touching every recall call site. Pre-publish-
+ * tolerant: if the accounts schema (WM-M2) is not live yet, any read error degrades to
+ * null, so recall never widens incorrectly.
+ */
+async function resolvePoolAccountId(
+  supabase: SupabaseClient,
+  workspaceId: string | null,
+): Promise<string | null> {
+  if (!workspaceId) return null;
+  try {
+    const ws = await supabase
+      .from("workspaces")
+      .select("account_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+    const accountId = (ws.data as { account_id?: string } | null)?.account_id;
+    if (ws.error || !accountId) return null;
+    const acc = await supabase
+      .from("accounts")
+      .select("plan_tier")
+      .eq("id", accountId)
+      .maybeSingle();
+    if (acc.error || !acc.data) return null;
+    const tier = normalizePlanTier((acc.data as { plan_tier?: unknown }).plan_tier);
+    return entitlementsFor(tier).crossWorkspaceMemory ? accountId : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Recall memory for `agentSlug` relevant to `query`. Two sources, deduped by
  * content: semantic match across all memory kinds + the top recent reflections.
  * `opts.touch` writes `last_used_at = now()` on the recalled ids (decay input).
- *
- * WM-F2: account-level memory pooling (paid accounts only).
- * - If accountId is provided, recall spans all workspaces in that account (paid tier only).
- * - Otherwise, recall is scoped to the active workspaceId (WM-F1 behavior).
  */
 export async function recallMemoryRefs(
   supabase: SupabaseClient,
@@ -39,11 +73,12 @@ export async function recallMemoryRefs(
   // recalls only this workspace, not everything they own). null = no workspace
   // filter (legacy / single-workspace behavior). The recall RPCs treat a NULL
   // memory.workspace_id as global, so untagged rows stay recallable everywhere.
+  // WM-F2: for paid accounts this widens to pool across the account's workspaces,
+  // resolved internally from the workspace's account tier (see resolvePoolAccountId).
   workspaceId: string | null,
-  opts?: { maxItems?: number; touch?: boolean; accountId?: string | null },
+  opts?: { maxItems?: number; touch?: boolean },
 ): Promise<RecalledMemory> {
   const maxItems = opts?.maxItems ?? 8;
-  const accountId = opts?.accountId ?? null;
   const lines: string[] = [];
   const refs: MemoryRef[] = [];
   const seenContent = new Set<string>();
@@ -60,6 +95,9 @@ export async function recallMemoryRefs(
     }
   };
 
+  // WM-F2: pool recall across the account's workspaces for paid tiers; null = single.
+  const poolAccountId = await resolvePoolAccountId(supabase, workspaceId);
+
   try {
     const v = await embedOne(query);
     const matchArgs = {
@@ -68,15 +106,20 @@ export async function recallMemoryRefs(
       for_agent_slug: agentSlug,
       match_count: 5,
     };
-    let res = await supabase.rpc("match_agent_memory", {
-      ...matchArgs,
-      ...(accountId ? { for_account: accountId } : { for_workspace: workspaceId }),
-    });
-    // Pre-migration tolerance: PGRST202 means the for_workspace overload does not
-    // exist yet (the deploy window before the WM-F1 migration applies). Retry the
-    // legacy call so recall never goes dark. Any OTHER error stays non-fatal and we
-    // do NOT fall back, so a transient error can never silently widen recall to all
-    // workspaces. Post-migration this branch never runs.
+    const baseArgs = { ...matchArgs, for_workspace: workspaceId };
+    let res = await supabase.rpc(
+      "match_agent_memory",
+      poolAccountId ? { ...baseArgs, for_account: poolAccountId } : baseArgs,
+    );
+    // Pre-migration tolerance: PGRST202 means that overload does not exist yet (the
+    // deploy window before the migration applies). Step the signature back so recall
+    // never goes dark: drop for_account (pre-WM-F2), then for_workspace (pre-WM-F1).
+    // Degrading a paid account to single-workspace recall in the window is safe — it
+    // never WIDENS recall. Any OTHER error stays non-fatal with no fallback, so a
+    // transient error can never silently widen recall. Post-migration none of this runs.
+    if (res.error?.code === "PGRST202" && poolAccountId) {
+      res = await supabase.rpc("match_agent_memory", baseArgs);
+    }
     if (res.error?.code === "PGRST202") {
       res = await supabase.rpc("match_agent_memory", matchArgs);
     }
@@ -87,10 +130,14 @@ export async function recallMemoryRefs(
 
   try {
     const reflArgs = { for_user: userId, for_agent_slug: agentSlug, match_count: 3 };
-    let res = await supabase.rpc("recent_agent_reflections", {
-      ...reflArgs,
-      ...(accountId ? { for_account: accountId } : { for_workspace: workspaceId }),
-    });
+    const baseRefl = { ...reflArgs, for_workspace: workspaceId };
+    let res = await supabase.rpc(
+      "recent_agent_reflections",
+      poolAccountId ? { ...baseRefl, for_account: poolAccountId } : baseRefl,
+    );
+    if (res.error?.code === "PGRST202" && poolAccountId) {
+      res = await supabase.rpc("recent_agent_reflections", baseRefl);
+    }
     if (res.error?.code === "PGRST202") {
       res = await supabase.rpc("recent_agent_reflections", reflArgs);
     }
