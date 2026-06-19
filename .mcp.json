@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/mcp.json",
   "mcpServers": {
     "supabase": {
       "command": "npx",
@@ -15,7 +14,14 @@
     },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "lovable": {
+      "type": "http",
+      "url": "https://mcp.lovable.dev"
     }
   }
 }
