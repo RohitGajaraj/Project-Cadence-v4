@@ -1,5 +1,9 @@
 # Ambient Precedent Implementation Plan
 
+> _Created: 2026-06-20 · Last updated: 2026-06-20_
+
+> **Status: PLAN (2026-06-20).** Granular, cold-buildable task-by-task build plan for the Decision Brain (H1) increment 1, Ambient Precedent. Spec: [`../features/ambient-precedent.md`](../features/ambient-precedent.md); feature parent: [`../features/decision-brain.md`](../features/decision-brain.md); strategy: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (H1). Status board: [`feature-dashboard.md`](./feature-dashboard.md) row 148 (DBR); build queue: [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §3.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the first increment of the Decision Brain (H1): a proactive precedent nudge that surfaces a workspace's own past shipped outcomes ("you reasoned this way before; here is how it went") wherever a decision is called out, powered by a semantic match over the outcome memories we already store.
@@ -16,7 +20,7 @@
 - **Fail-safe:** every seam degrades to rendering nothing; a precedent failure must never break the Critic or a decision surface (wrap reads in try/catch returning `[]`).
 - **`.server.ts` files run only in the Worker** and must never be imported by a client component.
 - **Design rule (founder, 2026-06-20):** any front-end build actively INVOKES the design skills (`impeccable`, `emil-design-eng`, the taste skills) and obeys the Engine-Room Doctrine + Ember system (`docs/conventions/design-context.md`); reuse `.bento` / `.mono-label` / verdict-chip patterns, invent no colors.
-- **Spec:** `docs/features/ambient-precedent.md`. **Status discipline:** mark a deliverable ◐ (not ✅) until behaviorally verified on a publish; the engine's pure logic is ✅ once unit-tested.
+- **Spec:** [`../features/ambient-precedent.md`](../features/ambient-precedent.md). **Status discipline:** mark a deliverable ◐ (not ✅) until behaviorally verified on a publish; the engine's pure logic is ✅ once unit-tested.
 - **Reference APIs (verified in-repo):**
   - `embedOne(text: string): Promise<number[]>` from `@/lib/rag/embed.server`.
   - RPC `match_agent_memory(query_embedding, for_user uuid, for_agent_slug text, match_count int, for_workspace uuid, for_account uuid)` returns rows `{ id, content, kind, importance, agent_slug, similarity }` (similarity = `1 - cosine_distance`, higher is closer), ordered closest-first. The trailing `for_workspace` / `for_account` overloads can 404 pre-migration with PostgREST code `PGRST202` (handled by the fallback below).
