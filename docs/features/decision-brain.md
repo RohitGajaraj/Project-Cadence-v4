@@ -94,6 +94,8 @@ One graph in, every surface out.
 
 ## Build roadmap (topmost priority; gated)
 
+> **Increment 1 (founder-approved 2026-06-20): Ambient Precedent.** The first build is generalizing DBR-0 into a **cross-platform proactive precedent nudge** (semantic match over the existing outcome memories), wired at the opportunity / spec / Critic seams, migration-free. It is the felt first win ("value at every step"). Full granular design: [`ambient-precedent.md`](./ambient-precedent.md).
+
 - **DBR-0 (DONE 2026-06-20, ◐):** give the Critic decision precedent. The outcome loop was already closed (`recordOutcome` → `rememberOutcome`), but the Critic (the wedge) red-teamed in a vacuum. Shipped: a pure, TDD'd `formatDecisionPrecedent` helper (`src/lib/ai/outcome-memory.ts`, +5 tests) plus a best-effort workspace-outcomes query wired into `runCritic` (`src/lib/ai/critic.server.ts`), so the Critic now cites the workspace's own shipped outcomes. tsc 0 / 303 tests / build green; fail-safe (an empty precedent block leaves the prompt unchanged). ◐ because the live LLM/DB path is not behaviorally verified unattended (verify on next publish). This is the read-side seam DBR-2 deepens once the graph (DBR-1) exists.
 - **DBR-1:** the typed bi-temporal decision graph over Supabase/pgvector (nodes, edges, validity), auto-extracted from PRDs/discovery/decisions; hybrid retrieval (vectors stay for fuzzy recall). Absorbs and elevates the partial `O1` (knowledge graph + query).
 - **DBR-2:** the Critic reads the graph (multi-hop contradiction and precedent context).

@@ -37,6 +37,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | ID        | Feature                                                        | Status                                          | Route(s)                                          | Doc                                                                  |
 | --------- | -------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
 | DBR (H1) | The Decision Brain (typed decision knowledge graph; the moat engine) | 📋 Horizon bet 2026-06-20 · TOPMOST priority | engine + Brain surface (`/chat`, `/memory`) | [`decision-brain.md`](./decision-brain.md) |
+| DBR · inc 1 | Ambient Precedent (cross-platform proactive decision-precedent nudge) | 📋 Design spec 2026-06-20 (founder-approved; build next) | opportunity / spec / Critic seams (v1) | [`ambient-precedent.md`](./ambient-precedent.md) |
 | CMD (H2) | The Command Canvas (NL command bar + live preview) | 📋 Horizon bet 2026-06-20 · sequenced behind H1 | `⌘K` + canvas pane | [`command-canvas.md`](./command-canvas.md) |
 | C4/E7 | Agent inspector (run history) | ◐ Core shipped 2026-06-18 | `/missions?tab=agents` | [`c4-e7-agent-inspector.md`](./c4-e7-agent-inspector.md) |
 | P7 | Incidents log (read-only) | ◐ Core shipped 2026-06-18 | `/govern?tab=incidents` | [`p7-incidents.md`](./p7-incidents.md) |

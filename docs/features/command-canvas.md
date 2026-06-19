@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-20 · Last updated: 2026-06-20_
 
-> **Status: high priority, sequenced behind the Decision Brain (founder ruling, 2026-06-20).** The preview half ships first; the full intent bar follows. Strategic home: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (bet H2). Interface law: [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md). This doc is the self-contained drill-down: read it on its own to understand, build, or share the idea.
+> **Status: PARKED (founder ruling, 2026-06-20).** Only the Decision Brain (H1) is active. This bet is preserved as documented thinking to revisit, not deleted, and not being built. Strategic home: [`../strategy/horizon-bets.md`](../strategy/horizon-bets.md) (bet H2). Interface law: [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md). This doc is the self-contained drill-down: read it on its own to understand or revisit the idea.
 
 ---
 
