@@ -777,13 +777,8 @@ export async function callModel(
   const byo = byoConfig(opts.model);
   let keyRow: { api_key: string } | null = null;
   if (byo && !opts.byoOverride) {
-    const { data } = await supabase
-      .from("user_api_keys")
-      .select("api_key")
-      .eq("user_id", userId)
-      .eq("provider", byo.provider)
-      .maybeSingle();
-    keyRow = (data as { api_key: string } | null) ?? null;
+    const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
+    keyRow = await loadBYOKey(supabase, userId, byo.provider);
   }
 
   const t0 = Date.now();
@@ -1134,13 +1129,8 @@ export async function callModelStream(
   const byo = byoConfig(opts.model);
   let keyRow: { api_key: string } | null = null;
   if (byo && !opts.byoOverride) {
-    const { data } = await supabase
-      .from("user_api_keys")
-      .select("api_key")
-      .eq("user_id", userId)
-      .eq("provider", byo.provider)
-      .maybeSingle();
-    keyRow = (data as { api_key: string } | null) ?? null;
+    const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
+    keyRow = await loadBYOKey(supabase, userId, byo.provider);
   }
 
   let via: "gateway" | "byo" = "gateway";

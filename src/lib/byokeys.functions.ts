@@ -12,28 +12,44 @@ export const BYO_PROVIDERS = [
   { id: "github_pat", label: "GitHub PAT", placeholder: "ghp_…" },
 ] as const;
 
-function mask(key: string): string {
-  if (!key) return "";
-  if (key.length <= 8) return "•".repeat(key.length);
-  return `${key.slice(0, 4)}••••${key.slice(-4)}`;
+function maskFromPrefix(prefix: string | null | undefined): string {
+  if (!prefix) return "••••••••";
+  return `${prefix}••••`;
 }
 
 export const listApiKeys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (context.supabase as never as {
+      from: (t: string) => {
+        select: (q: string) => {
+          order: (
+            c: string,
+            o: { ascending: boolean },
+          ) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+        };
+      };
+    })
       .from("user_api_keys")
-      .select("id, provider, label, base_url, created_at, api_key")
+      .select("id, provider, label, base_url, created_at, api_key_prefix")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Array<{
+      id: string;
+      provider: string;
+      label: string | null;
+      base_url: string | null;
+      created_at: string;
+      api_key_prefix: string | null;
+    }>;
     return {
-      keys: (data ?? []).map((k) => ({
+      keys: rows.map((k) => ({
         id: k.id,
         provider: k.provider,
         label: k.label,
         base_url: k.base_url,
         created_at: k.created_at,
-        preview: mask(k.api_key as string),
+        preview: maskFromPrefix(k.api_key_prefix),
       })),
     };
   });
@@ -50,6 +66,8 @@ export const saveApiKey = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => SaveSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const { buildEncryptedKeyColumns } = await import("@/lib/byokeys-vault.server");
+    const encrypted = await buildEncryptedKeyColumns(data.api_key);
     const { data: row, error } = await supabase
       .from("user_api_keys")
       .upsert(
@@ -57,8 +75,8 @@ export const saveApiKey = createServerFn({ method: "POST" })
           user_id: userId,
           provider: data.provider,
           label: data.label ?? null,
-          api_key: data.api_key,
           base_url: data.base_url ?? null,
+          ...encrypted,
         } as never,
         { onConflict: "user_id,provider,label" },
       )

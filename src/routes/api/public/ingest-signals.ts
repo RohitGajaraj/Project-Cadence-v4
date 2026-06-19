@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -56,10 +57,11 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
           // ingest_tokens is not yet in the generated Database types — untyped
           // cast, same precedent as outcome.functions.ts.
           const admin = supabaseAdmin as unknown as SupabaseClient;
+          const token_hash = createHash("sha256").update(token).digest("hex");
           const { data: tok, error: tokError } = await admin
             .from("ingest_tokens")
             .select("id,user_id,workspace_id")
-            .eq("token", token)
+            .eq("token_hash", token_hash)
             .is("revoked_at", null)
             .maybeSingle();
           if (tokError) throw new Error(tokError.message);

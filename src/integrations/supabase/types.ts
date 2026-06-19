@@ -2273,7 +2273,8 @@ export type Database = {
           id: string
           label: string | null
           revoked_at: string | null
-          token: string
+          token_hash: string
+          token_prefix: string | null
           user_id: string
           workspace_id: string
         }
@@ -2282,7 +2283,8 @@ export type Database = {
           id?: string
           label?: string | null
           revoked_at?: string | null
-          token: string
+          token_hash: string
+          token_prefix?: string | null
           user_id: string
           workspace_id?: string
         }
@@ -2291,7 +2293,8 @@ export type Database = {
           id?: string
           label?: string | null
           revoked_at?: string | null
-          token?: string
+          token_hash?: string
+          token_prefix?: string | null
           user_id?: string
           workspace_id?: string
         }
@@ -4065,6 +4068,7 @@ export type Database = {
       user_api_keys: {
         Row: {
           api_key: string
+          api_key_prefix: string | null
           base_url: string | null
           created_at: string
           id: string
@@ -4075,6 +4079,7 @@ export type Database = {
         }
         Insert: {
           api_key: string
+          api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
           id?: string
@@ -4085,6 +4090,7 @@ export type Database = {
         }
         Update: {
           api_key?: string
+          api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
           id?: string
