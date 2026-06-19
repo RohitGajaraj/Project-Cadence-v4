@@ -18,6 +18,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as DSlugRouteImport } from './routes/d.$slug'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -126,6 +127,11 @@ const TSlugRoute = TSlugRouteImport.update({
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinTokenRoute = JoinTokenRouteImport.update({
+  id: '/join/$token',
+  path: '/join/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DSlugRoute = DSlugRouteImport.update({
@@ -519,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/d/$slug': typeof DSlugRoute
+  '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
@@ -592,6 +599,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/d/$slug': typeof DSlugRoute
+  '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AuthenticatedIndexRoute
@@ -669,6 +677,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/d/$slug': typeof DSlugRoute
+  '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -747,6 +756,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/mcp'
     | '/d/$slug'
+    | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
     | '/build/$missionId'
@@ -820,6 +830,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/mcp'
     | '/d/$slug'
+    | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
     | '/'
@@ -896,6 +907,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/mcp'
     | '/d/$slug'
+    | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
     | '/_authenticated/'
@@ -939,6 +951,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiMcpRoute: typeof ApiMcpRoute
   DSlugRoute: typeof DSlugRoute
+  JoinTokenRoute: typeof JoinTokenRoute
   PSlugRoute: typeof PSlugRoute
   TSlugRoute: typeof TSlugRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -1024,6 +1037,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$slug'
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/$token': {
+      id: '/join/$token'
+      path: '/join/$token'
+      fullPath: '/join/$token'
+      preLoaderRoute: typeof JoinTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/d/$slug': {
@@ -1623,6 +1643,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiMcpRoute: ApiMcpRoute,
   DSlugRoute: DSlugRoute,
+  JoinTokenRoute: JoinTokenRoute,
   PSlugRoute: PSlugRoute,
   TSlugRoute: TSlugRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
