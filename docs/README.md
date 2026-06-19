@@ -30,11 +30,11 @@
 | An architecture contract (runtime · orchestration · security · data · frontend · integrations) | `architecture/` | this file (links throughout) |
 | An ADR / technical decision | `docs/decisions/` | this file (§ Decisions) |
 | A **verification / QA** screenshot (proof a build rendered) | `docs/screenshots/<group>/` — **gitignored, local only** | n/a (not committed) |
-| A **canonical design-reference** image a parallel build must match | `design-reference/` (next to the `*.jsx` references) — **committed, curated** | the relevant spec / [`../DESIGN.md`](../DESIGN.md) |
+| A **canonical design-reference** image a parallel build must match | `design-reference/` (next to the `*.jsx` references) — **committed, curated** | the relevant spec / [`../DESIGN.md`](../design.md) |
 
 ### Repo root is reserved — do not add docs here
 
-Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `ENTRY.md`, `Ai_Cofounder.md`), build/config (`package.json`, `vite.config.ts`, `wrangler.jsonc`, `tsconfig.json`, `eslint.config.js`, `components.json`, `bun.lock`, `bunfig.toml`, `.gitignore`, `.prettier*`, `.mcp.json`, `.lovable-config.txt`, `requirements.txt`, `.env*`), and the live cursors `plan.md` + `DESIGN.md`. **Nothing else.** (The old root `active-task.md` was folded into [`planning/SOURCE-OF-TRUTH.md`](./planning/SOURCE-OF-TRUTH.md) § 0 "The live cursor (NOW)" on 2026-06-19; do not recreate it at root.)
+Root holds **only**: AI-entry docs (`README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `ENTRY.md`, `Ai_Cofounder.md`), build/config (`package.json`, `vite.config.ts`, `wrangler.jsonc`, `tsconfig.json`, `eslint.config.js`, `components.json`, `bun.lock`, `bunfig.toml`, `.gitignore`, `.prettier*`, `.mcp.json`, `.lovable-config.txt`, `requirements.txt`, `.env*`), and the live cursors `plan.md` + `design.md`. **Nothing else.** (The old root `active-task.md` was folded into [`planning/SOURCE-OF-TRUTH.md`](./planning/SOURCE-OF-TRUTH.md) § 0 "The live cursor (NOW)" on 2026-06-19; do not recreate it at root.)
 
 ### Hard rules (the loop stays closed)
 
