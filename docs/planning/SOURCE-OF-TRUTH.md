@@ -2,7 +2,7 @@
 
 > **Founder: this is the ONE file to read.** The live cursor (section 0), status, what we are building, what is deferred to you, findings, and progress all live here. Everything else is **typed detail** this file points to (the map is in section 7). The autonomous build loop keeps this file current every cycle.
 >
-> **Created:** 2026-06-18 · **Last updated:** 2026-06-19 05:30 IST (folded the root `active-task.md` in as section 0; consolidated all work onto a single `main` branch; the doc map is now section 7). **Maintainer:** every tool, every unit of work.
+> **Created:** 2026-06-18 · **Last updated:** 2026-06-19 17:13 IST (added the live overall-progress headline in sections 0 + 2, derived from the dashboard register; method lives in the dashboard's Progress accounting rule; earlier 05:30 IST: folded the root `active-task.md` in as section 0, consolidated all work onto a single `main` branch, the doc map is now section 7). **Maintainer:** every tool, every unit of work.
 
 ---
 
@@ -13,6 +13,8 @@
 **Current initiative:** Workspace, Accounts & Tenancy + Monetization (`WM-*`), founder-directed 2026-06-19. **Branch:** `main` (single-branch model as of 2026-06-19, branch consolidation). Build bible (per-ID specs): [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md). Live board: group **G10** in [`feature-dashboard.md`](./feature-dashboard.md).
 
 **Status:** planning + docs landed; **WM feature code shipping**: WM-M1 (entitlements core) ✅, WM-F1 core (agent memory workspace-scoping) ◐, WM-M2 core (accounts table + billing relocation + credit pool shell) ◐, WM-M10 (credit unit + cost-to-credit conversion + legibility layer) ✅, WM-M4 core (dormant runtime credit seam at the AI chokepoint) ◐, WM-M11 core (per-tier credit grant + monthly reset + credit-tick hook) ◐, and WM-M12 core (atomic credit debit engine, fills the WM-M4 seam) ◐, all 2026-06-19.
+
+**Overall progress (live): 43% strict / 55% weighted** - 61 of 141 tracked rows fully done; ◐ partial counts at its per-row `[~NN%]` estimate, ⏸️ paused counts half. The per-item % (read off each row's status), the per-category roll-up, and the recompute method live in the dashboard's ["At a glance"](./feature-dashboard.md) + its **Progress accounting** rule. Recompute on every status change (do not hand-guess; run the tally).
 
 > **Reconciliation note (2026-06-19, cycle 27):** `main` had diverged (a parallel session built a second, buggy WM-F1 + a "Lovable MCP checkpoint" docs commit on LOCAL main only). Resolved per founder ruling "keep mine + save your docs": `origin/main` = my verified WM-F1 + the cherry-picked docs; the parallel work is backed up at branch `backup/parallel-wm-f1`. **Founder action:** sync local main with `git fetch && git reset --hard origin/main` (the loop cannot run `reset --hard`, it is denylisted). Detail: the overnight report reconciliation callout.
 
@@ -53,7 +55,7 @@ These are permanent operating rules. The loop follows them without being reminde
 ## 2. Current status (where the product is)
 
 - **Cycles 1-19 shipped AND live-verified on the published app** (`cadence-flow-beta.lovable.app`). All checked features work. The core loop (Sense → Decide → Plan → Build → Launch → Learn), the Engine Room (approvals, attention, incidents, spend, trust dial), the 13-agent mesh with handoffs + memory-as-moat, discovery + per-product clustering, provenance, and missions are all live.
-- **Approx completion:** ~55+ of ~101 tracked feature rows done, but true completion is higher than the dashboard shows (several ⬜ rows are already built, see section 5). The remaining work splits into the autonomous queue (section 3) and the founder pickup list (section 4).
+- **Completion (live, derived from the register): 43% strict / 55% weighted** - 61 of 141 tracked rows fully done (◐ partial counts at its per-row `[~NN%]` estimate, ⏸️ paused counts half toward the weighted figure). The remaining 57% splits into the autonomous queue (section 3) and the founder pickup list (section 4); the Monetization + Credit + BYO lanes (G10/G11) are 39 of the 80 not-done rows. True completion runs a little above 43% because several ⬜ rows are already built but not yet reconciled (section 5). **Per-item % + per-category roll-up + the recompute method:** [`feature-dashboard.md`](./feature-dashboard.md) "At a glance" + its **Progress accounting** standing rule.
 - **Two open findings from the live sweep** (neither a code bug), section 5.
 - Milestone framing (legacy M-0 to M-D): M-0/M-A (loop on real data) and M-B (moat visible) are met (the loop is live-verified, /memory + Gauntlet shipped); M-C (monetize) and M-D (dual-user/scale) map to the founder pickup list (section 4).
 

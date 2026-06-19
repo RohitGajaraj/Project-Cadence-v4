@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:44 (WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:44 (WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update; recompute the "At a glance" % per the **Progress accounting** rule below).
 
 ---
 
@@ -24,16 +24,30 @@
 ### How to pick something up
 Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the agent resolves the ID here, reads the row, opens the linked detail (backlog / WM plan / BYO plan / feature doc), and builds. The IDs are stable and shared with [`feature-backlog.md`](./feature-backlog.md).
 
-### Status legend
-| Mark | Meaning |
-| --- | --- |
-| ✅ | **Done** - built, on `main`, verified (date where known) |
-| 🔨 | **In Dev** - actively being built this/another session (see Active claims); keeps the literal `In Dev (` for the hook |
-| ◐ | **Partial** - foundation built, real remaining work; Comments says what is left |
-| ⏸️ | **Paused** - built or started but intentionally idle; reason in Comments |
-| ⏭️ | **Deferred** - deliberately not now (gate/sequence reason in Comments) |
-| 🚧 | **Blocked** - cannot proceed until a dependency clears (founder action / KI); reason in Comments |
-| ⬜ | **Open** - not started, ready to pick up |
+### STANDING RULE - PROGRESS ACCOUNTING (keep the % live, never hand-guess it)
+
+**This is how the "what percentage is done" question is answered at a glance, forever, without the number rotting.** The overall % and the per-category roll-up are **derived from the register rows**, not separately hand-kept, so they stay true as long as you follow this:
+
+1. **Every row already carries its own % - read it off the status icon** via the **Item %** column in the Status legend below (✅ 100%, ◐/⏸️/🔨 50%, ⬜/⏭️/🚧 0%). That is the *individual-item* completion. A ◐ partial may override its default 50% with an explicit `[~NN%]` token in its Comments when the remaining split is known (e.g. "remaining D4b ... `[~80%]`").
+2. **The overall number is two figures, both shown in "At a glance":** *strict* = fully-done rows / total; *weighted* = sum of every row's Item % / total. Strict is the honest floor; weighted credits half-built work.
+3. **Deferred rows stay in the denominator** - they are real planned scope, just not now. (For "% of active scope", subtract the deferred count from the denominator; the dashboard reports against all rows.)
+4. **On ANY status change, recompute in the same commit.** Do not eyeball it - run the override-aware tally and paste the results in:
+   ```
+   awk -F'|' '/^\| [0-9]+ \|/{s=$3;gsub(/^[ \t]+|[ \t]+$/,"",s);c[s]++;t++; w=(s=="✅")?1:(s=="◐")?(match($0,/\[~[0-9]+%\]/)?substr($0,RSTART+2,RLENGTH-4)/100:0.5):(s=="⏸️"||s=="🔨")?0.5:0; W+=w} END{for(k in c)print k,c[k]; printf "total=%d strict=%.1f%% weighted=%.2f (%.1f%%)\n",t,(c["✅"]/t)*100,W,(W/t)*100}' docs/planning/feature-dashboard.md
+   ```
+   then update the "At a glance" strict/weighted/by-status/by-category numbers and the "Last recomputed" stamp.
+5. **One number, one place.** [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (sections 0 + 2) shows the same headline % and points back here for the method. Never maintain a second independent figure.
+
+### Status legend (each status carries a completion weight - the **Item %** is the per-item progress you read off any row)
+| Mark | Meaning | Item % |
+| --- | --- | --- |
+| ✅ | **Done** - built, on `main`, verified (date where known) | **100%** |
+| 🔨 | **In Dev** - actively being built this/another session (see Active claims); keeps the literal `In Dev (` for the hook | **50%** |
+| ◐ | **Partial** - foundation built, real remaining work; Comments says what is left | **50%** (override with `[~NN%]` in Comments) |
+| ⏸️ | **Paused** - built or started but intentionally idle; reason in Comments | **50%** (built but idle) |
+| ⏭️ | **Deferred** - deliberately not now (gate/sequence reason in Comments) | **0%** |
+| 🚧 | **Blocked** - cannot proceed until a dependency clears (founder action / KI); reason in Comments | **0%** |
+| ⬜ | **Open** - not started, ready to pick up | **0%** |
 
 ### Category legend (11 categories; mapped from the source groups)
 | Category | What it covers | Source group |
@@ -64,38 +78,45 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ## At a glance
 
-- **Total features = 142** · **Open = 81** · **Done = 61**
-  ("Open" = every row not ✅: ⬜ open + 🔨 in dev + ◐ partial + ⏸️ paused + ⏭️ deferred + 🚧 blocked.)
-- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30; WM-M11 → ◐ credit grant + cycle reset, cycle 31; WM-M12 → ◐ credit debit engine, cycle 32.)_
-- **By status (of 141 total):**
+> **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Last recomputed: 2026-06-19 17:13 IST** from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
-| Status | Count |
-| --- | --- |
-| **Total** | **142** |
-| ✅ Done | 60 |
-| ⬜ Open (ready to pick up) | 53 |
-| ◐ Partial | 19 |
-| ⏭️ Deferred | 7 |
-| ⏸️ Paused | 3 |
-| 🔨 In Dev | 0 |
-| 🚧 Blocked | 0 |
+- ### Overall completion: **43% (strict) / 55% (weighted)**
+  - **Strict** = fully-done rows / total = **61 / 141 = 43%** (the honest floor).
+  - **Weighted** = sum of every row's Item % / total = **77.8 / 141 = 55%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Remaining: 57% open** - **80 of 141** rows not fully done.
+  - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 43%._
+- **Total features = 141** · **Done = 61** · **Not done = 80** (⬜ 47 open + ◐ 23 partial + ⏸️ 3 paused + ⏭️ 7 deferred + 🔨 0 in dev + 🚧 0 blocked).
+- _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open - **39 of the 80** not-done rows._
 
-- **By category (Total / Open / Done):**
+- **By status (of 141 total), with weighted contribution to the 55% roll-up:**
 
-| Category | Total | Open | Done |
+| Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
-| Foundational | 19 | 2 | 17 |
-| Sense | 12 | 9 | 3 |
-| Decide | 12 | 2 | 10 |
-| Build | 14 | 6 | 8 |
-| Launch | 8 | 6 | 2 |
-| Monetization | 27 | 26 | 1 |
-| Credit | 7 | 7 | 0 |
-| Interop | 5 | 4 | 1 |
-| Cockpit | 17 | 8 | 9 |
-| Governance | 12 | 4 | 8 |
-| BYO | 8 | 8 | 0 |
-| **Total** | **141** | **82** | **59** |
+| ✅ Done | 61 | 100% | 61.0 |
+| ◐ Partial | 23 | per-row `[~NN%]` (avg ~67%) | 15.3 |
+| ⏸️ Paused | 3 | 50% | 1.5 |
+| 🔨 In Dev | 0 | 50% | 0.0 |
+| ⬜ Open (ready to pick up) | 47 | 0% | 0.0 |
+| ⏭️ Deferred | 7 | 0% | 0.0 |
+| 🚧 Blocked | 0 | 0% | 0.0 |
+| **Total** | **141** | - | **77.8 / 141 = 55%** |
+
+- **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
+
+| Category | Total | Done | Open | Weighted % |
+| --- | --- | --- | --- | --- |
+| Decide | 12 | 10 | 2 | 94% |
+| Foundational | 19 | 17 | 2 | 89% |
+| Governance | 12 | 8 | 4 | 81% |
+| Build | 14 | 8 | 6 | 68% |
+| Cockpit | 17 | 9 | 8 | 62% |
+| Interop | 5 | 1 | 4 | 52% |
+| Sense | 12 | 3 | 9 | 45% |
+| Launch | 8 | 2 | 6 | 39% |
+| Credit | 7 | 1 | 6 | 35% |
+| Monetization | 27 | 2 | 25 | 23% |
+| BYO | 8 | 0 | 8 | 0% |
+| **Total** | **141** | **61** | **80** | **55%** |
 
 > **Priority rationale** lives in the v10 pick-list ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16, execution mechanics in [`v10_implementation-plan.md`](./v10_implementation-plan.md)) + the SSOT build queue ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0/§3/§4). The current founder-directed initiative is the WM tenancy + monetization + credit engine (WM-*, build top-down by the WM-1..WM-6 order below). BYO (BYO-*) awaits founder greenlight. This register does not restate that prose; the Priority column encodes it.
 
@@ -110,27 +131,27 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | # | Status | ID | Feature | What it does | Category | Priority | Added | Comments |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | ⏸️ | SEN-01 | Connector dock: 2nd live ingest | Adds a second real ingest source (Slack / GitHub issues / support) so the loop closes on real data | Sense | P0 | - | paused: needs founder to register one provider OAuth client (F-CONN) |
-| 2 | ◐ | M-C-PRICE | Pricing + entitlements | Plan tiers, billing fns, Stripe webhook, Settings Plan; the revenue rails (relocated to account-level via WM-M1/2/3) | Monetization | P1 | - | needs founder Stripe secrets to go live; carried/expanded by G10 WM rows |
+| 2 | ◐ | M-C-PRICE | Pricing + entitlements | Plan tiers, billing fns, Stripe webhook, Settings Plan; the revenue rails (relocated to account-level via WM-M1/2/3) | Monetization | P1 | - | needs founder Stripe secrets to go live; carried/expanded by G10 WM rows [~75%] |
 | 3 | ⬜ | Q2 | A2A server/client + Agent Cards + scopes/audit | Peer agents discover and call Cadence, governed by scopes + audit | Interop | P1 | - | needs founder decision on outward-facing surface + scopes/audit posture |
-| 4 | ◐ | Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals | Other agents/tools use Cadence as a tool (signals/opps/PRDs read, append decision) | Interop | P1 | - | Phases 1-3 done (foundation + dispatch + token UI); remaining Q2/Phase 4: full streamable-HTTP transport + external discovery |
+| 4 | ◐ | Q1 / ENG-07 / F-MCP-V1 | MCP server + read-only externals | Other agents/tools use Cadence as a tool (signals/opps/PRDs read, append decision) | Interop | P1 | - | Phases 1-3 done (foundation + dispatch + token UI); remaining Q2/Phase 4: full streamable-HTTP transport + external discovery [~75%] |
 | 5 | ⬜ | SEN-05 | Quant analytics inbound | Ingests PostHog/Amplitude/Mixpanel product metrics as a first-class signal | Sense | P1 | - | gated on a product-analytics connector OAuth + recurring spend |
 | 6 | ⬜ | F-ANALYTICS-1 | Cohort metrics + telemetry ingestion | Released features get real usage data into `product_analytics` | Launch | P1 | - | depends on SEN-05 |
 | 7 | ⬜ | F-ANALYTICS-2 | Opportunity impact eval | Post-release cohort feeds Product Memory and auto-adjusts ICE; the loop learns if a bet paid | Launch | P1 | - | depends on F-ANALYTICS-1 |
-| 8 | ◐ | H2-WRITES | Outcome roadmap governed writes | Extends the H2 Now/Next/Later board with governed write paths | Decide | P1 | - | follow-on to H2; full write surface still partial |
-| 9 | ◐ | PLG | PLG funnel | Public onboarding to first-win to upgrade; turns share traffic into activated paying users | Monetization | P1 | 2026-06-17 | Phases 1,2,4 done; Phase 3 (memory-expiry banner on Today/Brain) queued behind the autonomous loop |
-| 10 | ◐ | ENG-06 / F-GOV-COST-SURFACE | Cost-per-outcome chip + unit-economics roll-up | "What you got for what you spent" chip on the front + full per-agent telemetry behind the Engine Room | Cockpit | P1 | 2026-06-17 | B1 + B3 built; B2 (Missions glance) deferred; live-verify on next publish |
+| 8 | ◐ | H2-WRITES | Outcome roadmap governed writes | Extends the H2 Now/Next/Later board with governed write paths | Decide | P1 | - | follow-on to H2; full write surface still partial [~45%] |
+| 9 | ◐ | PLG | PLG funnel | Public onboarding to first-win to upgrade; turns share traffic into activated paying users | Monetization | P1 | 2026-06-17 | Phases 1,2,4 done; Phase 3 (memory-expiry banner on Today/Brain) queued behind the autonomous loop [~75%] |
+| 10 | ◐ | ENG-06 / F-GOV-COST-SURFACE | Cost-per-outcome chip + unit-economics roll-up | "What you got for what you spent" chip on the front + full per-agent telemetry behind the Engine Room | Cockpit | P1 | 2026-06-17 | B1 + B3 built; B2 (Missions glance) deferred; live-verify on next publish [~70%] |
 | 11 | ⬜ | SANDBOX | Sandbox / preview spine | A sandbox to run agent tests + preview a build before merge | Build | P1 | - | needs founder to pick a provider (Cloudflare Sandbox SDK / E2B / Vercel) + infra/spend |
 | 12 | ⬜ | AMBIENT-ARC | Ambient autonomy arc (Trust Dial) | Per-agent autonomy arc incl. Ambient + suggested promotion on the Agents tab | Governance | P1 | - | recon: shipped as `TrustDial.tsx`; see trust-and-autonomy.md §7 |
-| 13 | ◐ | F3 | Continuous discovery feed | Always-fresh, per-product clustered signal feed (`/product?tab=signals`) | Sense | P2 | 2026-06-18 | remaining: auto-cluster cron (F3-CRON shipped gated off; activation founder-gated, commits recurring AI spend) |
-| 14 | ◐ | O1 | Knowledge graph + query | Provenance walk: "why is this on the roadmap / being built?" back to root source signals | Sense | P2 | 2026-06-18 | remaining: typed graph explorer + drift/skill-pack export (O3) |
+| 13 | ◐ | F3 | Continuous discovery feed | Always-fresh, per-product clustered signal feed (`/product?tab=signals`) | Sense | P2 | 2026-06-18 | remaining: auto-cluster cron (F3-CRON shipped gated off; activation founder-gated, commits recurring AI spend) [~80%] |
+| 14 | ◐ | O1 | Knowledge graph + query | Provenance walk: "why is this on the roadmap / being built?" back to root source signals | Sense | P2 | 2026-06-18 | remaining: typed graph explorer + drift/skill-pack export (O3) [~60%] |
 | 15 | ⬜ | O3 | Fact currency/drift + skill packs | Flags stale facts on the provenance graph; exports versioned skill bundles over MCP | Sense | P2 | - | depends on O1 + Q1 |
-| 16 | ◐ | D4 | Cancel / replay-and-branch / checkpoints | Brake-pedal cancel + replay a finished mission (optionally a different model) with a branch link | Decide | P2 | 2026-06-18 | remaining D4b: rich side-by-side checkpoint-diff; pending publish + live verify |
-| 17 | ◐ | K2 | Rollback triggers + one-action revert | One-action non-destructive revert-to-revision in the Build Changes tab | Build | P2 | 2026-06-18 | remaining K2b: `studio.revert` agent tool (needs `agent_tools` migration) + feature-flag kill; parked on a backup branch, issue #4 |
-| 18 | ◐ | BLD-05 | Inspector gate (tests + preview before merge) | A test + preview bar on the PR/Checks tab before the operator clears the merge gate (warn-only on no tests) | Build | P2 | 2026-06-18 | wiring + unit tests built; live-verify pending; on branch `bld-05-inspector-gate` (PR pending) |
+| 16 | ◐ | D4 | Cancel / replay-and-branch / checkpoints | Brake-pedal cancel + replay a finished mission (optionally a different model) with a branch link | Decide | P2 | 2026-06-18 | remaining D4b: rich side-by-side checkpoint-diff; pending publish + live verify [~80%] |
+| 17 | ◐ | K2 | Rollback triggers + one-action revert | One-action non-destructive revert-to-revision in the Build Changes tab | Build | P2 | 2026-06-18 | remaining K2b: `studio.revert` agent tool (needs `agent_tools` migration) + feature-flag kill; parked on a backup branch, issue #4 [~70%] |
+| 18 | ◐ | BLD-05 | Inspector gate (tests + preview before merge) | A test + preview bar on the PR/Checks tab before the operator clears the merge gate (warn-only on no tests) | Build | P2 | 2026-06-18 | wiring + unit tests built; live-verify pending; on branch `bld-05-inspector-gate` (PR pending) [~80%] |
 | 19 | ⬜ | F-BUILDER-MULTIFILE | Scoped multi-file build | Pre-declared touch list + max-N files; safer multi-file edits | Build | P2 | - | thin slice of I1 |
 | 20 | ⬜ | BLD-04 | Delegate-out to external coding agents | A2A-style hand-off of build work, still governed | Build | P2 | - | depends on Q2; founder posture call (BYO-key + governance) |
-| 21 | ◐ | LRN-04 | Product Memory consult/write visibility | Surfaces the wired memory loop per mission | Launch | P2 | - | per-mission surfacing is N3 (shipped) |
-| 22 | ◐ | LCH-01 / L1 | Launch-kit mission | Turns a shipped changeset into 5 human-approved artifacts (changelog/blog/email/social/docs) | Launch | P2 | 2026-06-18 | remaining: a launch MISSION template + governed outbound send (never auto-sends) |
+| 21 | ◐ | LRN-04 | Product Memory consult/write visibility | Surfaces the wired memory loop per mission | Launch | P2 | - | per-mission surfacing is N3 (shipped) [~70%] |
+| 22 | ◐ | LCH-01 / L1 | Launch-kit mission | Turns a shipped changeset into 5 human-approved artifacts (changelog/blog/email/social/docs) | Launch | P2 | 2026-06-18 | remaining: a launch MISSION template + governed outbound send (never auto-sends) [~40%] |
 | 23 | ⬜ | L2 | Customer pages / announcements | Public-facing announcement pages (`p.$slug`) with approval to publish | Launch | P2 | - | M2 milestone |
 | 24 | ⬜ | M1 / LRN-01 | Support triage loop | Tickets to drafted replies to bug clusters to signals; support feeds back into Discover | Launch | P2 | - | M2; needs an inbound channel |
 | 25 | ⬜ | SEN-04 | Researcher watchtower | Scheduled competitor crawl briefs; ambient competitive signal without manual research | Sense | deferred | - | cut/defer: post-PMF |
@@ -142,34 +163,34 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 31 | ⬜ | F-IA-CULL-CALDOCS | Cull /calendar /meetings /docs /sync from nav | De-clutter the operator nav (data kept) | Cockpit | P2 | - | bundled with the design/IA pass |
 | 32 | ⬜ | F-IA-AGENTS-TABS | Fold /prompts + /agents into one route | Agents live in one place | Cockpit | P2 | - | bundled with the design/IA pass |
 | 33 | ⬜ | F-COCKPIT-MACHINE-MODE | Human <-> Machine mode toggle | Full-screen dispatch board, the "watch the factory" view | Cockpit | P2 | - | absorbed by F-IA-V4 |
-| 34 | ◐ | R3 | Notifications | In-app Attention feed + global bell with the live "what needs you" count | Cockpit | P2 | 2026-06-18 | remaining: email + digests + per-user prefs (R3-PREFS) |
-| 35 | ◐ | R4 | Settings expansion | Self-serve control: budgets, guardrails, health, prefs, admin | Cockpit | P2 | - | Plan tab shipped; rest partial |
-| 36 | ◐ | U6 | Full data-portability / export wizard | Exports the whole workspace as one RLS-scoped JSON with per-section selection | Interop | P2 | 2026-06-18 | remaining: an export audit-log (U6-AUDIT) |
+| 34 | ◐ | R3 | Notifications | In-app Attention feed + global bell with the live "what needs you" count | Cockpit | P2 | 2026-06-18 | remaining: email + digests + per-user prefs (R3-PREFS) [~60%] |
+| 35 | ◐ | R4 | Settings expansion | Self-serve control: budgets, guardrails, health, prefs, admin | Cockpit | P2 | - | Plan tab shipped; rest partial [~30%] |
+| 36 | ◐ | U6 | Full data-portability / export wizard | Exports the whole workspace as one RLS-scoped JSON with per-section selection | Interop | P2 | 2026-06-18 | remaining: an export audit-log (U6-AUDIT) [~85%] |
 | 37 | ⬜ | A6 / ENG-08 | Roles + RBAC + invites | owner/admin/member/viewer roles + invites; per-persona approval lanes | Interop | P2 | - | superseded/expanded by WM-F3/F4/F5 (G10); build from the WM rows |
-| 38 | ◐ | FND-0.7 | Prompt-injection defense | XML-tags + escapes untrusted tool/RAG output; guardrails support injection rules | Governance | P2 | - | remaining: a learned injection classifier + hard quarantine (regex-only today) |
-| 39 | ◐ | FND-0.5 | Agent blast-radius limits | Per-agent tool allow-list + scope so an agent cannot reach beyond its remit | Governance | P2 | - | next autonomous pick: pre-filter high-risk tools + product-scope the allow-list |
-| 40 | ◐ | P7 | Incidents log | Read-only log of failed tool runs, errored auto-pipelines, guardrail blocks, linked to traces | Governance | P2 | 2026-06-18 | remaining: a cost-incident source + a persistent incidents table (P7-COST-INCIDENT) |
+| 38 | ◐ | FND-0.7 | Prompt-injection defense | XML-tags + escapes untrusted tool/RAG output; guardrails support injection rules | Governance | P2 | - | remaining: a learned injection classifier + hard quarantine (regex-only today) [~55%] |
+| 39 | ◐ | FND-0.5 | Agent blast-radius limits | Per-agent tool allow-list + scope so an agent cannot reach beyond its remit | Governance | P2 | - | next autonomous pick: pre-filter high-risk tools + product-scope the allow-list [~55%] |
+| 40 | ◐ | P7 | Incidents log | Read-only log of failed tool runs, errored auto-pipelines, guardrail blocks, linked to traces | Governance | P2 | 2026-06-18 | remaining: a cost-incident source + a persistent incidents table (P7-COST-INCIDENT) [~60%] |
 | 41 | ⬜ | KI-15 / KI-16 | Stale zero-step completion · advance-cap | Per-tick dispatch cap + stale zero-step-mission completion edge cases | Foundational | P2 | - | low: KI-15 done, KI-16 (per-tick cap) genuinely unbuilt; high-scale only |
 | 42 | ⏭️ | HUMAN-SWEEP | Full-product humanization sweep | Sweep all UI strings + seed data for AI fingerprints | Foundational | deferred | - | deferred: pre-launch gate, so screen churn does not force a re-sweep |
 | 43 | ✅ | WM-M1 | Entitlements core (5 account tiers + matrix) | The tier model + limits both threads read; unblocks all pricing/limit work | Monetization | WM-1 | 2026-06-19 13:50 | SHIPPED (overnight cycle 26): 5 slug tiers + full matrix (limits, credits, RBAC, collab) + `limitFor` + Constellation `planPresentation`; legacy fields kept as aliases; `src/lib/entitlements.ts` (+ 14 tests). tsc/build/lint/test green |
-| 44 | ◐ | WM-F1 | Scope agent memory/runs/roster to workspace | The moat compounds per workspace/account (today user-scoped) | Monetization | WM-1 | 2026-06-19 14:45 | CORE shipped (overnight cycle 27): nullable `workspace_id` on all 5 agent tables (backfilled) + recall RPCs rewritten with `for_workspace` (service-role-safe, null-tolerant) + a security fix (cross-user reflection leak) + recall threading + outcome/reflection tagging. Verified by a BEGIN..ROLLBACK dry-run on prod (0 nulls). NOT NULL + RLS swap + roster unique-swap + remaining insert-path tagging -> WM-F1b. Live recall-isolation activates on publish |
+| 44 | ◐ | WM-F1 | Scope agent memory/runs/roster to workspace | The moat compounds per workspace/account (today user-scoped) | Monetization | WM-1 | 2026-06-19 14:45 | CORE shipped (overnight cycle 27): nullable `workspace_id` on all 5 agent tables (backfilled) + recall RPCs rewritten with `for_workspace` (service-role-safe, null-tolerant) + a security fix (cross-user reflection leak) + recall threading + outcome/reflection tagging. Verified by a BEGIN..ROLLBACK dry-run on prod (0 nulls). NOT NULL + RLS swap + roster unique-swap + remaining insert-path tagging -> WM-F1b. Live recall-isolation activates on publish [~70%] |
 | 44b | ⬜ | WM-F1b | Agent-workspace hardening (NOT NULL + RLS + roster key + full tagging) | Closes WM-F1's transitional gaps: NOT NULL on workspace_id, RLS membership swap, agents UNIQUE(workspace_id,slug), and tagging the remaining ~6 agent_memory insert paths (handoff/registry/swarm/gauntlet) so ALL new memory is workspace-isolated | Monetization | WM-1 | 2026-06-19 14:45 | needs a per-insert-site workspace_id audit (several service-role paths); follow-up to WM-F1 |
-| 45 | ◐ | WM-M2 | accounts table + billing/credit/decay migrations | Moves billing to the account; adds the credit-pool shell + 30d rolling decay | Monetization | WM-2 | 2026-06-19 15:40 | CORE shipped (overnight cycle 28): migration adds `accounts`/`account_members`/`account_credits`/`credit_ledger` + `workspaces.account_id` (backfilled, NOT NULL via an owner_id auto-fill trigger) + 5-tier CHECK widen + 30d rolling decay (rolls off `last_used_at`, dormant) + `credits_enabled()`/`is_account_member`/`ensure_user_default_account`; `billing.functions.ts` reads the plan from the account (shim fallback). Dry-run-verified on prod (5 accounts, all 7 ws linked, 0 nulls, rolled back). Live on publish. Types regen + account-aware webhook tracked with WM-M3 |
+| 45 | ◐ | WM-M2 | accounts table + billing/credit/decay migrations | Moves billing to the account; adds the credit-pool shell + 30d rolling decay | Monetization | WM-2 | 2026-06-19 15:40 | CORE shipped (overnight cycle 28): migration adds `accounts`/`account_members`/`account_credits`/`credit_ledger` + `workspaces.account_id` (backfilled, NOT NULL via an owner_id auto-fill trigger) + 5-tier CHECK widen + 30d rolling decay (rolls off `last_used_at`, dormant) + `credits_enabled()`/`is_account_member`/`ensure_user_default_account`; `billing.functions.ts` reads the plan from the account (shim fallback). Dry-run-verified on prod (5 accounts, all 7 ws linked, 0 nulls, rolled back). Live on publish. Types regen + account-aware webhook tracked with WM-M3 [~75%] |
 | 46 | ✅ | WM-M10 | Credit unit + cost-to-credit conversion + legibility | What one credit is + the calm per-action legibility layer (no meter-anxiety) | Credit | WM-2 | 2026-06-19 15:58 | SHIPPED (overnight cycle 29): `src/lib/ai/pricing.ts` adds `CREDIT_COGS_USD` + `creditsForCost` (0 for non-billable, >= 1 margin-positive for billable) + `estimateCreditsForCall` (composes the USD estimator) + the pure display-only `actionCreditRange` legibility layer (calibrated shapes through the same conversion; no DB); 15 unit tests (29 asserts). tsc/build/lint/test green. Numbers are §7 placeholders; the dormant `WM-M4` seam fills via WM-M12 |
 | 47 | ⬜ | WM-F3 | RBAC enforcement | Real owner/admin/member/viewer permissions for teams | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2 |
 | 48 | ⬜ | WM-M5 | Tier limit gates (DB triggers) | Enforce per-product/workspace caps at the DB (clients write direct, so triggers guard) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M1, WM-M2 |
 | 49 | ⬜ | WM-F2 | Account-level memory pooling (paid) | Paid accounts compound memory across workspaces (the flywheel) | Monetization | WM-3 | 2026-06-19 | effort M; needs WM-M2, WM-F1 |
 | 50 | ⬜ | WM-F9 | Isolation audit + scope leak fixes | Close cross-member leaks (meetings/notes/briefs/chat) before invites | Monetization | WM-3 | 2026-06-19 | effort S, no deps; do before WM-F5 |
-| 51 | ◐ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 16:31 | CORE shipped (overnight cycle 31): new `credits.functions.ts` (pure `monthlyGrantCredits`/`resetDelta` + dormant `grantMonthlyAllowance`/`resetCreditCycle`) + `credit-tick` cron hook (grants un-granted, resets due accounts, preserves top-ups). Gated behind `credits_enabled()` (dormant). 7 unit tests; tsc/build/lint green, 208/208. Grant math verified; the DB writes + tick activate on publish + flag + pg_cron |
+| 51 | ◐ | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Included resets, top-ups persist; the account credit pool | Credit | WM-3 | 2026-06-19 16:31 | CORE shipped (overnight cycle 31): new `credits.functions.ts` (pure `monthlyGrantCredits`/`resetDelta` + dormant `grantMonthlyAllowance`/`resetCreditCycle`) + `credit-tick` cron hook (grants un-granted, resets due accounts, preserves top-ups). Gated behind `credits_enabled()` (dormant). 7 unit tests; tsc/build/lint green, 208/208. Grant math verified; the DB writes + tick activate on publish + flag + pg_cron [~70%] |
 | 52 | ⬜ | WM-M15 | Margin levers (cost-aware routing + cache) | Keeps credits margin-positive (no self-serve BYOK to lean on) | Credit | WM-3 | 2026-06-19 | effort M; needs WM-M10 |
 | 53 | ⬜ | WM-F4 | Ownership transfer | Transfer an account/workspace; unblocks owner-leaves | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3 |
 | 54 | ⬜ | WM-F5 | Invites (account/workspace) | Add teammates (no invite flow today) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3, WM-M2 |
 | 55 | ⬜ | WM-M3 | Billing rails (account Stripe + webhook map) | 5-tier checkout + seats; webhook price-to-tier (dormant until secrets) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-M1, WM-M2; founder Stripe secrets to go live |
-| 56 | ◐ | WM-M4 | Runtime credit seam (dormant) | The seam the credit engine plugs into; credits-only (no self-serve BYOK) | Monetization | WM-4 | 2026-06-19 16:17 | CORE shipped (overnight cycle 30): `CreditExhaustedError` + cached `creditsEnabled()` + `resolveCreditAccountId` + `assertAccountCredits` (pre-call) + `debitAccountCredits` (post-call) wired into callModel + callModelStream at the chokepoint; gated behind `credits_enabled()` (dormant no-op, zero behavior change). tsc/build green, 201/201 tests, eslint clean. WM-M12 fills the bodies (atomic draw-down). Live debit on publish + flag flip |
+| 56 | ◐ | WM-M4 | Runtime credit seam (dormant) | The seam the credit engine plugs into; credits-only (no self-serve BYOK) | Monetization | WM-4 | 2026-06-19 16:17 | CORE shipped (overnight cycle 30): `CreditExhaustedError` + cached `creditsEnabled()` + `resolveCreditAccountId` + `assertAccountCredits` (pre-call) + `debitAccountCredits` (post-call) wired into callModel + callModelStream at the chokepoint; gated behind `credits_enabled()` (dormant no-op, zero behavior change). tsc/build green, 201/201 tests, eslint clean. WM-M12 fills the bodies (atomic draw-down). Live debit on publish + flag flip [~75%] |
 | 57 | ⬜ | WM-F7 | Settings IA (Account/Workspace/Personal) | A clear rubric for where each setting lives | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M2, WM-F3 |
 | 58 | ⬜ | WM-F8 | Workspace switch hardening | No stale-data flash on switch; agents/memory switch too | Monetization | WM-5 | 2026-06-19 | effort S; needs WM-F1 |
 | 59 | ⬜ | WM-M6 | Pricing surfaces (5 tiers + Usage panel) | The new model shown across pricing page + Settings Plan + Usage | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M1, WM-M3 |
-| 60 | ◐ | WM-M12 | Credit debit engine (fills the WM-M4 seam) | Meters credits from the account pool; halts clean when empty | Credit | WM-5 | 2026-06-19 16:44 | CORE shipped (overnight cycle 32): atomic `debit_account_credits` RPC (included-then-topup, FOR UPDATE, tagged ledger debit) + `assertAccountCredits` projects + halts with `CreditExhaustedError` + a blocked event; `debitAccountCredits` calls the RPC. Gated behind `credits_enabled()` (dormant). RPC behaviorally dry-run-verified on prod (70+60 debit -> 0/20, ledger -130); 19 pricing tests, 212/212, tsc/build/lint green. Live metering on publish + flag |
+| 60 | ◐ | WM-M12 | Credit debit engine (fills the WM-M4 seam) | Meters credits from the account pool; halts clean when empty | Credit | WM-5 | 2026-06-19 16:44 | CORE shipped (overnight cycle 32): atomic `debit_account_credits` RPC (included-then-topup, FOR UPDATE, tagged ledger debit) + `assertAccountCredits` projects + halts with `CreditExhaustedError` + a blocked event; `debitAccountCredits` calls the RPC. Gated behind `credits_enabled()` (dormant). RPC behaviorally dry-run-verified on prod (70+60 debit -> 0/20, ledger -130); 19 pricing tests, 212/212, tsc/build/lint green. Live metering on publish + flag [~75%] |
 | 61 | ⬜ | WM-M13 | Capped top-up purchase (Stripe credit packs) | Paid-only capped fair-use top-ups; per-cycle ceiling, off by default | Credit | WM-5 | 2026-06-19 | effort M; needs WM-M3, WM-M12; founder sets pack prices + ceiling |
 | 62 | ⬜ | WM-M14 | Per-product / per-member attribution + caps | See + cap spend per product/member on the pooled account | Credit | WM-5 | 2026-06-19 | effort M; needs WM-M12 |
 | 63 | ⬜ | WM-M7 | Upgrade nudges (value-framed) | Convert at natural moments, never punitive | Monetization | WM-6 | 2026-06-19 | effort S; needs WM-M5, WM-M6 |
