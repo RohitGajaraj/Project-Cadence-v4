@@ -152,7 +152,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-F8 | Workspace switch hardening | Foundation | Pending | WM-F1 |
 | WM-F9 | Isolation audit + scope leak fixes | Foundation | Pending | none (do before WM-F5) |
 | WM-M3 | Billing rails (account-level Stripe + webhook map) | Monetize | Pending | WM-M1, WM-M2 |
-| WM-M4 | Runtime credit seam (dormant) | Monetize | Pending | WM-M2 |
+| WM-M4 | Runtime credit seam (dormant) | Monetize | ◐ Core done 2026-06-19 | WM-M2 |
 | WM-M5 | Tier limit gates (product + workspace) | Monetize | Pending | WM-M1, WM-M2 |
 | WM-M6 | Pricing surfaces (pricing page + Settings Plan + Usage) | Monetize | Pending | WM-M1, WM-M3 |
 | WM-M7 | Upgrade nudges (value-framed) | Monetize | Pending | WM-M5, WM-M6 |
@@ -303,6 +303,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** must be a pure seam (no behavior change while dormant); account resolution must never throw on the hot path.
 - **Acceptance:** dormant = zero behavior change; when enabled (test), a platform call debits the account pool.
 - **Verify:** unit-test the seam with the flag on/off.
+- **◐ CORE shipped 2026-06-19 (overnight cycle 30).** All in `src/lib/ai/runtime.server.ts`. Added `CreditExhaustedError`; a cached `creditsEnabled()` (memoizes the `credits_enabled()` flag 5 min so the dormant hot path is about one RPC per process, not per call); `resolveCreditAccountId` (workspace -> account, fallback `ensure_user_default_account`, never throws); `assertAccountCredits` wired right after the per-user budget check in BOTH `callModel` and `callModelStream`; `debitAccountCredits` wired next to `incrementBudget` at both post-call sites. Gated behind `credits_enabled()` -> strict no-op while dormant (the flag + tables do not exist on prod until WM-M2 publishes, so the gate self-protects). Writes use the service-role `supabaseAdmin`. **Deliberate scope:** a minimal functional v1 enabled-path (balance check + best-effort ledger debit + non-atomic decrement); **WM-M12 hardens it** (the atomic draw-down RPC, included-then-top-up order, the blocked `ai_events` event, per-product attribution). **Verification (ran):** tsc 0, eslint 0 on the file, full `bun test` 201/201 (no chokepoint regression), build ✓, humanization clean. Adversarial review: no real fix. **◐ not ✅:** the live debit is DB-coupled and activates only on publish + the flag flip, so it is not behaviorally verifiable offline (no isolable unit test for a dormant DB seam); verified by tsc + build + the green suite + the dormant no-op guarantee.
 
 #### WM-M5 · Tier limit gates (product + workspace)
 - **Why:** enforce free/paid caps; the client writes products directly so server-only checks are bypassable.

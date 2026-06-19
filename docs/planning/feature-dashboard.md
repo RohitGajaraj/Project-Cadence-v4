@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 15:58 (WM-M10 → ✅: credit unit + cost-to-credit conversion + legibility layer shipped, overnight cycle 29; WM-M2 → ◐ cycle 28; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:17 (WM-M4 → ◐: dormant runtime credit seam wired into the AI chokepoint, overnight cycle 30; WM-M10 → ✅ cycle 29; WM-M2 → ◐ cycle 28; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
 
 ---
 
@@ -66,7 +66,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 - **Total features = 142** · **Open = 81** · **Done = 61**
   ("Open" = every row not ✅: ⬜ open + 🔨 in dev + ◐ partial + ⏸️ paused + ⏭️ deferred + 🚧 blocked.)
-- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29.)_
+- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30.)_
 - **By status (of 141 total):**
 
 | Status | Count |
@@ -165,7 +165,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 53 | ⬜ | WM-F4 | Ownership transfer | Transfer an account/workspace; unblocks owner-leaves | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3 |
 | 54 | ⬜ | WM-F5 | Invites (account/workspace) | Add teammates (no invite flow today) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-F3, WM-M2 |
 | 55 | ⬜ | WM-M3 | Billing rails (account Stripe + webhook map) | 5-tier checkout + seats; webhook price-to-tier (dormant until secrets) | Monetization | WM-4 | 2026-06-19 | effort M; needs WM-M1, WM-M2; founder Stripe secrets to go live |
-| 56 | ⬜ | WM-M4 | Runtime credit seam (dormant) | The seam the credit engine plugs into; credits-only (no self-serve BYOK) | Monetization | WM-4 | 2026-06-19 | effort S; needs WM-M2 |
+| 56 | ◐ | WM-M4 | Runtime credit seam (dormant) | The seam the credit engine plugs into; credits-only (no self-serve BYOK) | Monetization | WM-4 | 2026-06-19 16:17 | CORE shipped (overnight cycle 30): `CreditExhaustedError` + cached `creditsEnabled()` + `resolveCreditAccountId` + `assertAccountCredits` (pre-call) + `debitAccountCredits` (post-call) wired into callModel + callModelStream at the chokepoint; gated behind `credits_enabled()` (dormant no-op, zero behavior change). tsc/build green, 201/201 tests, eslint clean. WM-M12 fills the bodies (atomic draw-down). Live debit on publish + flag flip |
 | 57 | ⬜ | WM-F7 | Settings IA (Account/Workspace/Personal) | A clear rubric for where each setting lives | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M2, WM-F3 |
 | 58 | ⬜ | WM-F8 | Workspace switch hardening | No stale-data flash on switch; agents/memory switch too | Monetization | WM-5 | 2026-06-19 | effort S; needs WM-F1 |
 | 59 | ⬜ | WM-M6 | Pricing surfaces (5 tiers + Usage panel) | The new model shown across pricing page + Settings Plan + Usage | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M1, WM-M3 |

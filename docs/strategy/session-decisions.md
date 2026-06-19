@@ -26,6 +26,14 @@
 
 ## Decision log
 
+### 2026-06-19 · WM-M4 build calls: a dormant flag-gated seam is the safer unattended pick; minimal-functional v1
+**Context.** WM-M4 adds the account-level credit seam to the AI chokepoint (`runtime.server.ts`).
+- **Picked WM-M4 over the cursor's WM-F1b this cycle, on safety.** Both are high-impact, but a seam gated behind `credits_enabled()` (false) is the safer thing to build unattended: a bug in dormant code literally cannot run, whereas WM-F1b swaps RLS + adds NOT NULL on the LIVE core agent-memory tables (no flag) where a blind mistake breaks the running loop and is not behaviorally verifiable until publish. WM-M4 also unblocks WM-M12 (the debit keystone).
+- **The flag gate self-protects against the not-yet-published schema.** `credits_enabled()` and the credit tables do not exist on prod until WM-M2 publishes. The cached `creditsEnabled()` reads false (the RPC errors, so false), so the seam never touches the missing tables. Zero risk on current prod.
+- **Minimal functional v1, not a broken stub.** The enabled-path does a real balance check (assert) + ledger debit + non-atomic decrement (debit), so the acceptance "when enabled, a call debits the pool" holds; WM-M12 hardens it (atomic draw-down RPC, included-then-top-up order, blocked-event log, per-product attribution). This avoids both "staged but never driven" and building throwaway logic.
+- **Cached flag, not a per-call RPC.** `credits_enabled()` is memoized 5 min in-process so the dormant hot path costs about one RPC per process, honoring "no behavior change while dormant" without a round-trip per AI call.
+- **Marked ◐ not ✅.** The dormant seam compiles, wires, and the full suite stays green, but the live debit is DB-coupled and cannot be behaviorally tested offline, so it is partial until publish + the flag flip.
+
 ### 2026-06-19 · WM-M10 build calls: the credit unit, and keeping the legibility layer pure (no DB)
 **Context.** WM-M10 defines what one credit is and the cost-to-credit conversion (`src/lib/ai/pricing.ts`).
 - **`actionCreditRange` is a PURE function, not a DB read.** The written spec said the legibility range is "computed from historical `ai_events` averages," but the cursor scoped WM-M10 as "no DB, `pricing.ts` only." Reconciled by making `actionCreditRange(actionKind)` compute its `{min,max}` from calibrated representative token shapes run through the SAME `estimateCreditsForCall`, so it is pure (sync, no Supabase), self-consistent with the real meter, and unit-testable. The "ai_events averages" become the future calibration source (WM-M16, when the credit UI surfaces real per-action data), not a live query here. This keeps the item small, deterministic, and honest.
