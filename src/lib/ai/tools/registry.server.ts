@@ -235,7 +235,7 @@ const remember = def({
     scope: z.enum(["global", "agent"]).optional(),
   }),
   preview: (a) => `Remember: "${a.content.slice(0, 80)}"`,
-  run: async (a, { supabase, userId, agentSlug, agentId }) => {
+  run: async (a, { supabase, userId, agentSlug, agentId, workspaceId }) => {
     let emb: number[] | null = null;
     try {
       emb = await embedOne(a.content);
@@ -257,6 +257,22 @@ const remember = def({
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    // WM-F1b: land the memory in the ACTIVE workspace, not just the owner's default.
+    // The DB BEFORE-INSERT trigger fills workspace_id from user_id when omitted (so
+    // workspace isolation never depends on this app tag), but recording the active
+    // workspace keeps recall correctly scoped for a multi-workspace user. Done as a
+    // separate, error-tolerant update so it stays pre-migration safe: before the column
+    // exists the update no-ops (mirrors rememberOutcome in memory.server.ts).
+    if (workspaceId && (data as { id?: string } | null)?.id) {
+      try {
+        await supabase
+          .from("agent_memory")
+          .update({ workspace_id: workspaceId })
+          .eq("id", (data as { id: string }).id);
+      } catch {
+        /* column not present yet (pre-migration); non-fatal */
+      }
+    }
     return data;
   },
 });
