@@ -4,7 +4,7 @@
 
 > **What this is.** ONE canonical, at-a-glance, prioritized register of **every** feature - what is built, in dev, partial, paused, deferred, blocked, or open - each with a one-line "what it does", a category, and a priority, so any session can pick the top open item cold. This is the **front door** to status. Per-feature acceptance detail lives in [`feature-backlog.md`](./feature-backlog.md); current-initiative build specs live in [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) + [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11).
 >
-> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:31 (WM-M11 → ◐: per-tier credit grant + monthly cycle reset + credit-tick hook, overnight cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
+> **Created:** 2026-06-16 · **Last updated:** 2026-06-19 16:44 (WM-M12 → ◐: credit debit engine fills the WM-M4 seam, atomic draw-down + halt, overnight cycle 32; WM-M11 → ◐ cycle 31; WM-M4 → ◐ cycle 30; WM-M10 → ✅ cycle 29; earlier 05:30 IST: restructured into a single master prioritized register: every G0-G11 row is one numbered row; sorted open-first by priority, then done-by-category). **Maintainer rule:** Tier 1, continuous (update in the same commit as any status change; stamp the precise time on every update).
 
 ---
 
@@ -66,7 +66,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 - **Total features = 142** · **Open = 81** · **Done = 61**
   ("Open" = every row not ✅: ⬜ open + 🔨 in dev + ◐ partial + ⏸️ paused + ⏭️ deferred + 🚧 blocked.)
-- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30; WM-M11 → ◐ credit grant + cycle reset, cycle 31.)_
+- **Overall completion: 42% done** (60 of 142 fully done; ~49% counting partials as half-done). **58% remaining** (82 of 142 open). _The Monetization + Credit + BYO lanes (G10/G11) are the bulk of what is open. (WM-F1 → ◐; WM-F1b added as the hardening follow-up; WM-M2 → ◐ accounts/billing/credit migration, cycle 28; WM-M10 → ✅ credit unit + conversion, cycle 29; WM-M4 → ◐ dormant credit seam, cycle 30; WM-M11 → ◐ credit grant + cycle reset, cycle 31; WM-M12 → ◐ credit debit engine, cycle 32.)_
 - **By status (of 141 total):**
 
 | Status | Count |
@@ -169,7 +169,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 57 | ⬜ | WM-F7 | Settings IA (Account/Workspace/Personal) | A clear rubric for where each setting lives | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M2, WM-F3 |
 | 58 | ⬜ | WM-F8 | Workspace switch hardening | No stale-data flash on switch; agents/memory switch too | Monetization | WM-5 | 2026-06-19 | effort S; needs WM-F1 |
 | 59 | ⬜ | WM-M6 | Pricing surfaces (5 tiers + Usage panel) | The new model shown across pricing page + Settings Plan + Usage | Monetization | WM-5 | 2026-06-19 | effort M; needs WM-M1, WM-M3 |
-| 60 | ⬜ | WM-M12 | Credit debit engine (fills the WM-M4 seam) | Meters credits from the account pool; halts clean when empty | Credit | WM-5 | 2026-06-19 | effort M; needs WM-M4, WM-M10, WM-M11 |
+| 60 | ◐ | WM-M12 | Credit debit engine (fills the WM-M4 seam) | Meters credits from the account pool; halts clean when empty | Credit | WM-5 | 2026-06-19 16:44 | CORE shipped (overnight cycle 32): atomic `debit_account_credits` RPC (included-then-topup, FOR UPDATE, tagged ledger debit) + `assertAccountCredits` projects + halts with `CreditExhaustedError` + a blocked event; `debitAccountCredits` calls the RPC. Gated behind `credits_enabled()` (dormant). RPC behaviorally dry-run-verified on prod (70+60 debit -> 0/20, ledger -130); 19 pricing tests, 212/212, tsc/build/lint green. Live metering on publish + flag |
 | 61 | ⬜ | WM-M13 | Capped top-up purchase (Stripe credit packs) | Paid-only capped fair-use top-ups; per-cycle ceiling, off by default | Credit | WM-5 | 2026-06-19 | effort M; needs WM-M3, WM-M12; founder sets pack prices + ceiling |
 | 62 | ⬜ | WM-M14 | Per-product / per-member attribution + caps | See + cap spend per product/member on the pooled account | Credit | WM-5 | 2026-06-19 | effort M; needs WM-M12 |
 | 63 | ⬜ | WM-M7 | Upgrade nudges (value-framed) | Convert at natural moments, never punitive | Monetization | WM-6 | 2026-06-19 | effort S; needs WM-M5, WM-M6 |

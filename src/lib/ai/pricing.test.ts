@@ -6,6 +6,8 @@ import {
   estimateCreditsForCall,
   actionCreditRange,
   estimateCostUsd,
+  estimatePromptTokens,
+  projectCallCredits,
 } from "./pricing";
 
 describe("CREDIT_COGS_USD", () => {
@@ -107,5 +109,35 @@ describe("actionCreditRange (legibility layer)", () => {
     // equal the direct estimate, proving the range is not an independent number.
     const direct = estimateCreditsForCall("google/gemini-2.5-pro", 3000, 2000);
     expect(actionCreditRange("prd_draft").min).toBe(direct);
+  });
+});
+
+describe("estimatePromptTokens (WM-M12 pre-call projection)", () => {
+  it("is zero for empty input and scales ~4 chars per token", () => {
+    expect(estimatePromptTokens([])).toBe(0);
+    expect(estimatePromptTokens([{ content: "" }])).toBe(0);
+    expect(estimatePromptTokens([{ content: "a".repeat(40) }])).toBe(10);
+    expect(estimatePromptTokens([{ content: "a".repeat(20) }, { content: "b".repeat(20) }])).toBe(
+      10,
+    );
+  });
+
+  it("tolerates null / undefined content", () => {
+    expect(estimatePromptTokens([{ content: null }, { content: undefined }])).toBe(0);
+  });
+});
+
+describe("projectCallCredits (WM-M12 pre-call projection)", () => {
+  it("is a positive, whole-credit projection for a real prompt", () => {
+    const credits = projectCallCredits("google/gemini-2.5-pro", [{ content: "x".repeat(8000) }]);
+    expect(Number.isInteger(credits)).toBe(true);
+    expect(credits).toBeGreaterThanOrEqual(1);
+  });
+
+  it("a premium model projects more than a cheap one for the same prompt", () => {
+    const msgs = [{ content: "y".repeat(4000) }];
+    expect(projectCallCredits("anthropic/claude-opus-4", msgs)).toBeGreaterThan(
+      projectCallCredits("google/gemini-2.5-flash-lite", msgs),
+    );
   });
 });

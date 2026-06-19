@@ -26,6 +26,13 @@
 
 ## Decision log
 
+### 2026-06-19 · WM-M12 build calls: atomic debit via an RPC, pure projection in pricing.ts, behavioral dry-run
+**Context.** WM-M12 fills the WM-M4 seam with the real credit metering (`runtime.server.ts` + a debit RPC migration).
+- **The draw-down is an atomic RPC, not app-side read-modify-write.** The WM-M4 v1 did a non-atomic decrement; WM-M12 replaces it with `debit_account_credits` (SECURITY DEFINER + `FOR UPDATE` row lock), so concurrent debits cannot race and the included-then-top-up draw is one transaction with the ledger write. The function floors spend at the available balance (defensive; the pre-call assert is the real overdraw guard).
+- **The pre-call projection lives in pricing.ts (pure + tested).** `projectCallCredits` / `estimatePromptTokens` are pure functions in `pricing.ts`, unit-tested, and reused by the runtime assert, rather than buried (untestable) in the chokepoint. The projection is conservative (prompt heuristic + a 1200-token completion budget) and runs through the SAME `estimateCreditsForCall` the debit uses, so the guard and the meter agree on the unit.
+- **Behavioral dry-run as verification.** Because the live metering is dormant and DB-coupled, I verified the RPC's logic by scaffolding the WM-2 tables + the function inside a BEGIN..ROLLBACK on the live DB and exercising the included-then-top-up spillover (debit 70 then 60 on 100/50 -> 0/20, ledger -130), then rolling back. This proves the atomic draw-down + ledger reconciliation behaviorally, which a pure unit test of a DB function cannot.
+- **Marked ◐ not ✅.** The RPC + projection are verified, but end-to-end live metering (a real AI call debiting the pool) only runs on publish + the flag flip.
+
 ### 2026-06-19 · WM-M11 build calls: tick-driven grants, ledger reconciliation, test-safe pure helpers
 **Context.** WM-M11 builds the credit-engine grant side (`credits.functions.ts` + a `credit-tick` hook).
 - **The cron tick is the single driver (grant + reset).** Rather than wire grants into the signup flow and the Stripe webhook (other items' territory), the dormant `credit-tick` hook grants un-granted accounts and resets due ones on each run, so the engine is self-contained while dormant. An immediate signup grant can be layered on at activation (calling `grantMonthlyAllowance` from onboarding / WM-M3); for a dormant engine, grant-on-next-tick is fine.

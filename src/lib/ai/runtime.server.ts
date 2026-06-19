@@ -8,7 +8,7 @@
  * - Returns { output, eventId, hits, blocked }
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { estimateCostUsd, creditsForCost } from "./pricing";
+import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
 import { supabaseAdmin } from "../../integrations/supabase/client.server";
 import { evaluateGuardrails, type GuardrailRule } from "./guardrails.server";
 import { retrieve, formatContextBlock, type RetrievedChunk } from "../rag/retriever.server";
@@ -619,6 +619,48 @@ async function resolveCreditAccountId(
  * pool (included + top-up) is empty. No-op while dormant. Any read failure degrades to
  * "allow" so the credit engine can never block a real call by accident.
  */
+// Log a blocked ai_events row when a call is halted for an empty pool (mirrors the
+// governance-halt pattern). Best-effort; a logging failure must not mask the halt.
+async function logCreditExhausted(
+  supabase: SupabaseClient,
+  userId: string,
+  opts: CallOpts,
+  accountId: string,
+  balance: number,
+  projected: number,
+): Promise<void> {
+  try {
+    await supabase.from("ai_events").insert({
+      user_id: userId,
+      trace_id: opts.traceId ?? null,
+      parent_event_id: opts.parentEventId ?? null,
+      surface: opts.surface,
+      surface_ref: opts.surface_ref ?? null,
+      provider: "credits",
+      via: "gateway",
+      model: opts.model,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      est_cost_usd: 0,
+      latency_ms: 0,
+      status: "blocked",
+      error_message: `credit_exhausted: account ${accountId} balance ${balance} below projected ${projected}`,
+      input_preview: (opts.messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
+      system_preview: "",
+      output_preview: "",
+    });
+  } catch (e) {
+    console.error("credit_exhausted event insert failed:", e);
+  }
+}
+
+/**
+ * Pre-call: when credits are enabled, project the call's cost and halt with
+ * CreditExhaustedError (after logging a blocked ai_events row) if the account pool
+ * (included + top-up) cannot cover it. No-op while dormant. A read failure degrades to
+ * "allow" so the engine can never block a real call by accident.
+ */
 async function assertAccountCredits(
   supabase: SupabaseClient,
   userId: string,
@@ -640,49 +682,42 @@ async function assertAccountCredits(
   } catch {
     return;
   }
-  if (balance <= 0) {
-    throw new CreditExhaustedError(accountId, "Account credit balance is exhausted.");
+  const projected = projectCallCredits(opts.model, opts.messages);
+  if (balance <= 0 || balance < projected) {
+    await logCreditExhausted(supabase, userId, opts, accountId, balance, projected);
+    throw new CreditExhaustedError(
+      accountId,
+      `Account credit balance (${balance}) is below the projected cost (${projected}).`,
+    );
   }
 }
 
 /**
- * Post-call: when credits are enabled, meter the call against the account pool. v1 is a
- * best-effort ledger debit + balance decrement; WM-M12 replaces the decrement with an
- * atomic draw-down RPC (included-then-top-up) and adds per-product attribution. No-op
- * while dormant; never throws (a metering failure must not fail a completed call).
+ * Post-call: when credits are enabled, meter the call against the account pool via the
+ * atomic `debit_account_credits` RPC (draws INCLUDED first, then TOP-UP, in one locked
+ * transaction, and writes the credit_ledger debit tagged with the ai_event + surface).
+ * No-op while dormant; never throws (a metering failure must not fail a completed call).
  */
 async function debitAccountCredits(
   supabase: SupabaseClient,
   userId: string,
   opts: CallOpts,
   estCostUsd: number,
+  aiEventId: string | null,
 ): Promise<void> {
   if (!(await creditsEnabled(supabase))) return;
   const credits = creditsForCost(estCostUsd, opts.model);
   if (credits <= 0) return;
   const accountId = await resolveCreditAccountId(supabase, userId, opts.workspaceId ?? null);
   if (!accountId) return;
-  const admin = supabaseAdmin as unknown as SupabaseClient;
   try {
-    const { data: cur } = await admin
-      .from("account_credits")
-      .select("balance_credits")
-      .eq("account_id", accountId)
-      .maybeSingle();
-    const newBalance = Math.max(
-      0,
-      Number((cur as { balance_credits?: number } | null)?.balance_credits ?? 0) - credits,
-    );
-    await admin
-      .from("account_credits")
-      .update({ balance_credits: newBalance })
-      .eq("account_id", accountId);
-    await admin.from("credit_ledger").insert({
-      account_id: accountId,
-      user_id: userId,
-      delta_credits: -credits,
-      reason: "debit",
-      surface: opts.surface,
+    await (supabaseAdmin as unknown as SupabaseClient).rpc("debit_account_credits", {
+      _account_id: accountId,
+      _credits: credits,
+      _user_id: userId,
+      _surface: opts.surface,
+      _ai_event_id: aiEventId,
+      _product_id: null,
     });
   } catch (e) {
     console.error("debitAccountCredits failed:", e);
@@ -1062,8 +1097,8 @@ export async function callModel(
       await incrementBudget(supabase, userId, totalTok, est);
       await incrementSurfaceBudget(supabase, userId, opts.surface, est);
       await recordMissionUsage(supabase, opts.runId ?? null, totalTok, est);
-      // WM-M4: dormant account-level credit debit (no-op while credits_enabled() is false).
-      await debitAccountCredits(supabase, userId, opts, est);
+      // WM-M4 seam + WM-M12 debit: dormant account-level credit metering (no-op while dormant).
+      await debitAccountCredits(supabase, userId, opts, est, eventId);
     }
     if (resolvedPrompt && eventId) {
       await logPromptRun(supabase, userId, {
@@ -1613,8 +1648,8 @@ export async function callModelStream(
             await incrementBudget(supabase, userId, inTok + outTok, estCost);
             await incrementSurfaceBudget(supabase, userId, opts.surface, estCost);
             await recordMissionUsage(supabase, opts.runId ?? null, inTok + outTok, estCost);
-            // WM-M4: dormant account-level credit debit (no-op while credits_enabled() is false).
-            await debitAccountCredits(supabase, userId, opts, estCost);
+            // WM-M4 seam + WM-M12 debit: dormant account-level credit metering (no-op while dormant).
+            await debitAccountCredits(supabase, userId, opts, estCost, eventId);
           }
 
           if (resolvedPrompt && eventId) {

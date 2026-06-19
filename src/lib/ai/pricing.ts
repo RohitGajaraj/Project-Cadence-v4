@@ -138,3 +138,26 @@ export function actionCreditRange(actionKind: string): CreditRange {
   const max = Math.max(min, low, high);
   return { min, max };
 }
+
+// --- Pre-call projection (WM-M12) ------------------------------------------
+// The credit-debit seam projects a call's cost BEFORE making it, to halt cleanly
+// when the account pool cannot cover it. The real debit is exact (from the actual
+// post-call est_cost_usd); this projection is a conservative guard only.
+
+/** Default completion-token budget assumed for the pre-call projection. */
+export const ASSUMED_COMPLETION_TOKENS = 1200;
+
+/** Rough prompt-token estimate from message text (~4 chars per token). Pure. */
+export function estimatePromptTokens(messages: { content?: string | null }[]): number {
+  const chars = messages.reduce((n, m) => n + (m.content?.length ?? 0), 0);
+  return Math.ceil(chars / 4);
+}
+
+/**
+ * Conservative pre-call credit projection: estimated prompt tokens plus a default
+ * completion budget, run through the SAME converter the post-call debit uses, so the
+ * guard and the real meter agree on the unit. Pure.
+ */
+export function projectCallCredits(model: string, messages: { content?: string | null }[]): number {
+  return estimateCreditsForCall(model, estimatePromptTokens(messages), ASSUMED_COMPLETION_TOKENS);
+}

@@ -160,7 +160,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 | WM-M9 | Remove BYOK from self-serve (enterprise-only) | Monetize | Pending | WM-M1 |
 | WM-M10 | Credit unit + cost-to-credit conversion + legibility layer | Monetize (Credit engine) | ✅ Done 2026-06-19 | WM-M1 |
 | WM-M11 | Per-tier credit amounts + monthly grant + cycle reset | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M2, WM-M10 |
-| WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | Pending | WM-M4, WM-M10, WM-M11 |
+| WM-M12 | Credit debit engine (fills the WM-M4 seam; draw-down + halt) | Monetize (Credit engine) | ◐ Core done 2026-06-19 | WM-M4, WM-M10, WM-M11 |
 | WM-M13 | Capped top-up purchase (Stripe credit packs) | Monetize (Credit engine) | Pending | WM-M3, WM-M12 |
 | WM-M14 | Per-product / per-member attribution + caps | Monetize (Credit engine) | Pending | WM-M12 |
 | WM-M15 | Margin levers (cost-aware routing + cache) | Monetize (Credit engine) | Pending | WM-M10 |
@@ -384,6 +384,7 @@ The credit **engine**, what one credit is, the cost-to-credit conversion, per-ti
 - **Acceptance:** with the flag on, every managed call writes a debit and decrements the pool; a drained pool halts with `CreditExhaustedError` (surfaced as a calm message, not a raw 500); with the flag off, zero behavior change.
 - **Verify:** unit-test the seam with the flag on/off; drain a test pool and assert the next call halts; assert the ledger sum equals the balance delta.
 - **Depends on:** `WM-M4`, `WM-M10`, `WM-M11`.
+- **◐ CORE shipped 2026-06-19 (overnight cycle 32).** New migration `20260619170000_wm_m12_credit_debit_rpc.sql` adds the atomic `debit_account_credits` RPC (SECURITY DEFINER + `FOR UPDATE`; draws INCLUDED-first then TOP-UP in one locked tx, floors at 0, writes the tagged `credit_ledger` debit). `runtime.server.ts`: `assertAccountCredits` projects the call (`projectCallCredits`, new pure helper in `pricing.ts`) and halts with `CreditExhaustedError` + a blocked `ai_events` row when the pool cannot cover it; `debitAccountCredits` calls the atomic RPC and passes `ai_event_id` (threaded from both call sites). `_product_id` is tagged null for now (WM-M14 threads the product context). Gated behind `credits_enabled()` -> dormant no-op. **Verification (ran):** `bun test pricing.test.ts` 19/19, full `bun test` 212/212, tsc 0, eslint 0 on 3 files, build ✓, humanization clean, AND a behavioral dry-run of the RPC on the live prod DB (debit 70 then 60 on included=100/topup=50 -> included=0, topup=20, ledger_sum=-130, 2 rows), rolled back. Adversarial review: no real fix. **◐ not ✅:** the RPC + projection are verified, but end-to-end live metering is DB-coupled + dormant (activates on publish + the flag flip).
 
 #### WM-M13 · Capped top-up purchase (Stripe credit packs)
 - **Why:** paid tiers can buy capped fair-use top-ups (Anthropic-style: a separate purchased balance, a per-cycle ceiling, off by default), which protects the one-subscription promise and margin (§2.6).
