@@ -155,6 +155,17 @@ When no buildable backlog item is left (v10 through v8 mined, founder-gated item
 - **Same discipline.** Treat each design finding as a buildable item: surgical change, gate (`tsc --noEmit` + build + lint), adversarial review, doc-loop, commit + push, and a dated report entry. Work findings top-down by impact.
 - This is also the fallback whenever nothing else is pending: pick up the design pass rather than stop.
 
+## 15. Lane-scoped parallel mode (multi-worktree, file-disjoint)
+
+Several worktrees can build in parallel off `origin/main` at once (the WM/overnight lane plus a few feature lanes). A worktree is a **scoped lane** when `.remember/LANE.md` exists at its root (that path is git-ignored, so it never commits). The overnight WM worktree has no such file, so this section is a no-op for it. In lane mode the whole playbook still governs (per-cycle `git fetch` + rebase on `origin/main`, the section 5 correctness gate, the section 6 doc-loop, adversarial review, the section 8 rebase-recovery rule, bypass permissions, the section 8 sub-five-minute usage-limit retry), with these overrides:
+
+1. **Read `.remember/LANE.md` first, every cycle.** It declares the lane name, the ordered build queue (item IDs, built top-down), the OWNED paths (create or modify only these), the FORBIDDEN paths, and the lane's own report file. Build only the queued items, in order.
+2. **Never leave your lane.** Touch only OWNED paths. NEVER touch a FORBIDDEN path. Forbidden always includes the AI chokepoint and agent core (`src/lib/ai/runtime.server.ts`, `loop.server.ts`, `tools/registry.server.ts`, `cache.server.ts`, `memory.server.ts`), the WM tenancy/billing/credit files, and the other lanes' owned files. If an item would require a forbidden file, SKIP it, note why in the lane report, and take the next queued item.
+3. **Write to the lane's own report file** named in `LANE.md` (`docs/planning/archive/parallel-report-<lane>.md`), NEVER `overnight-build-report.md` (that is the WM lane's and is rewritten every cycle; sharing it is the number-one collision source).
+4. **Shared-doc discipline (this is what keeps the rebase clean).** `plan.md` section 4 and `session-decisions.md` are APPEND-ONLY. In `feature-dashboard.md`, on ship, flip ONLY your own item's register row (a single-line edit); do NOT recompute the global At-a-glance counts (one owner reconciles those later, since two sessions recomputing the same line is a guaranteed conflict). Your claim already sits in the Active-claims table.
+5. **Stop-and-report when the lane queue is DRY. This overrides section 9's never-stop rule for lane mode.** A scoped lane must NOT roam into another lane's category or into the chokepoint to find work; roaming is exactly how parallel sessions collide. When no buildable, non-forbidden, non-founder-gated item remains in the queue, write a final report entry ("lane dry, awaiting reassignment") and stop. The founder extends the queue or reassigns. The section 14 design pass is also off-limits in lane mode (it is a whole-product, single-owner activity).
+6. **One command.** Launch is identical to the WM lane: from inside the lane's worktree, `/overnight-build`. This section is what makes that single command self-scope to the lane.
+
 ---
 
 _Related: [`../../AGENTS.md`](../../AGENTS.md) (operating rules, doc-update protocol), [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (the master status board), [`git-discipline.md`](./commits.md), [`commits.md`](./commits.md), [`memory.md`](./memory.md)._
