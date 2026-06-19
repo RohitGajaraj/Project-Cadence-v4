@@ -1140,7 +1140,12 @@ export async function callModel(
   }
 
   const t0 = Date.now();
-  let providerOut: { text: string; in_tok: number; out_tok: number; latency: number };
+  let providerOut: { text: string; in_tok: number; out_tok: number; latency: number } = {
+    text: "",
+    in_tok: 0,
+    out_tok: 0,
+    latency: 0,
+  };
   let via: "gateway" | "byo" | "cache" = "gateway";
   let provider = "lovable";
   let status: "ok" | "error" | "blocked" = "ok";
@@ -1152,7 +1157,12 @@ export async function callModel(
 
   // WM-M15b: Response cache check
   let cacheHit = false;
-  const shouldCache = shouldCacheCall(opts.surface, opts.retrieval, opts.guardrails, opts.responseFormat);
+  const shouldCache = shouldCacheCall(
+    opts.surface,
+    opts.retrieval,
+    opts.guardrails,
+    opts.responseFormat,
+  );
   let cacheKey: string | null = null;
   if (shouldCache) {
     cacheKey = await generateCacheKey(effectiveModel, messages, opts.responseFormat);
@@ -1195,37 +1205,44 @@ export async function callModel(
     return callGateway(model, messages, opts.responseFormat);
   };
 
-  providerOut = { text: "", in_tok: 0, out_tok: 0, latency: Date.now() - t0 };
   let lastErr: unknown = null;
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      providerOut = await attempt(effectiveModel);
-      lastErr = null;
-      break;
-    } catch (e) {
-      lastErr = e;
-      const code = (e as { code?: string }).code;
-      if (code !== "RATE_LIMIT" && code !== "SERVER_ERROR") break;
-      if (i < maxRetries) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  // WM-M15b fix: on a cache hit, providerOut is already populated above — skip the
+  // provider call entirely (this is the COGS win; the original shipped version ran
+  // the provider unconditionally, making the cache a no-op).
+  if (!cacheHit) {
+    providerOut = { text: "", in_tok: 0, out_tok: 0, latency: Date.now() - t0 };
+    for (let i = 0; i <= maxRetries; i++) {
+      try {
+        providerOut = await attempt(effectiveModel);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        const code = (e as { code?: string }).code;
+        if (code !== "RATE_LIMIT" && code !== "SERVER_ERROR") break;
+        if (i < maxRetries) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+      }
+    }
+    if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
+      try {
+        providerOut = await attempt(opts.fallbackModel);
+        modelUsed = opts.fallbackModel;
+        fallback = true;
+        lastErr = null;
+      } catch (e) {
+        lastErr = e;
+      }
     }
   }
-  if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
-    try {
-      providerOut = await attempt(opts.fallbackModel);
-      modelUsed = opts.fallbackModel;
-      fallback = true;
-      lastErr = null;
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-  // WM-M15b: Write to cache if successful (non-cache, non-error response)
-  if (!cacheHit && !lastErr && cacheKey && shouldCacheCall(opts.surface, opts.retrieval, opts.guardrails, opts.responseFormat)) {
+  // WM-M15b fix: write to cache only on a fresh, successful, non-fallback call. Store
+  // under effectiveModel (the model the cache key was computed from) and skip fallback
+  // responses so later reads keyed by (model, cache_key) stay consistent.
+  if (!cacheHit && !lastErr && !fallback && cacheKey && shouldCache) {
     try {
       await writeCache(
         supabaseAdmin,
         userId,
-        modelUsed,
+        effectiveModel,
         cacheKey,
         providerOut.text,
         providerOut.in_tok,

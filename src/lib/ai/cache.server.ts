@@ -26,6 +26,8 @@
  *   to avoid caching reasoning models or benchmarks that should never cache
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type CacheEntry = {
   id: string;
   user_id: string;
@@ -40,16 +42,20 @@ export type CacheEntry = {
 
 /**
  * Generate a deterministic cache key for (model, messages, responseFormat).
- * Uses SHA256 to normalize the content. Lazy-imports crypto to avoid bundling issues.
+ * Uses Web Crypto SHA-256 (a worker global — no node:crypto import that gets
+ * externalized into the bundle, and no bare-"crypto" dynamic import whose runtime
+ * resolution is uncertain). Mirrors the repo's hashing pattern (rag/indexer.server.ts).
  */
 export async function generateCacheKey(
   model: string,
   messages: { role: string; content: string }[],
   responseFormat?: string,
 ): Promise<string> {
-  const { createHash } = await import("crypto");
   const msg = JSON.stringify({ model, messages, responseFormat });
-  return createHash("sha256").update(msg).digest("hex");
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**
@@ -112,7 +118,7 @@ export function cacheTtlSeconds(): number {
  * @returns CacheEntry or null
  */
 export async function readCache(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   model: string,
   cacheKey: string,
@@ -124,7 +130,10 @@ export async function readCache(
       .eq("user_id", userId)
       .eq("model", model)
       .eq("cache_key", cacheKey)
-      .gte("expires_at", "now()")
+      // WM-M15b fix: compare against a real ISO timestamp. The shipped version passed
+      // the literal string "now()", which Postgres cannot cast to timestamptz, so the
+      // query errored on every read and the cache always missed.
+      .gte("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -153,7 +162,7 @@ export async function readCache(
  * @param completionTokens - Output token count
  */
 export async function writeCache(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   model: string,
   cacheKey: string,

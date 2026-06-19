@@ -21,14 +21,17 @@ CREATE TABLE ai_response_cache (
   CONSTRAINT positive_tokens CHECK (prompt_tokens >= 0 AND completion_tokens >= 0)
 );
 
--- Composite index for efficient cache lookups: (user_id, model, cache_key, created_at DESC)
--- This allows a single index scan to find the most recent (valid) entry for a cache key.
+-- Composite index for efficient cache lookups: (user_id, model, cache_key, created_at DESC).
+-- A single index scan finds the most recent entry for a key; the expires_at comparison is
+-- a residual filter at query time. NOTE: a partial WHERE expires_at > now() predicate is NOT
+-- used because now() is STABLE (not IMMUTABLE) and Postgres rejects it in an index predicate
+-- (ERROR 42P17) — that defect made the originally shipped migration fail to apply.
 CREATE INDEX idx_ai_response_cache_lookup ON ai_response_cache
-  (user_id, model, cache_key, created_at DESC)
-  WHERE expires_at > now();
+  (user_id, model, cache_key, created_at DESC);
 
--- Index for cleanup: find expired entries efficiently.
-CREATE INDEX idx_ai_response_cache_expired ON ai_response_cache (expires_at) WHERE expires_at <= now();
+-- Index for cleanup: find expired entries efficiently (plain index; the same now()-in-predicate
+-- limitation applies, so the expiry comparison is done at query time against this index).
+CREATE INDEX idx_ai_response_cache_expired ON ai_response_cache (expires_at);
 
 -- RLS: Disable RLS (service-role only writes; users never query the cache directly).
 -- The chokepoint (runtime.server.ts) reads + writes on service-role, so no user RLS policy needed.
