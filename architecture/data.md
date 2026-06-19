@@ -4,6 +4,8 @@
 
 > Supabase Postgres + RLS + pgvector + pg_cron. Rules: [`AGENTS.md`](../AGENTS.md). Runtime: [`runtime.md`](./runtime.md).
 
+> **This database is provisioned and managed by Lovable.** Cadence is built on, hosted on, and published through Lovable; the Supabase Postgres instance, its schema, and its config come from there. Read live schema, migration state, and data from the connected Supabase MCP (`mcp__supabase__*`) or the Lovable MCP (`mcp__lovable__*`), never from assumption. Canonical rule: [`AGENTS.md`](../AGENTS.md) §0.
+
 ## The one rule
 
 **RLS on every user table.** Policy form: `auth.uid() = user_id` (own-row read/write). No client-trusted role checks. New tables ship with RLS in the same migration. Audited via the Supabase linter pass.

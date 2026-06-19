@@ -1,7 +1,7 @@
 ---
 version: 2.0
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-19
 name: cadence-ember-editorial
 product: "Project Cadence — agentic product-operations platform"
 description: >
@@ -53,7 +53,7 @@ motion:
 
 # Cadence Design — "Ember Editorial" · Source of Truth
 
-> _Created: 2026-06-12 · Last updated: 2026-06-12_
+> _Created: 2026-06-12 · Last updated: 2026-06-19_
 
 Cadence is a platform where a swarm of specialist agents (Scout, Scribe,
 Builder, Marketer, Historian…) runs the product loop — signals → opportunities
@@ -245,6 +245,8 @@ viewBox + `vector-effect: non-scaling-stroke`, so geometry scales but graphite
 weight never does.
 
 ## How to plan and build (instructions for any AI builder)
+
+**Backend, data, and auth come from Lovable, live.** Cadence is built on, hosted on, and published through Lovable, which provisions and manages the backend (Supabase database, auth and OAuth, secrets, hosting). When a surface needs real data, an auth or OAuth flow, or any backend or connector fact, read it live from the connected Lovable MCP (`mcp__lovable__*`), and the Supabase MCP (`mcp__supabase__*`) for direct DB reads, never assume it. Standing rule: [`AGENTS.md`](./AGENTS.md) §0.
 
 1. **Read before designing:** this file, then `cadence/tokens.css`, then the
    relevant screen in `Cadence Prototype.html` / `cadence/*.jsx`. The prototype

@@ -165,6 +165,8 @@ A request enters at the **client**, passes the **account / workspace / product t
 
 Where each layer lives in detail: [`architecture/`](./architecture/). Stack rationale and the open-source posture: [`docs/decisions/tech-stack.md`](./docs/decisions/tech-stack.md).
 
+**Hosting, backend, and the first checkpoint.** Cadence is built on, hosted on, and published through Lovable, the live system of record for the whole project (Supabase database, auth and OAuth, edge functions, hosting, deploys, analytics, logs, source). For contributors and agents: when you hit any gap, error, log, analytics, SQL, or data question, check Lovable directly first via the connected Lovable MCP, never assume it. Secrets and env are the one local-first exception (this project's git-ignored `.env`). Standing rule: [`AGENTS.md`](./AGENTS.md) §0.
+
 ---
 
 ## Documentation map

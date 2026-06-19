@@ -81,7 +81,7 @@ bun run dev       # dev server
 # open http://localhost:5173
 ```
 
-Environment is auto-provisioned by the cloud project (Supabase URL/key + AI gateway key injected). Migrations live in `supabase/migrations/` — author new ones via the migration tool; never edit existing migrations in place. Commits go through `gstack` ([`docs/operations/commits.md`](./docs/operations/commits.md)).
+Environment is auto-provisioned by the cloud project (Supabase URL/key + AI gateway key injected). That cloud project is **Lovable**: Cadence is built on, hosted on, and published through Lovable, which provisions and manages the backend (Supabase DB, auth/OAuth, secrets, hosting, deploys). Read any live backend, OAuth, or database fact from the connected Lovable MCP (`mcp__lovable__*`), and the Supabase MCP (`mcp__supabase__*`) for direct DB reads, never assume it. Standing rule: [`AGENTS.md`](./AGENTS.md) §0. Migrations live in `supabase/migrations/` — author new ones via the migration tool; never edit existing migrations in place. Commits go through `gstack` ([`docs/operations/commits.md`](./docs/operations/commits.md)).
 
 ---
 

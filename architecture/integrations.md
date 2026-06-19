@@ -4,6 +4,8 @@
 
 > External systems and the "built for agents" surface. Rules: [`AGENTS.md`](../AGENTS.md). Runtime: [`runtime.md`](./runtime.md). Data: [`data.md`](./data.md).
 
+> **Live backend source of truth: the Lovable MCP.** OAuth, connector and client credentials, redirect URIs, and provider config are provisioned and managed by Lovable (Cadence is built on, hosted on, and published through Lovable). When wiring or debugging a connector, an OAuth flow, or any credential, read the live config from the connected Lovable MCP (`mcp__lovable__*`), and the Supabase MCP (`mcp__supabase__*`) for the underlying tables, never from assumption. Canonical rule: [`AGENTS.md`](../AGENTS.md) §0.
+
 ## Principle
 
 Cadence is **agent-first**: built to be operated by agents over open protocols, not just by humans clicking. Connectors are tools agents call through the chokepoint; every tool call is allow-listed, approval-gated where it has side effects, and logged to `tool_calls`.

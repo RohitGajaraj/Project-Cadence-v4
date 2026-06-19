@@ -17,6 +17,10 @@
 
 Reserve `Bash` for actually running things (installs, builds, tests, migrations, git). Quote paths with spaces.
 
+## Lovable is the first checkpoint: query it directly, never guess
+
+Cadence was built on, is hosted on, and is published through **Lovable**, the live system of record for the whole project (Supabase database, auth and OAuth, connectors, edge functions, hosting, deploys, analytics, logs, source). When you hit any gap, error, or unknown (a backend or infra fact, a credential, a data point, a deployment status, an error or log, an analytics number, a SQL result, a project or file detail), check Lovable directly first via the connected **Lovable MCP** (`mcp__lovable__*`, declared in `.mcp.json`); use the **Supabase MCP** (`mcp__supabase__*`) for SQL (`execute_sql`), logs (`get_logs`), and advisors (`get_advisors`). Do not assume, infer, or fabricate it. One exception, secrets and env are local-first: certain key secrets live in this project's git-ignored `.env` and as wrangler secrets, so check local first for those. Otherwise fall back to local files only when the MCP genuinely cannot answer, and say so. Canonical rule: the Lovable callout in [`AGENTS.md`](../../AGENTS.md) §0.
+
 ## Read/Edit/Write discipline
 
 - **Read before Edit/Write on existing files.** The tools track read-state by absolute path. After any `mv`/`git mv`, re-Read at the new path (see [`AGENTS.md`](../../AGENTS.md), section 7).

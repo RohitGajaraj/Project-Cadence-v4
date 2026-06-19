@@ -54,6 +54,10 @@ Keep this file thin. Keep any global `~/.gemini/GEMINI.md` thin too — a fat gl
 
 This is a standing order, not a suggestion. Full protocol: [`AGENTS.md`](./AGENTS.md) §2 and the ⚡ standing order at the top of AGENTS.md.
 
+## Lovable is the first checkpoint for everything (query it directly, never guess)
+
+Cadence was built on, is hosted on, and is published through **Lovable**, the live system of record for the whole project: the Supabase database (schema, RLS, rows), authentication and OAuth (providers, redirect URIs, connector and client credentials), edge functions, hosting, deploys, analytics, logs, and the project source. When you hit any gap, error, or unknown (a backend or infrastructure fact, a credential, a data point, a deployment status, an error or log, an analytics number, a SQL result, or a project or file detail), check Lovable directly first via the connected **Lovable MCP** (`mcp__lovable__*`, declared in `.mcp.json`; mirror it into your Antigravity/Gemini MCP config so the capability exists), and use the **Supabase MCP** (`mcp__supabase__*`) for SQL, logs, and advisors. Do not assume, infer, or fabricate it. One exception, secrets and env are local-first: certain key secrets live in this project folder's git-ignored `.env` and as wrangler secrets, so check local first for those rather than deferring to Lovable. Full standing rule: the Lovable callout in [`AGENTS.md`](./AGENTS.md) §0.
+
 ## Antigravity configuration
 
 - Antigravity reads `GEMINI.md` (this file, highest user priority) and `AGENTS.md` (the foundation). Additional modular rules go in `.agent/rules/`. On-demand knowledge packages live in the Antigravity skills directory.

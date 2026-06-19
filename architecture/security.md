@@ -4,6 +4,8 @@
 
 > Where authentication, multi-tenancy, secrets, and agent governance live. Rules: [`AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
+> **Auth and OAuth are provisioned and managed by Lovable; query it first.** Cadence is built on, hosted on, and published through Lovable; Supabase Auth, the OAuth providers, and redirect URIs come from there. Read live provider config, redirect URIs, and whether a secret is set from the connected Lovable MCP (`mcp__lovable__*`), and the Supabase MCP (`mcp__supabase__*`) for auth tables, never from assumption. The one local-first exception: actual secret values live in this project's git-ignored `.env` and as wrangler secrets (`SUPABASE_SERVICE_ROLE_KEY`, `LOVABLE_API_KEY`, `CONNECTOR_SECRETS_KEY`, ...), so check local for those. Canonical rule: [`AGENTS.md`](../AGENTS.md) §0.
+
 ## Authentication
 
 - **Supabase Auth** — email/password + Google OAuth (more providers via the same path). Email verification on by default; never auto-confirm without explicit ask.

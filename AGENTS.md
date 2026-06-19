@@ -31,6 +31,11 @@ Three principles govern every decision in this repo:
 
 ---
 
+> [!IMPORTANT]
+> **LOVABLE IS THE FIRST CHECKPOINT FOR EVERYTHING. QUERY IT DIRECTLY; NEVER GUESS.** Cadence was built on, is hosted on, and is published through **Lovable**, and Lovable is the live system of record for the whole project, not just the backend. It provisions and manages the Supabase database (schema, RLS, rows), authentication and OAuth (providers, redirect URIs, connector and client credentials), edge functions, secrets and env, hosting, deploys, analytics, logs, and the project source itself. **Whenever you hit any gap, uncertainty, error, or unknown** (a backend or infrastructure fact, a credential, a schema or data point, an OAuth or connector config, a deployment or build status, an error or log line, an analytics number, a SQL query result, or a project or file detail), **the first checkpoint is Lovable, directly.** Do not assume, infer, fabricate, or guess, and do not stop at a local grep when the live answer is one MCP call away. Read it live from the connected, authenticated **Lovable MCP** (`mcp__lovable__*`, declared in `.mcp.json`) and resolve the task end to end through it: inspect the project, read files and diffs, query the database, run the SQL editor, check connections and connectors, read analytics, set project or workspace knowledge, or send a change request to the Lovable agent and deploy. The connected **Supabase MCP** (`mcp__supabase__*`) is the direct path into that same Lovable-provisioned database for SQL (`execute_sql`), logs (`get_logs`), and advisors (`get_advisors`). **One deliberate exception: secrets and env are local-first.** Certain key secrets and environment values are stored in this project folder's git-ignored `.env` and as wrangler secrets, under the documented client/server split (public `VITE_*` vs server `SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` / `LOVABLE_API_KEY` / `CONNECTOR_SECRETS_KEY`); for an env-var or secret value, check the local `.env` and that split first rather than blindly deferring to Lovable, and if it is missing in both, ask before assuming. Otherwise fall back to local files or assumption only when the MCP genuinely cannot answer, and say so; when unsure where a value lives, check both the local `.env` and Lovable and reconcile. This is a standing rule for every tool and every session; the notes in `CLAUDE.md`, `GEMINI.md`, `ENTRY.md`, `README.md`, `DESIGN.md`, and the `architecture/` contracts only point here.
+
+---
+
 > ## THE DOCUMENTATION OPERATING SYSTEM (read first, every tool, every session)
 >
 > **One front door, typed ledgers behind it, status in exactly ONE place.** This is the standing rule for how this repo's docs work, for every tool (Claude Code · Antigravity · Gemini · Lovable · any future tool). It exists so you never hunt across files, nothing drifts or gets orphaned, and a session starts without re-reading the whole corpus.
@@ -93,6 +98,8 @@ Three principles govern every decision in this repo:
 5. **Confirm destructive or shared-state actions.** Pushes, force-pushes, branch deletes, migrations, external sends. One past approval does not extend forward.
 6. **For UI work, run the dev server and verify visually.** Type-checking is not feature-checking. See [`architecture/frontend.md`](./architecture/frontend.md).
 7. **End with one or two sentences:** what changed, what is next.
+
+**Lovable is the first checkpoint for any gap.** If a step hits an unknown or gap (a backend, OAuth, connector, deployment, schema, data point, error, log, analytics, or SQL-query fact), check Lovable directly first via the connected Lovable MCP (`mcp__lovable__*`), and the Supabase MCP (`mcp__supabase__*`) for SQL, logs, and advisors, never from assumption. Secrets and env are the one local-first exception (this project's git-ignored `.env` + wrangler secrets). Full standing rule: the Lovable callout in section 0 above.
 
 If you catch yourself thinking "this is a quick fix, I can skip the protocol" — that is the signal to follow it.
 
