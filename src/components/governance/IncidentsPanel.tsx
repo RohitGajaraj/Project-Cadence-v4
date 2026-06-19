@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getIncidents, type Incident } from "@/lib/incidents.functions";
+import { CostIncidentBadge } from "./CostIncidentBadge";
 
 // P7 · Incidents, read-only "what went wrong" log on the Engine Room: failed
 // tool executions, errored auto-pipeline events, and guardrail blocks, newest
@@ -11,6 +12,8 @@ const KIND_LABEL: Record<Incident["kind"], string> = {
   execution: "Execution",
   pipeline: "Pipeline",
   guardrail: "Guardrail",
+  cost: "Cost",
+  manual: "Manual",
 };
 
 function fmt(at: string | null): string {
@@ -61,6 +64,9 @@ export function IncidentsPanel() {
             <span className="mono-label" style={{ color: "var(--rose, #dc2626)" }}>
               {KIND_LABEL[n.kind]}
             </span>
+            {n.kind === "cost" && (
+              <CostIncidentBadge amountUsd={n.amountUsd} windowKind={n.windowKind} />
+            )}
             {fmt(n.at) && (
               <span style={{ fontSize: 12, color: "var(--ink-muted)", marginLeft: "auto" }}>
                 {fmt(n.at)}

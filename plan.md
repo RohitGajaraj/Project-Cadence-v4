@@ -800,3 +800,12 @@ Fine-tuning workflows from `ai_events`; cross-workspace vector sharing; public a
 Built the 4-role RBAC system for workspaces and accounts. Migration adds SECURITY DEFINER helpers `has_workspace_role` / `has_account_role` with role-based RLS policies + owner demotion trigger. TypeScript helpers in `src/lib/roles.functions.ts` with `assertWorkspaceRole` / `assertCanManageWorkspace` etc. Unit tests 8/8 pass. Build green, humanization clean. Live enforcement activates on founder's next publish.
 
 Spec: docs/features/rbac.md. Commit: (pending).
+
+## Cockpit Lane Cycle 1 (2026-06-20)
+
+**[R3-PREFS, 2026-06-20 02:00, parallel/cockpit cycle 1] Notification preferences settings route, table, and email/digest scaffolding (✅).** Shipped per-user notification preferences table (`user_notification_preferences`) with RLS policies, settings route `/notifications` with the preferences matrix, and email/digest scaffolding helper fns. The Attention feed and global bell now filter dynamically based on preferences. Unit tests implemented and all tests pass green.
+
+## Cockpit Lane Cycle 2 (2026-06-20)
+
+**[P7, 2026-06-20 02:24, parallel/cockpit cycle 2] Persistent incidents table, cost incident detector, and badge integration (✅).** Shipped the persistent `cost_incidents` table migration with row-level security and `is_workspace_member` select/insert policies. Extended `getIncidents` server logic via `getIncidentsInternal` and `logCostIncidentInternal` helper fns to retrieve manual/persistent cost incidents and auto-detect budget limit breaches from `ai_budget_alerts` as incidents of `cost` kind. Populated `amountUsd` and `windowKind` fields on cost incidents to enable precise badge details. Integrated custom `CostIncidentBadge` component into the `IncidentsPanel` dashboard UI. All unit tests fully pass.
+
