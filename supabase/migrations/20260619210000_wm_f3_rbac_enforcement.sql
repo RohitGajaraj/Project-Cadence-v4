@@ -7,7 +7,17 @@
 -- (members/create-delete workspace+product/approvals/brief+guardrails), member
 -- (content/missions), viewer (read-only).
 --
--- Idempotent: re-runnable (IF NOT EXISTS / OR REPLACE / DROP-then-CREATE guarded).
+-- Idempotent: re-runnable (OR REPLACE / DROP-then-CREATE guarded).
+--
+-- WM-F3-fix (cycle 41): the originally shipped version used `create policy if not exists`,
+-- which is a SYNTAX ERROR in Postgres (CREATE POLICY has no IF NOT EXISTS clause, unlike
+-- CREATE TABLE/INDEX) -- it returns `ERROR: 42601` and the migration would have FAILED to
+-- apply on the founder's next publish, blocking the whole migration run. All four policy
+-- creates are now `drop policy if exists` + `create policy` (valid + idempotent), and the
+-- owner-demotion trigger is now drop-then-create guarded too. Confirmed on the live prod DB:
+-- the `if not exists` form errors with 42601; the corrected DDL applies cleanly (dry-run,
+-- rolled back). WM-F3 was never applied (it depends on the unpublished WM-M2), so editing
+-- the migration in place is correct.
 
 -- ---------------------------------------------------------------------------
 -- 1. Widen workspace_members.role CHECK to support all 4 roles (was default-only).
@@ -142,6 +152,7 @@ $$;
 
 grant execute on function public.prevent_workspace_owner_demotion() to authenticated, service_role;
 
+drop trigger if exists prevent_workspace_owner_demotion_trigger on public.workspace_members;
 create trigger prevent_workspace_owner_demotion_trigger
 before update on public.workspace_members
 for each row
@@ -175,12 +186,14 @@ create policy "owner manages members" on public.workspace_members
 alter table public.account_members enable row level security;
 
 -- Members can see their own account membership.
-create policy if not exists "account members see own" on public.account_members
+drop policy if exists "account members see own" on public.account_members;
+create policy "account members see own" on public.account_members
   for select
   using (user_id = auth.uid());
 
 -- Account owner manages all members.
-create policy if not exists "account owner manages members" on public.account_members
+drop policy if exists "account owner manages members" on public.account_members;
+create policy "account owner manages members" on public.account_members
   for all
   using (exists (select 1 from public.accounts a where a.id = account_id and a.owner_id = auth.uid()))
   with check (exists (select 1 from public.accounts a where a.id = account_id and a.owner_id = auth.uid()));
@@ -188,12 +201,14 @@ create policy if not exists "account owner manages members" on public.account_me
 alter table public.accounts enable row level security;
 
 -- Account members can see the account.
-create policy if not exists "account members read" on public.accounts
+drop policy if exists "account members read" on public.accounts;
+create policy "account members read" on public.accounts
   for select
   using (exists (select 1 from public.account_members m where m.account_id = id and m.user_id = auth.uid()));
 
 -- Only owner can update account (plan/billing).
-create policy if not exists "account owner manage" on public.accounts
+drop policy if exists "account owner manage" on public.accounts;
+create policy "account owner manage" on public.accounts
   for update
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
