@@ -9,6 +9,12 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
+import {
+  capExceeded,
+  creditWindowStartIso,
+  sumDebitCredits,
+  type LedgerDebitRow,
+} from "../credits.functions";
 import { supabaseAdmin } from "../../integrations/supabase/client.server";
 import { evaluateGuardrails, type GuardrailRule } from "./guardrails.server";
 import { retrieve, formatContextBlock, type RetrievedChunk } from "../rag/retriever.server";
@@ -225,6 +231,19 @@ export type CallOpts = {
   workspaceId?: string | null;
   /** When set, ties the call to an agent_runs row for per-mission caps + usage accounting. */
   runId?: string | null;
+  /**
+   * Product the call is attributed to (WM-M14 per-product credit attribution + caps).
+   * Null / omitted = unattributed (the account-pool default). Threaded into the credit
+   * ledger debit + the per-product cap check; inert while the credit engine is dormant.
+   *
+   * Fed today only by the product-scoped paths (discovery clustering). Most call sites
+   * leave it null, so their spend attributes to the account pool (per-MEMBER attribution,
+   * keyed on userId, is always driven); product-scoped sites adopt this field over time.
+   * INVARIANT: only pass a server-derived productId that belongs to this call's account
+   * (never a raw user-supplied id), or a member could dodge a per-product cap / mis-tag
+   * another product's spend.
+   */
+  productId?: string | null;
   /** Whether to run guardrails (default true, false for internal judge/eval) */
   guardrails?: boolean;
   /** Optional override of LOVABLE_API_KEY (e.g. when test-running a BYO key) */
@@ -568,6 +587,28 @@ export class CreditExhaustedError extends Error {
   }
 }
 
+// WM-M14: thrown when an owner-set per-product / per-member cap would be exceeded, even
+// though the account pool still has credits. Halts ONLY that scope. Logged as a blocked
+// ai_events row (reason 'credit_cap_reached'), mirroring the CreditExhaustedError halt.
+export class CreditCapError extends Error {
+  readonly code = "CREDIT_CAP_REACHED";
+  readonly accountId: string | null;
+  readonly scope: "product" | "member";
+  readonly targetId: string;
+  constructor(
+    accountId: string | null,
+    scope: "product" | "member",
+    targetId: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "CreditCapError";
+    this.accountId = accountId;
+    this.scope = scope;
+    this.targetId = targetId;
+  }
+}
+
 // credits_enabled() is a rarely-flipped flag; cache it in-process so the dormant hot
 // path costs at most one RPC per process per TTL, not a round-trip per AI call. A
 // missing function / error keeps the engine dormant (false) and never blocks a call.
@@ -621,13 +662,11 @@ async function resolveCreditAccountId(
  */
 // Log a blocked ai_events row when a call is halted for an empty pool (mirrors the
 // governance-halt pattern). Best-effort; a logging failure must not mask the halt.
-async function logCreditExhausted(
+async function insertBlockedCreditEvent(
   supabase: SupabaseClient,
   userId: string,
   opts: CallOpts,
-  accountId: string,
-  balance: number,
-  projected: number,
+  errorMessage: string,
 ): Promise<void> {
   try {
     await supabase.from("ai_events").insert({
@@ -645,14 +684,30 @@ async function logCreditExhausted(
       est_cost_usd: 0,
       latency_ms: 0,
       status: "blocked",
-      error_message: `credit_exhausted: account ${accountId} balance ${balance} below projected ${projected}`,
+      error_message: errorMessage,
       input_preview: (opts.messages.find((m) => m.role === "user")?.content ?? "").slice(0, 500),
       system_preview: "",
       output_preview: "",
     });
   } catch (e) {
-    console.error("credit_exhausted event insert failed:", e);
+    console.error("blocked credit event insert failed:", e);
   }
+}
+
+async function logCreditExhausted(
+  supabase: SupabaseClient,
+  userId: string,
+  opts: CallOpts,
+  accountId: string,
+  balance: number,
+  projected: number,
+): Promise<void> {
+  await insertBlockedCreditEvent(
+    supabase,
+    userId,
+    opts,
+    `credit_exhausted: account ${accountId} balance ${balance} below projected ${projected}`,
+  );
 }
 
 /**
@@ -671,14 +726,20 @@ async function assertAccountCredits(
   if (!accountId) return;
   const admin = supabaseAdmin as unknown as SupabaseClient;
   let balance = 0;
+  let cycleAnchorIso: string | null = null;
   try {
     const { data } = await admin
       .from("account_credits")
-      .select("balance_credits, topup_credits")
+      .select("balance_credits, topup_credits, cycle_anchor")
       .eq("account_id", accountId)
       .maybeSingle();
-    const row = (data ?? {}) as { balance_credits?: number; topup_credits?: number };
+    const row = (data ?? {}) as {
+      balance_credits?: number;
+      topup_credits?: number;
+      cycle_anchor?: string | null;
+    };
     balance = Number(row.balance_credits ?? 0) + Number(row.topup_credits ?? 0);
+    cycleAnchorIso = row.cycle_anchor ?? null;
   } catch {
     return;
   }
@@ -689,6 +750,91 @@ async function assertAccountCredits(
       accountId,
       `Account credit balance (${balance}) is below the projected cost (${projected}).`,
     );
+  }
+  // WM-M14: the account pool can cover the call, but an owner-set per-product / per-member
+  // cap may still halt this one scope. Only runs when an enabled cap exists.
+  await assertCreditCaps(supabase, userId, opts, accountId, projected, cycleAnchorIso);
+}
+
+/**
+ * WM-M14 per-product / per-member cap enforcement. When credits are enabled and an owner
+ * has set an enabled cap for this call's product or member, sum the window's debits for
+ * that scope and throw CreditCapError (logging a blocked event) if this call would push it
+ * over the cap, while the account pool itself may still have credits. Reads via the
+ * service-role client (the account is already resolved). Any read failure degrades to
+ * "allow" so a cap can never block a real call by accident. A no-op when no cap exists.
+ */
+async function assertCreditCaps(
+  supabase: SupabaseClient,
+  userId: string,
+  opts: CallOpts,
+  accountId: string,
+  projected: number,
+  cycleAnchorIso: string | null,
+): Promise<void> {
+  const productId = opts.productId ?? null;
+  // The (scope, target) pairs this call could hit: always its member, plus its product.
+  const targets: { scope: "product" | "member"; targetId: string }[] = [
+    { scope: "member", targetId: userId },
+  ];
+  if (productId) targets.push({ scope: "product", targetId: productId });
+
+  const admin = supabaseAdmin as unknown as SupabaseClient;
+  type CapRow = { scope: string; target_id: string; cap_credits: number; window_kind: string };
+  let caps: CapRow[] = [];
+  try {
+    const { data } = await admin
+      .from("credit_caps")
+      .select("scope, target_id, cap_credits, window_kind")
+      .eq("account_id", accountId)
+      .eq("enabled", true)
+      .in(
+        "target_id",
+        targets.map((t) => t.targetId),
+      );
+    caps = (data ?? []) as CapRow[];
+  } catch {
+    return; // cannot read caps -> never block a real call
+  }
+  if (caps.length === 0) return;
+
+  const nowIso = new Date().toISOString();
+  for (const cap of caps) {
+    // Enforce only a cap whose (scope, target) actually matches this call (a member id and
+    // a product id could collide in `target_id IN (...)`, so re-check the scope).
+    const match = targets.find((t) => t.scope === cap.scope && t.targetId === cap.target_id);
+    if (!match) continue;
+    const windowKind =
+      cap.window_kind === "day" || cap.window_kind === "month" ? cap.window_kind : "cycle";
+    const sinceIso = creditWindowStartIso(windowKind, cycleAnchorIso, nowIso);
+    let spent = 0;
+    try {
+      const column = cap.scope === "product" ? "product_id" : "user_id";
+      const { data } = await admin
+        .from("credit_ledger")
+        .select("delta_credits, product_id, user_id")
+        .eq("account_id", accountId)
+        .eq("reason", "debit")
+        .eq(column, cap.target_id)
+        .gte("created_at", sinceIso);
+      spent = sumDebitCredits((data ?? []) as LedgerDebitRow[]);
+    } catch {
+      continue; // cannot read this scope's spend -> do not block it
+    }
+    if (capExceeded(spent, projected, Number(cap.cap_credits))) {
+      await insertBlockedCreditEvent(
+        supabase,
+        userId,
+        opts,
+        `credit_cap_reached: ${cap.scope} ${cap.target_id} spent ${spent} of ${cap.cap_credits}`,
+      );
+      throw new CreditCapError(
+        accountId,
+        match.scope,
+        cap.target_id,
+        `Credit cap for this ${cap.scope} reached (${spent} of ${cap.cap_credits} used this cycle).`,
+      );
+    }
   }
 }
 
@@ -717,7 +863,7 @@ async function debitAccountCredits(
       _user_id: userId,
       _surface: opts.surface,
       _ai_event_id: aiEventId,
-      _product_id: null,
+      _product_id: opts.productId ?? null,
     });
   } catch (e) {
     console.error("debitAccountCredits failed:", e);

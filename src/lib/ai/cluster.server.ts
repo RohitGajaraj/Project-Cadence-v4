@@ -48,6 +48,10 @@ Return STRICT JSON only, no prose, no markdown fences.`;
     fallbackModel: "google/gemini-2.5-flash",
     responseFormat: "json_object",
     workspaceId,
+    // WM-M14: attribute this clustering spend to the product being clustered. projectId is
+    // server-derived (the signals query above filters user_id = userId AND project_id), so
+    // it always belongs to this user's account, never a foreign or user-spoofed product.
+    productId: projectId,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
