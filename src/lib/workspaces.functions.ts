@@ -50,6 +50,24 @@ export const leaveWorkspace = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// WM-F4: hand a workspace to another member. The transactional, audited reassignment
+// (owner_id + member roles + audit row) lives in the `transfer_workspace_ownership`
+// SECURITY DEFINER RPC, which enforces that only the current owner can transfer and that
+// the new owner is already a member. This server fn is the thin, validated entry point.
+export const transferWorkspaceOwnership = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ workspaceId: z.string().uuid(), newOwnerId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.rpc("transfer_workspace_ownership", {
+      _workspace_id: data.workspaceId,
+      _new_owner_id: data.newOwnerId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listWorkspaceMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
