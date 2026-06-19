@@ -60,7 +60,12 @@ export async function getUserAccountRole(
   accountId: string,
   userId: string
 ): Promise<Role | null> {
-  const { data, error } = await (supabase.from('account_members') as any)
+  // WM-M2's account_members table is not in the generated Supabase types yet (it
+  // ships on the founder's next publish), so cast the client before .from() to keep
+  // tsc green until the post-publish types regen. (The prior `.from(...) as any` cast
+  // the result, not the client, so tsc still rejected the table-name argument.)
+  const { data, error } = await (supabase as any)
+    .from('account_members')
     .select('role')
     .eq('account_id', accountId)
     .eq('user_id', userId)
