@@ -1,8 +1,8 @@
 # P7 · Incidents log
 
-> _Created: 2026-06-18 · Last updated: 2026-06-18_
+> _Created: 2026-06-18 · Last updated: 2026-06-20_
 
-> Status · Core shipped 2026-06-18 (autonomous overnight cycle 3) · Guardrail source added 2026-06-18 (cycle 16) · Route: `/govern?tab=incidents` · Owner: operator-facing, read-only
+> Status · Core shipped 2026-06-18 (cycle 3) · Guardrail source added 2026-06-18 (cycle 16) · Cost incident sources + persistent table added 2026-06-20 (cycle 2) · Route: `/govern?tab=incidents` · Owner: operator-facing, read-only
 
 ## What it does
 
@@ -25,10 +25,12 @@ Engine Room (`/govern`) > the **Incidents** tab (`?tab=incidents`).
 ## How it works
 
 - `getIncidents` server fn in `src/lib/incidents.functions.ts`. GET, `requireSupabaseAuth`.
-- No new table. Derives from confirmed logs: `agent_approvals` (status = failed, scoped by `user_id`) for execution failures, `event_queue` (rows with a non-null `error`, scoped to the resolved workspace) for pipeline errors, and `guardrail_hits` (action = block, scoped by `user_id`) for guardrail blocks.
+- **Persistent cost incidents (cycle 2):** uses the `cost_incidents` table (scoped by `workspace_id`, insert/select RLS) to record manual/auto cost breaches. Populates `amountUsd` and `windowKind` properties for rich badge rendering.
+- **Cost-incident detector (cycle 2):** automatically maps budget limit block alerts from `ai_budget_alerts` (where `kind = 'block'` and user-scoped) into cost incidents.
+- Derives from other logs: `agent_approvals` (status = failed, scoped by `user_id`) for execution failures, `event_queue` (rows with a non-null `error`, scoped to the resolved workspace) for pipeline errors, and `guardrail_hits` (action = block, scoped by `user_id`) for guardrail blocks.
 - **Guardrail blocks (cycle 16):** only `action = "block"` hits are incidents (a rule that actually stopped an AI call); `warn` and `redact` are routine governance (the call still runs) and are intentionally excluded. The card surfaces the rule name and which side it fired on (a blocked prompt vs a withheld response), never the raw `matched` payload, so nothing sensitive lands in the list. Guardrail incidents carry no trace link (`guardrail_hits` keys to an `event_id`, not a trace).
 - Merges and sorts newest-first, caps at 40, and returns each incident with a `kind`, title, error detail, timestamp, and (for executions) a `trace_id`.
-- `IncidentsPanel.tsx` (in `src/components/governance/`) renders the log via TanStack Query, with a "No incidents" empty state and a "View trace" link per execution incident.
+- `IncidentsPanel.tsx` (in `src/components/governance/`) renders the log via TanStack Query, with a "No incidents" empty state, dynamic `CostIncidentBadge` visual tags for cost incidents, and a "View trace" link per execution incident.
 
 ## Governance & guardrails
 
@@ -44,7 +46,6 @@ Engine Room (`/govern`) > the **Incidents** tab (`?tab=incidents`).
 
 ## Known limits / out of scope
 
-- Sources are execution failures, pipeline errors, and guardrail blocks (cycle 16). A cost-incident source (a budget cap reached recorded as an incident, not just a live Attention alert) and a persistent incidents table for manual logging are the documented remainder (the partial mark on the P7 dashboard row).
 - Pipeline incidents scope to the resolved workspace; a multi-workspace roll-up is a fast-follow.
 
 ## Related

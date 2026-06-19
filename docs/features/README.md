@@ -37,7 +37,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | ID        | Feature                                                        | Status                                          | Route(s)                                          | Doc                                                                  |
 | --------- | -------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
 | C4/E7 | Agent inspector (run history) | ◐ Core shipped 2026-06-18 | `/missions?tab=agents` | [`c4-e7-agent-inspector.md`](./c4-e7-agent-inspector.md) |
-| P7 | Incidents log (read-only) | ◐ Core shipped 2026-06-18 | `/govern?tab=incidents` | [`p7-incidents.md`](./p7-incidents.md) |
+| P7 | Incidents log (read-only) | ✅ Shipped 2026-06-20 | `/govern?tab=incidents` | [`p7-incidents.md`](./p7-incidents.md) |
 | R3 | Notifications (in-app Attention feed) | ✅ Shipped 2026-06-20 | `/govern?tab=attention` | [`r3-notifications.md`](./r3-notifications.md) |
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
 | SUBPROC-DISCLOSURE | Sub-processor disclosure ("Where your data goes") | ◐ Backend + Settings UI shipped 2026-06-20 | `/settings?section=data` | [`subprocessor-disclosure.md`](./subprocessor-disclosure.md) |
