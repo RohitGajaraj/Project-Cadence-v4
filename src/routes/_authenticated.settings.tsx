@@ -409,6 +409,109 @@ function BillingTab({ checkout }: { checkout?: string }) {
    block honestly says so instead of pretending a 0 is meaningful. ---- */
 
 function CreditsTab() {
+
+  return <CreditsTabInner />;
+}
+
+function BundleGrid({
+  bundles,
+  selectedKey,
+  onSelect,
+  remainingTopupRoom,
+  bestPerCredit,
+  fmtPrice,
+  fmtCreditsShort,
+}: {
+  bundles: { key: string; credits: number; priceCents: number }[];
+  selectedKey: string;
+  onSelect: (key: string) => void;
+  remainingTopupRoom: number | null;
+  bestPerCredit: number;
+  fmtPrice: (c: number) => string;
+  fmtCreditsShort: (n: number) => string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 10,
+        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+      }}
+    >
+      {bundles.map((b) => {
+        const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
+        const perCredit = b.priceCents / b.credits;
+        const isBest = Math.abs(perCredit - bestPerCredit) < 1e-9;
+        const selected = b.key === selectedKey;
+        const savePct =
+          perCredit > bestPerCredit
+            ? 0
+            : Math.round((1 - bestPerCredit / (bundles[0]?.priceCents / bundles[0]?.credits || perCredit)) * 100);
+        const vsStarter = bundles[0] ? bundles[0].priceCents / bundles[0].credits : perCredit;
+        const savedVsStarter = Math.max(0, Math.round((1 - perCredit / vsStarter) * 100));
+        return (
+          <button
+            key={b.key}
+            type="button"
+            disabled={wouldExceed}
+            onClick={() => onSelect(b.key)}
+            title={wouldExceed ? "Exceeds your per-cycle top-up limit." : undefined}
+            style={{
+              textAlign: "left",
+              padding: "12px 14px",
+              borderRadius: 10,
+              cursor: wouldExceed ? "not-allowed" : "pointer",
+              opacity: wouldExceed ? 0.5 : 1,
+              border: selected
+                ? "1px solid var(--ember, #c2602e)"
+                : "1px solid var(--hairline, rgba(0,0,0,0.12))",
+              background: selected
+                ? "color-mix(in oklab, var(--ember, #c2602e) 8%, var(--canvas, #fbf7ef))"
+                : "var(--canvas, #fbf7ef)",
+              boxShadow: selected
+                ? "0 0 0 3px color-mix(in oklab, var(--ember, #c2602e) 18%, transparent)"
+                : "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              position: "relative",
+            }}
+          >
+            {isBest && (
+              <span
+                className="mono-label"
+                style={{
+                  position: "absolute",
+                  top: -8,
+                  right: 10,
+                  fontSize: 8.5,
+                  background: "var(--ink, #1d1a14)",
+                  color: "var(--canvas, #fbf7ef)",
+                  padding: "2px 6px",
+                  borderRadius: 99,
+                }}
+              >
+                Best value
+              </span>
+            )}
+            <span className="font-display" style={{ fontSize: 18, lineHeight: 1.1 }}>
+              {fmtCreditsShort(b.credits)} credits
+            </span>
+            <span style={{ fontSize: 13, color: "var(--ink, #1d1a14)" }}>
+              {fmtPrice(b.priceCents)}
+            </span>
+            <span style={{ fontSize: 10, color: "var(--ink-subtle, #6b6457)" }}>
+              {(perCredit / 100).toFixed(3)} $/credit
+              {savedVsStarter > 0 ? ` · save ${savedVsStarter}%` : ""}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CreditsTabInner() {
   const fGetCredits = useServerFn(getMyCreditsView);
   const fGetCatalog = useServerFn(getPricingCatalog);
 
