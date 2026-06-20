@@ -416,8 +416,8 @@ function PaidTierCard({
   const [selectedId, setSelectedId] = useState<string>(defaultId);
   const selected = sorted.find((b) => b.id === selectedId) ?? sorted[0];
   const [open, setOpen] = useState(false);
-  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
-  const effectiveInterval: "monthly" | "yearly" = allowYearly ? interval : "monthly";
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const effectiveInterval: "monthly" | "yearly" = allowYearly ? billing : "monthly";
 
   const monthlyEquivCents = selected
     ? effectiveInterval === "monthly"
@@ -492,12 +492,12 @@ function PaidTierCard({
               }}
             >
               {(["monthly", "yearly"] as const).map((i) => {
-                const active = i === interval;
+                const active = i === billing;
                 return (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setInterval(i)}
+                    onClick={() => setBilling(i)}
                     style={{
                       background: active ? "var(--canvas, #fbf7ef)" : "transparent",
                       color: "var(--ink, #1d1a14)",
