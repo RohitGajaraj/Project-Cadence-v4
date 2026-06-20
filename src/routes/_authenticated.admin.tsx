@@ -3,7 +3,7 @@
  * locked card with a one-time "claim admin" button that only succeeds when
  * the user_roles table has zero admins (the bootstrap path).
  */
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield } from "lucide-react";
@@ -27,6 +27,7 @@ function AdminLayout() {
   const fAmI = useServerFn(amIAdmin);
   const me = useQuery({ queryKey: ["am-i-admin"], queryFn: () => fAmI() });
   const loc = useLocation();
+  const navigate = useNavigate();
 
   return (
     <AppShell>
@@ -45,12 +46,7 @@ function AdminLayout() {
             <TabRow
               tabs={TABS.map((t) => ({ id: t.id, label: t.label }))}
               active={loc.pathname === "/admin/pricing" ? "/admin/pricing" : "/admin"}
-              onSet={() => {}}
-              renderTab={(t) => (
-                <Link key={t.id} to={t.id as "/admin" | "/admin/pricing"}>
-                  {t.label}
-                </Link>
-              )}
+              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" })}
             />
             <Outlet />
           </>
