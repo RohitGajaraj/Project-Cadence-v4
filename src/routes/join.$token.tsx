@@ -100,13 +100,22 @@ function JoinPage() {
               You have a workspace invitation
             </h1>
             <p style={{ fontSize: 13, color: "var(--ink-muted)", marginBottom: 18 }}>
-              Log in or sign up with the email it was sent to, then reopen this link to join.
+              Log in or sign up with the email it was sent to. You will land right back here to
+              join.
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <Link to="/login" className="btn btn-primary btn-sm">
+              <Link
+                to="/login"
+                search={{ next: `/join/${token}` }}
+                className="btn btn-primary btn-sm"
+              >
                 Log in
               </Link>
-              <Link to="/signup" className="btn btn-ghost btn-sm">
+              <Link
+                to="/signup"
+                search={{ next: `/join/${token}` }}
+                className="btn btn-ghost btn-sm"
+              >
                 Sign up
               </Link>
             </div>

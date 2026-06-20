@@ -13,12 +13,29 @@ import { CadenceMark } from "@/components/cadence/Primitives";
 // replaced (production signs in with a password, so the consequence-first
 // label says what actually happens).
 
+// Only allow an internal absolute path as a post-login destination, never an
+// external or protocol-relative URL (open-redirect guard). Used by the invite
+// flow, which sends a logged-out invitee to /login?next=/join/<token> so they
+// land back on the accept page after signing in.
+function safeNextPath(next: unknown): string {
+  if (typeof next !== "string" || !next.startsWith("/")) return "/";
+  if (next.startsWith("//") || next.startsWith("/\\")) return "/";
+  return next;
+}
+
 export const Route = createFileRoute("/login")({
   ssr: false,
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" ? { next: search.next } : {},
+  beforeLoad: async ({ search }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/" });
+    if (!data.user) return;
+    const dest = safeNextPath(search.next);
+    // Preserve the SPA redirect for the common (no-next) case; a real next is an
+    // opaque internal path, so navigate via the browser to reach it reliably.
+    if (dest === "/") throw redirect({ to: "/" });
+    window.location.replace(dest);
   },
   component: LoginPage,
   head: () => ({ meta: [{ title: "Sign in · Cadence" }] }),
@@ -26,6 +43,8 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const dest = safeNextPath(next);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +58,8 @@ function LoginPage() {
     setLoadingEmail(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    navigate({ to: "/" });
+    if (dest === "/") navigate({ to: "/" });
+    else window.location.assign(dest);
   }
 
   async function signInGoogle() {

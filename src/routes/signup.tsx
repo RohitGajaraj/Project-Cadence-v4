@@ -12,12 +12,27 @@ import { CadenceMark } from "@/components/cadence/Primitives";
 // the handle_new_user trigger has already seeded their workspace, staff,
 // and demo content by the time they land there.
 
+// Only allow an internal absolute path as a post-signup destination, never an
+// external or protocol-relative URL (open-redirect guard). Mirrors login.tsx; used
+// by the invite flow (/signup?next=/join/<token>). /join is a top-level route, so
+// the invite accepts before the onboarding gate runs.
+function safeNextPath(next: unknown): string {
+  if (typeof next !== "string" || !next.startsWith("/")) return "/";
+  if (next.startsWith("//") || next.startsWith("/\\")) return "/";
+  return next;
+}
+
 export const Route = createFileRoute("/signup")({
   ssr: false,
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" ? { next: search.next } : {},
+  beforeLoad: async ({ search }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/" });
+    if (!data.user) return;
+    const dest = safeNextPath(search.next);
+    if (dest === "/") throw redirect({ to: "/" });
+    window.location.replace(dest);
   },
   component: SignupPage,
   head: () => ({ meta: [{ title: "Sign up · Cadence" }] }),
@@ -25,6 +40,8 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const dest = safeNextPath(next);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,7 +88,8 @@ function SignupPage() {
     }
     setLoading(false);
     toast.success("Account created");
-    navigate({ to: "/" });
+    if (dest === "/") navigate({ to: "/" });
+    else window.location.assign(dest);
   }
 
   async function signupGoogle() {
