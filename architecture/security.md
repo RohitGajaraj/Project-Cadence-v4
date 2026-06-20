@@ -30,7 +30,7 @@ Three nested scopes, enforced at every layer:
 - No provider key required for the default gateway path.
 - Connector OAuth tokens handled by the managed connector layer (refresh/revoke solved).
 - **Cross-member binding attribution** — workspace `connection_bindings` carry `created_by`; GitHub side effects run as the installed GitHub App (and are labeled "acting as …" in previews), not as any individual member's identity.
-- **Scheduled hook secret** — privileged `/api/public/hooks/*` routes never trust the browser-visible app key. `requireHookCaller` accepts only `x-cron-key` or bearer credentials that match a private backend secret (`CRON_SECRET` / `HOOK_CRON_SECRET` when set, or the locked `app_private.hook_secrets` value used by scheduled jobs). The secret store is unavailable to anonymous and signed-in Data API callers.
+- **Scheduled hook secret:** privileged `/api/public/hooks/*` routes never trust the browser-visible app key. `requireHookCaller` accepts only `x-cron-key` or bearer credentials that match a private backend secret (`CRON_SECRET` / `HOOK_CRON_SECRET` when set, or the locked `app_private.hook_secrets` value used by scheduled jobs). The secret store is unavailable to anonymous and signed-in Data API callers.
 
 ## Agent governance (security as a product feature)
 
