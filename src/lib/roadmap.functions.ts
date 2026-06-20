@@ -14,8 +14,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  validateCommitment,
+  governanceGapCount,
+  ROADMAP_TEXT_MAX,
+  type RoadmapBucket,
+} from "@/lib/roadmap-governance";
 
-export type RoadmapBucket = "now" | "next" | "later";
+export type { RoadmapBucket };
 
 export type RoadmapItem = {
   id: string;
@@ -28,7 +34,7 @@ export type RoadmapItem = {
 
 export const getRoadmap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ items: RoadmapItem[] }> => {
+  .handler(async ({ context }): Promise<{ items: RoadmapItem[]; governanceGaps: number }> => {
     // KI-32: exclude terminal-lifecycle opportunities from the board. The
     // opportunities.status column ('backlog'|'now'|'next'|'later'|'shipped'|
     // 'dropped', NOT NULL default 'backlog') carries the lifecycle state that
@@ -62,7 +68,9 @@ export const getRoadmap = createServerFn({ method: "GET" })
         measure: r.roadmap_measure ?? null,
       };
     });
-    return { items };
+    // H2-WRITES: surface how many commitments sit in a bucket without a declared
+    // outcome + measure (ungoverned), so the board can nudge toward the H2 rule.
+    return { items, governanceGaps: governanceGapCount(items) };
   });
 
 export const updateRoadmapItem = createServerFn({ method: "POST" })
@@ -89,6 +97,48 @@ export const updateRoadmapItem = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("opportunities")
       .update(patch)
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!rows || rows.length === 0) throw new Error("Opportunity not found");
+    return { ok: true };
+  });
+
+/**
+ * H2-WRITES · the GOVERNED commit path. Unlike the lenient `updateRoadmapItem`
+ * (which the drag board uses to move freely), this writes bucket + outcome +
+ * measure atomically and ENFORCES the H2 rule: a Now/Next/Later commitment must
+ * carry a declared outcome AND measure (anti-feature-factory governance). The
+ * board's "save outcome" action and the autonomous roadmap-commit both route
+ * through here, so a commitment can never be saved half-declared. Backlog
+ * (bucket null) is unconstrained.
+ */
+export const commitRoadmapItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        bucket: z.enum(["now", "next", "later"]).nullable(),
+        outcome: z.string().max(ROADMAP_TEXT_MAX).nullable(),
+        measure: z.string().max(ROADMAP_TEXT_MAX).nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const check = validateCommitment(data);
+    if (!check.ok) throw new Error(check.reason);
+    // Normalize blanks to null so an "all whitespace" field is not stored as a
+    // phantom declared outcome (and keeps the governance read honest).
+    const norm = (s: string | null) => (s && s.trim().length > 0 ? s.trim() : null);
+    const { data: rows, error } = await context.supabase
+      .from("opportunities")
+      .update({
+        roadmap_bucket: data.bucket,
+        roadmap_outcome: norm(data.outcome),
+        roadmap_measure: norm(data.measure),
+      })
       .eq("id", data.id)
       .eq("user_id", context.userId)
       .select("id");

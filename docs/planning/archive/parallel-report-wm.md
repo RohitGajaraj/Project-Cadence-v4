@@ -19,3 +19,14 @@
 
 **Publish-verify queue (for the founder):**
 - DATA-RETENTION-b: on publish, in `BEGIN..ROLLBACK`, enable `right_to_erasure_enabled()`, `select forget_workspace('<a test workspace WITH rows>')`, confirm `erasure_residue` → `{}` and the workspace row gone, then `ROLLBACK`. Activation = flip the flag + operator-invoke per verified erasure request.
+
+### 2026-06-21 02:20 — H2-WRITES — Outcome-roadmap governed writes (◐) — SHIPPED
+
+- **Picked:** roamed past Lane 0's gated Monetization/Credit rows to the highest-priority eligible non-gated unclaimed item (H2-WRITES, P1, Decide) — advances autonomous execution via a governed roadmap-commit path.
+- **Claimed:** `bash scripts/lane.sh claim H2-WRITES 0` (roadmap.functions.ts + new roadmap-governance.ts + test + RoadmapBoard.tsx). No collision.
+- **Built:** pure `src/lib/roadmap-governance.ts` (the governance rule, 8 tests) + `commitRoadmapItem` governed write (now/next/later requires outcome+measure; RLS-hardened) + `getRoadmap` returns `governanceGaps` + board gap-header + ember `VerdictChip` ("Needs outcome") on ungoverned cards. Lenient drag move untouched (the lenient/strict split).
+- **Gate:** tsc 0 · eslint 0 (4 files) · build ✓ (Node 26) · `bun test` 446/446 (8 new).
+- **Review:** focused adversarial self-review (additive/non-destructive → no multi-agent workflow); `impeccable` design pass (VerdictChip per the verdict-chip ruling, role-color law, no banned pattern).
+- **Doc-loop:** dashboard row 8 → ◐ + claim cleared; `plan.md` §4; new `docs/features/h2-writes.md`; `session-decisions.md`.
+- **◐ not ✅:** renders on publish (not render-verified locally); agent autonomous-commit wiring + richer write surface remain.
+- **Released claim** after ship.
