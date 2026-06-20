@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const TABS = [
   { id: "/admin", label: "Overview" },
   { id: "/admin/pricing", label: "Pricing" },
+  { id: "/admin/people", label: "People" },
 ] as const;
 
 function AdminLayout() {
@@ -45,8 +46,14 @@ function AdminLayout() {
           <>
             <TabRow
               tabs={TABS.map((t) => ({ id: t.id, label: t.label }))}
-              active={loc.pathname === "/admin/pricing" ? "/admin/pricing" : "/admin"}
-              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" })}
+              active={
+                loc.pathname.startsWith("/admin/people")
+                  ? "/admin/people"
+                  : loc.pathname === "/admin/pricing"
+                    ? "/admin/pricing"
+                    : "/admin"
+              }
+              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" })}
             />
             <Outlet />
           </>
