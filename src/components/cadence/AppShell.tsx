@@ -256,6 +256,18 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const updateProjectFn = useServerFn(updateProject);
   const moveProductFn = useServerFn(moveProduct);
 
+  // Admin role check — drives the "Admin console" item in the workspace
+  // dropdown so admins have a visible path in the published app (no slash
+  // command needed).
+  const amIAdminFn = useServerFn(amIAdmin);
+  const { data: adminInfo } = useQuery({
+    queryKey: ["am-i-admin"],
+    queryFn: () => amIAdminFn(),
+    staleTime: 60_000,
+  });
+  const isAdmin = !!adminInfo?.isAdmin;
+  const noAdminsYet = adminInfo ? !adminInfo.anyAdminExists : false;
+
   // Pending-calls badge (Approvals) — shares the "needs-you" cache key with
   // the Today page, so no extra fetch when both are mounted.
   const fetchNeedsYou = useServerFn(getNeedsYou);
