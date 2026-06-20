@@ -22,3 +22,11 @@ A second adversarial audit (loop front-end: ingest security · reactor dispatch 
 | --- | --- | --- | --- |
 | 2026-06-20 | R3-PREFS | Needs publish first | `/notifications` preferences page and settings need the migration to be live. |
 | 2026-06-20 | P7 | Needs publish first | Persistent cost incidents table and components need the schema migration to be live. |
+
+## Session close — autonomous general-backlog run (2026-06-20 ~21:55)
+
+Post-dry, per the founder's autonomous-mode override, this session ran as a general autonomous builder across the master backlog (collision-safe, claim-first, no chokepoint / claimed-lane / founder-gated edits). **13 commits to `main`, all green** (~10 real bugs fixed + KI-16b feature), driven by **5 adversarial audits** (reliability · loop-frontend · discovery/clustering · connectors · projects/budgets), each finding verified against source before fixing.
+
+**Shipped (in-scope, verified, gated):** P7 dead detector · KI-16b dispatch cap · mission-deadlock skip-cascade · handoff double-consume CAS · lost-`queued` recovery · decision attribution · KI-25 prompt-injection fence (CRITICAL) · KI-28 reactor double-dispatch CAS · KI-29 rate-limiter fail-open · KI-30 eval-tick double-spend · KI-31 cluster cross-workspace + atomic claim · KI-32 roadmap terminal-item filter.
+
+**Safe-fix queue DRY:** the 5th audit returned zero in-scope-fixable findings; projects.functions.ts is sound (RLS workspace-keyed, no export leak). All remaining work is founder/migration/attended/product-gated, recorded in `known-issues.md`, priority order: **KI-34 (CRITICAL cross-tenant credential theft)** · **KI-26 (CRITICAL cron-auth public key)** · KI-35/KI-36 (connector HIGH) · KI-27 (reactor reaper/retry migration) · KI-37 (token caps enforce-or-remove) · KI-33 (roadmap dual-store) · agent_runs RLS gap. Lane stops here ("queue dry, awaiting founder") rather than burn ~500k tokens/audit for near-zero fixable yield. **Recommend an attended security cycle for KI-34 + KI-26 first.**
