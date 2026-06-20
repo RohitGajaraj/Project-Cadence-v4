@@ -68,6 +68,17 @@ const DISPATCH_LOST_MS = 3 * 60 * 1000;
  *  receiver may simply not have picked it up yet). */
 const UNCONSUMED_STALE_MS = 15 * 60 * 1000;
 
+/** KI-16b: per-mission per-tick dispatch cap. `dispatchReadySteps` enqueues at
+ *  most this many ready steps per advance, so a wide or runaway DAG degrades to
+ *  bounded backpressure (the uncapped remainder stays 'planned' and is returned
+ *  again on the next tick) instead of an unbounded enqueue burst in a single
+ *  Worker tick. This bounds per-tick WORK (resolveAgent + memory recall + enqueue
+ *  per step) under the Cloudflare Workers execution budget; the running-concurrency
+ *  cap (MAX_RUNNING_PER_WORKSPACE in loop.server.ts) separately bounds how many
+ *  run at once. Env-tunable; sane default 10 (2x the running cap, enough to keep
+ *  the pipeline fed without a large per-tick burst). */
+const DISPATCH_CAP = Math.max(1, Number(process.env.MISSION_STEP_DISPATCH_CAP) || 10);
+
 type SenderCtx = {
   agentId: string | null;
   agentSlug: string | null;
@@ -218,11 +229,31 @@ export async function reflectStepStatusFromRuns(
 }
 
 /**
- * Dispatch every mission step whose dependencies are satisfied (and whose retry
- * backoff, if any, has elapsed — enforced by next_ready_mission_steps). Each
- * dispatch is claim-first (CAS planned→dispatched) so concurrent ticks can't
- * double-enqueue, and threads memory relevant to the hop into the handoff
- * payload (memory_refs + last_used_at). Idempotent.
+ * Fetch a mission's ready steps (dependencies satisfied + retry backoff elapsed,
+ * enforced by next_ready_mission_steps) and apply the KI-16b per-tick dispatch
+ * cap: return at most `cap` rows, preserving the RPC's order so the cap is
+ * deterministic and no step starves (the uncapped remainder is still 'planned'
+ * and is returned again on the next tick). Throws on RPC error.
+ */
+export async function selectDispatchBatch(
+  supabase: SupabaseClient,
+  missionId: string,
+  cap: number = DISPATCH_CAP,
+): Promise<MissionStepRow[]> {
+  const { data: ready, error } = await supabase.rpc("next_ready_mission_steps", {
+    p_mission_id: missionId,
+  });
+  if (error) throw new Error(error.message);
+  const rows = (ready ?? []) as MissionStepRow[];
+  return rows.slice(0, Math.max(1, cap));
+}
+
+/**
+ * Dispatch the mission steps whose dependencies are satisfied (and whose retry
+ * backoff, if any, has elapsed — enforced by next_ready_mission_steps), up to the
+ * KI-16b per-tick cap. Each dispatch is claim-first (CAS planned→dispatched) so
+ * concurrent ticks can't double-enqueue, and threads memory relevant to the hop
+ * into the handoff payload (memory_refs + last_used_at). Idempotent.
  */
 export async function dispatchReadySteps(
   supabase: SupabaseClient,
@@ -233,11 +264,8 @@ export async function dispatchReadySteps(
   failed: { idx: number; agent_slug: string; error: string }[];
 }> {
   const retryCols = await hasRetryColumns(supabase);
-  const { data: ready, error } = await supabase.rpc("next_ready_mission_steps", {
-    p_mission_id: mission.id,
-  });
-  if (error) throw new Error(error.message);
-  const readyRows = (ready ?? []) as MissionStepRow[];
+  // KI-16b: bound how many ready steps this mission dispatches this tick.
+  const readyRows = await selectDispatchBatch(supabase, mission.id, DISPATCH_CAP);
 
   const dispatched: { idx: number; agent_slug: string; run_id: string }[] = [];
   const failed: { idx: number; agent_slug: string; error: string }[] = [];
