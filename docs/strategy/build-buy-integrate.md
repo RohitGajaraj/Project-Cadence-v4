@@ -105,3 +105,77 @@ interface MemoryProvider {
 - It preserves the autonomy floor: a native, zero-external-paid-dep default must exist and be the automatic fallback. License hygiene: self-host only permissive weights/code; flag GPL/AGPL/BSL/CC-BY-NC before it lands.
 
 **Worked examples:** AI inference / embeddings / rerank -> commodity -> **BUY/INTEGRATE** via the gateway. Graph-viz rendering -> commodity, fast -> **BUILD-thin** (the dependency-free SVG canvas O1 already shipped). Typed decision graph + outcome-labeled supersession + the Critic -> THE moat -> **BUILD**. Graph storage engine -> not the moat but residency + autonomy-critical -> **BUILD-in-Postgres**, external engine reserved as an enterprise-only **INTEGRATE** escape hatch.
+
+---
+
+## The STRENGTHENED doctrine (default-to-BUILD; founder ruling 2026-06-20)
+
+> Founder course-correction: do not reflexively buy the commodity. **Build anything that makes the platform more defensible. Only the irreducible commodity leaves.** This section is the operative doctrine; the per-layer analysis above is the worked memory-stack example.
+
+**The platform is NOT an assembly of external products. We are a builder, not an integrator.** The default verdict for every capability is **BUILD**. The USP lives in-house, end to end, and is never wrapped on top of a vendor's generic layer. A capability only leaves the building when ALL of: (a) it is an irreducible commodity (a fast oracle, many interchangeable providers, price racing to zero), (b) it is not the moat and not moat-adjacent (does not touch the typed decision ontology / outcome-labeled supersession / the Critic / system-of-record / the orchestration position / governance-audit), (c) building it would burn moat-time on a solved non-differentiating problem, AND (d) it is cleanly meterable through credits (a per-use commodity, never a per-seat / per-GB / per-core subscription floor we cannot turn off).
+
+**Minimize external spend + reliance, structurally.** Prefer one provider that covers several needs over several single-purpose ones; prefer a provider already in the stack (Cloudflare, Supabase, the Lovable gateway) over a new vendor; no subscription floor where usage-metered billing exists. Standing target: single-digit-to-low-tens-of-dollars/month of external recurring spend across the whole product; anything that adds a fixed monthly SKU is escalated, not absorbed.
+
+**Every bought/integrated commodity has a self-host/BYOK fallback (the autonomy floor is structural).** A native, zero-external-paid-dep default exists for every external dep and is the automatic fallback on missing-key / cost-cap / provider-down / offline. License hygiene: self-host only permissive (MIT / Apache-2.0 / BSD); flag GPL / AGPL / BSL / SSPL / CC-BY-NC before it lands.
+
+**The agent owns the call, from its own research - not the founder.** The agent runs the 7-question gate itself, web-grounds pricing/licenses itself, picks the verdict + the single recommended player itself, and ships it. The founder is consulted ONLY for: a genuine spend approval (a new metered cost line going live), a secret / OAuth-client registration, or a real taste/policy call. A routine commodity-vs-moat classification is never deferred to the founder.
+
+**Applies forward AND retroactively.** Governs every new capability before build, AND is the lens to re-audit everything already shipped or in the pipeline. A violation already built (a direct provider call bypassing the chokepoint, an external dep with no native fallback, a wrapped commodity masquerading as moat, a redundant second provider) is a finding to correct, not grandfather. Re-run the gate over the register on every doctrine shift.
+
+**The moat boundary (sharpened by the adversarial pass).** Build the JUDGMENT, borrow the PLUMBING. The bi-temporal storage mechanics (`valid_at`/`invalid_at`, recursive-CTE traversal, invalidate-don't-delete machinery) are a solved, copyable Postgres pattern - borrow Graphiti's per-edge invalidation-prompt design or Apache AGE; do not artisanally re-derive them. The unpurchasable moat is: the **outcome LABEL** (the human-gated validated/missed verdict weeks after ship); the **typed normalization of raw heterogeneous signal INTO the decision ontology** (Signal -> Assumption -> Decision - the part a competitor cannot backfill); and the **precedent-salience ranking the Critic uses** (outcome-weighted, Cadence-owned - a commodity reranker may order recall, but the "which prior decision most challenges this one" score is ours).
+
+## Register categorization (the whole build bible, bucketed + verdict'd)
+
+A full pass over the ~100-row master register (feature-dashboard + SSOT §3) under the strengthened doctrine. **Result: ~95 of ~100 rows are BUILD** - the moat, the decision layer, the foundation/governance spine, and all tenancy/credit/entitlement logic are unpurchasable and in-house. Only a handful of irreducible commodities UNDER the moat leave the building, each routed through the chokepoint with a native/OSS fallback.
+
+| Bucket | Verdict mix | Note |
+| --- | --- | --- |
+| Foundation (loop spine, chokepoint, auth/tenancy, A2A, fallback resolvers) | ~22 BUILD | The whole autonomous-loop spine + the chokepoint are owned + moat-adjacent; the chokepoint can never be outsourced (everything routes through it). Only embeddings/rerank inside DBR leaves. |
+| Moat / Decision Layer (PRD/spec gen, Critic, decision cards, outcome roadmap, teardown wedge, scheduling) | ~13 BUILD | Pure moat, no fast oracle; unbuyable by definition. |
+| Governance (Trust Dial, injection defense, blast-radius, kill-switch/spend caps, eval/drift/incidents, prompt studio, sanitizer) | ~12 BUILD | The governance/audit moat; outsourcing traces/evals fails residency + splits the RLS schema. |
+| Sense (connectors, brain/research, discovery, knowledge graph, drift, audio) | ~12 BUILD + 2 INTEGRATE | The connector engine + the signal->ontology mapping are the moat. Firecrawl web (already wired) + F-AUDIO-1 ASR are the INTEGRATEs, both with self-host floors. |
+| Build (Build station, multi-file, branches, gates, release/rollback, repo binding, sandbox) | ~14 BUILD + ~5 INTEGRATE | The governed Build-to-Ship loop is owned; git hosting + runtime + sandbox are swappable substrate behind RepoProvider. SANDBOX = Cloudflare Sandbox SDK. |
+| Interop (MCP, A2A, export, RBAC/invites, handoff) | ~6 BUILD | Open protocols we implement, not products we buy. |
+| Launch (cohort metrics, impact eval, product-memory, launch-kit, support triage) | ~7 BUILD | The post-release outcome loop is the moat; analytics = thin BYO connector ($0). |
+| Cockpit / Ops (notifications, settings, cost roll-up, IA, health, flow mode) | ~18 BUILD | Calm-front surfaces over our own data; nothing buyable. |
+| Monetization + Credit (pricing, gates, credit unit/grant/debit/attribution, margin levers, PLG, billing) | ~24 BUILD + 2 INTEGRATE | All credit/entitlement LOGIC is moat substrate; only the payment processor (Stripe) + top-up leave. |
+| Workspace-Tenancy + Knowledge + Data/Privacy (RLS, RBAC, invites, pooling, knowledge graph, retention, subprocessors) | ~20 BUILD | Residency-critical, in our Postgres; compliance artifacts are in-house registries. Only invite EMAIL (Resend) is a thin INTEGRATE. |
+
+## What leaves the building (the complete BUY/INTEGRATE shortlist)
+
+The ENTIRE external surface, with my recommended player + cost. **Total recurring external spend today: ~$16-83/mo (Firecrawl) + $0-20/mo (Resend; free tier covers MVP) + cents/month metered.** Every line is a meterable commodity with a self-host/BYOK floor; no fixed subscription floor beyond the web tier.
+
+| Capability | Verdict | Recommended player | Cost | Self-host floor |
+| --- | --- | --- | --- | --- |
+| Embeddings | BUY (via `embedding` CallSurface) | OpenAI text-embedding-3-small (swap Voyage voyage-3.5-lite) | ~$0.02/1M tok, metered | BGE-M3 (MIT) |
+| Rerank (deferred) | INTEGRATE (via `rerank` CallSurface, multi-hop only) | ZeroEntropy zerank-2 | ~$0.025/1M tok, cents/mo | zerank-1-small (Apache-2.0); native = skip rerank |
+| Web research (wired) | INTEGRATE (KEEP) | Firecrawl (search+scrape+crawl in one) | $16-83/mo | SearXNG (BUILD now - see audit) |
+| Transcription (F-AUDIO, greenfield) | INTEGRATE (via `transcription` CallSurface) | Groq Whisper-Turbo (same model as floor) | ~$0.04/hr audio | whisper.cpp (same model, zero drift) |
+| Sandbox / preview | INTEGRATE (own seam) | Cloudflare Sandbox SDK (no new vendor) | $0.00002/vCPU-s | edge-native |
+| Billing | INTEGRATE (dormant seam) | Stripe (cheapest non-MoR) | 2.9%+$0.30/txn, $0 fixed | Paddle/LemonSqueezy (MoR) if tax forces |
+| Transactional email | INTEGRATE (`email.server.ts`) | Resend (best DX) | $0 free / $20 Pro past 3k/mo | Amazon SES |
+| Git hosting | INTEGRATE (RepoProvider) | GitHub (user's own org, BYO) | $0 | GitLab adapter next |
+| Analytics ingest | BUILD-thin connector (NOT a buy) | BYO PostHog/Mixpanel export | $0 | n/a |
+
+## Retroactive audit (what we have already built)
+
+- **Moat layers: correctly built, nothing over-built.** The precedent engine, the outcome loop, the Critic (all via `callModel`), and the O1 knowledge graph (in-house, Postgres) align with the doctrine. No external memory engine adopted; the supersession engine is correctly deferred (build later in Postgres via the chokepoint, invalidate-not-delete).
+- **ONE retroactive violation: embeddings bypass the chokepoint.** `src/lib/ai/embed.server.ts` calls the gateway directly, skipping `ai_events` cost, credit debit, BYO routing, and token logging - and the `embed` CallSurface literal exists in the union but is dead/unwired. **Fix (build-now #1):** route `embed.server.ts` through `callModel` via the `embed` surface, keep `text-embedding-3-small`, and add `model_id` + `dimension` columns to the vector store + backfill (a real migration, offline-gateable per standing ruling 1). This brings every embedding under the metered, BYOK, fail-safe path.
+- **One live autonomy-floor gap:** `src/lib/ai/tools/firecrawl.server.ts` hard-fails (throws) on a missing key - no native fallback, violating the "always run free + autonomous" rule TODAY. Fix = build the SearXNG self-host sibling (build-now).
+
+## Build-now (the BUILD-by-us queue, prioritized; chokepoint items are attended)
+
+1. **FIX embeddings routing** (the retroactive violation, #1): re-route `embed.server.ts` through the chokepoint + stamp model-id/dimension. _(chokepoint; attended / main worktree.)_
+2. **SearXNG self-host floor** next to `firecrawl.server.ts` (closes the live autonomy-floor gap). _(AI-tools; attended / main worktree.)_
+3. **Native supersession engine** in Postgres (the moat center): typed bi-temporal edges + invalidate-not-delete, borrowing Graphiti's invalidation-prompt; build the THIN judgment seam (ontology types + outcome-label gate + the Critic's outcome-weighted precedent-salience score), NOT artisanal CTE machinery. _(chokepoint + recurring spend; attended.)_
+4. **PROVIDER-FALLBACK + MODEL-REGISTRY-DEPRECATION resolvers** at the chokepoint (these ARE the autonomy floor). _(chokepoint; attended.)_
+5. **Credit debit engine end-to-end** (WM-M12 fills the WM-M4 seam) + attribution (WM-M14). _(WM lane.)_
+6. **Outcome-impact loop** (post-release cohort -> Product Memory -> auto-ICE) over BYO analytics. _(Launch.)_
+
+> WM-M15 (cost-aware routing + response cache) is ALREADY shipped at the chokepoint - removed from the queue (the synthesis double-listed it).
+
+## Where I need the founder (the short gate list)
+
+- **Spend approvals:** Stripe go-live (WM-M3/M13; 2.9%+$0.30, $0 fixed) + confirm Stripe over a Merchant-of-Record (Paddle/LemonSqueezy); the Sandbox compute cost (+ confirm Cloudflare Sandbox SDK); the recurring-AI-cost crons (the F3 discovery feed + any always-on crawl). The metered commodity rates (embeddings/rerank/transcription) do NOT need per-item approval.
+- **Secrets / OAuth:** register the OAuth client(s) for the 2nd ingest source + analytics/support channels (F-CONN / SEN-01 / SEN-05); confirm/provide the embedding key (or reuse the OpenAI key), the Groq key (when F-AUDIO ships), the Resend key (when email goes external).
+- **Taste / policy:** the WM-M9 BYOK-retirement ruling (enterprise-only); the tier-identity glyph (design pass); the A2A outward-exposure posture (BLD-04 / Q2).
