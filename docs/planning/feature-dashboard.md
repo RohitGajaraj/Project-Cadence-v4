@@ -87,7 +87,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 ### Before you build a picked item: the sourcing gate + the autonomy doctrine (founder ruling 2026-06-21)
 
-The Rank decides WHAT to build next; this decides HOW to source it, and WHO decides. Apply it to every item before writing code; the agent owns this call from its own web-grounded research (carry a greppable `BBI:` stamp on the deciding doc/PR). Canon: [`../strategy/build-buy-integrate.md`](../strategy/build-buy-integrate.md) + [`../../AGENTS.md`](../../AGENTS.md) §3.0c.
+The Rank decides WHAT to build next; this decides HOW to source it, and WHO decides. Apply it to every item before writing code; the agent owns this call from its own web-grounded research (carry a greppable `BBI:` stamp on the deciding doc/PR). **The per-cluster verdict (what to build vs what to source elsewhere) lives in the [Sourcing Map](../strategy/sourcing-map.md): look up a picked item's cluster there FIRST, and do NOT build any sub-item the map marks obviated by a buy/integrate (wire the named provider behind the cluster's seam instead).** Canon: [`../strategy/build-buy-integrate.md`](../strategy/build-buy-integrate.md) + [`../../AGENTS.md`](../../AGENTS.md) §3.0c.
 
 **The four sourcing decisions:**
 

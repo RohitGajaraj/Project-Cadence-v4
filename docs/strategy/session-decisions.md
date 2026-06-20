@@ -26,6 +26,17 @@
 
 ## Decision log
 
+### 2026-06-21 · Cluster-level Build/Buy/Integrate sourcing map (the Decision-Brain verdict, settled)
+
+**Context.** The founder asked whether priority/sequencing incorporates Build-vs-Buy-vs-Integrate, was confused about the Decision Brain (build in-house vs integrate a graph/memory engine), and gave the key insight: BBI is a CLUSTER-level call, so buying/integrating a cluster's substrate can obviate most of its sub-items (build 3 of 11, the other 8 come free). An 11-cluster web-grounded analysis (workflow `cadence-bbi-cluster-sourcing`) was run.
+
+**Decisions.**
+1. **The Decision Brain is a settled BUILD.** The JUDGMENT (typed ontology, human-gated outcome label, outcome-labeled supersession `DBR-1.5`, the Critic's precedent-salience, the visible-compounding metric) is built in-house forever = the moat; the SUBSTRATE (bi-temporal storage, recursive-CTE traversal, pgvector, the SVG canvas) is SELF-HOSTED in our Postgres and ALREADY SHIPPED (adopting Graphiti/Zep/mem0/Neo4j would COST build, not save it, and fracture RLS/residency); embeddings + rerank are BOUGHT via the chokepoint. External engines reference-only (borrow Graphiti's bi-temporal invalidation pattern; adopt none). Build the judgment, borrow the plumbing, own the store.
+2. **The sourcing map** (`docs/strategy/sourcing-map.md`): of ~73 capabilities across 11 clusters, ~56 are must-build moat, ~17 are obviated by buy/integrate; no moat cluster is obviated by any vendor. Biggest savings: AI-runtime (~6, the LLM-gateway feature set already owned/bought), tenancy/auth (~5, Supabase Auth + WorkOS), reliability (~5, Better Stack + Cloudflare-native + OTel), interop/MCP (~5, adopt the SDKs + free registries), sense (~3).
+3. **10 cluster-level founder calls** captured (SSOT §4 + the map). 4. **Agent doctrine:** look up the cluster verdict before building; act on moat-build items; do NOT build obviated items (wire the named provider behind the seam); escalate spend/secret/paid-provider/destructive/outward-facing; web-research + propose for undecided calls.
+
+**Why it matters.** Stops agents building from base what should be integrated/bought, resolves the founder's biggest open question, and turns ~17 items from "build" into "wire a provider", concentrating effort on the moat. Canon: [`sourcing-map.md`](./sourcing-map.md).
+
 ### 2026-06-21 · Strategy-vs-build-queue reconciliation + the numbered Build Sequence (pick-by-number law)
 
 **Context.** The founder flagged that the feature-dashboard + SSOT build queue carried tasks minted under earlier strategy (v5/v6/v7) that the refined canon (v8/v9/v10 + moat.md + the BBI gate + the 2026-06-20 Decision-Brain elevation) had moved past, and that monetization is now being built by Lovable in parallel, so autonomous lanes risked building the wrong things or colliding with Lovable. A 16-agent reconciliation workflow (3 canon-extractors, 11 per-lane reconcilers, synthesis + an adversarial completeness critic) classified every row against the canon with citations.
