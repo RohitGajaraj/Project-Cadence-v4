@@ -47,6 +47,7 @@ import {
   resumeMySubscription,
   getMyCreditsView,
 } from "@/lib/payments.functions";
+import { getPricingCatalog } from "@/lib/pricing.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
