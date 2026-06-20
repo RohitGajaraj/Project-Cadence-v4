@@ -37,9 +37,13 @@ The defaults are **independently-chosen heuristics that sit deliberately above t
 - `bunx tsc --noEmit` clean; `bun --bun run build` green; `bun test` 427 pass (18 new).
 - The detector is behaviorally complete and verified offline. The read fn's live query verifies on the founder's next publish (the lane's ◐ convention; DB MCPs intermittent this session).
 
+## Wired into the UI (2026-06-21)
+
+A calm, silent-when-healthy `ReliabilityGlance` ([`../../src/components/cockpit/ReliabilityGlance.tsx`](../../src/components/cockpit/ReliabilityGlance.tsx)) on the Missions header consumes `getRunawayMissions` (alongside `getReliabilitySlo`) and surfaces `summarizeRunaway` (e.g. "2 missions are spinning") **only** when a `runaway`-severity mission exists. Silent otherwise, per the engine-room-doctrine. Gated through `impeccable`. ◐ renders on the founder's next publish.
+
 ## Out of scope / follow-ups
 
-- **Operator surface** — a calm "N missions are spinning" line (reuse `summarizeRunaway`) on the Missions / Engine Room surface, and a drill into the flagged missions. Deferred to keep this cycle fully gate-verifiable; the wire-up reuses the shipped read fn with no backend change.
+- **Drill-in** — a list view of the flagged missions with their `reasons[]` behind the Engine Room (the calm glance only shows the count).
 - **Alerting** — turning a `runaway` verdict into an Attention/incident nudge (ties into R3 / P7 / `cost_incidents`).
 - **Auto-pause** — optionally feeding a confirmed runaway into the kill-switch / per-mission cancel (D4); enforcement is founder-gated.
 

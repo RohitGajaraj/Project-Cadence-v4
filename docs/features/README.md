@@ -45,8 +45,8 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | U6 | Workspace data export (data portability) | ◐ Core shipped 2026-06-18 | `/settings?section=data` | [`u6-data-export.md`](./u6-data-export.md) |
 | SUBPROC-DISCLOSURE | Sub-processor disclosure ("Where your data goes") | ◐ Backend + Settings UI shipped 2026-06-20 | `/settings?section=data` | [`subprocessor-disclosure.md`](./subprocessor-disclosure.md) |
 | APP-HEALTH | App-level health/readiness endpoint (uptime monitors / LBs) | ◐ Endpoint shipped 2026-06-20 | `GET /api/public/health` | [`app-health.md`](./app-health.md) |
-| RELIABILITY-SLO | AI-surface SLO / error budget (availability · latency · budget burn) | ◐ Backend + read fn shipped 2026-06-21 (lane 1) | `getReliabilitySlo` (Engine Room glance is the wire-up follow-up) | [`reliability-slo.md`](./reliability-slo.md) |
-| RUNAWAY-DETECT | Runaway / loop mission detector (the inverse of the stall monitor) | ◐ Detector + read fn shipped 2026-06-21 (lane 1) | `getRunawayMissions` (operator surface is the wire-up follow-up) | [`runaway-detection.md`](./runaway-detection.md) |
+| RELIABILITY-SLO | AI-surface SLO / error budget (availability · latency · budget burn) | ◐ Backend + read fn + Missions glance shipped 2026-06-21 (lane 1) | `getReliabilitySlo`; calm glance on the Missions header | [`reliability-slo.md`](./reliability-slo.md) |
+| RUNAWAY-DETECT | Runaway / loop mission detector (the inverse of the stall monitor) | ◐ Detector + read fn + Missions glance shipped 2026-06-21 (lane 1) | `getRunawayMissions`; calm glance on the Missions header | [`runaway-detection.md`](./runaway-detection.md) |
 | D4 | Mission cancellation (per-mission brake) | ◐ Cancellation shipped 2026-06-18 | `/missions/$id` | [`d4-mission-cancellation.md`](./d4-mission-cancellation.md) |
 | O1 | Provenance ("why is this on the roadmap?") | ◐ Provenance shipped 2026-06-18 | `/product?opp=` | [`o1-provenance.md`](./o1-provenance.md) |
 | LCH-01 | Launch-kit drafting (changelog/blog/email/social/docs) | ◐ Drafting shipped 2026-06-18 | `/build/$missionId` Changes | [`lch-01-launch-kit.md`](./lch-01-launch-kit.md) |

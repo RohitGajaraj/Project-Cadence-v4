@@ -32,9 +32,13 @@ Over a trailing window of the caller's own AI calls (`ai_events`), it reports:
 - `bunx tsc --noEmit` clean; `bun --bun run build` green; `bun test` 405 pass (18 new).
 - The pure engine is behaviorally complete and verified offline. The server fn's live read activates on the founder's next publish (consistent with the lane's ◐ convention; the live DB MCPs were intermittent this session).
 
+## Wired into the UI (2026-06-21)
+
+A calm, silent-when-healthy `ReliabilityGlance` ([`../../src/components/cockpit/ReliabilityGlance.tsx`](../../src/components/cockpit/ReliabilityGlance.tsx)) on the Missions header consumes `getReliabilitySlo` (alongside `getRunawayMissions`) and surfaces a one-line "Heads up" **only** when the error budget is `warning`/`exhausted` (or a mission is spinning). It renders nothing when healthy, per the engine-room-doctrine (attention, not an always-on panel). Neutral ink tones (the role-color accents stay reserved). Gated through `impeccable`. ◐ renders on the founder's next publish.
+
 ## Out of scope / follow-ups
 
-- **Engine Room glance** — a calm one-line reliability read (reusing `summarizeSlo`) on the operator's Engine Room / Analytics surface. Deferred to keep this cycle's deliverable fully gate-verifiable and to avoid the founder-gated design pass; the wire-up reuses the shipped read fn with no backend change.
+- **Deep Engine Room breakdown** — the full per-surface SLO + latency-percentile view behind the Engine Room door (the calm glance only fires on a strained budget). Reuses the same read fn.
 - **Public status page / posted SLA** — outward-facing, founder-gated (the internal operator view is not).
 - **Per-surface SLOs** — the `SloConfig` type already isolates the target so a per-surface override is a one-line change when the data warrants it.
 - **Alerting** — turning an `exhausted` budget into an Attention/incident nudge (ties into R3 / P7), once the operator surface lands.

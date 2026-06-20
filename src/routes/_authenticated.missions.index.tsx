@@ -16,6 +16,7 @@ import { listProjects } from "@/lib/projects.functions";
 import { MissionsPanel } from "@/components/cockpit/MissionsPanel";
 import { LoopHealthBanner } from "@/components/cockpit/LoopHealthBanner";
 import { MissionsCostGlance } from "@/components/cockpit/MissionsCostGlance";
+import { ReliabilityGlance } from "@/components/cockpit/ReliabilityGlance";
 
 export const Route = createFileRoute("/_authenticated/missions/")({
   // AGENT-EXP: the Agents tab is retired (the roster lives in Engine Room > Team).
@@ -50,6 +51,9 @@ function MissionsPage() {
           </p>
           {/* ENG-06 B2: the cost-per-outcome manager's glance for the fleet. */}
           <MissionsCostGlance />
+          {/* RELIABILITY-GLANCE: a silent-when-healthy heads-up if the AI error budget is
+              strained (RELIABILITY-SLO) or a mission is spinning (RUNAWAY-DETECT). */}
+          <ReliabilityGlance />
         </header>
 
         {/* E8 · Loop Health Monitor — catch a stalled loop before it bites. */}
