@@ -53,6 +53,7 @@ import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheck
 import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useConfirm } from "@/hooks/use-confirm";
+import { PlanPicker } from "@/components/billing/PlanPicker";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
