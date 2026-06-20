@@ -180,7 +180,11 @@ async function mutateCancelFlag(
       cancel_at_period_end: cancelAtPeriodEnd,
     });
     // Mirror immediately so the UI flips without waiting for the webhook.
-    await supabase
+    // RLS on `subscriptions` only allows service_role writes, so use the
+    // admin client here. We've already verified the caller owns this row
+    // via the RLS-scoped SELECT above.
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    await supabaseAdmin
       .from('subscriptions')
       .update({ cancel_at_period_end: cancelAtPeriodEnd, updated_at: new Date().toISOString() })
       .eq('stripe_subscription_id', s.stripe_subscription_id);
