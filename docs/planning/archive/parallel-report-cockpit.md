@@ -5,6 +5,8 @@
 
 This lane builds notification preferences and the persistent incidents / cost-incident log. Queue, owned paths, forbidden paths, and the stay-in-lane rules live in `.remember/LANE.md`. Follow `docs/operations/autonomous-build-loop.md` section 15.
 
+> **⏸️ PAUSED 2026-06-21 ~02:40 (founder stop) — awaiting a Tier-1 assignment.** This session shipped 5 gate-green + adversarially-reviewed cycles to `origin/main` (the "is the autonomy guarded" suite: RELIABILITY-SLO · RUNAWAY-DETECT · RELIABILITY-GLANCE · EVAL-COVERAGE · RUNAWAY-INCIDENTS; board rows 152-156, all ◐ pending publish). Mid-session the `build-sequence-and-ownership` directive landed (pick-by-number Build Sequence, Tier-1-moat-first; DBR-1.5 #1 = knowledge lane's; Lovable owns WM-M*) and flagged this lane's reliability/ops-hygiene category as Tier-3 drift. The Build-Sequence mechanism is NOT yet in the repo (only the memory), and Lane 1 has no clean Tier-1 pick (the moat is the knowledge lane's), so the founder paused Lane 1 to restructure the board / assign a Tier-1 item. **Resume:** read `.remember/remember.md` + the (to-be-added) Build Sequence at the top of `feature-dashboard.md`, then pick the lowest open eligible number. Lane idle, ledger clean.
+
 ## Status (rewritten each cycle; date + time every row)
 | Date · time | Cycle | Item | State | Notes |
 | --- | --- | --- | --- | --- |
