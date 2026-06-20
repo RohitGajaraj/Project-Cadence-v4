@@ -5,6 +5,8 @@
 > **Status: PLAN (2026-06-19).** ONE document, all phases P1-P5 bifurcated, with work items + tasks + division of work, grounded in the real codebase. Spec: [`../strategy/byo-build-and-cadence-cloud.md`](../strategy/byo-build-and-cadence-cloud.md). Tracked in the SSOT as group **G11 / BYO-\***. (This is the single all-phase implementation plan.)
 >
 > **Gate:** P1 is reuse-heavy and needs no founder input to design, but **no product code is written until the founder greenlights a phase.** Each phase's bite-sized, code-complete TDD tasks are produced at build time (after reading the exact current code) and executed via subagent-driven development, one task at a time with review between. P5 is founder-gated (infra/secrets).
+>
+> **Sequencing + ownership (2026-06-21):** this whole G11 / BYO-* lane is founder-gated AND sequenced **BEHIND the Decision Brain (H1, TOPMOST 2026-06-20)**; no autonomous cycle picks up any BYO-* row until both the founder greenlights it and the core loop is proven. **`BYO-P4` (managed AI credits) is LOVABLE-OWNED** (it is the WM credit engine, now built by Lovable in parallel; do not pick it up). Per moat.md, never position or price build or host as the differentiator (own only the PM-shaped 80%); host is sequenced strictly after the loop is proven.
 
 **Goal:** Product-level, provider-agnostic, BYO-or-managed repos; a fully autonomous Build to Ship chain that surfaces only outcomes; managed AI credits; and (sequenced last) a managed end-to-end runtime, so a user runs their whole product org on Cadence.
 

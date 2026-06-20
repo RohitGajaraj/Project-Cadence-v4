@@ -5,7 +5,7 @@
 
 ## The one rule
 
-**One lane = one terminal = one worktree = one autonomous `/loop`.** Each lane is a numbered worker (Lane 1..4). It pulls the next highest-impact unclaimed item **live from `docs/planning/feature-dashboard.md`**, **claims it atomically** so no other lane can take it, builds it, and immediately moves to the next - never stopping until you stop it.
+**One lane = one terminal = one worktree = one autonomous `/loop`.** Each lane is a numbered worker (Lane 0..4). It pulls the **lowest-numbered unclaimed, un-gated item from THE BUILD SEQUENCE** at the top of `docs/planning/feature-dashboard.md` (pick by number, do not deliberate; founder ruling 2026-06-21), **claims it atomically** so no other lane can take it, builds it, marks it done on the board in the same commit, and immediately moves to the next number - never stopping until you stop it. (Monetization / credit / pricing rows are **Lovable-owned** and are NOT in the sequence; never pick them.)
 
 ## The lane map (the legend)
 

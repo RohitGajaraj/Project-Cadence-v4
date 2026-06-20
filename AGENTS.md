@@ -204,6 +204,33 @@ Build the working product first. Any **non-trivial process that can be done corr
 
 In one line: per cycle, gate on correctness (tsc + build + tests + runtime-fatal review) and move fast; batch the quality polish to one disciplined, founder-prompted end-stage pass.
 
+### Build Sequence: pick strictly by the number (founder ruling, 2026-06-21)
+
+**The autonomous build order is a single PRIORITY-RANKED register, not a loose priority sort.** The canonical ranked list is the Master register in [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) (mirrored in [`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md) §0): every row is sorted by priority and carries a **Rank** (the `#` column; `#1` = the single highest priority). **Any tool, lane, or worktree picks the LOWEST-`#` row whose Priority is a Tier (Tier 1/2/3/4) and that is unclaimed, and builds that next. Never pick out of order; never deliberate, the Rank is the decision.** Skip rows marked `Gated` (founder must unblock), `Lovable` (Lovable builds them in parallel), `Done`, and `Deferred`.
+
+**How priority is marked (the ONE uniform vocabulary, founder ruling 2026-06-21):** every row's Priority column is exactly one of `Tier 1` (fundamentals / foundation / core features / core enablements / USPs), `Tier 2` (design + eye-for-detail, founder-prompted), `Tier 3` (non-essential / privacy / ops hygiene / enterprise-readiness), `Tier 4` (final detailing + polish, founder-prompted, last), `Gated` (founder-gated, parked), `Lovable` (Lovable-owned), `Deferred` (cut / superseded), `Done` (shipped). The legacy `P0/P1/P2/WM-*/BYO-*` codes were retired into this scheme; do not reintroduce them.
+
+**The Rank is DERIVED, never hand-numbered** (like the % tally). To add or reprioritize an item: set its Priority class (and, for a Tier-1 item, place its row among the Tier-1 rows in the order you want), then run `python3 scripts/rerank-dashboard.py`. It re-sorts the register by priority and renumbers `#1..N`, so a new high-priority item moves up and everything below it shifts down (nothing is left siloed, stuck on top, or stranded at the bottom), then recompute the "At a glance" % in the same commit. The parallel-lane mechanics in [`PARALLEL-BUILD.md`](./PARALLEL-BUILD.md) (the atomic claim ledger) are unchanged; only the pick-ORDER is now this ranked register instead of a flat priority scan.
+
+**The loop every agent runs (the board is a live, real-time status board for agents AND for a human reviewer):**
+
+1. **Pick** the lowest-numbered unclaimed, un-gated item in the Build Sequence ([`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md)). No deliberation, no scoring; the number is the decision.
+2. **Claim + mark it** before writing any feature code: `bash scripts/lane.sh claim <ID> <laneN> "<globs>"`, flip its register row to `🔨 In Dev (laneN, <date time>)`, add an Active-claims line, and commit that claim first, so the board shows it live and no other agent picks it.
+3. **Build it** to the per-cycle correctness gates (tsc + build + the feature's tests + the runtime-fatal review).
+4. **Mark it done in real time, in the SAME commit as the work:** flip the row to `✅` (or `◐` with a `[~NN%]`), remove the claim, recompute the "At a glance" tally (the Progress-accounting rule), and update the linked detail doc + [`plan.md`](./plan.md) §4.
+5. **Take the next number.** Never idle-stop; roam to the next eligible item (only a real usage-limit pauses, with a sub-5-minute recheck; only the founder ends the run).
+
+The board is the single live truth: the next agent reads it to know exactly what to pick and how, and a human reviewer reads it to see what is in flight, what is done, and what is pending, at a glance. **A change is not done until the board reflects it.** This restates the dashboard's "REGISTER FIRST, THEN BUILD" standing rule and binds it to the numbered pick-order.
+
+**The sequencing law (build substance before surface; non-core last):**
+
+1. **Tier 1, Fundamentals + core USP:** foundation, core features, core enablements, the USPs. The moat (the Decision Brain + its supersession engine), the closed loop (Sense to Decide to Define to Build to Ship to Learn), the Critic wedge, the neutral-brain interop, and chokepoint / autonomy-floor integrity. Build these first and most. This is where the autonomous lanes live.
+2. **Tier 2, Design + craft:** design layers, design elements, eye-for-detail on the core surfaces. The felt product. Founder-prompted, once, after the core is solid (standing ruling 2); does not auto-run.
+3. **Tier 3, Non-essential / non-foundational:** privacy details, reliability / ops hygiene, enterprise-readiness, edge cases, the nontrivial non-core work. Built only after Tier 1's buildable items are exhausted; it never outranks core.
+4. **Tier 4, Final detailing + polish:** the humanization sweep + lint/prettier + AI-trace + final design detailing across the whole product, pre-launch. Founder-prompted, once, last (this is the rulings 2 + 9 end-stage).
+
+This exists to fix the drift the 2026-06-21 strategy reconciliation found: the loop built Tier-3 ops hygiene (data-retention, health, provider-fallback) while the Tier-1 moat work (the supersession engine, the loop-closers) had no rows to claim. **Monetization / credit / billing items are Lovable-owned and are NOT in this sequence** (Lovable builds them in parallel; see the Build Sequence's "Lovable-owned scope"). Canonical order: SSOT §0.
+
 ### AI-specific
 
 16. **Budget caps are sacred.** Enforced server-side. See [`architecture/runtime.md`](./architecture/runtime.md).

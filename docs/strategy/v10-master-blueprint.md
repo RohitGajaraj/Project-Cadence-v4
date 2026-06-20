@@ -243,6 +243,8 @@ Every actionable feature, grounded in code + the dashboard. Format per item: **`
 
 ## 16. The priority pick-order (build one item at a time)
 
+> **Pick-order overlay (founder rulings 2026-06-20 + 2026-06-21; this section predates both).** The live, operative pick-order is now the numbered **Build Sequence** in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) (mirrored in [`../planning/SOURCE-OF-TRUTH.md`](../planning/SOURCE-OF-TRUTH.md) §0); build the lowest open number, do not deliberate. Two changes sit on top of the §16 ranking below: (1) the **Decision Brain (H1)** and its **supersession engine (DBR-1.5)** are TOPMOST, ahead of every §16 pick; (2) the monetization / credit / pricing items (`M-C-PRICE`, `WM-M*`, `BYO-P4`) are **Lovable-owned** and removed from the autonomous order. The §16 ranking still governs WITHIN the non-gated, non-Lovable, non-H1 remainder, and its #1/#3 loop-closers (`LRN-02`/`W1-AUTO`, `MOAT-VIS`) remain correct, now just below H1. Do not follow §16 literally as the pick-order; follow the Build Sequence.
+
 Lanes are file-disjoint, so a session claims a lane and builds its top item. Recommended order; items within a tier can run in parallel sessions across different lanes.
 
 **P0 - build first (close the loop + land the wedge):**
