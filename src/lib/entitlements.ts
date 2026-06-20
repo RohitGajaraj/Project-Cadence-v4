@@ -186,11 +186,13 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         price: "$39/mo",
         tagline: "Your decision memory never fades, and it starts to compound.",
         highlights: [
+          "Everything in Star, plus:",
           "Persistent decision memory that never fades",
           "5x the monthly AI credits",
           "Critic red-teams every spec and bet",
-          "Memory pools across your workspaces",
+          "Memory pools across all your workspaces",
           "3 products, pooled workspaces",
+          "Capped fair-use top-ups when you run hot",
         ],
       };
     case "max":
@@ -201,10 +203,11 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         price: "$99/mo",
         tagline: "More room to run, with priority and deeper memory.",
         highlights: [
-          "Everything in Cluster",
-          "20x the monthly AI credits, with priority",
+          "Everything in Cluster, plus:",
+          "20x the monthly AI credits, priority routing",
           "Around 5 products, pooled workspaces",
-          "Capped fair-use top-ups when you need them",
+          "Higher top-up ceiling for big weeks",
+          "Early access to new agents and tools",
         ],
       };
     case "team":
@@ -215,11 +218,12 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         price: "$25/seat/mo",
         tagline: "Shared memory and approval lanes for the whole product team.",
         highlights: [
-          "Everything in Constellation",
-          "Members, seats, and roles",
+          "Everything in Constellation, plus:",
+          "Members, seats, and roles (RBAC)",
           "Cross-workspace shared memory for the whole team",
-          "Per-role approval lanes",
-          "Transparent per-seat price",
+          "Per-role approval lanes for agent actions",
+          "Transparent per-seat pricing",
+          "Centralized billing and usage view",
         ],
       };
     case "enterprise":
@@ -229,10 +233,11 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         price: "Contact sales",
         tagline: "Your whole product org, governed end to end.",
         highlights: [
-          "Everything in Galaxy",
-          "SSO, SCIM, and audit logs",
+          "Everything in Constellation and Galaxy, plus:",
+          "SSO, SCIM, and full audit logs",
           "Data residency and a custom credit model",
-          "Dedicated support and an SLA",
+          "Dedicated support with a signed SLA",
+          "Security review, DPA, and procurement help",
         ],
       };
     case "free":
@@ -247,6 +252,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Decision memory kept " + FREE_MEMORY_RETENTION_DAYS + " days, then it fades",
           "2 products, 1 workspace",
           "Shareable decision links",
+          "Upgrade anytime to make memory permanent",
         ],
       };
   }
