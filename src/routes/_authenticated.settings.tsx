@@ -40,8 +40,13 @@ import {
   ConnectorDetail,
 } from "@/components/connections/AccountConnectionsSection";
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/connectors/registry";
-import { getBillingState, createCheckoutSession, type BillingState } from "@/lib/billing.functions";
+import { getBillingState, type BillingState } from "@/lib/billing.functions";
+import { createPortalSession } from "@/lib/payments.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
+import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
+import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
+import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
@@ -190,7 +195,11 @@ function SettingsPage() {
 function BillingTab({ checkout }: { checkout?: string }) {
   const qc = useQueryClient();
   const fGetBilling = useServerFn(getBillingState);
-  const fCheckout = useServerFn(createCheckoutSession);
+  const fPortal = useServerFn(createPortalSession);
+
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
+  const [checkoutTitle, setCheckoutTitle] = useState<string>("Checkout");
 
   const billing = useQuery({
     queryKey: ["billing"],
@@ -199,26 +208,41 @@ function BillingTab({ checkout }: { checkout?: string }) {
 
   useEffect(() => {
     if (checkout === "success") {
-      toast.success("You are on Pro. Your decision memory now persists.");
+      toast.success("Payment received. Your plan will reflect within a minute.");
       qc.invalidateQueries({ queryKey: ["billing"] });
     } else if (checkout === "cancel") {
       toast("Checkout canceled. You are still on your current plan.");
     }
   }, [checkout, qc]);
 
-  const upgrade = useMutation({
-    mutationFn: (tier: "pro" | "team") => fCheckout({ data: { tier } }),
+  function openCheckout(lookupKey: string, title: string) {
+    try {
+      getStripeEnvironment(); // throws if token missing
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payments are not configured.");
+      return;
+    }
+    setCheckoutKey(lookupKey);
+    setCheckoutTitle(title);
+    setCheckoutOpen(true);
+  }
+
+  const portal = useMutation({
+    mutationFn: () =>
+      fPortal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: `${window.location.origin}/settings?section=billing`,
+        },
+      }),
     onSuccess: (res) => {
-      if (res.url) {
-        window.location.href = res.url;
+      if ("error" in res) {
+        toast.error(res.error);
         return;
       }
-      toast(
-        res.reason ||
-          (res.configured ? "Could not start checkout." : "Billing is not connected yet."),
-      );
+      window.open(res.url, "_blank", "noopener,noreferrer");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Checkout failed."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open portal."),
   });
 
   const state: BillingState | undefined = billing.data;
@@ -227,6 +251,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      <PaymentTestModeBanner />
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
         <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
           Current plan
@@ -247,6 +272,17 @@ function BillingTab({ checkout }: { checkout?: string }) {
             Only the workspace owner can change the plan.
           </p>
         )}
+        {state && state.isOwner && currentTier !== "free" && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={portal.isPending}
+              onClick={() => portal.mutate()}
+            >
+              {portal.isPending ? "Opening" : "Manage subscription"}
+            </button>
+          </div>
+        )}
       </div>
 
       <div
@@ -259,7 +295,9 @@ function BillingTab({ checkout }: { checkout?: string }) {
         {PLAN_TIERS.map((tier) => {
           const p = planPresentation(tier);
           const isCurrent = tier === currentTier;
-          const canUpgrade = tier === "pro" && currentTier === "free" && (state?.isOwner ?? false);
+          const isPaidTier = tier === "pro" || tier === "max" || tier === "team";
+          const canSelect = isPaidTier && !isCurrent && (state?.isOwner ?? false);
+          const lookupKey = isPaidTier ? defaultMonthlyLookupKey(tier) : null;
           return (
             <div
               key={tier}
@@ -321,27 +359,74 @@ function BillingTab({ checkout }: { checkout?: string }) {
                   >
                     Your plan
                   </span>
-                ) : canUpgrade ? (
+                ) : canSelect && lookupKey ? (
                   <button
                     className="btn btn-primary btn-sm"
-                    disabled={upgrade.isPending}
-                    onClick={() => upgrade.mutate("pro")}
+                    onClick={() => openCheckout(lookupKey, `Subscribe to ${p.name}`)}
                   >
-                    {upgrade.isPending ? "Starting checkout" : "Upgrade to Pro"}
+                    {currentTier === "free" ? `Upgrade to ${p.name}` : `Switch to ${p.name}`}
                   </button>
-                ) : tier === "team" ? (
-                  <span
-                    className="mono-label"
-                    style={{ fontSize: 10, color: "var(--ink-faint, #8a8377)" }}
+                ) : tier === "enterprise" ? (
+                  <a
+                    className="btn btn-ghost btn-sm"
+                    href="mailto:sales@cadence.app?subject=Cosmos%20enquiry"
                   >
-                    In design with partners
-                  </span>
+                    Contact sales
+                  </a>
                 ) : null}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Top-ups: one-time credit purchases. Always visible to owners on any tier
+          so the path is testable end-to-end; balance UI lands when the credits
+          engine flips on. */}
+      {state?.isOwner && (
+        <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+          <div
+            className="mono-label"
+            style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+          >
+            One-time top-ups
+          </div>
+          <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
+            Add credits without changing your plan
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gap: 8,
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              marginTop: 12,
+            }}
+          >
+            {[
+              { key: "topup_250", credits: 250, price: "$5" },
+              { key: "topup_1k", credits: 1000, price: "$18" },
+              { key: "topup_2_5k", credits: 2500, price: "$40" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className="btn btn-ghost btn-sm"
+                onClick={() => openCheckout(t.key, `Top-up: ${t.credits} credits`)}
+              >
+                {t.credits.toLocaleString()} credits &middot; {t.price}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {checkoutKey ? (
+        <StripeEmbeddedCheckout
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          priceLookupKey={checkoutKey}
+          title={checkoutTitle}
+        />
+      ) : null}
     </div>
   );
 }
