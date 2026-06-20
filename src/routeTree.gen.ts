@@ -21,6 +21,7 @@ import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as DSlugRouteImport } from './routes/d.$slug'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
@@ -144,6 +145,11 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
 const DSlugRoute = DSlugRouteImport.update({
   id: '/d/$slug',
   path: '/d/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
@@ -538,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -614,6 +621,7 @@ export interface FileRoutesByTo {
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -694,6 +702,7 @@ export interface FileRoutesById {
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -775,6 +784,7 @@ export interface FileRouteTypes {
     | '/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -851,6 +861,7 @@ export interface FileRouteTypes {
     | '/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -930,6 +941,7 @@ export interface FileRouteTypes {
     | '/_authenticated/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -976,6 +988,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiMcpRoute: typeof ApiMcpRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   DSlugRoute: typeof DSlugRoute
   JoinTokenRoute: typeof JoinTokenRoute
   PSlugRoute: typeof PSlugRoute
@@ -1085,6 +1098,13 @@ declare module '@tanstack/react-router' {
       path: '/d/$slug'
       fullPath: '/d/$slug'
       preLoaderRoute: typeof DSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mcp': {
@@ -1684,6 +1704,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   ApiChatRoute: ApiChatRoute,
   ApiMcpRoute: ApiMcpRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   DSlugRoute: DSlugRoute,
   JoinTokenRoute: JoinTokenRoute,
   PSlugRoute: PSlugRoute,
