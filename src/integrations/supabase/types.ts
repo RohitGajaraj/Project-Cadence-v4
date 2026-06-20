@@ -1667,6 +1667,59 @@ export type Database = {
           },
         ]
       }
+      credit_topups: {
+        Row: {
+          account_id: string | null
+          amount_cents: number
+          created_at: string | null
+          credits_added: number
+          currency: string
+          environment: string
+          id: string
+          price_lookup_key: string
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount_cents: number
+          created_at?: string | null
+          credits_added: number
+          currency?: string
+          environment?: string
+          id?: string
+          price_lookup_key: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount_cents?: number
+          created_at?: string | null
+          credits_added?: number
+          currency?: string
+          environment?: string
+          id?: string
+          price_lookup_key?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_topups_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_briefs: {
         Row: {
           brief_date: string
@@ -4453,6 +4506,65 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          account_id: string | null
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          environment: string
+          id: string
+          price_id: string
+          product_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          price_id: string
+          product_id: string
+          status?: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          price_id?: string
+          product_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_mappings: {
         Row: {
           conflict: boolean
@@ -5223,6 +5335,10 @@ export type Database = {
       }
       has_account_role: {
         Args: { account: string; required_roles: string[] }
+        Returns: boolean
+      }
+      has_active_subscription: {
+        Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
       has_role: {
