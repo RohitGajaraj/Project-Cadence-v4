@@ -410,6 +410,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
 
 function CreditsTab() {
   const fGetCredits = useServerFn(getMyCreditsView);
+  const fGetCatalog = useServerFn(getPricingCatalog);
 
   let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
   try {
@@ -422,6 +423,10 @@ function CreditsTab() {
     queryKey: ["my-credits", envSafe],
     queryFn: () => fGetCredits({ data: { environment: envSafe! } }),
     enabled: !!envSafe,
+  });
+  const catalog = useQuery({
+    queryKey: ["pricing-catalog"],
+    queryFn: () => fGetCatalog(),
   });
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -452,11 +457,25 @@ function CreditsTab() {
     ? Math.max(0, data.cycleTopupCapCredits - data.cycleTopupCredits)
     : null;
 
-  const BUNDLES = [
-    { key: "topup_250", credits: 250, price: "$5" },
-    { key: "topup_1k", credits: 1000, price: "$18" },
-    { key: "topup_2_5k", credits: 2500, price: "$40" },
-  ];
+  // Drive bundles from the admin-managed catalog when available; fall back to
+  // the legacy three. Convention: lookup_key = "topup_<credits>" or "topup_<k>k".
+  const catalogBundles = (catalog.data?.topups ?? []).filter((b) => b.active);
+  const BUNDLES = catalogBundles.length
+    ? [...catalogBundles]
+        .sort((a, b) => a.credits - b.credits)
+        .map((b) => ({
+          key:
+            b.credits >= 1000 && b.credits % 1000 === 0
+              ? `topup_${b.credits / 1000}k`
+              : `topup_${b.credits}`,
+          credits: b.credits,
+          price: `$${Math.round(b.price_cents / 100).toLocaleString()}`,
+        }))
+    : [
+        { key: "topup_250", credits: 250, price: "$5" },
+        { key: "topup_1k", credits: 1000, price: "$18" },
+        { key: "topup_2_5k", credits: 2500, price: "$40" },
+      ];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
