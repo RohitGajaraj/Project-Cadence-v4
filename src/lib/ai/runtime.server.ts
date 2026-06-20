@@ -9,7 +9,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
-import { costRoutedModel } from "./routing";
+import { costRoutedModel, cheapestLiveModel } from "./routing";
+import { resolveFallbackChain } from "./fallback";
 import {
   capExceeded,
   creditWindowStartIso,
@@ -60,6 +61,16 @@ function resolveGateway(model: string): { url: string; key: string; model: strin
 // are never downgraded). Read per call (cheap string compare); no caching needed.
 function costRoutingEnabled(): boolean {
   const v = process.env.AI_COST_ROUTING;
+  return v === "1" || v === "true";
+}
+
+// PROVIDER-FALLBACK: an opt-in (AI_PROVIDER_FALLBACK, default OFF) cross-model degrade. When
+// off, the chokepoint is byte-identical to today (only an explicit fallbackModel/fallbackModels
+// is tried after the primary). When on, a failed primary also degrades to the cheapest live
+// model on most surfaces (eval + embed are excluded, see callModel/callModelStream). Read per
+// call (cheap string compare); the fallback path only runs once the primary has hard-failed.
+function providerFallbackEnabled(): boolean {
+  const v = process.env.AI_PROVIDER_FALLBACK;
   return v === "1" || v === "true";
 }
 
@@ -269,8 +280,11 @@ export type CallOpts = {
   byoOverride?: { provider: string; apiKey: string; baseUrl?: string };
   /** Ask provider for strict JSON */
   responseFormat?: "json_object";
-  /** Model to retry with if primary fails after retries */
+  /** Model to retry with if primary fails after retries (legacy single fallback). */
   fallbackModel?: string;
+  /** Ordered fallback chain tried after the primary fails (PROVIDER-FALLBACK). Takes
+   *  precedence over fallbackModel; the runtime may append a flag-gated auto-fallback. */
+  fallbackModels?: string[];
   /** Max retries on 429/5xx for the primary model (default 2) */
   maxRetries?: number;
   /** When true, retrieve relevant chunks from rag_chunks and prepend as system context */
@@ -1223,15 +1237,33 @@ export async function callModel(
         if (i < maxRetries) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
       }
     }
-    if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
-      try {
-        providerOut = await attempt(opts.fallbackModel);
-        modelUsed = opts.fallbackModel;
-        fallback = true;
-        lastErr = null;
-      } catch (e) {
-        lastErr = e;
+    if (lastErr) {
+      // PROVIDER-FALLBACK: walk the ordered fallback chain (explicit caller fallbacks first,
+      // then a flag-gated auto-degrade to the cheapest live model). The happy path above is
+      // untouched; this only runs once the primary has exhausted its retries.
+      const primaryErr = lastErr; // root-cause error to surface if the whole chain also fails
+      const chain = resolveFallbackChain(effectiveModel, {
+        fallbackModels: opts.fallbackModels,
+        fallbackModel: opts.fallbackModel,
+        autoFallback:
+          providerFallbackEnabled() && opts.surface !== "eval" && opts.surface !== "embed"
+            ? cheapestLiveModel()
+            : null,
+      });
+      for (const fb of chain) {
+        try {
+          providerOut = await attempt(fb);
+          modelUsed = fb;
+          fallback = true;
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+        }
       }
+      // Chain exhausted: surface the primary's failure (the root cause), not the last
+      // fallback's error, so an outage incident reports what actually went down.
+      if (lastErr) lastErr = primaryErr;
     }
   }
   // WM-M15b fix: write to cache only on a fresh, successful, non-fallback call. Store
@@ -1678,16 +1710,33 @@ export async function callModelStream(
     }
   }
 
-  if (lastErr && opts.fallbackModel && opts.fallbackModel !== effectiveModel) {
-    try {
-      response = await attemptStream(opts.fallbackModel);
-      if (!response.ok) throw new Error(`AI fallback error (${response.status})`);
-      modelUsed = opts.fallbackModel;
-      fallback = true;
-      lastErr = null;
-    } catch (e) {
-      lastErr = e;
+  if (lastErr) {
+    // PROVIDER-FALLBACK: walk the ordered fallback chain (see callModel). Streaming variant;
+    // a non-ok fallback response is treated as a failure and we try the next chain entry.
+    const primaryErr = lastErr; // root-cause error to surface if the whole chain also fails
+    const chain = resolveFallbackChain(effectiveModel, {
+      fallbackModels: opts.fallbackModels,
+      fallbackModel: opts.fallbackModel,
+      autoFallback:
+        providerFallbackEnabled() && opts.surface !== "eval" && opts.surface !== "embed"
+          ? cheapestLiveModel()
+          : null,
+    });
+    for (const fb of chain) {
+      try {
+        response = await attemptStream(fb);
+        if (!response.ok) throw new Error(`AI fallback error (${response.status})`);
+        modelUsed = fb;
+        fallback = true;
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
     }
+    // Chain exhausted: surface the primary's failure (the root cause), not the last
+    // fallback's error, so an outage incident reports what actually went down.
+    if (lastErr) lastErr = primaryErr;
   }
 
   if (lastErr || !response || !response.body) {
