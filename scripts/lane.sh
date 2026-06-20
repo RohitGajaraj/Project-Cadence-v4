@@ -31,6 +31,7 @@
 #   lane.sh release <ID>
 #   lane.sh heartbeat <ID>                                  # keep a long build's claim fresh
 #   lane.sh list                                            # all active claims
+#   lane.sh board                                           # per-lane view: Lane 0..4 -> current item
 #   lane.sh mine <lane>                                     # this lane's active claims
 #   lane.sh held <ID>                                       # print holder line if claimed, else nothing
 #   lane.sh reap [ttl_hours]                                # auto-release UNPINNED claims older than ttl (default 6h)
@@ -186,6 +187,33 @@ _print_claims() { # <lane-filter-or-empty>
   return 0
 }
 
+cmd_board() { # per-lane "who is building what right now"
+  _ensure
+  echo "Parallel build board (live @ $LEDGER):"
+  local n dir item lane pinned found now beat age
+  now="$(_now)"
+  for n in 0 1 2 3 4; do
+    found=""
+    for dir in "$CLAIMS"/*/; do
+      [ -d "$dir" ] || continue
+      [ "$(_meta_get "${dir%/}" lane)" = "$n" ] || continue
+      [ "$(_meta_get "${dir%/}" pinned)" = "true" ] && continue   # area reservations are not a "task"
+      beat="$(_meta_get "${dir%/}" beat)"; [ -n "$beat" ] || beat="$(_meta_get "${dir%/}" epoch)"
+      age=""; [ -n "$beat" ] && age=" ($(( (now - beat)/60 ))m)"
+      found="$found $(basename "${dir%/}")${age}"
+    done
+    printf '  Lane %s: %s\n' "$n" "${found:-(idle / no active claim)}"
+  done
+  local anyres=0
+  for dir in "$CLAIMS"/*/; do
+    [ -d "$dir" ] || continue
+    [ "$(_meta_get "${dir%/}" pinned)" = "true" ] || continue
+    [ "$anyres" = 0 ] && { echo "  --- standing reservations (safety, not a lane task) ---"; anyres=1; }
+    printf '  [reserved] %-12s lane=%s\n' "$(basename "${dir%/}")" "$(_meta_get "${dir%/}" lane)"
+  done
+  return 0
+}
+
 cmd_list() { echo "Active claims @ $LEDGER:"; _ensure; _print_claims ""; }
 cmd_mine() { local lane="${1:-}"; [ -n "$lane" ] || _die "usage: mine <lane>"; echo "Lane $lane claims:"; _ensure; _print_claims "$lane"; }
 
@@ -212,6 +240,7 @@ case "$sub" in
   release)   cmd_release "$@" ;;
   heartbeat) cmd_heartbeat "$@" ;;
   list)      cmd_list "$@" ;;
+  board)     cmd_board "$@" ;;
   mine)      cmd_mine "$@" ;;
   held)      cmd_held "$@" ;;
   reap)      cmd_reap "$@" ;;

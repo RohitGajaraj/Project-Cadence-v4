@@ -9,15 +9,17 @@
 
 ## The lane map (the legend)
 
+Five equal peer worktrees (`cadence-lane-0` .. `cadence-lane-4`). None is reserved for anything; each claims one item at a time from the ledger.
+
 | Lane | Skill | Folder | Branch | Prefers (then roams the whole board) |
 | --- | --- | --- | --- | --- |
-| **1** | `/overnight-build-1` | `cadence-cockpit` → `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
-| **2** | `/overnight-build-2` | `cadence-knowledge` → `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
+| **0** | (open the "Lane 0" task) | `cadence-lane-0` | `overnight/wm` | Monetization, Credit, Foundational |
+| **1** | `/overnight-build-1` | `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
+| **2** | `/overnight-build-2` | `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
 | **3** | `/overnight-build-3` | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
 | **4** | `/overnight-build-4` | `cadence-lane-4` | `parallel/build` | Build, then Interop |
-| **0 - WM** (running) | `/overnight-build` | `overnight-build` | `overnight/wm` | the original whole-product overnight lane |
 
-The lane folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`. **Lanes 1 & 2 keep their `cadence-cockpit` / `cadence-knowledge` folder names until you migrate them** (see "Migrating the folder names" below) - the *number* is the identity, not the folder word. Branch names are stable internal handles and are not renamed.
+The lane folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`. The *number* is the identity, not the folder word; branch names are stable internal handles and are not renamed. Lane 0 used to be the special whole-product "WM/overnight" lane; as of 2026-06-21 it is a normal peer that claims per item like the rest.
 
 ## How to launch a lane - in the VS Code integrated terminal (the way you wanted)
 
@@ -65,13 +67,11 @@ The ledger holds two kinds of entries:
 - **Per-item claims** (the normal case): a lane claims ONE dashboard row + the files it touches, builds it, releases it. Fully dynamic - any lane claims the highest-priority eligible row in ANY category. Nothing is glued to a category.
 - **Pinned reservations** (`[pinned]` in `lane.sh list`): a TEMPORARY guard for a lane running WITHOUT the ledger (the old-model Lanes 0/1/2 during the 2026-06-20 transition). They reserve that lane's live files so a new ledger-aware lane can't collide with a session it cannot see.
 
-**Pins are not the design and not permanent.** Each is released the moment its lane adopts the ledger or exits:
-- `LANE1-COCKPIT`, `LANE2-KNOWLEDGE` - released when Lanes 1 & 2 migrate to `cadence-lane-1/2`.
-- `LANE0-WM` - released when Lane 0 (the WM/overnight lane) stops; releasing it opens **Monetization + Credit** (the biggest open chunk) to roaming.
-- `AGENTEXP` - released when the agent-experience worktree is gone.
-- `CHOKEPOINT` - the ONE permanent reservation, and it is NOT restrictive: it covers the AI agent core (`runtime.server.ts`, `loop.server.ts`, …), which is never a buildable dashboard item.
+**Pins are not the design and not permanent.** The four transition pins were released as their lanes migrated to the ledger - **`LANE0-WM`, `LANE1-COCKPIT`, `LANE2-KNOWLEDGE`, and `AGENTEXP` are all GONE** (Monetization + Credit, Cockpit, and Knowledge are fully open to roaming). Current state (2026-06-21):
 
-So once every lane is on the ledger, the only thing reserved is the chokepoint, and every lane freely picks the single highest-priority item anywhere on the board. Release a pin by hand any time: `bash scripts/lane.sh release <PIN-ID>`. Safely migrate + auto-release a stopped lane: `bash scripts/lane-migrate.sh <src> <dst> <pin> <num>` (it refuses unless the session has truly exited and the tree is clean).
+- **`CHOKEPOINT` - the ONE standing reservation, kept as a SAFETY guard (not a category fence).** It covers the AI agent core (`runtime.server.ts`, `loop.server.ts`, `tools/registry.server.ts`, `cache.server.ts`, `memory.server.ts`). These are never a buildable dashboard "item", and concurrent or incidental edits to them can break the whole product for every lane on its next rebase - so core changes are kept deliberate and single-threaded. If an item genuinely needs a core change, a lane releases the pin, claims those exact globs solo, makes the change with a hard gate + adversarial review, and re-pins.
+
+So every lane now freely picks the single highest-priority item anywhere on the board; only the agent core is held back, for safety. Release any pin by hand: `bash scripts/lane.sh release <PIN-ID>`. Safely migrate + auto-release a stopped lane: `bash scripts/lane-migrate.sh <src> <dst> <pin> <num>` (refuses unless the session has exited and the tree is clean; `FORCE=1` for an operator-confirmed exit).
 
 ## "Own memory" - what each lane knows
 
@@ -81,16 +81,24 @@ Each lane reads, every cycle: its `.remember/LANE.md` (lane number, branch, repo
 
 A lane does not halt when its preferred category empties - it **roams** to the next eligible item anywhere on the board. When the *whole* board is dry it writes "board dry - long-polling" to its report and **rechecks every ~25 minutes** (a new row, a freed claim, or a founder push wakes it). It stops only on a real usage-limit (sub-5-minute retry) or when you stop it. This is the founder "never idle-stop" ruling, applied to lanes.
 
-## Migrating the folder names (Lanes 1 & 2, when you are ready)
+## Seeing who is on what (per-lane current task)
 
-Lanes 1 & 2 are running, so their folders can't be renamed under a live session. When you want the clean `cadence-lane-1` / `cadence-lane-2` names, **stop those two lanes**, then from this repo:
+Two views answer "which lane is building which item right now":
 
 ```bash
-git worktree move ../cadence-cockpit   ../cadence-lane-1
-git worktree move ../cadence-knowledge ../cadence-lane-2
+bash scripts/lane.sh board   # per-lane summary: Lane 0..4 -> current item (or idle) + standing reservations
+bash scripts/lane.sh list    # every active claim with its file-globs and age
 ```
 
-Then update the two `cwd` paths in `.vscode/tasks.json` (Lane 1, Lane 2) and the two `path`s in `cadence-parallel.code-workspace`, and relaunch. Lanes 3 & 4 are already on the new names.
+Plus the durable, tool-visible mirror: each lane flips its row in `docs/planning/feature-dashboard.md` to `🔨 In Dev (laneN, ...)` and adds an **Active claims** line when it claims, and clears it when it ships - so a `git pull` + open the dashboard also shows who is on what.
+
+## Migrating the folder names (DONE 2026-06-21)
+
+All five worktrees are on the clean `cadence-lane-0` .. `cadence-lane-4` names (done via `scripts/lane-migrate.sh`, which only moves a worktree once its session has exited and its tree is clean - `FORCE=1` for an operator-confirmed exit). Nothing left to migrate. If you ever need to re-migrate a worktree:
+
+```bash
+FORCE=1 bash scripts/lane-migrate.sh <oldFolder> <newFolder> <pinId-or-NONE> <laneNum>
+```
 
 ## Model switching (and saving tokens)
 

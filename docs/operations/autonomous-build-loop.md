@@ -198,20 +198,22 @@ Several worktrees build in parallel off `origin/main` at once (the WM/overnight 
 
 1. **Manual override.** An explicit `pick <ID>` on this invocation → manual mode, build that item, skip the rest. (Ambient IDs in memory do NOT count.)
 2. **Scoped lane.** `[ -f "$WT_ROOT/.remember/LANE.md" ]` → scoped numbered lane: start `/loop` per section 15, silently.
-3. **WM / overnight lane.** `BR` = `overnight/wm` → the original whole-product loop (sections 3-14).
+3. **(Legacy) WM whole-product lane.** `BR` = `overnight/wm` AND no `LANE.md` → the original whole-product loop (sections 3-14). **As of 2026-06-21 the `overnight/wm` worktree (`cadence-lane-0`) carries a `LANE.md`, so case 2 catches it as scoped Lane 0 first** - a normal peer lane that claims one item at a time. This case 3 only fires for a bare `overnight/wm` checkout that has no `LANE.md`.
 4. **Everything else: ASK, never auto-build.** The primary `main` checkout, a detached `HEAD`, or a `parallel/*` branch whose `LANE.md` is missing: do NOT build here. List the lanes and tell the founder to open one in a VS Code integrated terminal (the "Lane N" task), then stop. Never build on `main` or an unscoped branch.
 
-**Lane map (folder · branch · number).** Branch names are stable internal handles; the folder/label is "Lane N":
+**Lane map (folder · branch · number) - five equal peer worktrees, nothing reserved per lane.** Branch names are stable internal handles; the folder/label is "Lane N":
 
-| Lane | Folder | Branch | Preferred categories |
+| Lane | Folder | Branch | Preferred categories (soft; then roam) |
 | --- | --- | --- | --- |
-| 1 | `cadence-lane-1` (currently `cadence-cockpit`; migrating) | `parallel/cockpit` | Cockpit, then Governance |
-| 2 | `cadence-lane-2` (currently `cadence-knowledge`; migrating) | `parallel/knowledge` | Sense, Decide, Interop |
+| 0 | `cadence-lane-0` | `overnight/wm` | Monetization, Credit, Foundational |
+| 1 | `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
+| 2 | `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
 | 3 | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
 | 4 | `cadence-lane-4` | `parallel/build` | Build, then Interop |
-| 0 | `overnight-build` | `overnight/wm` | WM tenancy/billing/credit (whole-product loop) |
 
-Why a positive allowlist: absence of `LANE.md` does NOT mean "not a lane" (the WM worktree lacks it by design), and the unhandled contexts (detached HEAD, an unscoped `parallel/*`) must fail safe to ASK. Every lane worktree carries its own `.remember/LANE.md` so case 2 catches it; case 4 is the safety net.
+The only standing ledger reservation is `CHOKEPOINT` (the AI agent core), kept as a SAFETY guard against concurrent/incidental edits to that high-blast-radius shared code - it is not a per-lane category fence. See `bash scripts/lane.sh board` for the live per-lane view.
+
+Why a positive allowlist: absence of `LANE.md` does NOT mean "not a lane", and the unhandled contexts (detached HEAD, an unscoped `parallel/*`) must fail safe to ASK. Every lane worktree carries its own `.remember/LANE.md` so case 2 catches it; case 4 is the safety net.
 
 ---
 
