@@ -21,6 +21,7 @@ import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as DSlugRouteImport } from './routes/d.$slug'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
@@ -70,6 +71,7 @@ import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as AuthenticatedBuildMissionIdRouteImport } from './routes/_authenticated.build.$missionId'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
@@ -143,6 +145,11 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
 const DSlugRoute = DSlugRouteImport.update({
   id: '/d/$slug',
   path: '/d/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
@@ -399,6 +406,12 @@ const AuthenticatedBuildMissionIdRoute =
     path: '/build/$missionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRetentionTickRoute =
   ApiPublicHooksRetentionTickRouteImport.update({
     id: '/api/public/hooks/retention-tick',
@@ -531,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -561,6 +575,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -606,6 +621,7 @@ export interface FileRoutesByTo {
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -637,6 +653,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -685,6 +702,7 @@ export interface FileRoutesById {
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/d/$slug': typeof DSlugRoute
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
@@ -716,6 +734,7 @@ export interface FileRoutesById {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -765,6 +784,7 @@ export interface FileRouteTypes {
     | '/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -795,6 +815,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
@@ -840,6 +861,7 @@ export interface FileRouteTypes {
     | '/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -871,6 +893,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   id:
@@ -918,6 +941,7 @@ export interface FileRouteTypes {
     | '/_authenticated/traces'
     | '/api/chat'
     | '/api/mcp'
+    | '/checkout/return'
     | '/d/$slug'
     | '/join/$token'
     | '/p/$slug'
@@ -949,6 +973,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
@@ -963,6 +988,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiMcpRoute: typeof ApiMcpRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   DSlugRoute: typeof DSlugRoute
   JoinTokenRoute: typeof JoinTokenRoute
   PSlugRoute: typeof PSlugRoute
@@ -983,6 +1009,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOutcomeTickRoute: typeof ApiPublicHooksOutcomeTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicHooksRetentionTickRoute: typeof ApiPublicHooksRetentionTickRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicConnectGithubCallbackRoute: typeof ApiPublicConnectGithubCallbackRoute
   ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
@@ -1071,6 +1098,13 @@ declare module '@tanstack/react-router' {
       path: '/d/$slug'
       fullPath: '/d/$slug'
       preLoaderRoute: typeof DSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mcp': {
@@ -1416,6 +1450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuildMissionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/retention-tick': {
       id: '/api/public/hooks/retention-tick'
       path: '/api/public/hooks/retention-tick'
@@ -1663,6 +1704,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   ApiChatRoute: ApiChatRoute,
   ApiMcpRoute: ApiMcpRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   DSlugRoute: DSlugRoute,
   JoinTokenRoute: JoinTokenRoute,
   PSlugRoute: PSlugRoute,
@@ -1683,6 +1725,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOutcomeTickRoute: ApiPublicHooksOutcomeTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicHooksRetentionTickRoute: ApiPublicHooksRetentionTickRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicConnectGithubCallbackRoute: ApiPublicConnectGithubCallbackRoute,
   ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
