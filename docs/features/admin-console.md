@@ -1,8 +1,28 @@
 # Admin console (`/admin/*`, inbuilt)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20_
+> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: v1 shipped)_
 
-> Status · Role gate + admin-editable pricing tables landed 2026-06-20 (Phase 2 of G12). `/admin` shell + `/admin/pricing` UI = Phase 8.
+> Status · **v1 shipped 2026-06-20 (◐).** Two tabs live: **Overview** + **Pricing**. v2 (People · Workspaces · Platform) is the next initiative — plan below.
+
+## v1 (shipped)
+
+- **Overview tab:** credits-engine ON/OFF master toggle (`adminSetCreditsEnabled` → `app_settings.credits_enabled` flag, read by `credits_enabled()` SQL fn). Admin roster: list current admins, add admin by email, remove admin. Server fns in `src/lib/pricing.functions.ts` (`adminListAdmins`, `adminAddAdminByEmail`, `adminRemoveAdmin`, `adminBootstrapSelfAsAdmin`).
+- **Pricing tab:**
+  - Plan catalog CRUD (`adminUpsertBundle`, `adminDeleteBundle`) — edits clone-and-archive Stripe Prices so existing subscribers stay on their original price.
+  - Top-up bundle catalog CRUD (`adminUpsertTopupBundle`, `adminDeleteTopupBundle`).
+  - **"Most popular" marker** on plan rows: exactly one plan per audience can carry it; controls the centered badge on the Plan picker.
+  - **"Best value" marker** on top-up bundles per group (Starter / At scale).
+- **Access:** every admin RPC is `SECURITY DEFINER` and gates on `has_role(auth.uid(),'admin')`. First admin granted via `adminBootstrapSelfAsAdmin`.
+
+## v2 (planned, next initiative)
+
+Three new tabs (clustered, not five), each with deep drawers, so functionality is not lost:
+
+1. **People** — Users panel (search, drawer with identity / plan & billing / credits / workspaces / access / activity), Invitations panel (single + bulk CSV + pending queue + auto-approve domains + manual review), Vouchers & promos panel (signup vouchers with auto-login, credit-grant vouchers, plan-upgrade vouchers, campaign tags, redemption log).
+2. **Workspaces** — search, members + roles, workspace-level credit grants, plan override, transfer ownership, soft delete.
+3. **Platform** — feature flags & kill switches, system banner publisher, audit log viewer, system health peek.
+
+**Backend:** all admin mutations remain SECURITY DEFINER + `has_role` + atomic write to `admin_audit_log`. New tables: `admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`; plan-override columns on `subscriptions`. New server-fn modules: `admin.functions.ts`, `admin-invitations.functions.ts`, `admin-vouchers.functions.ts`, `admin-workspaces.functions.ts`, `admin-platform.functions.ts`, `redeem-voucher.functions.ts`. Plan: `.lovable/plan.md` (the approved Phase B).
 
 ## What it does
 

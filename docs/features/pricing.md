@@ -1,8 +1,34 @@
 # M-C: Pricing, plans, and entitlements (the monetization foundation)
 
-> _Created: 2026-06-16 · Last updated: 2026-06-19_
+> _Created: 2026-06-16 · Last updated: 2026-06-20_
 
 > Status · Foundation built 2026-06-16 (migration `20260616200000` applies on the next Lovable sync). Live charging waits on the founder provisioning Stripe keys. Route: Settings -> Plan (`/settings?section=billing`).
+
+## Update 2026-06-20 (Lovable cycle: pricing surface as shipped)
+
+The Settings → Plan picker and the public `/pricing` page now render the **5-tier Constellation scheme** with the founder-directed presentation rules. This block is the current source of truth for the surface; the older sections below describe the underlying engine and remain accurate.
+
+- **Top-level audience toggle:** `Personal` vs `Teams & Enterprise`. Selecting `Personal` shows three cards in one row (Star · Cluster · Constellation). Selecting `Teams & Enterprise` shows two cards in one row (Galaxy · Cosmos). Grid is forced (`repeat(3, 1fr)` / `repeat(2, 1fr)`) so cards never split half-half.
+- **Per-tier billing rules** (no global Monthly/Yearly toggle):
+  - **Star:** free; no toggle. Copy reads *"Free, upgrade anytime"* (not "Free forever") so the upgrade nudge stays subtle.
+  - **Cluster (Pro):** monthly + yearly toggle inside the card.
+  - **Constellation (Max):** monthly only. No yearly toggle (founder ruling: Constellation is monthly-only).
+  - **Galaxy / Cosmos:** no billing toggle; one-line contact-sales path.
+- **"Most popular" badge:** exactly one card carries it at a time, controlled by the admin pricing console's recommended flag. Centered floating pill (no clipping). The previous "Recommended" label is retired.
+- **Current plan highlight:** the active tier's card gets a multi-layer ember `box-shadow` glow, a warm orange `color-mix` tint, and a top-border accent so the user always sees which tier they are on.
+- **Per-tier features (strictly ascending):** entitlement bullets in `src/lib/entitlements.ts` follow an "Everything in [previous tier], plus:" pattern. Star=5 lines, Cluster=10, Constellation=11, Galaxy=13, Cosmos=14. Cosmos references both Constellation and Galaxy in its lead bullet.
+- **CTA copy:** consequence-first per `ui-voice.md` ("Step up to Cluster", "Bring the team into Galaxy", "Talk to our team"). All CTAs centered.
+- **Icon spotlights:** 38px ember-tinted tiles with inset glow on every card.
+- **Inline membership management:** the Settings page now hosts cancel / resume / open-portal inline next to the picker (per `inline-management.md`); no separate billing route.
+
+**Files of record:** `src/components/billing/PlanPicker.tsx`, `src/lib/entitlements.ts`, `src/routes/_authenticated.settings.tsx`, `src/lib/payments.functions.ts`. Conventions consulted: `engine-room-doctrine.md`, `ui-voice.md`, `destructive-actions.md`, `inline-management.md`, `humanized-output.md`, `data-minimalism.md`.
+
+**Verify:**
+1. Settings → Plan as a Free user: see three cards under Personal with Star highlighted; click "Teams & Enterprise" → two cards (Galaxy, Cosmos).
+2. Cluster card shows Monthly/Yearly toggle; Constellation card does not.
+3. Whichever tier the admin marks "Most popular" carries the centered pill on exactly one card.
+4. Current plan card shows the ember glow + tint.
+5. Star CTA copy is "Free, upgrade anytime" (not "Free forever").
 
 ## What it does
 

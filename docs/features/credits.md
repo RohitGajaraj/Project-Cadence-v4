@@ -1,8 +1,24 @@
 # Credits surface (balance, ledger, top-ups)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20_
+> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable refresh)_
 
 > Status · Phase 7 UI shipped 2026-06-20 (◐). Page lives at Settings → Credits. Metering still gated by `credits_enabled()` (off); top-ups record live to `credit_topups` and add to the balance once metering flips on.
+
+## Update 2026-06-20 (Lovable cycle: tiered top-up catalog as shipped)
+
+The top-up bundle catalog was restructured from a 3-bundle ladder (250 / 1k / 2.5k) to a **tiered, deliberate monetization surface** with a "Best value" anchor and two groups (Starter packs vs At scale).
+
+- **Bundle ladder:** 250 → 1,000 → 2,500 → 10,000 → 50,000 → 250,000 credits. Prices follow a decreasing $/credit curve so larger packs read as the real saving.
+- **Best value badge:** exactly one bundle per group carries it, controlled by the admin pricing console.
+- **Group headers:** "Starter packs" and "At scale" with mono-label kickers, so individual buyers and enterprise-volume buyers self-segment.
+- **Cap rule unchanged:** server-enforced 2× monthly grant per cycle (5,000-credit fallback when metering is dormant).
+- **The "Need more credits?" trailing CTA on the Settings page was removed** — the picker is the surface, not a duplicate link.
+
+**Admin control:** the catalog rows live in `pricing_topup_bundles` and are edited from `/admin` → Pricing tab. "Best value" is a boolean flag per row.
+
+## Update 2026-06-20 (security): Stripe-id column lockdown
+
+`stripe_customer_id` and `stripe_subscription_id` columns on `accounts`, `workspaces`, and `subscriptions` are revoked from `anon`/`authenticated`. Reads happen via service-role server fns (`getMySubscription`, `createPortalSession`, `mutateCancelFlag`) after `requireSupabaseAuth` verifies the caller. Migration: `supabase/migrations/20260620225748_*.sql`.
 
 ## What it does
 
