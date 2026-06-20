@@ -604,6 +604,17 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
                   </DropdownMenuItem>
                 </>
               )}
+              {(isAdmin || noAdminsYet) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <Link to="/admin">
+                    <DropdownMenuItem className="cursor-pointer gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>{isAdmin ? "Admin console" : "Claim admin"}</span>
+                    </DropdownMenuItem>
+                  </Link>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="cursor-pointer gap-2">
                 <LogOut className="h-3.5 w-3.5" />
