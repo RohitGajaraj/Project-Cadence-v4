@@ -29,3 +29,31 @@ export function defaultMonthlyLookupKey(tier: PlanTier): string | null {
     default:     return null;
   }
 }
+
+/** Tier slug -> Stripe lookup_key prefix. */
+const TIER_PREFIX: Record<Exclude<PlanTier, "free" | "enterprise">, string> = {
+  pro: "cluster",
+  max: "constellation",
+  team: "galaxy",
+};
+
+/**
+ * Build the Stripe `lookup_key` for a (tier, credits, interval) bundle.
+ * Convention: `<prefix>_<credits-shorthand>[_seat]_<monthly|yearly>`.
+ * - credits < 1000 -> raw number (e.g. `500`)
+ * - credits >= 1000 and a multiple of 1000 -> `Nk` (e.g. `1k`, `10k`)
+ * - otherwise -> raw number
+ * - team adds `_seat` (per-seat pricing).
+ */
+export function lookupKeyFor(
+  tier: PlanTier,
+  credits: number,
+  interval: "monthly" | "yearly",
+): string | null {
+  if (tier === "free" || tier === "enterprise") return null;
+  const prefix = TIER_PREFIX[tier];
+  const shorthand =
+    credits >= 1000 && credits % 1000 === 0 ? `${credits / 1000}k` : `${credits}`;
+  const seat = tier === "team" ? "_seat" : "";
+  return `${prefix}_${shorthand}${seat}_${interval}`;
+}
