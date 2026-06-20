@@ -63,6 +63,7 @@ import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPrdsIndexRouteImport } from './routes/_authenticated.prds.index'
 import { Route as AuthenticatedMissionsIndexRouteImport } from './routes/_authenticated.missions.index'
 import { Route as AuthenticatedBuildIndexRouteImport } from './routes/_authenticated.build.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicIngestSignalsRouteImport } from './routes/api/public/ingest-signals'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -363,6 +364,11 @@ const AuthenticatedBuildIndexRoute = AuthenticatedBuildIndexRouteImport.update({
   path: '/build/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -514,7 +520,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trust': typeof TrustRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/agents': typeof AuthenticatedAgentsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
@@ -565,6 +571,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/build/': typeof AuthenticatedBuildIndexRoute
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
@@ -593,7 +600,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trust': typeof TrustRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/agents': typeof AuthenticatedAgentsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/briefing': typeof AuthenticatedBriefingRoute
@@ -644,6 +650,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/build': typeof AuthenticatedBuildIndexRoute
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
@@ -674,7 +681,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/trust': typeof TrustRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
@@ -726,6 +733,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-signals': typeof ApiPublicIngestSignalsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/build/': typeof AuthenticatedBuildIndexRoute
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
@@ -808,6 +816,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
+    | '/admin/'
     | '/build/'
     | '/missions/'
     | '/prds/'
@@ -836,7 +845,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/trust'
-    | '/admin'
     | '/agents'
     | '/analytics'
     | '/briefing'
@@ -887,6 +895,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
+    | '/admin'
     | '/build'
     | '/missions'
     | '/prds'
@@ -968,6 +977,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-signals'
     | '/api/stripe/webhook'
+    | '/_authenticated/admin/'
     | '/_authenticated/build/'
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
@@ -1406,6 +1416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuildIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -1584,6 +1601,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedMeetingsRouteChildren {
   AuthenticatedMeetingsIdRoute: typeof AuthenticatedMeetingsIdRoute
 }
@@ -1622,7 +1650,7 @@ const AuthenticatedTracesRouteWithChildren =
   AuthenticatedTracesRoute._addFileChildren(AuthenticatedTracesRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
@@ -1667,7 +1695,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
