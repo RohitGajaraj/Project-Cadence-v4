@@ -405,12 +405,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
-        {PLAN_TIERS.map((tier) => {
+        {/* Tier highlight summary cards (current + neighbouring tiers) */}
+        {PLAN_TIERS.filter((t) => t !== "enterprise").map((tier) => {
           const p = planPresentation(tier);
           const isCurrent = tier === currentTier;
-          const isPaidTier = tier === "pro" || tier === "max" || tier === "team";
-          const canSelect = isPaidTier && !isCurrent && (state?.isOwner ?? false);
-          const lookupKey = isPaidTier ? defaultMonthlyLookupKey(tier) : null;
           return (
             <div
               key={tier}
@@ -419,79 +417,34 @@ function BillingTab({ checkout }: { checkout?: string }) {
                 padding: "var(--card-pad, 18px)",
                 display: "flex",
                 flexDirection: "column",
-                gap: 10,
+                gap: 8,
+                borderColor: isCurrent ? "var(--ember, #c2602e)" : undefined,
               }}
             >
-              <div
-                style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}
-              >
-                <span className="font-display" style={{ fontSize: 16 }}>
-                  {p.name}
-                </span>
-                <span
-                  className="mono-label"
-                  style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)" }}
-                >
-                  {p.price}
-                </span>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span className="font-display" style={{ fontSize: 16 }}>{p.name}</span>
+                {isCurrent ? (
+                  <span className="mono-label" style={{ fontSize: 9, color: "var(--emerald, #2f8f6b)" }}>
+                    Current
+                  </span>
+                ) : null}
               </div>
-              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>
-                {p.tagline}
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
-                {p.highlights.map((h) => (
-                  <li
-                    key={h}
-                    style={{
-                      fontSize: 12,
-                      color: "var(--ink-muted, #4a4438)",
-                      display: "flex",
-                      gap: 7,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: 99,
-                        background: "var(--ink-faint, #8a8377)",
-                        display: "inline-block",
-                        marginTop: 6,
-                        flexShrink: 0,
-                      }}
-                    />
+              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>{p.tagline}</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 5 }}>
+                {p.highlights.slice(0, 3).map((h) => (
+                  <li key={h} style={{ fontSize: 11.5, color: "var(--ink-muted, #4a4438)", display: "flex", gap: 6 }}>
+                    <span style={{ width: 3, height: 3, borderRadius: 99, background: "var(--ink-faint, #8a8377)", marginTop: 6, flexShrink: 0 }} />
                     <span>{h}</span>
                   </li>
                 ))}
               </ul>
-              <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                {isCurrent ? (
-                  <span
-                    className="mono-label"
-                    style={{ fontSize: 10, color: "var(--emerald, #2f8f6b)" }}
-                  >
-                    Your plan
-                  </span>
-                ) : canSelect && lookupKey ? (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => openCheckout(lookupKey, `Subscribe to ${p.name}`)}
-                  >
-                    {currentTier === "free" ? `Upgrade to ${p.name}` : `Switch to ${p.name}`}
-                  </button>
-                ) : tier === "enterprise" ? (
-                  <a
-                    className="btn btn-ghost btn-sm"
-                    href="mailto:sales@cadence.app?subject=Cosmos%20enquiry"
-                  >
-                    Contact sales
-                  </a>
-                ) : null}
-              </div>
             </div>
           );
         })}
       </div>
+
+      {/* The Lovable-style picker: tier toggle + monthly/yearly + credit slider. */}
+      <PlanPicker currentTier={currentTier} canSelect={state?.isOwner ?? false} />
 
       {state?.isOwner && (
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
