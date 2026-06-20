@@ -203,6 +203,7 @@ function SettingsPage() {
 
 function BillingTab({ checkout }: { checkout?: string }) {
   const qc = useQueryClient();
+  const navigate = useNavigate({ from: "/settings" });
   const fGetBilling = useServerFn(getBillingState);
   const fGetSub = useServerFn(getMySubscription);
   const fCancelSub = useServerFn(cancelMySubscription);
