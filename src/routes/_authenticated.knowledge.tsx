@@ -26,6 +26,7 @@ import { DecisionDetail } from "@/components/knowledge/DecisionDetail";
 import { LearningDetail } from "@/components/knowledge/LearningDetail";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
 import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
+import { GraphPanel } from "@/components/knowledge/GraphPanel";
 
 // Brain (formerly Knowledge) — the product's brain: one substrate of everything
 // it knows. The "memory" tab is the compounding agent-recall (the moat, folded
@@ -33,8 +34,8 @@ import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 // feed (the tab kept id "memory" until this restructure — now re-id'd to
 // "learnings" so the agent-recall tab can own "memory"). Founder ruling
 // 2026-06-16: Knowledge→Brain, /chat→Ask, /memory folds in here.
-type Tab = "calendar" | "memory" | "learnings" | "decisions" | "docs";
-const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "docs"];
+type Tab = "calendar" | "memory" | "learnings" | "decisions" | "docs" | "graph";
+const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "docs", "graph"];
 
 const KNOWLEDGE_DESC: Record<string, string> = {
   calendar: "Events and meeting transcripts. Open a meeting to capture and extract.",
@@ -44,6 +45,8 @@ const KNOWLEDGE_DESC: Record<string, string> = {
     "What your team recorded: re-scored opportunities and outcome memos, each with a verdict.",
   decisions: "Every choice your team made, captured once. Sourced from missions, specs, meetings.",
   docs: "Workspace pages. Import from Google Docs or Notion, edit inline.",
+  graph:
+    "Lineage and provenance. Trace why any artifact is on the roadmap back to the root signals.",
 };
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
@@ -171,6 +174,7 @@ function KnowledgePage() {
             { id: "learnings", label: "Learnings" },
             { id: "decisions", label: "Decisions" },
             { id: "docs", label: "Docs" },
+            { id: "graph", label: "Graph" },
           ]}
           active={tab}
           onSet={(t) => setTab(t as Tab)}
@@ -182,6 +186,7 @@ function KnowledgePage() {
         {tab === "learnings" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
         {tab === "decisions" && (decision ? <DecisionDetail id={decision} /> : <DecisionsPanel />)}
         {tab === "docs" && <DocsPanel />}
+        {tab === "graph" && <GraphPanel />}
       </div>
     </AppShell>
   );
