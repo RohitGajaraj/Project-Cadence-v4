@@ -387,16 +387,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
           Per-card credits dropdown drives the live price. */}
       <PlanTable currentTier={currentTier} canSelect={state?.isOwner ?? false} />
 
-      {state?.isOwner && (
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigate({ search: { section: "credits" } })}
-          >
-            Need more credits? Buy a top-up &rarr;
-          </button>
-        </div>
-      )}
     </div>
   );
 }
