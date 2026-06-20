@@ -155,6 +155,32 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   }, { onConflict: 'stripe_session_id' });
 }
 
+/**
+ * Mirror invoice payment outcomes onto subscriptions.status so the dunning
+ * banner reacts immediately, without waiting for the next
+ * customer.subscription.updated event. We do NOT change plan_tier here:
+ * per founder ruling, access is preserved while Stripe retries the card.
+ */
+async function handleInvoicePaymentFailed(invoice: any, env: StripeEnv) {
+  const subId = invoice.subscription;
+  if (!subId) return;
+  await getSupabase()
+    .from('subscriptions')
+    .update({ status: 'past_due', updated_at: new Date().toISOString() })
+    .eq('stripe_subscription_id', subId)
+    .eq('environment', env);
+}
+
+async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
+  const subId = invoice.subscription;
+  if (!subId) return;
+  await getSupabase()
+    .from('subscriptions')
+    .update({ status: 'active', updated_at: new Date().toISOString() })
+    .eq('stripe_subscription_id', subId)
+    .eq('environment', env);
+}
+
 async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
   switch (event.type) {
@@ -166,6 +192,10 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       await handleSubscriptionDeleted(event.data.object, env); break;
     case 'checkout.session.completed':
       await handleCheckoutCompleted(event.data.object, env); break;
+    case 'invoice.payment_failed':
+      await handleInvoicePaymentFailed(event.data.object, env); break;
+    case 'invoice.payment_succeeded':
+      await handleInvoicePaymentSucceeded(event.data.object, env); break;
     default:
       console.log('Webhook unhandled event:', event.type);
   }
