@@ -169,24 +169,43 @@ export async function getIncidentsInternal(
     });
   }
 
-  // Cost-incident detector: detect budget cap reached events from ai_budget_alerts
+  // Cost-incident detector: surface real budget alerts from ai_budget_alerts.
+  // Contract (producer: runtime.server.ts incrementBudget / incrementSurfaceBudget):
+  // exactly one row is written per window when spend CROSSES the configured alert
+  // threshold (default 80% of cap), always kind="warn", with pct in [threshold, 100]
+  // (pct is capped at 100; a genuine cap hit halts the next call by throwing).
+  // No path writes kind="block" today, so the prior `.eq("kind","block")` filter
+  // matched nothing and this detector was silently dead. Surface the warn rows that
+  // actually exist, report the true pct, and escalate the copy to "cap reached" only
+  // when the cap itself was hit (pct >= 100, or a future block).
   const { data: budgetAlerts } = await supabase
     .from("ai_budget_alerts")
-    .select("id,kind,pct,scope,surface,usd_cap,usd_used,created_at")
+    .select("id,kind,pct,surface,usd_cap,usd_used,window_kind,created_at")
     .eq("user_id", userId)
-    .eq("kind", "block") // or pct >= 100
+    .in("kind", ["warn", "block"])
     .order("created_at", { ascending: false })
     .limit(20);
   for (const b of budgetAlerts ?? []) {
-    const surface = b.surface ? ` for surface "${b.surface}"` : "";
+    const surface = b.surface ? ` for "${b.surface}"` : "";
+    const window = b.window_kind === "month" ? "monthly" : "daily";
+    const pct = b.pct != null ? Math.round(Number(b.pct)) : null;
+    const capReached = (pct ?? 0) >= 100 || b.kind === "block";
+    const cap = `$${Number(b.usd_cap ?? 0).toFixed(2)}`;
+    const used = `$${Number(b.usd_used ?? 0).toFixed(2)}`;
+    const pctText = pct != null ? `${pct}%` : "the alert threshold";
     out.push({
       id: `budget_alert:${b.id}`,
       kind: "cost",
-      title: `Budget limit reached${surface}`,
-      detail: `The daily or monthly budget cap of $${b.usd_cap} was reached (used: $${b.usd_used}). AI calls were blocked.`,
+      title: capReached
+        ? `Budget cap reached${surface}`
+        : `Budget alert${surface}: ${pctText} of ${window} cap`,
+      detail: capReached
+        ? `Your ${window} AI spend reached the ${cap} cap (used: ${used}). Further AI calls are blocked until the cap is raised.`
+        : `Your ${window} AI spend reached ${pctText} of the ${cap} cap (used: ${used}).`,
       at: (b.created_at as string | null) ?? null,
       traceId: null,
-      amountUsd: b.usd_cap ? Number(b.usd_cap) : undefined,
+      amountUsd: b.usd_cap != null ? Number(b.usd_cap) : undefined,
+      windowKind: b.window_kind === "month" ? "month" : b.window_kind === "day" ? "day" : undefined,
     });
   }
 

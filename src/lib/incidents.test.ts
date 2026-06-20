@@ -51,13 +51,17 @@ describe("Incidents Log & Cost Incident Detection", () => {
       },
     ];
 
+    // Real producer contract: runtime.server.ts only ever writes kind="warn"
+    // (a hard cap halts the call by throwing, so no kind="block" row is produced).
+    // pct=100 here is the rare single-call overshoot that tips usage to the cap.
     const mockBudgetAlerts = [
       {
         id: "alert-1",
-        kind: "block",
+        kind: "warn",
         pct: 100,
         scope: "user",
         surface: "chat",
+        window_kind: "day",
         usd_cap: 10.0,
         usd_used: 10.05,
         created_at: "2026-06-20T01:20:00Z",
@@ -88,6 +92,17 @@ describe("Incidents Log & Cost Incident Detection", () => {
                             if (table === "guardrail_hits") {
                               return { data: mockGuardrails, error: null };
                             }
+                            return { data: null, error: null };
+                          },
+                        };
+                      },
+                    };
+                  },
+                  in: (col2: string, vals: unknown) => {
+                    return {
+                      order: (col3: string, opts?: unknown) => {
+                        return {
+                          limit: async (limitVal: number) => {
                             if (table === "ai_budget_alerts") {
                               return { data: mockBudgetAlerts, error: null };
                             }
@@ -138,8 +153,9 @@ describe("Incidents Log & Cost Incident Detection", () => {
     // alert-1 (01:20) > guard-1 (01:15) > cost-1 (01:10) > event-1 (01:05) > approval-1 (01:00)
     expect(items[0].id).toBe("budget_alert:alert-1");
     expect(items[0].kind).toBe("cost");
-    expect(items[0].title).toBe('Budget limit reached for surface "chat"');
+    expect(items[0].title).toBe('Budget cap reached for "chat"');
     expect(items[0].amountUsd).toBe(10.0);
+    expect(items[0].windowKind).toBe("day");
 
     expect(items[1].id).toBe("guard:guard-1");
     expect(items[1].kind).toBe("guardrail");
@@ -193,5 +209,80 @@ describe("Incidents Log & Cost Incident Detection", () => {
 
     expect(result.success).toBe(true);
     expect(result.id).toBe("new-cost-incident-id");
+  });
+
+  test("budget-alert detector surfaces real kind='warn' crossings, escalating only at the cap", async () => {
+    // The producer (runtime.server.ts) only ever writes kind="warn" when spend
+    // crosses the alert threshold; it NEVER writes kind="block". This guards the
+    // detector against regressing to a filter that matches no real rows.
+    const alerts = [
+      {
+        id: "warn-80",
+        kind: "warn",
+        pct: 80,
+        surface: null,
+        window_kind: "day",
+        usd_cap: 10,
+        usd_used: 8,
+        created_at: "2026-06-20T02:00:00Z",
+      },
+      {
+        id: "cap-100",
+        kind: "warn",
+        pct: 100,
+        surface: "chat",
+        window_kind: "month",
+        usd_cap: 50,
+        usd_used: 50.4,
+        created_at: "2026-06-20T03:00:00Z",
+      },
+    ];
+    const mockSupabase = {
+      rpc: async (fn: string) =>
+        fn === "current_user_default_workspace"
+          ? { data: "ws-1", error: null }
+          : { data: null, error: null },
+      from: (table: string) => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => ({ limit: async () => ({ data: [], error: null }) }),
+            }),
+            in: () => ({
+              order: () => ({
+                limit: async () => ({
+                  data: table === "ai_budget_alerts" ? alerts : [],
+                  error: null,
+                }),
+              }),
+            }),
+            not: () => ({
+              order: () => ({ limit: async () => ({ data: [], error: null }) }),
+            }),
+            order: () => ({ limit: async () => ({ data: [], error: null }) }),
+          }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+
+    const result = await getIncidentsInternal(mockSupabase, "u-1");
+    const byId: Record<string, Incident> = Object.fromEntries(
+      result.incidents.map((i) => [i.id, i]),
+    );
+
+    // 80% threshold crossing: honest pct + window, NOT "cap reached".
+    const warn = byId["budget_alert:warn-80"];
+    expect(warn).toBeDefined();
+    expect(warn.kind).toBe("cost");
+    expect(warn.title).toBe("Budget alert: 80% of daily cap");
+    expect(warn.detail).toContain("reached 80% of the $10.00 cap");
+    expect(warn.detail).toContain("used: $8.00");
+
+    // 100% of cap: escalated copy + windowKind passthrough for the badge.
+    const capHit = byId["budget_alert:cap-100"];
+    expect(capHit).toBeDefined();
+    expect(capHit.title).toBe('Budget cap reached for "chat"');
+    expect(capHit.detail).toContain("Further AI calls are blocked");
+    expect(capHit.windowKind).toBe("month");
   });
 });

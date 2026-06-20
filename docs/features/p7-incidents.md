@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-18 · Last updated: 2026-06-20_
 
-> Status · Core shipped 2026-06-18 (cycle 3) · Guardrail source added 2026-06-18 (cycle 16) · Cost incident sources + persistent table added 2026-06-20 (cycle 2) · Route: `/govern?tab=incidents` · Owner: operator-facing, read-only
+> Status · Core shipped 2026-06-18 (cycle 3) · Guardrail source added 2026-06-18 (cycle 16) · Cost incident sources + persistent table added 2026-06-20 (cycle 2) · Cost-incident detector corrected 2026-06-20 (cockpit cycle 3) · Route: `/govern?tab=incidents` · Owner: operator-facing, read-only
 
 ## What it does
 
@@ -26,7 +26,7 @@ Engine Room (`/govern`) > the **Incidents** tab (`?tab=incidents`).
 
 - `getIncidents` server fn in `src/lib/incidents.functions.ts`. GET, `requireSupabaseAuth`.
 - **Persistent cost incidents (cycle 2):** uses the `cost_incidents` table (scoped by `workspace_id`, insert/select RLS) to record manual/auto cost breaches. Populates `amountUsd` and `windowKind` properties for rich badge rendering.
-- **Cost-incident detector (cycle 2):** automatically maps budget limit block alerts from `ai_budget_alerts` (where `kind = 'block'` and user-scoped) into cost incidents.
+- **Cost-incident detector (cycle 2, corrected cockpit cycle 3):** surfaces budget alerts from `ai_budget_alerts` (user-scoped) as `cost` incidents. The producer (the AI chokepoint, `runtime.server.ts`) only ever writes `kind = 'warn'`, emitted once when spend crosses the configured alert threshold (default 80% of cap); a genuine cap hit halts the next call by throwing, so no `'block'` row is ever produced and `pct` is capped at 100. The detector therefore queries `.in('kind', ['warn','block'])`, reports the true `pct` and window, and escalates the copy to "Budget cap reached" only when `pct >= 100`. The earlier `kind = 'block'`-only filter matched no real rows (silently dead) and is fixed.
 - Derives from other logs: `agent_approvals` (status = failed, scoped by `user_id`) for execution failures, `event_queue` (rows with a non-null `error`, scoped to the resolved workspace) for pipeline errors, and `guardrail_hits` (action = block, scoped by `user_id`) for guardrail blocks.
 - **Guardrail blocks (cycle 16):** only `action = "block"` hits are incidents (a rule that actually stopped an AI call); `warn` and `redact` are routine governance (the call still runs) and are intentionally excluded. The card surfaces the rule name and which side it fired on (a blocked prompt vs a withheld response), never the raw `matched` payload, so nothing sensitive lands in the list. Guardrail incidents carry no trace link (`guardrail_hits` keys to an `event_id`, not a trace).
 - Merges and sorts newest-first, caps at 40, and returns each incident with a `kind`, title, error detail, timestamp, and (for executions) a `trace_id`.
@@ -42,6 +42,7 @@ Engine Room (`/govern`) > the **Incidents** tab (`?tab=incidents`).
 
 - [x] `tsc --noEmit` clean, `eslint` clean, `bun run build` green (2026-06-18; guardrail source re-gated cycle 16).
 - [x] Adversarial review folded: explicit workspace scoping on `event_queue`, not RLS alone. Cycle 16 (guardrail): excluded the raw `matched` payload from the card so nothing sensitive surfaces; filtered to `action = block` so routine warn/redact governance is not mislabelled an incident.
+- [x] Cockpit cycle 3 (cost detector): an adversarial audit caught the dead `kind='block'` filter; the producer contract was verified directly against `runtime.server.ts` (warn-only, fires at the ~80% crossing, `pct` capped at 100), which also corrected the audit's suggested `pct >= 100`-only filter; rewired to `.in('kind',['warn','block'])` with honest pct/window copy; TDD red to green plus a regression test; `tsc --noEmit` 0, 11 tests pass, `bun run build` green.
 - [ ] **Pending published-app verification (needs the founder to publish first):** on the live app, with a failed tool execution present, confirm it appears in Engine Room > Incidents with the error detail and a working "View trace" link; confirm "No incidents" when clean. **Guardrail:** trigger a blocking guardrail rule (a `block` action) and confirm a "Blocked by guardrail: <rule>" card appears with no trace link and no raw matched content.
 
 ## Known limits / out of scope
