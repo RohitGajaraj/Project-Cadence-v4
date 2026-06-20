@@ -30,3 +30,14 @@ Post-dry, per the founder's autonomous-mode override, this session ran as a gene
 **Shipped (in-scope, verified, gated):** P7 dead detector · KI-16b dispatch cap · mission-deadlock skip-cascade · handoff double-consume CAS · lost-`queued` recovery · decision attribution · KI-25 prompt-injection fence (CRITICAL) · KI-28 reactor double-dispatch CAS · KI-29 rate-limiter fail-open · KI-30 eval-tick double-spend · KI-31 cluster cross-workspace + atomic claim · KI-32 roadmap terminal-item filter.
 
 **Safe-fix queue DRY:** the 5th audit returned zero in-scope-fixable findings; projects.functions.ts is sound (RLS workspace-keyed, no export leak). All remaining work is founder/migration/attended/product-gated, recorded in `known-issues.md`, priority order: **KI-34 (CRITICAL cross-tenant credential theft)** · **KI-26 (CRITICAL cron-auth public key)** · KI-35/KI-36 (connector HIGH) · KI-27 (reactor reaper/retry migration) · KI-37 (token caps enforce-or-remove) · KI-33 (roadmap dual-store) · agent_runs RLS gap. Lane stops here ("queue dry, awaiting founder") rather than burn ~500k tokens/audit for near-zero fixable yield. **Recommend an attended security cycle for KI-34 + KI-26 first.**
+
+## Session close 2 — founder-authorized security cycle (2026-06-20 ~22:35)
+
+Founder authorized the security cycle + enabled live publishing (live DB access via the Lovable MCP; dry-runs on prod). Delivered, all green on `main`:
+- **KI-26 (CRITICAL cron-auth public key):** confirmed already code-fixed by another session (`requireHookCaller` now requires a private `CRON_SECRET`/`HOOK_CRON_SECRET`; no publishable-key fallback). Founder step remains: provision the secret + point pg_cron at `x-cron-key`.
+- **KI-34 (CRITICAL cross-tenant credential theft):** CLOSED — app-layer guard in `resolveProviderAuth` (`bindingConnectionAllowed`) + RLS migration `20260620220000` validating connection ownership (dry-run-verified on prod).
+- **KI-36 (HIGH binding hijack):** CLOSED — same RLS migration (only creator/admin can mutate a binding).
+- **KI-27 (HIGH reactor reaper/retry):** CLOSED — migration `20260620220500` ('processing' status + attempt_count/next_attempt_at) + reaper + bounded retry.
+- **RLS-posture sweep:** every public table has RLS + ≥1 policy — no gaps.
+
+In-scope autonomous queue is DRY (RLS posture clean; no safe code-fixable items left). Founder/WM-gated remainder, priority order: **founder** — provision `CRON_SECRET` (KI-26); decide KI-37 (token caps: enforce-in-chokepoint vs remove-the-inputs); decide KI-33 (roadmap dual-store canonical column + backfill); the gateway ownership API for KI-35. **WM/tenancy lane** — the agent_runs cross-member SELECT (agent-table RLS is theirs). The autonomous lane stops here ("queue dry, awaiting founder/WM"), per the founder's standing stop-when-genuinely-dry allowance.
