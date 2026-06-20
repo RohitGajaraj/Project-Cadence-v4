@@ -34,8 +34,8 @@ import { GraphPanel } from "@/components/knowledge/GraphPanel";
 // feed (the tab kept id "memory" until this restructure — now re-id'd to
 // "learnings" so the agent-recall tab can own "memory"). Founder ruling
 // 2026-06-16: Knowledge→Brain, /chat→Ask, /memory folds in here.
-type Tab = "calendar" | "memory" | "learnings" | "decisions" | "docs" | "graph";
-const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "docs", "graph"];
+type Tab = "calendar" | "memory" | "learnings" | "decisions" | "graph" | "docs";
+const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "graph", "docs"];
 
 const KNOWLEDGE_DESC: Record<string, string> = {
   calendar: "Events and meeting transcripts. Open a meeting to capture and extract.",
@@ -44,21 +44,30 @@ const KNOWLEDGE_DESC: Record<string, string> = {
   learnings:
     "What your team recorded: re-scored opportunities and outcome memos, each with a verdict.",
   decisions: "Every choice your team made, captured once. Sourced from missions, specs, meetings.",
-  docs: "Workspace pages. Import from Google Docs or Notion, edit inline.",
   graph:
-    "Lineage and provenance. Trace why any artifact is on the roadmap back to the root signals.",
+    "Trace why anything exists: the live map of how signals, specs, and decisions connect. Click a node to walk its provenance.",
+  docs: "Workspace pages. Import from Google Docs or Notion, edit inline.",
 };
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { tab: Tab; meeting?: string; decision?: string; learning?: string } => {
+  ): {
+    tab: Tab;
+    meeting?: string;
+    decision?: string;
+    learning?: string;
+    focusKind?: string;
+    focusId?: string;
+  } => {
     const t = search.tab;
     return {
       tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "calendar",
       meeting: typeof search.meeting === "string" ? search.meeting : undefined,
       decision: typeof search.decision === "string" ? search.decision : undefined,
       learning: typeof search.learning === "string" ? search.learning : undefined,
+      focusKind: typeof search.focusKind === "string" ? search.focusKind : undefined,
+      focusId: typeof search.focusId === "string" ? search.focusId : undefined,
     };
   },
   component: KnowledgePage,
@@ -88,7 +97,7 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
 });
 
 function KnowledgePage() {
-  const { tab, meeting, decision, learning } = Route.useSearch();
+  const { tab, meeting, decision, learning, focusKind, focusId } = Route.useSearch();
   const navigate = useNavigate({ from: "/knowledge" });
   const { activeWorkspace } = useWorkspace();
 
@@ -173,8 +182,8 @@ function KnowledgePage() {
             { id: "memory", label: "Memory" },
             { id: "learnings", label: "Learnings" },
             { id: "decisions", label: "Decisions" },
-            { id: "docs", label: "Docs" },
             { id: "graph", label: "Graph" },
+            { id: "docs", label: "Docs" },
           ]}
           active={tab}
           onSet={(t) => setTab(t as Tab)}
@@ -185,8 +194,8 @@ function KnowledgePage() {
         {tab === "memory" && <MemoryList />}
         {tab === "learnings" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
         {tab === "decisions" && (decision ? <DecisionDetail id={decision} /> : <DecisionsPanel />)}
+        {tab === "graph" && <GraphPanel focusKind={focusKind} focusId={focusId} />}
         {tab === "docs" && <DocsPanel />}
-        {tab === "graph" && <GraphPanel />}
       </div>
     </AppShell>
   );
