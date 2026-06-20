@@ -23,7 +23,13 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isSideEffectingTool } from "@/lib/tool-consequences";
 import { trendOf, isMissingRelation, type Trend } from "@/lib/gauntlet-metrics";
-import { reuseRate, countPriorityMoves } from "@/lib/memory-compounding";
+import {
+  reuseRate,
+  countPriorityMoves,
+  computeMemoryLift,
+  type ReviewedOutcome,
+  type MemoryLiftReason,
+} from "@/lib/memory-compounding";
 
 export type { Trend };
 
@@ -544,4 +550,128 @@ export const getOutcomeAccuracy = createServerFn({ method: "POST" })
     const trend = recentRate != null && priorRate != null ? trendOf(recentRate, priorRate) : "flat";
 
     return { rate, validated, missed, mixed, decided, trend, priorRate, tableReady: true };
+  });
+
+// ---------------------------------------------------------------------------
+// MOAT-METRIC — the memory-depth split (the lift half of the moat proof).
+//
+// The honest, observational complement to Outcome accuracy: a within-account cut
+// that splits the reviewed bets into the half decided EARLIER in the store's
+// growth (less precedent accumulated) vs the half decided LATER (more precedent),
+// and reports the difference in validated share between them. It is CORRELATIONAL,
+// never causal — depth is near-collinear with calendar time, so practice, easier
+// later bets, and survivorship (agent_memory is hard-deletable) all confound it;
+// the card names that at the pixel. Every number is gated (size floor + a
+// material depth-contrast guard + a two-proportion 95% CI noise gate); below the
+// gates it reads "not enough data yet" with a reason, never an invented figure.
+// All compute lives in the pure, unit-tested computeMemoryLift (no causal claim,
+// whole percentage points, negatives reported as-is, totality-safe).
+
+export type MemoryLiftResult = {
+  /** Signed whole percentage points, or null when not defensibly computable. */
+  liftPoints: number | null;
+  /** Validated share of the earlier / lower-depth half (0..1, or null). */
+  sparseRate: number | null;
+  /** Validated share of the later / upper-depth half (0..1, or null). */
+  richRate: number | null;
+  sparseN: number;
+  richN: number;
+  /** How much one outcome moves the headline (so a small sample never reads as settled). */
+  swingPoints: number;
+  /** Realized separation between the halves' median precedent depth. */
+  depthGap: number;
+  /** Why liftPoints is null; null when it is a real number (incl. a measured 0). */
+  reason: MemoryLiftReason | null;
+  /** False when learnings OR agent_memory is pre-migration / unreadable. */
+  tableReady: boolean;
+  /** False when the precedent timeline exceeded the cap (truncated, not computable). */
+  memoryBounded: boolean;
+};
+
+// agent_memory created_at is bounded to a chronological prefix; a true count over
+// the cap means later outcomes' depth would be undercounted, so we refuse rather
+// than under-report (memoryBounded=false).
+const MEMORY_TIMELINE_CAP = 20000;
+
+const LIFT_NOT_READY: MemoryLiftResult = {
+  liftPoints: null,
+  sparseRate: null,
+  richRate: null,
+  sparseN: 0,
+  richN: 0,
+  swingPoints: 0,
+  depthGap: 0,
+  reason: null,
+  tableReady: false,
+  memoryBounded: true,
+};
+
+export const getMemoryLift = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ days: z.number().int().min(2).max(365).default(90) }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<MemoryLiftResult> => {
+    const { supabase, userId } = context;
+    const windowStart = new Date(Date.now() - data.days * DAY_MS).toISOString();
+
+    // Reviewed outcomes (windowed, mirrors getOutcomeAccuracy). The 2000 cap is a
+    // safe truncation for a cohort statistic; the column is CHECK-constrained to
+    // the three terminal verdicts in production, so the helper's filter never
+    // drops real drafts.
+    const learnRes = await supabase
+      .from("learnings")
+      .select("verdict,created_at")
+      .eq("user_id", userId)
+      .gte("created_at", windowStart)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    if (learnRes.error) {
+      if (isMissingRelation(learnRes.error as { code?: string; message?: string })) {
+        return LIFT_NOT_READY;
+      }
+      throw new Error(learnRes.error.message);
+    }
+
+    // The precedent timeline: agent_memory.created_at, chronological, with an
+    // exact count so truncation is detectable. No .lte(now) predicate (a no-op
+    // that the index can't use).
+    const memRes = await supabase
+      .from("agent_memory")
+      .select("created_at", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(MEMORY_TIMELINE_CAP);
+    if (memRes.error) {
+      if (isMissingRelation(memRes.error as { code?: string; message?: string })) {
+        return LIFT_NOT_READY;
+      }
+      // A non-missing read error is NOT a "your store is flat" result — degrading
+      // to [] would print "depth-contrast-too-small", a wrong claim. Stay neutral.
+      return { ...LIFT_NOT_READY, tableReady: false };
+    }
+    if (typeof memRes.count === "number" && memRes.count > MEMORY_TIMELINE_CAP) {
+      // True count exceeds the cap: later outcomes' depth would be undercounted.
+      // Refuse rather than under-report.
+      return { ...LIFT_NOT_READY, tableReady: true, memoryBounded: false };
+    }
+
+    const lift = computeMemoryLift(
+      (learnRes.data ?? []) as ReviewedOutcome[],
+      ((memRes.data ?? []) as { created_at: string }[]).map((r) => r.created_at),
+    );
+
+    // Expose only what the card reads; medians + droppedOutcomes stay internal.
+    return {
+      liftPoints: lift.liftPoints,
+      sparseRate: lift.sparseRate,
+      richRate: lift.richRate,
+      sparseN: lift.sparseN,
+      richN: lift.richN,
+      swingPoints: lift.swingPoints,
+      depthGap: lift.depthGap,
+      reason: lift.reason,
+      tableReady: true,
+      memoryBounded: true,
+    };
   });

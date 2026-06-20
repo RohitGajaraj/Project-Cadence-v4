@@ -11,6 +11,7 @@ import {
   Flame,
   Sparkles,
   Target,
+  Layers,
   ArrowUpRight,
   ArrowDownRight,
   Minus,
@@ -21,9 +22,11 @@ import {
   getRitualRetention,
   getMemoryCompounding,
   getOutcomeAccuracy,
+  getMemoryLift,
   type Trend,
   type MemoryCompounding,
   type OutcomeAccuracy,
+  type MemoryLiftResult,
 } from "@/lib/gauntlet.functions";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { AutonomyCard } from "@/components/today/AutonomyCard";
@@ -264,12 +267,121 @@ function OutcomeAccuracyCard({
   );
 }
 
+/** MOAT-METRIC — the memory-depth split (the lift half of the moat proof). An
+ *  honest, observational cut: of your reviewed bets, did the half decided LATER in
+ *  the store's growth (more precedent accumulated) validate more often than the
+ *  half decided earlier. Correlational, never causal — the colour stays neutral
+ *  for either sign and the confound is named inline and in the footnote. Below the
+ *  size / depth-contrast / noise gates it reads "not enough data yet" with a
+ *  reason, never an invented number. Pairs with Outcome accuracy and Memory
+ *  compounds as the three honest faces of the moat. */
+function MemoryDepthSplitCard({
+  data,
+  loading,
+}: {
+  data: MemoryLiftResult | undefined;
+  loading: boolean;
+}) {
+  const ready = data?.tableReady ?? false;
+  const bounded = data?.memoryBounded ?? true;
+  const lift = data?.liftPoints ?? null;
+  const hasNumber = !!data && ready && bounded && lift != null;
+
+  // Not-computable copy — keyed on the reason so the user learns what would unlock it.
+  let notMsg = "Not enough data yet.";
+  if (data && ready && !bounded) {
+    // The store grew past what we score in one pass — an honest refusal to
+    // under-report depth, NOT a sparse-data state. Say so rather than imply "empty".
+    notMsg = "Your memory store is larger than we can score in one pass right now.";
+  } else if (data && ready && bounded && lift == null) {
+    if (data.reason === "not-enough-outcomes") {
+      notMsg =
+        "Not enough reviewed bets yet. Two halves of 8 or more reviewed outcomes unlock this.";
+    } else if (data.reason === "depth-contrast-too-small") {
+      notMsg = "Not enough variation in precedent across your reviewed bets to compare them yet.";
+    } else if (data.reason === "lift-within-noise") {
+      notMsg = `Measured, but within the margin of error at this sample. Earlier half ${pct(
+        data.sparseRate,
+      )} (n=${data.sparseN}), later half ${pct(data.richRate)} (n=${data.richN}). Too close to call.`;
+    } else if (data.reason === "data-quality") {
+      notMsg = "Not enough clean data yet.";
+    }
+  }
+
+  const absLift = lift == null ? 0 : Math.abs(lift);
+  const headline = lift == null ? "-" : `${lift > 0 ? "+" : ""}${lift} pts`;
+  const meaning =
+    lift == null
+      ? ""
+      : lift === 0
+        ? "The two halves of your reviewed bets validated about equally, whether decided with little or lots of memory accumulated. Read this as association, not a memory on/off test."
+        : `The half of your reviewed bets made later in your memory's growth validated ${absLift} pts ${
+            lift > 0 ? "more" : "less"
+          } often than the earlier half. Later also means more practice, so read this as association, not a memory on/off test.`;
+
+  return (
+    <div className="bento" style={{ padding: "var(--card-pad)", marginTop: 12 }}>
+      <MonoLabel icon={Layers} style={{ marginBottom: 8 }}>
+        Memory-depth split · the moat
+      </MonoLabel>
+      {loading ? (
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint)" }}>
+          loading…
+        </div>
+      ) : hasNumber ? (
+        <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ minWidth: 110 }}>
+            {/* Neutral ink for either sign — this is an association, not a win. */}
+            <div
+              className="font-display tabular-nums"
+              style={{ fontSize: 30, color: "var(--ink)" }}
+            >
+              {headline}
+            </div>
+            <div
+              className="mono-label"
+              style={{ fontSize: 8.5, color: "var(--ink-faint)", marginTop: 2 }}
+            >
+              later half vs earlier half
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", lineHeight: 1.45 }}>
+              {meaning}
+            </p>
+            <div
+              className="mono-label"
+              style={{ fontSize: 9, marginTop: 10, color: "var(--ink-subtle)" }}
+            >
+              Earlier half: {pct(data!.sparseRate)} validated (n={data!.sparseN}) / Later half:{" "}
+              {pct(data!.richRate)} validated (n={data!.richN}). One outcome moves this about{" "}
+              {data!.swingPoints} pts.
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", lineHeight: 1.45 }}>{notMsg}</p>
+      )}
+      <div
+        className="mono-label"
+        style={{ fontSize: 8, color: "var(--ink-faint)", marginTop: 10, lineHeight: 1.5 }}
+      >
+        Correlational, within your account. We compare bets by how much memory had accumulated when
+        each was decided, not a memory on/off test. Bets with deeper memory are usually also later
+        bets, so getting better over time, easier later bets, or survivorship could explain this
+        rather than memory itself.
+      </div>
+    </div>
+  );
+}
+
 export function GauntletMetricsPanel() {
   const fAccept = useServerFn(getAcceptanceRate);
   const fAutonomy = useServerFn(getAutonomyRatio);
   const fRitual = useServerFn(getRitualRetention);
   const fMem = useServerFn(getMemoryCompounding);
   const fAccuracy = useServerFn(getOutcomeAccuracy);
+  const fLift = useServerFn(getMemoryLift);
 
   const acceptQ = useQuery({
     queryKey: ["gauntlet-acceptance"],
@@ -290,6 +402,10 @@ export function GauntletMetricsPanel() {
   const accuracyQ = useQuery({
     queryKey: ["gauntlet-accuracy"],
     queryFn: () => fAccuracy({ data: { days: 90 } }),
+  });
+  const liftQ = useQuery({
+    queryKey: ["gauntlet-memory-lift"],
+    queryFn: () => fLift({ data: { days: 90 } }),
   });
 
   const a = acceptQ.data;
@@ -377,13 +493,21 @@ export function GauntletMetricsPanel() {
         <AutonomyCard />
       </div>
 
-      {/* MOAT-METRIC — outcome accuracy, paired with Memory compounds as the
-          two halves of the moat proof (judgment validating + memory reused). */}
+      {/* MOAT-METRIC — outcome accuracy, the memory-depth split, and memory
+          compounds as the three honest faces of the moat proof (judgment
+          validating + accuracy-by-memory-depth + memory reused). */}
       <OutcomeAccuracyCard data={accuracyQ.data} loading={accuracyQ.isLoading} />
+
+      <MemoryDepthSplitCard data={liftQ.data} loading={liftQ.isLoading} />
 
       <MemoryCompoundsCard data={memQ.data} loading={memQ.isLoading} />
 
-      {(acceptQ.error || autonomyQ.error || ritualQ.error || memQ.error || accuracyQ.error) && (
+      {(acceptQ.error ||
+        autonomyQ.error ||
+        ritualQ.error ||
+        memQ.error ||
+        accuracyQ.error ||
+        liftQ.error) && (
         <div className="bento" style={{ padding: 16, marginTop: 12 }}>
           <div className="mono-label" style={{ color: "var(--rose)" }}>
             Couldn't load some metrics
@@ -395,7 +519,8 @@ export function GauntletMetricsPanel() {
                   autonomyQ.error ||
                   ritualQ.error ||
                   memQ.error ||
-                  accuracyQ.error) as Error
+                  accuracyQ.error ||
+                  liftQ.error) as Error
               ).message
             }
           </p>
