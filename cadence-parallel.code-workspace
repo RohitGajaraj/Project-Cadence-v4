@@ -3,7 +3,7 @@
   "folders": [
     { "name": "main (Project-Cadence-v4)", "path": "." },
     { "name": "Lane 1 (cadence-cockpit)", "path": "../cadence-lane-1" },
-    { "name": "Lane 2 (cadence-knowledge)", "path": "../cadence-knowledge" },
+    { "name": "Lane 2 (cadence-knowledge)", "path": "../cadence-lane-2" },
     { "name": "Lane 3 (cadence-lane-3)", "path": "../cadence-lane-3" },
     { "name": "Lane 4 (cadence-lane-4)", "path": "../cadence-lane-4" },
     { "name": "Lane 0 - WM / overnight (overnight-build)", "path": "../overnight-build" }
