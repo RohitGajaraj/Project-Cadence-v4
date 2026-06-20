@@ -45,6 +45,7 @@ import {
   getMySubscription,
   cancelMySubscription,
   resumeMySubscription,
+  getMyCreditsView,
 } from "@/lib/payments.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
@@ -64,6 +65,7 @@ type SectionId =
   | "staff"
   | "workspace"
   | "billing"
+  | "credits"
   | "interop"
   | "profile"
   | "data";
@@ -83,6 +85,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "staff", label: "Staff" },
   { id: "workspace", label: "Workspace" },
   { id: "billing", label: "Plan" },
+  { id: "credits", label: "Credits" },
   { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
   { id: "data", label: "Data" },
@@ -178,6 +181,7 @@ function SettingsPage() {
         {active === "staff" && <StaffTab />}
         {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
         {active === "billing" && <BillingTab checkout={checkout} />}
+        {active === "credits" && <CreditsTab />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
         {active === "data" && (
