@@ -122,11 +122,10 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 
 | Lane | Rank | ID | Activity | Claimed | Status | Files |
 | --- | --- | --- | --- | --- | --- | --- |
-| lane 1 | #4 | MOAT-METRIC | Lift vs a generic-model baseline as one account's memory gro | 2026-06-21 03:59 (32m ago) | 🔨 In Dev | gauntlet.functions.ts, gauntlet-metrics.ts +7 |
-| lane 2 | #1 | DBR-1.5 | On recordOutcome, infer + write typed supersedes/contradicts | 2026-06-21 04:21 (11m ago) | 🔨 In Dev | supersession.ts, supersession.test.ts +4 |
+| lane 1 | #4 | MOAT-METRIC | Lift vs a generic-model baseline as one account's memory gro | 2026-06-21 03:59 (48m ago) | 🔨 In Dev | gauntlet.functions.ts, gauntlet-metrics.ts +7 |
 
 > **Standing reservation (safety, not a lane task):** `CHOKEPOINT` pinned to lane `core` - AI chokepoint/agent core - no lane touches this.
-> _Regenerated from the live ledger (claims) by `scripts/sync-active-claims.py` at 2026-06-21 04:32; run on every claim and every ship._
+> _Regenerated from the live ledger (claims) by `scripts/sync-active-claims.py` at 2026-06-21 04:47; run on every claim and every ship._
 
 ---
 
