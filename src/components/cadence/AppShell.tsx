@@ -43,6 +43,7 @@ import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject, moveProduct } from "@/lib/projects.functions";
+import { amIAdmin } from "@/lib/pricing.functions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
