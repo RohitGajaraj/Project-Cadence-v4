@@ -11,50 +11,8 @@
  */
 import { callModel } from "@/lib/ai/runtime.server";
 import { formatDecisionPrecedent, type DecisionPrecedentRow } from "@/lib/ai/outcome-memory";
+import { loadDecisionPrecedent } from "@/lib/ai/decision-precedent.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-/**
- * DBR-0 (the Decision Brain's first step). Load this workspace's recent shipped
- * outcomes so the Critic can cite decision precedent ("we shipped a similar bet
- * and it MISSED") instead of red-teaming the row in a vacuum. Best-effort by
- * design: any failure (missing table pre-sync, no FK, no rows) returns [] so the
- * Critic behaves exactly as before. The `learnings` table is not in the
- * generated DB types yet, so the result is cast (the outcome.functions.ts
- * precedent). A later Decision Brain step (DBR-1/DBR-2) upgrades this from
- * recency to true semantic / multi-hop / contradiction precedent over the graph.
- */
-type PrecedentQueryRow = {
-  verdict: DecisionPrecedentRow["verdict"];
-  summary: string | null;
-  prior_ice: number | null;
-  new_ice: number | null;
-  opportunities: { title: string | null } | null;
-};
-
-async function loadDecisionPrecedent(
-  supabase: SupabaseClient,
-  workspaceId: string | null,
-): Promise<DecisionPrecedentRow[]> {
-  if (!workspaceId) return [];
-  try {
-    const { data } = await supabase
-      .from("learnings")
-      .select("verdict,summary,prior_ice,new_ice,opportunities(title)")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: false })
-      .limit(12);
-    const rows = (data ?? []) as unknown as PrecedentQueryRow[];
-    return rows.map((r) => ({
-      title: r.opportunities?.title ?? null,
-      verdict: r.verdict,
-      summary: r.summary ?? "",
-      priorIce: r.prior_ice,
-      newIce: r.new_ice,
-    }));
-  } catch {
-    return [];
-  }
-}
 
 export type CriticReview = {
   verdict: "ship" | "revise" | "kill";
@@ -118,12 +76,14 @@ Return STRICT JSON only:
 {"verdict":"ship|revise|kill","summary":"max 240 chars","risks":["..."],"kill_criteria":["..."],"missing_evidence":["..."],"confidence":0.0-1.0}
 Be specific. No filler. Use "ship" only when risks are bounded and evidence is strong; "kill" when the bet is unsalvageable; "revise" otherwise.`;
 
-  // DBR-0: give the Critic decision precedent so its verdict cites the
-  // workspace's own history. Best-effort — an empty block leaves the prompt
-  // exactly as it was before this step.
-  const precedent = formatDecisionPrecedent(
-    await loadDecisionPrecedent(supabase, (row.workspace_id as string | null) ?? null),
-  );
+  // DBR / Ambient Precedent: semantic precedent over the workspace's past outcomes.
+  const precedentRows = await loadDecisionPrecedent(supabase, {
+    userId,
+    workspaceId: (row.workspace_id as string | null) ?? null,
+    text: subject,
+    excludeId: undefined,
+  });
+  const precedent = formatDecisionPrecedent(precedentRows as DecisionPrecedentRow[]);
   const userContent = precedent ? `${subject}\n\n${precedent}` : subject;
   const systemContent = precedent
     ? `${system}\nIf a "Decision precedent" block is present, weigh it: cite a relevant past outcome (especially a MISSED one) in risks or missing_evidence when it bears on this judgment.`
