@@ -8,7 +8,18 @@
  * which logs to tool_calls and feeds the result into the next callModel().
  * Pre-guardrails on that next call treat the markdown as untrusted input
  * (prompt-injection / PII / secret keyword) — do not bypass them.
+ *
+ * FIRECRAWL-FLOOR (autonomy floor): webSearch is provider-agnostic. When no paid
+ * FIRECRAWL_API_KEY is set it falls back to a self-host SearXNG instance
+ * (SEARXNG_URL), the zero-external-paid-dependency native default, so the agent's
+ * web search holds without a paid key. The key-present path is byte-identical to
+ * before. SearXNG only searches, so webFetch/webMap/webCrawl stay Firecrawl-only.
  */
+import { selectWebBackend, type WebSearchHit } from "@/lib/ai/tools/web-search-fallback";
+import { searxngSearch } from "@/lib/ai/tools/searxng.server";
+
+export type { WebSearchHit };
+
 const BASE = "https://api.firecrawl.dev/v2";
 
 function key(): string {
@@ -47,12 +58,7 @@ function clip(s: string | undefined | null, n: number): string {
 }
 
 // ── search ──────────────────────────────────────────────────────────────
-export type WebSearchHit = {
-  url: string;
-  title: string;
-  description: string;
-  markdown?: string;
-};
+// WebSearchHit is defined in ./web-search-fallback and re-exported above.
 
 export async function webSearch(opts: {
   query: string;
@@ -60,6 +66,25 @@ export async function webSearch(opts: {
   scrape?: boolean;
   recency?: "day" | "week" | "month" | "year";
 }): Promise<{ query: string; results: WebSearchHit[] }> {
+  // FIRECRAWL-FLOOR: resolve the backend before doing any I/O. Firecrawl wins
+  // when its key is set (the path below is unchanged); else the self-host SearXNG
+  // floor; else a clear error naming BOTH options instead of a Firecrawl-only one.
+  const backend = selectWebBackend({
+    FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
+    SEARXNG_URL: process.env.SEARXNG_URL,
+  });
+  if (backend === "searxng") {
+    // SearXNG returns snippets, not scraped markdown, so opts.scrape is a no-op
+    // here - the agent gets honest search results without a paid scraper.
+    return searxngSearch({ query: opts.query, limit: opts.limit, recency: opts.recency });
+  }
+  if (backend === "none") {
+    throw new Error(
+      "web search is not configured: set FIRECRAWL_API_KEY, or self-host SearXNG and set " +
+        "SEARXNG_URL (the zero-paid-dependency native default). Platform infrastructure, not a user connector.",
+    );
+  }
+  // backend === "firecrawl": the existing path, unchanged.
   const body: Record<string, unknown> = {
     query: opts.query.slice(0, 300),
     limit: Math.min(10, Math.max(1, opts.limit ?? 5)),
