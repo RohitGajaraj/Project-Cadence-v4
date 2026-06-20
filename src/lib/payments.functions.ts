@@ -1,6 +1,6 @@
-import { createServerFn } from '@tanstack/react-start';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { type StripeEnv, createStripeClient, getStripeErrorMessage } from '@/lib/stripe.server';
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 type CheckoutResult = { clientSecret: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
@@ -19,7 +19,7 @@ async function resolveOrCreateCustomer(
   options: { email?: string; userId?: string },
 ): Promise<string> {
   if (options.userId && !/^[a-zA-Z0-9_-]+$/.test(options.userId)) {
-    throw new Error('Invalid userId');
+    throw new Error("Invalid userId");
   }
   if (options.userId) {
     const found = await stripe.customers.search({
@@ -47,12 +47,14 @@ async function resolveOrCreateCustomer(
   return created.id;
 }
 
-export const createCheckoutSession = createServerFn({ method: 'POST' })
+export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { priceId: string; returnUrl: string; environment: StripeEnv; quantity?: number }) => {
-    if (!/^[a-zA-Z0-9_-]+$/.test(data.priceId)) throw new Error('Invalid priceId');
-    return data;
-  })
+  .inputValidator(
+    (data: { priceId: string; returnUrl: string; environment: StripeEnv; quantity?: number }) => {
+      if (!/^[a-zA-Z0-9_-]+$/.test(data.priceId)) throw new Error("Invalid priceId");
+      return data;
+    },
+  )
   .handler(async ({ data, context }): Promise<CheckoutResult> => {
     try {
       const { userId, claims } = context;
@@ -62,54 +64,53 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
       if (!prices.data.length) throw new Error(`Price not found: ${data.priceId}`);
       const stripePrice = prices.data[0];
-      const isRecurring = stripePrice.type === 'recurring';
-      const isTopup = data.priceId.startsWith('topup_');
+      const isRecurring = stripePrice.type === "recurring";
+      const isTopup = data.priceId.startsWith("topup_");
 
       const customerId = await resolveOrCreateCustomer(stripe, { email, userId });
 
       let productDescription: string | undefined;
       if (!isRecurring) {
-        const productId = typeof stripePrice.product === 'string'
-          ? stripePrice.product
-          : stripePrice.product.id;
+        const productId =
+          typeof stripePrice.product === "string" ? stripePrice.product : stripePrice.product.id;
         const product = await stripe.products.retrieve(productId);
         productDescription = product.name;
       }
 
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: stripePrice.id, quantity: data.quantity || 1 }],
-        mode: isRecurring ? 'subscription' : 'payment',
-        ui_mode: 'embedded_page',
+        mode: isRecurring ? "subscription" : "payment",
+        ui_mode: "embedded_page",
         return_url: data.returnUrl,
         customer: customerId,
         ...(!isRecurring && { payment_intent_data: { description: productDescription } }),
-        metadata: { userId, kind: isTopup ? 'topup' : (isRecurring ? 'subscription' : 'one_time') },
+        metadata: { userId, kind: isTopup ? "topup" : isRecurring ? "subscription" : "one_time" },
         ...(isRecurring && {
           subscription_data: { metadata: { userId, price_lookup_key: data.priceId } },
         }),
       } as Parameters<typeof stripe.checkout.sessions.create>[0]);
 
-      return { clientSecret: session.client_secret ?? '' };
+      return { clientSecret: session.client_secret ?? "" };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
     }
   });
 
-export const createPortalSession = createServerFn({ method: 'POST' })
+export const createPortalSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { returnUrl?: string; environment: StripeEnv }) => data)
   .handler(async ({ data, context }): Promise<PortalResult> => {
     const { supabase, userId } = context;
     const { data: sub } = await supabase
-      .from('subscriptions')
-      .select('stripe_customer_id')
-      .eq('user_id', userId)
-      .eq('environment', data.environment)
-      .order('created_at', { ascending: false })
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .eq("environment", data.environment)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!sub?.stripe_customer_id) return { error: 'No subscription found' };
+    if (!sub?.stripe_customer_id) return { error: "No subscription found" };
 
     try {
       const stripe = createStripeClient(data.environment);
@@ -127,17 +128,17 @@ export const createPortalSession = createServerFn({ method: 'POST' })
  * In-app subscription read for the Plan page. Returns the latest row from
  * the subscriptions table for the calling user in the current environment.
  */
-export const getMySubscription = createServerFn({ method: 'GET' })
+export const getMySubscription = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
   .handler(async ({ data, context }): Promise<MySubscription> => {
     const { supabase, userId } = context;
     const { data: sub } = await supabase
-      .from('subscriptions')
-      .select('stripe_subscription_id, status, price_id, current_period_end, cancel_at_period_end')
-      .eq('user_id', userId)
-      .eq('environment', data.environment)
-      .order('created_at', { ascending: false })
+      .from("subscriptions")
+      .select("stripe_subscription_id, status, price_id, current_period_end, cancel_at_period_end")
+      .eq("user_id", userId)
+      .eq("environment", data.environment)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!sub) return { hasSubscription: false };
@@ -159,21 +160,21 @@ export const getMySubscription = createServerFn({ method: 'GET' })
   });
 
 async function mutateCancelFlag(
-  context: { supabase: import('@supabase/supabase-js').SupabaseClient; userId: string },
+  context: { supabase: import("@supabase/supabase-js").SupabaseClient; userId: string },
   environment: StripeEnv,
   cancelAtPeriodEnd: boolean,
 ): Promise<MutateResult> {
   const { supabase, userId } = context;
   const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('stripe_subscription_id, status')
-    .eq('user_id', userId)
-    .eq('environment', environment)
-    .order('created_at', { ascending: false })
+    .from("subscriptions")
+    .select("stripe_subscription_id, status")
+    .eq("user_id", userId)
+    .eq("environment", environment)
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   const s = sub as { stripe_subscription_id?: string; status?: string } | null;
-  if (!s?.stripe_subscription_id) return { error: 'No active subscription found.' };
+  if (!s?.stripe_subscription_id) return { error: "No active subscription found." };
   try {
     const stripe = createStripeClient(environment);
     const updated = await stripe.subscriptions.update(s.stripe_subscription_id, {
@@ -183,29 +184,31 @@ async function mutateCancelFlag(
     // RLS on `subscriptions` only allows service_role writes, so use the
     // admin client here. We've already verified the caller owns this row
     // via the RLS-scoped SELECT above.
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
-      .from('subscriptions')
+      .from("subscriptions")
       .update({ cancel_at_period_end: cancelAtPeriodEnd, updated_at: new Date().toISOString() })
-      .eq('stripe_subscription_id', s.stripe_subscription_id);
+      .eq("stripe_subscription_id", s.stripe_subscription_id);
     return { ok: true, cancelAtPeriodEnd: !!updated.cancel_at_period_end };
   } catch (error) {
     return { error: getStripeErrorMessage(error) };
   }
 }
 
-export const cancelMySubscription = createServerFn({ method: 'POST' })
+export const cancelMySubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
-  .handler(({ data, context }): Promise<MutateResult> =>
-    mutateCancelFlag(context as never, data.environment, true),
+  .handler(
+    ({ data, context }): Promise<MutateResult> =>
+      mutateCancelFlag(context as never, data.environment, true),
   );
 
-export const resumeMySubscription = createServerFn({ method: 'POST' })
+export const resumeMySubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
-  .handler(({ data, context }): Promise<MutateResult> =>
-    mutateCancelFlag(context as never, data.environment, false),
+  .handler(
+    ({ data, context }): Promise<MutateResult> =>
+      mutateCancelFlag(context as never, data.environment, false),
   );
 
 // ---------------------------------------------------------------------------
@@ -250,7 +253,7 @@ export type CreditsView = {
 
 const FALLBACK_TOPUP_CAP = 5000; // when monthly grant is 0 (engine still dormant)
 
-export const getMyCreditsView = createServerFn({ method: 'GET' })
+export const getMyCreditsView = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
   .handler(async ({ data, context }): Promise<CreditsView> => {
@@ -272,11 +275,13 @@ export const getMyCreditsView = createServerFn({ method: 'GET' })
     let accountId: string | null = null;
     try {
       const { data: acc } = await supabase.rpc(
-        'ensure_user_default_account' as never,
+        "ensure_user_default_account" as never,
         { _user_id: userId } as never,
       );
       accountId = (acc as string | null) ?? null;
-    } catch { /* RPC missing pre-publish; degrade gracefully */ }
+    } catch {
+      /* RPC missing pre-publish; degrade gracefully */
+    }
     if (!accountId) return empty;
 
     // Is the credits engine flipped on? Reads a public SQL fn that returns
@@ -284,28 +289,32 @@ export const getMyCreditsView = createServerFn({ method: 'GET' })
     // as "metering on" vs "metering off" without lying about a 0 balance.
     let enabled = false;
     try {
-      const { data: en } = await supabase.rpc('credits_enabled' as never);
+      const { data: en } = await supabase.rpc("credits_enabled" as never);
       enabled = en === true;
-    } catch { /* fn missing — treat as off */ }
+    } catch {
+      /* fn missing — treat as off */
+    }
 
     const [credRes, ledRes, topRes] = await Promise.all([
       supabase
-        .from('account_credits')
-        .select('balance_credits, monthly_grant_credits, topup_credits, cycle_anchor')
-        .eq('account_id', accountId)
+        .from("account_credits")
+        .select("balance_credits, monthly_grant_credits, topup_credits, cycle_anchor")
+        .eq("account_id", accountId)
         .maybeSingle(),
       supabase
-        .from('credit_ledger')
-        .select('id, delta_credits, reason, surface, product_id, created_at')
-        .eq('account_id', accountId)
-        .order('created_at', { ascending: false })
+        .from("credit_ledger")
+        .select("id, delta_credits, reason, surface, product_id, created_at")
+        .eq("account_id", accountId)
+        .order("created_at", { ascending: false })
         .limit(20),
       supabase
-        .from('credit_topups')
-        .select('id, price_lookup_key, credits_added, amount_cents, currency, status, created_at, environment')
-        .eq('user_id', userId)
-        .eq('environment', data.environment)
-        .order('created_at', { ascending: false })
+        .from("credit_topups")
+        .select(
+          "id, price_lookup_key, credits_added, amount_cents, currency, status, created_at, environment",
+        )
+        .eq("user_id", userId)
+        .eq("environment", data.environment)
+        .order("created_at", { ascending: false })
         .limit(10),
     ]);
 
@@ -321,7 +330,7 @@ export const getMyCreditsView = createServerFn({ method: 'GET' })
 
     const sinceMs = cycleAnchor ? new Date(cycleAnchor).getTime() : Date.now() - 30 * 86_400_000;
     const cycleTopups = topups
-      .filter((t) => t.status === 'completed' && new Date(t.created_at).getTime() >= sinceMs)
+      .filter((t) => t.status === "completed" && new Date(t.created_at).getTime() >= sinceMs)
       .reduce((s, t) => s + Number(t.credits_added || 0), 0);
     const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
 
@@ -334,15 +343,15 @@ export const getMyCreditsView = createServerFn({ method: 'GET' })
       cycleAnchor,
       cycleTopupCredits: cycleTopups,
       cycleTopupCapCredits: cap,
-      ledger: ((ledRes.data ?? []) as CreditsLedgerRow[]),
+      ledger: (ledRes.data ?? []) as CreditsLedgerRow[],
       topups,
     };
   });
 
 const TOPUP_BUNDLES: Record<string, { credits: number; label: string }> = {
-  topup_250: { credits: 250, label: '250 credits' },
-  topup_1k: { credits: 1000, label: '1,000 credits' },
-  topup_2_5k: { credits: 2500, label: '2,500 credits' },
+  topup_250: { credits: 250, label: "250 credits" },
+  topup_1k: { credits: 1000, label: "1,000 credits" },
+  topup_2_5k: { credits: 2500, label: "2,500 credits" },
 };
 
 /**
@@ -350,40 +359,46 @@ const TOPUP_BUNDLES: Record<string, { credits: number; label: string }> = {
  * top-up credits past the per-cycle cap, otherwise delegates to the standard
  * embedded-checkout session. Same return shape as createCheckoutSession.
  */
-export const createTopUpCheckout = createServerFn({ method: 'POST' })
+export const createTopUpCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { priceId: string; returnUrl: string; environment: StripeEnv }) => {
-    if (!/^topup_[a-zA-Z0-9_]+$/.test(data.priceId)) throw new Error('Invalid top-up priceId');
+    if (!/^topup_[a-zA-Z0-9_]+$/.test(data.priceId)) throw new Error("Invalid top-up priceId");
     return data;
   })
   .handler(async ({ data, context }): Promise<CheckoutResult> => {
     const bundle = TOPUP_BUNDLES[data.priceId];
-    if (!bundle) return { error: 'Unknown top-up bundle.' };
+    if (!bundle) return { error: "Unknown top-up bundle." };
 
     // Inline a tiny version of getMyCreditsView's cap math so we don't have
     // to expose the function-as-RPC machinery internally.
     const { supabase, userId, claims } = context;
     try {
       const { data: accId } = await supabase.rpc(
-        'ensure_user_default_account' as never,
+        "ensure_user_default_account" as never,
         { _user_id: userId } as never,
       );
       if (accId) {
         const { data: cred } = await supabase
-          .from('account_credits')
-          .select('monthly_grant_credits, cycle_anchor')
-          .eq('account_id', accId as string)
+          .from("account_credits")
+          .select("monthly_grant_credits, cycle_anchor")
+          .eq("account_id", accId as string)
           .maybeSingle();
-        const monthlyGrant = Number((cred as { monthly_grant_credits?: number } | null)?.monthly_grant_credits ?? 0);
+        const monthlyGrant = Number(
+          (cred as { monthly_grant_credits?: number } | null)?.monthly_grant_credits ?? 0,
+        );
         const cycleAnchor = (cred as { cycle_anchor?: string | null } | null)?.cycle_anchor ?? null;
-        const sinceMs = cycleAnchor ? new Date(cycleAnchor).getTime() : Date.now() - 30 * 86_400_000;
+        const sinceMs = cycleAnchor
+          ? new Date(cycleAnchor).getTime()
+          : Date.now() - 30 * 86_400_000;
         const { data: tops } = await supabase
-          .from('credit_topups')
-          .select('credits_added, status, created_at')
-          .eq('user_id', userId)
-          .eq('environment', data.environment);
-        const cycleSpend = ((tops ?? []) as Array<{ credits_added: number; status: string; created_at: string }>)
-          .filter((t) => t.status === 'completed' && new Date(t.created_at).getTime() >= sinceMs)
+          .from("credit_topups")
+          .select("credits_added, status, created_at")
+          .eq("user_id", userId)
+          .eq("environment", data.environment);
+        const cycleSpend = (
+          (tops ?? []) as Array<{ credits_added: number; status: string; created_at: string }>
+        )
+          .filter((t) => t.status === "completed" && new Date(t.created_at).getTime() >= sinceMs)
           .reduce((s, t) => s + Number(t.credits_added || 0), 0);
         const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
         if (cycleSpend + bundle.credits > cap) {
@@ -392,7 +407,9 @@ export const createTopUpCheckout = createServerFn({ method: 'POST' })
           };
         }
       }
-    } catch { /* if the cap check itself errors, fall through to checkout */ }
+    } catch {
+      /* if the cap check itself errors, fall through to checkout */
+    }
 
     // Delegate to the canonical session creator (resolves customer, sets
     // metadata.kind='topup', etc.). Re-implementing here would drift.
@@ -403,20 +420,19 @@ export const createTopUpCheckout = createServerFn({ method: 'POST' })
       const stripePrice = prices.data[0];
       const email = (claims as { email?: string })?.email;
       const customerId = await resolveOrCreateCustomer(stripe, { email, userId });
-      const productId = typeof stripePrice.product === 'string'
-        ? stripePrice.product
-        : stripePrice.product.id;
+      const productId =
+        typeof stripePrice.product === "string" ? stripePrice.product : stripePrice.product.id;
       const product = await stripe.products.retrieve(productId);
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: stripePrice.id, quantity: 1 }],
-        mode: 'payment',
-        ui_mode: 'embedded_page',
+        mode: "payment",
+        ui_mode: "embedded_page",
         return_url: data.returnUrl,
         customer: customerId,
         payment_intent_data: { description: product.name },
-        metadata: { userId, kind: 'topup' },
+        metadata: { userId, kind: "topup" },
       } as Parameters<typeof stripe.checkout.sessions.create>[0]);
-      return { clientSecret: session.client_secret ?? '' };
+      return { clientSecret: session.client_secret ?? "" };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
     }

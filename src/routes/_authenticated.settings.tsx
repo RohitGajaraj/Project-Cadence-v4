@@ -221,7 +221,11 @@ function BillingTab({ checkout }: { checkout?: string }) {
 
   // Resolve env lazily so a missing payments token doesn't crash render.
   let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
-  try { envSafe = getStripeEnvironment(); } catch { envSafe = null; }
+  try {
+    envSafe = getStripeEnvironment();
+  } catch {
+    envSafe = null;
+  }
 
   const mySub = useQuery({
     queryKey: ["my-subscription", envSafe],
@@ -256,7 +260,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const cancelSub = useMutation({
     mutationFn: () => fCancelSub({ data: { environment: envSafe! } }),
     onSuccess: (res) => {
-      if ("error" in res) { toast.error(res.error); return; }
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Subscription set to cancel at the end of the current period.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       qc.invalidateQueries({ queryKey: ["billing"] });
@@ -267,7 +274,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const resumeSub = useMutation({
     mutationFn: () => fResumeSub({ data: { environment: envSafe! } }),
     onSuccess: (res) => {
-      if ("error" in res) { toast.error(res.error); return; }
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Subscription resumed. Renews on the next billing date.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       qc.invalidateQueries({ queryKey: ["billing"] });
@@ -295,7 +305,9 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const sub = mySub.data;
   const hasSub = !!sub?.hasSubscription;
   const renews = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
-  const renewsLabel = renews ? renews.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
+  const renewsLabel = renews
+    ? renews.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -332,7 +344,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
           >
             <div style={{ display: "flex", flexWrap: "wrap", gap: 18, fontSize: 12 }}>
               <div>
-                <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                <div
+                  className="mono-label"
+                  style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                >
                   Status
                 </div>
                 <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>
@@ -345,7 +360,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
               </div>
               {renewsLabel && (
                 <div>
-                  <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                  <div
+                    className="mono-label"
+                    style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                  >
                     {sub?.cancelAtPeriodEnd ? "Access until" : "Renews on"}
                   </div>
                   <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>{renewsLabel}</div>
@@ -372,7 +390,8 @@ function BillingTab({ checkout }: { checkout?: string }) {
               )}
             </div>
             <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-              To switch tiers, pick a different plan below. Changes take effect at the start of your next billing period.
+              To switch tiers, pick a different plan below. Changes take effect at the start of your
+              next billing period.
             </p>
           </div>
         )}
@@ -507,7 +526,11 @@ function CreditsTab() {
   const fGetCredits = useServerFn(getMyCreditsView);
 
   let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
-  try { envSafe = getStripeEnvironment(); } catch { envSafe = null; }
+  try {
+    envSafe = getStripeEnvironment();
+  } catch {
+    envSafe = null;
+  }
 
   const credits = useQuery({
     queryKey: ["my-credits", envSafe],
@@ -520,7 +543,9 @@ function CreditsTab() {
   const [checkoutTitle, setCheckoutTitle] = useState("Buy credits");
 
   function openTopUp(key: string, label: string) {
-    try { getStripeEnvironment(); } catch (e) {
+    try {
+      getStripeEnvironment();
+    } catch (e) {
       toast.error(e instanceof Error ? e.message : "Payments are not configured.");
       return;
     }
@@ -531,7 +556,11 @@ function CreditsTab() {
 
   const data = credits.data;
   const cycleLabel = data?.cycleAnchor
-    ? new Date(data.cycleAnchor).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    ? new Date(data.cycleAnchor).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : null;
   const remainingTopupRoom = data
     ? Math.max(0, data.cycleTopupCapCredits - data.cycleTopupCredits)
@@ -553,25 +582,36 @@ function CreditsTab() {
         </div>
         <div className="font-display" style={{ fontSize: 28, marginTop: 4 }}>
           {data ? (data.balanceCredits + data.topupCredits).toLocaleString() : "—"}
-          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", marginLeft: 8 }}>credits</span>
+          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", marginLeft: 8 }}>
+            credits
+          </span>
         </div>
         {data && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 12, fontSize: 12 }}>
             <div>
-              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+              >
                 Monthly grant
               </div>
               <div style={{ marginTop: 2 }}>{data.monthlyGrantCredits.toLocaleString()}</div>
             </div>
             <div>
-              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+              >
                 Purchased top-ups
               </div>
               <div style={{ marginTop: 2 }}>{data.topupCredits.toLocaleString()}</div>
             </div>
             {cycleLabel && (
               <div>
-                <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                <div
+                  className="mono-label"
+                  style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                >
                   Cycle started
                 </div>
                 <div style={{ marginTop: 2 }}>{cycleLabel}</div>
@@ -581,7 +621,8 @@ function CreditsTab() {
         )}
         {data && !data.enabled && (
           <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
-            Metering is off while we finish the credits rollout. Top-ups are recorded and will count once metering turns on.
+            Metering is off while we finish the credits rollout. Top-ups are recorded and will count
+            once metering turns on.
           </p>
         )}
       </div>
@@ -609,7 +650,9 @@ function CreditsTab() {
                 className="btn btn-ghost btn-sm"
                 disabled={wouldExceed}
                 onClick={() => openTopUp(b.key, `Top-up: ${b.credits.toLocaleString()} credits`)}
-                title={wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined}
+                title={
+                  wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined
+                }
               >
                 {b.credits.toLocaleString()} credits &middot; {b.price}
               </button>
@@ -618,7 +661,8 @@ function CreditsTab() {
         </div>
         {data && (
           <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
-            This cycle: {data.cycleTopupCredits.toLocaleString()} of {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
+            This cycle: {data.cycleTopupCredits.toLocaleString()} of{" "}
+            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
           </p>
         )}
       </div>
@@ -636,7 +680,9 @@ function CreditsTab() {
             No activity yet. Your grants, debits, and top-ups will appear here.
           </p>
         ) : (
-          <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 6 }}>
+          <ul
+            style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 6 }}
+          >
             {data?.topups.map((t) => (
               <li
                 key={`top-${t.id}`}
@@ -650,12 +696,15 @@ function CreditsTab() {
                 }}
               >
                 <span>
-                  Top-up &middot; <span style={{ color: "var(--ink-subtle, #6b6457)" }}>{t.price_lookup_key}</span>
+                  Top-up &middot;{" "}
+                  <span style={{ color: "var(--ink-subtle, #6b6457)" }}>{t.price_lookup_key}</span>
                 </span>
                 <span style={{ color: "var(--emerald, #2f8f6b)" }}>
                   +{Number(t.credits_added).toLocaleString()} credits
                 </span>
-                <span style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}>
+                <span
+                  style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}
+                >
                   {new Date(t.created_at).toLocaleDateString()}
                 </span>
               </li>
@@ -673,12 +722,21 @@ function CreditsTab() {
                 }}
               >
                 <span>
-                  {row.reason}{row.surface ? ` · ${row.surface}` : ""}
+                  {row.reason}
+                  {row.surface ? ` · ${row.surface}` : ""}
                 </span>
-                <span style={{ color: row.delta_credits >= 0 ? "var(--emerald, #2f8f6b)" : "var(--ink, #1d1a14)" }}>
-                  {row.delta_credits >= 0 ? "+" : ""}{Number(row.delta_credits).toLocaleString()} credits
+                <span
+                  style={{
+                    color:
+                      row.delta_credits >= 0 ? "var(--emerald, #2f8f6b)" : "var(--ink, #1d1a14)",
+                  }}
+                >
+                  {row.delta_credits >= 0 ? "+" : ""}
+                  {Number(row.delta_credits).toLocaleString()} credits
                 </span>
-                <span style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}>
+                <span
+                  style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}
+                >
                   {new Date(row.created_at).toLocaleDateString()}
                 </span>
               </li>
