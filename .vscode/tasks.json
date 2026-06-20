@@ -8,7 +8,7 @@
       "type": "shell",
       "command": "claude",
       "args": ["You are scoped parallel build Lane 1 in this worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane's categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> 1 \"<globs>\" before writing any code (if it prints HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build. If the whole board is dry, write 'board dry - long-polling' to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files."],
-      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-cockpit" },
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-lane-1" },
       "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
       "problemMatcher": []
     },

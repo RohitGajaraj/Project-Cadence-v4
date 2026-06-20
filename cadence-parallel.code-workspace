@@ -2,7 +2,7 @@
   "//": "Open this file (File > Open Workspace from File) in VS Code or Antigravity to see ALL parallel build lanes in one window. The lane folders are siblings of this repo, so a plain 'Open Folder' on the repo hides them. To start a lane: right-click its folder -> 'Open in Integrated Terminal', then type /loop with the lane cycle prompt (or use the 'Lane N' VS Code task). The loop runs in the integrated terminal, never a separate macOS window. See PARALLEL-BUILD.md. Lanes 1-2 keep their cadence-cockpit / cadence-knowledge folders until those running worktrees are migrated to cadence-lane-1 / cadence-lane-2.",
   "folders": [
     { "name": "main (Project-Cadence-v4)", "path": "." },
-    { "name": "Lane 1 (cadence-cockpit)", "path": "../cadence-cockpit" },
+    { "name": "Lane 1 (cadence-cockpit)", "path": "../cadence-lane-1" },
     { "name": "Lane 2 (cadence-knowledge)", "path": "../cadence-knowledge" },
     { "name": "Lane 3 (cadence-lane-3)", "path": "../cadence-lane-3" },
     { "name": "Lane 4 (cadence-lane-4)", "path": "../cadence-lane-4" },
