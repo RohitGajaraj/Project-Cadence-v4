@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps docs/planning/active-claims.live.md real-time from the lane ledger + origin/main.
+  Install:
+    cp scripts/launchd/com.cadence.active-claims-sync.plist ~/Library/LaunchAgents/
+    launchctl unload ~/Library/LaunchAgents/com.cadence.active-claims-sync.plist 2>/dev/null
+    launchctl load   ~/Library/LaunchAgents/com.cadence.active-claims-sync.plist
+  It runs at login and is restarted if it dies (KeepAlive). Log: ~/.cadence-parallel/active-claims-watch.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cadence.active-claims-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/rohitgajaraj/Projects/My Projects/My Builds/Project-Cadence-v4/scripts/active-claims-watch.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>/Users/rohitgajaraj/.cadence-parallel/active-claims-watch.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/rohitgajaraj/.cadence-parallel/active-claims-watch.log</string>
+</dict>
+</plist>

@@ -106,7 +106,7 @@ bash scripts/lane.sh board   # per-lane summary: Lane 0..4 -> current item (or i
 bash scripts/lane.sh list    # every active claim with its file-globs and age
 ```
 
-Plus the durable, tool-visible mirror: `lane.sh` **auto-regenerates the "Active claims" table in `docs/planning/feature-dashboard.md` from the ledger on every claim, release, and reap** (via `scripts/sync-active-claims.py` - lane, activity, Rank, claimed date+time, status; never hand-edited), and each lane flips its register row to `🔨 In Dev (laneN, ...)` on claim and to `✅`/`◐` on ship - so a `git pull` + open the dashboard shows, in real time, who is on what, since when, and at what status. A stale row means a dead session: `bash scripts/lane.sh reap` clears claims > 6h and re-syncs.
+**Real-time status, two surfaces:** (1) the **live file** `docs/planning/active-claims.live.md` - who is on what + the top-of-rank status (✓ done / 🔒 building / 🟢 free), regenerated every ~8s by the `com.cadence.active-claims-sync` launchd watcher (`scripts/active-claims-watch.sh`) from the ledger + a read-only `git fetch` of origin/main; **git-ignored, never rots, no pull needed** - open it and your editor live-reloads it. (2) `bash scripts/lane.sh board` / `list` - instant CLI view of the ledger. The committed `feature-dashboard.md` register is the durable/editable record (each lane flips its row to `🔨`/`✅` on claim/ship and pushes); it is NOT the real-time surface - the live file is. **The watcher is permanent** (launchd `RunAtLoad` + `KeepAlive`, starts at login); a lane start can also run `bash scripts/ensure-watcher.sh` to bring it up idempotently. A dead-session claim clears with `bash scripts/lane.sh reap` (> 6h).
 
 ## Migrating the folder names (DONE 2026-06-21)
 
