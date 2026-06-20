@@ -2,13 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  assessMissions,
+  buildMissionStats,
+  type RawMissionRow,
+  type RawStepRow,
+  type RawRunRow,
+} from "@/lib/reliability/runaway";
 
 // P7 · Incidents, a read-only "what went wrong" record: failed tool executions,
 // errored auto-pipeline events, guardrail blocks, and cost cap incidents, newest
 // first, each linked to its trace where available.
 // Engine-Room: names the outcome ("what went wrong"), not the mechanism.
 
-export type IncidentKind = "execution" | "pipeline" | "guardrail" | "cost" | "manual";
+export type IncidentKind = "execution" | "pipeline" | "guardrail" | "cost" | "manual" | "runaway";
 
 export type Incident = {
   id: string;
@@ -207,6 +214,51 @@ export async function getIncidentsInternal(
       amountUsd: b.usd_cap != null ? Number(b.usd_cap) : undefined,
       windowKind: b.window_kind === "month" ? "month" : b.window_kind === "day" ? "day" : undefined,
     });
+  }
+
+  // Runaway missions (RUNAWAY-DETECT): a mission that is spinning (hop/step/retry/spend blown past
+  // normal) lands in the durable "what went wrong" record, not only the silent Missions glance.
+  // Live-recomputed (non-persisted), like the approval/guardrail/budget sources above. Only
+  // `runaway` severity (still active) is emitted; a terminal-but-breached mission is `watch` and
+  // excluded, so the log is not flooded by finished runs. Reuses the SAME bounded read + the shared
+  // pure fold as getRunawayMissions, so the two cannot drift.
+  // Scan the 200 most recent missions (bounded by order+limit, no age floor, so an old still-active
+  // spinner is caught too); assessMissions only flags the active `runaway` ones.
+  const MAX_RUNAWAY_MISSIONS = 200;
+  const { data: rMissions } = await supabase
+    .from("missions")
+    .select("id,status,hop_count,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(MAX_RUNAWAY_MISSIONS);
+  const rIds = (rMissions ?? []).map((m) => (m as { id: string }).id).filter(Boolean);
+  if (rIds.length) {
+    // Read .data only (no throw on .error): this is a fan-in aggregator, so a failing source must
+    // degrade to empty, never blow up the whole incidents log. Matches every source above.
+    const [rSteps, rRuns] = await Promise.all([
+      supabase.from("mission_steps").select("mission_id,attempts").in("mission_id", rIds),
+      supabase.from("agent_runs").select("mission_id,spend_used_usd").in("mission_id", rIds),
+    ]);
+    const stats = buildMissionStats(
+      (rMissions ?? []) as RawMissionRow[],
+      (rSteps.data ?? []) as RawStepRow[],
+      (rRuns.data ?? []) as RawRunRow[],
+      Date.now(),
+    );
+    const byId = new Map(
+      (rMissions ?? []).map((m) => [(m as { id: string }).id, m as { created_at: string | null }]),
+    );
+    for (const v of assessMissions(stats)) {
+      if (v.severity !== "runaway") continue;
+      out.push({
+        id: `runaway:${v.missionId}`,
+        kind: "runaway",
+        title: "Mission is spinning",
+        detail: v.reasons.join(", "),
+        at: byId.get(v.missionId)?.created_at ?? null,
+        traceId: null,
+      });
+    }
   }
 
   out.sort((x, y) => (y.at ?? "").localeCompare(x.at ?? ""));

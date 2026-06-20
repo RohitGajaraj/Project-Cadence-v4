@@ -14,6 +14,7 @@ const KIND_LABEL: Record<Incident["kind"], string> = {
   guardrail: "Guardrail",
   cost: "Cost",
   manual: "Manual",
+  runaway: "Runaway",
 };
 
 function fmt(at: string | null): string {

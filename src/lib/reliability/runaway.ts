@@ -136,6 +136,65 @@ export function assessMissions(
     .sort((a, b) => order[a.severity] - order[b.severity]);
 }
 
+// Raw row shapes from missions / mission_steps / agent_runs, as the read paths select them.
+export type RawMissionRow = {
+  id: string;
+  status: string | null;
+  hop_count: number | null;
+  created_at: string;
+};
+export type RawStepRow = { mission_id: string; attempts: number | null };
+export type RawRunRow = { mission_id: string | null; spend_used_usd: number | null };
+
+/**
+ * Fold raw mission + step + run rows into per-mission {@link MissionRunStats}. PURE (the clock is
+ * injected as `nowMs`), so both read paths (getRunawayMissions and the incidents runaway source)
+ * share one tested fold and cannot drift. Non-finite/negative aggregates degrade to 0.
+ */
+export function buildMissionStats(
+  missions: RawMissionRow[],
+  steps: RawStepRow[],
+  runs: RawRunRow[],
+  nowMs: number,
+): MissionRunStats[] {
+  const stepAgg = new Map<string, { count: number; total: number; max: number }>();
+  for (const s of steps) {
+    const a = stepAgg.get(s.mission_id) ?? { count: 0, total: 0, max: 0 };
+    const attempts = Number(s.attempts ?? 0);
+    const v = Number.isFinite(attempts) && attempts >= 0 ? attempts : 0;
+    a.count += 1;
+    a.total += v;
+    a.max = Math.max(a.max, v);
+    stepAgg.set(s.mission_id, a);
+  }
+
+  const spendAgg = new Map<string, number>();
+  for (const r of runs) {
+    if (!r.mission_id) continue;
+    const spend = Number(r.spend_used_usd ?? 0);
+    spendAgg.set(
+      r.mission_id,
+      (spendAgg.get(r.mission_id) ?? 0) + (Number.isFinite(spend) ? spend : 0),
+    );
+  }
+
+  return missions.map((m) => {
+    const steps = stepAgg.get(m.id) ?? { count: 0, total: 0, max: 0 };
+    const createdMs = Date.parse(m.created_at);
+    const ageMinutes = Number.isFinite(createdMs) ? Math.max(0, (nowMs - createdMs) / 60000) : 0;
+    return {
+      missionId: m.id,
+      status: m.status ?? "unknown",
+      hopCount: Number(m.hop_count ?? 0),
+      stepCount: steps.count,
+      totalAttempts: steps.total,
+      maxStepAttempts: steps.max,
+      spendUsd: spendAgg.get(m.id) ?? 0,
+      ageMinutes,
+    };
+  });
+}
+
 /**
  * One calm operator line. Authored display copy (humanized-output Tier 2: no em/en dashes, no
  * AI-cliche filler). Returns "" when nothing tripped so the caller can stay silent.

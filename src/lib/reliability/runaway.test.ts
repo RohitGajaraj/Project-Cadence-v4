@@ -4,6 +4,7 @@ import {
   assessMissions,
   isTerminalStatus,
   summarizeRunaway,
+  buildMissionStats,
   DEFAULT_RUNAWAY_CONFIG,
   type MissionRunStats,
 } from "./runaway";
@@ -115,6 +116,84 @@ describe("assessMissions (batch, sorted, filtered)", () => {
 
   it("returns an empty array when everything is healthy", () => {
     expect(assessMissions([m({}), m({ missionId: "m2" })])).toEqual([]);
+  });
+});
+
+describe("buildMissionStats (shared pure fold)", () => {
+  const NOW = Date.parse("2026-06-21T01:00:00.000Z");
+  const tenMinAgo = "2026-06-21T00:50:00.000Z";
+
+  it("folds steps (count/total/max attempts) and spend per mission", () => {
+    const stats = buildMissionStats(
+      [{ id: "m1", status: "running", hop_count: 3, created_at: tenMinAgo }],
+      [
+        { mission_id: "m1", attempts: 1 },
+        { mission_id: "m1", attempts: 4 },
+      ],
+      [
+        { mission_id: "m1", spend_used_usd: 0.5 },
+        { mission_id: "m1", spend_used_usd: 1.25 },
+      ],
+      NOW,
+    );
+    expect(stats).toHaveLength(1);
+    expect(stats[0]).toMatchObject({
+      missionId: "m1",
+      status: "running",
+      hopCount: 3,
+      stepCount: 2,
+      totalAttempts: 5,
+      maxStepAttempts: 4,
+      spendUsd: 1.75,
+    });
+    expect(stats[0].ageMinutes).toBeCloseTo(10, 5);
+  });
+
+  it("gives a mission with no children zeroed aggregates", () => {
+    const stats = buildMissionStats(
+      [{ id: "m2", status: "pending", hop_count: null, created_at: tenMinAgo }],
+      [],
+      [],
+      NOW,
+    );
+    expect(stats[0]).toMatchObject({
+      hopCount: 0,
+      stepCount: 0,
+      totalAttempts: 0,
+      maxStepAttempts: 0,
+      spendUsd: 0,
+    });
+  });
+
+  it("ignores run rows with a null mission_id and never mixes missions", () => {
+    const stats = buildMissionStats(
+      [
+        { id: "a", status: "running", hop_count: 0, created_at: tenMinAgo },
+        { id: "b", status: "running", hop_count: 0, created_at: tenMinAgo },
+      ],
+      [{ mission_id: "a", attempts: 0 }],
+      [
+        { mission_id: null, spend_used_usd: 99 },
+        { mission_id: "b", spend_used_usd: 2 },
+      ],
+      NOW,
+    );
+    const a = stats.find((s) => s.missionId === "a")!;
+    const b = stats.find((s) => s.missionId === "b")!;
+    expect(a.spendUsd).toBe(0);
+    expect(a.stepCount).toBe(1);
+    expect(b.spendUsd).toBe(2);
+    expect(b.stepCount).toBe(0);
+  });
+
+  it("degrades a bad created_at to ageMinutes 0 (no NaN)", () => {
+    const stats = buildMissionStats(
+      [{ id: "m", status: "running", hop_count: 0, created_at: "not-a-date" }],
+      [],
+      [],
+      NOW,
+    );
+    expect(stats[0].ageMinutes).toBe(0);
   });
 });
 

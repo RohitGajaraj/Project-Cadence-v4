@@ -286,3 +286,54 @@ describe("Incidents Log & Cost Incident Detection", () => {
     expect(capHit.windowKind).toBe("month");
   });
 });
+
+describe("Incidents Log - runaway mission source (RUNAWAY-DETECT wire-up)", () => {
+  // A thenable + chainable mock: every query method returns the builder, and awaiting it resolves
+  // to the canned data for that table. Tables not in `canned` resolve to null (empty), so only the
+  // runaway source fires here.
+  function makeMock(canned: Record<string, unknown[]>): SupabaseClient {
+    return {
+      rpc: async (fn: string) =>
+        fn === "current_user_default_workspace"
+          ? { data: "ws-1", error: null }
+          : { data: null, error: null },
+      from: (table: string) => {
+        const builder: Record<string, unknown> = {};
+        for (const m of ["select", "eq", "in", "not", "order", "gte", "lte", "limit"]) {
+          builder[m] = () => builder;
+        }
+        (builder as { then: unknown }).then = (resolve: (v: unknown) => unknown) =>
+          resolve({ data: canned[table] ?? null, error: null });
+        return builder;
+      },
+    } as unknown as SupabaseClient;
+  }
+
+  const old = "2026-06-01T00:00:00Z";
+
+  test("a spinning active mission becomes a 'runaway' incident; healthy and terminal ones do not", async () => {
+    const mock = makeMock({
+      missions: [
+        { id: "spin", status: "running", hop_count: 99, created_at: old },
+        { id: "ok", status: "running", hop_count: 1, created_at: old },
+        { id: "doneSpin", status: "done", hop_count: 99, created_at: old }, // breached but terminal => watch, excluded
+      ],
+      mission_steps: [{ mission_id: "ok", attempts: 0 }],
+      agent_runs: [],
+    });
+
+    const { incidents } = await getIncidentsInternal(mock, "user-1");
+    const runaways = incidents.filter((i) => i.kind === "runaway");
+
+    expect(runaways).toHaveLength(1);
+    expect(runaways[0].id).toBe("runaway:spin");
+    expect(runaways[0].title).toBe("Mission is spinning");
+    expect(runaways[0].detail).toContain("99 hops");
+    expect(runaways[0].at).toBe(old);
+  });
+
+  test("no missions -> no runaway incidents", async () => {
+    const { incidents } = await getIncidentsInternal(makeMock({}), "user-1");
+    expect(incidents.filter((i) => i.kind === "runaway")).toHaveLength(0);
+  });
+});

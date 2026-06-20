@@ -41,10 +41,14 @@ The defaults are **independently-chosen heuristics that sit deliberately above t
 
 A calm, silent-when-healthy `ReliabilityGlance` ([`../../src/components/cockpit/ReliabilityGlance.tsx`](../../src/components/cockpit/ReliabilityGlance.tsx)) on the Missions header consumes `getRunawayMissions` (alongside `getReliabilitySlo`) and surfaces `summarizeRunaway` (e.g. "2 missions are spinning") **only** when a `runaway`-severity mission exists. Silent otherwise, per the engine-room-doctrine. Gated through `impeccable`. ◐ renders on the founder's next publish.
 
+## Wired into the Incidents log (RUNAWAY-INCIDENTS, 2026-06-21)
+
+A spinning mission now also lands in the operator's persistent "what went wrong" record: `getIncidentsInternal` ([`../../src/lib/incidents.functions.ts`](../../src/lib/incidents.functions.ts)) gained a **`runaway`** incident source (and `IncidentKind` gained `"runaway"`, with a `KIND_LABEL` entry the type system forces). It scans the 200 most recent user missions (no age floor, so an old still-active spinner is caught), runs the detector, and emits an incident **only** for `runaway` severity (a terminal-but-breached mission is `watch` and excluded, so the historical log is not flooded). The id is stable (`runaway:<missionId>`). The mission→stats fold was extracted into a shared pure `buildMissionStats` in [`../../src/lib/reliability/runaway.ts`](../../src/lib/reliability/runaway.ts), so this source and `getRunawayMissions` cannot drift. Live-recomputed (non-persisted), like the approval/guardrail/budget sources.
+
 ## Out of scope / follow-ups
 
 - **Drill-in** — a list view of the flagged missions with their `reasons[]` behind the Engine Room (the calm glance only shows the count).
-- **Alerting** — turning a `runaway` verdict into an Attention/incident nudge (ties into R3 / P7 / `cost_incidents`).
+- **Push alerting** — a cron that turns a `runaway` verdict into an Attention (R3) nudge proactively (the incidents source above is pull, surfaced when the operator opens the log).
 - **Auto-pause** — optionally feeding a confirmed runaway into the kill-switch / per-mission cancel (D4); enforcement is founder-gated.
 
 ## Related
