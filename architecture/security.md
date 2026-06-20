@@ -1,6 +1,6 @@
 # architecture/security.md — Auth, tenancy & governance
 
-> _Created: 2026-06-03 · Last updated: 2026-06-19_
+> _Created: 2026-06-03 · Last updated: 2026-06-20_
 
 > Where authentication, multi-tenancy, secrets, and agent governance live. Rules: [`AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
@@ -30,6 +30,7 @@ Three nested scopes, enforced at every layer:
 - No provider key required for the default gateway path.
 - Connector OAuth tokens handled by the managed connector layer (refresh/revoke solved).
 - **Cross-member binding attribution** — workspace `connection_bindings` carry `created_by`; GitHub side effects run as the installed GitHub App (and are labeled "acting as …" in previews), not as any individual member's identity.
+- **Scheduled hook secret** — privileged `/api/public/hooks/*` routes never trust the browser-visible app key. `requireHookCaller` accepts only `x-cron-key` or bearer credentials that match a private backend secret (`CRON_SECRET` / `HOOK_CRON_SECRET` when set, or the locked `app_private.hook_secrets` value used by scheduled jobs). The secret store is unavailable to anonymous and signed-in Data API callers.
 
 ## Agent governance (security as a product feature)
 
@@ -53,6 +54,7 @@ RLS multi-tenancy, audit logs, encrypted secrets, and approval trails are the su
 ## Invariants
 
 - RLS on every user table; service-role client server-only.
+- Privileged scheduled hooks must use a private hook secret, never the public app key.
 - Every scope check uses user + workspace + product, never client-trusted role.
 - Secrets never leave the DB in plaintext.
 - Every side-effecting agent action is gated, logged, and reversible.
