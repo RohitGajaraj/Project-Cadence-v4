@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-20 · Last updated: 2026-06-20_
 >
-> **Owner:** Lovable (parallel monetization/admin lane). **Status:** ⬜ approved-plan, build-ready. **Scope:** extends the shipped v1 admin (`Overview` + `Pricing` tabs) with three new tabs - **People**, **Workspaces**, **Platform** - without touching v1.
+> **Owner:** Lovable (parallel monetization/admin lane). **Status:** ✅ Steps 1-7 shipped (2026-06-20). **Scope:** extends the shipped v1 admin (`Overview` + `Pricing` tabs) with three new tabs - **People**, **Workspaces**, **Platform** - without touching v1.
 >
 > This is the cold-buildable spec. Any agent (Lovable Cloud / Claude Code / Antigravity) should be able to pick this up, run the migration, ship the server fns, and wire the UI without re-deriving intent.
 
