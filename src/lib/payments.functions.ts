@@ -100,8 +100,11 @@ export const createPortalSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { returnUrl?: string; environment: StripeEnv }) => data)
   .handler(async ({ data, context }): Promise<PortalResult> => {
-    const { supabase, userId } = context;
-    const { data: sub } = await supabase
+    const { userId } = context;
+    // stripe_customer_id is service-role-only (revoked from authenticated);
+    // user is already verified by requireSupabaseAuth and we scope by user_id.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: sub } = await supabaseAdmin
       .from("subscriptions")
       .select("stripe_customer_id")
       .eq("user_id", userId)
@@ -132,8 +135,10 @@ export const getMySubscription = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
   .handler(async ({ data, context }): Promise<MySubscription> => {
-    const { supabase, userId } = context;
-    const { data: sub } = await supabase
+    const { userId } = context;
+    // stripe_subscription_id is service-role-only; scope by user_id (authed).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: sub } = await supabaseAdmin
       .from("subscriptions")
       .select("stripe_subscription_id, status, price_id, current_period_end, cancel_at_period_end")
       .eq("user_id", userId)
@@ -164,8 +169,10 @@ async function mutateCancelFlag(
   environment: StripeEnv,
   cancelAtPeriodEnd: boolean,
 ): Promise<MutateResult> {
-  const { supabase, userId } = context;
-  const { data: sub } = await supabase
+  const { userId } = context;
+  // stripe_subscription_id is service-role-only; scope by user_id (authed).
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: sub } = await supabaseAdmin
     .from("subscriptions")
     .select("stripe_subscription_id, status")
     .eq("user_id", userId)
@@ -181,10 +188,6 @@ async function mutateCancelFlag(
       cancel_at_period_end: cancelAtPeriodEnd,
     });
     // Mirror immediately so the UI flips without waiting for the webhook.
-    // RLS on `subscriptions` only allows service_role writes, so use the
-    // admin client here. We've already verified the caller owns this row
-    // via the RLS-scoped SELECT above.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("subscriptions")
       .update({ cancel_at_period_end: cancelAtPeriodEnd, updated_at: new Date().toISOString() })
