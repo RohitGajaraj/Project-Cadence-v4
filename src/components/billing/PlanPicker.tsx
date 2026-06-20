@@ -170,7 +170,10 @@ export function PlanTable({
         style={{
           display: "grid",
           gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns:
+            audience === "personal"
+              ? "repeat(3, minmax(0, 1fr))"
+              : "repeat(2, minmax(0, 1fr))",
           alignItems: "stretch",
         }}
       >
@@ -181,8 +184,8 @@ export function PlanTable({
               <PaidTierCard
                 key={tier}
                 tier={tier}
-                /* pro (Cluster, entry) = monthly only; max (Constellation) = both */
-                allowYearly={tier === "max"}
+                /* Cluster (pro) = monthly + yearly; Constellation (max) = monthly only */
+                allowYearly={tier === "pro"}
                 bundles={allBundles.filter((b) => b.tier === tier)}
                 isCurrent={currentTier === tier}
                 isRecommended={recommended === tier}
