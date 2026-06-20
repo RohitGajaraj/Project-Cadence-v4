@@ -91,7 +91,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | Per-mission spend caps + global kill-switch/pause     | Stop runaway autonomy and cost                           | P0       |
 | Blast-radius scoping (what an agent may touch)        | Limit damage of a wrong action                           | P0       |
 | Review gate on agent-written code before merge/deploy | Quality + safety of autonomous shipping                  | P0       |
-| Loop/runaway detection                                | Agents can spin; cap + detect                            | P1       |
+| Loop/runaway detection                                | Agents can spin; cap + detect                            | P1 — ◐ RUNAWAY-DETECT (lane 1, 2026-06-21): the DETECT half (KI-15/16 are the caps). Pure detector (hop/step/retry/spend thresholds calibrated to the real caps; runaway vs watch) + read-only `getRunawayMissions`; the inverse of E8's stall monitor. Remaining: the operator surface + alert/auto-pause wire-up. |
 | Eval coverage targets per surface/agent               | Today coverage is partial; autonomy needs broad coverage | P1       |
 | Model-deprecation + benchmark cadence                 | Models change; route to best/cheapest safely             | P1       |
 
