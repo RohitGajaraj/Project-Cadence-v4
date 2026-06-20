@@ -12,6 +12,7 @@ import {
   ArrowUp,
   Plus,
   Trash2,
+  Pencil,
   ExternalLink,
   ChevronDown,
   ChevronUp,
@@ -48,6 +49,7 @@ import {
   getConversation,
   createConversation,
   deleteConversation,
+  renameConversation,
 } from "@/lib/conversations.functions";
 import { getBrainStatus, rememberMessage } from "@/lib/brain.functions";
 import { createDecision } from "@/lib/decisions.functions";
@@ -102,6 +104,7 @@ function ChatPage() {
   const fGet = useServerFn(getConversation);
   const fCreate = useServerFn(createConversation);
   const fDelete = useServerFn(deleteConversation);
+  const fRename = useServerFn(renameConversation);
   const { activeWorkspace } = useWorkspace();
 
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
@@ -110,6 +113,10 @@ function ChatPage() {
   const convs = useQuery({ queryKey: ["conversations"], queryFn: () => fList() });
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Inline thread rename (the rail already supports delete; rename was backend-only).
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const skipRenameBlur = useRef(false);
   const [model, setModel] = useState<string>("google/gemini-3-flash-preview");
   const [input, setInput] = useState("");
   // F-AGENTS-MENTIONABLE: the partial "@token" under the caret (null = no menu)
@@ -202,6 +209,17 @@ function ChatPage() {
       setActiveId(null);
     },
   });
+  const mRename = useMutation({
+    mutationFn: (v: { id: string; title: string }) => fRename({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  // Commit an inline rename: only writes when the trimmed title actually changed.
+  function commitRename(id: string, original: string) {
+    const next = renameDraft.trim().slice(0, 120);
+    setRenamingId(null);
+    if (next && next !== original) mRename.mutate({ id, title: next });
+  }
 
   async function ensureConversation(): Promise<string> {
     if (activeId) return activeId;
@@ -494,31 +512,73 @@ function ChatPage() {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
-                  <span
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontSize: 13,
-                      fontWeight: isActive ? 550 : 400,
-                      color: isActive ? "var(--ink)" : "var(--ink-muted)",
-                    }}
-                  >
-                    {c.title}
-                  </span>
-                  <button
-                    aria-label="Delete thread"
-                    className="opacity-0 group-hover:opacity-100 transition"
-                    style={{ color: "var(--ink-faint)", flexShrink: 0 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      mDel.mutate(c.id);
-                    }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
+                  {renamingId === c.id ? (
+                    <input
+                      autoFocus
+                      className="input"
+                      value={renameDraft}
+                      maxLength={120}
+                      aria-label="Rename thread"
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setRenameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Enter") e.currentTarget.blur();
+                        else if (e.key === "Escape") {
+                          skipRenameBlur.current = true;
+                          setRenamingId(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (skipRenameBlur.current) {
+                          skipRenameBlur.current = false;
+                          return;
+                        }
+                        commitRename(c.id, c.title);
+                      }}
+                      style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "1px 6px" }}
+                    />
+                  ) : (
+                    <>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          fontSize: 13,
+                          fontWeight: isActive ? 550 : 400,
+                          color: isActive ? "var(--ink)" : "var(--ink-muted)",
+                        }}
+                      >
+                        {c.title}
+                      </span>
+                      <button
+                        aria-label="Rename thread"
+                        className="opacity-0 group-hover:opacity-100 transition"
+                        style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenameDraft(c.title);
+                          setRenamingId(c.id);
+                        }}
+                      >
+                        <Pencil size={11} />
+                      </button>
+                      <button
+                        aria-label="Delete thread"
+                        className="opacity-0 group-hover:opacity-100 transition"
+                        style={{ color: "var(--ink-faint)", flexShrink: 0 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          mDel.mutate(c.id);
+                        }}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </>
+                  )}
                 </span>
                 <span className="mono-label" style={{ fontSize: 9 }}>
                   {when ? relativeAgo(when) : ""}
