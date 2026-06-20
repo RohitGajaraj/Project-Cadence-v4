@@ -43,6 +43,7 @@ import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject, moveProduct } from "@/lib/projects.functions";
+import { amIAdmin } from "@/lib/pricing.functions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -254,6 +255,18 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const leaveWsFn = useServerFn(leaveWorkspace);
   const updateProjectFn = useServerFn(updateProject);
   const moveProductFn = useServerFn(moveProduct);
+
+  // Admin role check — drives the "Admin console" item in the workspace
+  // dropdown so admins have a visible path in the published app (no slash
+  // command needed).
+  const amIAdminFn = useServerFn(amIAdmin);
+  const { data: adminInfo } = useQuery({
+    queryKey: ["am-i-admin"],
+    queryFn: () => amIAdminFn(),
+    staleTime: 60_000,
+  });
+  const isAdmin = !!adminInfo?.isAdmin;
+  const noAdminsYet = adminInfo ? !adminInfo.anyAdminExists : false;
 
   // Pending-calls badge (Approvals) — shares the "needs-you" cache key with
   // the Today page, so no extra fetch when both are mounted.
@@ -589,6 +602,17 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
                     <Trash2 className="h-3.5 w-3.5" />
                     <span>Delete workspace</span>
                   </DropdownMenuItem>
+                </>
+              )}
+              {(isAdmin || noAdminsYet) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <Link to="/admin">
+                    <DropdownMenuItem className="cursor-pointer gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>{isAdmin ? "Admin console" : "Claim admin"}</span>
+                    </DropdownMenuItem>
+                  </Link>
                 </>
               )}
               <DropdownMenuSeparator />

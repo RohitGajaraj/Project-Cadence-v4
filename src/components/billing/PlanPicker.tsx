@@ -1,42 +1,40 @@
 /**
- * Plan picker: tier toggle (Pro / Cluster · Max / Constellation · Team /
- * Galaxy) + Monthly/Yearly switch + a credit-bundle slider that snaps to the
- * credit points the founder publishes (driven by `pricing_bundles`). Picking
- * a point and clicking Subscribe opens the existing embedded Stripe checkout
- * with the bundle's Stripe lookup_key.
+ * PlanTable: horizontal pricing table (Lovable / Anthropic style).
  *
- * Enterprise is intentionally a "Talk to us" card next to the picker, not a
- * slider entry.
+ *   Free · Cluster · Constellation · Galaxy · Cosmos
+ *
+ * One global Monthly/Yearly toggle at the top. Each paid card carries its own
+ * "Credits / month" dropdown (driven by `pricing_bundles`); the displayed
+ * price recalculates as the user picks a credit volume. Prices are rounded.
+ * The user's current tier shows a "Current plan" pill and a neutral button.
+ * Enterprise is a "Contact sales" card.
  */
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Slider } from "@/components/ui/slider";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { toast } from "@/lib/notify";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { getPricingCatalog, type PricingBundle } from "@/lib/pricing.functions";
 import { lookupKeyFor } from "@/lib/billing-tier";
-import type { PlanTier } from "@/lib/entitlements";
+import { planPresentation, type PlanTier } from "@/lib/entitlements";
 
-type PickerTier = "pro" | "max" | "team";
-const TIER_NAMES: Record<PickerTier, string> = {
-  pro: "Cluster",
-  max: "Constellation",
-  team: "Galaxy",
-};
-const TIER_TAGLINES: Record<PickerTier, string> = {
-  pro: "Persistent memory, Critic everywhere",
-  max: "Higher volume, priority routing",
-  team: "Shared memory, per-seat pricing",
-};
+type PaidTier = "pro" | "max" | "team";
+const PAID_TIERS: PaidTier[] = ["pro", "max", "team"];
 
-function formatPrice(cents: number) {
-  const dollars = cents / 100;
-  return Number.isInteger(dollars) ? `$${dollars}` : `$${dollars.toFixed(2)}`;
+function roundDollars(cents: number): string {
+  return `$${Math.round(cents / 100).toLocaleString()}`;
 }
 
-export function PlanPicker({
+function formatCredits(n: number): string {
+  if (n >= 1000 && n % 1000 === 0) return `${n / 1000}k`;
+  return n.toLocaleString();
+}
+
+/** Backwards-compat alias so existing imports keep working. */
+export const PlanPicker = PlanTable;
+
+export function PlanTable({
   currentTier,
   canSelect,
 }: {
@@ -46,218 +44,366 @@ export function PlanPicker({
   const fGetCatalog = useServerFn(getPricingCatalog);
   const catalog = useQuery({ queryKey: ["pricing-catalog"], queryFn: () => fGetCatalog() });
 
-  const [tier, setTier] = useState<PickerTier>(
-    currentTier === "max" || currentTier === "team" ? (currentTier as PickerTier) : "pro",
-  );
-  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
-  const [stepIndex, setStepIndex] = useState(0);
-
-  const bundles: PricingBundle[] = useMemo(() => {
-    const all = (catalog.data?.bundles ?? []).filter((b) => b.tier === tier && b.active);
-    return [...all].sort((a, b) => a.credits - b.credits);
-  }, [catalog.data, tier]);
-
-  // Default to the recommended bundle when the tier changes.
-  const recommendedIdx = Math.max(0, bundles.findIndex((b) => b.recommended));
-  const safeIdx = Math.min(stepIndex, Math.max(0, bundles.length - 1));
-  const idx = bundles.length === 0 ? 0 : safeIdx;
-
-  const selected = bundles[idx];
-  const priceCents = selected ? (interval === "monthly" ? selected.monthly_cents : selected.yearly_cents) : 0;
-  const yearlyMonthly = selected ? (selected.yearly_cents / 12) : 0;
-  const yearlySavingsPct = selected
-    ? Math.max(0, Math.round((1 - selected.yearly_cents / (selected.monthly_cents * 12)) * 100))
-    : 0;
-
-  const lookupKey = selected ? lookupKeyFor(tier as PlanTier, selected.credits, interval) : null;
-
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-
-  function onSubscribe() {
-    if (!lookupKey) return;
-    try {
-      getStripeEnvironment();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Payments are not configured.");
-      return;
-    }
-    setCheckoutOpen(true);
-  }
+  const [interval, setIntervalState] = useState<"monthly" | "yearly">("monthly");
 
   if (catalog.isLoading) {
     return <div className="bento" style={{ padding: 18 }}>Loading plans…</div>;
   }
   if (catalog.error || !catalog.data) {
     return (
-      <div className="bento" style={{ padding: 18, color: "var(--rose)" }}>
+      <div className="bento" style={{ padding: 18, color: "var(--rose, #b14233)" }}>
         Couldn't load pricing. {(catalog.error as Error)?.message ?? ""}
       </div>
     );
   }
 
-  return (
-    <div className="bento" style={{ padding: 22, display: "grid", gap: 18 }}>
-      {/* Tier toggle */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {(["pro", "max", "team"] as PickerTier[]).map((t) => {
-          const active = t === tier;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                setTier(t);
-                setStepIndex(recommendedIdx);
-              }}
-              className="btn btn-sm"
-              style={{
-                background: active ? "var(--ember, #c2602e)" : "transparent",
-                color: active ? "white" : "var(--ink, #1d1a14)",
-                border: active ? "none" : "1px solid var(--hairline, rgba(0,0,0,0.12))",
-                padding: "6px 14px",
-                borderRadius: 99,
-              }}
-            >
-              {TIER_NAMES[t]}
-            </button>
-          );
-        })}
-      </div>
-      <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>
-        {TIER_TAGLINES[tier]}
-      </p>
+  const allBundles = catalog.data.bundles.filter((b) => b.active);
 
-      {/* Monthly / Yearly */}
+  // Best-yearly-savings across all paid tiers, for the toggle pill.
+  let bestSave = 0;
+  for (const b of allBundles) {
+    const pct = Math.max(0, Math.round((1 - b.yearly_cents / (b.monthly_cents * 12)) * 100));
+    if (pct > bestSave) bestSave = pct;
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      {/* Monthly / Yearly toggle */}
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            padding: 3,
+            borderRadius: 99,
+            background: "var(--soft-stone, rgba(0,0,0,0.06))",
+          }}
+        >
+          {(["monthly", "yearly"] as const).map((i) => {
+            const active = i === interval;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIntervalState(i)}
+                style={{
+                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                  color: "var(--ink, #1d1a14)",
+                  border: "none",
+                  padding: "6px 16px",
+                  borderRadius: 99,
+                  fontSize: 12,
+                  fontWeight: active ? 600 : 500,
+                  cursor: "pointer",
+                  boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : undefined,
+                }}
+              >
+                {i === "monthly" ? "Monthly" : "Yearly"}
+                {i === "yearly" && bestSave > 0 ? (
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 9, marginLeft: 8, color: "var(--emerald, #2f8f6b)" }}
+                  >
+                    save up to {bestSave}%
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Horizontal plan grid: Free · Cluster · Constellation · Galaxy · Cosmos */}
       <div
         style={{
-          display: "inline-flex",
-          alignSelf: "flex-start",
-          padding: 3,
-          borderRadius: 99,
-          background: "var(--soft-stone, rgba(0,0,0,0.04))",
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          alignItems: "stretch",
         }}
       >
-        {(["monthly", "yearly"] as const).map((i) => {
-          const active = i === interval;
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setInterval(i)}
+        <FreeCard isCurrent={currentTier === "free"} />
+        {PAID_TIERS.map((tier) => (
+          <PaidTierCard
+            key={tier}
+            tier={tier}
+            interval={interval}
+            bundles={allBundles.filter((b) => b.tier === tier)}
+            isCurrent={currentTier === tier}
+            canSelect={canSelect}
+          />
+        ))}
+        <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+      </div>
+    </div>
+  );
+}
+
+function CardShell({
+  isCurrent,
+  recommended,
+  children,
+}: {
+  isCurrent: boolean;
+  recommended?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="bento"
+      style={{
+        padding: 18,
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        borderColor: isCurrent
+          ? "var(--ember, #c2602e)"
+          : recommended
+            ? "var(--ink-faint, #8a8377)"
+            : undefined,
+        position: "relative",
+      }}
+    >
+      {recommended && !isCurrent ? (
+        <span
+          className="mono-label"
+          style={{
+            position: "absolute",
+            top: -8,
+            right: 14,
+            background: "var(--ink, #1d1a14)",
+            color: "var(--canvas, #fbf7ef)",
+            padding: "2px 8px",
+            borderRadius: 99,
+            fontSize: 9,
+          }}
+        >
+          Popular
+        </span>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+function CardHeader({ name, tagline, isCurrent }: { name: string; tagline: string; isCurrent: boolean }) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+        <span className="font-display" style={{ fontSize: 18 }}>{name}</span>
+        {isCurrent ? (
+          <span
+            className="mono-label"
+            style={{
+              fontSize: 9,
+              color: "var(--canvas, #fbf7ef)",
+              background: "var(--ember, #c2602e)",
+              padding: "2px 8px",
+              borderRadius: 99,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Current plan
+          </span>
+        ) : null}
+      </div>
+      <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0", minHeight: 32 }}>
+        {tagline}
+      </p>
+    </div>
+  );
+}
+
+function Bullets({ items }: { items: string[] }) {
+  return (
+    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
+      {items.map((h) => (
+        <li key={h} style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}>
+          <span
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: 99,
+              background: "var(--ember, #c2602e)",
+              marginTop: 7,
+              flexShrink: 0,
+            }}
+          />
+          <span>{h}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FreeCard({ isCurrent }: { isCurrent: boolean }) {
+  const p = planPresentation("free");
+  return (
+    <CardShell isCurrent={isCurrent}>
+      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+        <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>$0</span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>/month</span>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Bullets items={p.highlights} />
+      </div>
+      <button className="btn btn-ghost btn-sm" disabled style={{ marginTop: 4 }}>
+        {isCurrent ? "Your current plan" : "Free forever"}
+      </button>
+    </CardShell>
+  );
+}
+
+function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
+  const p = planPresentation("enterprise");
+  return (
+    <CardShell isCurrent={isCurrent}>
+      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+        <span className="font-display" style={{ fontSize: 24, lineHeight: 1.1 }}>Custom</span>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Bullets items={p.highlights} />
+      </div>
+      <a
+        className="btn btn-primary btn-sm"
+        href="mailto:sales@cadence.app?subject=Cosmos%20enquiry"
+        style={{ marginTop: 4, textAlign: "center" }}
+      >
+        Contact sales
+      </a>
+    </CardShell>
+  );
+}
+
+function PaidTierCard({
+  tier,
+  interval,
+  bundles,
+  isCurrent,
+  canSelect,
+}: {
+  tier: PaidTier;
+  interval: "monthly" | "yearly";
+  bundles: PricingBundle[];
+  isCurrent: boolean;
+  canSelect: boolean;
+}) {
+  const p = planPresentation(tier);
+  const sorted = useMemo(() => [...bundles].sort((a, b) => a.credits - b.credits), [bundles]);
+  const defaultId =
+    sorted.find((b) => b.recommended)?.id ?? sorted[0]?.id ?? "";
+  const [selectedId, setSelectedId] = useState<string>(defaultId);
+  const selected = sorted.find((b) => b.id === selectedId) ?? sorted[0];
+  const [open, setOpen] = useState(false);
+
+  const monthlyEquivCents = selected
+    ? interval === "monthly"
+      ? selected.monthly_cents
+      : selected.yearly_cents / 12
+    : 0;
+  const billedCents = selected
+    ? interval === "monthly"
+      ? selected.monthly_cents
+      : selected.yearly_cents
+    : 0;
+
+  const lookupKey = selected ? lookupKeyFor(tier, selected.credits, interval) : null;
+  const recommended = !!selected?.recommended;
+
+  function onSubscribe() {
+    if (!lookupKey) return;
+    try {
+      getStripeEnvironment();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payments are not configured yet.");
+      return;
+    }
+    setOpen(true);
+  }
+
+  return (
+    <CardShell isCurrent={isCurrent} recommended={recommended}>
+      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+
+      {selected ? (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+            <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>
+              {roundDollars(monthlyEquivCents)}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
+              /{tier === "team" ? "seat/" : ""}month
+            </span>
+          </div>
+          <div style={{ fontSize: 10.5, color: "var(--ink-subtle, #6b6457)", marginTop: -8 }}>
+            {interval === "yearly"
+              ? `Billed ${roundDollars(billedCents)} yearly`
+              : "Billed monthly"}
+          </div>
+
+          <label style={{ display: "grid", gap: 4 }}>
+            <span className="mono-label" style={{ fontSize: 9 }}>Credits / month</span>
+            <select
+              value={selected.id}
+              onChange={(e) => setSelectedId(e.target.value)}
               style={{
-                background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--hairline, rgba(0,0,0,0.14))",
+                background: "var(--canvas, #fbf7ef)",
                 color: "var(--ink, #1d1a14)",
-                border: "none",
-                padding: "5px 14px",
-                borderRadius: 99,
-                fontSize: 12,
-                fontWeight: active ? 600 : 500,
+                fontSize: 13,
                 cursor: "pointer",
               }}
             >
-              {i === "monthly" ? "Monthly" : "Yearly"}
-              {i === "yearly" && yearlySavingsPct > 0 ? (
-                <span
-                  className="mono-label"
-                  style={{ fontSize: 9, marginLeft: 6, color: "var(--emerald, #2f8f6b)" }}
-                >
-                  save {yearlySavingsPct}%
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Price + credits */}
-      {selected ? (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 12,
-            paddingTop: 4,
-            flexWrap: "wrap",
-          }}
-        >
-          <span className="font-display" style={{ fontSize: 40, lineHeight: 1 }}>
-            {formatPrice(interval === "monthly" ? priceCents : yearlyMonthly)}
-          </span>
-          <span style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)" }}>
-            /{tier === "team" ? "seat/" : ""}month
-            {interval === "yearly" ? `, billed yearly (${formatPrice(priceCents)}/yr)` : ""}
-          </span>
-        </div>
-      ) : null}
-
-      {/* Slider */}
-      {bundles.length > 1 ? (
-        <div style={{ display: "grid", gap: 10, paddingTop: 4 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span className="mono-label" style={{ fontSize: 9 }}>Monthly credits</span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>
-              {selected?.credits.toLocaleString()}
-              {tier === "team" ? " /seat" : ""}
-            </span>
-          </div>
-          <Slider
-            min={0}
-            max={bundles.length - 1}
-            step={1}
-            value={[idx]}
-            onValueChange={(v) => setStepIndex(v[0] ?? 0)}
-          />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--ink-faint, #8a8377)" }}>
-            <span>{bundles[0]?.credits.toLocaleString()}</span>
-            <span>{bundles[bundles.length - 1]?.credits.toLocaleString()}</span>
-          </div>
-        </div>
-      ) : selected ? (
-        <div style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          Includes {selected.credits.toLocaleString()} credits / month
-          {tier === "team" ? " per seat" : ""}.
-        </div>
+              {sorted.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {formatCredits(b.credits)} credits{tier === "team" ? " / seat" : ""}
+                  {b.recommended ? "  · popular" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
       ) : (
         <div style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          No bundles configured for {TIER_NAMES[tier]} yet.
+          Coming soon.
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        {currentTier === tier ? (
-          <span className="mono-label" style={{ fontSize: 10, color: "var(--emerald, #2f8f6b)" }}>
-            Your current tier
-          </span>
-        ) : null}
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={!canSelect || !lookupKey}
-          onClick={onSubscribe}
-          title={
-            !canSelect
+      <div style={{ flex: 1 }}>
+        <Bullets items={p.highlights} />
+      </div>
+
+      <button
+        className={isCurrent ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"}
+        disabled={!canSelect || !lookupKey || isCurrent}
+        onClick={onSubscribe}
+        title={
+          isCurrent
+            ? "This is your current plan."
+            : !canSelect
               ? "Only the workspace owner can change the plan."
               : !lookupKey
-                ? "This bundle is not configured for checkout yet."
+                ? "Not available for checkout yet."
                 : undefined
-          }
-        >
-          {currentTier === "free"
-            ? `Subscribe to ${TIER_NAMES[tier]}`
-            : `Switch to ${TIER_NAMES[tier]} · ${selected?.credits.toLocaleString()} credits`}
-        </button>
-        <a className="btn btn-ghost btn-sm" href="mailto:sales@cadence.app?subject=Cosmos%20enquiry">
-          Enterprise · contact sales
-        </a>
-      </div>
+        }
+        style={{ marginTop: 4 }}
+      >
+        {isCurrent
+          ? "Your current plan"
+          : `Get ${p.name}`}
+      </button>
 
       {lookupKey ? (
         <StripeEmbeddedCheckout
-          open={checkoutOpen}
-          onOpenChange={setCheckoutOpen}
+          open={open}
+          onOpenChange={setOpen}
           priceLookupKey={lookupKey}
-          title={`Subscribe · ${TIER_NAMES[tier]} ${selected?.credits.toLocaleString()} credits`}
+          title={`Subscribe · ${p.name} · ${formatCredits(selected!.credits)} credits`}
         />
       ) : null}
-    </div>
+    </CardShell>
   );
 }
