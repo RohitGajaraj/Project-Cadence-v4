@@ -15,6 +15,7 @@ import { DrillHeader, MonoLabel } from "@/components/cadence/Primitives";
 import { listOpportunities, generatePrd } from "@/lib/discovery.functions";
 import { listLearnings } from "@/lib/outcome.functions";
 import { getLineage, getProvenance, type ArtifactKind } from "@/lib/lineage.functions";
+import { PrecedentNudge } from "@/components/decision/PrecedentNudge";
 
 type OppRow = {
   id: string;
@@ -173,6 +174,8 @@ export function OpportunityDetail({ id }: { id: string }) {
           </button>
         }
       />
+
+      <PrecedentNudge kind="opportunity" targetId={id} className="mb-3" />
 
       <div
         style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr", gap: 12, marginBottom: 14 }}

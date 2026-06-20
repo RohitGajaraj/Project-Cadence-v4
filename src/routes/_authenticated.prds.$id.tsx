@@ -28,6 +28,7 @@ import {
 } from "@/lib/discovery.functions";
 import { getProvenance } from "@/lib/lineage.functions";
 import { CriticBadge } from "@/components/governance/CriticBadge";
+import { PrecedentNudge } from "@/components/decision/PrecedentNudge";
 import { CitationsCard, type Citation } from "@/components/product/CitationsCard";
 import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
 import { listTasks } from "@/lib/tasks.functions";
@@ -322,6 +323,8 @@ function PrdEditor() {
             </button>
           ))}
         </div>
+
+        <PrecedentNudge kind="prd" targetId={id} className="mb-6" />
 
         {/* H1 — engineering task graph (Planner) */}
         <div className="mb-6 rounded-lg border hairline bg-card px-3 py-2.5">

@@ -13,9 +13,11 @@ const VERDICT_TONE: Record<string, VerdictTone> = {
 export function PrecedentNudge({
   kind,
   targetId,
+  className,
 }: {
   kind: "opportunity" | "prd";
   targetId: string;
+  className?: string;
 }) {
   const [dismissed, setDismissed] = useState(false);
   const fetchPrecedent = useServerFn(getDecisionPrecedent);
@@ -26,7 +28,10 @@ export function PrecedentNudge({
   });
   if (dismissed || !data || data.length === 0) return null;
   return (
-    <aside className="bento" aria-label="Decision precedent">
+    <aside
+      className={["bento", className].filter(Boolean).join(" ")}
+      aria-label="Decision precedent"
+    >
       <div className="flex items-center justify-between">
         <span className="mono-label">Precedent</span>
         <button
