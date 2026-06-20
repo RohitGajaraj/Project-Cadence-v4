@@ -29,6 +29,13 @@ export async function clusterSignalsCore(
     .eq("user_id", userId)
     .is("theme_id", null);
   if (projectId) sigQuery = sigQuery.eq("project_id", projectId);
+  // KI-31: scope the read to the workspace the cron is processing. The cron path
+  // runs service-role (RLS off) and clusters "on behalf of a workspace owner"; an
+  // owner with signals in multiple workspaces would otherwise have workspace A's
+  // tick read ALL their unclustered signals (across every workspace), stamp them
+  // with A's theme_id, and consume B's signals so B's own tick never sees them.
+  // When workspaceId is null (the manual, RLS-scoped path) this is a no-op.
+  if (workspaceId) sigQuery = sigQuery.eq("workspace_id", workspaceId);
   const { data: sigs, error } = await sigQuery.order("created_at", { ascending: false }).limit(80);
   if (error) throw new Error(error.message);
   if (!sigs?.length) return { themes: 0, message: "No unclustered signals." };
@@ -96,8 +103,18 @@ Return STRICT JSON only, no prose, no markdown fences.`;
       .single();
     if (tErr || !theme) continue;
     const ids = members.map((n) => sigs[n].id);
-    await supabase.from("signals").update({ theme_id: theme.id }).in("id", ids);
-    for (const sid of ids) {
+    // KI-31: claim atomically — only stamp signals that are STILL unclustered, so a
+    // manual cluster racing the cron (or two passes) can't move a signal from one
+    // theme to another (the loser's update matches zero rows). Record lineage only
+    // for the signals this pass actually claimed.
+    const { data: claimedRows } = await supabase
+      .from("signals")
+      .update({ theme_id: theme.id })
+      .in("id", ids)
+      .is("theme_id", null)
+      .select("id");
+    const claimedIds = (claimedRows ?? []).map((r) => (r as { id: string }).id);
+    for (const sid of claimedIds) {
       await recordLineage(supabase, userId, {
         parent_kind: "signal",
         parent_id: sid,
