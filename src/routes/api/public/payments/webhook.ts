@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { type StripeEnv, verifyWebhook } from '@/lib/stripe.server';
+import { tierFromLookupKey } from '@/lib/billing-tier';
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
@@ -18,6 +19,32 @@ function resolvePriceLookup(item: any): string {
   return item?.price?.lookup_key
     || item?.price?.metadata?.lovable_external_id
     || item?.price?.id;
+}
+
+/**
+ * Flip plan_tier on the user's account (and the workspaces shim for back-compat).
+ * Service-role client, so RLS does not block. No-op if we cannot derive a tier
+ * (e.g. top-up checkout, unrecognized lookup key) or the user has no account row.
+ */
+async function applyTierForUser(userId: string, lookupKey: string, status: string) {
+  const tier = tierFromLookupKey(lookupKey);
+  if (!tier) return;
+  // Treat anything that is not an active-ish status as "back to free" for tier purposes.
+  const effectiveTier = (status === 'active' || status === 'trialing' || status === 'past_due')
+    ? tier
+    : 'free';
+  const sb = getSupabase();
+  // Account-level (preferred): every account row owned by this user.
+  const { data: accounts } = await sb
+    .from('accounts' as any)
+    .select('id')
+    .eq('owner_id', userId);
+  const accountIds = (accounts as Array<{ id: string }> | null)?.map((a) => a.id) ?? [];
+  if (accountIds.length) {
+    await sb.from('accounts' as any).update({ plan_tier: effectiveTier }).in('id', accountIds);
+  }
+  // Workspaces shim: any workspace owned by this user.
+  await sb.from('workspaces' as any).update({ plan_tier: effectiveTier }).eq('owner_id', userId);
 }
 
 async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
@@ -45,6 +72,7 @@ async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
     environment: env,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'stripe_subscription_id' });
+  await applyTierForUser(userId, priceId, sub.status);
 }
 
 async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
@@ -67,6 +95,8 @@ async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
     })
     .eq('stripe_subscription_id', sub.id)
     .eq('environment', env);
+  const userId = sub.metadata?.userId;
+  if (userId) await applyTierForUser(userId, priceId, sub.status);
 }
 
 async function handleSubscriptionDeleted(sub: any, env: StripeEnv) {
@@ -75,6 +105,10 @@ async function handleSubscriptionDeleted(sub: any, env: StripeEnv) {
     .update({ status: 'canceled', updated_at: new Date().toISOString() })
     .eq('stripe_subscription_id', sub.id)
     .eq('environment', env);
+  const userId = sub.metadata?.userId;
+  const item = sub.items?.data?.[0];
+  const priceId = resolvePriceLookup(item);
+  if (userId && priceId) await applyTierForUser(userId, priceId, 'canceled');
 }
 
 const TOPUP_CREDITS: Record<string, number> = {
