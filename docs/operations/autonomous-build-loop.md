@@ -48,7 +48,7 @@ For each item:
 1. **Sync:** `git fetch`, rebase the worktree on `origin/main`. This runs before every cycle, so each cycle automatically picks up any founder or Lovable pushes, including security fixes, and never works on stale data. (Per-cycle sync is enough; no mid-cycle re-pull rule.)
 2. **Plan:** read the item spec + linked detail. State the approach, the assumptions, and the success criteria. Take the necessary decisions; do not wait on the founder for anything that is not founder-gated.
 3. **Claim:** add the item to the report as in-progress.
-4. **Build:** surgical changes only; every line traces to the item. Follow the two-files-in-lockstep convention (server function + route) and the existing patterns.
+4. **Build:** surgical changes only; every line traces to the item. Follow the two-files-in-lockstep convention (server function + route) and the existing patterns. **For any front-end build, run the frontend build protocol** (the full design-skill toolkit, not `impeccable` alone): [`../conventions/design-context.md`](../conventions/design-context.md) "The frontend build protocol" + [`../../AGENTS.md`](../../AGENTS.md) §3.0d (founder ruling 2026-06-20).
 5. **Gate:** `bunx tsc --noEmit` (the real typecheck; `bun build` skips it), then `bun run build`, then `bun run lint`. All must pass before commit.
 6. **Adversarial review:** run a skeptical self-review (or parallel reviewer agents) against the diff. Fold every real fix. This is the "plan and take necessary edits" step, done before the work is trusted.
 7. **Doc-loop:** update every doc the change touches (section 6).
