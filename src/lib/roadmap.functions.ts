@@ -29,9 +29,15 @@ export type RoadmapItem = {
 export const getRoadmap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ items: RoadmapItem[] }> => {
+    // KI-32: exclude terminal-lifecycle opportunities from the board. The
+    // opportunities.status column ('backlog'|'now'|'next'|'later'|'shipped'|
+    // 'dropped', NOT NULL default 'backlog') carries the lifecycle state that
+    // discovery's updateOpportunity writes; without this filter, shipped and
+    // dropped items permanently reappear on the Now/Next/Later board.
     const { data, error } = await context.supabase
       .from("opportunities")
       .select("*")
+      .not("status", "in", "(shipped,dropped)")
       .order("ice_score", { ascending: false });
     if (error) throw new Error(error.message);
     const items: RoadmapItem[] = (data ?? []).map((o) => {
