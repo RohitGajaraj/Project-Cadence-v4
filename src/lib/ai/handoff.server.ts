@@ -366,12 +366,18 @@ export async function maybeCompleteMission(
       .select("id", { count: "exact", head: true })
       .eq("mission_id", updated.id);
     if ((existing ?? 0) === 0) {
-      // Pull the final hop's output as the rationale (best-effort).
+      // Pull the rationale from the run that actually FINISHED LAST, not the one
+      // ENQUEUED last: for a wide DAG several runs are enqueued in the same tick
+      // (often the same millisecond), so created_at DESC could attribute the
+      // decision to the wrong agent/output. Restrict to completed runs and order
+      // by their last activity (last_checkpoint_at ≈ completion time; agent_runs
+      // has no completed_at column).
       const { data: lastRun } = await supabase
         .from("agent_runs")
         .select("output,agent_slug")
         .eq("mission_id", updated.id)
-        .order("created_at", { ascending: false })
+        .eq("status", "completed")
+        .order("last_checkpoint_at", { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle();
       const rationale = (lastRun?.output ?? updated.goal ?? "").slice(0, 2000);
