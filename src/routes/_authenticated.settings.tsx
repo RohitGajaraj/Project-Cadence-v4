@@ -409,6 +409,105 @@ function BillingTab({ checkout }: { checkout?: string }) {
    block honestly says so instead of pretending a 0 is meaningful. ---- */
 
 function CreditsTab() {
+
+  return <CreditsTabInner />;
+}
+
+function BundleGrid({
+  bundles,
+  selectedKey,
+  onSelect,
+  remainingTopupRoom,
+  bestPerCredit,
+  fmtPrice,
+  fmtCreditsShort,
+}: {
+  bundles: { key: string; credits: number; priceCents: number }[];
+  selectedKey: string;
+  onSelect: (key: string) => void;
+  remainingTopupRoom: number | null;
+  bestPerCredit: number;
+  fmtPrice: (c: number) => string;
+  fmtCreditsShort: (n: number) => string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 10,
+        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+      }}
+    >
+      {bundles.map((b) => {
+        const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
+        const perCredit = b.priceCents / b.credits;
+        const isBest = Math.abs(perCredit - bestPerCredit) < 1e-9;
+        const selected = b.key === selectedKey;
+        const vsStarter = bundles[0] ? bundles[0].priceCents / bundles[0].credits : perCredit;
+        const savedVsStarter = Math.max(0, Math.round((1 - perCredit / vsStarter) * 100));
+        return (
+          <button
+            key={b.key}
+            type="button"
+            disabled={wouldExceed}
+            onClick={() => onSelect(b.key)}
+            title={wouldExceed ? "Exceeds your per-cycle top-up limit." : undefined}
+            style={{
+              textAlign: "left",
+              padding: "12px 14px",
+              borderRadius: 10,
+              cursor: wouldExceed ? "not-allowed" : "pointer",
+              opacity: wouldExceed ? 0.5 : 1,
+              border: selected
+                ? "1px solid var(--ember, #c2602e)"
+                : "1px solid var(--hairline, rgba(0,0,0,0.12))",
+              background: selected
+                ? "color-mix(in oklab, var(--ember, #c2602e) 8%, var(--canvas, #fbf7ef))"
+                : "var(--canvas, #fbf7ef)",
+              boxShadow: selected
+                ? "0 0 0 3px color-mix(in oklab, var(--ember, #c2602e) 18%, transparent)"
+                : "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              position: "relative",
+            }}
+          >
+            {isBest && (
+              <span
+                className="mono-label"
+                style={{
+                  position: "absolute",
+                  top: -8,
+                  right: 10,
+                  fontSize: 8.5,
+                  background: "var(--ink, #1d1a14)",
+                  color: "var(--canvas, #fbf7ef)",
+                  padding: "2px 6px",
+                  borderRadius: 99,
+                }}
+              >
+                Best value
+              </span>
+            )}
+            <span className="font-display" style={{ fontSize: 18, lineHeight: 1.1 }}>
+              {fmtCreditsShort(b.credits)} credits
+            </span>
+            <span style={{ fontSize: 13, color: "var(--ink, #1d1a14)" }}>
+              {fmtPrice(b.priceCents)}
+            </span>
+            <span style={{ fontSize: 10, color: "var(--ink-subtle, #6b6457)" }}>
+              {(perCredit / 100).toFixed(3)} $/credit
+              {savedVsStarter > 0 ? ` · save ${savedVsStarter}%` : ""}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CreditsTabInner() {
   const fGetCredits = useServerFn(getMyCreditsView);
   const fGetCatalog = useServerFn(getPricingCatalog);
 
@@ -458,9 +557,12 @@ function CreditsTab() {
     : null;
 
   // Drive bundles from the admin-managed catalog when available; fall back to
-  // the legacy three. Convention: lookup_key = "topup_<credits>" or "topup_<k>k".
+  // a market-benchmarked ladder (Notion AI / Cursor / Linear pricing per equivalent
+  // unit, ~$1.50–$2 per 100 credits at entry, scaling down with volume to ~$1).
+  // Convention: lookup_key = "topup_<credits>" or "topup_<k>k".
   const catalogBundles = (catalog.data?.topups ?? []).filter((b) => b.active);
-  const BUNDLES = catalogBundles.length
+  type Bundle = { key: string; credits: number; priceCents: number };
+  const BUNDLES: Bundle[] = catalogBundles.length
     ? [...catalogBundles]
         .sort((a, b) => a.credits - b.credits)
         .map((b) => ({
@@ -469,13 +571,34 @@ function CreditsTab() {
               ? `topup_${b.credits / 1000}k`
               : `topup_${b.credits}`,
           credits: b.credits,
-          price: `$${Math.round(b.price_cents / 100).toLocaleString()}`,
+          priceCents: b.price_cents,
         }))
     : [
-        { key: "topup_250", credits: 250, price: "$5" },
-        { key: "topup_1k", credits: 1000, price: "$18" },
-        { key: "topup_2_5k", credits: 2500, price: "$40" },
+        { key: "topup_250", credits: 250, priceCents: 500 },
+        { key: "topup_1k", credits: 1000, priceCents: 1800 },
+        { key: "topup_2_5k", credits: 2500, priceCents: 4000 },
+        { key: "topup_5k", credits: 5000, priceCents: 7500 },
+        { key: "topup_10k", credits: 10000, priceCents: 14000 },
+        { key: "topup_25k", credits: 25000, priceCents: 32500 },
+        { key: "topup_50k", credits: 50000, priceCents: 60000 },
+        { key: "topup_100k", credits: 100000, priceCents: 110000 },
+        { key: "topup_250k", credits: 250000, priceCents: 250000 },
       ];
+  const fmtPrice = (c: number) => `$${Math.round(c / 100).toLocaleString()}`;
+  const fmtCreditsShort = (n: number) =>
+    n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString();
+
+  const STARTER_MAX = 5000;
+  const starterBundles = BUNDLES.filter((b) => b.credits <= STARTER_MAX);
+  const scaleBundles = BUNDLES.filter((b) => b.credits > STARTER_MAX);
+  const [selectedKey, setSelectedKey] = useState<string>(
+    () => BUNDLES.find((b) => b.credits === 2500)?.key ?? BUNDLES[0]?.key ?? "",
+  );
+  const selectedBundle = BUNDLES.find((b) => b.key === selectedKey) ?? BUNDLES[0];
+  const bestPerCredit = BUNDLES.reduce(
+    (min, b) => Math.min(min, b.priceCents / b.credits),
+    Infinity,
+  );
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -532,42 +655,94 @@ function CreditsTab() {
         )}
       </div>
 
+      {/* ===== Pick a bundle ===== */}
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
-          One-time top-ups
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div className="mono-label" style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}>
+              One-time top-ups
+            </div>
+            <div className="font-display" style={{ fontSize: 22, marginTop: 4, fontWeight: 500, letterSpacing: "-0.01em" }}>
+              Buy credits without changing your plan
+            </div>
+            <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0" }}>
+              Credits land in your balance and stay until used. Higher bundles unlock a better per-credit rate.
+            </p>
+          </div>
+          {selectedBundle && (
+            <div style={{ textAlign: "right" }}>
+              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                Your selection
+              </div>
+              <div className="font-display" style={{ fontSize: 28, lineHeight: 1, marginTop: 4 }}>
+                {fmtPrice(selectedBundle.priceCents)}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", marginTop: 2 }}>
+                {selectedBundle.credits.toLocaleString()} credits &middot;{" "}
+                {(selectedBundle.priceCents / selectedBundle.credits / 100).toFixed(3)} $/credit
+              </div>
+            </div>
+          )}
         </div>
-        <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
-          Buy credits without changing your plan
+
+        {/* Starter tiers */}
+        <div style={{ marginTop: 18 }}>
+          <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+            Starter packs
+          </div>
+          <BundleGrid
+            bundles={starterBundles}
+            selectedKey={selectedKey}
+            onSelect={setSelectedKey}
+            remainingTopupRoom={remainingTopupRoom}
+            bestPerCredit={bestPerCredit}
+            fmtPrice={fmtPrice}
+            fmtCreditsShort={fmtCreditsShort}
+          />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gap: 8,
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            marginTop: 12,
-          }}
-        >
-          {BUNDLES.map((b) => {
-            const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
-            return (
-              <button
-                key={b.key}
-                className="btn btn-ghost btn-sm"
-                disabled={wouldExceed}
-                onClick={() => openTopUp(b.key, `Top-up: ${b.credits.toLocaleString()} credits`)}
-                title={
-                  wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined
-                }
-              >
-                {b.credits.toLocaleString()} credits &middot; {b.price}
-              </button>
-            );
-          })}
-        </div>
+
+        {/* Scale tiers */}
+        {scaleBundles.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+              At scale &middot; better per-credit rate
+            </div>
+            <BundleGrid
+              bundles={scaleBundles}
+              selectedKey={selectedKey}
+              onSelect={setSelectedKey}
+              remainingTopupRoom={remainingTopupRoom}
+              bestPerCredit={bestPerCredit}
+              fmtPrice={fmtPrice}
+              fmtCreditsShort={fmtCreditsShort}
+            />
+          </div>
+        )}
+
+        {selectedBundle && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={remainingTopupRoom !== null && selectedBundle.credits > remainingTopupRoom}
+              onClick={() =>
+                openTopUp(
+                  selectedBundle.key,
+                  `Top-up: ${selectedBundle.credits.toLocaleString()} credits`,
+                )
+              }
+            >
+              Buy {selectedBundle.credits.toLocaleString()} credits &middot; {fmtPrice(selectedBundle.priceCents)}
+            </button>
+          </div>
+        )}
+
         {data && (
-          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "12px 0 0" }}>
             This cycle: {data.cycleTopupCredits.toLocaleString()} of{" "}
-            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
+            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used. Need more? &nbsp;
+            <a href="mailto:sales@cadence.app?subject=Enterprise%20credits" style={{ color: "var(--ember, #c2602e)" }}>
+              Talk to sales for volume pricing
+            </a>.
           </p>
         )}
       </div>
