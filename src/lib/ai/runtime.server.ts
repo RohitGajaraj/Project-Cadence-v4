@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
 import { costRoutedModel, cheapestLiveModel } from "./routing";
 import { resolveFallbackChain } from "./fallback";
+import { activeModelId } from "./models";
 import {
   capExceeded,
   creditWindowStartIso,
@@ -1074,9 +1075,12 @@ export async function callModel(
   await checkSurfaceBudget(supabase, userId, opts.surface);
   // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
   // on) up front, so the credit pre-check projects the model that will actually run.
+  // MODEL-REGISTRY-DEPRECATION: resolve a deprecated requested model to its live replacement
+  // first (a no-op when nothing is flagged in the catalog), then apply cost-aware routing.
+  const requested = activeModelId(opts.model);
   const effectiveModel = costRoutingEnabled()
-    ? costRoutedModel(opts.surface, opts.model)
-    : opts.model;
+    ? costRoutedModel(opts.surface, requested)
+    : requested;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
   await assertAccountCredits(supabase, userId, opts, effectiveModel);
 
@@ -1505,9 +1509,12 @@ export async function callModelStream(
   await checkSurfaceBudget(supabase, userId, opts.surface);
   // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
   // on) up front, so the credit pre-check projects the model that will actually run.
+  // MODEL-REGISTRY-DEPRECATION: resolve a deprecated requested model to its live replacement
+  // first (a no-op when nothing is flagged in the catalog), then apply cost-aware routing.
+  const requested = activeModelId(opts.model);
   const effectiveModel = costRoutingEnabled()
-    ? costRoutedModel(opts.surface, opts.model)
-    : opts.model;
+    ? costRoutedModel(opts.surface, requested)
+    : requested;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
   await assertAccountCredits(supabase, userId, opts, effectiveModel);
 

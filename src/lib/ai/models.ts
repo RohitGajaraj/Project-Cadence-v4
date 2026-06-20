@@ -14,6 +14,18 @@ export type Model = {
   contextK: number;
   desc: string;
   live: boolean;
+  /**
+   * MODEL-REGISTRY-DEPRECATION: a model-deprecation playbook (considerations.md #4). When a
+   * provider sunsets a model, mark it `deprecated: true` and point `replacement` at the model
+   * id that should serve its traffic instead; `activeModelId` then routes around it at the AI
+   * chokepoint. `sunset` is the human-readable date for the catalog UI. All optional, so a
+   * catalog with nothing flagged (today) is a no-op. The route-around only takes effect when a
+   * `replacement` is set AND that replacement is live, so a deprecation can never strand traffic
+   * on an unusable model.
+   */
+  deprecated?: boolean;
+  replacement?: string;
+  sunset?: string;
 };
 
 export const MODELS: Model[] = [
@@ -170,6 +182,40 @@ export const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 export function getModel(id: string): Model {
   return MODELS.find((m) => m.id === id) ?? MODELS[0];
+}
+
+/**
+ * MODEL-REGISTRY-DEPRECATION: resolve a requested model id to the model that should actually
+ * serve it, following `deprecated -> replacement` links. Pure + deterministic. Safe by
+ * construction: it follows a hop only when the current model is `deprecated`, names a
+ * `replacement`, and that replacement EXISTS in the catalog (intermediates may be non-live
+ * retired models that themselves point onward); the chain stops at the first non-deprecated
+ * model, a missing replacement, or a cycle. The resolved model is adopted ONLY if that terminal
+ * model is `live` - otherwise the original requested id is returned, so a deprecation can never
+ * route traffic onto a missing or non-live model. It caps the hop count and tracks visited ids
+ * so a misconfigured cycle terminates instead of looping. With nothing flagged in the catalog (the
+ * state today) this is the identity function, so the chokepoint stays byte-identical until a
+ * real sunset is recorded. Unit-tested in models.test.ts with an injected catalog.
+ */
+export function activeModelId(id: string, catalog: Model[] = MODELS): string {
+  let current = id;
+  const seen = new Set<string>();
+  // Follow deprecated -> replacement links (a retired model may itself point to a newer one,
+  // so intermediates can be non-live). Cap the hops and track visited ids so a misconfigured
+  // cycle terminates.
+  for (let hops = 0; hops < 8; hops++) {
+    const m = catalog.find((x) => x.id === current);
+    if (!m || !m.deprecated || !m.replacement) break;
+    if (seen.has(current)) break;
+    seen.add(current);
+    if (!catalog.find((x) => x.id === m.replacement)) break; // replacement missing: do not strand
+    current = m.replacement;
+  }
+  // Only adopt the resolved model if it is a real, LIVE endpoint; otherwise keep the original
+  // requested id so a deprecation can never route traffic onto a missing or non-live model.
+  if (current === id) return id;
+  const resolved = catalog.find((x) => x.id === current);
+  return resolved && resolved.live ? current : id;
 }
 
 /**
