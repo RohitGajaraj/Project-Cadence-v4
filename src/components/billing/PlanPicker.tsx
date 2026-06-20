@@ -12,6 +12,7 @@
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { Sparkle, Star, Stars, Orbit, Atom } from "lucide-react";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { toast } from "@/lib/notify";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -20,7 +21,40 @@ import { lookupKeyFor } from "@/lib/billing-tier";
 import { planPresentation, type PlanTier } from "@/lib/entitlements";
 
 type PaidTier = "pro" | "max" | "team";
-const PAID_TIERS: PaidTier[] = ["pro", "max", "team"];
+
+type Audience = "personal" | "teams" | "enterprise";
+
+const AUDIENCE_LABEL: Record<Audience, string> = {
+  personal: "Personal",
+  teams: "Teams",
+  enterprise: "Enterprise",
+};
+
+const TIER_ICON: Record<PlanTier, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  free: Sparkle,
+  pro: Star,
+  max: Stars,
+  team: Orbit,
+  enterprise: Atom,
+};
+
+/** N+1 nudge: the next paid step above the user's current tier. */
+function recommendedFor(current: PlanTier): PaidTier {
+  switch (current) {
+    case "free": return "pro";
+    case "pro": return "max";
+    case "max": return "team";
+    case "team": return "max"; // sideways nudge; enterprise has its own card
+    case "enterprise": return "max";
+    default: return "max";
+  }
+}
+
+function audienceFor(tier: PlanTier): Audience {
+  if (tier === "team") return "teams";
+  if (tier === "enterprise") return "enterprise";
+  return "personal";
+}
 
 function roundDollars(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString()}`;
@@ -45,6 +79,7 @@ export function PlanTable({
   const catalog = useQuery({ queryKey: ["pricing-catalog"], queryFn: () => fGetCatalog() });
 
   const [interval, setIntervalState] = useState<"monthly" | "yearly">("monthly");
+  const [audience, setAudience] = useState<Audience>(audienceFor(currentTier));
 
   if (catalog.isLoading) {
     return <div className="bento" style={{ padding: 18 }}>Loading plans…</div>;
@@ -58,6 +93,7 @@ export function PlanTable({
   }
 
   const allBundles = catalog.data.bundles.filter((b) => b.active);
+  const recommended = recommendedFor(currentTier);
 
   // Best-yearly-savings across all paid tiers, for the toggle pill.
   let bestSave = 0;
@@ -68,7 +104,44 @@ export function PlanTable({
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
+      {/* Personal · Teams · Enterprise (Anthropic-style audience switcher) */}
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            padding: 3,
+            borderRadius: 99,
+            background: "var(--soft-stone, rgba(0,0,0,0.06))",
+          }}
+        >
+          {(Object.keys(AUDIENCE_LABEL) as Audience[]).map((a) => {
+            const active = a === audience;
+            return (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAudience(a)}
+                style={{
+                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                  color: "var(--ink, #1d1a14)",
+                  border: "none",
+                  padding: "6px 18px",
+                  borderRadius: 99,
+                  fontSize: 12,
+                  fontWeight: active ? 600 : 500,
+                  cursor: "pointer",
+                  boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : undefined,
+                }}
+              >
+                {AUDIENCE_LABEL[a]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Monthly / Yearly toggle */}
+      {audience !== "enterprise" && (
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div
           style={{
@@ -111,29 +184,64 @@ export function PlanTable({
           })}
         </div>
       </div>
+      )}
 
-      {/* Horizontal plan grid: Free · Cluster · Constellation · Galaxy · Cosmos */}
+      {/* Horizontal plan grid, scoped to the active audience */}
       <div
         style={{
           display: "grid",
           gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
           alignItems: "stretch",
         }}
       >
-        <FreeCard isCurrent={currentTier === "free"} />
-        {PAID_TIERS.map((tier) => (
+        {audience === "personal" && (
+          <>
+            <FreeCard isCurrent={currentTier === "free"} />
+            {(["pro", "max"] as PaidTier[]).map((tier) => (
+              <PaidTierCard
+                key={tier}
+                tier={tier}
+                interval={interval}
+                bundles={allBundles.filter((b) => b.tier === tier)}
+                isCurrent={currentTier === tier}
+                isRecommended={recommended === tier}
+                currentTier={currentTier}
+                canSelect={canSelect}
+              />
+            ))}
+          </>
+        )}
+        {audience === "teams" && (
           <PaidTierCard
-            key={tier}
-            tier={tier}
+            tier="team"
             interval={interval}
-            bundles={allBundles.filter((b) => b.tier === tier)}
-            isCurrent={currentTier === tier}
+            bundles={allBundles.filter((b) => b.tier === "team")}
+            isCurrent={currentTier === "team"}
+            isRecommended={recommended === "team"}
+            currentTier={currentTier}
             canSelect={canSelect}
           />
-        ))}
-        <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+        )}
+        {audience === "enterprise" && (
+          <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+        )}
       </div>
+
+      <p
+        style={{
+          textAlign: "center",
+          fontSize: 11,
+          color: "var(--ink-subtle, #6b6457)",
+          margin: 0,
+        }}
+      >
+        {audience === "personal"
+          ? "For individuals and small product teams."
+          : audience === "teams"
+            ? "Per-seat pricing for the whole product org."
+            : "Custom contracts, SSO, residency, and a dedicated SLA."}
+      </p>
     </div>
   );
 }
@@ -160,6 +268,11 @@ function CardShell({
           : recommended
             ? "var(--ink-faint, #8a8377)"
             : undefined,
+        boxShadow: isCurrent
+          ? "0 0 0 1px var(--ember, #c2602e), 0 8px 24px -12px color-mix(in oklab, var(--ember, #c2602e) 35%, transparent)"
+          : recommended
+            ? "0 4px 18px -10px rgba(0,0,0,0.18)"
+            : undefined,
         position: "relative",
       }}
     >
@@ -177,7 +290,7 @@ function CardShell({
             fontSize: 9,
           }}
         >
-          Popular
+          Recommended
         </span>
       ) : null}
       {children}
@@ -185,11 +298,28 @@ function CardShell({
   );
 }
 
-function CardHeader({ name, tagline, isCurrent }: { name: string; tagline: string; isCurrent: boolean }) {
+function CardHeader({
+  tier,
+  name,
+  tagline,
+  isCurrent,
+}: {
+  tier: PlanTier;
+  name: string;
+  tagline: string;
+  isCurrent: boolean;
+}) {
+  const Icon = TIER_ICON[tier];
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <span className="font-display" style={{ fontSize: 18 }}>{name}</span>
+        <span
+          className="font-display"
+          style={{ fontSize: 18, display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          <Icon size={16} strokeWidth={1.7} />
+          {name}
+        </span>
         {isCurrent ? (
           <span
             className="mono-label"
@@ -239,7 +369,7 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
   const p = planPresentation("free");
   return (
     <CardShell isCurrent={isCurrent}>
-      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+      <CardHeader tier="free" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>$0</span>
         <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>/month</span>
@@ -258,7 +388,7 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
   const p = planPresentation("enterprise");
   return (
     <CardShell isCurrent={isCurrent}>
-      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+      <CardHeader tier="enterprise" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span className="font-display" style={{ fontSize: 24, lineHeight: 1.1 }}>Custom</span>
       </div>
@@ -281,12 +411,16 @@ function PaidTierCard({
   interval,
   bundles,
   isCurrent,
+  isRecommended,
+  currentTier,
   canSelect,
 }: {
   tier: PaidTier;
   interval: "monthly" | "yearly";
   bundles: PricingBundle[];
   isCurrent: boolean;
+  isRecommended: boolean;
+  currentTier: PlanTier;
   canSelect: boolean;
 }) {
   const p = planPresentation(tier);
@@ -309,7 +443,13 @@ function PaidTierCard({
     : 0;
 
   const lookupKey = selected ? lookupKeyFor(tier, selected.credits, interval) : null;
-  const recommended = !!selected?.recommended;
+  const recommended = isRecommended;
+
+  // Tier order index for upgrade / downgrade language.
+  const TIER_ORDER: PlanTier[] = ["free", "pro", "max", "team", "enterprise"];
+  const cmp = TIER_ORDER.indexOf(tier) - TIER_ORDER.indexOf(currentTier);
+  const direction: "upgrade" | "downgrade" | "same" =
+    cmp > 0 ? "upgrade" : cmp < 0 ? "downgrade" : "same";
 
   function onSubscribe() {
     if (!lookupKey) return;
@@ -322,9 +462,16 @@ function PaidTierCard({
     setOpen(true);
   }
 
+  const ctaLabel = (() => {
+    if (isCurrent) return "Your current plan";
+    if (direction === "upgrade") return `Upgrade to ${p.name}`;
+    if (direction === "downgrade") return `Switch to ${p.name}`;
+    return `Get ${p.name}`;
+  })();
+
   return (
     <CardShell isCurrent={isCurrent} recommended={recommended}>
-      <CardHeader name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
+      <CardHeader tier={tier} name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
 
       {selected ? (
         <>
@@ -360,11 +507,24 @@ function PaidTierCard({
               {sorted.map((b) => (
                 <option key={b.id} value={b.id}>
                   {formatCredits(b.credits)} credits{tier === "team" ? " / seat" : ""}
-                  {b.recommended ? "  · popular" : ""}
                 </option>
               ))}
             </select>
           </label>
+
+          {isCurrent && (
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--ink-subtle, #6b6457)",
+                margin: 0,
+                lineHeight: 1.4,
+              }}
+            >
+              Need extra room this month? Buy a top-up instead of upgrading — credits land in your
+              balance and stay until used.
+            </p>
+          )}
         </>
       ) : (
         <div style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
@@ -391,9 +551,7 @@ function PaidTierCard({
         }
         style={{ marginTop: 4 }}
       >
-        {isCurrent
-          ? "Your current plan"
-          : `Get ${p.name}`}
+        {ctaLabel}
       </button>
 
       {lookupKey ? (
