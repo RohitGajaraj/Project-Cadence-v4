@@ -22,6 +22,7 @@ import {
   Trash2,
   MoreHorizontal,
   Pencil,
+  FolderInput,
   LogOut as LeaveIcon,
   Calendar as CalIcon,
   type LucideIcon,
@@ -41,7 +42,7 @@ import { getNeedsYou } from "@/lib/today.functions";
 import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
-import { updateProject } from "@/lib/projects.functions";
+import { updateProject, moveProduct } from "@/lib/projects.functions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -49,6 +50,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -249,6 +253,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const deleteWsFn = useServerFn(deleteWorkspace);
   const leaveWsFn = useServerFn(leaveWorkspace);
   const updateProjectFn = useServerFn(updateProject);
+  const moveProductFn = useServerFn(moveProduct);
 
   // Pending-calls badge (Approvals) — shares the "needs-you" cache key with
   // the Today page, so no extra fetch when both are mounted.
@@ -295,6 +300,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     .toUpperCase();
 
   const activeProduct = products.find((p) => p.id === activeProductId) ?? null;
+  // Move-product destinations: the user's other workspaces (products in the list
+  // all belong to the active workspace). The move_product RPC enforces same-account.
+  const otherWorkspaces = workspaces.filter((w) => w.id !== activeWorkspaceId);
 
   async function createWorkspace() {
     const name = await prompt({
@@ -452,6 +460,28 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     toast.success("Product deleted.");
     if (activeProductId === id) setActiveProductId(null);
     await refreshProducts();
+  }
+
+  // WM-F6: move a product to another workspace in the same account. Reversible
+  // (no destructive styling / typed-confirm), so a clear confirm is enough. The
+  // move_product RPC enforces owner/admin-in-both + same-account and reassigns
+  // every child row atomically; an unmet guard surfaces as the toast error.
+  async function moveProductTo(id: string, name: string, dest: { id: string; name: string }) {
+    const ok = await confirm({
+      title: `Move "${name}" to "${dest.name}"?`,
+      body: "The product and everything in it (signals, specs, tasks, docs, decisions) moves with it. Workspace memory stays put. You can move it back later.",
+      confirmLabel: "Move product",
+    });
+    if (!ok) return;
+    try {
+      await moveProductFn({ data: { productId: id, destWorkspaceId: dest.id } });
+      toast.success(`Moved "${name}" to "${dest.name}".`);
+      // The product left this workspace's list; drop it as active and refresh.
+      if (activeProductId === id) setActiveProductId(null);
+      await refreshProducts();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't move the product.");
+    }
   }
 
   async function signOut() {
@@ -680,6 +710,25 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
                         <Pencil className="h-3.5 w-3.5" />
                         <span>Rename</span>
                       </DropdownMenuItem>
+                      {otherWorkspaces.length > 0 && (
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer gap-2">
+                            <FolderInput className="h-3.5 w-3.5" />
+                            <span>Move to workspace</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="max-h-64 overflow-auto">
+                            {otherWorkspaces.map((ws) => (
+                              <DropdownMenuItem
+                                key={ws.id}
+                                onClick={() => moveProductTo(p.id, p.name, ws)}
+                                className="cursor-pointer"
+                              >
+                                <span className="truncate">{ws.name}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => deleteProduct(p.id, p.name)}
