@@ -201,3 +201,78 @@ export const adminRemoveAdmin = createServerFn({ method: "POST" })
     if (error) return { error: error.message };
     return { ok: true };
   });
+
+// ─── Users + credit grants + dynamic plans ──────────────────────────────────
+
+export type AdminUserRow = {
+  user_id: string;
+  email: string;
+  created_at: string;
+  is_admin: boolean;
+  primary_account_id: string | null;
+  plan_tier: string;
+  balance_credits: number;
+  topup_credits: number;
+};
+
+export const adminListUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string; limit?: number }) => d)
+  .handler(async ({ context, data }): Promise<AdminUserRow[] | { error: string }> => {
+    const { data: rows, error } = await context.supabase.rpc("admin_list_users", {
+      _search: data.search?.trim() || null,
+      _limit: data.limit ?? 200,
+    });
+    if (error) return { error: error.message };
+    return (rows ?? []) as AdminUserRow[];
+  });
+
+export const adminGrantCredits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string; credits: number; reason?: string }) => d)
+  .handler(async ({ context, data }): Promise<{ account_id: string; new_balance: number } | { error: string }> => {
+    const { data: res, error } = await context.supabase.rpc("admin_grant_credits", {
+      _user_id: data.user_id,
+      _credits: data.credits,
+      _reason: data.reason ?? "admin_grant",
+    });
+    if (error) return { error: error.message };
+    const r = res as { account_id: string; new_balance: number };
+    return { account_id: r.account_id, new_balance: r.new_balance };
+  });
+
+export const adminUpsertPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      tier: string;
+      display_name: string;
+      tagline?: string | null;
+      audience?: string;
+      sort_order?: number;
+      recommended?: boolean;
+      active?: boolean;
+    }) => d,
+  )
+  .handler(async ({ context, data }): Promise<{ tier: string } | { error: string }> => {
+    const { data: tier, error } = await context.supabase.rpc("admin_upsert_plan", {
+      _tier: data.tier,
+      _display_name: data.display_name,
+      _tagline: data.tagline ?? null,
+      _audience: data.audience ?? "general",
+      _sort_order: data.sort_order ?? 50,
+      _recommended: data.recommended ?? false,
+      _active: data.active ?? true,
+    });
+    if (error) return { error: error.message };
+    return { tier: tier as string };
+  });
+
+export const adminDeletePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tier: string }) => d)
+  .handler(async ({ context, data }): Promise<{ ok: true } | { error: string }> => {
+    const { error } = await context.supabase.rpc("admin_delete_plan", { _tier: data.tier });
+    if (error) return { error: error.message };
+    return { ok: true };
+  });
