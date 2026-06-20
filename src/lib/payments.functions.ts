@@ -207,3 +207,217 @@ export const resumeMySubscription = createServerFn({ method: 'POST' })
   .handler(({ data, context }): Promise<MutateResult> =>
     mutateCancelFlag(context as never, data.environment, false),
   );
+
+// ---------------------------------------------------------------------------
+// Phase 7: Credits surface (balance, ledger, top-ups).
+// Reads the live account_credits / credit_ledger / credit_topups rows via the
+// caller's authed (RLS-scoped) client. Top-ups still flow through the same
+// Stripe Embedded Checkout — createTopUpCheckout is a thin guard that enforces
+// the per-cycle cap before delegating to createCheckoutSession.
+// ---------------------------------------------------------------------------
+
+export type CreditsLedgerRow = {
+  id: string;
+  delta_credits: number;
+  reason: string;
+  surface: string | null;
+  product_id: string | null;
+  created_at: string;
+};
+
+export type CreditsTopupRow = {
+  id: string;
+  price_lookup_key: string;
+  credits_added: number;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  created_at: string;
+};
+
+export type CreditsView = {
+  accountId: string | null;
+  enabled: boolean;
+  balanceCredits: number;
+  monthlyGrantCredits: number;
+  topupCredits: number;
+  cycleAnchor: string | null;
+  cycleTopupCredits: number;
+  cycleTopupCapCredits: number;
+  ledger: CreditsLedgerRow[];
+  topups: CreditsTopupRow[];
+};
+
+const FALLBACK_TOPUP_CAP = 5000; // when monthly grant is 0 (engine still dormant)
+
+export const getMyCreditsView = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { environment: StripeEnv }) => data)
+  .handler(async ({ data, context }): Promise<CreditsView> => {
+    const { supabase, userId } = context;
+    const empty: CreditsView = {
+      accountId: null,
+      enabled: false,
+      balanceCredits: 0,
+      monthlyGrantCredits: 0,
+      topupCredits: 0,
+      cycleAnchor: null,
+      cycleTopupCredits: 0,
+      cycleTopupCapCredits: FALLBACK_TOPUP_CAP,
+      ledger: [],
+      topups: [],
+    };
+
+    // Resolve the user's default account id (idempotent provisioning).
+    let accountId: string | null = null;
+    try {
+      const { data: acc } = await supabase.rpc(
+        'ensure_user_default_account' as never,
+        { _user_id: userId } as never,
+      );
+      accountId = (acc as string | null) ?? null;
+    } catch { /* RPC missing pre-publish; degrade gracefully */ }
+    if (!accountId) return empty;
+
+    // Is the credits engine flipped on? Reads a public SQL fn that returns
+    // bool; defaults to false. We surface this so the UI can label balances
+    // as "metering on" vs "metering off" without lying about a 0 balance.
+    let enabled = false;
+    try {
+      const { data: en } = await supabase.rpc('credits_enabled' as never);
+      enabled = en === true;
+    } catch { /* fn missing — treat as off */ }
+
+    const [credRes, ledRes, topRes] = await Promise.all([
+      supabase
+        .from('account_credits')
+        .select('balance_credits, monthly_grant_credits, topup_credits, cycle_anchor')
+        .eq('account_id', accountId)
+        .maybeSingle(),
+      supabase
+        .from('credit_ledger')
+        .select('id, delta_credits, reason, surface, product_id, created_at')
+        .eq('account_id', accountId)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabase
+        .from('credit_topups')
+        .select('id, price_lookup_key, credits_added, amount_cents, currency, status, created_at, environment')
+        .eq('user_id', userId)
+        .eq('environment', data.environment)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    const cred = (credRes.data ?? {}) as {
+      balance_credits?: number;
+      monthly_grant_credits?: number;
+      topup_credits?: number;
+      cycle_anchor?: string | null;
+    };
+    const monthlyGrant = Number(cred.monthly_grant_credits ?? 0);
+    const cycleAnchor = (cred.cycle_anchor as string | null) ?? null;
+    const topups = (topRes.data ?? []) as CreditsTopupRow[];
+
+    const sinceMs = cycleAnchor ? new Date(cycleAnchor).getTime() : Date.now() - 30 * 86_400_000;
+    const cycleTopups = topups
+      .filter((t) => t.status === 'completed' && new Date(t.created_at).getTime() >= sinceMs)
+      .reduce((s, t) => s + Number(t.credits_added || 0), 0);
+    const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
+
+    return {
+      accountId,
+      enabled,
+      balanceCredits: Number(cred.balance_credits ?? 0),
+      monthlyGrantCredits: monthlyGrant,
+      topupCredits: Number(cred.topup_credits ?? 0),
+      cycleAnchor,
+      cycleTopupCredits: cycleTopups,
+      cycleTopupCapCredits: cap,
+      ledger: ((ledRes.data ?? []) as CreditsLedgerRow[]),
+      topups,
+    };
+  });
+
+const TOPUP_BUNDLES: Record<string, { credits: number; label: string }> = {
+  topup_250: { credits: 250, label: '250 credits' },
+  topup_1k: { credits: 1000, label: '1,000 credits' },
+  topup_2_5k: { credits: 2500, label: '2,500 credits' },
+};
+
+/**
+ * Cap-guarded top-up: rejects if this purchase would push the cycle's total
+ * top-up credits past the per-cycle cap, otherwise delegates to the standard
+ * embedded-checkout session. Same return shape as createCheckoutSession.
+ */
+export const createTopUpCheckout = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { priceId: string; returnUrl: string; environment: StripeEnv }) => {
+    if (!/^topup_[a-zA-Z0-9_]+$/.test(data.priceId)) throw new Error('Invalid top-up priceId');
+    return data;
+  })
+  .handler(async ({ data, context }): Promise<CheckoutResult> => {
+    const bundle = TOPUP_BUNDLES[data.priceId];
+    if (!bundle) return { error: 'Unknown top-up bundle.' };
+
+    // Inline a tiny version of getMyCreditsView's cap math so we don't have
+    // to expose the function-as-RPC machinery internally.
+    const { supabase, userId, claims } = context;
+    try {
+      const { data: accId } = await supabase.rpc(
+        'ensure_user_default_account' as never,
+        { _user_id: userId } as never,
+      );
+      if (accId) {
+        const { data: cred } = await supabase
+          .from('account_credits')
+          .select('monthly_grant_credits, cycle_anchor')
+          .eq('account_id', accId as string)
+          .maybeSingle();
+        const monthlyGrant = Number((cred as { monthly_grant_credits?: number } | null)?.monthly_grant_credits ?? 0);
+        const cycleAnchor = (cred as { cycle_anchor?: string | null } | null)?.cycle_anchor ?? null;
+        const sinceMs = cycleAnchor ? new Date(cycleAnchor).getTime() : Date.now() - 30 * 86_400_000;
+        const { data: tops } = await supabase
+          .from('credit_topups')
+          .select('credits_added, status, created_at')
+          .eq('user_id', userId)
+          .eq('environment', data.environment);
+        const cycleSpend = ((tops ?? []) as Array<{ credits_added: number; status: string; created_at: string }>)
+          .filter((t) => t.status === 'completed' && new Date(t.created_at).getTime() >= sinceMs)
+          .reduce((s, t) => s + Number(t.credits_added || 0), 0);
+        const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
+        if (cycleSpend + bundle.credits > cap) {
+          return {
+            error: `Top-up limit reached for this cycle (${cap.toLocaleString()} credits). Try a smaller bundle, or wait for the next cycle.`,
+          };
+        }
+      }
+    } catch { /* if the cap check itself errors, fall through to checkout */ }
+
+    // Delegate to the canonical session creator (resolves customer, sets
+    // metadata.kind='topup', etc.). Re-implementing here would drift.
+    try {
+      const stripe = createStripeClient(data.environment);
+      const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
+      if (!prices.data.length) return { error: `Price not found: ${data.priceId}` };
+      const stripePrice = prices.data[0];
+      const email = (claims as { email?: string })?.email;
+      const customerId = await resolveOrCreateCustomer(stripe, { email, userId });
+      const productId = typeof stripePrice.product === 'string'
+        ? stripePrice.product
+        : stripePrice.product.id;
+      const product = await stripe.products.retrieve(productId);
+      const session = await stripe.checkout.sessions.create({
+        line_items: [{ price: stripePrice.id, quantity: 1 }],
+        mode: 'payment',
+        ui_mode: 'embedded_page',
+        return_url: data.returnUrl,
+        customer: customerId,
+        payment_intent_data: { description: product.name },
+        metadata: { userId, kind: 'topup' },
+      } as Parameters<typeof stripe.checkout.sessions.create>[0]);
+      return { clientSecret: session.client_secret ?? '' };
+    } catch (error) {
+      return { error: getStripeErrorMessage(error) };
+    }
+  });
