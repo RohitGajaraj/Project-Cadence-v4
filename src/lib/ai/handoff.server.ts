@@ -216,25 +216,41 @@ export async function consumeInboundHandoff(
   supabase: SupabaseClient,
   args: { mission_id: string; to_agent_id: string; run_id: string },
 ): Promise<{ from_agent_slug: string | null; payload: HandoffPayload } | null> {
-  const { data } = await supabase
-    .from("agent_messages")
-    .select("id,from_agent_slug,payload,consumed_by_run_id")
-    .eq("mission_id", args.mission_id)
-    .eq("to_agent_id", args.to_agent_id)
-    // F-STUDIO: 'steer' messages are consumed by the loop mid-session — they
-    // must never be swallowed here as a handoff payload.
-    .eq("kind", "handoff")
-    .is("consumed_by_run_id", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!data) return null;
-  const msg = data as { id: string; from_agent_slug: string | null; payload: HandoffPayload };
-  await supabase
-    .from("agent_messages")
-    .update({ consumed_by_run_id: args.run_id, consumed_at: new Date().toISOString() })
-    .eq("id", msg.id);
-  return { from_agent_slug: msg.from_agent_slug, payload: msg.payload };
+  // The orchestrator routinely plans DAGs with two+ steps on the SAME agent slug,
+  // and dispatchReadySteps enqueues a distinct message + queued run per step, all
+  // addressed to that agent — so two receiver runs can select the same unconsumed
+  // message. Claim it with a compare-and-set (UPDATE ... WHERE consumed_by_run_id
+  // IS NULL): only one run wins. On a lost claim we do NOT return the (now another
+  // run's) payload; we loop and try the next unconsumed message addressed to us,
+  // so each run gets its own and none is double-consumed. Bounded to avoid
+  // spinning under heavy same-agent fan-out.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data } = await supabase
+      .from("agent_messages")
+      .select("id,from_agent_slug,payload,consumed_by_run_id")
+      .eq("mission_id", args.mission_id)
+      .eq("to_agent_id", args.to_agent_id)
+      // F-STUDIO: 'steer' messages are consumed by the loop mid-session — they
+      // must never be swallowed here as a handoff payload.
+      .eq("kind", "handoff")
+      .is("consumed_by_run_id", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return null; // nothing inbound (e.g. the operator-started first hop)
+    const msg = data as { id: string; from_agent_slug: string | null; payload: HandoffPayload };
+    const { data: claimed } = await supabase
+      .from("agent_messages")
+      .update({ consumed_by_run_id: args.run_id, consumed_at: new Date().toISOString() })
+      .eq("id", msg.id)
+      .is("consumed_by_run_id", null) // CAS: only claim if still unconsumed
+      .select("id");
+    if (claimed?.length) {
+      return { from_agent_slug: msg.from_agent_slug, payload: msg.payload };
+    }
+    // Lost the claim to a concurrent run — try the next unconsumed message.
+  }
+  return null;
 }
 
 /**
