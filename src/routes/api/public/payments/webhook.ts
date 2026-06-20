@@ -1,0 +1,158 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { createClient } from '@supabase/supabase-js';
+import { type StripeEnv, verifyWebhook } from '@/lib/stripe.server';
+
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+  }
+  return _supabase;
+}
+
+function resolvePriceLookup(item: any): string {
+  return item?.price?.lookup_key
+    || item?.price?.metadata?.lovable_external_id
+    || item?.price?.id;
+}
+
+async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
+  const userId = sub.metadata?.userId;
+  if (!userId) {
+    console.error('Webhook: subscription has no userId metadata', sub.id);
+    return;
+  }
+  const item = sub.items?.data?.[0];
+  const priceId = resolvePriceLookup(item);
+  const productId = item?.price?.product;
+  const periodStart = item?.current_period_start ?? sub.current_period_start;
+  const periodEnd = item?.current_period_end ?? sub.current_period_end;
+
+  await getSupabase().from('subscriptions').upsert({
+    user_id: userId,
+    stripe_subscription_id: sub.id,
+    stripe_customer_id: sub.customer,
+    product_id: productId,
+    price_id: priceId,
+    status: sub.status,
+    current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+    current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    cancel_at_period_end: sub.cancel_at_period_end || false,
+    environment: env,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'stripe_subscription_id' });
+}
+
+async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
+  const item = sub.items?.data?.[0];
+  const priceId = resolvePriceLookup(item);
+  const productId = item?.price?.product;
+  const periodStart = item?.current_period_start ?? sub.current_period_start;
+  const periodEnd = item?.current_period_end ?? sub.current_period_end;
+
+  await getSupabase()
+    .from('subscriptions')
+    .update({
+      status: sub.status,
+      product_id: productId,
+      price_id: priceId,
+      current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      cancel_at_period_end: sub.cancel_at_period_end || false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('stripe_subscription_id', sub.id)
+    .eq('environment', env);
+}
+
+async function handleSubscriptionDeleted(sub: any, env: StripeEnv) {
+  await getSupabase()
+    .from('subscriptions')
+    .update({ status: 'canceled', updated_at: new Date().toISOString() })
+    .eq('stripe_subscription_id', sub.id)
+    .eq('environment', env);
+}
+
+const TOPUP_CREDITS: Record<string, number> = {
+  topup_250: 250,
+  topup_1k: 1000,
+  topup_2_5k: 2500,
+};
+
+async function handleCheckoutCompleted(session: any, env: StripeEnv) {
+  if (session.mode !== 'payment') return;
+  const userId = session.metadata?.userId;
+  const kind = session.metadata?.kind;
+  if (!userId || kind !== 'topup') return;
+
+  const lineItems = await fetch(
+    `https://connector-gateway.lovable.dev/stripe/v1/checkout/sessions/${session.id}/line_items`,
+    {
+      headers: {
+        'X-Connection-Api-Key': env === 'sandbox'
+          ? process.env.STRIPE_SANDBOX_API_KEY!
+          : process.env.STRIPE_LIVE_API_KEY!,
+        'Lovable-API-Key': process.env.LOVABLE_API_KEY!,
+      },
+    },
+  ).then((r) => r.json() as Promise<{ data: Array<{ price: { lookup_key?: string; id: string } }> }>);
+
+  const lookupKey = lineItems.data?.[0]?.price?.lookup_key;
+  const credits = lookupKey ? TOPUP_CREDITS[lookupKey] : undefined;
+  if (!credits) {
+    console.error('Webhook: top-up has unknown lookup_key', lookupKey);
+    return;
+  }
+
+  await getSupabase().from('credit_topups').upsert({
+    user_id: userId,
+    stripe_session_id: session.id,
+    stripe_payment_intent_id: session.payment_intent,
+    price_lookup_key: lookupKey!,
+    credits_added: credits,
+    amount_cents: session.amount_total ?? 0,
+    currency: session.currency ?? 'usd',
+    status: 'completed',
+    environment: env,
+  }, { onConflict: 'stripe_session_id' });
+}
+
+async function handleWebhook(req: Request, env: StripeEnv) {
+  const event = await verifyWebhook(req, env);
+  switch (event.type) {
+    case 'customer.subscription.created':
+      await handleSubscriptionCreated(event.data.object, env); break;
+    case 'customer.subscription.updated':
+      await handleSubscriptionUpdated(event.data.object, env); break;
+    case 'customer.subscription.deleted':
+      await handleSubscriptionDeleted(event.data.object, env); break;
+    case 'checkout.session.completed':
+      await handleCheckoutCompleted(event.data.object, env); break;
+    default:
+      console.log('Webhook unhandled event:', event.type);
+  }
+}
+
+export const Route = createFileRoute('/api/public/payments/webhook')({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const rawEnv = new URL(request.url).searchParams.get('env');
+        if (rawEnv !== 'sandbox' && rawEnv !== 'live') {
+          console.error('Webhook invalid env query param:', rawEnv);
+          return Response.json({ received: true, ignored: 'invalid env' });
+        }
+        try {
+          await handleWebhook(request, rawEnv);
+          return Response.json({ received: true });
+        } catch (e) {
+          console.error('Webhook error:', e);
+          return new Response('Webhook error', { status: 400 });
+        }
+      },
+    },
+  },
+});
