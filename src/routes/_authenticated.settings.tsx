@@ -306,11 +306,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
         <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "6px 0 0" }}>
           {current.tagline}
         </p>
-        {state && !state.stripeConfigured && (
-          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
-            Paid plans turn on once billing is connected. Nothing is charged yet.
-          </p>
-        )}
         {state && !state.isOwner && (
           <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
             Only the workspace owner can change the plan.
@@ -381,53 +376,9 @@ function BillingTab({ checkout }: { checkout?: string }) {
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        }}
-      >
-        {/* Tier highlight summary cards (current + neighbouring tiers) */}
-        {PLAN_TIERS.filter((t) => t !== "enterprise").map((tier) => {
-          const p = planPresentation(tier);
-          const isCurrent = tier === currentTier;
-          return (
-            <div
-              key={tier}
-              className="bento"
-              style={{
-                padding: "var(--card-pad, 18px)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                borderColor: isCurrent ? "var(--ember, #c2602e)" : undefined,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                <span className="font-display" style={{ fontSize: 16 }}>{p.name}</span>
-                {isCurrent ? (
-                  <span className="mono-label" style={{ fontSize: 9, color: "var(--emerald, #2f8f6b)" }}>
-                    Current
-                  </span>
-                ) : null}
-              </div>
-              <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: 0 }}>{p.tagline}</p>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 5 }}>
-                {p.highlights.slice(0, 3).map((h) => (
-                  <li key={h} style={{ fontSize: 11.5, color: "var(--ink-muted, #4a4438)", display: "flex", gap: 6 }}>
-                    <span style={{ width: 3, height: 3, borderRadius: 99, background: "var(--ink-faint, #8a8377)", marginTop: 6, flexShrink: 0 }} />
-                    <span>{h}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* The Lovable-style picker: tier toggle + monthly/yearly + credit slider. */}
-      <PlanPicker currentTier={currentTier} canSelect={state?.isOwner ?? false} />
+      {/* Horizontal Lovable-style plan table: free · 3 paid · enterprise.
+          Per-card credits dropdown drives the live price. */}
+      <PlanTable currentTier={currentTier} canSelect={state?.isOwner ?? false} />
 
       {state?.isOwner && (
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
