@@ -75,6 +75,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | ID | Feature | Tool / session | Since | Notes |
 | --- | --- | --- | --- | --- |
 | AGENT-EXP | Agent experience (roster model · faces · identity · relay) | Claude Code · `worktree-agent-experience` | 2026-06-18 | Off the overnight tip; forward-integrate only. Owns `agent-vocabulary.ts`, the agent routes, `govern`, `AgentsPanel`, `orchestrator`, new migrations, `docs/features/agent-experience.md`. Phase 1 (catalog model + migrations + prompts + station-aware planning) and Phase 2 (relay UI + station spine + Engine Room Team) BOTH BUILT, gate green (tsc + build clean; lint-clean on changed files); pushed to the branch; pending merge to main + the signup smoke-test. Detail: [`../features/agent-experience.md`](../features/agent-experience.md) |
+| H2-AUDIT-UI | Roadmap-item decision-history popover | Lane 0 · `cadence-lane-0` | 2026-06-21 02:53 | Row 8c. `src/components/product/RoadmapBoard.tsx` + new `src/components/product/RoadmapHistory.tsx`. A reveal-on-demand "why is this here" popover consuming the shipped `getRoadmapHistory`/`summarizeRoadmapHistory` (H2-AUDIT). Disjoint from CHOKEPOINT/lane 1. |
 
 ---
 
