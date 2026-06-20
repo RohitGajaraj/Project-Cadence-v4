@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_billing_secrets: {
+        Row: {
+          account_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_billing_secrets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_credits: {
         Row: {
           account_id: string
@@ -3280,6 +3309,163 @@ export type Database = {
           },
         ]
       }
+      pricing_bundles: {
+        Row: {
+          active: boolean
+          created_at: string
+          credits: number
+          id: string
+          monthly_cents: number
+          recommended: boolean
+          sort_order: number
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          tier: string
+          updated_at: string
+          yearly_cents: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          credits: number
+          id?: string
+          monthly_cents: number
+          recommended?: boolean
+          sort_order?: number
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          tier: string
+          updated_at?: string
+          yearly_cents: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          credits?: number
+          id?: string
+          monthly_cents?: number
+          recommended?: boolean
+          sort_order?: number
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          tier?: string
+          updated_at?: string
+          yearly_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_bundles_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["tier"]
+          },
+        ]
+      }
+      pricing_features: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          tier: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          tier: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_features_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["tier"]
+          },
+        ]
+      }
+      pricing_plans: {
+        Row: {
+          active: boolean
+          audience: string
+          created_at: string
+          display_name: string
+          recommended: boolean
+          sort_order: number
+          tagline: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          audience?: string
+          created_at?: string
+          display_name: string
+          recommended?: boolean
+          sort_order?: number
+          tagline?: string | null
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          audience?: string
+          created_at?: string
+          display_name?: string
+          recommended?: boolean
+          sort_order?: number
+          tagline?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pricing_topup_bundles: {
+        Row: {
+          active: boolean
+          created_at: string
+          credits: number
+          id: string
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          credits: number
+          id?: string
+          price_cents: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          credits?: number
+          id?: string
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -4703,6 +4889,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       workspace_audit_log: {
         Row: {
           action: string
@@ -4733,6 +4940,35 @@ export type Database = {
             foreignKeyName: "workspace_audit_log_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_billing_secrets: {
+        Row: {
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_billing_secrets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
@@ -4989,6 +5225,13 @@ export type Database = {
         Args: { account: string; required_roles: string[] }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_workspace_role: {
         Args: { required_roles: string[]; ws: string }
         Returns: boolean
@@ -5202,6 +5445,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "member"
       calendar_provider: "google" | "microsoft"
     }
     CompositeTypes: {
@@ -5330,6 +5574,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "member"],
       calendar_provider: ["google", "microsoft"],
     },
   },
