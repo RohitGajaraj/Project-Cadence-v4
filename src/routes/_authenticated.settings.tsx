@@ -47,12 +47,12 @@ import {
   resumeMySubscription,
   getMyCreditsView,
 } from "@/lib/payments.functions";
-import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
+import { planPresentation, type PlanTier } from "@/lib/entitlements";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useConfirm } from "@/hooks/use-confirm";
-import { PlanPicker } from "@/components/billing/PlanPicker";
+import { PlanTable } from "@/components/billing/PlanPicker";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
