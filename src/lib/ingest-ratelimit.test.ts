@@ -42,3 +42,49 @@ describe("ingest rate limiting (business logic)", () => {
     expect(retryAfterSeconds).toBeLessThanOrEqual(3600);
   });
 });
+
+import { checkIngestRateLimit } from "./ingest-ratelimit.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+describe("checkIngestRateLimit — window-reset upsert must key on token_id (no fail-open) [KI-29]", () => {
+  function mockDb(
+    record: unknown,
+    capture: (payload: unknown, options: unknown) => void,
+  ): SupabaseClient {
+    return {
+      from: () => ({
+        select: () => ({ eq: () => ({ single: async () => ({ data: record, error: null }) }) }),
+        // Support both the buggy `.upsert(payload).eq(...)` shape and the fixed
+        // `.upsert(payload, { onConflict })` shape so the test is meaningful red->green.
+        upsert: (payload: unknown, options: unknown) => {
+          capture(payload, options);
+          const res = { error: null };
+          return {
+            error: null,
+            eq: () => Promise.resolve(res),
+            then: (resolve: (v: unknown) => void) => resolve(res),
+          };
+        },
+        update: () => ({ eq: async () => ({ error: null }) }),
+      }),
+    } as unknown as SupabaseClient;
+  }
+
+  it("resets an expired window via an upsert keyed on token_id (cannot violate UNIQUE and fail open)", async () => {
+    // An existing record whose window started > 1h ago triggers the reset path.
+    const expired = {
+      id: "rl1",
+      request_count: 50,
+      window_start: new Date(Date.now() - 3600 * 1000 - 60_000).toISOString(),
+    };
+    let capturedOptions: { onConflict?: string } | undefined;
+    const db = mockDb(expired, (_p, o) => {
+      capturedOptions = o as { onConflict?: string };
+    });
+    const res = await checkIngestRateLimit(db, "tok-1");
+    expect(res.allowed).toBe(true);
+    // The fix: the reset upsert resolves the conflict on token_id (not the PK), so
+    // a second-window reset for an existing token UPDATEs instead of erroring.
+    expect(capturedOptions?.onConflict).toBe("token_id");
+  });
+});

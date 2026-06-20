@@ -40,16 +40,21 @@ export async function checkIngestRateLimit(
     const shouldReset = !record || new Date(record.window_start) < new Date(windowStart);
 
     if (shouldReset) {
-      // Start a new window
-      const { error: upsertError } = await db
-        .from("ingest_rate_limits")
-        .upsert({
+      // Start a new window. Resolve the conflict on token_id (the UNIQUE key), not
+      // the PK: the row already exists for a returning token, so without
+      // onConflict:'token_id' PostgREST tries a fresh INSERT, violates UNIQUE
+      // (token_id), errors, and the catch below fails OPEN — i.e. the limiter
+      // silently stops enforcing for that token after its first window. The
+      // trailing .eq() on an upsert was a no-op and is removed.
+      const { error: upsertError } = await db.from("ingest_rate_limits").upsert(
+        {
           token_id: tokenId,
           request_count: 1,
           window_start: now,
           updated_at: now,
-        })
-        .eq("token_id", tokenId);
+        },
+        { onConflict: "token_id" },
+      );
 
       if (upsertError) throw new Error(upsertError.message);
 
