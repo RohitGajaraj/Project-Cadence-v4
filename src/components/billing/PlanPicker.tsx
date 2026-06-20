@@ -512,9 +512,13 @@ function PaidTierCard({
 
   const ctaLabel = (() => {
     if (isCurrent) return "Your current plan";
-    if (direction === "upgrade") return `Upgrade to ${p.name}`;
-    if (direction === "downgrade") return `Switch to ${p.name}`;
-    return `Get ${p.name}`;
+    if (tier === "team") {
+      if (direction === "upgrade") return `Bring the team into ${p.name}`;
+      return `Switch to ${p.name}`;
+    }
+    if (direction === "upgrade") return `Step up to ${p.name}`;
+    if (direction === "downgrade") return `Move to ${p.name}`;
+    return `Start with ${p.name}`;
   })();
 
   return (
@@ -642,7 +646,7 @@ function PaidTierCard({
                 ? "Not available for checkout yet."
                 : undefined
         }
-        style={{ marginTop: 4 }}
+        style={{ marginTop: 4, width: "100%", textAlign: "center" }}
       >
         {ctaLabel}
       </button>
