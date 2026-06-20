@@ -22,12 +22,15 @@ import { planPresentation, type PlanTier } from "@/lib/entitlements";
 
 type PaidTier = "pro" | "max" | "team";
 
-type Audience = "personal" | "teams" | "enterprise";
+type Audience = "personal" | "teams";
 
 const AUDIENCE_LABEL: Record<Audience, string> = {
   personal: "Personal",
-  teams: "Teams",
-  enterprise: "Enterprise",
+  teams: "Teams & Enterprise",
+};
+const AUDIENCE_SUB: Record<Audience, string> = {
+  personal: "For individuals and small product teams.",
+  teams: "Shared memory, roles, and SSO — for the whole product org.",
 };
 
 const TIER_ICON: Record<PlanTier, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
@@ -57,8 +60,7 @@ function recommendedFor(current: PlanTier): "pro" | "max" {
 }
 
 function audienceFor(tier: PlanTier): Audience {
-  if (tier === "team") return "teams";
-  if (tier === "enterprise") return "enterprise";
+  if (tier === "team" || tier === "enterprise") return "teams";
   return "personal";
 }
 
@@ -84,7 +86,6 @@ export function PlanTable({
   const fGetCatalog = useServerFn(getPricingCatalog);
   const catalog = useQuery({ queryKey: ["pricing-catalog"], queryFn: () => fGetCatalog() });
 
-  const [interval, setIntervalState] = useState<"monthly" | "yearly">("monthly");
   const [audience, setAudience] = useState<Audience>(audienceFor(currentTier));
 
   if (catalog.isLoading) {
@@ -101,16 +102,34 @@ export function PlanTable({
   const allBundles = catalog.data.bundles.filter((b) => b.active);
   const recommended = recommendedFor(currentTier);
 
-  // Best-yearly-savings across all paid tiers, for the toggle pill.
-  let bestSave = 0;
-  for (const b of allBundles) {
-    const pct = Math.max(0, Math.round((1 - b.yearly_cents / (b.monthly_cents * 12)) * 100));
-    if (pct > bestSave) bestSave = pct;
-  }
-
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      {/* Personal · Teams · Enterprise (Anthropic-style audience switcher) */}
+    <div style={{ display: "grid", gap: 18 }}>
+      {/* Elevated section header for the active audience */}
+      <div style={{ textAlign: "center" }}>
+        <span
+          className="mono-label"
+          style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}
+        >
+          Pricing
+        </span>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 30,
+            lineHeight: 1.15,
+            margin: "6px 0 4px",
+            letterSpacing: "-0.01em",
+            fontWeight: 500,
+          }}
+        >
+          {AUDIENCE_LABEL[audience]}
+        </h2>
+        <p style={{ fontSize: 12.5, color: "var(--ink-muted, #4a4438)", margin: 0 }}>
+          {AUDIENCE_SUB[audience]}
+        </p>
+      </div>
+
+      {/* Audience switcher: Personal | Teams & Enterprise */}
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div
           style={{
@@ -146,52 +165,6 @@ export function PlanTable({
         </div>
       </div>
 
-      {/* Monthly / Yearly toggle */}
-      {audience !== "enterprise" && (
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div
-          style={{
-            display: "inline-flex",
-            padding: 3,
-            borderRadius: 99,
-            background: "var(--soft-stone, rgba(0,0,0,0.06))",
-          }}
-        >
-          {(["monthly", "yearly"] as const).map((i) => {
-            const active = i === interval;
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIntervalState(i)}
-                style={{
-                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
-                  color: "var(--ink, #1d1a14)",
-                  border: "none",
-                  padding: "6px 16px",
-                  borderRadius: 99,
-                  fontSize: 12,
-                  fontWeight: active ? 600 : 500,
-                  cursor: "pointer",
-                  boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : undefined,
-                }}
-              >
-                {i === "monthly" ? "Monthly" : "Yearly"}
-                {i === "yearly" && bestSave > 0 ? (
-                  <span
-                    className="mono-label"
-                    style={{ fontSize: 9, marginLeft: 8, color: "var(--emerald, #2f8f6b)" }}
-                  >
-                    save up to {bestSave}%
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      )}
-
       {/* Horizontal plan grid, scoped to the active audience */}
       <div
         style={{
@@ -208,7 +181,8 @@ export function PlanTable({
               <PaidTierCard
                 key={tier}
                 tier={tier}
-                interval={interval}
+                /* pro (Cluster, entry) = monthly only; max (Constellation) = both */
+                allowYearly={tier === "max"}
                 bundles={allBundles.filter((b) => b.tier === tier)}
                 isCurrent={currentTier === tier}
                 isRecommended={recommended === tier}
@@ -219,35 +193,22 @@ export function PlanTable({
           </>
         )}
         {audience === "teams" && (
-          <PaidTierCard
-            tier="team"
-            interval={interval}
-            bundles={allBundles.filter((b) => b.tier === "team")}
-            isCurrent={currentTier === "team"}
-            isRecommended={false}
-            currentTier={currentTier}
-            canSelect={canSelect}
-          />
-        )}
-        {audience === "enterprise" && (
-          <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+          <>
+            <PaidTierCard
+              tier="team"
+              /* Galaxy (Team) — no billing toggle per spec */
+              allowYearly={false}
+              hideInterval
+              bundles={allBundles.filter((b) => b.tier === "team")}
+              isCurrent={currentTier === "team"}
+              isRecommended={false}
+              currentTier={currentTier}
+              canSelect={canSelect}
+            />
+            <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+          </>
         )}
       </div>
-
-      <p
-        style={{
-          textAlign: "center",
-          fontSize: 11,
-          color: "var(--ink-subtle, #6b6457)",
-          margin: 0,
-        }}
-      >
-        {audience === "personal"
-          ? "For individuals and small product teams."
-          : audience === "teams"
-            ? "Per-seat pricing for the whole product org."
-            : "Custom contracts, SSO, residency, and a dedicated SLA."}
-      </p>
     </div>
   );
 }
@@ -274,14 +235,31 @@ function CardShell({
           : recommended
             ? "var(--ink-faint, #8a8377)"
             : undefined,
+        background: isCurrent
+          ? "color-mix(in oklab, var(--ember, #c2602e) 7%, var(--canvas, #fbf7ef))"
+          : undefined,
         boxShadow: isCurrent
-          ? "0 0 0 1px var(--ember, #c2602e), 0 8px 24px -12px color-mix(in oklab, var(--ember, #c2602e) 35%, transparent)"
+          ? "0 0 0 1px var(--ember, #c2602e), 0 0 0 4px color-mix(in oklab, var(--ember, #c2602e) 14%, transparent), 0 12px 32px -16px color-mix(in oklab, var(--ember, #c2602e) 45%, transparent)"
           : recommended
             ? "0 4px 18px -10px rgba(0,0,0,0.18)"
             : undefined,
         position: "relative",
+        overflow: "hidden",
       }}
     >
+      {isCurrent ? (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: "linear-gradient(90deg, var(--ember, #c2602e), color-mix(in oklab, var(--ember, #c2602e) 60%, transparent))",
+          }}
+        />
+      ) : null}
       {recommended && !isCurrent ? (
         <span
           className="mono-label"
@@ -414,7 +392,8 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
 
 function PaidTierCard({
   tier,
-  interval,
+  allowYearly,
+  hideInterval = false,
   bundles,
   isCurrent,
   isRecommended,
@@ -422,7 +401,8 @@ function PaidTierCard({
   canSelect,
 }: {
   tier: PaidTier;
-  interval: "monthly" | "yearly";
+  allowYearly: boolean;
+  hideInterval?: boolean;
   bundles: PricingBundle[];
   isCurrent: boolean;
   isRecommended: boolean;
@@ -436,20 +416,25 @@ function PaidTierCard({
   const [selectedId, setSelectedId] = useState<string>(defaultId);
   const selected = sorted.find((b) => b.id === selectedId) ?? sorted[0];
   const [open, setOpen] = useState(false);
+  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
+  const effectiveInterval: "monthly" | "yearly" = allowYearly ? interval : "monthly";
 
   const monthlyEquivCents = selected
-    ? interval === "monthly"
+    ? effectiveInterval === "monthly"
       ? selected.monthly_cents
       : selected.yearly_cents / 12
     : 0;
   const billedCents = selected
-    ? interval === "monthly"
+    ? effectiveInterval === "monthly"
       ? selected.monthly_cents
       : selected.yearly_cents
     : 0;
 
-  const lookupKey = selected ? lookupKeyFor(tier, selected.credits, interval) : null;
+  const lookupKey = selected ? lookupKeyFor(tier, selected.credits, effectiveInterval) : null;
   const recommended = isRecommended;
+  const yearlySavePct = selected && allowYearly
+    ? Math.max(0, Math.round((1 - selected.yearly_cents / (selected.monthly_cents * 12)) * 100))
+    : 0;
 
   // Tier order index for upgrade / downgrade language.
   const TIER_ORDER: PlanTier[] = ["free", "pro", "max", "team", "enterprise"];
@@ -490,10 +475,55 @@ function PaidTierCard({
             </span>
           </div>
           <div style={{ fontSize: 10.5, color: "var(--ink-subtle, #6b6457)", marginTop: -8 }}>
-            {interval === "yearly"
+            {effectiveInterval === "yearly"
               ? `Billed ${roundDollars(billedCents)} yearly`
               : "Billed monthly"}
           </div>
+
+          {/* Per-card billing frequency (only when the tier allows yearly) */}
+          {allowYearly && !hideInterval && (
+            <div
+              style={{
+                display: "inline-flex",
+                padding: 2,
+                borderRadius: 99,
+                background: "var(--soft-stone, rgba(0,0,0,0.06))",
+                alignSelf: "flex-start",
+              }}
+            >
+              {(["monthly", "yearly"] as const).map((i) => {
+                const active = i === interval;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setInterval(i)}
+                    style={{
+                      background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                      color: "var(--ink, #1d1a14)",
+                      border: "none",
+                      padding: "4px 12px",
+                      borderRadius: 99,
+                      fontSize: 11,
+                      fontWeight: active ? 600 : 500,
+                      cursor: "pointer",
+                      boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : undefined,
+                    }}
+                  >
+                    {i === "monthly" ? "Monthly" : "Yearly"}
+                    {i === "yearly" && yearlySavePct > 0 ? (
+                      <span
+                        className="mono-label"
+                        style={{ fontSize: 9, marginLeft: 6, color: "var(--emerald, #2f8f6b)" }}
+                      >
+                        -{yearlySavePct}%
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <label style={{ display: "grid", gap: 4 }}>
             <span className="mono-label" style={{ fontSize: 9 }}>Credits / month</span>
