@@ -1,6 +1,6 @@
 # architecture/threat-model.md: v7 threat model (STRIDE)
 
-> _Created: 2026-06-14 · Last updated: 2026-06-19_
+> _Created: 2026-06-14 · Last updated: 2026-06-20_
 
 > **What this is.** The adversary's view of Cadence: the assets worth attacking, how each could be spoofed, tampered with, disclosed, denied, or escalated, and the control that stops it today (Built) or is owed (Partial / Planned). It is the security companion to [`security.md`](./security.md), which holds the auth, RLS, tenancy, secrets, and governance *model*. This file does not restate that model, it stress-tests it. Strategy canon: [`../docs/strategy/v7-agentic-product-os.md`](../docs/strategy/v7-agentic-product-os.md). Rules: [`../AGENTS.md`](../AGENTS.md). Data: [`data.md`](./data.md). Orchestration: [`orchestration.md`](./orchestration.md). Runtime: [`runtime.md`](./runtime.md).
 
@@ -130,7 +130,7 @@ The env split and the vault are the model; see [`security.md`](./security.md) §
 
 **Elevation of privilege (service-role reach).** The service role bypasses RLS, so any path that uses it is a privilege concentration.
 - `supabaseAdmin` is confined to cron hooks and the connector credential chain (`resolveProviderAuth`). The loop and tools never touch it. **Built.**
-- The cron hooks authenticate the caller with `requireHookCaller`, matched against `SUPABASE_PUBLISHABLE_KEY` used as a shared secret between pg_cron and the Worker. That key is the anon key, which is public. So the real protection on the hooks is that they are pull-only workers doing fixed work, not that the shared secret is strong. An attacker who calls a hook endpoint can at most trigger a tick the cron would have run anyway; they cannot pass arbitrary payloads into a privileged write. Still, the shared secret should become a distinct, non-public cron secret. **Partial.**
+- The cron hooks authenticate the caller with `requireHookCaller`, matched against a private hook secret sent as `x-cron-key` or bearer auth. The live scheduled jobs fetch that secret from a locked `app_private` table, and the app can also read `CRON_SECRET` / `HOOK_CRON_SECRET` when those env secrets are configured. The browser-visible app key is no longer accepted. **Built.**
 
 ### 3.5 Agent tool execution
 
@@ -160,7 +160,7 @@ The blast radius. Tools commit code, open and merge PRs, create calendar events 
 - Auth: Bearer or `x-ingest-token` against `ingest_tokens` (revocable). Payload capped at 50. Inserts are explicitly workspace-scoped so the reactor fan-out cannot cross tenants. **Built.**
 - A leaked ingest token lets an attacker inject signals into one workspace until it is revoked. Per-token rate limiting and rotation guidance are **Planned**.
 
-**Cron hooks.** See §3.4: pull-only, fixed work, weak shared secret. **Partial.**
+**Cron hooks.** See §3.4: pull-only, fixed work, private shared secret. **Built.**
 
 **The A2A agent card (`/api/public/a2a.agents.cadence.card.ts`).** Unauthenticated by design (it is a public capability advertisement). It exposes no data and triggers no action, so the risk is informational only. **Built** (intentional).
 
@@ -186,12 +186,11 @@ The same restraint that keeps us out of the FTC's path is also the moat: honesty
 Ranked by exposure, with the owed control. None of these are cross-tenant-read holes; the RLS spine and KI-17 hold the worst case.
 
 1. **Output guardrails skip `json_object` responses.** The agent loop's structured turns are not output-scanned. *Owed: re-scan structured tool args/results for secret-leak and PII on the output side.* **Partial.**
-2. **Cron-hook shared secret is the public anon key.** Low impact (pull-only, fixed work) but wrong in principle. *Owed: a distinct non-public cron secret.* **Partial.**
-3. **No rate limiting on public share / ingest routes.** Unguessable slugs blunt enumeration, but a holder of valid slugs or tokens can hammer. *Owed: per-route and per-token rate limits.* **Planned.**
-4. **No CI secret-leak / raw-gateway-call guard.** Env split is correct today but unprotected against regression. *Owed: bundle grep + a lint rule forbidding direct gateway `fetch`.* **Planned.**
-5. **No tamper-evident audit export.** Logs sit in a Postgres the workspace owner administers. *Owed: append-only external sink for enterprise non-repudiation.* **Planned.**
-6. **No connector-secret rotation runbook.** `key_version` makes rotation possible, the runbook is unwritten. *Owed: rotation procedure.* **Partial.**
-7. **Live slug bug gates the loop.** `mission.plan` validation is correct; the orchestrator prompt is wrong. *Owed: align the prompt to seeded slugs (v7 M-0).* **Partial.**
+2. **No rate limiting on public share / ingest routes.** Unguessable slugs blunt enumeration, but a holder of valid slugs or tokens can hammer. *Owed: per-route and per-token rate limits.* **Planned.**
+3. **No CI secret-leak / raw-gateway-call guard.** Env split is correct today but unprotected against regression. *Owed: bundle grep + a lint rule forbidding direct gateway `fetch`.* **Planned.**
+4. **No tamper-evident audit export.** Logs sit in a Postgres the workspace owner administers. *Owed: append-only external sink for enterprise non-repudiation.* **Planned.**
+5. **No connector-secret rotation runbook.** `key_version` makes rotation possible, the runbook is unwritten. *Owed: rotation procedure.* **Partial.**
+6. **Live slug bug gates the loop.** `mission.plan` validation is correct; the orchestrator prompt is wrong. *Owed: align the prompt to seeded slugs (v7 M-0).* **Partial.**
 
 ---
 
