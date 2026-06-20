@@ -72,6 +72,14 @@ echo "[8] pinned area blocks overlapping claim"
 bash "$LANE" claim SOME-KG 3 "src/lib/knowledge-graph-drift.functions.ts" >/dev/null 2>&1; kk=$?
 [ "$kk" = 3 ] && ok "overlapping claim against pinned area rejected (exit 3)" || bad "pinned area did not block overlap (kk=$kk)"
 
+# 9) lane-aware: a lane's own pinned area does NOT block that lane's own per-item claim,
+#    but DOES block another lane's overlapping claim.
+echo "[9] lane-aware overlap (own area allows self, blocks others)"
+bash "$LANE" pin L1-AREA 1 "src/lib/cockpit/**" "area" >/dev/null
+bash "$LANE" claim L1-ITEM 1 "src/lib/cockpit/incidents.ts" >/dev/null 2>&1; self=$?   # same lane -> allowed
+bash "$LANE" claim L3-ITEM 3 "src/lib/cockpit/incidents.ts" >/dev/null 2>&1; cross=$?   # other lane -> blocked
+{ [ "$self" = 0 ] && [ "$cross" = 3 ]; } && ok "same-lane claim allowed ($self), cross-lane blocked ($cross)" || bad "lane-aware overlap wrong (self=$self cross=$cross)"
+
 echo
 echo "RESULT: $pass passed, $fail failed"
 [ "$fail" = 0 ]

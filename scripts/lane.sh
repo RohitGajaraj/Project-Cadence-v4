@@ -98,18 +98,22 @@ cmd_claim() {
     return 1
   fi
 
-  # 2) file-glob reservation: reject if my globs overlap an OTHER active claim
+  # 2) file-glob reservation: reject if my globs overlap ANOTHER LANE's active claim.
+  #    A lane never conflicts with its own claims/reservations (one lane = one
+  #    worker, building one item at a time; its area-reservation must not block
+  #    its own per-item claim). So overlap is only checked across DIFFERENT lanes.
   if [ -n "$globs" ]; then
-    local other og
+    local other og ol oid
     for other in "$CLAIMS"/*/; do
       [ -d "$other" ] || continue
       [ "$other" = "$dir/" ] && continue
+      ol="$(_meta_get "${other%/}" lane 2>/dev/null || echo '?')"
+      [ "$ol" = "$lane" ] && continue                 # same lane -> never a conflict
       og="$(_meta_get "${other%/}" globs 2>/dev/null || true)"
       [ -n "$og" ] || continue
       if _globs_overlap "$globs" "$og"; then
-        local ol; ol="$(_meta_get "${other%/}" lane 2>/dev/null || echo '?')"
-        local oid; oid="$(basename "${other%/}")"
-        rmdir "$dir" 2>/dev/null || rm -rf "$dir"   # back out my just-won mutex
+        oid="$(basename "${other%/}")"
+        rmdir "$dir" 2>/dev/null || rm -rf "$dir"     # back out my just-won mutex
         echo "CONFLICT $id globs overlap lane $ol's claim $oid ($og)"
         return 3
       fi
