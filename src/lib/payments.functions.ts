@@ -366,12 +366,29 @@ export const createTopUpCheckout = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data, context }): Promise<CheckoutResult> => {
-    const bundle = TOPUP_BUNDLES[data.priceId];
+    const { supabase, userId, claims } = context;
+
+    // Resolve bundle: prefer admin-managed catalog (pricing_topup_bundles),
+    // fall back to the static map so legacy lookup keys keep working.
+    let bundle: { credits: number; label: string } | null =
+      TOPUP_BUNDLES[data.priceId] ?? null;
+    if (!bundle) {
+      const m = data.priceId.match(/^topup_(\d+)(k?)$/);
+      if (m) {
+        const n = parseInt(m[1], 10) * (m[2] === "k" ? 1000 : 1);
+        const { data: row } = await supabase
+          .from("pricing_topup_bundles")
+          .select("credits")
+          .eq("credits", n)
+          .eq("active", true)
+          .maybeSingle();
+        if (row) bundle = { credits: Number(row.credits), label: `${n.toLocaleString()} credits` };
+      }
+    }
     if (!bundle) return { error: "Unknown top-up bundle." };
 
     // Inline a tiny version of getMyCreditsView's cap math so we don't have
     // to expose the function-as-RPC machinery internally.
-    const { supabase, userId, claims } = context;
     try {
       const { data: accId } = await supabase.rpc(
         "ensure_user_default_account" as never,
