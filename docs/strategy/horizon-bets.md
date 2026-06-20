@@ -17,7 +17,7 @@
 
 | ID | Bet | Drill-down doc | Priority | Status |
 | --- | --- | --- | --- | --- |
-| **H1** | The Decision Brain | [`decision-brain.md`](../features/decision-brain.md) | **TOPMOST (founder ruling 2026-06-20)** | Increment 1 ([Ambient Precedent](../features/ambient-precedent.md)) in build; deeper graph (DBR-1+) awaiting enrichment |
+| **H1** | The Decision Brain | [`decision-brain.md`](../features/decision-brain.md) | **TOPMOST (founder ruling 2026-06-20)** | Increment 1 ([Ambient Precedent](../features/ambient-precedent.md)) SHIPPED to `main` (◐) 2026-06-20 cycle 55, all 6 tasks (engine + ranker ✅ unit-verified; 3 seams render-on-publish); deeper graph (DBR-1+) awaiting enrichment |
 | **H2** | The Command Canvas | [`command-canvas.md`](../features/command-canvas.md) | **PARKED (founder 2026-06-20)** | Parked; only H1 is active |
 
 Both came from one founder session (2026-06-20) and are best read as one arc: a **second-brain product** where a knowledge graph is the engine and a command-plus-preview surface is the front. Graph in, canvas out. Each bet has a self-contained, shareable drill-down doc in [`../features/`](../features/) (linked above); this register holds the strategic view (thesis, wiring, multi-lens, roadmap).
