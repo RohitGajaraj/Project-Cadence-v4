@@ -19,6 +19,27 @@ import {
   type TopupBundle,
 } from "@/lib/pricing.functions";
 
+type BundleInput = {
+  id?: string | null;
+  tier: string;
+  credits: number;
+  monthly_cents: number;
+  yearly_cents: number;
+  stripe_price_id_monthly?: string | null;
+  stripe_price_id_yearly?: string | null;
+  recommended?: boolean;
+  active?: boolean;
+  sort_order?: number;
+};
+type TopupInput = {
+  id?: string | null;
+  credits: number;
+  price_cents: number;
+  stripe_price_id?: string | null;
+  active?: boolean;
+  sort_order?: number;
+};
+
 export const Route = createFileRoute("/_authenticated/admin/pricing")({
   component: AdminPricing,
 });
@@ -99,7 +120,7 @@ function TierSection({
   const fDelete = useServerFn(adminDeleteBundle);
 
   const upsert = useMutation({
-    mutationFn: (input: Parameters<typeof fUpsert>[0]["data"]) => fUpsert({ data: input }),
+    mutationFn: (input: BundleInput) => fUpsert({ data: input }),
     onSuccess: (res) => {
       if ("error" in res) {
         toast.error(res.error);
@@ -180,7 +201,7 @@ function BundleRow({
 }: {
   tier: "pro" | "max" | "team";
   row: PricingBundle | null;
-  onSave: (input: Parameters<typeof adminUpsertBundle>[0]["data"]) => void;
+  onSave: (input: BundleInput) => void;
   onDelete: (id: string) => void;
 }) {
   const [credits, setCredits] = useState(row?.credits ?? 0);
@@ -264,7 +285,7 @@ function TopupSection({
   const fDelete = useServerFn(adminDeleteTopup);
 
   const upsert = useMutation({
-    mutationFn: (input: Parameters<typeof fUpsert>[0]["data"]) => fUpsert({ data: input }),
+    mutationFn: (input: TopupInput) => fUpsert({ data: input }),
     onSuccess: (res) => {
       if ("error" in res) {
         toast.error(res.error);
@@ -329,7 +350,7 @@ function TopupRow({
   onDelete,
 }: {
   row: TopupBundle | null;
-  onSave: (input: Parameters<typeof adminUpsertTopup>[0]["data"]) => void;
+  onSave: (input: TopupInput) => void;
   onDelete: (id: string) => void;
 }) {
   const [credits, setCredits] = useState(row?.credits ?? 0);
