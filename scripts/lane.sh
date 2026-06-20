@@ -182,7 +182,8 @@ _print_claims() { # <lane-filter-or-empty>
     printf '  %-22s lane=%-3s age=%-6s globs=%s%s\n' "$id" "${lane:-?}" "$age" "${globs:-<none>}" "$pin"
     any=1
   done
-  [ "$any" = 0 ] && echo "  (no active claims)"
+  if [ "$any" = 0 ]; then echo "  (no active claims)"; fi
+  return 0
 }
 
 cmd_list() { echo "Active claims @ $LEDGER:"; _ensure; _print_claims ""; }
