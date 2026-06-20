@@ -30,3 +30,14 @@
 - **Doc-loop:** dashboard row 8 → ◐ + claim cleared; `plan.md` §4; new `docs/features/h2-writes.md`; `session-decisions.md`.
 - **◐ not ✅:** renders on publish (not render-verified locally); agent autonomous-commit wiring + richer write surface remain.
 - **Released claim** after ship.
+
+### 2026-06-21 02:42 — H2-AUDIT — Roadmap-decision audit trail (◐, backend) — SHIPPED
+
+- **Picked:** highest-impact clean isolation-safe item after re-scan (Monetization/Credit gated, DATA-RETENTION-c founder/legal-gated, reliability/evals = lane 1). Closes the PM P0/P1 gap "why is this on the roadmap" (cited evidence). Extends H2-WRITES.
+- **Claimed:** `scripts/lane.sh claim H2-AUDIT 0` (new migration + roadmap.functions.ts + roadmap-audit.ts + test). No collision.
+- **Built:** append-only `roadmap_audit` migration (insert-own + read-own-or-workspace RLS, no update/delete; FK opportunities ON DELETE CASCADE; auto-covered by DATA-RETENTION-b's workspace_id sweep) + best-effort audit writes in commitRoadmapItem (outcome at commit time) + updateRoadmapItem (moves) + getRoadmapHistory read fn + pure roadmap-audit.ts (buildAuditInsert + summarizeRoadmapHistory, 5 tests).
+- **Gate:** tsc 0 · eslint 0 (3 files) · build ✓ (Node 26) · `bun test` 451/451 (5 new).
+- **Review:** focused adversarial self-review (additive/best-effort → no multi-agent workflow). Migration dry-run-verified on prod (BEGIN..ROLLBACK: table+RLS+2 policies+3 indexes+FK CASCADE).
+- **Doc-loop:** dashboard new row 8b → ◐; `plan.md` §4; `docs/features/h2-writes.md` (H2-AUDIT section); `session-decisions.md`.
+- **◐ not ✅:** backend built + dry-run-verified, renders on publish; the "why is this here" UI surface is a later/design slice.
+- **Released claim** after ship.

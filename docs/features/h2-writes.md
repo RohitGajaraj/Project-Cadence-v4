@@ -43,6 +43,15 @@ The MOVE (drag or the per-card select) stays lenient via `updateRoadmapItem`, so
 - **Richer write surface** (reprioritize, bulk-commit, audit of roadmap changes) remains for a later H2-WRITES increment.
 - Clearing an outcome on a committed item is deliberately not allowed inline (move to backlog first).
 
+## H2-AUDIT — roadmap-decision audit trail (increment, 2026-06-21)
+
+Answers "why is this on the roadmap?" (the recurring senior-PM justification burden, `considerations.md` PM P0/P1) with cited evidence, by recording every roadmap decision.
+
+- `supabase/migrations/20260621024000_h2_roadmap_audit.sql`: an append-only `roadmap_audit` table (insert-own + read-own-or-workspace RLS, NO update/delete = tamper-evident, mirroring `export_log`/U6-AUDIT; FK to `opportunities` `ON DELETE CASCADE` so the audit never outlives its data and is auto-erased by DATA-RETENTION-b's `workspace_id` sweep; CHECK on action/buckets).
+- `src/lib/roadmap-audit.ts` (pure): `buildAuditInsert` (blank-normalization; `user_id` left to the DB default `auth.uid()` so the actor can't be spoofed) + `summarizeRoadmapHistory` (the live "why" = the newest committed outcome). 5 unit tests.
+- `roadmap.functions.ts`: best-effort audit writes in `commitRoadmapItem` (action `commit`, captures the declared outcome **at commit time** — the point-in-time evidence) and `updateRoadmapItem` (action `move` on a bucket change); the write is try/caught so it never breaks the roadmap write it describes. New `getRoadmapHistory(opportunityId)` read fn (RLS-scoped, newest-first).
+- **Status:** backend ◐ — built, unit-verified, and migration dry-run-verified on prod (BEGIN..ROLLBACK: table + RLS + 2 policies + FK CASCADE confirmed). The "why is this here" UI surface (consume `getRoadmapHistory`/`summarizeRoadmapHistory`) is a later/design slice.
+
 ## Related
 
 - [`../../plan.md`](../../plan.md) §4 (2026-06-21) · [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) row 8 · H2 base feature (shipped) · `src/components/product/RoadmapBoard.tsx`

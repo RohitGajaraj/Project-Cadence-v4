@@ -20,8 +20,37 @@ import {
   ROADMAP_TEXT_MAX,
   type RoadmapBucket,
 } from "@/lib/roadmap-governance";
+import {
+  buildAuditInsert,
+  type RoadmapAuditAction,
+  type RoadmapAuditRow,
+} from "@/lib/roadmap-audit";
 
 export type { RoadmapBucket };
+
+/**
+ * H2-AUDIT: record a roadmap decision, best-effort. Never throws into the caller
+ * (a failed audit must not fail the roadmap write); the insert runs under the
+ * user's RLS context, and `user_id` defaults to auth.uid() at the DB so the actor
+ * cannot be spoofed. `workspace_id` is read back from the just-updated row.
+ */
+async function recordRoadmapDecision(
+  supabase: { from: (t: string) => { insert: (rows: unknown) => Promise<{ error: unknown }> } },
+  input: {
+    opportunityId: string;
+    workspaceId: string | null;
+    action: RoadmapAuditAction;
+    toBucket: RoadmapBucket | null;
+    outcome?: string | null;
+    measure?: string | null;
+  },
+): Promise<void> {
+  try {
+    await supabase.from("roadmap_audit").insert(buildAuditInsert(input));
+  } catch {
+    // best-effort: the audit is supplementary; never break the write it describes.
+  }
+}
 
 export type RoadmapItem = {
   id: string;
@@ -99,9 +128,19 @@ export const updateRoadmapItem = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.id)
       .eq("user_id", context.userId)
-      .select("id");
+      .select("id, workspace_id");
     if (error) throw new Error(error.message);
     if (!rows || rows.length === 0) throw new Error("Opportunity not found");
+    // H2-AUDIT: a bucket change is a roadmap decision worth recording (a plain
+    // outcome/measure edit without a bucket change is not a "move").
+    if (data.bucket !== undefined) {
+      await recordRoadmapDecision(context.supabase, {
+        opportunityId: data.id,
+        workspaceId: (rows[0] as { workspace_id?: string | null }).workspace_id ?? null,
+        action: "move",
+        toBucket: data.bucket ?? null,
+      });
+    }
     return { ok: true };
   });
 
@@ -141,8 +180,39 @@ export const commitRoadmapItem = createServerFn({ method: "POST" })
       })
       .eq("id", data.id)
       .eq("user_id", context.userId)
-      .select("id");
+      .select("id, workspace_id");
     if (error) throw new Error(error.message);
     if (!rows || rows.length === 0) throw new Error("Opportunity not found");
+    // H2-AUDIT: a governed commit records the declared outcome AT THIS TIME - the
+    // point-in-time evidence behind "why is this on the roadmap".
+    await recordRoadmapDecision(context.supabase, {
+      opportunityId: data.id,
+      workspaceId: (rows[0] as { workspace_id?: string | null }).workspace_id ?? null,
+      action: "commit",
+      toBucket: data.bucket,
+      outcome: data.outcome,
+      measure: data.measure,
+    });
     return { ok: true };
+  });
+
+/**
+ * H2-AUDIT · read an opportunity's roadmap-decision history (newest first), so the
+ * board / a "why is this here" surface can show who committed it, when, and the
+ * outcome promised at that time. RLS-scoped (own rows or a workspace you belong to).
+ */
+export const getRoadmapHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ opportunityId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }): Promise<{ events: RoadmapAuditRow[] }> => {
+    const { data: rows, error } = await context.supabase
+      .from("roadmap_audit")
+      .select(
+        "id, opportunity_id, user_id, workspace_id, action, from_bucket, to_bucket, outcome, measure, created_at",
+      )
+      .eq("opportunity_id", data.opportunityId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return { events: (rows ?? []) as RoadmapAuditRow[] };
   });
