@@ -161,17 +161,31 @@ export const decideEventDispatch = createServerFn({ method: "POST" })
       return { ok: true, skipped: true, reason: `already ${evt.status}` };
 
     if (data.decision === "reject") {
-      await supabase
+      // KI-28: atomic claim — only the operation that flips pending->skipped wins,
+      // so a concurrent approve (double-click / two tabs / cron) can't race it.
+      const { data: rejected } = await supabase
         .from("event_queue")
         .update({
           status: "skipped",
           decided_at: new Date().toISOString(),
           error: "rejected by operator",
         })
-        .eq("id", data.eventId);
+        .eq("id", data.eventId)
+        .eq("status", "pending")
+        .select("id");
+      if (!rejected?.length) return { ok: true, skipped: true, reason: "already decided" };
       return { ok: true, dispatched: false };
     }
 
+    // KI-28: atomic claim before dispatch (the read-then-check above is not atomic
+    // with the dispatch), so two concurrent approvals can't both spawn a mission.
+    const { data: claimed } = await supabase
+      .from("event_queue")
+      .update({ status: "dispatched", decided_at: new Date().toISOString() })
+      .eq("id", data.eventId)
+      .eq("status", "pending")
+      .select("id");
+    if (!claimed?.length) return { ok: true, skipped: true, reason: "already decided" };
     const result = await dispatchEvent(supabase, evt as EventRow, userId);
     return { ok: true, dispatched: true, ...result };
   });

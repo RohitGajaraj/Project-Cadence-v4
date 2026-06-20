@@ -35,6 +35,22 @@ export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
           const dispatched: string[] = [];
           const failed: { id: string; error: string }[] = [];
           for (const row of rows ?? []) {
+            // KI-28: claim-first CAS. dispatchEvent runs the full agent loop and
+            // only flips status at the end, leaving the row 'pending' for the
+            // whole (>60s) run; with the cron firing every minute, two overlapping
+            // ticks would otherwise re-select and re-dispatch the same event,
+            // spawning duplicate missions + duplicate billed runs. Reuse the
+            // existing 'dispatched' status as the claim: only the tick that flips
+            // pending->dispatched proceeds; the loser matches zero rows and skips.
+            // (A dedicated 'processing' status + staleness reaper + retry cap is
+            // KI-27, which needs a migration, and is deferred.)
+            const { data: claimed } = await supabaseAdmin
+              .from("event_queue")
+              .update({ status: "dispatched", dispatched_at: new Date().toISOString() })
+              .eq("id", row.id)
+              .eq("status", "pending")
+              .select("id");
+            if (!claimed?.length) continue; // another tick already claimed this event
             try {
               await dispatchEvent(supabaseAdmin, row as EventRow, null);
               dispatched.push(row.id);
