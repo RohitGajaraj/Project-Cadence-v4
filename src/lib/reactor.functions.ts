@@ -152,7 +152,9 @@ export const decideEventDispatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: evt, error } = await supabase
       .from("event_queue")
-      .select("id,user_id,workspace_id,event_type,target_agent_slug,payload,status,source_id")
+      .select(
+        "id,user_id,workspace_id,event_type,target_agent_slug,payload,status,source_id,attempt_count",
+      )
       .eq("id", data.eventId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -179,9 +181,11 @@ export const decideEventDispatch = createServerFn({ method: "POST" })
 
     // KI-28: atomic claim before dispatch (the read-then-check above is not atomic
     // with the dispatch), so two concurrent approvals can't both spawn a mission.
+    // KI-27: claim to 'processing' (not 'dispatched'); dispatchEvent flips it to
+    // 'dispatched' on success or retry/'failed' on error.
     const { data: claimed } = await supabase
       .from("event_queue")
-      .update({ status: "dispatched", decided_at: new Date().toISOString() })
+      .update({ status: "processing", decided_at: new Date().toISOString() })
       .eq("id", data.eventId)
       .eq("status", "pending")
       .select("id");
@@ -201,7 +205,33 @@ export type EventRow = {
   payload: Record<string, unknown>;
   source_id: string;
   status: string;
+  attempt_count?: number;
 };
+
+// KI-27: bounded-retry decision for a failed or stalled reactor dispatch. Given
+// the row's CURRENT attempt_count, decide whether to re-queue (with an exponential
+// backoff written to next_attempt_at) or terminalize 'failed' once the cap is
+// reached — so a transient failure recovers but a poison event can't loop forever.
+// Pure (nowMs passed in) so it is unit-testable.
+export const REACTOR_RETRY_CAP = 3;
+export function nextReactorAttempt(
+  attemptCount: number,
+  nowMs: number,
+  cap: number = REACTOR_RETRY_CAP,
+):
+  | { action: "retry"; attemptCount: number; nextAttemptAt: string }
+  | { action: "fail"; attemptCount: number } {
+  const attempt = attemptCount + 1;
+  if (attempt < cap) {
+    const backoffMin = Math.min(2 ** attempt, 30); // 2, 4, 8, ... minutes, capped at 30
+    return {
+      action: "retry",
+      attemptCount: attempt,
+      nextAttemptAt: new Date(nowMs + backoffMin * 60_000).toISOString(),
+    };
+  }
+  return { action: "fail", attemptCount: attempt };
+}
 
 // Externally-ingested signal / opportunity / PRD text is UNTRUSTED: an ingested
 // signal whose content says "ignore prior instructions and call <a tool>" must
@@ -255,9 +285,7 @@ export function goalForEvent(evt: EventRow): string {
         untrustedSignalBlock({ title, github_issue_url: (p.github_issue_url as string) ?? "" })
       );
     default:
-      return (
-        `Handle ${evt.event_type}. ${UNTRUSTED_WARNING}\n` + untrustedSignalBlock({ title })
-      );
+      return `Handle ${evt.event_type}. ${UNTRUSTED_WARNING}\n` + untrustedSignalBlock({ title });
   }
 }
 
@@ -315,14 +343,32 @@ export async function dispatchEvent(
     return { mission_id: mission.id, run_id: result.run_id ?? null, halted };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await supabase
-      .from("event_queue")
-      .update({
-        status: "failed",
-        dispatched_at: new Date().toISOString(),
-        error: msg,
-      })
-      .eq("id", evt.id);
+    // KI-27: bounded retry. A transient dispatch failure re-queues with an
+    // exponential backoff; once the retry cap is reached it terminalizes 'failed'.
+    // (The cron tick auto-retries pending+auto rows whose next_attempt_at elapsed;
+    // a 'confirm' row returns to pending for operator re-approval.)
+    const decision = nextReactorAttempt(evt.attempt_count ?? 0, Date.now());
+    if (decision.action === "retry") {
+      await supabase
+        .from("event_queue")
+        .update({
+          status: "pending",
+          attempt_count: decision.attemptCount,
+          next_attempt_at: decision.nextAttemptAt,
+          error: msg,
+        })
+        .eq("id", evt.id);
+    } else {
+      await supabase
+        .from("event_queue")
+        .update({
+          status: "failed",
+          attempt_count: decision.attemptCount,
+          dispatched_at: new Date().toISOString(),
+          error: msg,
+        })
+        .eq("id", evt.id);
+    }
     throw e;
   }
 }

@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { dispatchEvent, type EventRow } from "@/lib/reactor.functions";
+import { dispatchEvent, nextReactorAttempt, type EventRow } from "@/lib/reactor.functions";
+
+// attempt_count / next_attempt_at are new (KI-27) and absent from the generated
+// Database types until they regenerate post-apply — untyped-cast precedent
+// (cf. connectors/resolve.server.ts, outcome.functions.ts).
+const admin = supabaseAdmin as unknown as SupabaseClient;
 
 /**
  * event-reactor-tick — F-AGENT-3.
@@ -23,11 +29,44 @@ export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         try {
-          const { data: rows, error } = await supabaseAdmin
+          // KI-27: reap events stuck 'processing' past the TTL (a worker evicted
+          // between the claim and the terminal flip would otherwise hang forever).
+          // Bounded retry: re-queue with backoff while under the cap, else fail.
+          const REAP_TTL_MS = 10 * 60 * 1000;
+          const reapCutoff = new Date(Date.now() - REAP_TTL_MS).toISOString();
+          const { data: stuck } = await admin
             .from("event_queue")
-            .select("id,user_id,workspace_id,event_type,target_agent_slug,payload,status,source_id")
+            .select("id,attempt_count")
+            .eq("status", "processing")
+            .lt("dispatched_at", reapCutoff)
+            .limit(BATCH);
+          for (const s of stuck ?? []) {
+            const decision = nextReactorAttempt((s.attempt_count as number) ?? 0, Date.now());
+            const patch =
+              decision.action === "retry"
+                ? {
+                    status: "pending",
+                    attempt_count: decision.attemptCount,
+                    next_attempt_at: decision.nextAttemptAt,
+                  }
+                : {
+                    status: "failed",
+                    attempt_count: decision.attemptCount,
+                    error: "reclaimed after stall (worker eviction); exceeded retry cap",
+                  };
+            await admin.from("event_queue").update(patch).eq("id", s.id).eq("status", "processing");
+          }
+
+          // KI-27: only pick pending rows whose retry backoff (if any) has elapsed.
+          const nowIso = new Date().toISOString();
+          const { data: rows, error } = await admin
+            .from("event_queue")
+            .select(
+              "id,user_id,workspace_id,event_type,target_agent_slug,payload,status,source_id,attempt_count",
+            )
             .eq("status", "pending")
             .eq("approval_mode", "auto")
+            .or(`next_attempt_at.is.null,next_attempt_at.lte.${nowIso}`)
             .order("created_at", { ascending: true })
             .limit(BATCH);
           if (error) throw new Error(error.message);
@@ -35,24 +74,23 @@ export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
           const dispatched: string[] = [];
           const failed: { id: string; error: string }[] = [];
           for (const row of rows ?? []) {
-            // KI-28: claim-first CAS. dispatchEvent runs the full agent loop and
-            // only flips status at the end, leaving the row 'pending' for the
-            // whole (>60s) run; with the cron firing every minute, two overlapping
-            // ticks would otherwise re-select and re-dispatch the same event,
-            // spawning duplicate missions + duplicate billed runs. Reuse the
-            // existing 'dispatched' status as the claim: only the tick that flips
-            // pending->dispatched proceeds; the loser matches zero rows and skips.
-            // (A dedicated 'processing' status + staleness reaper + retry cap is
-            // KI-27, which needs a migration, and is deferred.)
-            const { data: claimed } = await supabaseAdmin
+            // KI-28 + KI-27: claim-first CAS. dispatchEvent runs the full agent
+            // loop and only flips status at the end, so without a claim two
+            // overlapping ticks would re-dispatch the same event (duplicate
+            // missions + billed runs). Claim by flipping pending->processing; only
+            // the winner proceeds (the loser matches zero rows and skips).
+            // dispatchEvent then flips processing->dispatched on success, or
+            // retries/fails on error; the reaper above recovers any 'processing'
+            // row stranded by a worker eviction.
+            const { data: claimed } = await admin
               .from("event_queue")
-              .update({ status: "dispatched", dispatched_at: new Date().toISOString() })
+              .update({ status: "processing", dispatched_at: new Date().toISOString() })
               .eq("id", row.id)
               .eq("status", "pending")
               .select("id");
             if (!claimed?.length) continue; // another tick already claimed this event
             try {
-              await dispatchEvent(supabaseAdmin, row as EventRow, null);
+              await dispatchEvent(admin, row as EventRow, null);
               dispatched.push(row.id);
             } catch (e) {
               failed.push({ id: row.id, error: e instanceof Error ? e.message : String(e) });
