@@ -143,6 +143,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          payload: Json
+          target_id: string | null
+          target_kind: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_kind: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_kind?: string
+        }
+        Relationships: []
+      }
       agent_approvals: {
         Row: {
           agent_id: string | null
@@ -1177,6 +1207,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auto_approve_domains: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_role: string
+          domain: string
+          id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_role?: string
+          domain: string
+          id?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_role?: string
+          domain?: string
+          id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
       }
       builder_file_claims: {
         Row: {
@@ -2557,6 +2614,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          enabled: boolean
+          id: string
+          key: string
+          payload: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          key: string
+          payload?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          key?: string
+          payload?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       guardrail_hits: {
         Row: {
           action: string
@@ -2756,6 +2840,45 @@ export type Database = {
           token_prefix?: string | null
           user_id?: string
           workspace_id?: string
+        }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          state: string
+          token: string
+          workspace_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          state?: string
+          token: string
+          workspace_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          state?: string
+          token?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -3550,6 +3673,7 @@ export type Database = {
           id: string
           onboarded: boolean
           role: string | null
+          suspended: boolean
           timezone: string | null
           updated_at: string
           voice_anchor_text: string | null
@@ -3565,6 +3689,7 @@ export type Database = {
           id: string
           onboarded?: boolean
           role?: string | null
+          suspended?: boolean
           timezone?: string | null
           updated_at?: string
           voice_anchor_text?: string | null
@@ -3580,6 +3705,7 @@ export type Database = {
           id?: string
           onboarded?: boolean
           role?: string | null
+          suspended?: boolean
           timezone?: string | null
           updated_at?: string
           voice_anchor_text?: string | null
@@ -4327,6 +4453,39 @@ export type Database = {
           },
         ]
       }
+      signup_approvals: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          note: string | null
+          requested_workspace_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          note?: string | null
+          requested_workspace_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          note?: string | null
+          requested_workspace_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string
+        }
+        Relationships: []
+      }
       studio_changes: {
         Row: {
           base_content: string | null
@@ -4536,6 +4695,9 @@ export type Database = {
           current_period_start: string | null
           environment: string
           id: string
+          plan_override_expires_at: string | null
+          plan_override_reason: string | null
+          plan_override_tier: string | null
           price_id: string
           product_id: string
           status: string
@@ -4552,6 +4714,9 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          plan_override_expires_at?: string | null
+          plan_override_reason?: string | null
+          plan_override_tier?: string | null
           price_id: string
           product_id: string
           status?: string
@@ -4568,6 +4733,9 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          plan_override_expires_at?: string | null
+          plan_override_reason?: string | null
+          plan_override_tier?: string | null
           price_id?: string
           product_id?: string
           status?: string
@@ -4583,6 +4751,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_override_tier_fkey"
+            columns: ["plan_override_tier"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["tier"]
           },
         ]
       }
@@ -4634,6 +4809,36 @@ export type Database = {
           user_id?: string
           version_local?: number
           version_remote?: number
+        }
+        Relationships: []
+      }
+      system_banner: {
+        Row: {
+          active: boolean
+          expires_at: string | null
+          id: string
+          level: string
+          message: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          expires_at?: string | null
+          id?: string
+          level?: string
+          message: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          expires_at?: string | null
+          id?: string
+          level?: string
+          message?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -5040,6 +5245,97 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_redemptions: {
+        Row: {
+          id: string
+          meta: Json
+          redeemed_at: string
+          user_id: string
+          voucher_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          id?: string
+          meta?: Json
+          redeemed_at?: string
+          user_id: string
+          voucher_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          id?: string
+          meta?: Json
+          redeemed_at?: string
+          user_id?: string
+          voucher_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          active: boolean
+          auto_login: boolean
+          campaign_tag: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          credits: number | null
+          expires_at: string | null
+          id: string
+          kind: string
+          max_redemptions: number | null
+          plan_tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          auto_login?: boolean
+          campaign_tag?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          credits?: number | null
+          expires_at?: string | null
+          id?: string
+          kind: string
+          max_redemptions?: number | null
+          plan_tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          auto_login?: boolean
+          campaign_tag?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          credits?: number | null
+          expires_at?: string | null
+          id?: string
+          kind?: string
+          max_redemptions?: number | null
+          plan_tier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_plan_tier_fkey"
+            columns: ["plan_tier"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["tier"]
+          },
+        ]
+      }
       workspace_audit_log: {
         Row: {
           action: string
@@ -5296,6 +5592,15 @@ export type Database = {
     Functions: {
       accept_workspace_invitation: { Args: { _token: string }; Returns: string }
       admin_add_admin_by_email: { Args: { _email: string }; Returns: string }
+      admin_audit: {
+        Args: {
+          _action: string
+          _payload?: Json
+          _target_id: string
+          _target_kind: string
+        }
+        Returns: string
+      }
       admin_bootstrap_self_as_admin: { Args: never; Returns: boolean }
       admin_delete_bundle: { Args: { _id: string }; Returns: boolean }
       admin_delete_plan: { Args: { _tier: string }; Returns: undefined }
@@ -5434,7 +5739,34 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_active_banner: {
+        Args: never
+        Returns: {
+          expires_at: string
+          id: string
+          level: string
+          message: string
+        }[]
+      }
       get_cron_hook_secret: { Args: never; Returns: string }
+      get_flag: {
+        Args: { _key: string }
+        Returns: {
+          enabled: boolean
+          payload: Json
+        }[]
+      }
+      get_invitation_by_token: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          role: string
+          state: string
+          workspace_id: string
+        }[]
+      }
       halt_agent_run: {
         Args: { _reason: string; _run_id: string }
         Returns: undefined
