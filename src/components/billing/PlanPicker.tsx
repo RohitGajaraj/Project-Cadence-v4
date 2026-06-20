@@ -229,7 +229,7 @@ function CardShell({
     <div
       className="bento"
       style={{
-        padding: 18,
+        padding: "22px 18px 18px",
         display: "flex",
         flexDirection: "column",
         gap: 12,
@@ -242,12 +242,12 @@ function CardShell({
           ? "color-mix(in oklab, var(--ember, #c2602e) 7%, var(--canvas, #fbf7ef))"
           : undefined,
         boxShadow: isCurrent
-          ? "0 0 0 1px var(--ember, #c2602e), 0 0 0 4px color-mix(in oklab, var(--ember, #c2602e) 14%, transparent), 0 12px 32px -16px color-mix(in oklab, var(--ember, #c2602e) 45%, transparent)"
+          ? "0 0 0 1.5px var(--ember, #c2602e), 0 0 0 6px color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), 0 0 24px -2px color-mix(in oklab, var(--ember, #c2602e) 35%, transparent), 0 18px 44px -18px color-mix(in oklab, var(--ember, #c2602e) 55%, transparent)"
           : recommended
             ? "0 4px 18px -10px rgba(0,0,0,0.18)"
             : undefined,
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       {isCurrent ? (
@@ -260,6 +260,8 @@ function CardShell({
             right: 0,
             height: 3,
             background: "linear-gradient(90deg, var(--ember, #c2602e), color-mix(in oklab, var(--ember, #c2602e) 60%, transparent))",
+            borderTopLeftRadius: "inherit",
+            borderTopRightRadius: "inherit",
           }}
         />
       ) : null}
@@ -268,16 +270,21 @@ function CardShell({
           className="mono-label"
           style={{
             position: "absolute",
-            top: -8,
-            right: 14,
+            top: -10,
+            left: "50%",
+            transform: "translateX(-50%)",
             background: "var(--ink, #1d1a14)",
             color: "var(--canvas, #fbf7ef)",
-            padding: "2px 8px",
+            padding: "3px 10px",
             borderRadius: 99,
-            fontSize: 9,
+            fontSize: 9.5,
+            letterSpacing: "0.14em",
+            whiteSpace: "nowrap",
+            boxShadow: "0 4px 12px -4px rgba(0,0,0,0.25)",
+            zIndex: 2,
           }}
         >
-          Recommended
+          Most popular
         </span>
       ) : null}
       {children}
@@ -299,13 +306,32 @@ function CardHeader({
   const Icon = TIER_ICON[tier];
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
         <span
-          className="font-display"
-          style={{ fontSize: 18, display: "inline-flex", alignItems: "center", gap: 8 }}
+          aria-hidden
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background:
+              "linear-gradient(145deg, color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), color-mix(in oklab, var(--ember, #c2602e) 6%, transparent))",
+            border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 22%, transparent)",
+            color: "var(--ember, #c2602e)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 12px -6px color-mix(in oklab, var(--ember, #c2602e) 40%, transparent)",
+          }}
         >
-          <Icon size={16} strokeWidth={1.7} />
-          {name}
+          <Icon size={20} strokeWidth={1.6} />
         </span>
         {isCurrent ? (
           <span
@@ -314,14 +340,21 @@ function CardHeader({
               fontSize: 9,
               color: "var(--canvas, #fbf7ef)",
               background: "var(--ember, #c2602e)",
-              padding: "2px 8px",
+              padding: "3px 9px",
               borderRadius: 99,
               whiteSpace: "nowrap",
+              letterSpacing: "0.12em",
             }}
           >
             Current plan
           </span>
         ) : null}
+      </div>
+      <div
+        className="font-display"
+        style={{ fontSize: 19, marginTop: 10, letterSpacing: "-0.01em" }}
+      >
+        {name}
       </div>
       <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0", minHeight: 32 }}>
         {tagline}
