@@ -32,6 +32,7 @@ import { getGreeting } from "@/lib/greeting.functions";
 import { getNeedsYou, getColdStart, getLoopPulse } from "@/lib/today.functions";
 import { resolveApproval } from "@/lib/governance.functions";
 import { listLearnings } from "@/lib/outcome.functions";
+import { describeCompounding, summarizeCompounding } from "@/lib/moat-vis";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
@@ -210,13 +211,17 @@ function Dashboard() {
   // v6 Phase 0 / W4 — real emptiness (no signals/opps/specs) shows the on-ramp.
   const isCold = coldStart.data?.isCold ?? false;
 
-  // v6 Phase 0 / W5 — make the closed loop visible on Today: the outcome→memory
-  // re-score (listLearnings prior_ice → new_ice) surfaced as a line. Only counts
-  // learnings where the score actually moved.
-  const rescores = (learnings.data?.learnings ?? []).filter(
-    (l) => l.prior_ice != null && l.new_ice != null && Number(l.prior_ice) !== Number(l.new_ice),
-  );
-  const latestRescore = rescores[0];
+  // v6 Phase 0 / W5 + MOAT-VIS — make the compounding visible on Today. The
+  // outcome→memory re-score (prior_ice → new_ice) runs through the shared pure
+  // summarizer (moat-vis.ts) so Today's "what changed" line and the Brain's
+  // Compounding panel read one source. `latest` is the newest cause; the
+  // aggregate sentence shows the loop is compounding, not a one-off.
+  const compounding = summarizeCompounding(learnings.data?.learnings ?? []);
+  const latestRescore = compounding.latest;
+  // `> 1` is deliberate: one re-score is an event, not yet "compounding" — the
+  // aggregate sentence stays silent on a single move so it never overclaims. Do
+  // not relax to `>= 1`.
+  const compoundingLine = compounding.rescoreCount > 1 ? describeCompounding(compounding) : null;
 
   // Command center: what is stuck (expired calls + failed runs) and what to push (top ICE).
   const expiredApprovals = (ny?.approvals ?? []).filter((a) => a.escalation_state === "expired");
@@ -892,14 +897,25 @@ function Dashboard() {
                       </span>
                       {" · "}
                       <span style={{ color: "var(--ink)", fontWeight: 600 }}>
-                        ICE {Number(latestRescore.prior_ice).toFixed(1)} to{" "}
-                        {Number(latestRescore.new_ice).toFixed(1)}
+                        ICE {latestRescore.priorIce.toFixed(1)} to {latestRescore.newIce.toFixed(1)}
                       </span>
                       .
                     </p>
                   ) : (
                     <p style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 8 }}>
                       Nothing new since you last looked.
+                    </p>
+                  )}
+                  {compoundingLine && (
+                    <p
+                      style={{
+                        fontSize: 10.5,
+                        color: "var(--ink-subtle)",
+                        marginTop: 6,
+                        opacity: 0.8,
+                      }}
+                    >
+                      {compoundingLine}
                     </p>
                   )}
                 </Link>

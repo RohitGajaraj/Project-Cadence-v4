@@ -7,9 +7,17 @@
  * daily ritual reads from here.
  */
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isSideEffectingTool } from "@/lib/tool-consequences";
 import type { CriticReview } from "@/lib/discovery.functions";
+import {
+  type CompoundingLearning,
+  type CompoundingSummary,
+  type Rescore,
+  rescoresOf,
+  summarizeCompounding,
+} from "@/lib/moat-vis";
 
 export type NeedsYou = {
   approvals: {
@@ -307,4 +315,54 @@ export const getRecentExecutedUnattended = createServerFn({ method: "GET" })
         latency_ms: r.latency_ms,
       })),
     };
+  });
+
+// MOAT-VIS — make the compounding visible. The outcome loop (recordOutcome) writes
+// a `learnings` row carrying prior_ice/new_ice + the verdict that moved the score.
+// This is the canonical rescore-cause read that both Today's "what changed" card and
+// the Brain's Learnings tab consume, so the compounding story has one source of truth
+// (the pure summarizer in moat-vis.ts). RLS-scoped via the authed client; fail-safe.
+
+export type CompoundingResult = {
+  /** Newest-first, capped; each rescore carries its cause (verdict + summary). */
+  rescores: Rescore[];
+  summary: CompoundingSummary;
+};
+
+export const getCompounding = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CompoundingResult> => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data, error } = await db
+      .from("learnings")
+      .select(
+        "id, verdict, summary, prior_ice, new_ice, created_at, opportunity:opportunities(title)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+
+    // Flatten the to-one opportunity embed (PostgREST may widen it to an array),
+    // mirroring listLearnings so the wire shape stays flat + back-compatible.
+    type Wire = {
+      id: string;
+      verdict: "validated" | "missed" | "mixed";
+      summary: string;
+      prior_ice: number | string | null;
+      new_ice: number | string | null;
+      created_at: string;
+      opportunity: { title: string | null } | { title: string | null }[] | null;
+    };
+    const learnings: CompoundingLearning[] = ((data ?? []) as Wire[]).map(
+      ({ opportunity, ...rest }) => {
+        const opp = Array.isArray(opportunity) ? opportunity[0] : opportunity;
+        return { ...rest, opportunity_title: opp?.title ?? null };
+      },
+    );
+
+    // One pure path feeds both halves so the feed and the summary never drift: the
+    // query is created_at desc, so rescoresOf preserves newest-first ordering.
+    const rescores = rescoresOf(learnings);
+    const summary = summarizeCompounding(learnings);
+    return { rescores, summary };
   });

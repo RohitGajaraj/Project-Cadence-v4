@@ -19,9 +19,9 @@ import { MonoLabel, SurfaceHeader, TabRow } from "@/components/cadence/Primitive
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
-import { MemoryPanel } from "@/components/knowledge/MemoryPanel";
 import { MemoryList } from "@/components/memory/MemoryList";
 import { DecisionsPanel } from "@/components/knowledge/DecisionsPanel";
+import { CompoundingPanel } from "@/components/knowledge/CompoundingPanel";
 import { DecisionDetail } from "@/components/knowledge/DecisionDetail";
 import { LearningDetail } from "@/components/knowledge/LearningDetail";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
@@ -192,7 +192,8 @@ function KnowledgePage() {
 
         {tab === "calendar" && <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />}
         {tab === "memory" && <MemoryList />}
-        {tab === "learnings" && (learning ? <LearningDetail id={learning} /> : <MemoryPanel />)}
+        {tab === "learnings" &&
+          (learning ? <LearningDetail id={learning} /> : <CompoundingPanel />)}
         {tab === "decisions" && (decision ? <DecisionDetail id={decision} /> : <DecisionsPanel />)}
         {tab === "graph" && <GraphPanel focusKind={focusKind} focusId={focusId} />}
         {tab === "docs" && <DocsPanel />}
