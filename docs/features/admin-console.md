@@ -1,8 +1,26 @@
 # Admin console (`/admin/*`, inbuilt)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: v1 shipped)_
+> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: v2 shipped)_
 
-> Status · **v1 shipped 2026-06-20 (◐).** Two tabs live: **Overview** + **Pricing**. v2 (People · Workspaces · Platform) is the next initiative — plan below.
+> Status · **v2 shipped 2026-06-20 (◐).** Five tabs live: **Overview** + **Pricing** (v1) and **People** + **Workspaces** + **Platform** (v2). All 8 steps of the v2 build bible are complete. Live on the founder's next publish (the v2 migrations + cron hooks apply then).
+
+## v2 (shipped)
+
+- **People tab** (`/admin/people`) — Users search + drawer (identity, plan override w/ expiry + reason, credit grants, monthly credit reset, suspend/restore, per-user audit log), **Invitations panel** (single + bulk invites, auto-approve domain rules, manual signup-approval queue), **Vouchers panel** (signup vouchers w/ auto-login, credit-grant vouchers, plan-upgrade vouchers, campaign tags, redemption log + public `redeemVoucher` RPC).
+- **Workspaces tab** (`/admin/workspaces`) — Search tenants, drawer for members + roles, workspace-level credit grants, plan override, ownership transfer, soft-delete + restore.
+- **Platform tab** (`/admin/platform`) — Feature flags / kill switches, system-banner publisher, full audit-log viewer, system-health peek.
+- **Backend:** 8 new tables (`admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`), `profiles.suspended`, `subscriptions.plan_override_tier/expires_at/reason`, all admin RPCs `SECURITY DEFINER` + `has_role(auth.uid(),'admin')` + atomic write to `admin_audit_log`. Server-fn modules: `admin.functions.ts`, `admin-invitations.functions.ts`, `admin-vouchers.functions.ts`, `admin-workspaces.functions.ts`, `admin-platform.functions.ts`. Public voucher redemption in `redeem-voucher.functions.ts`.
+- **Security hardening (same cycle):** mirrored `stripe_customer_id` / `stripe_subscription_id` from `accounts` / `subscriptions` / `workspaces` into `*_billing_secrets` tables; revoked column-level `SELECT` on the originals for `authenticated` + `anon`; only `service_role` (webhooks + admin RPCs) can read.
+- **Cron:** `/api/public/hooks/admin-expiry-tick` calls `cron_tick_admin_expiries()` nightly to clear expired plan overrides and invitations.
+
+## How to verify (v2)
+
+- Grant admin (`adminBootstrapSelfAsAdmin` or insert into `user_roles`) → `/admin` shows the People / Workspaces / Platform tabs alongside Overview / Pricing.
+- People → search a user → drawer opens → grant 500 credits, set a Star override expiring in 7 days → audit-log shows both actions.
+- Invitations → create a single invite + a bulk CSV; add `@company.com` to auto-approve domains; queue a signup for manual review and approve it.
+- Vouchers → create a 1-month Cluster voucher, redeem from a fresh signup with `?voucher=CODE`, see the redemption log entry.
+- Workspaces → search a tenant → transfer ownership → soft-delete → restore.
+- Platform → flip a feature flag, publish a banner, scroll the audit log.
 
 ## v1 (shipped)
 
@@ -14,17 +32,7 @@
   - **"Best value" marker** on top-up bundles per group (Starter / At scale).
 - **Access:** every admin RPC is `SECURITY DEFINER` and gates on `has_role(auth.uid(),'admin')`. First admin granted via `adminBootstrapSelfAsAdmin`.
 
-## v2 (planned, next initiative)
-
-Three new tabs (clustered, not five), each with deep drawers, so functionality is not lost:
-
-1. **People** — Users panel (search, drawer with identity / plan & billing / credits / workspaces / access / activity), Invitations panel (single + bulk CSV + pending queue + auto-approve domains + manual review), Vouchers & promos panel (signup vouchers with auto-login, credit-grant vouchers, plan-upgrade vouchers, campaign tags, redemption log).
-2. **Workspaces** — search, members + roles, workspace-level credit grants, plan override, transfer ownership, soft delete.
-3. **Platform** — feature flags & kill switches, system banner publisher, audit log viewer, system health peek.
-
-**Backend:** all admin mutations remain SECURITY DEFINER + `has_role` + atomic write to `admin_audit_log`. New tables: `admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`; plan-override columns on `subscriptions`. New server-fn modules: `admin.functions.ts`, `admin-invitations.functions.ts`, `admin-vouchers.functions.ts`, `admin-workspaces.functions.ts`, `admin-platform.functions.ts`, `redeem-voucher.functions.ts`.
-
-> **Cold-buildable build bible: [`../planning/admin-console-v2-plan.md`](../planning/admin-console-v2-plan.md).** Any agent picking this up reads that doc first — it carries the migration spec, per-module server-fn list, frontend pattern rules, signup wiring, cron hooks, strict build order, and acceptance checklist. Do not re-derive scope from this page; this page is the index, the build bible is the contract.
+> **Build bible (now historical):** [`../planning/admin-console-v2-plan.md`](../planning/admin-console-v2-plan.md) — Steps 1-8 all shipped. Kept as the cold-buildable record of intent + acceptance.
 
 ## What it does
 
