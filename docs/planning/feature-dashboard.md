@@ -84,9 +84,9 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 
 > **Live progress (derived from the rows, recompute on every status change - see the Progress accounting rule above).** **Decision Brain merge (2026-06-20): NEW rows 148 DBR (H1, ⬜) + 149 CMD (H2, parked, ⬜)** are 0% horizon cues, so total 147→149, ⬜ 36→38, strict 63/149=42.3%, weighted 88.80/149=59.6% (the weighted sum is unchanged at 88.80). Prior: **2026-06-20 04:55 IST** (cycle 54, FRONT-END theme: wired WM-F5's accept route - a standalone `/join/$token` page that redeems an invite via `acceptInvitation`, completing the invite→accept loop; row 54 WM-F5 [~85%]→[~92%], weighted 88.73→88.80 = 60.4%, counts unchanged; ran `impeccable`. cycle 53, FRONT-END theme: wired WM-F5's invite UI - a `TeamCard` ("Invite teammates") in Settings > Workspace (invite by email + role, copy join link, list + revoke invitations); row 54 WM-F5 [~70%]→[~85%]; then rebased in the cockpit lane's P7 (which flipped P7 → ✅), so the canonical awk now reads ✅63 / ◐35 / ⬜36 / ⏸️3 / ⏭️10, strict 42.9% / weighted 88.73 = 60.4%; ran `impeccable`. cycle 52, FRONT-END theme: wired U6's export-history view - the DataExportCard now shows a "Recent exports" list via `listExportLog` (row 36 U6 [~95%]→[~98%]); weighted 88.15→88.18, counts unchanged; ran `impeccable` per the founder ruling. cycle 51, FRONT-END PIVOT per founder ruling: started stitching UI onto shipped backends so they are visible in the app. First build: a calm-front `SubprocessorsCard` ("Where your data goes") in Settings > Data wiring SUBPROC-DISCLOSURE's `getSubprocessors` (row 146 [~60%]→[~75%]). Rebased in the cockpit lane's R3-PREFS (which flipped R3 → ✅), so the canonical awk now reads ✅62 / ◐36 / ⬜36 / ⏸️3 / ⏭️10, strict 42.2% / weighted 88.15 = 60.0%. cycle 50: NEW row 147 APP-HEALTH → ◐ [~60%], a public app health/readiness endpoint (`/api/public/health`) + pure status-assembly module, Reliability P0; canonical awk now ✅61 / ◐37 / ⬜36 / ⏸️3 / ⏭️10, strict 41.5% / weighted 87.60 = 59.6%. cycle 49: NEW row 146 SUBPROC-DISCLOSURE → ◐ [~60%], a catalog-derived sub-processor disclosure registry + read fn, Data/Privacy P1; the awk recompute also corrected drift in the hand-kept status counts. cycle 48: U6-AUDIT backend (row 36 U6) shipped — an append-only `export_log` audit table + per-export audit-write in `exportProduct`/`exportWorkspace` + a `listExportLog` read fn, behaviorally dry-run-verified on prod (append-only confirmed: insert+select policies only); U6 [~85%]→[~95%], weighted 83.06→83.16 (counts unchanged, U6 stays ◐ pending its history UI); earlier cycle 47: NEW row 145 DATA-RETENTION → ◐) from the register (the per-status counts and per-category roll-up are tallied, not hand-kept).
 
-- ### Overall completion: **42% (strict) / 60% (weighted)**
+- ### Overall completion: **42.3% (strict) / 59.8% (weighted)**
   - **Strict** = fully-done rows / total = **63 / 149 = 42.3%** (the honest floor).
-  - **Weighted** = sum of every row's Item % / total = **88.80 / 149 = 59.6%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
+  - **Weighted** = sum of every row's Item % / total = **89.10 / 149 = 59.8%** (✅ 100%; ◐ partial at its per-row `[~NN%]` estimate; ⏸️ paused + 🔨 in-dev 50%).
   - **Remaining: 58% open** - **86 of 149** rows not fully done.
   - _Conservative by design: several ⬜ rows are already built but not yet reconciled (SSOT section 5), so true completion runs a little higher than 42%. The 149 total includes the 3 deferred pricing-packaging rows (WM-M17/M18/M19) and the 2 horizon cues (DBR/CMD, 0% pending enrichment), which add planned scope, not regression._
 - **Total features = 149** · **Done = 63** · **Not done = 86** (⬜ 38 open + ◐ 35 partial + ⏸️ 3 paused + ⏭️ 10 deferred + 🔨 0 in dev + 🚧 0 blocked).
@@ -97,13 +97,13 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
 | ✅ Done | 63 | 100% | 63.0 |
-| ◐ Partial | 35 | per-row `[~NN%]` (avg ~69%) | 24.30 |
+| ◐ Partial | 35 | per-row `[~NN%]` (avg ~70%) | 24.60 |
 | ⏸️ Paused | 3 | 50% | 1.5 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
 | ⬜ Open (ready to pick up) | 38 | 0% | 0.0 |
 | ⏭️ Deferred | 10 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **149** | - | **88.80 / 149 = 60%** |
+| **Total** | **149** | - | **89.10 / 149 = 59.8%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -149,7 +149,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 11 | ⬜ | SANDBOX | Sandbox / preview spine | A sandbox to run agent tests + preview a build before merge | Build | P1 | - | needs founder to pick a provider (Cloudflare Sandbox SDK / E2B / Vercel) + infra/spend |
 | 12 | ⬜ | AMBIENT-ARC | Ambient autonomy arc (Trust Dial) | Per-agent autonomy arc incl. Ambient + suggested promotion on the Agents tab | Governance | P1 | - | recon: shipped as `TrustDial.tsx`; see trust-and-autonomy.md §7 |
 | 13 | ◐ | F3 | Continuous discovery feed | Always-fresh, per-product clustered signal feed (`/product?tab=signals`) | Sense | P2 | 2026-06-18 | remaining: auto-cluster cron (F3-CRON shipped gated off; activation founder-gated, commits recurring AI spend) [~80%] |
-| 14 | ◐ | O1 | Knowledge graph + query | Provenance walk: "why is this on the roadmap / being built?" back to root source signals | Sense | P2 | 2026-06-18 | remaining: typed graph explorer + drift/skill-pack export (O3) [~60%] |
+| 14 | ◐ | O1 | Knowledge graph + query | Provenance walk: "why is this on the roadmap / being built?" back to root source signals | Sense | P2 | 2026-06-18 | O1 v1 (Lean tree explorer): buildLineageTree + hydrateTreeTitles + GraphPanel on /knowledge tab; deterministic projection over artifact_lineage, zero migrations, 6 unit tests, tsc green, build green. Live render-verify pending. [~90%]; O3 (drift + skill-pack export) remains. |
 | 15 | ⬜ | O3 | Fact currency/drift + skill packs | Flags stale facts on the provenance graph; exports versioned skill bundles over MCP | Sense | P2 | - | depends on O1 + Q1 |
 | 16 | ◐ | D4 | Cancel / replay-and-branch / checkpoints | Brake-pedal cancel + replay a finished mission (optionally a different model) with a branch link | Decide | P2 | 2026-06-18 | remaining D4b: rich side-by-side checkpoint-diff; pending publish + live verify [~80%] |
 | 17 | ◐ | K2 | Rollback triggers + one-action revert | One-action non-destructive revert-to-revision in the Build Changes tab | Build | P2 | 2026-06-18 | remaining K2b: `studio.revert` agent tool (needs `agent_tools` migration) + feature-flag kill; parked on a backup branch, issue #4 [~70%] |
