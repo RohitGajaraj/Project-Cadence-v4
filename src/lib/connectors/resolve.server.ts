@@ -69,6 +69,22 @@ function admin(): SupabaseClient {
 }
 
 /**
+ * KI-34 cross-tenant credential guard. The connection_bindings write RLS
+ * authorizes by workspace membership only and never validates connection_id, so a
+ * member could point a binding at ANOTHER account's connection; resolveProviderAuth
+ * loads that connection via the service-role client (RLS off), so it must itself
+ * confirm the bound connection's owner belongs to the binding's workspace before
+ * materializing the credential. Policy: block only a DEFINITIVELY cross-tenant
+ * owner (lookup succeeded, owner not a member); fail OPEN on any lookup error so a
+ * transient failure can never break a legitimate integration (the RLS migration is
+ * the airtight backstop). Exported for unit testing.
+ */
+export function bindingConnectionAllowed(lookup: { errored: boolean; isMember: boolean }): boolean {
+  if (lookup.errored) return true;
+  return lookup.isMember;
+}
+
+/**
  * Turn a connected connections row into usable auth. Secrets/token minting go
  * through supabaseAdmin. Exported for connections.functions.ts, which
  * materializes auth for ONE specific row (not the workspace→user→env chain).
@@ -148,18 +164,39 @@ export async function resolveProviderAuth(args: {
           .eq("id", binding.connection_id)
           .maybeSingle();
         if (conn && (conn as ConnectionRow).status === "connected") {
-          const auth = await materializeAuth(conn as ConnectionRow, provider);
-          if (auth) {
-            return {
-              auth,
-              binding: {
-                resourceId: binding.resource_id,
-                resourceLabel: binding.resource_label ?? null,
-                config: binding.config ?? {},
-                createdBy: binding.created_by,
-              },
-              source: "workspace_binding",
-            };
+          // KI-34: confirm the bound connection's OWNER is a member of the
+          // binding's workspace before materializing its credential (the binding
+          // RLS never validated connection_id, so it could point cross-tenant).
+          let lookup = { errored: true, isMember: false };
+          try {
+            const { data: mem, error: memErr } = await admin()
+              .from("workspace_members")
+              .select("user_id")
+              .eq("workspace_id", workspaceId)
+              .eq("user_id", (conn as ConnectionRow).user_id)
+              .maybeSingle();
+            lookup = { errored: !!memErr, isMember: !!mem };
+          } catch {
+            lookup = { errored: true, isMember: false };
+          }
+          if (!bindingConnectionAllowed(lookup)) {
+            console.warn(
+              `[connectors] KI-34: refusing workspace binding for ${provider} — bound connection owner is not a member of the binding's workspace (possible cross-tenant binding); falling through`,
+            );
+          } else {
+            const auth = await materializeAuth(conn as ConnectionRow, provider);
+            if (auth) {
+              return {
+                auth,
+                binding: {
+                  resourceId: binding.resource_id,
+                  resourceLabel: binding.resource_label ?? null,
+                  config: binding.config ?? {},
+                  createdBy: binding.created_by,
+                },
+                source: "workspace_binding",
+              };
+            }
           }
         }
       }
