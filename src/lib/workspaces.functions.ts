@@ -129,12 +129,48 @@ export const removeWorkspaceMember = createServerFn({ method: "POST" })
     z.object({ workspaceId: z.string().uuid(), userId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
+    // RLS ("owner manages members", WM-F3) restricts member writes to the workspace
+    // owner. The .select() turns an RLS-blocked delete (0 rows, no error from PostgREST)
+    // into a loud failure instead of a phantom "ok" the UI would report as success.
+    const { data: removed, error } = await context.supabase
       .from("workspace_members")
       .delete()
       .eq("workspace_id", data.workspaceId)
-      .eq("user_id", data.userId);
+      .eq("user_id", data.userId)
+      .select("user_id");
     if (error) throw new Error(error.message);
+    if (!removed || removed.length === 0) {
+      throw new Error("Only the workspace owner can remove members.");
+    }
+    return { ok: true };
+  });
+
+// Change a member's role. Owner-only via the same "owner manages members" RLS; the
+// prevent_workspace_owner_demotion trigger blocks demoting the owner. The role enum
+// excludes "owner" because promotion to owner is the ownership-transfer flow, not a
+// role edit. The .select() makes an RLS-blocked update fail loudly, not silently ok.
+export const changeWorkspaceMemberRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        userId: z.string().uuid(),
+        role: z.enum(["admin", "member", "viewer"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: updated, error } = await context.supabase
+      .from("workspace_members")
+      .update({ role: data.role })
+      .eq("workspace_id", data.workspaceId)
+      .eq("user_id", data.userId)
+      .select("user_id");
+    if (error) throw new Error(error.message);
+    if (!updated || updated.length === 0) {
+      throw new Error("Only the workspace owner can change member roles.");
+    }
     return { ok: true };
   });
 

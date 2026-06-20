@@ -7,15 +7,18 @@ import {
   listWorkspaceMembers,
   removeWorkspaceMember,
   transferWorkspaceOwnership,
+  changeWorkspaceMemberRole,
 } from "@/lib/workspaces.functions";
 import { toast } from "@/lib/notify";
 
 // Members: the calm-front view of who is in the workspace (WM-F4 + RBAC). Identity (name/email)
 // comes from the membership-gated workspace_members_with_identity RPC, because profiles RLS is
-// own-row-only. Owners/admins can remove a member; the owner can hand over ownership via an
-// inline two-step confirm (it demotes them to admin, so it is not a one-click action).
-// Engine-Room: workspace_members + the RBAC roles + the transfer/remove RPCs -> shown in
-// Settings > Workspace as "Members" -> see who is in the workspace and, as owner/admin, manage them.
+// own-row-only. Member management is OWNER-ONLY (the WM-F3 "owner manages members" RLS is
+// owner-scoped, so admins cannot write workspace_members): the owner can change a member's role
+// inline, remove a member, or hand over ownership via an inline two-step confirm (it demotes
+// the owner to admin, so it is not one-click).
+// Engine-Room: workspace_members + the RBAC roles + the transfer/remove/role RPCs -> shown in
+// Settings > Workspace as "Members" -> see who is in the workspace and, as owner, manage them.
 
 type Member = {
   userId: string;
@@ -77,6 +80,7 @@ export function MembersCard() {
   const fList = useServerFn(listWorkspaceMembers);
   const fRemove = useServerFn(removeWorkspaceMember);
   const fTransfer = useServerFn(transferWorkspaceOwnership);
+  const fChangeRole = useServerFn(changeWorkspaceMemberRole);
 
   const membersQ = useQuery({
     queryKey: ["workspace-members", activeWorkspaceId],
@@ -85,9 +89,8 @@ export function MembersCard() {
   });
 
   const members: Member[] = membersQ.data?.members ?? [];
-  const selfRole = membersQ.data?.selfRole ?? null;
-  const canManage = selfRole === "owner" || selfRole === "admin";
-  const isOwner = selfRole === "owner";
+  // Member management is owner-only (WM-F3 "owner manages members" RLS is owner-scoped).
+  const isOwner = (membersQ.data?.selfRole ?? null) === "owner";
   const ownerId = activeWorkspace?.owner_id ?? null;
 
   const [confirmTransfer, setConfirmTransfer] = useState<string | null>(null);
@@ -114,6 +117,18 @@ export function MembersCard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const changeRole = useMutation({
+    mutationFn: (vars: { userId: string; role: "admin" | "member" | "viewer" }) =>
+      fChangeRole({
+        data: { workspaceId: activeWorkspaceId as string, userId: vars.userId, role: vars.role },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workspace-members", activeWorkspaceId] });
+      toast.success("Role updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="bento" style={{ padding: "var(--card-pad)" }}>
       <div
@@ -133,11 +148,9 @@ export function MembersCard() {
       </div>
       <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginTop: 6, maxWidth: 520 }}>
         Who can work in this workspace.{" "}
-        {canManage
-          ? isOwner
-            ? "You can remove people or hand over ownership."
-            : "You can remove people."
-          : "Ask an owner or admin to change who is here."}
+        {isOwner
+          ? "As the owner, you can change roles, remove people, or hand over ownership."
+          : "Only the workspace owner can change who is here."}
       </p>
 
       <div style={{ marginTop: 16 }}>
@@ -195,8 +208,11 @@ export function MembersCard() {
             {members.map((m, i) => {
               const name = memberName(m);
               const isRowOwner = m.userId === ownerId || m.role === "owner";
-              const showRemove = canManage && !isRowOwner && !m.isSelf;
-              const showTransfer = isOwner && !isRowOwner && !m.isSelf;
+              // All member management is owner-only (RLS). The owner cannot manage
+              // their own row (the demotion trigger guards it) or the owner row.
+              const manageable = isOwner && !isRowOwner && !m.isSelf;
+              const showRemove = manageable;
+              const showTransfer = manageable;
               const subtitle =
                 m.displayName && m.email
                   ? `${m.email} · joined ${joinedOn(m.createdAt)}`
@@ -264,7 +280,35 @@ export function MembersCard() {
                           You
                         </span>
                       )}
-                      <RoleChip role={m.role} />
+                      {manageable ? (
+                        <select
+                          className="mono-label"
+                          value={m.role}
+                          disabled={changeRole.isPending}
+                          onChange={(e) =>
+                            changeRole.mutate({
+                              userId: m.userId,
+                              role: e.target.value as "admin" | "member" | "viewer",
+                            })
+                          }
+                          aria-label={`Role for ${name}`}
+                          style={{
+                            fontSize: 10,
+                            padding: "1px 6px",
+                            borderRadius: 999,
+                            color: "var(--ink-muted)",
+                            background: "var(--surface-1)",
+                            border: "1px solid var(--hairline)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="member">Member</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                      ) : (
+                        <RoleChip role={m.role} />
+                      )}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 2 }}>
                       {subtitle}
