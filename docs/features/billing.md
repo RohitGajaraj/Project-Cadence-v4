@@ -1,8 +1,19 @@
 # Billing rail (Stripe, credit-bundle model)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20_
+> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: cancel/resume + Stripe-id lockdown)_
 
-> Status · Phase 1-2 landed 2026-06-20 (Stripe enabled in sandbox; admin-editable pricing catalog + service-role billing vault tables shipped via migration `stripe_rail_pricing_catalog_and_admin_role`). Phases 3-10 in progress; board group G12.
+> Status · Phase 1-2 landed 2026-06-20 (Stripe enabled in sandbox; admin-editable pricing catalog + service-role billing vault tables). **Phase 5 partial: Stripe Checkout + customer portal + cancel/resume wired.** Webhook handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`. Sandbox env active; live env gated on the founder.
+
+## Update 2026-06-20 (Lovable cycle: cancel / resume / portal as shipped)
+
+- **Server fns (`src/lib/payments.functions.ts`):**
+  - `getMySubscription` — reads the active subscription row via service-role after `requireSupabaseAuth` verifies the caller.
+  - `createPortalSession` — opens Stripe Customer Portal (new tab; portal cannot embed).
+  - `mutateCancelFlag` — sets `cancel_at_period_end` true/false (cancel + resume). End-of-period semantics: a canceled sub keeps access until `current_period_end`.
+  - All three load `supabaseAdmin` lazily inside the handler (never at module scope) per the server-runtime rule.
+- **UI:** Settings → Plan hosts cancel / resume / "Open portal" inline next to the current-plan card. Destructive cancel goes through `useConfirm()` (per `destructive-actions.md`).
+- **Test-mode banner:** a calm banner declares when Stripe is in sandbox so the user is never confused about whether a real charge happened. Component: `src/components/billing/PaymentTestModeBanner.tsx`.
+- **Stripe-id column lockdown:** migration `20260620225748_*.sql` revokes `stripe_customer_id` / `stripe_subscription_id` on `accounts`, `workspaces`, `subscriptions` from anon+authenticated. Two EXPOSED_SENSITIVE_DATA findings closed.
 
 ## What it does
 

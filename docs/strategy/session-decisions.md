@@ -26,6 +26,34 @@
 
 ## Decision log
 
+### 2026-06-20 — Pricing surface architecture: 5-tier Constellation, audience toggle, per-tier billing rules
+
+**Decision:** The Settings → Plan picker and `/pricing` use a **two-axis audience toggle** (Personal · Teams & Enterprise), not a flat 5-card row or a global Monthly/Yearly switch. Per-tier billing rules differ deliberately: **Cluster** carries both monthly and yearly; **Constellation** is monthly-only; **Star / Galaxy / Cosmos** have no billing toggle. Exactly one card per audience carries a centered "Most popular" badge, controlled from the admin pricing console. The current plan is visually distinguished by an ember glow + warm tint + top-border accent. Star copy is "Free, upgrade anytime" (not "Free forever"). Feature bullets per tier are strictly ascending with an "Everything in [previous tier], plus:" lead.
+
+**Why:** Five cards in one row split half-half on common viewports and broke the visual hierarchy; the audience toggle keeps each row at 3 or 2 cards so cards never clip. Constellation is a usage-heavy power tier where yearly bundling reduced perceived flexibility, so monthly-only was the founder's call; Cluster is the silent reference unit and benefits from a yearly anchor. A single "Most popular" badge per audience preserves its psychological weight (multiple badges = no badge). The current-plan highlight closes the loop a previous build had broken (users could not tell which tier was active).
+
+**Tradeoffs considered:**
+- *Global Monthly/Yearly toggle (rejected):* simpler, but it forced yearly on tiers where the founder did not want it (Constellation), and it hid the per-tier intent.
+- *5-card single row (rejected):* visual hierarchy collapse on 1440px and below.
+- *"Recommended" label (retired):* "Most popular" is a stronger conversion nudge per the pricing-strategy thinking in v7 §9.
+- *"Free forever" Star copy (rejected):* removed the upgrade nudge entirely. "Free, upgrade anytime" keeps the door open subtly.
+
+**Impact:** `src/components/billing/PlanPicker.tsx` (grid + audience toggle + per-tier billing rules + Most-popular pill + current-plan glow), `src/lib/entitlements.ts` (Constellation names + strictly ascending feature bullets), `src/routes/_authenticated.settings.tsx` (inline cancel/resume/portal, no separate billing route), `src/lib/payments.functions.ts` (`getMySubscription` / `createPortalSession` / `mutateCancelFlag` via service-role + `requireSupabaseAuth`), migration `20260620225748_*.sql` (Stripe-id column lockdown). Docs updated: `docs/features/pricing.md`, `docs/features/credits.md`, `docs/features/admin-console.md`, `docs/features/billing.md`.
+
+### 2026-06-20 — Admin console IA: 3 new tabs (People · Workspaces · Platform), not 5
+
+**Decision:** Admin Console v2 clusters all new functionality into **three new tabs** alongside the existing Overview + Pricing — totaling 5 tabs maximum — rather than splitting Users / Workspaces / Access & Roles into separate tabs. The People tab carries three sub-panels (Users / Invitations / Vouchers) accessed via a sub-tab strip; Workspaces is one tab with row → drawer; Platform consolidates feature flags + banner + audit log + system health.
+
+**Why:** A 5-tab admin with overlapping concerns produces navigation overhead and orphans related actions (granting credits to a user vs to their workspace would live two clicks apart). Clustering by *actor* (people, workspaces, platform) matches how admin work actually flows. Drawers carry the depth so functionality is not compressed.
+
+**Tradeoffs considered:**
+- *5 separate tabs (Users / Invitations / Vouchers / Workspaces / Access & roles / Platform) — rejected:* navigation bloat, related actions fragmented.
+- *Single mega-tab — rejected:* depth becomes unreadable; would force everything into one giant page.
+
+**Voucher design ruling (same turn):** vouchers are first-class signup primitives, not just credit codes. A *Signup voucher* can auto-place a redeemer on a chosen tier with optional credit grant and an optional `auto_login` flag (skip the verification gate for trusted campaigns). *Existing-user vouchers* redeem for credits or a time-boxed plan upgrade. *Workspace vouchers* benefit a whole workspace. Limits include max-uses total, max-uses per user, expiry, and email-domain restriction. Redemptions write to `voucher_redemptions` for campaign-tag attribution.
+
+**Impact:** Plan recorded in `.lovable/plan.md` (Phase B). Build pending founder approval. Will add tables `admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`; plan-override columns on `subscriptions`; new server-fn modules under `src/lib/admin*.functions.ts`. Doc updated: `docs/features/admin-console.md`.
+
 ### 2026-06-21 · Cluster-level Build/Buy/Integrate sourcing map (the Decision-Brain verdict, settled)
 
 **Context.** The founder asked whether priority/sequencing incorporates Build-vs-Buy-vs-Integrate, was confused about the Decision Brain (build in-house vs integrate a graph/memory engine), and gave the key insight: BBI is a CLUSTER-level call, so buying/integrating a cluster's substrate can obviate most of its sub-items (build 3 of 11, the other 8 come free). An 11-cluster web-grounded analysis (workflow `cadence-bbi-cluster-sourcing`) was run.
