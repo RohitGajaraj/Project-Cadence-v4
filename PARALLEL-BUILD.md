@@ -21,27 +21,43 @@ Five equal peer worktrees (`cadence-lane-0` .. `cadence-lane-4`). None is reserv
 
 The lane folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`. The *number* is the identity, not the folder word; branch names are stable internal handles and are not renamed. Lane 0 used to be the special whole-product "WM/overnight" lane; as of 2026-06-21 it is a normal peer that claims per item like the rest.
 
-## How to launch a lane - in the VS Code integrated terminal (the way you wanted)
+## How to launch a lane
 
-The loop now runs **in the VS Code integrated terminal**, not a separate macOS Terminal window. Two ways:
+### The one command: `overnight-build N` (alias `ob N`)
 
-**A. VS Code task (one click).** `Cmd+Shift+P` → "Tasks: Run Task" → pick **"Lane 1"** (or 2/3/4, or **"Lanes 1-4: open all"**). Each opens a dedicated integrated-terminal tab in the right worktree and starts that lane's continuous loop. (Open this repo folder in VS Code first so the tasks appear.)
+From **any** terminal, in **any** directory (even the main repo), just type:
 
-**B. Open the lane folder, then `/loop`.** Open `cadence-parallel.code-workspace` (File → Open Workspace from File) to see all lanes in one window, right-click the lane's folder → **"Open in Integrated Terminal"**, then start the loop by typing:
-
-```
-/loop
+```bash
+overnight-build 1      # or: ob 1
 ```
 
-and paste the **lane cycle prompt** (replace `<N>` with the lane number):
+It jumps to worktree `cadence-lane-1` and starts that lane's continuous build loop, **on Opus 4.8 (1M) at ultracode (xhigh) effort**. **You never type `cd` - the command does it for you.** `overnight-build 2` → worktree 2, `overnight-build 3` → worktree 3, and so on (0-4).
 
-> Scoped parallel build Lane `<N>`. One cycle: git fetch + rebase origin/main; `bash scripts/lane.sh reap`; SELECT the next highest-impact eligible item live from `docs/planning/feature-dashboard.md` (prefer this lane's categories, then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check `bash scripts/lane.sh list`); CLAIM IT with `bash scripts/lane.sh claim <ID> <N> "<globs>"` before writing any code (if HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push the claim; build; gate (`bunx tsc --noEmit` + `bun run build` + tests); adversarial review; doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and `bash scripts/lane.sh release <ID>`. Then continue to the next item. Never stop after one item; if the board is dry, note it and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files.
+**One terminal runs one lane** (the lane's `claude` session takes over that terminal). So to run several lanes in parallel, open a new VS Code terminal tab for each and type its number:
 
-`/loop` is what makes it pick up the next item by itself, one after another - the thing that was missing before.
+```
+tab 1:  ob 0
+tab 2:  ob 1
+tab 3:  ob 2
+tab 4:  ob 3
+tab 5:  ob 4
+```
 
-> Already sitting inside a lane's worktree terminal? Just type the lane skill (`/overnight-build-1`..`-4`) or `/loop` with the prompt above. It runs the loop **in that terminal** - it does not open a new window.
+(`Ctrl-Shift-` ` or the `+` in the terminal panel opens a new tab.) Watch them all with `ob board` (or `bash scripts/lane.sh board`).
 
-> Fallback only (non-VS-Code): `bash scripts/parallel-build.sh 3` pops a separate Terminal window. Prefer the VS Code path above.
+> The command is a shell function in `~/.zshrc` (block marked `cadence parallel-build lanes (ob)`). Open a fresh terminal after install, or run `source ~/.zshrc` once, for it to be available.
+
+### Click-to-launch alternative (spawns the terminals for you)
+
+If you'd rather not open tabs by hand: `Cmd+Shift+P` → **"Tasks: Run Task"** → **"Lanes 0-4: open all"** spawns all five lane terminals at once (or pick a single **"Lane N"**). Same result; the task opens the integrated terminal in the right worktree and starts the lane. (Open the repo - or `cadence-parallel.code-workspace` - in VS Code first.)
+
+### Model + effort (Opus 4.8 / ultracode) is pinned per lane
+
+Each worktree's `.claude/settings.local.json` sets `model: opus[1m]` + `effortLevel: xhigh`, so **every** launch method (the command, the task, or a bare `claude` in the lane) defaults to Opus 4.8 (1M) at xhigh - the persistent equivalent of ultracode. The "dynamic workflow orchestration" half of ultracode is induced by the launch prompt; for the exact `/effort` toggle, type `/effort` once inside a lane. To change the default, edit `model` / `effortLevel` in that lane's `.claude/settings.local.json`.
+
+> Already sitting inside a lane's worktree terminal? Just type the lane skill (`/overnight-build-0`..`-4`). It runs the loop **in that terminal**.
+
+> Fallback only (non-VS-Code): `bash scripts/parallel-build.sh 3` pops a separate Terminal window. Prefer the command above.
 
 ## Why two lanes never grab the same item (the atomic claim ledger)
 
