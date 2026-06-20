@@ -392,14 +392,32 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
       <CardHeader tier="free" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>$0</span>
-        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>/month</span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
+          /month · no card needed
+        </span>
       </div>
       <div style={{ flex: 1 }}>
         <Bullets items={p.highlights} />
       </div>
-      <button className="btn btn-ghost btn-sm" disabled style={{ marginTop: 4 }}>
-        {isCurrent ? "Your current plan" : "Free forever"}
+      <button
+        className="btn btn-ghost btn-sm"
+        disabled
+        style={{ marginTop: 4, width: "100%", textAlign: "center" }}
+      >
+        {isCurrent ? "You're on Star" : "Start on Star"}
       </button>
+      {!isCurrent ? (
+        <p
+          style={{
+            fontSize: 10.5,
+            color: "var(--ink-subtle, #6b6457)",
+            margin: 0,
+            textAlign: "center",
+          }}
+        >
+          Memory fades after 30 days. Upgrade to keep it.
+        </p>
+      ) : null}
     </CardShell>
   );
 }
@@ -411,6 +429,9 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
       <CardHeader tier="enterprise" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span className="font-display" style={{ fontSize: 24, lineHeight: 1.1 }}>Custom</span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
+          shaped to your org
+        </span>
       </div>
       <div style={{ flex: 1 }}>
         <Bullets items={p.highlights} />
@@ -418,9 +439,9 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
       <a
         className="btn btn-primary btn-sm"
         href="mailto:sales@cadence.app?subject=Cosmos%20enquiry"
-        style={{ marginTop: 4, textAlign: "center" }}
+        style={{ marginTop: 4, textAlign: "center", width: "100%" }}
       >
-        Contact sales
+        Talk to our team
       </a>
     </CardShell>
   );
