@@ -6,11 +6,17 @@
  * - createEvalCase / updateEvalCase / deleteEvalCase
  * - runEvalSuiteNow: trigger a manual run (synchronous)
  * - getEvalRun: full run detail with per-case results
+ * - getEvalCoverage: which canonical AI surfaces have an eval guard (EVAL-COVERAGE)
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runEvalSuite } from "./ai/eval-runner.server";
+import {
+  assessEvalCoverage,
+  type SuiteCoverageInput,
+  type CoverageReport,
+} from "@/lib/evals/coverage";
 
 export const listEvalSuites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -60,6 +66,63 @@ export const listEvalSuites = createServerFn({ method: "GET" })
       case_count: caseCounts.get(s.id) ?? 0,
       last_run: lastRuns.get(s.id) ?? null,
     }));
+  });
+
+/**
+ * EVAL-COVERAGE: which of the canonical AI surfaces have an enabled, case-bearing, recently-run
+ * eval guard, versus none (uncovered) or unproven (stale). Read-only, user-scoped (RLS via
+ * requireSupabaseAuth + an explicit user_id filter, matching listEvalSuites). The classification
+ * lives in the pure, unit-tested `assessEvalCoverage`; this only normalizes the suite rows.
+ */
+export const getEvalCoverage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CoverageReport> => {
+    const { supabase, userId } = context;
+    const { data: suites, error } = await supabase
+      .from("eval_suites")
+      .select("id,surface,prompt_key,enabled")
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+
+    const rows = suites ?? [];
+    const ids = rows.map((s) => s.id as string).filter(Boolean);
+
+    // Case counts + the newest run status per suite (the same fold listEvalSuites uses).
+    const caseCounts = new Map<string, number>();
+    const lastStatus = new Map<string, string>();
+    if (ids.length) {
+      const [casesRes, runsRes] = await Promise.all([
+        supabase.from("eval_cases").select("suite_id,enabled").in("suite_id", ids),
+        supabase
+          .from("eval_runs")
+          .select("suite_id,status,created_at")
+          .in("suite_id", ids)
+          .order("created_at", { ascending: false }),
+      ]);
+      if (casesRes.error) throw new Error(casesRes.error.message);
+      if (runsRes.error) throw new Error(runsRes.error.message);
+      // Count only RUNNABLE cases (the runner runs enabled ones); a suite of all-disabled cases is
+      // a hollow guard. `enabled === false` excludes; null/undefined/true count (the column default).
+      (casesRes.data ?? []).forEach((c) => {
+        const row = c as { suite_id: string; enabled: boolean | null };
+        if (row.enabled === false) return;
+        caseCounts.set(row.suite_id, (caseCounts.get(row.suite_id) ?? 0) + 1);
+      });
+      (runsRes.data ?? []).forEach((r) => {
+        const sid = (r as { suite_id: string }).suite_id;
+        if (!lastStatus.has(sid)) lastStatus.set(sid, (r as { status: string }).status);
+      });
+    }
+
+    const inputs: SuiteCoverageInput[] = rows.map((s) => ({
+      surface: (s as { surface: string }).surface,
+      promptKey: (s as { prompt_key: string }).prompt_key,
+      enabled: Boolean((s as { enabled: boolean }).enabled),
+      caseCount: caseCounts.get(s.id as string) ?? 0,
+      lastRunStatus: lastStatus.get(s.id as string) ?? null,
+    }));
+
+    return assessEvalCoverage(inputs);
   });
 
 export const getEvalSuite = createServerFn({ method: "POST" })

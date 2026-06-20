@@ -16,18 +16,16 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "@/lib/notify";
 import { FlaskConical } from "lucide-react";
-import { listEvalSuites, createEvalSuite, getEvalScoreTrends } from "@/lib/evals.functions";
+import {
+  listEvalSuites,
+  createEvalSuite,
+  getEvalScoreTrends,
+  getEvalCoverage,
+} from "@/lib/evals.functions";
 import { EmptyState, MonoLabel } from "@/components/cadence/Primitives";
-
-const SURFACE_KEYS: Array<{ surface: string; key: string; label: string }> = [
-  { surface: "chat", key: "default", label: "Chat — default" },
-  { surface: "copilot", key: "daily_brief", label: "Copilot — daily brief" },
-  { surface: "discovery", key: "theme_cluster", label: "Discovery — theme cluster" },
-  { surface: "meetings", key: "summarize", label: "Meetings — summarize" },
-  { surface: "roadmap", key: "prd_generate", label: "Roadmap — PRD" },
-  { surface: "studio", key: "prototype", label: "Studio — prototype" },
-  { surface: "agent", key: "planner_executor", label: "Agent — planner" },
-];
+// One source of truth for the canonical surface×prompt targets (shared with the EVAL-COVERAGE
+// scorer), so the "new suite" picker and the coverage banner can never drift.
+import { EVAL_COVERAGE_TARGETS as SURFACE_KEYS } from "@/lib/evals/coverage";
 
 type SuiteRow = {
   id: string;
@@ -54,6 +52,9 @@ export function EvalsPanel() {
   const trendsFn = useServerFn(getEvalScoreTrends);
   const suitesQ = useQuery({ queryKey: ["eval_suites"], queryFn: () => listFn() });
   const trendsQ = useQuery({ queryKey: ["eval_suite_trends"], queryFn: () => trendsFn() });
+  const coverageFn = useServerFn(getEvalCoverage);
+  const coverageQ = useQuery({ queryKey: ["eval_coverage"], queryFn: () => coverageFn() });
+  const coverageSummary = coverageQ.data?.summary ?? "";
 
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -90,6 +91,26 @@ export function EvalsPanel() {
           New suite · targets a prompt
         </button>
       </div>
+
+      {/* EVAL-COVERAGE: a calm, silent-when-fully-covered line naming the AI surfaces with no
+          eval guard. Neutral ink (the role-color accents stay reserved); degrades to silent on a
+          query error. The full per-target breakdown lives in the suite grid below. */}
+      {coverageSummary ? (
+        <div
+          className="mono-label tabular-nums"
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            flexWrap: "wrap",
+            marginBottom: 12,
+            color: "var(--ink-subtle)",
+          }}
+        >
+          <span style={{ color: "var(--ink-faint)" }}>Coverage</span>
+          <span style={{ color: "var(--ink)" }}>{coverageSummary}</span>
+        </div>
+      ) : null}
 
       {createOpen ? (
         <CreateSuiteForm
