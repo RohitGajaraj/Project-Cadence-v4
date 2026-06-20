@@ -42,6 +42,17 @@ set -uo pipefail
 LEDGER="${CADENCE_LEDGER:-$HOME/.cadence-parallel}"
 CLAIMS="$LEDGER/claims"
 
+# Best-effort: regenerate the git-visible "Active claims" mirror in feature-dashboard.md
+# from this ledger after any state change, so the board is real-time and never rots.
+# Runs AFTER the claim/release succeeds and swallows all errors, so it can never affect
+# the claim outcome or break a live lane.
+_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+_sync_board() {
+  [ -n "$_SELF_DIR" ] && command -v python3 >/dev/null 2>&1 \
+    && [ -f "$_SELF_DIR/sync-active-claims.py" ] \
+    && python3 "$_SELF_DIR/sync-active-claims.py" >/dev/null 2>&1 || true
+}
+
 _now() { date +%s; }
 _die() { echo "lane.sh: $*" >&2; exit 2; }
 
@@ -136,6 +147,7 @@ cmd_claim() {
     echo "beat=$ts"
   } > "$dir/meta"
   [ "${PINNED:-false}" = "true" ] && echo "PINNED $id by lane $lane" || echo "CLAIMED $id by lane $lane"
+  _sync_board
   return 0
 }
 
@@ -145,6 +157,7 @@ cmd_release() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: release <ID>"
   local dir="$CLAIMS/$id"
   if [ -d "$dir" ]; then rm -rf "$dir"; echo "RELEASED $id"; else echo "not held: $id"; fi
+  _sync_board
 }
 
 cmd_heartbeat() {
@@ -230,6 +243,7 @@ cmd_reap() {
       rm -rf "$dir"; echo "REAPED $id (stale > ${ttl_h}h)"
     fi
   done
+  _sync_board
 }
 
 sub="${1:-}"; shift || true
