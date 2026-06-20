@@ -59,6 +59,20 @@ bash scripts/lane.sh reap                           # auto-free claims from dead
 
 The lane still mirrors its claim into the dashboard (`🔨 In Dev`) and pushes it, so Lovable and the other tools - which don't read the ledger - also see it. The ledger is the real-time cross-worktree truth; the dashboard claim is the durable, tool-visible record. The static OWNED/FORBIDDEN lists in each `.remember/LANE.md` remain a backstop.
 
+## Are the pinned reservations restrictive? (no - they are temporary)
+
+The ledger holds two kinds of entries:
+- **Per-item claims** (the normal case): a lane claims ONE dashboard row + the files it touches, builds it, releases it. Fully dynamic - any lane claims the highest-priority eligible row in ANY category. Nothing is glued to a category.
+- **Pinned reservations** (`[pinned]` in `lane.sh list`): a TEMPORARY guard for a lane running WITHOUT the ledger (the old-model Lanes 0/1/2 during the 2026-06-20 transition). They reserve that lane's live files so a new ledger-aware lane can't collide with a session it cannot see.
+
+**Pins are not the design and not permanent.** Each is released the moment its lane adopts the ledger or exits:
+- `LANE1-COCKPIT`, `LANE2-KNOWLEDGE` - released when Lanes 1 & 2 migrate to `cadence-lane-1/2`.
+- `LANE0-WM` - released when Lane 0 (the WM/overnight lane) stops; releasing it opens **Monetization + Credit** (the biggest open chunk) to roaming.
+- `AGENTEXP` - released when the agent-experience worktree is gone.
+- `CHOKEPOINT` - the ONE permanent reservation, and it is NOT restrictive: it covers the AI agent core (`runtime.server.ts`, `loop.server.ts`, …), which is never a buildable dashboard item.
+
+So once every lane is on the ledger, the only thing reserved is the chokepoint, and every lane freely picks the single highest-priority item anywhere on the board. Release a pin by hand any time: `bash scripts/lane.sh release <PIN-ID>`. Safely migrate + auto-release a stopped lane: `bash scripts/lane-migrate.sh <src> <dst> <pin> <num>` (it refuses unless the session has truly exited and the tree is clean).
+
 ## "Own memory" - what each lane knows
 
 Each lane reads, every cycle: its `.remember/LANE.md` (lane number, branch, report file, preferred categories, claim-glob conventions, OWNED/FORBIDDEN backstop), `docs/planning/SOURCE-OF-TRUTH.md` (the front-door tracker), `docs/planning/feature-dashboard.md` (the live prioritized register = what to build next), `docs/planning/considerations.md` (cross-cutting gaps), and `scripts/lane.sh list` (what every lane is on). That is its working memory of the parent project: priority, what is in flight, what is pending, and what is not yet verified.
