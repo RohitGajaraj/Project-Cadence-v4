@@ -443,10 +443,6 @@ function BundleGrid({
         const perCredit = b.priceCents / b.credits;
         const isBest = Math.abs(perCredit - bestPerCredit) < 1e-9;
         const selected = b.key === selectedKey;
-        const savePct =
-          perCredit > bestPerCredit
-            ? 0
-            : Math.round((1 - bestPerCredit / (bundles[0]?.priceCents / bundles[0]?.credits || perCredit)) * 100);
         const vsStarter = bundles[0] ? bundles[0].priceCents / bundles[0].credits : perCredit;
         const savedVsStarter = Math.max(0, Math.round((1 - perCredit / vsStarter) * 100));
         return (
