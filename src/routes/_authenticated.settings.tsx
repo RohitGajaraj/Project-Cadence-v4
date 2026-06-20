@@ -53,6 +53,7 @@ import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanne
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useConfirm } from "@/hooks/use-confirm";
 import { PlanTable } from "@/components/billing/PlanPicker";
+import { getPricingCatalog } from "@/lib/pricing.functions";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
@@ -367,10 +368,16 @@ function BillingTab({ checkout }: { checkout?: string }) {
                   {cancelSub.isPending ? "Canceling" : "Cancel subscription"}
                 </button>
               )}
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => navigate({ search: { section: "credits" } })}
+              >
+                Need more credits? Buy a top-up
+              </button>
             </div>
             <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-              To switch tiers, pick a different plan below. Changes take effect at the start of your
-              next billing period.
+              Top-ups give you extra credits without changing your plan. To move tiers, pick another
+              card below. Changes take effect at the start of your next billing period.
             </p>
           </div>
         )}
