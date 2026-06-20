@@ -5,6 +5,35 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const JUDGE_MODEL = "google/gemini-2.5-flash-lite";
 const BATCH = 20;
+// A 'pending' eval reserve older than this was abandoned mid-judge (worker
+// eviction between the reserve insert and the terminal update) and is reclaimable.
+const RESERVE_STALE_MS = 10 * 60 * 1000;
+
+/**
+ * KI-30: decide which events still need judging, reserve-aware. Skip events that
+ * already have a TERMINAL eval (complete/error) or a FRESH in-flight 'pending'
+ * reserve (a concurrent tick is judging it right now). A STALE 'pending' reserve
+ * (abandoned mid-judge) stays a candidate so it can be reclaimed and retried.
+ * Exported for unit testing.
+ */
+export function selectEvalCandidates(
+  events: { id: string }[],
+  existing: { event_id: string; status: string; updated_at: string }[],
+  staleCutoffIso: string,
+  batch: number,
+): { id: string }[] {
+  const done = new Set(
+    existing
+      .filter(
+        (r) =>
+          r.status === "complete" ||
+          r.status === "error" ||
+          (r.status === "pending" && r.updated_at >= staleCutoffIso),
+      )
+      .map((r) => r.event_id),
+  );
+  return events.filter((e) => !done.has(e.id)).slice(0, batch);
+}
 
 type EventRow = {
   id: string;
@@ -107,34 +136,80 @@ export const Route = createFileRoute("/api/public/hooks/eval-tick")({
         const ids = (events ?? []).map((e) => e.id);
         if (ids.length === 0) return Response.json({ judged: 0 });
 
+        const staleCutoff = new Date(Date.now() - RESERVE_STALE_MS).toISOString();
         const { data: existing } = await supabaseAdmin
           .from("ai_evals")
-          .select("event_id")
+          .select("event_id,status,updated_at")
           .in("event_id", ids);
-        const done = new Set((existing ?? []).map((r) => r.event_id as string));
-        const pending = (events as EventRow[]).filter((e) => !done.has(e.id)).slice(0, BATCH);
+        const pending = selectEvalCandidates(
+          events as { id: string }[],
+          (existing ?? []) as { event_id: string; status: string; updated_at: string }[],
+          staleCutoff,
+          BATCH,
+        ) as EventRow[];
 
         const results: { id: string; ok: boolean; error?: string }[] = [];
         for (const evt of pending) {
+          // KI-30: RESERVE before the paid judge() call so two overlapping ticks
+          // can't both pay to judge the same event (previously both computed the
+          // same set and both judged; only the second INSERT lost on the unique
+          // index, after the spend). Insert a 'pending' row keyed on event_id (the
+          // unique index is the race guard). If a row already exists, reclaim it
+          // ONLY when it is a STALE pending (a prior tick abandoned it mid-judge),
+          // never a terminal or a fresh in-flight reserve.
+          const nowIso = new Date().toISOString();
+          let reservedId: string | null = null;
+          const { data: inserted } = await supabaseAdmin
+            .from("ai_evals")
+            .insert({
+              event_id: evt.id,
+              user_id: evt.user_id,
+              judge_model: JUDGE_MODEL,
+              status: "pending",
+              updated_at: nowIso,
+            } as never)
+            .select("id")
+            .maybeSingle();
+          if (inserted) {
+            reservedId = (inserted as { id: string }).id;
+          } else {
+            const { data: reclaimed } = await supabaseAdmin
+              .from("ai_evals")
+              .update({ updated_at: nowIso } as never)
+              .eq("event_id", evt.id)
+              .eq("status", "pending")
+              .lt("updated_at", staleCutoff)
+              .select("id")
+              .maybeSingle();
+            if (reclaimed) reservedId = (reclaimed as { id: string }).id;
+          }
+          if (!reservedId) {
+            results.push({ id: evt.id, ok: false, error: "reserved by a concurrent tick" });
+            continue;
+          }
+
           try {
             const scored = await judge(evt);
-            await supabaseAdmin.from("ai_evals").insert({
-              event_id: evt.id,
-              user_id: evt.user_id,
-              judge_model: JUDGE_MODEL,
-              status: "complete",
-              ...scored,
-              unsupported_claims: scored.unsupported_claims as never,
-            } as never);
+            await supabaseAdmin
+              .from("ai_evals")
+              .update({
+                judge_model: JUDGE_MODEL,
+                status: "complete",
+                updated_at: new Date().toISOString(),
+                ...scored,
+                unsupported_claims: scored.unsupported_claims as never,
+              } as never)
+              .eq("id", reservedId);
             results.push({ id: evt.id, ok: true });
           } catch (e) {
-            await supabaseAdmin.from("ai_evals").insert({
-              event_id: evt.id,
-              user_id: evt.user_id,
-              judge_model: JUDGE_MODEL,
-              status: "error",
-              judge_rationale: e instanceof Error ? e.message.slice(0, 500) : "judge failed",
-            } as never);
+            await supabaseAdmin
+              .from("ai_evals")
+              .update({
+                status: "error",
+                updated_at: new Date().toISOString(),
+                judge_rationale: e instanceof Error ? e.message.slice(0, 500) : "judge failed",
+              } as never)
+              .eq("id", reservedId);
             results.push({
               id: evt.id,
               ok: false,
