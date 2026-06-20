@@ -22,6 +22,8 @@ const TABS = [
   { id: "/admin", label: "Overview" },
   { id: "/admin/pricing", label: "Pricing" },
   { id: "/admin/people", label: "People" },
+  { id: "/admin/workspaces", label: "Workspaces" },
+  { id: "/admin/platform", label: "Platform" },
 ] as const;
 
 function AdminLayout() {
@@ -47,13 +49,13 @@ function AdminLayout() {
             <TabRow
               tabs={TABS.map((t) => ({ id: t.id, label: t.label }))}
               active={
-                loc.pathname.startsWith("/admin/people")
-                  ? "/admin/people"
-                  : loc.pathname === "/admin/pricing"
-                    ? "/admin/pricing"
-                    : "/admin"
+                loc.pathname.startsWith("/admin/people") ? "/admin/people"
+                  : loc.pathname.startsWith("/admin/workspaces") ? "/admin/workspaces"
+                  : loc.pathname.startsWith("/admin/platform") ? "/admin/platform"
+                  : loc.pathname === "/admin/pricing" ? "/admin/pricing"
+                  : "/admin"
               }
-              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" })}
+              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" | "/admin/workspaces" | "/admin/platform" })}
             />
             <Outlet />
           </>

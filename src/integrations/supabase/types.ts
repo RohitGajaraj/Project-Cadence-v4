@@ -5534,6 +5534,7 @@ export type Database = {
           account_id: string
           auto_cluster_enabled: boolean
           created_at: string
+          deleted_at: string | null
           id: string
           last_auto_cluster_at: string | null
           name: string
@@ -5549,6 +5550,7 @@ export type Database = {
           account_id: string
           auto_cluster_enabled?: boolean
           created_at?: string
+          deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
           name: string
@@ -5564,6 +5566,7 @@ export type Database = {
           account_id?: string
           auto_cluster_enabled?: boolean
           created_at?: string
+          deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
           name?: string
@@ -5592,6 +5595,10 @@ export type Database = {
     Functions: {
       accept_workspace_invitation: { Args: { _token: string }; Returns: string }
       admin_add_admin_by_email: { Args: { _email: string }; Returns: string }
+      admin_add_workspace_member: {
+        Args: { _role: string; _uid: string; _wid: string }
+        Returns: undefined
+      }
       admin_audit: {
         Args: {
           _action: string
@@ -5602,14 +5609,86 @@ export type Database = {
         Returns: string
       }
       admin_bootstrap_self_as_admin: { Args: never; Returns: boolean }
+      admin_bulk_create_invitations: { Args: { _rows: Json }; Returns: number }
+      admin_change_member_role: {
+        Args: { _role: string; _uid: string; _wid: string }
+        Returns: undefined
+      }
+      admin_clear_banner: { Args: never; Returns: undefined }
       admin_clear_user_plan_override: {
         Args: { _uid: string }
         Returns: undefined
       }
+      admin_create_invitation: {
+        Args: {
+          _email: string
+          _expires_days?: number
+          _role: string
+          _workspace_id: string
+        }
+        Returns: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          state: string
+          token: string
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_create_voucher: {
+        Args: {
+          _auto_login: boolean
+          _campaign_tag: string
+          _code: string
+          _credits: number
+          _expires_at: string
+          _kind: string
+          _max_redemptions: number
+          _plan_tier: string
+        }
+        Returns: {
+          active: boolean
+          auto_login: boolean
+          campaign_tag: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          credits: number | null
+          expires_at: string | null
+          id: string
+          kind: string
+          max_redemptions: number | null
+          plan_tier: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vouchers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_deactivate_voucher: { Args: { _id: string }; Returns: undefined }
+      admin_delete_auto_approve_domain: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       admin_delete_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_delete_flag: { Args: { _id: string }; Returns: undefined }
       admin_delete_plan: { Args: { _tier: string }; Returns: undefined }
       admin_delete_topup_bundle: { Args: { _id: string }; Returns: boolean }
       admin_get_user_detail: { Args: { _uid: string }; Returns: Json }
+      admin_get_workspace_detail: { Args: { _wid: string }; Returns: Json }
       admin_grant_credits: {
         Args: { _credits: number; _reason?: string; _user_id: string }
         Returns: Json
@@ -5626,6 +5705,98 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_audit_log: {
+        Args: {
+          _lim?: number
+          _off?: number
+          _target_id: string
+          _target_kind: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          payload: Json
+          target_id: string
+          target_kind: string
+        }[]
+      }
+      admin_list_auto_approve_domains: {
+        Args: never
+        Returns: {
+          created_at: string
+          created_by: string | null
+          default_role: string
+          domain: string
+          id: string
+          workspace_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "auto_approve_domains"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_list_flags: {
+        Args: never
+        Returns: {
+          enabled: boolean
+          id: string
+          key: string
+          payload: Json
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "feature_flags"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_list_invitations: {
+        Args: { _lim?: number; _off?: number; _state?: string }
+        Returns: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          state: string
+          token: string
+          workspace_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "invitations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_list_signup_approvals: {
+        Args: { _lim?: number; _off?: number; _state?: string }
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          note: string | null
+          requested_workspace_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "signup_approvals"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_list_users: {
         Args: { _limit?: number; _search?: string }
         Returns: {
@@ -5639,6 +5810,34 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_voucher_redemptions: {
+        Args: { _voucher_id: string }
+        Returns: {
+          id: string
+          meta: Json
+          redeemed_at: string
+          user_email: string
+          user_id: string
+          workspace_id: string
+        }[]
+      }
+      admin_list_vouchers: {
+        Args: { _active?: boolean; _lim?: number; _off?: number }
+        Returns: {
+          active: boolean
+          auto_login: boolean
+          campaign_tag: string
+          code: string
+          created_at: string
+          credits: number
+          expires_at: string
+          id: string
+          kind: string
+          max_redemptions: number
+          plan_tier: string
+          redemptions_count: number
+        }[]
+      }
       admin_override_user_plan: {
         Args: {
           _expires_at: string
@@ -5649,10 +5848,20 @@ export type Database = {
         Returns: undefined
       }
       admin_remove_admin: { Args: { _user_id: string }; Returns: boolean }
+      admin_remove_workspace_member: {
+        Args: { _uid: string; _wid: string }
+        Returns: undefined
+      }
       admin_reset_user_credit_cycle: {
         Args: { _uid: string }
         Returns: undefined
       }
+      admin_restore_workspace: { Args: { _wid: string }; Returns: undefined }
+      admin_review_signup_approval: {
+        Args: { _approve: boolean; _id: string; _note: string }
+        Returns: undefined
+      }
+      admin_revoke_invitation: { Args: { _id: string }; Returns: undefined }
       admin_search_users: {
         Args: { _lim?: number; _off?: number; _q: string }
         Returns: {
@@ -5665,6 +5874,44 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_search_workspaces: {
+        Args: { _lim?: number; _off?: number; _q: string }
+        Returns: {
+          balance_credits: number
+          created_at: string
+          deleted_at: string
+          id: string
+          member_count: number
+          name: string
+          owner_email: string
+          owner_id: string
+          plan_tier: string
+          slug: string
+        }[]
+      }
+      admin_set_banner: {
+        Args: {
+          _active: boolean
+          _expires_at: string
+          _level: string
+          _message: string
+        }
+        Returns: {
+          active: boolean
+          expires_at: string | null
+          id: string
+          level: string
+          message: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "system_banner"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_bundle_active: {
         Args: { _active: boolean; _id: string }
         Returns: boolean
@@ -5676,6 +5923,64 @@ export type Database = {
       admin_set_user_suspended: {
         Args: { _reason: string; _suspend: boolean; _uid: string }
         Returns: undefined
+      }
+      admin_soft_delete_workspace: {
+        Args: { _wid: string }
+        Returns: undefined
+      }
+      admin_transfer_workspace_ownership: {
+        Args: { _new_owner: string; _wid: string }
+        Returns: undefined
+      }
+      admin_update_voucher: {
+        Args: {
+          _active: boolean
+          _auto_login: boolean
+          _campaign_tag: string
+          _credits: number
+          _expires_at: string
+          _id: string
+          _max_redemptions: number
+          _plan_tier: string
+        }
+        Returns: {
+          active: boolean
+          auto_login: boolean
+          campaign_tag: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          credits: number | null
+          expires_at: string | null
+          id: string
+          kind: string
+          max_redemptions: number | null
+          plan_tier: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vouchers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_upsert_auto_approve_domain: {
+        Args: { _domain: string; _role: string; _workspace_id: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          default_role: string
+          domain: string
+          id: string
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "auto_approve_domains"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_upsert_bundle: {
         Args: {
@@ -5691,6 +5996,23 @@ export type Database = {
           _yearly_cents: number
         }
         Returns: string
+      }
+      admin_upsert_flag: {
+        Args: { _enabled: boolean; _key: string; _payload: Json }
+        Returns: {
+          enabled: boolean
+          id: string
+          key: string
+          payload: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "feature_flags"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_upsert_plan: {
         Args: {
@@ -5748,6 +6070,7 @@ export type Database = {
         }[]
       }
       credits_enabled: { Args: never; Returns: boolean }
+      cron_tick_admin_expiries: { Args: never; Returns: Json }
       current_kill_state: {
         Args: { ws: string }
         Returns: {
@@ -6004,6 +6327,7 @@ export type Database = {
         Args: { _cost_usd: number; _run_id: string; _tokens: number }
         Returns: undefined
       }
+      redeem_voucher: { Args: { _code: string }; Returns: Json }
       revoke_mcp_token: { Args: { _token_id: string }; Returns: undefined }
       seed_default_agent_tools: {
         Args: { _user_id: string }

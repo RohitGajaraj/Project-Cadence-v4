@@ -73,7 +73,9 @@ import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as AuthenticatedBuildMissionIdRouteImport } from './routes/_authenticated.build.$missionId'
+import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated.admin.workspaces'
 import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated.admin.pricing'
+import { Route as AuthenticatedAdminPlatformRouteImport } from './routes/_authenticated.admin.platform'
 import { Route as AuthenticatedAdminPeopleRouteImport } from './routes/_authenticated.admin.people'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
@@ -89,6 +91,7 @@ import { Route as ApiPublicHooksCreditTickRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksClusterTickRouteImport } from './routes/api/public/hooks/cluster-tick'
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
+import { Route as ApiPublicHooksAdminExpiryTickRouteImport } from './routes/api/public/hooks/admin-expiry-tick'
 import { Route as ApiPublicConnectGithubCallbackRouteImport } from './routes/api/public/connect/github/callback'
 import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
@@ -420,10 +423,22 @@ const AuthenticatedBuildMissionIdRoute =
     path: '/build/$missionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminWorkspacesRoute =
+  AuthenticatedAdminWorkspacesRouteImport.update({
+    id: '/workspaces',
+    path: '/workspaces',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPricingRoute =
   AuthenticatedAdminPricingRouteImport.update({
     id: '/pricing',
     path: '/pricing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPlatformRoute =
+  AuthenticatedAdminPlatformRouteImport.update({
+    id: '/platform',
+    path: '/platform',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminPeopleRoute =
@@ -513,6 +528,12 @@ const ApiPublicHooksAgentTickRoute = ApiPublicHooksAgentTickRouteImport.update({
   path: '/api/public/hooks/agent-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksAdminExpiryTickRoute =
+  ApiPublicHooksAdminExpiryTickRouteImport.update({
+    id: '/api/public/hooks/admin-expiry-tick',
+    path: '/api/public/hooks/admin-expiry-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicConnectGithubCallbackRoute =
   ApiPublicConnectGithubCallbackRouteImport.update({
     id: '/api/public/connect/github/callback',
@@ -577,7 +598,9 @@ export interface FileRoutesByFullPath {
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/admin/people': typeof AuthenticatedAdminPeopleRoute
+  '/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -592,6 +615,7 @@ export interface FileRoutesByFullPath {
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
   '/studio/': typeof AuthenticatedStudioIndexRoute
+  '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
@@ -658,7 +682,9 @@ export interface FileRoutesByTo {
   '/t/$slug': typeof TSlugRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/people': typeof AuthenticatedAdminPeopleRoute
+  '/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -673,6 +699,7 @@ export interface FileRoutesByTo {
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
   '/studio': typeof AuthenticatedStudioIndexRoute
+  '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
@@ -743,7 +770,9 @@ export interface FileRoutesById {
   '/t/$slug': typeof TSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/people': typeof AuthenticatedAdminPeopleRoute
+  '/_authenticated/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
+  '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/_authenticated/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -758,6 +787,7 @@ export interface FileRoutesById {
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
   '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
+  '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
@@ -828,7 +858,9 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/t/$slug'
     | '/admin/people'
+    | '/admin/platform'
     | '/admin/pricing'
+    | '/admin/workspaces'
     | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
@@ -843,6 +875,7 @@ export interface FileRouteTypes {
     | '/missions/'
     | '/prds/'
     | '/studio/'
+    | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
@@ -909,7 +942,9 @@ export interface FileRouteTypes {
     | '/t/$slug'
     | '/'
     | '/admin/people'
+    | '/admin/platform'
     | '/admin/pricing'
+    | '/admin/workspaces'
     | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
@@ -924,6 +959,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/prds'
     | '/studio'
+    | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
@@ -993,7 +1029,9 @@ export interface FileRouteTypes {
     | '/t/$slug'
     | '/_authenticated/'
     | '/_authenticated/admin/people'
+    | '/_authenticated/admin/platform'
     | '/_authenticated/admin/pricing'
+    | '/_authenticated/admin/workspaces'
     | '/_authenticated/build/$missionId'
     | '/_authenticated/meetings/$id'
     | '/_authenticated/missions/$missionId'
@@ -1008,6 +1046,7 @@ export interface FileRouteTypes {
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
     | '/_authenticated/studio/'
+    | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
@@ -1044,6 +1083,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiPublicHooksAdminExpiryTickRoute: typeof ApiPublicHooksAdminExpiryTickRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksClusterTickRoute: typeof ApiPublicHooksClusterTickRoute
@@ -1512,11 +1552,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuildMissionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/workspaces': {
+      id: '/_authenticated/admin/workspaces'
+      path: '/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/pricing': {
       id: '/_authenticated/admin/pricing'
       path: '/pricing'
       fullPath: '/admin/pricing'
       preLoaderRoute: typeof AuthenticatedAdminPricingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/platform': {
+      id: '/_authenticated/admin/platform'
+      path: '/platform'
+      fullPath: '/admin/platform'
+      preLoaderRoute: typeof AuthenticatedAdminPlatformRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/people': {
@@ -1624,6 +1678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAgentTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/admin-expiry-tick': {
+      id: '/api/public/hooks/admin-expiry-tick'
+      path: '/api/public/hooks/admin-expiry-tick'
+      fullPath: '/api/public/hooks/admin-expiry-tick'
+      preLoaderRoute: typeof ApiPublicHooksAdminExpiryTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/connect/github/callback': {
       id: '/api/public/connect/github/callback'
       path: '/api/public/connect/github/callback'
@@ -1643,13 +1704,17 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPeopleRoute: typeof AuthenticatedAdminPeopleRoute
+  AuthenticatedAdminPlatformRoute: typeof AuthenticatedAdminPlatformRoute
   AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
+  AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPeopleRoute: AuthenticatedAdminPeopleRoute,
+  AuthenticatedAdminPlatformRoute: AuthenticatedAdminPlatformRoute,
   AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
+  AuthenticatedAdminWorkspacesRoute: AuthenticatedAdminWorkspacesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -1805,6 +1870,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiPublicHooksAdminExpiryTickRoute: ApiPublicHooksAdminExpiryTickRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksClusterTickRoute: ApiPublicHooksClusterTickRoute,
