@@ -19,7 +19,7 @@ Auth, tenancy, RLS, secrets, governance, approval gates, audit → [`../../archi
 1. **Autonomous-agent blast radius.** An agent that can build, ship, and touch external systems can do real damage. We need spend caps per mission, scope limits on what an agent can touch, a global kill-switch/pause, sandboxed code execution, and review of agent-written code before merge. (P0)
 2. **Inference cost economics.** A "token-max" product can cost more to serve than it charges. We need per-customer/per-mission cost attribution, plan-limit enforcement, and a cost-to-serve vs. price model — or margins die silently. (P0/P1)
 3. **Prompt injection at scale.** Ingested signals, external MCP/A2A results, and support tickets are untrusted input feeding agents that take actions. One poisoned input could trigger an unwanted autonomous action. (P0)
-4. **Provider/model outage + deprecation.** The whole product stops if the gateway or a model is down or sunset. Need fallback routing, graceful degradation, and a model-deprecation playbook. (P0/P1)
+4. **Provider/model outage + deprecation.** The whole product stops if the gateway or a model is down or sunset. Need fallback routing, graceful degradation, and a model-deprecation playbook. (P0/P1) **PARTIALLY ADDRESSED (2026-06-20, cycle 56, PROVIDER-FALLBACK ◐):** the chokepoint now has an ordered fallback chain (`resolveFallbackChain` + `fallback.ts`) replacing the single `fallbackModel`, with a flag-gated (`AI_PROVIDER_FALLBACK`) auto cross-model degrade to the cheapest live model. Remaining: the model-DEPRECATION playbook (MODEL-REGISTRY-DEPRECATION, attended chokepoint) and turning the flag on after the founder weighs the cost/quality tradeoff.
 5. **Reliability of long-running parallel sessions on the current runtime.** Cloudflare Workers execution limits vs. multi-step missions — durability/queueing must be designed now (sequence, don't postpone). (P0)
 
 ---
@@ -70,7 +70,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | App-level monitoring + alerting (not just AI telemetry) | Uptime, errors, latency of the platform itself     | P0       |
 | SLOs/SLAs + error budgets; status page                  | Enterprise buyers ask; trust signal                | P1       |
 | Long-running job durability / queue + backpressure      | Parallel missions exceed Workers limits without it | P0       |
-| Graceful degradation when a provider/model is down      | Product must not hard-fail                         | P0       |
+| Graceful degradation when a provider/model is down      | Product must not hard-fail                         | P0 — ◐ PROVIDER-FALLBACK cycle 56 (ordered fallback chain + flag-gated cross-model degrade; on-switch is the founder's) |
 | Incident response runbooks + on-call                    | When (not if) something breaks                     | P1       |
 | DR: backups, point-in-time restore, restore drills      | Data loss is existential                           | P0/P1    |
 
