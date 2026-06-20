@@ -63,7 +63,10 @@ export const adminListVoucherRedemptions = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const { data: rows, error } = await context.supabase.rpc("admin_list_voucher_redemptions", { _voucher_id: data.voucherId });
     if (error) return { error: error.message };
-    return (rows ?? []) as Array<{ id: string; user_id: string; user_email: string; workspace_id: string | null; redeemed_at: string; meta: Record<string, unknown> }>;
+    type Row = { id: string; user_id: string; user_email: string; workspace_id: string | null; redeemed_at: string; meta: string };
+    return ((rows ?? []) as unknown as Array<{ id: string; user_id: string; user_email: string; workspace_id: string | null; redeemed_at: string; meta: unknown }>).map(
+      (r): Row => ({ ...r, meta: JSON.stringify(r.meta ?? {}) }),
+    );
   });
 
 /** Public redeem: callable by any signed-in user against their own account. */
