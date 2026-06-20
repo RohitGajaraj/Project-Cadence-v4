@@ -48,7 +48,6 @@ import {
   getMyCreditsView,
 } from "@/lib/payments.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
-import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
 import { getStripeEnvironment } from "@/lib/stripe";
