@@ -5,6 +5,7 @@ import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { FlowModeProvider } from "@/hooks/use-flow-mode";
 import { needsOnboarding } from "@/lib/onboarding-gate";
 import { BackendHealthBanner } from "@/components/system/BackendHealthBanner";
+import { BillingBanner } from "@/components/billing/BillingBanner";
 
 export const Route = createFileRoute("/_authenticated")({
   // Disable SSR/prerender for the entire authenticated subtree. Without a
@@ -39,6 +40,7 @@ function AuthedLayout() {
       <FlowModeProvider>
         {/* Ambient time/weather moved into the per-page TopBar (shell port). */}
         <BackendHealthBanner />
+        <BillingBanner />
         <CommandPalette />
         <GotoShortcuts />
         <Outlet />
