@@ -16,7 +16,8 @@ The founder's instinct to make the "agent manager" role explicit was right, but 
 
 ## Where to find it
 
-- **Calm front:** Today (`/`), inside the "This week" PULSE bento — a single line under the rate vitals. Renders only when there is something to show (no outcomes and no spend = silent).
+- **Calm front (Today):** Today (`/`), inside the "This week" PULSE bento — a single line under the rate vitals. Renders only when there is something to show (no outcomes and no spend = silent).
+- **Calm front (Missions):** the Missions header (`/missions`) — the B2 "manager's glance" line, same data, framed for the fleet. Same silence rule.
 - **Engine Room:** `/govern?tab=analytics`, a "Unit economics · {range}" bento above "Spend by surface." Renders only once outcomes exist in the window.
 
 ## Demo script (≤ 90s)
@@ -46,7 +47,7 @@ The founder's instinct to make the "agent manager" role explicit was right, but 
 
 ## Known limits / out of scope
 
-- **B2 (Missions "manager's glance") is deferred** — the fleet-at-a-glance polish on the Missions header is not built; B1 (front chip) + B3 (Engine Room roll-up) are.
+- **B2 (Missions "manager's glance") shipped FE cycle 5 (2026-06-20):** `MissionsCostGlance` ([`../../src/components/cockpit/MissionsCostGlance.tsx`](../../src/components/cockpit/MissionsCostGlance.tsx)) renders a calm one-line cost-per-outcome glance ("This week the fleet shipped N specs · N decisions · N shipped for $X") on the Missions header (`_authenticated.missions.index.tsx`), reusing `getCostPerOutcome` via the shared `["cost-per-outcome"]` query cache (no extra fetch) and staying silent on a quiet week. Doctrine-safe (one outcome-framed line, not a control-room panel). It is intentionally near-identical to the Today chip but a dedicated component, to leave the Today surface untouched. ◐ live-verify on the next publish. All 3 B-slices (B1 front chip + B2 Missions glance + B3 Engine Room roll-up) are now built.
 - Cost per outcome is **blended**, not per-type attributed (deliberate; see How it works).
 - Front line uses a trailing-7-day window for outcomes/spend and a month-to-date window for the budget context; the two windows are labeled distinctly to stay honest.
 - **Build is green; one environment caveat.** `tsc --noEmit`, eslint, and the production build all pass — but the build must run under bun's runtime (`bun --bun run build` → `✓ built`) or Node ≥ 20.19 / ≥ 22.12. Plain `bun run build` on **Node 20.9.0** (this environment) fails at config load with `ERR_REQUIRE_ESM`, because Lovable's CJS config wrapper now `require()`s the ESM-only `lovable-tagger@1.2.0` and old Node cannot `require()` an ES module. Pre-existing and unrelated to this feature (reproduces on clean `HEAD`; `vite.config.ts` untouched). The hosted UI walkthrough waits on the next publish, as usual.

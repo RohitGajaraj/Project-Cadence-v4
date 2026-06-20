@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { MissionsPanel } from "@/components/cockpit/MissionsPanel";
 import { LoopHealthBanner } from "@/components/cockpit/LoopHealthBanner";
+import { MissionsCostGlance } from "@/components/cockpit/MissionsCostGlance";
 
 export const Route = createFileRoute("/_authenticated/missions/")({
   // AGENT-EXP: the Agents tab is retired (the roster lives in Engine Room > Team).
@@ -47,6 +48,8 @@ function MissionsPage() {
           <p style={{ fontSize: 13.5, color: "var(--ink-subtle)", marginTop: 4, maxWidth: 520 }}>
             Goal-driven runs across the agent mesh. Watch the work, jump into any step.
           </p>
+          {/* ENG-06 B2: the cost-per-outcome manager's glance for the fleet. */}
+          <MissionsCostGlance />
         </header>
 
         {/* E8 · Loop Health Monitor — catch a stalled loop before it bites. */}
