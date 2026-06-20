@@ -211,10 +211,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const fResumeSub = useServerFn(resumeMySubscription);
   const confirm = useConfirm();
 
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
-  const [checkoutTitle, setCheckoutTitle] = useState<string>("Checkout");
-
   const billing = useQuery({
     queryKey: ["billing"],
     queryFn: () => fGetBilling({ data: {} }),
@@ -245,18 +241,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
       toast("Still confirming with the payment provider. This usually clears in a minute.");
     }
   }, [checkout, qc]);
-
-  function openCheckout(lookupKey: string, title: string) {
-    try {
-      getStripeEnvironment(); // throws if token missing
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Payments are not configured.");
-      return;
-    }
-    setCheckoutKey(lookupKey);
-    setCheckoutTitle(title);
-    setCheckoutOpen(true);
-  }
 
   const cancelSub = useMutation({
     mutationFn: () => fCancelSub({ data: { environment: envSafe! } }),
