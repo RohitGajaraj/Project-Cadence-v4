@@ -45,6 +45,7 @@ import {
   getMySubscription,
   cancelMySubscription,
   resumeMySubscription,
+  getMyCreditsView,
 } from "@/lib/payments.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
@@ -64,6 +65,7 @@ type SectionId =
   | "staff"
   | "workspace"
   | "billing"
+  | "credits"
   | "interop"
   | "profile"
   | "data";
@@ -83,6 +85,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "staff", label: "Staff" },
   { id: "workspace", label: "Workspace" },
   { id: "billing", label: "Plan" },
+  { id: "credits", label: "Credits" },
   { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
   { id: "data", label: "Data" },
@@ -178,6 +181,7 @@ function SettingsPage() {
         {active === "staff" && <StaffTab />}
         {active === "workspace" && <WorkspaceTab scrollToBrief={section === "brief"} />}
         {active === "billing" && <BillingTab checkout={checkout} />}
+        {active === "credits" && <CreditsTab />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
         {active === "data" && (
@@ -199,6 +203,7 @@ function SettingsPage() {
 
 function BillingTab({ checkout }: { checkout?: string }) {
   const qc = useQueryClient();
+  const navigate = useNavigate({ from: "/settings" });
   const fGetBilling = useServerFn(getBillingState);
   const fGetSub = useServerFn(getMySubscription);
   const fCancelSub = useServerFn(cancelMySubscription);
@@ -216,7 +221,11 @@ function BillingTab({ checkout }: { checkout?: string }) {
 
   // Resolve env lazily so a missing payments token doesn't crash render.
   let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
-  try { envSafe = getStripeEnvironment(); } catch { envSafe = null; }
+  try {
+    envSafe = getStripeEnvironment();
+  } catch {
+    envSafe = null;
+  }
 
   const mySub = useQuery({
     queryKey: ["my-subscription", envSafe],
@@ -251,7 +260,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const cancelSub = useMutation({
     mutationFn: () => fCancelSub({ data: { environment: envSafe! } }),
     onSuccess: (res) => {
-      if ("error" in res) { toast.error(res.error); return; }
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Subscription set to cancel at the end of the current period.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       qc.invalidateQueries({ queryKey: ["billing"] });
@@ -262,7 +274,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const resumeSub = useMutation({
     mutationFn: () => fResumeSub({ data: { environment: envSafe! } }),
     onSuccess: (res) => {
-      if ("error" in res) { toast.error(res.error); return; }
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Subscription resumed. Renews on the next billing date.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       qc.invalidateQueries({ queryKey: ["billing"] });
@@ -290,7 +305,9 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const sub = mySub.data;
   const hasSub = !!sub?.hasSubscription;
   const renews = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
-  const renewsLabel = renews ? renews.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
+  const renewsLabel = renews
+    ? renews.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -327,7 +344,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
           >
             <div style={{ display: "flex", flexWrap: "wrap", gap: 18, fontSize: 12 }}>
               <div>
-                <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                <div
+                  className="mono-label"
+                  style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                >
                   Status
                 </div>
                 <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>
@@ -340,7 +360,10 @@ function BillingTab({ checkout }: { checkout?: string }) {
               </div>
               {renewsLabel && (
                 <div>
-                  <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                  <div
+                    className="mono-label"
+                    style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                  >
                     {sub?.cancelAtPeriodEnd ? "Access until" : "Renews on"}
                   </div>
                   <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>{renewsLabel}</div>
@@ -367,7 +390,8 @@ function BillingTab({ checkout }: { checkout?: string }) {
               )}
             </div>
             <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-              To switch tiers, pick a different plan below. Changes take effect at the start of your next billing period.
+              To switch tiers, pick a different plan below. Changes take effect at the start of your
+              next billing period.
             </p>
           </div>
         )}
@@ -468,42 +492,14 @@ function BillingTab({ checkout }: { checkout?: string }) {
         })}
       </div>
 
-      {/* Top-ups: one-time credit purchases. Always visible to owners on any tier
-          so the path is testable end-to-end; balance UI lands when the credits
-          engine flips on. */}
       {state?.isOwner && (
-        <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-          <div
-            className="mono-label"
-            style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate({ search: { section: "credits" } })}
           >
-            One-time top-ups
-          </div>
-          <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
-            Add credits without changing your plan
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gap: 8,
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              marginTop: 12,
-            }}
-          >
-            {[
-              { key: "topup_250", credits: 250, price: "$5" },
-              { key: "topup_1k", credits: 1000, price: "$18" },
-              { key: "topup_2_5k", credits: 2500, price: "$40" },
-            ].map((t) => (
-              <button
-                key={t.key}
-                className="btn btn-ghost btn-sm"
-                onClick={() => openCheckout(t.key, `Top-up: ${t.credits} credits`)}
-              >
-                {t.credits.toLocaleString()} credits &middot; {t.price}
-              </button>
-            ))}
-          </div>
+            Need more credits? Buy a top-up &rarr;
+          </button>
         </div>
       )}
 
@@ -513,6 +509,249 @@ function BillingTab({ checkout }: { checkout?: string }) {
           onOpenChange={setCheckoutOpen}
           priceLookupKey={checkoutKey}
           title={checkoutTitle}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/* ---- Credits — Phase 7 surface (G12). Isolated from Plan so subscription
+   changes and credit top-ups never get visually entangled (the Anthropic
+   pattern). Reads balance + cycle + last 20 ledger rows + last 10 top-ups via
+   RLS; top-ups route through the cap-guarded `createTopUpCheckout`. When the
+   metering engine is still dormant (`credits_enabled() = false`), the balance
+   block honestly says so instead of pretending a 0 is meaningful. ---- */
+
+function CreditsTab() {
+  const fGetCredits = useServerFn(getMyCreditsView);
+
+  let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
+  try {
+    envSafe = getStripeEnvironment();
+  } catch {
+    envSafe = null;
+  }
+
+  const credits = useQuery({
+    queryKey: ["my-credits", envSafe],
+    queryFn: () => fGetCredits({ data: { environment: envSafe! } }),
+    enabled: !!envSafe,
+  });
+
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
+  const [checkoutTitle, setCheckoutTitle] = useState("Buy credits");
+
+  function openTopUp(key: string, label: string) {
+    try {
+      getStripeEnvironment();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payments are not configured.");
+      return;
+    }
+    setCheckoutKey(key);
+    setCheckoutTitle(label);
+    setCheckoutOpen(true);
+  }
+
+  const data = credits.data;
+  const cycleLabel = data?.cycleAnchor
+    ? new Date(data.cycleAnchor).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+  const remainingTopupRoom = data
+    ? Math.max(0, data.cycleTopupCapCredits - data.cycleTopupCredits)
+    : null;
+
+  const BUNDLES = [
+    { key: "topup_250", credits: 250, price: "$5" },
+    { key: "topup_1k", credits: 1000, price: "$18" },
+    { key: "topup_2_5k", credits: 2500, price: "$40" },
+  ];
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <PaymentTestModeBanner />
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Balance
+        </div>
+        <div className="font-display" style={{ fontSize: 28, marginTop: 4 }}>
+          {data ? (data.balanceCredits + data.topupCredits).toLocaleString() : "—"}
+          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", marginLeft: 8 }}>
+            credits
+          </span>
+        </div>
+        {data && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 12, fontSize: 12 }}>
+            <div>
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+              >
+                Monthly grant
+              </div>
+              <div style={{ marginTop: 2 }}>{data.monthlyGrantCredits.toLocaleString()}</div>
+            </div>
+            <div>
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+              >
+                Purchased top-ups
+              </div>
+              <div style={{ marginTop: 2 }}>{data.topupCredits.toLocaleString()}</div>
+            </div>
+            {cycleLabel && (
+              <div>
+                <div
+                  className="mono-label"
+                  style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+                >
+                  Cycle started
+                </div>
+                <div style={{ marginTop: 2 }}>{cycleLabel}</div>
+              </div>
+            )}
+          </div>
+        )}
+        {data && !data.enabled && (
+          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
+            Metering is off while we finish the credits rollout. Top-ups are recorded and will count
+            once metering turns on.
+          </p>
+        )}
+      </div>
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          One-time top-ups
+        </div>
+        <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
+          Buy credits without changing your plan
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            marginTop: 12,
+          }}
+        >
+          {BUNDLES.map((b) => {
+            const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
+            return (
+              <button
+                key={b.key}
+                className="btn btn-ghost btn-sm"
+                disabled={wouldExceed}
+                onClick={() => openTopUp(b.key, `Top-up: ${b.credits.toLocaleString()} credits`)}
+                title={
+                  wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined
+                }
+              >
+                {b.credits.toLocaleString()} credits &middot; {b.price}
+              </button>
+            );
+          })}
+        </div>
+        {data && (
+          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            This cycle: {data.cycleTopupCredits.toLocaleString()} of{" "}
+            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
+          </p>
+        )}
+      </div>
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Recent activity
+        </div>
+        {credits.isLoading ? (
+          <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            Loading…
+          </p>
+        ) : data && data.ledger.length === 0 && data.topups.length === 0 ? (
+          <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            No activity yet. Your grants, debits, and top-ups will appear here.
+          </p>
+        ) : (
+          <ul
+            style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 6 }}
+          >
+            {data?.topups.map((t) => (
+              <li
+                key={`top-${t.id}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  fontSize: 12,
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--hairline, rgba(0,0,0,0.06))",
+                }}
+              >
+                <span>
+                  Top-up &middot;{" "}
+                  <span style={{ color: "var(--ink-subtle, #6b6457)" }}>{t.price_lookup_key}</span>
+                </span>
+                <span style={{ color: "var(--emerald, #2f8f6b)" }}>
+                  +{Number(t.credits_added).toLocaleString()} credits
+                </span>
+                <span
+                  style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}
+                >
+                  {new Date(t.created_at).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+            {data?.ledger.map((row) => (
+              <li
+                key={`led-${row.id}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  fontSize: 12,
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--hairline, rgba(0,0,0,0.06))",
+                }}
+              >
+                <span>
+                  {row.reason}
+                  {row.surface ? ` · ${row.surface}` : ""}
+                </span>
+                <span
+                  style={{
+                    color:
+                      row.delta_credits >= 0 ? "var(--emerald, #2f8f6b)" : "var(--ink, #1d1a14)",
+                  }}
+                >
+                  {row.delta_credits >= 0 ? "+" : ""}
+                  {Number(row.delta_credits).toLocaleString()} credits
+                </span>
+                <span
+                  style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}
+                >
+                  {new Date(row.created_at).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {checkoutKey ? (
+        <StripeEmbeddedCheckout
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          priceLookupKey={checkoutKey}
+          title={checkoutTitle}
+          mode="topup"
         />
       ) : null}
     </div>
