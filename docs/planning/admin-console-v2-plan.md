@@ -1,8 +1,8 @@
 # Admin Console v2 - Build Bible (People · Workspaces · Platform)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20_
+> _Created: 2026-06-20 · Last updated: 2026-06-20 (all 8 steps shipped)_
 >
-> **Owner:** Lovable (parallel monetization/admin lane). **Status:** ✅ Steps 1-7 shipped (2026-06-20). **Scope:** extends the shipped v1 admin (`Overview` + `Pricing` tabs) with three new tabs - **People**, **Workspaces**, **Platform** - without touching v1.
+> **Owner:** Lovable (parallel monetization/admin lane). **Status:** ✅ Steps 1-8 shipped (2026-06-20). v2 is complete; the People · Workspaces · Platform tabs are live alongside v1's Overview + Pricing. Live on the founder's next publish. Doc-closure (Step 8) closed: feature page flipped to "v2 shipped", plan.md §4 log line appended, this bible marked complete.
 >
 > This is the cold-buildable spec. Any agent (Lovable Cloud / Claude Code / Antigravity) should be able to pick this up, run the migration, ship the server fns, and wire the UI without re-deriving intent.
 
