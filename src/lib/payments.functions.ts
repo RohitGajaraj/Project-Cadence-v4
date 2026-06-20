@@ -4,6 +4,15 @@ import { type StripeEnv, createStripeClient, getStripeErrorMessage } from '@/lib
 
 type CheckoutResult = { clientSecret: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
+type MySubscription = {
+  hasSubscription: boolean;
+  stripeSubscriptionId?: string;
+  status?: string;
+  priceId?: string;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+};
+type MutateResult = { ok: true; cancelAtPeriodEnd: boolean } | { error: string };
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -113,3 +122,84 @@ export const createPortalSession = createServerFn({ method: 'POST' })
       return { error: getStripeErrorMessage(error) };
     }
   });
+
+/**
+ * In-app subscription read for the Plan page. Returns the latest row from
+ * the subscriptions table for the calling user in the current environment.
+ */
+export const getMySubscription = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { environment: StripeEnv }) => data)
+  .handler(async ({ data, context }): Promise<MySubscription> => {
+    const { supabase, userId } = context;
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('stripe_subscription_id, status, price_id, current_period_end, cancel_at_period_end')
+      .eq('user_id', userId)
+      .eq('environment', data.environment)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!sub) return { hasSubscription: false };
+    const s = sub as {
+      stripe_subscription_id: string;
+      status: string;
+      price_id: string;
+      current_period_end: string | null;
+      cancel_at_period_end: boolean | null;
+    };
+    return {
+      hasSubscription: true,
+      stripeSubscriptionId: s.stripe_subscription_id,
+      status: s.status,
+      priceId: s.price_id,
+      currentPeriodEnd: s.current_period_end,
+      cancelAtPeriodEnd: !!s.cancel_at_period_end,
+    };
+  });
+
+async function mutateCancelFlag(
+  context: { supabase: import('@supabase/supabase-js').SupabaseClient; userId: string },
+  environment: StripeEnv,
+  cancelAtPeriodEnd: boolean,
+): Promise<MutateResult> {
+  const { supabase, userId } = context;
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('stripe_subscription_id, status')
+    .eq('user_id', userId)
+    .eq('environment', environment)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const s = sub as { stripe_subscription_id?: string; status?: string } | null;
+  if (!s?.stripe_subscription_id) return { error: 'No active subscription found.' };
+  try {
+    const stripe = createStripeClient(environment);
+    const updated = await stripe.subscriptions.update(s.stripe_subscription_id, {
+      cancel_at_period_end: cancelAtPeriodEnd,
+    });
+    // Mirror immediately so the UI flips without waiting for the webhook.
+    await supabase
+      .from('subscriptions')
+      .update({ cancel_at_period_end: cancelAtPeriodEnd, updated_at: new Date().toISOString() })
+      .eq('stripe_subscription_id', s.stripe_subscription_id);
+    return { ok: true, cancelAtPeriodEnd: !!updated.cancel_at_period_end };
+  } catch (error) {
+    return { error: getStripeErrorMessage(error) };
+  }
+}
+
+export const cancelMySubscription = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { environment: StripeEnv }) => data)
+  .handler(({ data, context }): Promise<MutateResult> =>
+    mutateCancelFlag(context as never, data.environment, true),
+  );
+
+export const resumeMySubscription = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { environment: StripeEnv }) => data)
+  .handler(({ data, context }): Promise<MutateResult> =>
+    mutateCancelFlag(context as never, data.environment, false),
+  );
