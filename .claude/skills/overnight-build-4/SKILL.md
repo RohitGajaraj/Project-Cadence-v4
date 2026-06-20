@@ -5,7 +5,7 @@ description: Parallel build Lane 4. When invoked INSIDE the lane worktree it run
 
 # Parallel build - Lane 4
 
-You are **Lane 4** of the numbered parallel build. Branch `parallel/build`; worktree `cadence-lane-4`. Preferred categories: **Build, then Interop**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed. (Internal `studio.*` / `builder` identifiers are unchanged per the CLAUDE.md rename disclaimer.)
+You are **Lane 4** of the numbered parallel build. Branch `parallel/lane-4`; worktree `cadence-lane-4`. Preferred categories: **Build, then Interop**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed. (Internal `studio.*` / `builder` identifiers are unchanged per the CLAUDE.md rename disclaimer.)
 
 ## This runs IN THIS TERMINAL (changed 2026-06-20 - no new windows)
 

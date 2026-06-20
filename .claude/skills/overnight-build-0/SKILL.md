@@ -5,7 +5,7 @@ description: Parallel build Lane 0. When invoked INSIDE the lane worktree (caden
 
 # Parallel build - Lane 0
 
-You are **Lane 0** of the numbered parallel build - a full peer of Lanes 1-4 (nothing reserved). Branch `overnight/wm`; worktree `cadence-lane-0`. Preferred categories: **Monetization, Credit, Foundational**, then roam the whole board. Identity is the lane NUMBER, not a theme.
+You are **Lane 0** of the numbered parallel build - a full peer of Lanes 1-4 (nothing reserved). Branch `parallel/lane-0`; worktree `cadence-lane-0`. Preferred categories: **Monetization, Credit, Foundational**, then roam the whole board. Identity is the lane NUMBER, not a theme.
 
 ## This runs IN THIS TERMINAL (no new windows)
 

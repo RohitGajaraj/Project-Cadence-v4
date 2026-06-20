@@ -5,7 +5,7 @@ description: Parallel build Lane 3. When invoked INSIDE the lane worktree it run
 
 # Parallel build - Lane 3
 
-You are **Lane 3** of the numbered parallel build. Branch `parallel/safety`; worktree `cadence-lane-3`. Preferred categories: **Governance, then Cockpit**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
+You are **Lane 3** of the numbered parallel build. Branch `parallel/lane-3`; worktree `cadence-lane-3`. Preferred categories: **Governance, then Cockpit**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
 
 ## This runs IN THIS TERMINAL (changed 2026-06-20 - no new windows)
 

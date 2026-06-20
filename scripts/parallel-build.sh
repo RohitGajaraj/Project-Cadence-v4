@@ -40,11 +40,11 @@ BOOTSTRAP='You are a scoped parallel build lane in THIS worktree. Read .remember
 
 # name|branch|worktree-dir|description   (ordered so the menu numbers match: 1 .. 4, then wm)
 LANES=(
-  "cockpit|parallel/cockpit|cadence-cockpit|Lane 1 - pulls the next highest-impact unclaimed item (prefers Cockpit/Governance, then roams)"
-  "knowledge|parallel/knowledge|cadence-knowledge|Lane 2 - pulls the next highest-impact unclaimed item (prefers Sense/Decide/Interop, then roams)"
-  "safety|parallel/safety|cadence-lane-3|Lane 3 - pulls the next highest-impact unclaimed item (prefers Governance/Cockpit, then roams)"
-  "build|parallel/build|cadence-lane-4|Lane 4 - pulls the next highest-impact unclaimed item (prefers Build/Interop, then roams)"
-  "wm|overnight/wm|overnight-build|Lane 0 (already running) - WM tenancy / billing / credit, the original overnight lane"
+  "cockpit|parallel/lane-1|cadence-lane-1|Lane 1 - pulls the next highest-impact unclaimed item (prefers Cockpit/Governance, then roams)"
+  "knowledge|parallel/lane-2|cadence-lane-2|Lane 2 - pulls the next highest-impact unclaimed item (prefers Sense/Decide/Interop, then roams)"
+  "safety|parallel/lane-3|cadence-lane-3|Lane 3 - pulls the next highest-impact unclaimed item (prefers Governance/Cockpit, then roams)"
+  "build|parallel/lane-4|cadence-lane-4|Lane 4 - pulls the next highest-impact unclaimed item (prefers Build/Interop, then roams)"
+  "wm|parallel/lane-0|cadence-lane-0|Lane 0 - pulls the next highest-impact unclaimed item (prefers Monetization/Credit/Foundational, then roams)"
 )
 
 lane_field() { # <name> <2branch|3dir|4desc>

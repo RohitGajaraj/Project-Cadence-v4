@@ -5,7 +5,7 @@ description: Parallel build Lane 2. When invoked INSIDE the lane worktree it run
 
 # Parallel build - Lane 2
 
-You are **Lane 2** of the numbered parallel build. Branch `parallel/knowledge`; worktree `cadence-lane-2` (still named `cadence-knowledge` until the founder migrates it). Preferred categories: **Sense, Decide, Interop**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
+You are **Lane 2** of the numbered parallel build. Branch `parallel/lane-2`; worktree `cadence-lane-2` (still named `cadence-knowledge` until the founder migrates it). Preferred categories: **Sense, Decide, Interop**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
 
 ## This runs IN THIS TERMINAL (changed 2026-06-20 - no new windows)
 

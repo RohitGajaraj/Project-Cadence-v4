@@ -13,11 +13,11 @@ Five equal peer worktrees (`cadence-lane-0` .. `cadence-lane-4`). None is reserv
 
 | Lane | Skill | Folder | Branch | Prefers (then roams the whole board) |
 | --- | --- | --- | --- | --- |
-| **0** | (open the "Lane 0" task) | `cadence-lane-0` | `overnight/wm` | Monetization, Credit, Foundational |
-| **1** | `/overnight-build-1` | `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
-| **2** | `/overnight-build-2` | `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
-| **3** | `/overnight-build-3` | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
-| **4** | `/overnight-build-4` | `cadence-lane-4` | `parallel/build` | Build, then Interop |
+| **0** | (open the "Lane 0" task) | `cadence-lane-0` | `parallel/lane-0` | Monetization, Credit, Foundational |
+| **1** | `/overnight-build-1` | `cadence-lane-1` | `parallel/lane-1` | Cockpit, then Governance |
+| **2** | `/overnight-build-2` | `cadence-lane-2` | `parallel/lane-2` | Sense, Decide, Interop |
+| **3** | `/overnight-build-3` | `cadence-lane-3` | `parallel/lane-3` | Governance, then Cockpit |
+| **4** | `/overnight-build-4` | `cadence-lane-4` | `parallel/lane-4` | Build, then Interop |
 
 The lane folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`. The *number* is the identity, not the folder word; branch names are stable internal handles and are not renamed. Lane 0 used to be the special whole-product "WM/overnight" lane; as of 2026-06-21 it is a normal peer that claims per item like the rest.
 

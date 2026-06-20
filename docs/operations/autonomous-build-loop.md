@@ -198,18 +198,18 @@ Several worktrees build in parallel off `origin/main` at once (the WM/overnight 
 
 1. **Manual override.** An explicit `pick <ID>` on this invocation → manual mode, build that item, skip the rest. (Ambient IDs in memory do NOT count.)
 2. **Scoped lane.** `[ -f "$WT_ROOT/.remember/LANE.md" ]` → scoped numbered lane: start `/loop` per section 15, silently.
-3. **(Legacy) WM whole-product lane.** `BR` = `overnight/wm` AND no `LANE.md` → the original whole-product loop (sections 3-14). **As of 2026-06-21 the `overnight/wm` worktree (`cadence-lane-0`) carries a `LANE.md`, so case 2 catches it as scoped Lane 0 first** - a normal peer lane that claims one item at a time. This case 3 only fires for a bare `overnight/wm` checkout that has no `LANE.md`.
-4. **Everything else: ASK, never auto-build.** The primary `main` checkout, a detached `HEAD`, or a `parallel/*` branch whose `LANE.md` is missing: do NOT build here. List the lanes and tell the founder to open one in a VS Code integrated terminal (the "Lane N" task), then stop. Never build on `main` or an unscoped branch.
+3. **(Legacy, now inert) WM whole-product lane.** Historically `BR` = `overnight/wm` AND no `LANE.md` → the original whole-product loop (sections 3-14). **As of 2026-06-21 there is no `overnight/wm` branch (Lane 0 was renamed to `parallel/lane-0` and carries a `LANE.md`), so every lane is a scoped peer caught by case 2.** This case is retained only for a hypothetical bare `overnight/wm` checkout; in normal operation it never fires.
+4. **Everything else: ASK, never auto-build.** The primary `main` checkout, a detached `HEAD`, or a `parallel/*` branch whose `LANE.md` is missing: do NOT build here. List the lanes and tell the founder to open one with `overnight-build N` (or the "Lane N" VS Code task), then stop. Never build on `main` or an unscoped branch.
 
-**Lane map (folder · branch · number) - five equal peer worktrees, nothing reserved per lane.** Branch names are stable internal handles; the folder/label is "Lane N":
+**Lane map (folder · branch · number) - five equal peer worktrees, nothing reserved per lane.** Folder and branch now line up (`cadence-lane-N` ↔ `parallel/lane-N`):
 
 | Lane | Folder | Branch | Preferred categories (soft; then roam) |
 | --- | --- | --- | --- |
-| 0 | `cadence-lane-0` | `overnight/wm` | Monetization, Credit, Foundational |
-| 1 | `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
-| 2 | `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
-| 3 | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
-| 4 | `cadence-lane-4` | `parallel/build` | Build, then Interop |
+| 0 | `cadence-lane-0` | `parallel/lane-0` | Monetization, Credit, Foundational |
+| 1 | `cadence-lane-1` | `parallel/lane-1` | Cockpit, then Governance |
+| 2 | `cadence-lane-2` | `parallel/lane-2` | Sense, Decide, Interop |
+| 3 | `cadence-lane-3` | `parallel/lane-3` | Governance, then Cockpit |
+| 4 | `cadence-lane-4` | `parallel/lane-4` | Build, then Interop |
 
 The only standing ledger reservation is `CHOKEPOINT` (the AI agent core), kept as a SAFETY guard against concurrent/incidental edits to that high-blast-radius shared code - it is not a per-lane category fence. See `bash scripts/lane.sh board` for the live per-lane view.
 

@@ -5,7 +5,7 @@ description: Parallel build Lane 1. When invoked INSIDE the lane worktree it run
 
 # Parallel build - Lane 1
 
-You are **Lane 1** of the numbered parallel build. Branch `parallel/cockpit`; worktree `cadence-lane-1` (still named `cadence-cockpit` until the founder migrates it). Preferred categories: **Cockpit, then Governance**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
+You are **Lane 1** of the numbered parallel build. Branch `parallel/lane-1`; worktree `cadence-lane-1` (still named `cadence-cockpit` until the founder migrates it). Preferred categories: **Cockpit, then Governance**, then roam the whole board. Identity is the lane NUMBER, not a theme - you build whatever the live dashboard says is highest-impact and unclaimed.
 
 ## This runs IN THIS TERMINAL (changed 2026-06-20 - no new windows)
 
