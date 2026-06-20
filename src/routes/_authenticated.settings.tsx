@@ -41,12 +41,17 @@ import {
 } from "@/components/connections/AccountConnectionsSection";
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "@/lib/connectors/registry";
 import { getBillingState, type BillingState } from "@/lib/billing.functions";
-import { createPortalSession } from "@/lib/payments.functions";
+import {
+  getMySubscription,
+  cancelMySubscription,
+  resumeMySubscription,
+} from "@/lib/payments.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { useConfirm } from "@/hooks/use-confirm";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
@@ -195,7 +200,10 @@ function SettingsPage() {
 function BillingTab({ checkout }: { checkout?: string }) {
   const qc = useQueryClient();
   const fGetBilling = useServerFn(getBillingState);
-  const fPortal = useServerFn(createPortalSession);
+  const fGetSub = useServerFn(getMySubscription);
+  const fCancelSub = useServerFn(cancelMySubscription);
+  const fResumeSub = useServerFn(resumeMySubscription);
+  const confirm = useConfirm();
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
@@ -206,12 +214,25 @@ function BillingTab({ checkout }: { checkout?: string }) {
     queryFn: () => fGetBilling({ data: {} }),
   });
 
+  // Resolve env lazily so a missing payments token doesn't crash render.
+  let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
+  try { envSafe = getStripeEnvironment(); } catch { envSafe = null; }
+
+  const mySub = useQuery({
+    queryKey: ["my-subscription", envSafe],
+    queryFn: () => fGetSub({ data: { environment: envSafe! } }),
+    enabled: !!envSafe,
+  });
+
   useEffect(() => {
     if (checkout === "success") {
       toast.success("Payment received. Your plan will reflect within a minute.");
       qc.invalidateQueries({ queryKey: ["billing"] });
+      qc.invalidateQueries({ queryKey: ["my-subscription"] });
     } else if (checkout === "cancel") {
       toast("Checkout canceled. You are still on your current plan.");
+    } else if (checkout === "pending") {
+      toast("Still confirming with the payment provider. This usually clears in a minute.");
     }
   }, [checkout, qc]);
 
@@ -227,27 +248,49 @@ function BillingTab({ checkout }: { checkout?: string }) {
     setCheckoutOpen(true);
   }
 
-  const portal = useMutation({
-    mutationFn: () =>
-      fPortal({
-        data: {
-          environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/settings?section=billing`,
-        },
-      }),
+  const cancelSub = useMutation({
+    mutationFn: () => fCancelSub({ data: { environment: envSafe! } }),
     onSuccess: (res) => {
-      if ("error" in res) {
-        toast.error(res.error);
-        return;
-      }
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      if ("error" in res) { toast.error(res.error); return; }
+      toast.success("Subscription set to cancel at the end of the current period.");
+      qc.invalidateQueries({ queryKey: ["my-subscription"] });
+      qc.invalidateQueries({ queryKey: ["billing"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open portal."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not cancel."),
   });
+
+  const resumeSub = useMutation({
+    mutationFn: () => fResumeSub({ data: { environment: envSafe! } }),
+    onSuccess: (res) => {
+      if ("error" in res) { toast.error(res.error); return; }
+      toast.success("Subscription resumed. Renews on the next billing date.");
+      qc.invalidateQueries({ queryKey: ["my-subscription"] });
+      qc.invalidateQueries({ queryKey: ["billing"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not resume."),
+  });
+
+  async function onCancelClick() {
+    const renews = mySub.data?.currentPeriodEnd
+      ? new Date(mySub.data.currentPeriodEnd).toLocaleDateString()
+      : "the end of the current period";
+    const ok = await confirm({
+      title: "Cancel subscription?",
+      body: `You'll keep full access until ${renews}. After that, the plan drops to Free. You can resume anytime before then.`,
+      confirmLabel: "Cancel plan",
+      cancelLabel: "Keep plan",
+      destructive: true,
+    });
+    if (ok) cancelSub.mutate();
+  }
 
   const state: BillingState | undefined = billing.data;
   const currentTier: PlanTier = state?.planTier ?? "free";
   const current = planPresentation(currentTier);
+  const sub = mySub.data;
+  const hasSub = !!sub?.hasSubscription;
+  const renews = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+  const renewsLabel = renews ? renews.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -272,15 +315,60 @@ function BillingTab({ checkout }: { checkout?: string }) {
             Only the workspace owner can change the plan.
           </p>
         )}
-        {state && state.isOwner && currentTier !== "free" && (
-          <div style={{ marginTop: 12 }}>
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={portal.isPending}
-              onClick={() => portal.mutate()}
-            >
-              {portal.isPending ? "Opening" : "Manage subscription"}
-            </button>
+        {state && state.isOwner && hasSub && (
+          <div
+            style={{
+              marginTop: 14,
+              paddingTop: 14,
+              borderTop: "1px solid var(--hairline, rgba(0,0,0,0.08))",
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 18, fontSize: 12 }}>
+              <div>
+                <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                  Status
+                </div>
+                <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>
+                  {sub?.cancelAtPeriodEnd
+                    ? "Cancels at period end"
+                    : sub?.status === "past_due"
+                      ? "Payment issue, retrying"
+                      : "Active"}
+                </div>
+              </div>
+              {renewsLabel && (
+                <div>
+                  <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                    {sub?.cancelAtPeriodEnd ? "Access until" : "Renews on"}
+                  </div>
+                  <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>{renewsLabel}</div>
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {sub?.cancelAtPeriodEnd ? (
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={resumeSub.isPending}
+                  onClick={() => resumeSub.mutate()}
+                >
+                  {resumeSub.isPending ? "Resuming" : "Resume subscription"}
+                </button>
+              ) : (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  disabled={cancelSub.isPending}
+                  onClick={onCancelClick}
+                >
+                  {cancelSub.isPending ? "Canceling" : "Cancel subscription"}
+                </button>
+              )}
+            </div>
+            <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
+              To switch tiers, pick a different plan below. Changes take effect at the start of your next billing period.
+            </p>
           </div>
         )}
       </div>
