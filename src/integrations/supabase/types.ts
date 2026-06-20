@@ -5602,12 +5602,21 @@ export type Database = {
         Returns: string
       }
       admin_bootstrap_self_as_admin: { Args: never; Returns: boolean }
+      admin_clear_user_plan_override: {
+        Args: { _uid: string }
+        Returns: undefined
+      }
       admin_delete_bundle: { Args: { _id: string }; Returns: boolean }
       admin_delete_plan: { Args: { _tier: string }; Returns: undefined }
       admin_delete_topup_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_get_user_detail: { Args: { _uid: string }; Returns: Json }
       admin_grant_credits: {
         Args: { _credits: number; _reason?: string; _user_id: string }
         Returns: Json
+      }
+      admin_grant_user_credits: {
+        Args: { _delta: number; _reason: string; _uid: string }
+        Returns: number
       }
       admin_list_admins: {
         Args: never
@@ -5630,7 +5639,32 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_override_user_plan: {
+        Args: {
+          _expires_at: string
+          _reason: string
+          _tier: string
+          _uid: string
+        }
+        Returns: undefined
+      }
       admin_remove_admin: { Args: { _user_id: string }; Returns: boolean }
+      admin_reset_user_credit_cycle: {
+        Args: { _uid: string }
+        Returns: undefined
+      }
+      admin_search_users: {
+        Args: { _lim?: number; _off?: number; _q: string }
+        Returns: {
+          balance_credits: number
+          created_at: string
+          display_name: string
+          email: string
+          plan_tier: string
+          suspended: boolean
+          user_id: string
+        }[]
+      }
       admin_set_bundle_active: {
         Args: { _active: boolean; _id: string }
         Returns: boolean
@@ -5638,6 +5672,10 @@ export type Database = {
       admin_set_credits_enabled: {
         Args: { _enabled: boolean }
         Returns: boolean
+      }
+      admin_set_user_suspended: {
+        Args: { _reason: string; _suspend: boolean; _uid: string }
+        Returns: undefined
       }
       admin_upsert_bundle: {
         Args: {
