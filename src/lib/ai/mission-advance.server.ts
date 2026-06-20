@@ -417,9 +417,90 @@ async function sweepStaleUnconsumedMessages(
 }
 
 /**
+ * Pure DAG analysis for the skip-cascade: given the mission's steps (idx, status,
+ * depends_on), return a map of idx -> the failed/skipped upstream dep idx for
+ * every still-pending step that can never become ready because it (transitively)
+ * depends on a 'failed' step. Iterates to a fixpoint so a poisoned step also
+ * poisons ITS dependents. Only 'planned'/'dispatched' steps are candidates;
+ * terminal ('done'/'failed'/'skipped') and in-flight ('running') steps are left
+ * untouched. Exported for unit testing.
+ */
+export function computePoisonedSteps(
+  steps: { idx: number; status: string; depends_on: number[] | null }[],
+): Map<number, number> {
+  const statusByIdx = new Map(steps.map((s) => [s.idx, s.status]));
+  const poisonedBy = new Map<number, number>();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const s of steps) {
+      if (poisonedBy.has(s.idx)) continue;
+      if (s.status !== "planned" && s.status !== "dispatched") continue;
+      for (const dep of s.depends_on ?? []) {
+        if (statusByIdx.get(dep) === "failed" || poisonedBy.has(dep)) {
+          poisonedBy.set(s.idx, dep);
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+  return poisonedBy;
+}
+
+/**
+ * Skip-cascade writer: terminalize the pending dependents of any 'failed' step as
+ * 'skipped' so the DAG can finalize. Without this, next_ready_mission_steps never
+ * returns a step with a failed dependency (it requires every dep 'done') and
+ * maybeCompleteMission never sees an all-terminal DAG, so the mission hangs
+ * 'running' forever. Idempotent and concurrency-safe: each write CAS-guards on the
+ * pending statuses, so a re-run (or an overlapping tick) is a no-op and never
+ * clobbers a step that legitimately progressed. Returns the count newly skipped.
+ */
+export async function cascadeSkipFailedDependents(
+  supabase: SupabaseClient,
+  missionId: string,
+): Promise<number> {
+  const { data: rows } = await supabase
+    .from("mission_steps")
+    .select("id,idx,status,depends_on")
+    .eq("mission_id", missionId);
+  const steps = (rows ?? []) as {
+    id: string;
+    idx: number;
+    status: string;
+    depends_on: number[] | null;
+  }[];
+  if (steps.length === 0) return 0;
+
+  const poisonedBy = computePoisonedSteps(steps);
+  if (poisonedBy.size === 0) return 0;
+
+  const now = new Date().toISOString();
+  let skipped = 0;
+  for (const s of steps) {
+    const depIdx = poisonedBy.get(s.idx);
+    if (depIdx === undefined) continue;
+    const { data: updated } = await supabase
+      .from("mission_steps")
+      .update({
+        status: "skipped",
+        error: `Skipped: upstream step #${depIdx} failed`,
+        completed_at: now,
+      })
+      .eq("id", s.id)
+      .in("status", ["planned", "dispatched"])
+      .select("id");
+    if (updated?.length) skipped += updated.length;
+  }
+  return skipped;
+}
+
+/**
  * Advance a single mission one tick, deterministically and model-free:
- * reflect → dispatch ready → finalize. Safe to call repeatedly and concurrently;
- * a no-op for missions with no ready work or no DAG. Returns a small summary.
+ * reflect → dispatch ready → skip-cascade failed dependents → finalize. Safe to
+ * call repeatedly and concurrently; a no-op for missions with no ready work or no
+ * DAG. Returns a small summary.
  */
 export async function advanceMissionCore(
   supabase: SupabaseClient,
@@ -448,6 +529,13 @@ export async function advanceMissionCore(
   // 3b. KI-15: release an orphaned-handoff completion block (stale unconsumed
   //     message) so a dropped single hop can't pin the mission 'running' forever.
   await sweepStaleUnconsumedMessages(supabase, mission.id);
+
+  // 3c. Skip-cascade: a failed step's dependents can never become ready (the
+  //     ready-RPC requires every dependency 'done'), so without this they sit
+  //     'planned' forever and the mission can never reach an all-terminal state
+  //     for maybeCompleteMission to finalize — it would hang 'running' for good.
+  //     Mark them 'skipped' so the DAG terminalizes (as completed_with_failures).
+  await cascadeSkipFailedDependents(supabase, mission.id);
 
   // 4. Finalize when the DAG is fully terminal (failure-aware + idempotent).
   await maybeCompleteMission(supabase, mission.id);
