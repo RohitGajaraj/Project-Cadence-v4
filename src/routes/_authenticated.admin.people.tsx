@@ -305,7 +305,7 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
                 onClick={async () => {
                   const ok = await confirm({
                     title: "Reset monthly cycle?",
-                    description: "Clears this month's grant counter. One-time top-ups are preserved.",
+                    body: "Clears this month's grant counter. One-time top-ups are preserved.",
                     confirmLabel: "Reset cycle",
                   });
                   if (ok) reset.mutate();
@@ -339,17 +339,13 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
                   const isSuspended = d.profile?.suspended;
                   const ok = await confirm({
                     title: isSuspended ? "Restore sign-in?" : "Suspend sign-in?",
-                    description: isSuspended
+                    body: isSuspended
                       ? "User regains the ability to sign in."
                       : "User is blocked from new sign-ins. Existing sessions stay until they expire.",
                     confirmLabel: isSuspended ? "Restore · allows sign-in" : "Suspend · blocks sign-in",
                     destructive: !isSuspended,
                   });
-                  if (ok) {
-                    const reason = window.prompt && !isSuspended ? "" : "";
-                    void reason;
-                    suspend.mutate({ suspend: !isSuspended, reason: "" });
-                  }
+                  if (ok) suspend.mutate({ suspend: !isSuspended, reason: "" });
                 }}
               >
                 {d.profile?.suspended ? "Restore · allows sign-in" : "Suspend · blocks sign-in"}
