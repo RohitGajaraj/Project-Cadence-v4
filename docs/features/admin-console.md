@@ -22,7 +22,9 @@ Three new tabs (clustered, not five), each with deep drawers, so functionality i
 2. **Workspaces** — search, members + roles, workspace-level credit grants, plan override, transfer ownership, soft delete.
 3. **Platform** — feature flags & kill switches, system banner publisher, audit log viewer, system health peek.
 
-**Backend:** all admin mutations remain SECURITY DEFINER + `has_role` + atomic write to `admin_audit_log`. New tables: `admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`; plan-override columns on `subscriptions`. New server-fn modules: `admin.functions.ts`, `admin-invitations.functions.ts`, `admin-vouchers.functions.ts`, `admin-workspaces.functions.ts`, `admin-platform.functions.ts`, `redeem-voucher.functions.ts`. Plan: `.lovable/plan.md` (the approved Phase B).
+**Backend:** all admin mutations remain SECURITY DEFINER + `has_role` + atomic write to `admin_audit_log`. New tables: `admin_audit_log`, `vouchers`, `voucher_redemptions`, `invitations`, `auto_approve_domains`, `signup_approvals`, `feature_flags`, `system_banner`; plan-override columns on `subscriptions`. New server-fn modules: `admin.functions.ts`, `admin-invitations.functions.ts`, `admin-vouchers.functions.ts`, `admin-workspaces.functions.ts`, `admin-platform.functions.ts`, `redeem-voucher.functions.ts`.
+
+> **Cold-buildable build bible: [`../planning/admin-console-v2-plan.md`](../planning/admin-console-v2-plan.md).** Any agent picking this up reads that doc first — it carries the migration spec, per-module server-fn list, frontend pattern rules, signup wiring, cron hooks, strict build order, and acceptance checklist. Do not re-derive scope from this page; this page is the index, the build bible is the contract.
 
 ## What it does
 
