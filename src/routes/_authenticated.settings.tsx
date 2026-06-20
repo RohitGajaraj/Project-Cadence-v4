@@ -45,6 +45,7 @@ import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements"
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
+import { MembersCard } from "@/components/settings/MembersCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 
 type SectionId =
@@ -966,6 +967,7 @@ function WorkspaceTab({ scrollToBrief }: { scrollToBrief: boolean }) {
         </p>
       </div>
 
+      <MembersCard />
       <TeamCard />
     </div>
   );

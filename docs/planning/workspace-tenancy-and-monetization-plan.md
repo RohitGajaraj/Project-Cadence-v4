@@ -246,6 +246,7 @@ The thought process: name tiers after **what the product does to your knowledge*
 - **Gotchas:** atomic (all writes or none); guard that the new owner is a member; audit every transfer.
 - **Acceptance:** owner can transfer to another member; old owner becomes admin; an audit row is written; non-owners cannot transfer.
 - **Verify:** Playwright transfer flow + audit row check.
+- **Status (◐ CORE shipped cycle 43; UI shipped FE cycle 1, 2026-06-20):** the RPC + `workspace_audit_log` + `transferWorkspaceOwnership` server fn shipped cycle 43 (dry-run-verified on prod). The **UI shipped FE cycle 1**: `src/components/settings/MembersCard.tsx` (Settings > Workspace > Members) surfaces the transfer as a per-member "Make owner" action behind an inline two-step confirm (it demotes the owner to admin), reusing the members list as the picker (no separate member-picker needed). Member identity for that list comes from a new membership-gated SECURITY DEFINER RPC `workspace_members_with_identity` (migration `20260620213000`), because `profiles` RLS is own-row-only and email lives in `auth.users`. The `leaveWorkspace` dead-end is no longer a dead-end (owners can now hand over via the UI). ◐ live on publish; the identity-RPC live dry-run is pending (MCP unauthorized this session, flagged for publish-verify). The Playwright transfer-flow check is part of the deferred hosted Playwright pass (§ verification).
 
 #### WM-F5 · Invites (account / workspace)
 - **Why:** there is no invite flow; membership is manual.

@@ -69,17 +69,58 @@ export const transferWorkspaceOwnership = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Members + identity for the Members surface. display_name lives in profiles (own-row-only
+// RLS) and email in auth.users, so a plain select cannot show co-members; the membership-gated
+// SECURITY DEFINER `workspace_members_with_identity` RPC supplies identity. Pre-migration
+// tolerant: if the RPC is not published yet it falls back to the plain rows (identity null),
+// so the surface renders today and fills in on publish. `selfRole` lets the UI gate the
+// manage affordances (only owner/admin see remove; only owner sees transfer) without a
+// second round-trip; `isSelf` marks the caller's own row.
+type MemberIdentityRow = {
+  user_id: string;
+  role: string;
+  created_at: string;
+  display_name: string | null;
+  email: string | null;
+};
+
 export const listWorkspaceMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { data: members, error } = await context.supabase
-      .from("workspace_members")
-      .select("id, user_id, role, created_at")
-      .eq("workspace_id", data.id)
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
-    return { members: members ?? [] };
+    const viaRpc = await context.supabase.rpc("workspace_members_with_identity", {
+      _workspace_id: data.id,
+    });
+
+    let rows: MemberIdentityRow[];
+    if (!viaRpc.error && Array.isArray(viaRpc.data)) {
+      rows = viaRpc.data as MemberIdentityRow[];
+    } else {
+      const plain = await context.supabase
+        .from("workspace_members")
+        .select("user_id, role, created_at")
+        .eq("workspace_id", data.id)
+        .order("created_at", { ascending: true });
+      if (plain.error) throw new Error(plain.error.message);
+      rows = (plain.data ?? []).map((r) => ({
+        user_id: r.user_id as string,
+        role: r.role as string,
+        created_at: r.created_at as string,
+        display_name: null,
+        email: null,
+      }));
+    }
+
+    const members = rows.map((r) => ({
+      userId: r.user_id,
+      role: r.role,
+      createdAt: r.created_at,
+      displayName: r.display_name,
+      email: r.email,
+      isSelf: r.user_id === context.userId,
+    }));
+    const selfRole = members.find((m) => m.isSelf)?.role ?? null;
+    return { members, selfRole };
   });
 
 export const removeWorkspaceMember = createServerFn({ method: "POST" })
