@@ -46,13 +46,13 @@ A new `graph` tab on the existing `_authenticated.knowledge.tsx` (`validateSearc
 - `GraphExplorer.tsx`: the dependency-free **SVG canvas** (deterministic layout, color-by-type, size-by-influence, pan/zoom, click-to-select). All rendered titles are user data, so they are escaped (React text nodes, never `dangerouslySetInnerHTML`).
 - `GraphNodeStory.tsx`: the selected node's provenance + descendants, reusing `getLineage` / `getProvenance`.
 
-## The supersession seam (empty, ready)
+## The supersession seam (write-path SHIPPED as DBR-1.5, dormant)
 
-`GraphEdge.relation` already includes `supersedes | contradicts`; `GraphEdge.validTo: string | null`. The renderer styles `supersedes` / `contradicts` edges distinctly (e.g. dashed / madder). v1 never emits them. The day the future engine writes those relation values + a real `invalid_at`, they render with **zero UI change**. The graph is bi-temporal-shaped from night one.
+`GraphEdge.relation` already includes `supersedes | contradicts`; `GraphEdge.validTo: string | null`. The renderer styles `supersedes` / `contradicts` edges distinctly (e.g. dashed / madder). The read v1 never emits them itself; the **write-path** that does now exists: **DBR-1.5** (`src/lib/ai/supersession.server.ts`) infers `supersedes`/`contradicts` edges from recorded outcomes and stamps `valid_to`/`invalidated_by`/`inference` on `artifact_lineage` (migration `20260621030000`). It is **flag-gated OFF** (`DECISION_BRAIN_SUPERSESSION`), so the seam stays empty until the founder activates it. Because the engine writes real `relation` values into the same table this surface reads (and the explorer selects an explicit column list that excludes the 3 new bi-temporal columns), the edges render with **zero UI change** the day the flag flips. The graph is bi-temporal-shaped from night one. Spec: [`../planning/supersession-engine-plan.md`](../planning/supersession-engine-plan.md).
 
 ## Deferred -> the next DBR increment (AI / attended lane)
 
-- The contradiction / supersession **write engine** (an outcome invalidates a prior assumption): an inference write-path = recurring AI spend + the AI chokepoint (`src/lib/ai/*`), both founder-gated and out of the knowledge lane.
+- ~~The contradiction / supersession **write engine**~~ — SHIPPED as DBR-1.5 (flag-gated OFF). Remaining: the Critic reasoning over the written edges multi-hop (DBR-2), which is the read-side AI spend, founder-gated.
 - A materialized `kg_nodes` / `kg_edges` store (only needed once we persist *inferred* edges).
 - Whole-product mega-graph + clustering + level-of-detail.
 - Entity resolution ("the checkout redesign" == "Project Swift").

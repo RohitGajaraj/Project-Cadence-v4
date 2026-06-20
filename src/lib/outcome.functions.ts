@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import { buildOutcomeMemory, outcomeImportance } from "@/lib/ai/outcome-memory";
 import { rememberOutcome } from "@/lib/ai/memory.server";
+import { inferSupersession } from "@/lib/ai/supersession.server";
 import { callModel } from "@/lib/ai/runtime.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
@@ -270,6 +271,28 @@ export const recordOutcome = createServerFn({ method: "POST" })
       prdTitle: (prd.title as string | null) ?? null,
       oppTitle,
     });
+
+    // DBR-1.5 — supersession engine: best-effort, flag-gated inference of typed
+    // supersedes/contradicts edges between this outcome and the account's prior
+    // decisions (bi-temporal, invalidate-don't-delete). Dormant no-op (zero embed,
+    // zero write) unless the founder enables DECISION_BRAIN_SUPERSESSION.
+    // inferSupersession is itself fail-safe; this try is belt-and-suspenders so edge
+    // inference can never break the recorded outcome.
+    try {
+      await inferSupersession(db, {
+        userId,
+        prdId: prd.id,
+        opportunityId: (prd.opportunity_id as string | null) ?? null,
+        text: [prd.title as string | null, data.summary].filter(Boolean).join(". "),
+        verdict: data.verdict,
+        summary: data.summary,
+        learningId: (learning as { id?: string } | null)?.id ?? null,
+        memoryId: memory?.id ?? null,
+        aiEventId: null,
+      });
+    } catch (e) {
+      console.error("inferSupersession failed (non-fatal):", e);
+    }
 
     return { learning, opportunity, memory_id: memory?.id ?? null };
   });
