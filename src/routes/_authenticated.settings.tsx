@@ -472,42 +472,14 @@ function BillingTab({ checkout }: { checkout?: string }) {
         })}
       </div>
 
-      {/* Top-ups: one-time credit purchases. Always visible to owners on any tier
-          so the path is testable end-to-end; balance UI lands when the credits
-          engine flips on. */}
       {state?.isOwner && (
-        <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-          <div
-            className="mono-label"
-            style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate({ search: { section: "credits" } })}
           >
-            One-time top-ups
-          </div>
-          <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
-            Add credits without changing your plan
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gap: 8,
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              marginTop: 12,
-            }}
-          >
-            {[
-              { key: "topup_250", credits: 250, price: "$5" },
-              { key: "topup_1k", credits: 1000, price: "$18" },
-              { key: "topup_2_5k", credits: 2500, price: "$40" },
-            ].map((t) => (
-              <button
-                key={t.key}
-                className="btn btn-ghost btn-sm"
-                onClick={() => openCheckout(t.key, `Top-up: ${t.credits} credits`)}
-              >
-                {t.credits.toLocaleString()} credits &middot; {t.price}
-              </button>
-            ))}
-          </div>
+            Need more credits? Buy a top-up &rarr;
+          </button>
         </div>
       )}
 
