@@ -73,6 +73,7 @@ import { Route as AuthenticatedPrdsIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMissionsMissionIdRouteImport } from './routes/_authenticated.missions.$missionId'
 import { Route as AuthenticatedMeetingsIdRouteImport } from './routes/_authenticated.meetings.$id'
 import { Route as AuthenticatedBuildMissionIdRouteImport } from './routes/_authenticated.build.$missionId'
+import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authenticated.admin.pricing'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
@@ -418,6 +419,12 @@ const AuthenticatedBuildMissionIdRoute =
     path: '/build/$missionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminPricingRoute =
+  AuthenticatedAdminPricingRouteImport.update({
+    id: '/pricing',
+    path: '/pricing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -562,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
+  '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -641,6 +649,7 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -724,6 +733,7 @@ export interface FileRoutesById {
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
   '/_authenticated/build/$missionId': typeof AuthenticatedBuildMissionIdRoute
   '/_authenticated/meetings/$id': typeof AuthenticatedMeetingsIdRoute
   '/_authenticated/missions/$missionId': typeof AuthenticatedMissionsMissionIdRoute
@@ -807,6 +817,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
+    | '/admin/pricing'
     | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
@@ -886,6 +897,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/t/$slug'
     | '/'
+    | '/admin/pricing'
     | '/build/$missionId'
     | '/meetings/$id'
     | '/missions/$missionId'
@@ -968,6 +980,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/t/$slug'
     | '/_authenticated/'
+    | '/_authenticated/admin/pricing'
     | '/_authenticated/build/$missionId'
     | '/_authenticated/meetings/$id'
     | '/_authenticated/missions/$missionId'
@@ -1486,6 +1499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuildMissionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/pricing': {
+      id: '/_authenticated/admin/pricing'
+      path: '/pricing'
+      fullPath: '/admin/pricing'
+      preLoaderRoute: typeof AuthenticatedAdminPricingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -1602,10 +1622,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminPricingRoute: typeof AuthenticatedAdminPricingRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminPricingRoute: AuthenticatedAdminPricingRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
