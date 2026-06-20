@@ -68,7 +68,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | Gap                                                     | Why it matters                                     | Priority |
 | ------------------------------------------------------- | -------------------------------------------------- | -------- |
 | App-level monitoring + alerting (not just AI telemetry) | Uptime, errors, latency of the platform itself     | P0       |
-| SLOs/SLAs + error budgets; status page                  | Enterprise buyers ask; trust signal                | P1       |
+| SLOs/SLAs + error budgets; status page                  | Enterprise buyers ask; trust signal                | P1 — ◐ RELIABILITY-SLO (lane 1, 2026-06-21): pure SLO/error-budget engine over `ai_events` (availability · p50/p95 latency · budget burn; `blocked` halts excluded) + read-only `getReliabilitySlo`. Remaining: the Engine Room glance (wire-up) + the outward-facing status page/SLA (founder-gated). |
 | Long-running job durability / queue + backpressure      | Parallel missions exceed Workers limits without it | P0       |
 | Graceful degradation when a provider/model is down      | Product must not hard-fail                         | P0 — ◐ PROVIDER-FALLBACK cycle 56 (ordered fallback chain + flag-gated cross-model degrade; on-switch is the founder's) |
 | Incident response runbooks + on-call                    | When (not if) something breaks                     | P1       |
