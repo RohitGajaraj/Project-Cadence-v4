@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getStripeEnvironment } from '@/lib/stripe';
@@ -12,11 +12,16 @@ export const Route = createFileRoute('/checkout/return')({
 
 function CheckoutReturn() {
   const { session_id } = Route.useSearch();
-  // Poll the subscriptions table for up to ~30s after return so the
-  // user sees their newly-applied plan without a manual refresh.
-  const [confirmed, setConfirmed] = useState(false);
+  const navigate = useNavigate();
+  // Poll the subscriptions table for up to ~20s after return; the moment the
+  // webhook lands (or we hit the cap) we bounce back to the Plan page so the
+  // user never has to read a Stripe-facing "session" screen.
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'timeout'>('pending');
   useEffect(() => {
     if (!session_id) return;
+    const goBack = (flag: 'success' | 'pending') => {
+      navigate({ to: '/settings', search: { section: 'billing', checkout: flag } as never, replace: true });
+    };
     let cancelled = false;
     let tries = 0;
     const tick = async () => {
@@ -32,14 +37,22 @@ function CheckoutReturn() {
         .maybeSingle();
       if (cancelled) return;
       if (data && (data.status === 'active' || data.status === 'trialing')) {
-        setConfirmed(true);
+        setStatus('confirmed');
+        goBack('success');
         return;
       }
-      if (tries++ < 15) setTimeout(tick, 2000);
+      if (tries++ < 10) {
+        setTimeout(tick, 2000);
+      } else {
+        setStatus('timeout');
+        // Top-ups and async flows: webhook may still arrive shortly.
+        // Bounce back anyway so the user lands somewhere familiar.
+        goBack('pending');
+      }
     };
     tick();
     return () => { cancelled = true; };
-  }, [session_id]);
+  }, [session_id, navigate]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
@@ -48,17 +61,13 @@ function CheckoutReturn() {
       </div>
       <p className="text-sm text-[var(--color-ink-muted)]">
         {session_id
-          ? (confirmed
-              ? 'Your plan is live. Head back to keep working.'
-              : 'Confirming your plan with the payment provider...')
+          ? status === 'confirmed'
+            ? 'Your plan is live. Returning to your plan page.'
+            : status === 'timeout'
+              ? 'Still confirming. Returning to your plan page.'
+              : 'Confirming your payment. One moment.'
           : 'We could not find a checkout session in this URL.'}
       </p>
-      <Link
-        to="/settings"
-        className="rounded-[8px] bg-[var(--color-ink)] px-4 py-2 text-sm text-[var(--color-canvas)] transition hover:opacity-90"
-      >
-        Back to Settings
-      </Link>
     </div>
   );
 }
