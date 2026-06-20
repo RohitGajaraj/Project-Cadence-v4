@@ -1,6 +1,10 @@
 import { expect, test, describe } from "bun:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { selectDispatchBatch, computePoisonedSteps } from "./mission-advance.server";
+import {
+  selectDispatchBatch,
+  computePoisonedSteps,
+  isLostQueuedRun,
+} from "./mission-advance.server";
 
 // Minimal mock: selectDispatchBatch only touches supabase.rpc.
 function mockRpc(rows: unknown[] | null, error: { message: string } | null = null): SupabaseClient {
@@ -92,5 +96,34 @@ describe("Skip-cascade: a failed step's dependents no longer hang the mission fo
 
   test("a failed step with no dependents poisons nothing (single-step fail already finalizes)", () => {
     expect(computePoisonedSteps([step(0, "done"), step(1, "failed")]).size).toBe(0);
+  });
+});
+
+describe("isLostQueuedRun: recover a step whose child run is stuck 'queued'", () => {
+  const cutoff = "2026-06-20T12:00:00.000Z";
+
+  test("true for a run still 'queued' past the dispatch window", () => {
+    expect(
+      isLostQueuedRun({ status: "queued", created_at: "2026-06-20T11:50:00.000Z" }, cutoff),
+    ).toBe(true);
+  });
+
+  test("false for a recently-queued run (still within the window)", () => {
+    expect(
+      isLostQueuedRun({ status: "queued", created_at: "2026-06-20T12:05:00.000Z" }, cutoff),
+    ).toBe(false);
+  });
+
+  test("false for a queued run with no created_at (cannot age it)", () => {
+    expect(isLostQueuedRun({ status: "queued", created_at: null }, cutoff)).toBe(false);
+  });
+
+  test("false for running / completed runs regardless of age", () => {
+    expect(
+      isLostQueuedRun({ status: "running", created_at: "2026-06-20T10:00:00.000Z" }, cutoff),
+    ).toBe(false);
+    expect(
+      isLostQueuedRun({ status: "completed", created_at: "2026-06-20T10:00:00.000Z" }, cutoff),
+    ).toBe(false);
   });
 });

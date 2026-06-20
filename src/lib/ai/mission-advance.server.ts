@@ -144,6 +144,19 @@ async function failOrRequeueStep(
 }
 
 /**
+ * A child run still 'queued' past the dispatch window was never promoted to
+ * 'running' (e.g. resumeAgentLoop threw before the queued->running CAS), so the
+ * reflector would otherwise never act on it and the step would hang 'dispatched'
+ * forever. Treat it as a lost dispatch. Exported for unit testing.
+ */
+export function isLostQueuedRun(
+  run: { status: string; created_at?: string | null },
+  cutoffIso: string,
+): boolean {
+  return run.status === "queued" && !!run.created_at && run.created_at < cutoffIso;
+}
+
+/**
  * Cross-check every in-flight mission_step.run_id against agent_runs.status and
  * reflect the terminal state back onto the step. A failed/halted child triggers
  * the bounded-retry decision. Cheap; shared by the orchestrator tools and the
@@ -190,17 +203,16 @@ export async function reflectStepStatusFromRuns(
 
   const { data: runs } = await supabase
     .from("agent_runs")
-    .select("id,status,output,halted_reason")
+    .select("id,status,output,halted_reason,created_at")
     .in("id", runIds);
-  const byRun = new Map<
-    string,
-    { status: string; output: string | null; halted_reason: string | null }
-  >(
-    (runs ?? []).map((r) => [
-      (r as { id: string }).id,
-      r as { id: string; status: string; output: string | null; halted_reason: string | null },
-    ]),
-  );
+  type RunRow = {
+    id: string;
+    status: string;
+    output: string | null;
+    halted_reason: string | null;
+    created_at: string | null;
+  };
+  const byRun = new Map<string, RunRow>((runs ?? []).map((r) => [(r as RunRow).id, r as RunRow]));
 
   for (const row of rows) {
     if (!row.run_id) continue;
@@ -224,6 +236,31 @@ export async function reflectStepStatusFromRuns(
         run.halted_reason ?? run.output ?? `child run ${run.status}`,
         retryCols,
       );
+    } else if (isLostQueuedRun(run, lostCutoff)) {
+      // A child run still 'queued' past the dispatch window was never promoted to
+      // 'running' (e.g. resumeAgentLoop threw before the queued->running CAS). The
+      // reflector ignores 'queued' runs, so the step would hang 'dispatched'
+      // forever and pin the mission. CAS the dead run to 'failed' (only while
+      // still 'queued', so we never clobber one that just got promoted), which
+      // also stops the resume sweeper from re-picking it and prevents the step
+      // from ever running twice; then route the step through retry/terminalize.
+      const { data: killed } = await supabase
+        .from("agent_runs")
+        .update({
+          status: "failed",
+          halted_reason: "queued past the dispatch window (worker eviction before promotion)",
+        })
+        .eq("id", row.run_id)
+        .eq("status", "queued")
+        .select("id");
+      if (killed?.length) {
+        await failOrRequeueStep(
+          supabase,
+          row,
+          "child run stuck queued past the dispatch window",
+          retryCols,
+        );
+      }
     }
   }
 }
