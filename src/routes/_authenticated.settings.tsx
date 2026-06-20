@@ -496,6 +496,210 @@ function BillingTab({ checkout }: { checkout?: string }) {
   );
 }
 
+/* ---- Credits — Phase 7 surface (G12). Isolated from Plan so subscription
+   changes and credit top-ups never get visually entangled (the Anthropic
+   pattern). Reads balance + cycle + last 20 ledger rows + last 10 top-ups via
+   RLS; top-ups route through the cap-guarded `createTopUpCheckout`. When the
+   metering engine is still dormant (`credits_enabled() = false`), the balance
+   block honestly says so instead of pretending a 0 is meaningful. ---- */
+
+function CreditsTab() {
+  const fGetCredits = useServerFn(getMyCreditsView);
+
+  let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
+  try { envSafe = getStripeEnvironment(); } catch { envSafe = null; }
+
+  const credits = useQuery({
+    queryKey: ["my-credits", envSafe],
+    queryFn: () => fGetCredits({ data: { environment: envSafe! } }),
+    enabled: !!envSafe,
+  });
+
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
+  const [checkoutTitle, setCheckoutTitle] = useState("Buy credits");
+
+  function openTopUp(key: string, label: string) {
+    try { getStripeEnvironment(); } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payments are not configured.");
+      return;
+    }
+    setCheckoutKey(key);
+    setCheckoutTitle(label);
+    setCheckoutOpen(true);
+  }
+
+  const data = credits.data;
+  const cycleLabel = data?.cycleAnchor
+    ? new Date(data.cycleAnchor).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
+  const remainingTopupRoom = data
+    ? Math.max(0, data.cycleTopupCapCredits - data.cycleTopupCredits)
+    : null;
+
+  const BUNDLES = [
+    { key: "topup_250", credits: 250, price: "$5" },
+    { key: "topup_1k", credits: 1000, price: "$18" },
+    { key: "topup_2_5k", credits: 2500, price: "$40" },
+  ];
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <PaymentTestModeBanner />
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Balance
+        </div>
+        <div className="font-display" style={{ fontSize: 28, marginTop: 4 }}>
+          {data ? (data.balanceCredits + data.topupCredits).toLocaleString() : "—"}
+          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", marginLeft: 8 }}>credits</span>
+        </div>
+        {data && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 12, fontSize: 12 }}>
+            <div>
+              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                Monthly grant
+              </div>
+              <div style={{ marginTop: 2 }}>{data.monthlyGrantCredits.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                Purchased top-ups
+              </div>
+              <div style={{ marginTop: 2 }}>{data.topupCredits.toLocaleString()}</div>
+            </div>
+            {cycleLabel && (
+              <div>
+                <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                  Cycle started
+                </div>
+                <div style={{ marginTop: 2 }}>{cycleLabel}</div>
+              </div>
+            )}
+          </div>
+        )}
+        {data && !data.enabled && (
+          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
+            Metering is off while we finish the credits rollout. Top-ups are recorded and will count once metering turns on.
+          </p>
+        )}
+      </div>
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          One-time top-ups
+        </div>
+        <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
+          Buy credits without changing your plan
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            marginTop: 12,
+          }}
+        >
+          {BUNDLES.map((b) => {
+            const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
+            return (
+              <button
+                key={b.key}
+                className="btn btn-ghost btn-sm"
+                disabled={wouldExceed}
+                onClick={() => openTopUp(b.key, `Top-up: ${b.credits.toLocaleString()} credits`)}
+                title={wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined}
+              >
+                {b.credits.toLocaleString()} credits &middot; {b.price}
+              </button>
+            );
+          })}
+        </div>
+        {data && (
+          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            This cycle: {data.cycleTopupCredits.toLocaleString()} of {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
+          </p>
+        )}
+      </div>
+
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Recent activity
+        </div>
+        {credits.isLoading ? (
+          <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            Loading…
+          </p>
+        ) : data && data.ledger.length === 0 && data.topups.length === 0 ? (
+          <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+            No activity yet. Your grants, debits, and top-ups will appear here.
+          </p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 6 }}>
+            {data?.topups.map((t) => (
+              <li
+                key={`top-${t.id}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  fontSize: 12,
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--hairline, rgba(0,0,0,0.06))",
+                }}
+              >
+                <span>
+                  Top-up &middot; <span style={{ color: "var(--ink-subtle, #6b6457)" }}>{t.price_lookup_key}</span>
+                </span>
+                <span style={{ color: "var(--emerald, #2f8f6b)" }}>
+                  +{Number(t.credits_added).toLocaleString()} credits
+                </span>
+                <span style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}>
+                  {new Date(t.created_at).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+            {data?.ledger.map((row) => (
+              <li
+                key={`led-${row.id}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  fontSize: 12,
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--hairline, rgba(0,0,0,0.06))",
+                }}
+              >
+                <span>
+                  {row.reason}{row.surface ? ` · ${row.surface}` : ""}
+                </span>
+                <span style={{ color: row.delta_credits >= 0 ? "var(--emerald, #2f8f6b)" : "var(--ink, #1d1a14)" }}>
+                  {row.delta_credits >= 0 ? "+" : ""}{Number(row.delta_credits).toLocaleString()} credits
+                </span>
+                <span style={{ color: "var(--ink-faint, #8a8377)", minWidth: 90, textAlign: "right" }}>
+                  {new Date(row.created_at).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {checkoutKey ? (
+        <StripeEmbeddedCheckout
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          priceLookupKey={checkoutKey}
+          title={checkoutTitle}
+          mode="topup"
+        />
+      ) : null}
+    </div>
+  );
+}
+
 /* ---- Connections — Connected accounts (OAuth-only) + workspace tool sync,
    the reference's 3-col connector card grid (serif 16 name · StepDot ·
    12 ink-subtle desc · Connect/Disconnect). Screen 6 ships the ConnectorDetail
