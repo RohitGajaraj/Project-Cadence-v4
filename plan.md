@@ -1,6 +1,6 @@
 # plan.md — Feature scope & build log
 
-> _Created: 2026-06-03 · Last updated: 2026-06-19_
+> _Created: 2026-06-03 · Last updated: 2026-06-20_
 
 > [!IMPORTANT]
 > **PRODUCT NAME: CADENCE.** The product is **Cadence**, and that is the only name to use. A brief 2026-06-10 rename experiment to a different brand was reverted on 2026-06-16; the retired name must not be reintroduced anywhere (code, docs, DB, env, caches, APIs). Any stray legacy token from that experiment is to be read as equivalent to `cadence`/`Cadence`.
@@ -284,6 +284,8 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 ## 4. Active build log (update as we ship)
 
 ### 2026-06-20
+
+**[SECURITY, 2026-06-20 15:08 UTC] Scheduled backend hook auth hardened (✅).** Loaded all persisted security scan results, including connector security scan results (Wiz returned no findings). Fixed the active open-endpoint finding: `/api/public/hooks/*` no longer accepts the public app key as proof of caller identity. The hook guard now accepts only a private hook secret from `x-cron-key` or bearer auth, with optional env fallback; migration `20260620150512_a486e345-5722-48bd-80e4-49ee123b8179.sql` creates a locked `app_private` secret store and rewires the live scheduled jobs (`approvals-tick`, `event-reactor-tick`, `memory-tick-daily`, `resume-runs`) to send the private key. Verified the live job commands now use `x-cron-key` and the scanner finding was marked fixed; persisted scan results now show no active findings across app, connector, and backend scanners.
 
 **[O3 drift slice, 2026-06-20] Fact-currency / drift flag shipped on the knowledge graph (parallel/knowledge).** The deterministic half of `O3`: a pure `computeStaleness` (`src/lib/knowledge-graph-view.ts`) flags a fact as stale when its NEWEST supporting `artifact_lineage` edge is older than a 90-day threshold (relative to an injected `nowMs`, so it stays testable), and is HONEST - nodes with no dated evidence are never counted. Surfaced minimally in the Graph view (`GraphCanvasView` + `GraphExplorer`): a "N of M facts may be stale" count + a dashed amber ring on stale nodes (functional flag, not a design pass). +3 unit tests (16 in the module). **Gate:** tsc 0 / `bun test` (drift) 16/16 / `bun run build` green. ◐ (live-verify on publish). **Deferred (the other half of O3):** outcome-driven contradiction drift (needs the supersession engine, AI/attended lane) + the versioned skill-pack export over MCP (needs Q1). **Branch:** `parallel/knowledge` to `main`.
 

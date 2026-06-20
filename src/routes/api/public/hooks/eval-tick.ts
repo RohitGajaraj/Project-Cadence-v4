@@ -89,7 +89,7 @@ export const Route = createFileRoute("/api/public/hooks/eval-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireHookCaller(request);
+        const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         // Find recent ok events that lack an eval row
         const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

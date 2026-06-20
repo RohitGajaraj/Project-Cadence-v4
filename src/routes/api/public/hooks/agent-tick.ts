@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/hooks/agent-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireHookCaller(request);
+        const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         try {
           const { data: agents } = await supabaseAdmin

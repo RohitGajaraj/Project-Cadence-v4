@@ -1,34 +1,55 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 /**
- * Shared cron/webhook caller-auth guard for /api/public/hooks/*.
+ * Shared scheduled-hook caller-auth guard for /api/public/hooks/*.
  *
- * These endpoints use supabaseAdmin (service-role, RLS-bypassing) and are
- * intended to be called only by pg_cron (or an operator with the project
- * anon key). Per docs/server-side-modern + schedule-jobs-options, we use the
- * Supabase anon/publishable key as the shared caller secret via the `apikey`
- * header — no new secret to provision.
+ * These endpoints use privileged backend access and must never trust the public
+ * app key. Callers authenticate with a private hook secret sent as `x-cron-key`
+ * or a bearer token.
  *
  * Returns a 401 Response when the call is not authorized, or null when OK.
  */
-export function requireHookCaller(request: Request): Response | null {
-  const expected =
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!expected) {
-    return new Response(JSON.stringify({ ok: false, error: "Hook auth not configured" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+export async function requireHookCaller(request: Request): Promise<Response | null> {
+  const expected = await getExpectedHookSecrets();
+  if (expected.length === 0) {
+    return json({ ok: false, error: "Hook auth not configured" }, 500);
   }
-  const provided =
-    request.headers.get("apikey") ||
-    request.headers.get("x-cron-key") ||
-    (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (provided !== expected) {
-    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+
+  const provided = getProvidedHookSecret(request);
+  if (!provided || !expected.includes(provided)) {
+    return json({ ok: false, error: "Unauthorized" }, 401);
   }
+
   return null;
+}
+
+function getProvidedHookSecret(request: Request): string | null {
+  const bearer = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  return request.headers.get("x-cron-key")?.trim() || bearer || null;
+}
+
+async function getExpectedHookSecrets(): Promise<string[]> {
+  const envSecrets = [process.env.CRON_SECRET, process.env.HOOK_CRON_SECRET]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => value.trim());
+
+  try {
+    const { data, error } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
+      "get_cron_hook_secret",
+    );
+    if (error) throw error;
+    if (typeof data === "string" && data.trim()) return [...envSecrets, data.trim()];
+  } catch (error) {
+    console.error("cron hook secret lookup failed", error);
+  }
+
+  return envSecrets;
+}
+
+function json(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }

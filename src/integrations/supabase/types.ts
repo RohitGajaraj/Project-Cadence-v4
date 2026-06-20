@@ -4980,6 +4980,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_cron_hook_secret: { Args: never; Returns: string }
       halt_agent_run: {
         Args: { _reason: string; _run_id: string }
         Returns: undefined

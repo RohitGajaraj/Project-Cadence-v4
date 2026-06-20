@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/hooks/memory-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireHookCaller(request);
+        const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         try {
           const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();

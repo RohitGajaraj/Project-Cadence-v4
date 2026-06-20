@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/hooks/eval-suite-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireHookCaller(request);
+        const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         const { data: suites, error } = await supabaseAdmin

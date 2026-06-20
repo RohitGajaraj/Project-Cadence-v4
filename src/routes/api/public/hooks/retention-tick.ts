@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/hooks/retention-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireHookCaller(request);
+        const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
         const json = (body: unknown, status = 200) =>
           new Response(JSON.stringify(body), {
