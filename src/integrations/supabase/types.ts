@@ -1104,6 +1104,27 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       artifact_lineage: {
         Row: {
           ai_event_id: string | null
@@ -5277,6 +5298,24 @@ export type Database = {
     }
     Functions: {
       accept_workspace_invitation: { Args: { _token: string }; Returns: string }
+      admin_set_bundle_active: {
+        Args: { _active: boolean; _id: string }
+        Returns: boolean
+      }
+      admin_set_credits_enabled: {
+        Args: { _enabled: boolean }
+        Returns: boolean
+      }
+      admin_upsert_topup_bundle: {
+        Args: {
+          _active: boolean
+          _credits: number
+          _id: string
+          _price_cents: number
+          _sort_order: number
+        }
+        Returns: string
+      }
       auto_advance_agent_arc: {
         Args: { p_agent_id: string; p_user_id: string }
         Returns: string
