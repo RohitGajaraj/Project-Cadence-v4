@@ -56,23 +56,13 @@ function AdminPeople() {
           </button>
         ))}
       </div>
-      {sub === "users" ? <UsersPanel /> : <ComingSoon what={sub} />}
+      {sub === "users" ? <UsersPanel /> : sub === "invitations" ? <InvitationsPanel /> : <VouchersPanel />}
     </div>
   );
 }
 
-function ComingSoon({ what }: { what: string }) {
-  return (
-    <div className="bento" style={{ padding: 18 }}>
-      <div className="font-display" style={{ fontSize: 16 }}>
-        {what} · next step
-      </div>
-      <p style={{ fontSize: 12.5, color: "var(--ink-muted, #4a4438)", marginTop: 6 }}>
-        Ships in the next slice of `admin-console-v2-plan.md`. The Users panel is live.
-      </p>
-    </div>
-  );
-}
+import { InvitationsPanel } from "@/components/admin/InvitationsPanel";
+import { VouchersPanel } from "@/components/admin/VouchersPanel";
 
 function UsersPanel() {
   const fSearch = useServerFn(adminSearchUsers);
