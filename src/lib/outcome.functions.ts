@@ -267,6 +267,8 @@ export const recordOutcome = createServerFn({ method: "POST" })
       verdict: data.verdict,
       priorIce,
       newIce,
+      prdTitle: (prd.title as string | null) ?? null,
+      oppTitle,
     });
 
     return { learning, opportunity, memory_id: memory?.id ?? null };

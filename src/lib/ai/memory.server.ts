@@ -190,6 +190,8 @@ export async function rememberOutcome(
     verdict: string;
     priorIce: number | null;
     newIce: number | null;
+    prdTitle: string | null;
+    oppTitle: string | null;
   },
 ): Promise<{ id: string } | null> {
   try {
@@ -234,6 +236,8 @@ export async function rememberOutcome(
           verdict: args.verdict,
           prior_ice: args.priorIce,
           new_ice: args.newIce,
+          prd_title: args.prdTitle,
+          opp_title: args.oppTitle,
         },
         embedding: emb as unknown as string,
       })
