@@ -35,9 +35,16 @@ if [ -d "$D" ] && [ ! -d "$S" ]; then
   [ "$dry" = "--dry-run" ] || bash "$LANE" release "$pin" >>"$LOG" 2>&1
   exit 0
 fi
-lsof_sane   || { log "REFUSE: lsof returned nothing (sandbox/perms?) - cannot verify session exit"; exit 2; }
 [ -d "$S" ] || { log "REFUSE: src $src missing"; exit 2; }
-if cwd_inside "$src"; then log "WAIT: a process still has cwd inside $src - session alive"; exit 1; fi
+# FORCE=1 = the operator has confirmed the session is closed (skips the lsof-based
+# exit detection, which is only needed for unattended/autonomous migration). The
+# clean-tree guard ALWAYS applies - we never move a worktree with uncommitted work.
+if [ "${FORCE:-0}" != "1" ]; then
+  lsof_sane || { log "REFUSE: lsof returned nothing (sandbox/perms?) - cannot verify session exit (set FORCE=1 if you have confirmed it)"; exit 2; }
+  if cwd_inside "$src"; then log "WAIT: a process still has cwd inside $src - session alive"; exit 1; fi
+else
+  log "FORCE=1 (operator-confirmed exit) - skipping lsof exit detection"
+fi
 if [ -n "$(git -C "$S" status --porcelain 2>/dev/null)" ]; then log "WAIT: $src tree dirty - not moving"; exit 1; fi
 
 if [ "$dry" = "--dry-run" ]; then log "DRY-RUN: WOULD move $src -> $dst, update tasks/workspace/settings, release $pin"; exit 0; fi
