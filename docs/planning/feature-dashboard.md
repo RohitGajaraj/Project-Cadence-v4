@@ -79,11 +79,30 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | **Tier 3** | Non-essential / non-foundational (privacy, ops / reliability hygiene, enterprise-readiness, edge). Never outranks core. | yes, after Tier 2 |
 | **Tier 4** | Final detailing + comprehensive polish (humanization sweep, lint, AI-trace, final design). Founder-prompted, last. | yes, last |
 | **Gated** | Founder-gated; ranked in place but parked until the founder unblocks it (OAuth / secret / spend / taste). | skip until unblocked |
-| **Lovable** | Lovable-owned (billing / credit / pricing); built in parallel by Lovable. | never a Claude pick |
+| **Lovable** | Lovable-owned (billing / credit / pricing); built in parallel by Lovable. | no by default; **yes if the founder explicitly hands it back to an agent** |
 | **Deferred** | Cut / post-PMF / superseded. | no |
 | **Done** | Shipped. | no |
 
 **The tier law (build substance before surface; non-core last):** Tier 1 then Tier 2 then Tier 3 then Tier 4, in that strict order. This is why the rank puts every Tier-1 row above every Tier-2 row, and so on. It fixes the drift where the loop built Tier-3 ops hygiene while the Tier-1 moat work had no rows.
+
+### Before you build a picked item: the sourcing gate + the autonomy doctrine (founder ruling 2026-06-21)
+
+The Rank decides WHAT to build next; this decides HOW to source it, and WHO decides. Apply it to every item before writing code; the agent owns this call from its own web-grounded research (carry a greppable `BBI:` stamp on the deciding doc/PR). Canon: [`../strategy/build-buy-integrate.md`](../strategy/build-buy-integrate.md) + [`../../AGENTS.md`](../../AGENTS.md) §3.0c.
+
+**The four sourcing decisions:**
+
+- **BUILD** (in-house, from base) - the moat / USP: the typed decision ontology, the supersession engine, the Critic + precedent-salience, signal->ontology normalization, outcome->memory write-back, the system-of-record. **Never wrapped, never bought.** Default for anything that IS the differentiator.
+- **BUY** (a commodity, always via the AI chokepoint `runtime.server.ts`, never called directly) - inference, embeddings, rerank, OCR, email, OAuth.
+- **INTEGRATE** (a high-lock-in substrate, behind our OWN swappable seam, with a native default + graceful fallback) - e.g. the sandbox provider, a heavier graph engine only if we outgrow Postgres.
+- **SELF-HOST** (open-source we run ourselves - the autonomy floor: a zero-external-paid-dep native default that must always hold) - e.g. SearXNG (`FIRECRAWL-FLOOR`), Postgres + pgvector for the graph.
+
+**The Decision Brain verdict (the strongest opinion, since this was the open question):** the brain's INTELLIGENCE is **BUILD, in-house, forever** - the ontology, supersession (`DBR-1.5`), the Critic, the salience ranker. Never make the brain's reasoning a wrapper around someone else's product; that IS the moat. Its SUBSTRATE is **SELF-HOST/native** (Postgres + pgvector now), swappable to an **INTEGRATE'd** graph engine (Graphiti / Neo4j) behind a `GraphStore` seam only if scale demands; its embeddings + inference are **BUY** via the chokepoint; the Obsidian-style view **INTEGRATE**s a viz library (don't build a render engine). Net: the thinking is ours; only the plumbing is swappable.
+
+**Autonomy doctrine (act on your own; escalate only when you must):**
+
+- **ACT autonomously** - build the moat; buy a commodity via the chokepoint with NO new recurring spend; self-host an OSS native default; integrate behind a seam when a free/native default exists; any migration / server-fn needing no secret/spend/taste (gate it offline, flag for publish-verify).
+- **THINK it through autonomously** (the agent decides via web research - do NOT ask the founder for this) - the sourcing call above, the architecture, the seam design, moat-vs-commodity. Carry the `BBI:` stamp on the deciding doc/PR.
+- **ASK the founder** (escalate; mark the row `Gated`) - a new recurring SPEND; a SECRET / OAuth / paid-provider pick; a TASTE / positioning / pricing / product-tasting call; anything IRREVERSIBLE or OUTWARD-FACING (sending, publishing, the founder's accounts); a legal / policy call (data-retention scope, PII). When genuinely unsure whether it is a taste / spend / irreversible call, ask.
 
 ### The ranking is DERIVED - never hand-number it
 
