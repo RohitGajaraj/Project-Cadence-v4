@@ -458,9 +458,12 @@ function CreditsTab() {
     : null;
 
   // Drive bundles from the admin-managed catalog when available; fall back to
-  // the legacy three. Convention: lookup_key = "topup_<credits>" or "topup_<k>k".
+  // a market-benchmarked ladder (Notion AI / Cursor / Linear pricing per equivalent
+  // unit, ~$1.50–$2 per 100 credits at entry, scaling down with volume to ~$1).
+  // Convention: lookup_key = "topup_<credits>" or "topup_<k>k".
   const catalogBundles = (catalog.data?.topups ?? []).filter((b) => b.active);
-  const BUNDLES = catalogBundles.length
+  type Bundle = { key: string; credits: number; priceCents: number };
+  const BUNDLES: Bundle[] = catalogBundles.length
     ? [...catalogBundles]
         .sort((a, b) => a.credits - b.credits)
         .map((b) => ({
@@ -469,13 +472,34 @@ function CreditsTab() {
               ? `topup_${b.credits / 1000}k`
               : `topup_${b.credits}`,
           credits: b.credits,
-          price: `$${Math.round(b.price_cents / 100).toLocaleString()}`,
+          priceCents: b.price_cents,
         }))
     : [
-        { key: "topup_250", credits: 250, price: "$5" },
-        { key: "topup_1k", credits: 1000, price: "$18" },
-        { key: "topup_2_5k", credits: 2500, price: "$40" },
+        { key: "topup_250", credits: 250, priceCents: 500 },
+        { key: "topup_1k", credits: 1000, priceCents: 1800 },
+        { key: "topup_2_5k", credits: 2500, priceCents: 4000 },
+        { key: "topup_5k", credits: 5000, priceCents: 7500 },
+        { key: "topup_10k", credits: 10000, priceCents: 14000 },
+        { key: "topup_25k", credits: 25000, priceCents: 32500 },
+        { key: "topup_50k", credits: 50000, priceCents: 60000 },
+        { key: "topup_100k", credits: 100000, priceCents: 110000 },
+        { key: "topup_250k", credits: 250000, priceCents: 250000 },
       ];
+  const fmtPrice = (c: number) => `$${Math.round(c / 100).toLocaleString()}`;
+  const fmtCreditsShort = (n: number) =>
+    n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString();
+
+  const STARTER_MAX = 5000;
+  const starterBundles = BUNDLES.filter((b) => b.credits <= STARTER_MAX);
+  const scaleBundles = BUNDLES.filter((b) => b.credits > STARTER_MAX);
+  const [selectedKey, setSelectedKey] = useState<string>(
+    () => BUNDLES.find((b) => b.credits === 2500)?.key ?? BUNDLES[0]?.key ?? "",
+  );
+  const selectedBundle = BUNDLES.find((b) => b.key === selectedKey) ?? BUNDLES[0];
+  const bestPerCredit = BUNDLES.reduce(
+    (min, b) => Math.min(min, b.priceCents / b.credits),
+    Infinity,
+  );
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -532,42 +556,94 @@ function CreditsTab() {
         )}
       </div>
 
+      {/* ===== Pick a bundle ===== */}
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
-          One-time top-ups
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div className="mono-label" style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}>
+              One-time top-ups
+            </div>
+            <div className="font-display" style={{ fontSize: 22, marginTop: 4, fontWeight: 500, letterSpacing: "-0.01em" }}>
+              Buy credits without changing your plan
+            </div>
+            <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0" }}>
+              Credits land in your balance and stay until used. Higher bundles unlock a better per-credit rate.
+            </p>
+          </div>
+          {selectedBundle && (
+            <div style={{ textAlign: "right" }}>
+              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+                Your selection
+              </div>
+              <div className="font-display" style={{ fontSize: 28, lineHeight: 1, marginTop: 4 }}>
+                {fmtPrice(selectedBundle.priceCents)}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", marginTop: 2 }}>
+                {selectedBundle.credits.toLocaleString()} credits &middot;{" "}
+                {(selectedBundle.priceCents / selectedBundle.credits / 100).toFixed(3)} $/credit
+              </div>
+            </div>
+          )}
         </div>
-        <div className="font-display" style={{ fontSize: 16, marginTop: 4 }}>
-          Buy credits without changing your plan
+
+        {/* Starter tiers */}
+        <div style={{ marginTop: 18 }}>
+          <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+            Starter packs
+          </div>
+          <BundleGrid
+            bundles={starterBundles}
+            selectedKey={selectedKey}
+            onSelect={setSelectedKey}
+            remainingTopupRoom={remainingTopupRoom}
+            bestPerCredit={bestPerCredit}
+            fmtPrice={fmtPrice}
+            fmtCreditsShort={fmtCreditsShort}
+          />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gap: 8,
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            marginTop: 12,
-          }}
-        >
-          {BUNDLES.map((b) => {
-            const wouldExceed = remainingTopupRoom !== null && b.credits > remainingTopupRoom;
-            return (
-              <button
-                key={b.key}
-                className="btn btn-ghost btn-sm"
-                disabled={wouldExceed}
-                onClick={() => openTopUp(b.key, `Top-up: ${b.credits.toLocaleString()} credits`)}
-                title={
-                  wouldExceed ? "This bundle would exceed your per-cycle top-up limit." : undefined
-                }
-              >
-                {b.credits.toLocaleString()} credits &middot; {b.price}
-              </button>
-            );
-          })}
-        </div>
+
+        {/* Scale tiers */}
+        {scaleBundles.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+              At scale &middot; better per-credit rate
+            </div>
+            <BundleGrid
+              bundles={scaleBundles}
+              selectedKey={selectedKey}
+              onSelect={setSelectedKey}
+              remainingTopupRoom={remainingTopupRoom}
+              bestPerCredit={bestPerCredit}
+              fmtPrice={fmtPrice}
+              fmtCreditsShort={fmtCreditsShort}
+            />
+          </div>
+        )}
+
+        {selectedBundle && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={remainingTopupRoom !== null && selectedBundle.credits > remainingTopupRoom}
+              onClick={() =>
+                openTopUp(
+                  selectedBundle.key,
+                  `Top-up: ${selectedBundle.credits.toLocaleString()} credits`,
+                )
+              }
+            >
+              Buy {selectedBundle.credits.toLocaleString()} credits &middot; {fmtPrice(selectedBundle.priceCents)}
+            </button>
+          </div>
+        )}
+
         {data && (
-          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+          <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "12px 0 0" }}>
             This cycle: {data.cycleTopupCredits.toLocaleString()} of{" "}
-            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used.
+            {data.cycleTopupCapCredits.toLocaleString()} top-up credits used. Need more? &nbsp;
+            <a href="mailto:sales@cadence.app?subject=Enterprise%20credits" style={{ color: "var(--ember, #c2602e)" }}>
+              Talk to sales for volume pricing
+            </a>.
           </p>
         )}
       </div>
