@@ -5298,12 +5298,30 @@ export type Database = {
       admin_add_admin_by_email: { Args: { _email: string }; Returns: string }
       admin_bootstrap_self_as_admin: { Args: never; Returns: boolean }
       admin_delete_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_delete_plan: { Args: { _tier: string }; Returns: undefined }
       admin_delete_topup_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_grant_credits: {
+        Args: { _credits: number; _reason?: string; _user_id: string }
+        Returns: Json
+      }
       admin_list_admins: {
         Args: never
         Returns: {
           created_at: string
           email: string
+          user_id: string
+        }[]
+      }
+      admin_list_users: {
+        Args: { _limit?: number; _search?: string }
+        Returns: {
+          balance_credits: number
+          created_at: string
+          email: string
+          is_admin: boolean
+          plan_tier: string
+          primary_account_id: string
+          topup_credits: number
           user_id: string
         }[]
       }
@@ -5328,6 +5346,18 @@ export type Database = {
           _stripe_price_id_yearly: string
           _tier: string
           _yearly_cents: number
+        }
+        Returns: string
+      }
+      admin_upsert_plan: {
+        Args: {
+          _active?: boolean
+          _audience?: string
+          _display_name: string
+          _recommended?: boolean
+          _sort_order?: number
+          _tagline?: string
+          _tier: string
         }
         Returns: string
       }
