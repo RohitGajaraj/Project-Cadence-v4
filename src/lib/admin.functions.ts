@@ -29,15 +29,20 @@ export const adminSearchUsers = createServerFn({ method: "GET" })
     return (rows ?? []) as AdminUserRow[];
   });
 
+export type AdminUserDetail = {
+  detail?: Record<string, unknown>;
+  error?: string;
+};
+
 export const adminGetUserDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string }) => d)
-  .handler(async ({ context, data }): Promise<Record<string, unknown> | { error: string }> => {
+  .handler(async ({ context, data }): Promise<AdminUserDetail> => {
     const { data: detail, error } = await context.supabase.rpc("admin_get_user_detail", {
       _uid: data.userId,
     });
     if (error) return { error: error.message };
-    return (detail ?? {}) as Record<string, unknown>;
+    return { detail: (detail ?? {}) as Record<string, unknown> };
   });
 
 export const adminGrantCredits = createServerFn({ method: "POST" })
