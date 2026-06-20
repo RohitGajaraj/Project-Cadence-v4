@@ -131,7 +131,10 @@ content = (
     f"`bash scripts/lane.sh claim <ID> <lane> \"<globs>\"` and proceed only if it returns success (exit 0 = won). "
     f"A `HELD`/`CONFLICT` result means another lane has it - pick the next 🟢 free item below. Never start work before claiming.\n\n"
     "## In progress now (per lane)\n\n" + "\n".join(prog) + "\n\n"
-    "## Top of the rank - LIVE status (✓ done · 🔒 building · 🟢 free)\n\n" + "\n".join(queue) + "\n\n"
+    "## Top of the rank - LIVE status (✓ done · 🔒 building · 🟢 free)\n\n"
+    "> **Status meaning:** ⬜ open · 🔨 building now · ◐ built + gates green, **pending your publish-verify** · ✅ verified live. "
+    "A lane marks **◐ when it finishes building** (honest status), and only flips to ✅ after you publish and it is behaviorally verified - "
+    "so a `◐` here means the lane HAS finished it, not that it is unfinished.\n\n" + "\n".join(queue) + "\n\n"
     + ("## Standing reservations (safety, not a lane task)" + resv + "\n" if pinned else "")
 )
 open(LIVE, "w").write(content)
