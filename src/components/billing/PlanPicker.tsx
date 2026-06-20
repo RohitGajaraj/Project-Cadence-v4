@@ -38,13 +38,19 @@ const TIER_ICON: Record<PlanTier, React.ComponentType<{ size?: number; strokeWid
   enterprise: Atom,
 };
 
-/** N+1 nudge: the next paid step above the user's current tier. */
-function recommendedFor(current: PlanTier): PaidTier {
+/**
+ * N+1 nudge: the next paid step above the user's current tier.
+ * Scoped to Personal tiers only so the "Recommended" badge appears on exactly
+ * ONE card across the entire pricing view (never on the Teams or Enterprise
+ * tab as well). Teams and Enterprise each have a single card, so they don't
+ * need an in-tab recommendation.
+ */
+function recommendedFor(current: PlanTier): "pro" | "max" {
   switch (current) {
     case "free": return "pro";
     case "pro": return "max";
-    case "max": return "team";
-    case "team": return "max"; // sideways nudge; enterprise has its own card
+    case "max": return "max";
+    case "team": return "max";
     case "enterprise": return "max";
     default: return "max";
   }
@@ -218,7 +224,7 @@ export function PlanTable({
             interval={interval}
             bundles={allBundles.filter((b) => b.tier === "team")}
             isCurrent={currentTier === "team"}
-            isRecommended={recommended === "team"}
+            isRecommended={false}
             currentTier={currentTier}
             canSelect={canSelect}
           />
