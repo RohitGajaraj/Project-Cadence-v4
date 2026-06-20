@@ -440,15 +440,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
           </button>
         </div>
       )}
-
-      {checkoutKey ? (
-        <StripeEmbeddedCheckout
-          open={checkoutOpen}
-          onOpenChange={setCheckoutOpen}
-          priceLookupKey={checkoutKey}
-          title={checkoutTitle}
-        />
-      ) : null}
     </div>
   );
 }
