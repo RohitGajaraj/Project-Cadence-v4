@@ -193,6 +193,9 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Memory pools across all your workspaces",
           "3 products, pooled workspaces",
           "Capped fair-use top-ups when you run hot",
+          "Monthly or yearly billing (save with yearly)",
+          "Unlimited shareable decision links",
+          "Email support, next-business-day",
         ],
       };
     case "max":
@@ -208,6 +211,11 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Around 5 products, pooled workspaces",
           "Higher top-up ceiling for big weeks",
           "Early access to new agents and tools",
+          "Longer context windows on heavy missions",
+          "Advanced Critic profiles and custom guardrails",
+          "Bring-your-own model keys (BYOK)",
+          "Usage analytics with cost-per-outcome view",
+          "Priority email support",
         ],
       };
     case "team":
@@ -224,6 +232,12 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Per-role approval lanes for agent actions",
           "Transparent per-seat pricing",
           "Centralized billing and usage view",
+          "Shared prompt and playbook library",
+          "Team-wide audit trail of agent actions",
+          "Slack and Teams notifications",
+          "Workspace-level guardrails and budgets",
+          "Onboarding session with our team",
+          "Chat support with same-business-day SLA",
         ],
       };
     case "enterprise":
@@ -238,6 +252,14 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Data residency and a custom credit model",
           "Dedicated support with a signed SLA",
           "Security review, DPA, and procurement help",
+          "Single-tenant or VPC deployment options",
+          "Custom retention and legal-hold controls",
+          "Private model routing and approved-model lists",
+          "Custom integrations and connector development",
+          "Dedicated CSM and quarterly business reviews",
+          "Volume pricing on credits and seats",
+          "Custom MSA, indemnification, and IP terms",
+          "24/7 incident response with named contacts",
         ],
       };
     case "free":
@@ -252,7 +274,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Decision memory kept " + FREE_MEMORY_RETENTION_DAYS + " days, then it fades",
           "2 products, 1 workspace",
           "Shareable decision links",
-          "Upgrade anytime to make memory permanent",
+          "Community support",
         ],
       };
   }
