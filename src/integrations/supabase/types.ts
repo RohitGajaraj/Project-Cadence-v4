@@ -4856,7 +4856,6 @@ export type Database = {
       }
       user_api_keys: {
         Row: {
-          api_key: string | null
           api_key_prefix: string | null
           base_url: string | null
           created_at: string
@@ -4867,7 +4866,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          api_key?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
@@ -4878,7 +4876,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          api_key?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
@@ -5298,6 +5295,19 @@ export type Database = {
     }
     Functions: {
       accept_workspace_invitation: { Args: { _token: string }; Returns: string }
+      admin_add_admin_by_email: { Args: { _email: string }; Returns: string }
+      admin_bootstrap_self_as_admin: { Args: never; Returns: boolean }
+      admin_delete_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_delete_topup_bundle: { Args: { _id: string }; Returns: boolean }
+      admin_list_admins: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          user_id: string
+        }[]
+      }
+      admin_remove_admin: { Args: { _user_id: string }; Returns: boolean }
       admin_set_bundle_active: {
         Args: { _active: boolean; _id: string }
         Returns: boolean
@@ -5306,16 +5316,43 @@ export type Database = {
         Args: { _enabled: boolean }
         Returns: boolean
       }
-      admin_upsert_topup_bundle: {
+      admin_upsert_bundle: {
         Args: {
           _active: boolean
           _credits: number
           _id: string
-          _price_cents: number
+          _monthly_cents: number
+          _recommended: boolean
           _sort_order: number
+          _stripe_price_id_monthly: string
+          _stripe_price_id_yearly: string
+          _tier: string
+          _yearly_cents: number
         }
         Returns: string
       }
+      admin_upsert_topup_bundle:
+        | {
+            Args: {
+              _active: boolean
+              _credits: number
+              _id: string
+              _price_cents: number
+              _sort_order: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _active: boolean
+              _credits: number
+              _id: string
+              _price_cents: number
+              _sort_order: number
+              _stripe_price_id: string
+            }
+            Returns: string
+          }
       auto_advance_agent_arc: {
         Args: { p_agent_id: string; p_user_id: string }
         Returns: string
