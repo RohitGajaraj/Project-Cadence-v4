@@ -1,51 +1,47 @@
 {
   "version": "2.0.0",
-  "_comment": "Parallel build lanes as VS Code integrated-terminal tabs. Cmd+Shift+P -> 'Tasks: Run Task' -> pick a lane (or 'Lanes 1-4: open all'). Each opens a dedicated terminal in its worktree and auto-starts the scoped loop. See PARALLEL-BUILD.md. The bootstrap arg is used because a slash command cannot be passed at launch.",
+  "_comment": "Parallel build lanes as VS Code INTEGRATED-TERMINAL tabs (the loop runs in VS Code, never a separate macOS Terminal window). Cmd+Shift+P -> 'Tasks: Run Task' -> pick a lane (or 'Lanes 1-4: open all'). Each opens a dedicated integrated terminal in its worktree and starts the scoped autonomous /loop. The args string is a natural-language bootstrap because a slash command cannot be passed at launch. Lanes 1-2 still point at cadence-cockpit / cadence-knowledge until those running worktrees are migrated to cadence-lane-1 / cadence-lane-2 (see PARALLEL-BUILD.md 'Migrating the folder names'); update the cwd here when you migrate them.",
+  "_bootstrap": "Shared kickoff: run as a continuous loop in THIS terminal, claim atomically before building, never stop after one item.",
   "tasks": [
     {
-      "label": "Lane 1: Cockpit (R3-PREFS, P7)",
+      "label": "Lane 1",
       "type": "shell",
       "command": "claude",
-      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "args": ["You are scoped parallel build Lane 1 in this worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane's categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> 1 \"<globs>\" before writing any code (if it prints HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build. If the whole board is dry, write 'board dry - long-polling' to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files."],
       "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-cockpit" },
       "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
       "problemMatcher": []
     },
     {
-      "label": "Lane 2: Knowledge (O1, O3)",
+      "label": "Lane 2",
       "type": "shell",
       "command": "claude",
-      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
+      "args": ["You are scoped parallel build Lane 2 in this worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane's categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> 2 \"<globs>\" before writing any code (if it prints HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build. If the whole board is dry, write 'board dry - long-polling' to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files."],
       "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-knowledge" },
       "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
       "problemMatcher": []
     },
     {
-      "label": "Lane 3: Safety (FND-0.5, FND-0.7)",
+      "label": "Lane 3",
       "type": "shell",
       "command": "claude",
-      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
-      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-safety" },
+      "args": ["You are scoped parallel build Lane 3 in this worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane's categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> 3 \"<globs>\" before writing any code (if it prints HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build. If the whole board is dry, write 'board dry - long-polling' to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-lane-3" },
       "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
       "problemMatcher": []
     },
     {
-      "label": "Lane 4: Build (F-BUILDER-MULTIFILE)",
+      "label": "Lane 4",
       "type": "shell",
       "command": "claude",
-      "args": ["Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree: read .remember/LANE.md and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate, adversarially review, run the doc-loop, commit explicit paths with a WHY, fast-forward push. Stay in lane; stop when the queue is dry."],
-      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-build" },
+      "args": ["You are scoped parallel build Lane 4 in this worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane's categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> 4 \"<globs>\" before writing any code (if it prints HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build. If the whole board is dry, write 'board dry - long-polling' to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files."],
+      "options": { "cwd": "/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-lane-4" },
       "presentation": { "panel": "dedicated", "group": "lanes", "reveal": "always", "focus": true, "echo": true },
       "problemMatcher": []
     },
     {
       "label": "Lanes 1-4: open all",
-      "dependsOn": [
-        "Lane 1: Cockpit (R3-PREFS, P7)",
-        "Lane 2: Knowledge (O1, O3)",
-        "Lane 3: Safety (FND-0.5, FND-0.7)",
-        "Lane 4: Build (F-BUILDER-MULTIFILE)"
-      ],
+      "dependsOn": ["Lane 1", "Lane 2", "Lane 3", "Lane 4"],
       "problemMatcher": []
     }
   ]

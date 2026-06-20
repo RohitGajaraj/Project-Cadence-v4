@@ -155,36 +155,63 @@ When no buildable backlog item is left (v10 through v8 mined, founder-gated item
 - **Same discipline.** Treat each design finding as a buildable item: surgical change, gate (`tsc --noEmit` + build + lint), adversarial review, doc-loop, commit + push, and a dated report entry. Work findings top-down by impact.
 - This is also the fallback whenever nothing else is pending: pick up the design pass rather than stop.
 
-## 15. Lane-scoped parallel mode (multi-worktree, file-disjoint)
+## 15. Lane-scoped parallel mode (numbered lanes · live dashboard · atomic claims · /loop)
 
-Several worktrees can build in parallel off `origin/main` at once (the WM/overnight lane plus a few feature lanes). A worktree is a **scoped lane** when `.remember/LANE.md` exists at its root (that path is git-ignored, so it never commits). The overnight WM worktree has no such file, so this section is a no-op for it. In lane mode the whole playbook still governs (per-cycle `git fetch` + rebase on `origin/main`, the section 5 correctness gate, the section 6 doc-loop, adversarial review, the section 8 rebase-recovery rule, bypass permissions, the section 8 sub-five-minute usage-limit retry), with these overrides:
+> **Rewritten 2026-06-20 (founder ruling).** The old model had a tiny hardcoded per-lane queue, no real-time cross-worktree claim, and a "stop when the lane queue is dry" rule. In practice that meant a lane launched, found its 1-2 seed items already shipped, and halted. The new model: a lane is a **numbered worker** that pulls the next highest-impact item **live from `feature-dashboard.md`**, **claims it atomically** in a shared ledger before building, **roams the whole board** (not one category), and **never hard-stops** (it long-polls when the board is dry). Identity is the **lane number**, not a theme word.
 
-1. **Read `.remember/LANE.md` first, every cycle.** It declares the lane name, the ordered build queue (item IDs, built top-down), the OWNED paths (create or modify only these), the FORBIDDEN paths, and the lane's own report file. Build only the queued items, in order.
-2. **Never leave your lane.** Touch only OWNED paths. NEVER touch a FORBIDDEN path. Forbidden always includes the AI chokepoint and agent core (`src/lib/ai/runtime.server.ts`, `loop.server.ts`, `tools/registry.server.ts`, `cache.server.ts`, `memory.server.ts`), the WM tenancy/billing/credit files, and the other lanes' owned files. If an item would require a forbidden file, SKIP it, note why in the lane report, and take the next queued item.
-3. **Write to the lane's own report file** named in `LANE.md` (`docs/planning/archive/parallel-report-<lane>.md`), NEVER `overnight-build-report.md` (that is the WM lane's and is rewritten every cycle; sharing it is the number-one collision source).
-4. **Shared-doc discipline (this is what keeps the rebase clean).** `plan.md` section 4 and `session-decisions.md` are APPEND-ONLY. In `feature-dashboard.md`, on ship, flip ONLY your own item's register row (a single-line edit); do NOT recompute the global At-a-glance counts (one owner reconciles those later, since two sessions recomputing the same line is a guaranteed conflict). Your claim already sits in the Active-claims table.
-5. **Stop-and-report when the lane queue is DRY. This overrides section 9's never-stop rule for lane mode.** A scoped lane must NOT roam into another lane's category or into the chokepoint to find work; roaming is exactly how parallel sessions collide. When no buildable, non-forbidden, non-founder-gated item remains in the queue, write a final report entry ("lane dry, awaiting reassignment") and stop. The founder extends the queue or reassigns. The section 14 design pass is also off-limits in lane mode (it is a whole-product, single-owner activity).
-6. **One command.** Launch is identical to the WM lane: from inside the lane's worktree, `/overnight-build`. This section is what makes that single command self-scope to the lane.
+Several worktrees build in parallel off `origin/main` at once (the WM/overnight lane plus the numbered feature lanes). A worktree is a **scoped lane** when `.remember/LANE.md` exists at its root (git-ignored; never commits). The overnight WM worktree has no such file, so this section is a no-op for it. The whole playbook still governs (per-cycle `git fetch` + rebase on `origin/main`, the section 5 correctness gate, the section 6 doc-loop, adversarial review, the section 8 rebase-recovery + sub-five-minute usage-limit retry, bypass permissions), with these overrides:
 
-## 16. Worktree selection at launch (never auto-build outside a known lane)
+1. **The driver is `/loop`.** A lane runs Claude Code's built-in `/loop` so each iteration auto-continues to the next item with no manual re-kick and no self-scheduled `ScheduleWakeup` choreography. One `/loop` iteration = one per-item cycle (steps 3a-3h below). This is what fixes "it built one thing then stopped and waited for me." (The WM/overnight lane may keep its `ScheduleWakeup` bridge; numbered lanes use `/loop`.)
 
-A bare `/overnight-build` first detects WHICH context it is in, with git, and routes by a POSITIVE ALLOWLIST: it BUILDS only in a known lane, and ASKS everywhere else. This is purely additive (the WM/overnight lane and the daytime manual `pick <ID>` mode are unchanged) and it composes with section 15.
+2. **Read `.remember/LANE.md` first, every cycle.** It declares the **lane number**, branch, the lane's own **report file**, the **preferred categories** (a soft ordering, not a fence), the **claim-glob conventions**, and the static OWNED/FORBIDDEN backstop. There is no hardcoded item queue any more - the queue is the live dashboard.
 
-Resolve the worktree root first, so a call from a subdirectory still classifies correctly:
-`WT_ROOT="$(git rev-parse --show-toplevel)"` and `BR="$(git rev-parse --abbrev-ref HEAD)"` (note: a detached HEAD returns the literal string `HEAD`, not a branch name).
+3. **The per-item cycle (every `/loop` iteration):**
+   - **a. Sync.** `git fetch` + rebase this worktree on `origin/main` (pulls the latest dashboard, every other lane's pushes, and the current `scripts/lane.sh`).
+   - **b. Hygiene.** `bash scripts/lane.sh reap` (clear claims from dead sessions), and if you are resuming an in-flight item, `bash scripts/lane.sh heartbeat <ID>`.
+   - **c. SELECT (this is "knowing what to pick").** From the `feature-dashboard.md` register, take the **next eligible row** by the **selection rule** below. Cross-check `bash scripts/lane.sh list` so you never pick something another lane already holds.
+   - **d. CLAIM ATOMICALLY, before any code.** `bash scripts/lane.sh claim <ID> <laneN> "<globs>" "<short-note>"`, where `<globs>` is a comma-separated list covering **every file you will create or modify** for this item. If it prints `HELD` (another lane won) or `CONFLICT` (your globs overlap an active claim), **do not build** - go back to (c) and take the next candidate. **A successful `CLAIMED` is a precondition for writing code.** This is the hard gate that makes "the same item is never picked by two lanes" true.
+   - **e. Mirror the claim into the dashboard.** Flip the row to `🔨 In Dev (laneN, YYYY-MM-DD HH:MM)`, add an Active-claims line, and commit + push that one-line claim **first** (before feature code) so the other tools and Lovable - which do not read the ledger - also see it. The ledger is the real-time cross-worktree truth; the dashboard claim is the durable, tool-visible record.
+   - **f. Build → gate → review.** Surgical changes (every line traces to the item); section 5 correctness gate (`bunx tsc --noEmit` + `bun run build` + the feature's tests); adversarial runtime-fatal self-review; fold every real fix.
+   - **g. Doc-loop + ship.** Section 6 doc-loop. Commit explicit paths with one WHY line; fast-forward push. On ship, flip the row to `✅`/`◐`, remove the Active-claims line, then **`bash scripts/lane.sh release <ID>`**.
+   - **h. Next.** `/loop` immediately starts the next iteration at (a). No pause between items.
 
-Then, in order:
+4. **SELECTION RULE (deterministic).** The next item is the **highest-impact eligible row**, where *eligible* = status `⬜` open OR `◐` partial-with-remaining-work; AND NOT `🚧` blocked; AND NOT `⏭️` deferred; AND NOT founder-gated (taste/positioning, spend, accounts/secrets/OAuth, anything outward-facing - section 3); AND NOT already `🔨 In Dev`; AND NOT in the ledger (`lane.sh list`); AND whose file-globs do **not** overlap an active claim. Order: **prefer this lane's preferred categories first**, then **roam to any eligible row**; within that, **strategic impact / priority** (P0 > P1 > P2 against the current positioning - section 3 ruling 2), then the topmost register row. State the pick and the one-line why before claiming.
 
-1. **Manual override (highest precedence).** If THIS invocation carries an explicit `pick <ID>` (an operator-supplied item on this run), honor it: manual mode, build that item, skip the rest of this section. Ambient mentions of an ID in memory/context do NOT count; only an explicit `pick` argument on this run.
-2. **Scoped lane.** Else if `[ -f "$WT_ROOT/.remember/LANE.md" ]`, this is a scoped parallel lane: proceed per section 15 (read `LANE.md`, build its queue, stay in lane), silently, no prompt.
-3. **WM / overnight lane.** Else if `BR` is `overnight/wm`, this is the original overnight lane (no `LANE.md` by design): proceed with the full whole-product loop (sections 3 through 14).
-4. **Everything else: ASK, never auto-build.** Else (the primary `main` checkout, a detached `HEAD`, a `parallel/*` branch whose `LANE.md` is missing, or any ad-hoc branch): do NOT build here. Building on the shared primary, or on an unscoped branch, is the exact collision the lane model prevents. Instead:
-   - List the lanes + worktrees: `wm` (overnight-build), `cockpit` (cadence-cockpit), `knowledge` (cadence-knowledge), `safety` (cadence-safety), `build` (cadence-build).
-   - ASK the founder which lane to launch (one line; do not assume).
-   - On their pick, run `bash scripts/parallel-build.sh <lane>`, which opens that worktree's terminal and AUTO-STARTS its loop via a bootstrap prompt (a slash command cannot be passed at launch, so the script passes a natural-language instruction that invokes this skill). Then stop here.
-   - Never build directly on `main` or on an unscoped branch from this context.
+5. **ROAM - do not idle, do not fence yourself to one category.** A numbered lane is not pinned to a theme. When its preferred categories are dry, it claims the next eligible item **anywhere on the board**. Collisions are prevented by the **ledger's glob reservation**, not by a static category, so roaming is safe. (This deliberately reverses the old "a lane must not roam" rule, which only made sense when claims were not atomic.)
 
-Why a positive allowlist (build only in cases 2 and 3): absence of `LANE.md` does NOT mean "not a lane" (the WM worktree is a real lane that lacks it), and the unhandled contexts (detached HEAD, a `parallel/*` branch whose `LANE.md` is missing) must fail safe to ASK, never to an implicit whole-product build on the wrong branch. Every lane worktree should carry its own `.remember/LANE.md` so case 2 catches it; case 4 is the safety net.
+6. **NEVER hard-stop - long-poll instead (founder ruling; overrides the old §15.5 and aligns with section 9).** When the **whole board** has zero eligible, unclaimed, non-conflicting items for this lane *right now*, write "board dry - long-polling" to the lane report and let `/loop` **recheck on a ~20-30 min cadence**; a newly added row, a released claim, or a founder push reactivates the lane automatically. The lane stops only on a real usage-limit (sub-five-minute retry, section 8) or an explicit founder stop. "Dry" is a wait, never a halt.
+
+7. **File-glob reservation is the collision proof.** Every claim declares the globs it will touch; `lane.sh` rejects a claim whose globs overlap an active claim (proven by `scripts/lane.test.sh`). Declare globs that cover everything you will create or modify. If mid-build you discover you must touch a file outside your declared globs **and** it falls in another lane's claim, stop that item, `release` it, note it in the report, and take the next. The OWNED/FORBIDDEN lists in `LANE.md` stay as a static backstop, but **the ledger is the live authority**.
+
+8. **Shared-doc discipline (keeps every rebase clean - unchanged).** `plan.md` section 4 and `session-decisions.md` are APPEND-ONLY. In `feature-dashboard.md`, flip ONLY your own row; never recompute the global At-a-glance counts (one owner reconciles those later).
+
+9. **Write to the lane's own report file** named in `LANE.md` (`docs/planning/archive/parallel-report-<laneN>.md`), NEVER `overnight-build-report.md` (the WM lane's; sharing it is a guaranteed collision).
+
+## 16. Where the loop runs + worktree selection (run-in-place; never a new OS window)
+
+**Run-in-place (founder ruling 2026-06-20).** A lane runs **in the terminal it was launched in** - specifically the **VS Code integrated terminal** opened inside the lane's worktree. The old launcher (`scripts/parallel-build.sh`) used `osascript` to pop a separate Terminal.app / iTerm window; that is no longer the default. Open the lane this way instead:
+- **VS Code task (preferred):** `Cmd+Shift+P` → "Tasks: Run Task" → **"Lane N: ..."**. Each task opens a dedicated integrated-terminal tab in the right worktree and starts the lane.
+- **Or:** open `cadence-parallel.code-workspace`, right-click the lane's folder → "Open in Integrated Terminal", then start the lane there.
+- A lane skill (`/overnight-build-1..4`) invoked **from inside a lane worktree** starts the loop in **that** session; it does NOT open a new OS window. Invoked from the main checkout, it tells you which VS Code task to run - it does not spawn a window.
+
+**Positive allowlist (a bare `/overnight-build` builds only in a known lane; asks everywhere else).** Resolve `WT_ROOT="$(git rev-parse --show-toplevel)"` and `BR="$(git rev-parse --abbrev-ref HEAD)"` (a detached HEAD returns the literal `HEAD`). Then, in order:
+
+1. **Manual override.** An explicit `pick <ID>` on this invocation → manual mode, build that item, skip the rest. (Ambient IDs in memory do NOT count.)
+2. **Scoped lane.** `[ -f "$WT_ROOT/.remember/LANE.md" ]` → scoped numbered lane: start `/loop` per section 15, silently.
+3. **WM / overnight lane.** `BR` = `overnight/wm` → the original whole-product loop (sections 3-14).
+4. **Everything else: ASK, never auto-build.** The primary `main` checkout, a detached `HEAD`, or a `parallel/*` branch whose `LANE.md` is missing: do NOT build here. List the lanes and tell the founder to open one in a VS Code integrated terminal (the "Lane N" task), then stop. Never build on `main` or an unscoped branch.
+
+**Lane map (folder · branch · number).** Branch names are stable internal handles; the folder/label is "Lane N":
+
+| Lane | Folder | Branch | Preferred categories |
+| --- | --- | --- | --- |
+| 1 | `cadence-lane-1` (currently `cadence-cockpit`; migrating) | `parallel/cockpit` | Cockpit, then Governance |
+| 2 | `cadence-lane-2` (currently `cadence-knowledge`; migrating) | `parallel/knowledge` | Sense, Decide, Interop |
+| 3 | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
+| 4 | `cadence-lane-4` | `parallel/build` | Build, then Interop |
+| 0 | `overnight-build` | `overnight/wm` | WM tenancy/billing/credit (whole-product loop) |
+
+Why a positive allowlist: absence of `LANE.md` does NOT mean "not a lane" (the WM worktree lacks it by design), and the unhandled contexts (detached HEAD, an unscoped `parallel/*`) must fail safe to ASK. Every lane worktree carries its own `.remember/LANE.md` so case 2 catches it; case 4 is the safety net.
 
 ---
 

@@ -1,110 +1,99 @@
 
 # Parallel build - how to run the lanes
 
-> Plain operating manual for running the backlog in parallel across several worktrees at once. Placed at the repo root on founder request so it is easy to find. The deep rules live in `docs/operations/autonomous-build-loop.md` (sections 15-16); this is the "just tell me how to run it" page.
+> Plain operating manual for running the backlog in parallel across several worktrees at once. The deep rules live in `docs/operations/autonomous-build-loop.md` sections 15-16; this is the "just tell me how to run it" page. **Rewritten 2026-06-20** for the numbered-lane model: lanes pull live from the dashboard, claim atomically, roam the whole board, run in the VS Code integrated terminal, and never stop on their own.
 
 ## The one rule
 
-**One lane = one terminal = one worktree = one autonomous loop.** Each lane builds a different set of files, so they never collide. A session is tied to the folder it launched in, so you launch one terminal per lane (a skill, a VS Code task, or a command does this for you).
+**One lane = one terminal = one worktree = one autonomous `/loop`.** Each lane is a numbered worker (Lane 1..4). It pulls the next highest-impact unclaimed item **live from `docs/planning/feature-dashboard.md`**, **claims it atomically** so no other lane can take it, builds it, and immediately moves to the next - never stopping until you stop it.
 
-## The lane map (this is the legend)
+## The lane map (the legend)
 
-| Lane | Skill | What it builds | Worktree folder | Branch |
+| Lane | Skill | Folder | Branch | Prefers (then roams the whole board) |
 | --- | --- | --- | --- | --- |
-| **1 - Cockpit** | `/overnight-build-1` | R3-PREFS notification prefs, then P7 incidents / cost-incident log | `cadence-cockpit` | `parallel/cockpit` |
-| **2 - Knowledge** | `/overnight-build-2` | O1 knowledge-graph explorer, then O3 fact-drift + skill-pack export | `cadence-knowledge` | `parallel/knowledge` |
-| **3 - Safety** | `/overnight-build-3` | FND-0.5 agent blast-radius, then FND-0.7 injection classifier | `cadence-safety` | `parallel/safety` |
-| **4 - Build** | `/overnight-build-4` | F-BUILDER-MULTIFILE scoped multi-file build | `cadence-build` | `parallel/build` |
-| **0 - WM** (running) | `/overnight-build` | Tenancy / billing / credit (the original overnight lane) | `overnight-build` | `overnight/wm` |
+| **1** | `/overnight-build-1` | `cadence-cockpit` → `cadence-lane-1` | `parallel/cockpit` | Cockpit, then Governance |
+| **2** | `/overnight-build-2` | `cadence-knowledge` → `cadence-lane-2` | `parallel/knowledge` | Sense, Decide, Interop |
+| **3** | `/overnight-build-3` | `cadence-lane-3` | `parallel/safety` | Governance, then Cockpit |
+| **4** | `/overnight-build-4` | `cadence-lane-4` | `parallel/build` | Build, then Interop |
+| **0 - WM** (running) | `/overnight-build` | `overnight-build` | `overnight/wm` | the original whole-product overnight lane |
 
-The worktree folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`.
+The lane folders are siblings of this repo, under `~/Projects/My Projects/My Builds/`. **Lanes 1 & 2 keep their `cadence-cockpit` / `cadence-knowledge` folder names until you migrate them** (see "Migrating the folder names" below) - the *number* is the identity, not the folder word. Branch names are stable internal handles and are not renamed.
 
-## How to launch a lane (pick one way)
+## How to launch a lane - in the VS Code integrated terminal (the way you wanted)
 
-**A. Claude Code skill (one command).** In any Claude Code session, type the lane's skill:
+The loop now runs **in the VS Code integrated terminal**, not a separate macOS Terminal window. Two ways:
+
+**A. VS Code task (one click).** `Cmd+Shift+P` → "Tasks: Run Task" → pick **"Lane 1"** (or 2/3/4, or **"Lanes 1-4: open all"**). Each opens a dedicated integrated-terminal tab in the right worktree and starts that lane's continuous loop. (Open this repo folder in VS Code first so the tasks appear.)
+
+**B. Open the lane folder, then `/loop`.** Open `cadence-parallel.code-workspace` (File → Open Workspace from File) to see all lanes in one window, right-click the lane's folder → **"Open in Integrated Terminal"**, then start the loop by typing:
 
 ```
-/overnight-build-1     (or -2 / -3 / -4)
+/loop
 ```
 
-It opens that lane's own terminal session and auto-starts the loop. (It does NOT run the build in your current session, so it won't eat your current session's tokens.)
+and paste the **lane cycle prompt** (replace `<N>` with the lane number):
 
-**B. VS Code (your preferred way).** `.vscode/tasks.json` defines one task per lane.
-`Cmd+Shift+P` -> "Tasks: Run Task" -> pick **"Lane 1: Cockpit"** (or 2/3/4, or **"Lanes 1-4: open all"**). Each opens its own integrated-terminal tab in the right worktree and auto-starts. (If a task does not appear, open this repo folder in VS Code first.)
+> Scoped parallel build Lane `<N>`. One cycle: git fetch + rebase origin/main; `bash scripts/lane.sh reap`; SELECT the next highest-impact eligible item live from `docs/planning/feature-dashboard.md` (prefer this lane's categories, then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check `bash scripts/lane.sh list`); CLAIM IT with `bash scripts/lane.sh claim <ID> <N> "<globs>"` before writing any code (if HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push the claim; build; gate (`bunx tsc --noEmit` + `bun run build` + tests); adversarial review; doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and `bash scripts/lane.sh release <ID>`. Then continue to the next item. Never stop after one item; if the board is dry, note it and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files.
 
-**C. Terminal command.** From this repo:
+`/loop` is what makes it pick up the next item by itself, one after another - the thing that was missing before.
+
+> Already sitting inside a lane's worktree terminal? Just type the lane skill (`/overnight-build-1`..`-4`) or `/loop` with the prompt above. It runs the loop **in that terminal** - it does not open a new window.
+
+> Fallback only (non-VS-Code): `bash scripts/parallel-build.sh 3` pops a separate Terminal window. Prefer the VS Code path above.
+
+## Why two lanes never grab the same item (the atomic claim ledger)
+
+A git working tree is a **private** view: a claim written into one worktree's dashboard copy is invisible to the other worktrees until it is committed, pushed, and the others pull. That gap let two lanes pick the same item. The fix is a **shared claim ledger that lives outside every worktree**, at `~/.cadence-parallel/`, with an **atomic** primitive:
+
+- **Claiming = `mkdir` of the item's claim dir**, which the OS does atomically - if two lanes race for the same item, exactly one wins and the rest get `HELD` and pick something else. (Proven by `scripts/lane.test.sh`: 12 concurrent claims → 1 winner.)
+- **Each claim also reserves the file globs it will touch.** A claim whose files overlap an active claim is rejected (`CONFLICT`), so even when lanes roam onto *different* items they can never edit the *same files*. This is what lets a lane safely build anything on the board, not just its own category.
+
+Commands (all lanes share one ledger):
 
 ```bash
-bash scripts/parallel-build.sh            # interactive menu (1=cockpit .. 4=build, a=all)
-bash scripts/parallel-build.sh 1          # open just lane 1 (numbers or names both work)
-bash scripts/parallel-build.sh a          # open all 4 lanes at once
-bash scripts/parallel-build.sh list       # just print the commands, open nothing
+bash scripts/lane.sh list                          # who holds what, right now
+bash scripts/lane.sh claim <ID> <laneN> "<globs>"  # atomic claim BEFORE building (0=won 1=held 3=file-conflict)
+bash scripts/lane.sh release <ID>                   # free it when the item ships
+bash scripts/lane.sh reap                           # auto-free claims from dead sessions (>6h)
 ```
 
-It opens a new macOS terminal window per lane (iTerm if running, else Terminal.app) and auto-starts. On a machine without macOS terminal automation it prints the command for you to paste.
+The lane still mirrors its claim into the dashboard (`🔨 In Dev`) and pushes it, so Lovable and the other tools - which don't read the ledger - also see it. The ledger is the real-time cross-worktree truth; the dashboard claim is the durable, tool-visible record. The static OWNED/FORBIDDEN lists in each `.remember/LANE.md` remain a backstop.
 
-> If you are already sitting inside a lane's worktree folder, you don't need any of the above - just type `/overnight-build` and it scopes itself to that lane.
+## "Own memory" - what each lane knows
 
-## How do I know which tree I am in?
+Each lane reads, every cycle: its `.remember/LANE.md` (lane number, branch, report file, preferred categories, claim-glob conventions, OWNED/FORBIDDEN backstop), `docs/planning/SOURCE-OF-TRUTH.md` (the front-door tracker), `docs/planning/feature-dashboard.md` (the live prioritized register = what to build next), `docs/planning/considerations.md` (cross-cutting gaps), and `scripts/lane.sh list` (what every lane is on). That is its working memory of the parent project: priority, what is in flight, what is pending, and what is not yet verified.
 
-- `pwd` (the folder name is the worktree, e.g. `cadence-cockpit`) and `git branch --show-current` (e.g. `parallel/cockpit`).
-- Each lane session, on its first turn, reads its `.remember/LANE.md` and states its lane out loud.
-- It only ever writes to its own report: `docs/planning/archive/parallel-report-<lane>.md`.
-- Tip: name each terminal tab. Run once in that terminal: `echo -ne "\033]0;Lane 1\007"`.
+## It never stops on its own
+
+A lane does not halt when its preferred category empties - it **roams** to the next eligible item anywhere on the board. When the *whole* board is dry it writes "board dry - long-polling" to its report and **rechecks every ~25 minutes** (a new row, a freed claim, or a founder push wakes it). It stops only on a real usage-limit (sub-5-minute retry) or when you stop it. This is the founder "never idle-stop" ruling, applied to lanes.
+
+## Migrating the folder names (Lanes 1 & 2, when you are ready)
+
+Lanes 1 & 2 are running, so their folders can't be renamed under a live session. When you want the clean `cadence-lane-1` / `cadence-lane-2` names, **stop those two lanes**, then from this repo:
+
+```bash
+git worktree move ../cadence-cockpit   ../cadence-lane-1
+git worktree move ../cadence-knowledge ../cadence-lane-2
+```
+
+Then update the two `cwd` paths in `.vscode/tasks.json` (Lane 1, Lane 2) and the two `path`s in `cadence-parallel.code-workspace`, and relaunch. Lanes 3 & 4 are already on the new names.
 
 ## Model switching (and saving tokens)
 
-- **Switch mid-session:** type `/model` and pick (Opus 4.8, Sonnet 4.6, Haiku 4.5, Fable 5). `/fast` toggles faster Opus output.
-- **Launch a lane pinned to a model:** add `--model <id>` when launching, e.g. `claude --model claude-sonnet-4-6`. Model ids: `claude-opus-4-8` (and the `[1m]` long-context variant), `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`, `claude-fable-5`.
-- **Token economy across lanes:** you do not have to run every lane on Opus. A practical split: keep the hard lanes (Safety, Knowledge) on Opus and run the lighter lanes (Cockpit, Build) on Sonnet to stretch your budget. To pin a lane, edit that lane's command to `claude --model claude-sonnet-4-6 "..."` (in `scripts/parallel-build.sh` `launch_cmd`, or the `.vscode/tasks.json` task's `command`/`args`).
-- The recommended default for a full autonomous lane is Opus 4.8 with the 1M window; lower tiers trade some reasoning depth for cost.
-
-## Running a lane from another tool (Antigravity, Gemini, Codex) - to spare Claude Code tokens
-
-### First: where ARE the lane folders? (the "I can't see them" problem)
-
-The lane folders are NOT inside this repo. They are **sibling folders** next to it, all under `~/Projects/My Projects/My Builds/`:
-
-```
-My Builds/
-  Project-Cadence-v4/   <- this repo (what you usually open; you only see THIS)
-  cadence-cockpit/      <- Lane 1     one level UP from the repo
-  cadence-knowledge/    <- Lane 2
-  cadence-safety/       <- Lane 3
-  cadence-build/        <- Lane 4
-  overnight-build/      <- Lane 0 (WM)
-```
-
-So opening `Project-Cadence-v4` in any tool hides the lanes. Three ways to open a lane folder:
-
-1. **See them all at once (best):** open `cadence-parallel.code-workspace` (at this repo's root) - in VS Code / Antigravity: File > Open Workspace from File. All six folders appear in the Explorer; right-click any one -> "Open in Integrated Terminal".
-2. **Open one directly:** File > Open Folder, navigate UP to `My Builds`, pick e.g. `cadence-cockpit`. Full path: `/Users/rohitgajaraj/Projects/My Projects/My Builds/cadence-cockpit`.
-3. **Open the parent:** open the `My Builds` folder - all siblings are visible.
-
-### Then: start the lane (the `/overnight-build` skill does NOT exist in other tools)
-
-You are right - the `/overnight-build-*` skills are **Claude-Code-only** (they live in `.claude/skills` / `~/.claude/skills`; only Claude Code reads them). But the loop is just markdown instructions any agent can read. Open a terminal in the lane folder (or point the tool's agent at it) and paste this **kickoff prompt** - it is the portable equivalent of the skill, and the agent then "knows everything":
-
-> You are in a scoped parallel build lane of the Cadence repo. Read `.remember/LANE.md` and `docs/operations/autonomous-build-loop.md` (sections 15 and 16) in full, then run it as a self-paced autonomous build loop: build this lane's queued items one after another; on each, run the gate (tsc + build + tests) and a skeptical self-review, then commit explicit paths with a one-line WHY and fast-forward push to main, then pick the next queued item and continue. Stay strictly inside this lane's OWNED files; never touch its FORBIDDEN files. Stop and report only when the queue is dry.
-
-That tool's session uses **its own** model and token budget, so it does not draw down this Claude Code account.
-
-### Honest note on autonomy (so you are not surprised)
-
-The deepest unattended, build-feature-after-feature loop is in **Claude Code** - the playbook self-schedules each cycle, so it genuinely runs back-to-back while you sleep. **Antigravity and Gemini are agentic and WILL follow the kickoff prompt** (read everything, build, gate, commit, push), but how relentlessly they auto-continue from one item to the NEXT, unattended, depends on that tool: some pause between turns or hit a turn/quota cap, where you nudge with "continue". The instructions are identical across tools; the loop persistence is the tool's, not ours. **Try one lane in Antigravity first** to see how far it auto-continues on your plan, then decide which lanes to run where.
-
-## Why lanes never collide (one line)
-
-Each lane owns a disjoint set of files (declared in its `.remember/LANE.md`), writes its own report, appends-only to shared docs, and rebases on `origin/main` every cycle - so they fast-forward onto `main` without conflicts. Full rules: `docs/operations/autonomous-build-loop.md` section 15.
+- **Switch mid-session:** `/model` (Opus 4.8, Sonnet 4.6, Haiku 4.5, Fable 5); `/fast` toggles faster Opus.
+- **Pin a lane to a model:** add `--model <id>` to that lane's launch (the task `command`/`args`, or `scripts/parallel-build.sh` `launch_cmd`). A practical split: hard lanes on Opus, lighter lanes on Sonnet.
+- Default for a full autonomous lane: Opus 4.8 with the 1M window.
 
 ## Monitor / stop
 
-- Each lane commits + pushes to `main` every cycle with a clear WHY; `git log --oneline` is the live trail, and each lane's `parallel-report-<lane>.md` is its status.
-- To stop a lane: interrupt or close its terminal. Its last commit is already safe on `main`; nothing is lost.
-- **First time:** watch each lane's first cycle confirm its lane + pick the right item before you walk away. After that it is hands-off.
+- Every lane commits + pushes to `main` each cycle with a clear WHY; `git log --oneline` is the live trail, and each lane's `docs/planning/archive/parallel-report-*.md` is its status.
+- `bash scripts/lane.sh list` shows what every lane currently holds.
+- To stop a lane: interrupt or close its terminal. Its last commit is already safe on `main`; `bash scripts/lane.sh reap` frees any claim it was holding.
+- **First time:** watch each lane's first cycle confirm its number and claim its item before you walk away. After that it is hands-off.
 
 ## Troubleshooting
 
-- **It asks for permission / stalls:** each worktree has `defaultMode: bypassPermissions` in its `.claude/settings.local.json`, so it should run unattended. If it still prompts, launch with `claude --dangerously-skip-permissions`.
-- **macOS opens windows, not tabs:** a forced new tab needs Accessibility permission for Terminal (System Settings > Privacy & Security > Accessibility). Windows need no permission, so that is the default. Use VS Code (option B) for clean tabs with no permission.
-- **A skill says the worktree is on the wrong branch:** the launcher refuses to start a lane whose worktree is not on its expected branch - check `git -C <worktree> branch --show-current`.
+- **It asks for permission / stalls:** each worktree has `defaultMode: bypassPermissions` in its `.claude/settings.local.json`, plus `~/.cadence-parallel` in `additionalDirectories` so the ledger never prompts. If it still prompts, launch with `claude --dangerously-skip-permissions`.
+- **A claim won't go through (`CONFLICT`):** another lane reserved overlapping files - that is the ledger doing its job. Pick a different item.
+- **A lane is on the wrong branch:** the worktree must be on its expected branch (`git -C <worktree> branch --show-current`); the loop refuses to build otherwise.
+- **The ledger looks stale:** `bash scripts/lane.sh reap` clears dead-session claims (>6h); pinned area-reservations for the running lanes never expire by design.

@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
-# parallel-build.sh - launch (or list) the file-disjoint parallel build lanes.
-# Each lane runs the autonomous loop in its own git worktree, scoped by that
+# parallel-build.sh - FALLBACK launcher for the parallel build lanes.
+#
+# PREFERRED WAY (2026-06-20): run lanes in the VS Code INTEGRATED TERMINAL, not a
+# separate macOS Terminal window. Use the "Lane N" VS Code tasks (Cmd+Shift+P ->
+# Tasks: Run Task) or open cadence-parallel.code-workspace and right-click a lane
+# folder -> Open in Integrated Terminal, then type /loop with the lane cycle
+# prompt. This script (which pops a separate Terminal/iTerm window via osascript)
+# remains only for non-VS-Code use. See PARALLEL-BUILD.md.
+#
+# Each lane runs the autonomous /loop in its own git worktree, scoped by that
 # worktree's .remember/LANE.md (docs/operations/autonomous-build-loop.md s15-16).
 # Choosing a lane = choosing which worktree gets a terminal.
 #
@@ -28,14 +36,14 @@ set -uo pipefail   # NOT -e: an interactive read returning non-zero must not kil
 ROOT="/Users/rohitgajaraj/Projects/My Projects/My Builds"
 PRIMARY="$ROOT/Project-Cadence-v4"
 
-BOOTSTRAP='Invoke the overnight-build skill now and run the autonomous build loop for THIS worktree. If a .remember/LANE.md exists you are a scoped parallel lane: read it and follow docs/operations/autonomous-build-loop.md sections 15 and 16. Build, gate (tsc + build + tests), adversarially review, run the doc-loop, commit explicit paths with a WHY, and fast-forward push. Stay in lane; stop and report when the queue is dry.'
+BOOTSTRAP='You are a scoped parallel build lane in THIS worktree. Read .remember/LANE.md and docs/operations/autonomous-build-loop.md sections 15-16, then run as a CONTINUOUS autonomous loop (equivalent to /loop) IN THIS TERMINAL. Each cycle: git fetch + rebase origin/main; bash scripts/lane.sh reap; SELECT the next highest-impact eligible item live from feature-dashboard.md (prefer this lane'\''s categories then roam; skip blocked/deferred/founder-gated/already-claimed; cross-check bash scripts/lane.sh list); CLAIM IT ATOMICALLY with bash scripts/lane.sh claim <ID> <laneN> "<globs>" before writing any code (if HELD or CONFLICT, pick another); flip the dashboard row to In Dev and push that claim first; build; gate (bunx tsc --noEmit + bun run build + tests); adversarially review; run the doc-loop; commit explicit paths with a WHY; fast-forward push; flip the row done and bash scripts/lane.sh release <ID>; then immediately continue to the next item. Never stop after one build; if the board is dry, write "board dry - long-polling" to the lane report and recheck in ~25 min. Stay in lane via the ledger; never touch FORBIDDEN files.'
 
-# name|branch|worktree-dir|description   (ordered so the menu numbers match: 1=cockpit .. 4=build, then wm)
+# name|branch|worktree-dir|description   (ordered so the menu numbers match: 1 .. 4, then wm)
 LANES=(
-  "cockpit|parallel/cockpit|cadence-cockpit|Lane 1 - R3-PREFS notification prefs + P7 incidents / cost-incident log"
-  "knowledge|parallel/knowledge|cadence-knowledge|Lane 2 - O1 knowledge-graph explorer + O3 drift / skill-pack export"
-  "safety|parallel/safety|cadence-safety|Lane 3 - FND-0.5 agent blast-radius + FND-0.7 injection classifier"
-  "build|parallel/build|cadence-build|Lane 4 - F-BUILDER-MULTIFILE scoped multi-file build (touch list + max-N)"
+  "cockpit|parallel/cockpit|cadence-cockpit|Lane 1 - pulls the next highest-impact unclaimed item (prefers Cockpit/Governance, then roams)"
+  "knowledge|parallel/knowledge|cadence-knowledge|Lane 2 - pulls the next highest-impact unclaimed item (prefers Sense/Decide/Interop, then roams)"
+  "safety|parallel/safety|cadence-lane-3|Lane 3 - pulls the next highest-impact unclaimed item (prefers Governance/Cockpit, then roams)"
+  "build|parallel/build|cadence-lane-4|Lane 4 - pulls the next highest-impact unclaimed item (prefers Build/Interop, then roams)"
   "wm|overnight/wm|overnight-build|Lane 0 (already running) - WM tenancy / billing / credit, the original overnight lane"
 )
 
