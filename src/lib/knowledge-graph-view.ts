@@ -300,3 +300,61 @@ export function filterByTime(graph: KnowledgeGraph, asOf: string | null): Knowle
     },
   };
 }
+
+export type StalenessResult = {
+  /** Node keys whose most recent supporting evidence is older than the threshold. */
+  staleKeys: Set<string>;
+  staleCount: number;
+  /** Nodes that have ANY dated evidence (the honest denominator). */
+  datedCount: number;
+  thresholdDays: number;
+};
+
+const DAY_MS = 86_400_000;
+export const DEFAULT_STALE_DAYS = 90;
+
+/**
+ * O3 (drift slice): flag facts whose most recent supporting evidence has gone
+ * stale. A node is stale when its NEWEST incident edge (the last time anything
+ * reinforced it) is older than `thresholdDays` relative to `nowMs`. Pure and
+ * deterministic - `nowMs` is injected so it is testable - and HONEST: nodes
+ * with no dated evidence are never counted, never guessed. This is the
+ * deterministic half of fact-currency; outcome-driven contradiction (the
+ * supersession engine) is the deferred other half.
+ */
+export function computeStaleness(
+  graph: KnowledgeGraph,
+  opts: { thresholdDays?: number; nowMs: number },
+): StalenessResult {
+  const thresholdDays = opts?.thresholdDays ?? DEFAULT_STALE_DAYS;
+  const cutoff = opts.nowMs - thresholdDays * DAY_MS;
+
+  // Newest supporting timestamp per node (max incident edge validFrom).
+  const latest = new Map<string, number>();
+  const consider = (key: string, iso: string | null) => {
+    if (!iso) return;
+    const t = Date.parse(iso);
+    if (Number.isNaN(t)) return;
+    const cur = latest.get(key);
+    if (cur === undefined || t > cur) latest.set(key, t);
+  };
+  for (const e of graph.edges) {
+    consider(e.source, e.validFrom);
+    consider(e.target, e.validFrom);
+  }
+  // Fall back to the node's own createdAt when it has no incident edge.
+  for (const n of graph.nodes) {
+    if (!latest.has(n.key)) consider(n.key, n.createdAt);
+  }
+
+  const staleKeys = new Set<string>();
+  let datedCount = 0;
+  for (const n of graph.nodes) {
+    const t = latest.get(n.key);
+    if (t === undefined) continue; // undated -> not counted
+    datedCount++;
+    if (t < cutoff) staleKeys.add(n.key);
+  }
+
+  return { staleKeys, staleCount: staleKeys.size, datedCount, thresholdDays };
+}

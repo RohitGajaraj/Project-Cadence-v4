@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 import { getKnowledgeGraph } from "@/lib/knowledge-graph-view.functions";
-import { filterByTime, type GraphNodeKind } from "@/lib/knowledge-graph-view";
+import { filterByTime, computeStaleness, type GraphNodeKind } from "@/lib/knowledge-graph-view";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { GraphExplorer, KIND_COLOR, KIND_LABEL } from "./GraphExplorer";
 import { GraphNodeStory } from "./GraphNodeStory";
@@ -49,6 +49,12 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
     for (const n of graph?.nodes ?? []) set.add(n.kind);
     return [...set];
   }, [graph]);
+
+  // O3 drift slice: which facts have gone stale (no fresh evidence lately).
+  const staleness = useMemo(
+    () => (graph ? computeStaleness(graph, { nowMs: Date.now() }) : null),
+    [graph],
+  );
 
   const recenter = (kind: string, id: string) => {
     setSelectedKey(null);
@@ -166,9 +172,21 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
         </MonoLabel>
       )}
 
+      {staleness && staleness.staleCount > 0 && (
+        <MonoLabel style={{ marginBottom: 8, color: "#9a7b1f" }}>
+          {staleness.staleCount} of {staleness.datedCount} facts may be stale · no fresh evidence in{" "}
+          {staleness.thresholdDays}d (dashed ring)
+        </MonoLabel>
+      )}
+
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 320 }}>
-          <GraphExplorer graph={graph} selectedKey={selectedKey} onSelect={setSelectedKey} />
+          <GraphExplorer
+            graph={graph}
+            selectedKey={selectedKey}
+            onSelect={setSelectedKey}
+            staleKeys={staleness?.staleKeys}
+          />
         </div>
         <div style={{ width: 280, flexShrink: 0 }}>
           <GraphNodeStory node={selectedNode} onFocus={recenter} />

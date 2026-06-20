@@ -45,10 +45,12 @@ export function GraphExplorer({
   graph,
   selectedKey,
   onSelect,
+  staleKeys,
 }: {
   graph: KnowledgeGraph;
   selectedKey: string | null;
   onSelect: (key: string) => void;
+  staleKeys?: Set<string>;
 }) {
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
@@ -148,6 +150,16 @@ export function GraphExplorer({
                   strokeWidth={isSel ? 2.5 : isFocus ? 2 : 1}
                   opacity={0.92}
                 />
+                {staleKeys?.has(n.key) && (
+                  <circle
+                    r={r + 3.5}
+                    fill="none"
+                    stroke="#c2982f"
+                    strokeWidth={1}
+                    strokeDasharray="2 2"
+                    opacity={0.85}
+                  />
+                )}
                 <text
                   y={r + 11}
                   textAnchor="middle"

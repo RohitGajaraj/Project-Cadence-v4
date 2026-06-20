@@ -2,6 +2,7 @@ import { describe, it, expect } from "bun:test";
 import {
   projectGraph,
   filterByTime,
+  computeStaleness,
   classifyRelation,
   isSuperseding,
   nodeKey,
@@ -164,5 +165,47 @@ describe("filterByTime", () => {
   it("returns the graph unchanged when asOf is null", () => {
     const g = projectGraph(edges, new Map(), k("decision", "d1"));
     expect(filterByTime(g, null)).toBe(g);
+  });
+});
+
+describe("computeStaleness", () => {
+  const NOW = Date.parse("2026-06-20T00:00:00.000Z");
+
+  it("flags nodes whose newest evidence is older than the threshold", () => {
+    const edges = [
+      edge(["signal", "s1"], ["opportunity", "o1"], { created_at: "2026-01-01T00:00:00.000Z" }),
+      edge(["opportunity", "o1"], ["decision", "d1"], { created_at: "2026-01-01T00:00:00.000Z" }),
+    ];
+    const g = projectGraph(edges, new Map(), k("decision", "d1"));
+    const r = computeStaleness(g, { thresholdDays: 90, nowMs: NOW });
+    expect(r.staleCount).toBe(3);
+    expect(r.datedCount).toBe(3);
+    expect(r.staleKeys.has(k("signal", "s1"))).toBe(true);
+  });
+
+  it("uses the NEWEST edge, so a recently reinforced node is fresh", () => {
+    const edges = [
+      edge(["signal", "s1"], ["opportunity", "o1"], {
+        id: "old",
+        created_at: "2026-01-01T00:00:00.000Z",
+      }),
+      edge(["opportunity", "o1"], ["decision", "d1"], {
+        id: "new",
+        created_at: "2026-06-15T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(edges, new Map(), k("decision", "d1"));
+    const r = computeStaleness(g, { thresholdDays: 90, nowMs: NOW });
+    expect(r.staleKeys.has(k("opportunity", "o1"))).toBe(false);
+    expect(r.staleKeys.has(k("decision", "d1"))).toBe(false);
+    expect(r.staleKeys.has(k("signal", "s1"))).toBe(true);
+    expect(r.staleCount).toBe(1);
+  });
+
+  it("never counts undated nodes (honest denominator)", () => {
+    const g = projectGraph([], new Map(), k("decision", "d1"));
+    const r = computeStaleness(g, { thresholdDays: 90, nowMs: NOW });
+    expect(r.datedCount).toBe(0);
+    expect(r.staleCount).toBe(0);
   });
 });
