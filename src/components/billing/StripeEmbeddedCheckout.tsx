@@ -11,7 +11,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
-import { createCheckoutSession } from "@/lib/payments.functions";
+import { createCheckoutSession, createTopUpCheckout } from "@/lib/payments.functions";
 
 interface Props {
   open: boolean;
@@ -20,6 +20,11 @@ interface Props {
   quantity?: number;
   title?: string;
   returnUrl?: string;
+  /**
+   * "topup" routes through the cap-guarded `createTopUpCheckout`. Default
+   * "subscription" uses the standard `createCheckoutSession`.
+   */
+  mode?: "subscription" | "topup";
 }
 
 export function StripeEmbeddedCheckout({
@@ -29,24 +34,35 @@ export function StripeEmbeddedCheckout({
   quantity,
   title,
   returnUrl,
+  mode = "subscription",
 }: Props) {
   const fCheckout = useServerFn(createCheckoutSession);
+  const fTopUp = useServerFn(createTopUpCheckout);
 
   const fetchClientSecret = useCallback(async (): Promise<string> => {
-    const result = await fCheckout({
-      data: {
-        priceId: priceLookupKey,
-        quantity: quantity ?? 1,
-        environment: getStripeEnvironment(),
-        returnUrl:
-          returnUrl ||
-          `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
-      },
-    });
+    const sharedReturnUrl =
+      returnUrl ||
+      `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`;
+    const result = mode === "topup"
+      ? await fTopUp({
+          data: {
+            priceId: priceLookupKey,
+            environment: getStripeEnvironment(),
+            returnUrl: sharedReturnUrl,
+          },
+        })
+      : await fCheckout({
+          data: {
+            priceId: priceLookupKey,
+            quantity: quantity ?? 1,
+            environment: getStripeEnvironment(),
+            returnUrl: sharedReturnUrl,
+          },
+        });
     if ("error" in result) throw new Error(result.error);
     if (!result.clientSecret) throw new Error("Checkout did not return a client secret");
     return result.clientSecret;
-  }, [fCheckout, priceLookupKey, quantity, returnUrl]);
+  }, [fCheckout, fTopUp, mode, priceLookupKey, quantity, returnUrl]);
 
   const options = useMemo(() => ({ fetchClientSecret }), [fetchClientSecret]);
 
