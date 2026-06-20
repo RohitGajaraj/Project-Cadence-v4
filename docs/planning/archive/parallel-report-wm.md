@@ -41,3 +41,15 @@
 - **Doc-loop:** dashboard new row 8b → ◐; `plan.md` §4; `docs/features/h2-writes.md` (H2-AUDIT section); `session-decisions.md`.
 - **◐ not ✅:** backend built + dry-run-verified, renders on publish; the "why is this here" UI surface is a later/design slice.
 - **Released claim** after ship.
+
+### 2026-06-21 02:58 — H2-AUDIT-UI — Roadmap "why is this here" history popover (◐) — SHIPPED
+
+- **Picked:** the teed-up next pick — surface the H2-AUDIT backend (shipped same session) as a user-visible "why is this on the roadmap" affordance. Clean FE-wiring of a shipped backend (the loop's established pattern), disjoint from CHOKEPOINT/lane 1 (reliability/incidents).
+- **Claimed:** `scripts/lane.sh claim H2-AUDIT-UI 0` (RoadmapBoard.tsx + new RoadmapHistory.tsx). Claim pushed to main first.
+- **Built:** `RoadmapHistory.tsx` — a quiet "why" trigger on committed cards opens a Popover that lazily (`enabled: open`) reads `getRoadmapHistory` + renders `summarizeRoadmapHistory` (live why) + a hairline event timeline; wired into the board's outcome block.
+- **Gate:** tsc 0 · eslint 0 · build ✓ (Node 26) · `bun test` 469/469 · no fancy unicode.
+- **Design:** Ember Editorial + Engine-Room reveal-on-demand applied (restrained color, hairline separators not side-stripes, `·` separator, no banned pattern); design rules from last cycle's `impeccable` load govern.
+- **Review:** focused self-review (additive UI): lazy fetch (no N-query fan-out), graceful empty/pre-publish state (no crash), purely additive.
+- **Doc-loop:** dashboard new row 8c → ◐ + H2-WRITES row 8 bumped to [~85%] + claim cleared; `plan.md` §4; `docs/features/h2-writes.md` UI section.
+- **◐ not ✅:** renders real history on publish (once audit rows exist); not render-verified locally.
+- **Released claim** after ship.

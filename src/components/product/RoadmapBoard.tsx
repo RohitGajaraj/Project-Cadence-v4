@@ -17,6 +17,7 @@ import {
   type RoadmapBucket,
 } from "@/lib/roadmap.functions";
 import { isCommitmentGoverned } from "@/lib/roadmap-governance";
+import { RoadmapHistory } from "@/components/product/RoadmapHistory";
 
 const COLS: { key: RoadmapBucket | null; label: string }[] = [
   { key: null, label: "Backlog" },
@@ -232,17 +233,23 @@ export function RoadmapBoard() {
                             )}
                           </p>
                         )}
-                        <button
-                          className="mono-label"
-                          style={{ color: "var(--action-blue)", marginTop: 3 }}
-                          onClick={() => {
-                            setEditId(it.id);
-                            setOutcome(it.outcome ?? "");
-                            setMeasure(it.measure ?? "");
-                          }}
+                        <span
+                          style={{ display: "inline-flex", alignItems: "center", marginTop: 3 }}
                         >
-                          {it.outcome ? "edit outcome" : "+ outcome & measure"}
-                        </button>
+                          <button
+                            className="mono-label"
+                            style={{ color: "var(--action-blue)" }}
+                            onClick={() => {
+                              setEditId(it.id);
+                              setOutcome(it.outcome ?? "");
+                              setMeasure(it.measure ?? "");
+                            }}
+                          >
+                            {it.outcome ? "edit outcome" : "+ outcome & measure"}
+                          </button>
+                          {/* H2-AUDIT-UI: reveal the decision history (why this is here). */}
+                          <RoadmapHistory opportunityId={it.id} />
+                        </span>
                       </div>
                     )}
 
