@@ -47,6 +47,7 @@ import {
   resumeMySubscription,
   getMyCreditsView,
 } from "@/lib/payments.functions";
+import { getPricingCatalog } from "@/lib/pricing.functions";
 import { planPresentation, PLAN_TIERS, type PlanTier } from "@/lib/entitlements";
 import { defaultMonthlyLookupKey } from "@/lib/billing-tier";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
@@ -538,6 +539,12 @@ function CreditsTab() {
     enabled: !!envSafe,
   });
 
+  const fGetCatalog = useServerFn(getPricingCatalog);
+  const catalog = useQuery({
+    queryKey: ["pricing-catalog"],
+    queryFn: () => fGetCatalog(),
+  });
+
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
   const [checkoutTitle, setCheckoutTitle] = useState("Buy credits");
@@ -566,11 +573,21 @@ function CreditsTab() {
     ? Math.max(0, data.cycleTopupCapCredits - data.cycleTopupCredits)
     : null;
 
-  const BUNDLES = [
-    { key: "topup_250", credits: 250, price: "$5" },
-    { key: "topup_1k", credits: 1000, price: "$18" },
-    { key: "topup_2_5k", credits: 2500, price: "$40" },
-  ];
+  // Stripe lookup-key mapping for known credit sizes. Adding a new size in the
+  // admin pricing console also requires creating the matching Stripe price
+  // with this lookup_key, otherwise checkout returns "Price not found".
+  const TOPUP_KEY_BY_CREDITS: Record<number, string> = {
+    250: "topup_250",
+    1000: "topup_1k",
+    2500: "topup_2_5k",
+  };
+  const BUNDLES = (catalog.data?.topups ?? [])
+    .filter((t) => t.active && TOPUP_KEY_BY_CREDITS[t.credits])
+    .map((t) => ({
+      key: TOPUP_KEY_BY_CREDITS[t.credits],
+      credits: t.credits,
+      price: `$${(t.price_cents / 100).toFixed(t.price_cents % 100 === 0 ? 0 : 2)}`,
+    }));
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
