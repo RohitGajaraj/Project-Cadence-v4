@@ -23,9 +23,7 @@ const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 function readTierLimitMigration(): string {
   const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"));
   const hit = files.find((f) =>
-    readFileSync(join(MIGRATIONS_DIR, f), "utf8").includes(
-      "function public.tier_product_limit",
-    ),
+    readFileSync(join(MIGRATIONS_DIR, f), "utf8").includes("function public.tier_product_limit"),
   );
   if (!hit) {
     throw new Error(
@@ -59,7 +57,11 @@ function parseTierCase(
   }
 
   const elseMatch = /else\s+(\d+|null)/i.exec(body);
-  const fallback = !elseMatch ? null : elseMatch[1].toLowerCase() === "null" ? null : Number(elseMatch[1]);
+  const fallback = !elseMatch
+    ? null
+    : elseMatch[1].toLowerCase() === "null"
+      ? null
+      : Number(elseMatch[1]);
 
   return { explicit, fallback };
 }
