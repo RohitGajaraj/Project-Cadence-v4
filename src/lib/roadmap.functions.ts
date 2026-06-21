@@ -22,6 +22,7 @@ import {
 } from "@/lib/roadmap-governance";
 import {
   buildAuditInsert,
+  classifyRoadmapWrite,
   type RoadmapAuditAction,
   type RoadmapAuditRow,
 } from "@/lib/roadmap-audit";
@@ -40,6 +41,7 @@ async function recordRoadmapDecision(
     opportunityId: string;
     workspaceId: string | null;
     action: RoadmapAuditAction;
+    fromBucket?: RoadmapBucket | null;
     toBucket: RoadmapBucket | null;
     outcome?: string | null;
     measure?: string | null;
@@ -120,6 +122,25 @@ export const updateRoadmapItem = createServerFn({ method: "POST" })
     if (data.outcome !== undefined) patch.roadmap_outcome = data.outcome;
     if (data.measure !== undefined) patch.roadmap_measure = data.measure;
     if (Object.keys(patch).length === 0) return { ok: true };
+
+    // Read the prior state first (RLS-scoped) so the audit can record where a commitment moved FROM
+    // and what it still promised at the move (prev -> next), not just the destination bucket.
+    const { data: prevRows, error: prevErr } = await context.supabase
+      .from("opportunities")
+      .select("roadmap_bucket, roadmap_outcome, roadmap_measure")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .limit(1);
+    if (prevErr) throw new Error(prevErr.message);
+    const prevRow = prevRows?.[0] as
+      | {
+          roadmap_bucket: RoadmapBucket | null;
+          roadmap_outcome: string | null;
+          roadmap_measure: string | null;
+        }
+      | undefined;
+    if (!prevRow) throw new Error("Opportunity not found");
+
     // RLS ("own opportunities all") scopes the write; the explicit user_id +
     // .select() makes a blocked or no-match update fail loudly instead of
     // returning a phantom ok:true (which would leave the optimistic UI lying).
@@ -128,17 +149,37 @@ export const updateRoadmapItem = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.id)
       .eq("user_id", context.userId)
-      .select("id, workspace_id");
+      .select("id, workspace_id, roadmap_bucket, roadmap_outcome, roadmap_measure");
     if (error) throw new Error(error.message);
     if (!rows || rows.length === 0) throw new Error("Opportunity not found");
-    // H2-AUDIT: a bucket change is a roadmap decision worth recording (a plain
-    // outcome/measure edit without a bucket change is not a "move").
-    if (data.bucket !== undefined) {
+
+    // H2-AUDIT: record every roadmap DECISION this write made, with full provenance. A real bucket
+    // move carries its from-bucket + the outcome it still promised; an in-place re-declaration is a
+    // commit. classifyRoadmapWrite is the pure, unit-tested source of that rule (and records nothing
+    // when the bucket is merely re-saved unchanged, so the trail has no phantom moves).
+    const row = rows[0] as {
+      workspace_id?: string | null;
+      roadmap_bucket: RoadmapBucket | null;
+      roadmap_outcome: string | null;
+      roadmap_measure: string | null;
+    };
+    const decisions = classifyRoadmapWrite(
+      {
+        bucket: prevRow.roadmap_bucket,
+        outcome: prevRow.roadmap_outcome,
+        measure: prevRow.roadmap_measure,
+      },
+      { bucket: row.roadmap_bucket, outcome: row.roadmap_outcome, measure: row.roadmap_measure },
+    );
+    for (const d of decisions) {
       await recordRoadmapDecision(context.supabase, {
         opportunityId: data.id,
-        workspaceId: (rows[0] as { workspace_id?: string | null }).workspace_id ?? null,
-        action: "move",
-        toBucket: data.bucket ?? null,
+        workspaceId: row.workspace_id ?? null,
+        action: d.action,
+        fromBucket: d.fromBucket,
+        toBucket: d.toBucket,
+        outcome: d.outcome,
+        measure: d.measure,
       });
     }
     return { ok: true };

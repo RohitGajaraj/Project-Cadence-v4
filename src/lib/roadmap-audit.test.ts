@@ -1,5 +1,10 @@
 import { describe, it, expect } from "bun:test";
-import { buildAuditInsert, summarizeRoadmapHistory, type RoadmapAuditRow } from "./roadmap-audit";
+import {
+  buildAuditInsert,
+  classifyRoadmapWrite,
+  summarizeRoadmapHistory,
+  type RoadmapAuditRow,
+} from "./roadmap-audit";
 
 describe("buildAuditInsert", () => {
   it("shapes a commit and normalizes blank outcome/measure to null", () => {
@@ -51,6 +56,93 @@ const ev = (o: Partial<RoadmapAuditRow>): RoadmapAuditRow => ({
   measure: "y",
   created_at: "2026-06-21T00:00:00Z",
   ...o,
+});
+
+describe("classifyRoadmapWrite", () => {
+  const state = (
+    bucket: "now" | "next" | "later" | null,
+    outcome: string | null = null,
+    measure: string | null = null,
+  ) => ({ bucket, outcome, measure });
+
+  it("records a move that CARRIES the from-bucket and the outcome still promised", () => {
+    // re-prioritize a governed commitment now -> next (the drag path)
+    const d = classifyRoadmapWrite(
+      state("now", "Lift activation", "D7 retention"),
+      state("next", "Lift activation", "D7 retention"),
+    );
+    expect(d).toHaveLength(1);
+    expect(d[0]).toEqual({
+      action: "move",
+      fromBucket: "now",
+      toBucket: "next",
+      outcome: "Lift activation",
+      measure: "D7 retention",
+    });
+  });
+
+  it("records a move into a bucket from backlog (from-bucket null)", () => {
+    const d = classifyRoadmapWrite(state(null), state("now"));
+    expect(d).toEqual([
+      { action: "move", fromBucket: null, toBucket: "now", outcome: null, measure: null },
+    ]);
+  });
+
+  it("records NOTHING when the same bucket is re-saved unchanged (no phantom move)", () => {
+    expect(classifyRoadmapWrite(state("now", "x", "y"), state("now", "x", "y"))).toEqual([]);
+  });
+
+  it("treats an in-place outcome amendment on a committed item as a commit", () => {
+    const d = classifyRoadmapWrite(
+      state("now", "Old outcome", "m"),
+      state("now", "New outcome", "m"),
+    );
+    expect(d).toEqual([
+      {
+        action: "commit",
+        fromBucket: "now",
+        toBucket: "now",
+        outcome: "New outcome",
+        measure: "m",
+      },
+    ]);
+  });
+
+  it("records BOTH a move and a commit when one write relocates AND re-declares the outcome", () => {
+    // summarizeRoadmapHistory reads the live-why only from commit rows, so a combined write must
+    // emit a commit too, or the re-declared outcome would be invisible.
+    const d = classifyRoadmapWrite(
+      state("now", "Old outcome", "m"),
+      state("next", "New outcome", "m"),
+    );
+    expect(d.map((x) => x.action)).toEqual(["move", "commit"]);
+    expect(d[0]).toEqual({
+      action: "move",
+      fromBucket: "now",
+      toBucket: "next",
+      outcome: "New outcome",
+      measure: "m",
+    });
+    expect(d[1]).toMatchObject({ action: "commit", toBucket: "next", outcome: "New outcome" });
+  });
+
+  it("normalizes the outcome/measure it carries (no leaky untrimmed strings)", () => {
+    const d = classifyRoadmapWrite(state(null), state("now", "  Trimmed  ", "  "));
+    // move into a bucket from backlog: outcome trimmed, blank measure -> null
+    expect(d[0]).toMatchObject({ action: "move", outcome: "Trimmed", measure: null });
+  });
+
+  it("does NOT record an amendment on a backlog item (not a roadmap decision)", () => {
+    expect(classifyRoadmapWrite(state(null, "a"), state(null, "b"))).toEqual([]);
+  });
+
+  it("does NOT record a pure clear (outcome removed) as a commit; the gap surface owns that", () => {
+    expect(classifyRoadmapWrite(state("now", "had one", "m"), state("now", null, "m"))).toEqual([]);
+  });
+
+  it("ignores a whitespace-only change (normalized equal)", () => {
+    expect(classifyRoadmapWrite(state("now", "x", "y"), state("now", "  x  ", "y"))).toEqual([]);
+  });
 });
 
 describe("summarizeRoadmapHistory", () => {

@@ -66,6 +66,67 @@ export function buildAuditInsert(input: {
   };
 }
 
+/** One audit decision a write should record, ready for {@link buildAuditInsert}. */
+export type RoadmapWriteDecision = {
+  action: RoadmapAuditAction;
+  fromBucket: RoadmapBucket | null;
+  toBucket: RoadmapBucket | null;
+  outcome: string | null;
+  measure: string | null;
+};
+
+/**
+ * Classify an `updateRoadmapItem` write (prev -> next state) into the audit decisions it should
+ * record, so the "why is this here" trail is complete across RE-PRIORITIZATIONS, not just commits:
+ *
+ * - A real bucket change is a "move" that now CARRIES the from-bucket AND the item's current
+ *   outcome/measure, so the history shows where a commitment moved from and what it still promised
+ *   at that move (today the move row records neither).
+ * - An in-place outcome/measure amendment that leaves the item in a bucket with a declared outcome
+ *   is a "commit" (a re-declaration), captured even when a non-board caller routed it through the
+ *   lenient path instead of the governed commit fn.
+ *
+ * Pure and total. Comparing prev to next also avoids a phantom "move" when the same bucket is
+ * re-saved (the old code audited whenever `bucket` was merely present in the patch). Clears (outcome
+ * removed) and edits on a backlog item are not roadmap decisions, so they produce no row here.
+ */
+export function classifyRoadmapWrite(
+  prev: { bucket: RoadmapBucket | null; outcome: string | null; measure: string | null },
+  next: { bucket: RoadmapBucket | null; outcome: string | null; measure: string | null },
+): RoadmapWriteDecision[] {
+  const decisions: RoadmapWriteDecision[] = [];
+  // Normalize so the returned decisions are canonical (a move never carries "  x  "), independent of
+  // the insert path which also normalizes.
+  const outcome = norm(next.outcome);
+  const measure = norm(next.measure);
+  const bucketChanged = prev.bucket !== next.bucket;
+  const fieldsChanged = norm(prev.outcome) !== outcome || norm(prev.measure) !== measure;
+
+  if (bucketChanged) {
+    decisions.push({
+      action: "move",
+      fromBucket: prev.bucket,
+      toBucket: next.bucket,
+      outcome,
+      measure,
+    });
+  }
+  // A (re)declaration of an outcome on a live commitment is a "commit", recorded ALSO alongside a
+  // move (NOT else-if): the live-why summary reads commit rows, never move rows, so a single call
+  // that both relocates AND re-declares would otherwise lose the new outcome. A pure clear (no
+  // outcome left) and edits on a backlog item are not roadmap decisions and produce no row.
+  if (fieldsChanged && next.bucket != null && outcome != null) {
+    decisions.push({
+      action: "commit",
+      fromBucket: next.bucket,
+      toBucket: next.bucket,
+      outcome,
+      measure,
+    });
+  }
+  return decisions;
+}
+
 export type RoadmapHistorySummary = {
   /** Total recorded decisions. */
   events: number;
