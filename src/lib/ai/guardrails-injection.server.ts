@@ -47,8 +47,10 @@ const CROSS_CHUNK_VERDICT: InjectionVerdict = {
 
 /**
  * Classify untrusted text and hard-quarantine it when the classifier is
- * confident it is a prompt-injection attempt. Fail-open: on any internal error
- * the original text is returned unchanged so the pipeline never breaks.
+ * confident it is a prompt-injection attempt (structural-gated). Fail-open: on
+ * any internal error the original text is returned unchanged so the pipeline
+ * never breaks. Used on every untrusted boundary, including the externally-
+ * ingested reactor path (FND-0.7-c).
  */
 export function quarantineUntrusted(text: string): UntrustedAssessment {
   try {

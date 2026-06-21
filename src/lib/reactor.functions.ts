@@ -16,6 +16,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
+import { quarantineUntrusted } from "@/lib/ai/guardrails-injection.server";
 
 const EVENT_TYPES = ["signal.created", "opportunity.scored", "prd.approved"] as const;
 
@@ -250,7 +251,20 @@ const UNTRUSTED_WARNING =
 function untrustedSignalBlock(fields: Record<string, string | undefined>): string {
   const inner = Object.entries(fields)
     .filter(([, v]) => v != null && v !== "")
-    .map(([k, v]) => `  <${k}>${xmlEscape(String(v))}</${k}>`)
+    .map(([k, v]) => {
+      // FND-0.7-c: ingested external content feeds the FULLY AUTONOMOUS reactor
+      // loop (no human reads the signal before it dispatches), so hard-quarantine
+      // a field the classifier flags as an actual in-band injection BEFORE fencing
+      // it. The bar is STRUCTURAL (a literal fence breakout / forged turn aimed at
+      // our agent). A lexical bar was rejected here because this product ingests
+      // AI/PM/security signals, where benign prose describing an attack carries the
+      // same vocabulary as a real one, so lexical stripping would silently drop
+      // high-value signals. Fail-open: a benign field is byte-identical, then
+      // XML-escaped + fenced exactly as before (the fence + warning + trusted-channel
+      // separation remain the primary defense for lexical-only content).
+      const safe = quarantineUntrusted(String(v)).text;
+      return `  <${k}>${xmlEscape(safe)}</${k}>`;
+    })
     .join("\n");
   return `<untrusted_signal>\n${inner}\n</untrusted_signal>`;
 }

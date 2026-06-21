@@ -390,6 +390,15 @@ export function quarantineText(verdict: InjectionVerdict): string {
  * Convenience: classify and, if the decision is to quarantine, return the
  * neutralized placeholder in place of the original. Pure (no fail-open guard
  * here; the server seam adds that). Returns the original text for allow/flag.
+ *
+ * The quarantine bar is STRUCTURAL-gated (see `classifyInjection`): only a literal
+ * fence breakout / forged turn marker strips. This holds on EVERY untrusted
+ * boundary, including the externally-ingested reactor path (FND-0.7-c). A purely
+ * lexical bar was prototyped for ingested content but removed: for this product's
+ * ingest domain (AI / PM / security signals) benign descriptive prose ABOUT an
+ * attack carries the same attack vocabulary as a real attack, so no lexical
+ * threshold separates them without silently dropping high-value signals: only the
+ * structural gate reliably does. Lexical-only suspicion stays `flag` (kept, fenced).
  */
 export function assessAndQuarantine(input: unknown): {
   text: string;
