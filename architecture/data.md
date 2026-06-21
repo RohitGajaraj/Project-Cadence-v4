@@ -36,7 +36,22 @@ Every signed-in profile must have at least one workspace membership. `current_us
 
 ## Vectors (pgvector)
 
-`rag_chunks`: 1536-d embeddings, `ivfflat (vector_cosine_ops)` index (lists=100). Chunker: ~512-token chunks, 64-token overlap, headings preserved (256/none dropped groundedness ~12%). Retrieval is hybrid (vector cosine + keyword), top-k=8, MMR for diversity. See [`runtime.md`](./runtime.md) step 4.
+`rag_chunks`: 1536-d embeddings, `vector_cosine_ops` HNSW index. Chunker: ~512-token chunks, 64-token overlap, headings preserved (256/none dropped groundedness ~12%). Retrieval is hybrid (vector cosine + keyword), top-k=8, MMR for diversity. See [`runtime.md`](./runtime.md) step 4.
+
+### Why embeddings are locked to one model + dimension (read this before swapping the embedder)
+
+Every stored vector is **1536-d** (~20 `vector(1536)` columns across `rag_chunks`, `agent_memory`, etc.), chosen to match **OpenAI `text-embedding-3-small`** (the Lovable gateway's default embedder — strong, cheap [~$0.02 / 1M tokens]).
+
+This makes embeddings, unlike completions, **NOT model-agnostic**:
+- **Completions** output text → any model works (Gemini/GPT/Claude are interchangeable; BYO routing in `runtime.server.ts` `byoConfig` covers them). This is why a BYO Gemini key drives chat with zero schema work.
+- **Embeddings** output a fixed-length vector → similarity search (cosine) requires every vector (stored chunks AND the query) to come from the **same model**: same **dimension** (768 ≠ 1536 can't even be compared) AND same **semantic space** (a different model at 1536-d is still a different space → garbage matches). So the embedder is pinned to OpenAI `text-embedding-3-small` (or the gateway, which uses it).
+- **Free embedders don't fit:** Gemini (`text-embedding-004` = 768) and Ollama (`nomic` = 768) mismatch the dimension; even Gemini's configurable-1536 mode is a different space. Switching to any of them = re-embed EVERY stored vector + change the column dimension + rebuild the HNSW index (a full, destructive data migration), then locked to that embedder. Not worth it — a cheap OpenAI key matches the existing vectors with no migration.
+
+**Dimension tradeoff:** more dims (1536) = more capacity for nuance (modestly better retrieval on large/subtle corpora) at the cost of storage (~6KB vs ~3KB/vector), slower similarity math, bigger indexes. Both 768 and 1536 work for most apps; 1536 is a reasonable, proven default, not a hard requirement.
+
+**EMBED-CHOKEPOINT** (`src/lib/rag/embed.server.ts`) made embeddings swappable at the **provider** level (gateway / OpenAI BYO) but NOT the **dimension** level (1536 is baked into the schema). True model-agnosticism would need per-vector `model`/`dims` columns so different-dim vectors coexist + namespaced retrieval — deferred groundwork noted on the EMBED-CHOKEPOINT row.
+
+**Practical rule for testing/dev:** use any model for completions; for embeddings you need a **1536-d OpenAI source** (a BYO OpenAI key in Settings → Models, or a funded Lovable gateway). A Gemini key does NOT enable embeddings.
 
 ## Scheduling
 
@@ -44,7 +59,9 @@ Every signed-in profile must have at least one workspace membership. `current_us
 
 ## Secrets
 
-BYO keys encrypted with pgsodium `crypto_secretbox`; server-fns decrypt on use only; the service-role client is the only reader.
+BYO AI keys + connector OAuth secrets are encrypted **app-layer with WebCrypto AES-256-GCM** (`src/lib/connectors/crypto.server.ts`), keyed by the **`CONNECTOR_SECRETS_KEY`** server secret (base64 for exactly 32 bytes; generate via `openssl rand -base64 32`). Server-fns decrypt on use only. Stored in `user_api_keys` as cipher columns: `api_key_cipher` / `api_key_iv` / `key_version` (+ a non-secret `api_key_prefix` for display). The legacy plaintext `api_key` column was dropped (migration `20260620211507`); `byokeys-vault.server.ts` reads/writes only the cipher columns. If `CONNECTOR_SECRETS_KEY` is unset, saving any BYO key fails with "connector secret vault is setup pending."
+
+> **Live-DB schema drift gotcha (2026-06-21):** the live Lovable DB had **not** applied every repo migration — saving a BYO key failed first on the dropped `api_key` column, then on the missing cipher columns (the `20260612080000` f_conn migration that defines them was absent while later migrations were present). Fix was a one-off idempotent `ALTER TABLE user_api_keys ADD COLUMN IF NOT EXISTS api_key_cipher/api_key_iv/key_version` + `NOTIFY pgrst, 'reload schema'` run in the Supabase SQL editor (also captured as migration `20260621180000`). Treat the live DB as potentially behind the repo migrations; a full migration-sync is owed.
 
 ## Migrations
 
