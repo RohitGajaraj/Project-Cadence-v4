@@ -53,12 +53,18 @@ export const TIER_ICON: Record<
  */
 function recommendedFor(current: PlanTier): "pro" | "max" {
   switch (current) {
-    case "free": return "pro";
-    case "pro": return "max";
-    case "max": return "max";
-    case "team": return "max";
-    case "enterprise": return "max";
-    default: return "max";
+    case "free":
+      return "pro";
+    case "pro":
+      return "max";
+    case "max":
+      return "max";
+    case "team":
+      return "max";
+    case "enterprise":
+      return "max";
+    default:
+      return "max";
   }
 }
 
@@ -92,7 +98,11 @@ export function PlanTable({
   const [audience, setAudience] = useState<Audience>(audienceFor(currentTier));
 
   if (catalog.isLoading) {
-    return <div className="bento" style={{ padding: 18 }}>Loading plans…</div>;
+    return (
+      <div className="bento" style={{ padding: 18 }}>
+        Loading plans…
+      </div>
+    );
   }
   if (catalog.error || !catalog.data) {
     return (
@@ -174,9 +184,7 @@ export function PlanTable({
           display: "grid",
           gap: 12,
           gridTemplateColumns:
-            audience === "personal"
-              ? "repeat(3, minmax(0, 1fr))"
-              : "repeat(2, minmax(0, 1fr))",
+            audience === "personal" ? "repeat(3, minmax(0, 1fr))" : "repeat(2, minmax(0, 1fr))",
           alignItems: "stretch",
         }}
       >
@@ -262,7 +270,8 @@ function CardShell({
             left: 0,
             right: 0,
             height: 3,
-            background: "linear-gradient(90deg, var(--ember, #c2602e), color-mix(in oklab, var(--ember, #c2602e) 60%, transparent))",
+            background:
+              "linear-gradient(90deg, var(--ember, #c2602e), color-mix(in oklab, var(--ember, #c2602e) 60%, transparent))",
             borderTopLeftRadius: "inherit",
             borderTopRightRadius: "inherit",
           }}
@@ -359,7 +368,14 @@ function CardHeader({
       >
         {name}
       </div>
-      <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0", minHeight: 32 }}>
+      <p
+        style={{
+          fontSize: 12,
+          color: "var(--ink-muted, #4a4438)",
+          margin: "4px 0 0",
+          minHeight: 32,
+        }}
+      >
         {tagline}
       </p>
     </div>
@@ -370,7 +386,10 @@ function Bullets({ items }: { items: string[] }) {
   return (
     <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
       {items.map((h) => (
-        <li key={h} style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}>
+        <li
+          key={h}
+          style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}
+        >
           <span
             style={{
               width: 4,
@@ -394,7 +413,9 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
     <CardShell isCurrent={isCurrent}>
       <CardHeader tier="free" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>$0</span>
+        <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>
+          $0
+        </span>
         <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
           /month · no card needed
         </span>
@@ -431,10 +452,10 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
     <CardShell isCurrent={isCurrent}>
       <CardHeader tier="enterprise" name={p.name} tagline={p.tagline} isCurrent={isCurrent} />
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span className="font-display" style={{ fontSize: 24, lineHeight: 1.1 }}>Custom</span>
-        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          shaped to your org
+        <span className="font-display" style={{ fontSize: 24, lineHeight: 1.1 }}>
+          Custom
         </span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>shaped to your org</span>
       </div>
       <div style={{ flex: 1 }}>
         <Bullets items={p.highlights} />
@@ -471,8 +492,7 @@ function PaidTierCard({
 }) {
   const p = planPresentation(tier);
   const sorted = useMemo(() => [...bundles].sort((a, b) => a.credits - b.credits), [bundles]);
-  const defaultId =
-    sorted.find((b) => b.recommended)?.id ?? sorted[0]?.id ?? "";
+  const defaultId = sorted.find((b) => b.recommended)?.id ?? sorted[0]?.id ?? "";
   const [selectedId, setSelectedId] = useState<string>(defaultId);
   const selected = sorted.find((b) => b.id === selectedId) ?? sorted[0];
   const [open, setOpen] = useState(false);
@@ -492,9 +512,10 @@ function PaidTierCard({
 
   const lookupKey = selected ? lookupKeyFor(tier, selected.credits, effectiveInterval) : null;
   const recommended = isRecommended;
-  const yearlySavePct = selected && allowYearly
-    ? Math.max(0, Math.round((1 - selected.yearly_cents / (selected.monthly_cents * 12)) * 100))
-    : 0;
+  const yearlySavePct =
+    selected && allowYearly
+      ? Math.max(0, Math.round((1 - selected.yearly_cents / (selected.monthly_cents * 12)) * 100))
+      : 0;
 
   // Tier order index for upgrade / downgrade language.
   const TIER_ORDER: PlanTier[] = ["free", "pro", "max", "team", "enterprise"];
@@ -590,7 +611,9 @@ function PaidTierCard({
           )}
 
           <label style={{ display: "grid", gap: 4 }}>
-            <span className="mono-label" style={{ fontSize: 9 }}>Credits / month</span>
+            <span className="mono-label" style={{ fontSize: 9 }}>
+              Credits / month
+            </span>
             <select
               value={selected.id}
               onChange={(e) => setSelectedId(e.target.value)}
@@ -627,9 +650,7 @@ function PaidTierCard({
           )}
         </>
       ) : (
-        <div style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          Coming soon.
-        </div>
+        <div style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>Coming soon.</div>
       )}
 
       <div style={{ flex: 1 }}>
