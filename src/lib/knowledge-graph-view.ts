@@ -358,3 +358,121 @@ export function computeStaleness(
 
   return { staleKeys, staleCount: staleKeys.size, datedCount, thresholdDays };
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// DBR-1.5 read-side (F-IA-BRAIN-GRAPH): make the supersession mechanic legible.
+//
+// The supersession engine writes typed `supersedes`/`contradicts` edges between a
+// decision and a prior belief when a recorded outcome reverses it (the moat's
+// signature mechanic). The canvas already styles those edges (madder, dashed), but
+// the node-story panel never said WHAT they mean. This pure helper turns the raw
+// lineage rows getLineage already returns into a plain-language "decision history":
+// for a selected node, which beliefs it revised, and whether it was itself revised
+// by a later outcome. Migration-free (reads only `relation`, already present) and
+// fail-safe (no such edges -> empty story -> the section simply doesn't render).
+// ───────────────────────────────────────────────────────────────────────────
+
+/** How a supersession edge reads relative to the SELECTED node. */
+export type SupersessionDirection =
+  | "superseded-by"
+  | "contradicted-by"
+  | "supersedes"
+  | "contradicts";
+
+const SUPERSESSION_LABEL: Record<SupersessionDirection, string> = {
+  "superseded-by": "Superseded by",
+  "contradicted-by": "Contradicted by",
+  supersedes: "Supersedes",
+  contradicts: "Contradicts",
+};
+
+/** A single supersession relationship, phrased from the selected node's point of view. */
+export type SupersessionLink = {
+  /** Stable key = the lineage edge id. */
+  id: string;
+  direction: SupersessionDirection;
+  /** Human phrase, e.g. "Superseded by". */
+  label: string;
+  /** The other artifact's display title (may be empty if unhydrated). */
+  peerTitle: string;
+  peerKind: string;
+  peerId: string;
+  /** True when this link means the selected node's OWN belief was revised by a later outcome. */
+  retiresSelf: boolean;
+};
+
+export type SupersessionStory = {
+  links: SupersessionLink[];
+  /** The selected node's belief was later superseded or contradicted by a recorded outcome. */
+  revised: boolean;
+};
+
+/** The minimal lineage-row shape this helper needs (a superset of getLineage's rows). */
+export type LineageRowLike = {
+  id: string;
+  relation?: string | null;
+  peer_title?: string | null;
+  parent_kind?: string | null;
+  parent_id?: string | null;
+  child_kind?: string | null;
+  child_id?: string | null;
+};
+
+/** PURE. True for the two relations the supersession engine writes. */
+export function isSupersessionRelation(raw: string | null | undefined): boolean {
+  const r = (raw ?? "").trim().toLowerCase();
+  return r === "supersedes" || r === "contradicts";
+}
+
+/**
+ * PURE. Build the selected node's supersession "decision history" from the
+ * `ancestors` (edges INTO the node, peer is the parent) and `descendants`
+ * (edges OUT, peer is the child) that getLineage returns.
+ *
+ * Direction logic (an edge always reads parent --relation--> child):
+ *  - ancestor + `supersedes`  => parent supersedes THIS node => "Superseded by parent" (self revised)
+ *  - ancestor + `contradicts` => "Contradicted by parent" (self revised)
+ *  - descendant + `supersedes`  => THIS node supersedes child => "Supersedes child"
+ *  - descendant + `contradicts` => "Contradicts child"
+ *
+ * Self-revised links are listed first (the most important signal). Fail-safe on
+ * malformed / non-array input; dedups by edge id so a self-loop can't double-count.
+ */
+export function buildSupersessionStory(
+  ancestors: LineageRowLike[] | null | undefined,
+  descendants: LineageRowLike[] | null | undefined,
+): SupersessionStory {
+  const links: SupersessionLink[] = [];
+  const seen = new Set<string>();
+
+  const collect = (
+    rows: LineageRowLike[] | null | undefined,
+    peerSide: "parent" | "child",
+    byRelation: Partial<Record<string, SupersessionDirection>>,
+  ) => {
+    for (const r of Array.isArray(rows) ? rows : []) {
+      if (!r || typeof r.id !== "string" || seen.has(r.id)) continue;
+      const rel = (r.relation ?? "").trim().toLowerCase();
+      const direction = byRelation[rel];
+      if (!direction) continue;
+      seen.add(r.id);
+      const peerKind = (peerSide === "parent" ? r.parent_kind : r.child_kind) ?? "";
+      const peerId = (peerSide === "parent" ? r.parent_id : r.child_id) ?? "";
+      links.push({
+        id: r.id,
+        direction,
+        label: SUPERSESSION_LABEL[direction],
+        peerTitle: (r.peer_title ?? "").trim(),
+        peerKind,
+        peerId,
+        retiresSelf: direction === "superseded-by" || direction === "contradicted-by",
+      });
+    }
+  };
+
+  // Self-revised first (ancestors), then this node's own assertions (descendants).
+  collect(ancestors, "parent", { supersedes: "superseded-by", contradicts: "contradicted-by" });
+  collect(descendants, "child", { supersedes: "supersedes", contradicts: "contradicts" });
+
+  return { links, revised: links.some((l) => l.retiresSelf) };
+}

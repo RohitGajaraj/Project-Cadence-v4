@@ -56,6 +56,14 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
     [graph],
   );
 
+  // DBR-1.5 read-side: how many edges in view mark a belief a recorded outcome
+  // later revised (supersedes / contradicts). Derived from the already-loaded,
+  // time-filtered graph, so it honors the "as of" axis. Zero until the engine runs.
+  const revisedCount = useMemo(
+    () => (graph ? graph.edges.filter((e) => e.superseding).length : 0),
+    [graph],
+  );
+
   const recenter = (kind: string, id: string) => {
     setSelectedKey(null);
     setAsOf(null);
@@ -176,6 +184,13 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
         <MonoLabel style={{ marginBottom: 8, color: "#9a7b1f" }}>
           {staleness.staleCount} of {staleness.datedCount} facts may be stale · no fresh evidence in{" "}
           {staleness.thresholdDays}d (dashed ring)
+        </MonoLabel>
+      )}
+
+      {revisedCount > 0 && (
+        <MonoLabel style={{ marginBottom: 8, color: "var(--madder, #b0573f)" }}>
+          {revisedCount} {revisedCount === 1 ? "link" : "links"} here mark a belief a recorded
+          outcome later revised (madder, dashed)
         </MonoLabel>
       )}
 

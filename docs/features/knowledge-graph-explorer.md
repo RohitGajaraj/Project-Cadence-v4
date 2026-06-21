@@ -50,6 +50,16 @@ A new `graph` tab on the existing `_authenticated.knowledge.tsx` (`validateSearc
 
 `GraphEdge.relation` already includes `supersedes | contradicts`; `GraphEdge.validTo: string | null`. The renderer styles `supersedes` / `contradicts` edges distinctly (e.g. dashed / madder). The read v1 never emits them itself; the **write-path** that does now exists: **DBR-1.5** (`src/lib/ai/supersession.server.ts`) infers `supersedes`/`contradicts` edges from recorded outcomes and stamps `valid_to`/`invalidated_by`/`inference` on `artifact_lineage` (migration `20260621030000`). It is **flag-gated OFF** (`DECISION_BRAIN_SUPERSESSION`), so the seam stays empty until the founder activates it. Because the engine writes real `relation` values into the same table this surface reads (and the explorer selects an explicit column list that excludes the 3 new bi-temporal columns), the edges render with **zero UI change** the day the flag flips. The graph is bi-temporal-shaped from night one. Spec: [`../planning/supersession-engine-plan.md`](../planning/supersession-engine-plan.md).
 
+### Supersession legibility (read-side, F-IA-BRAIN-GRAPH, SHIPPED ◐)
+
+Styling the supersession edges distinctly is not the same as making them *legible*: a madder dashed line does not tell a PM "this decision was reversed by a later outcome." This slice puts the mechanic into words, derived purely from the `relation` field `getLineage` already returns (no new query, no dependence on the not-yet-applied `valid_to` column, additive, fail-safe).
+
+- **Pure core** (`src/lib/knowledge-graph-view.ts`): `buildSupersessionStory(ancestors, descendants)` reads each node's incident `supersedes` / `contradicts` edges and phrases them from that node's point of view. Direction follows the parent-to-child edge convention: an **ancestor** edge (this node is the child) means it **was superseded / contradicted by** the parent (its belief was revised); a **descendant** edge means this node **supersedes / contradicts** the child. `isSupersessionRelation` is the shared predicate. Self-revised links sort first; dedup by edge id; fail-safe on null/malformed input. Unit-tested (`buildSupersessionStory` + `isSupersessionRelation`, 6 cases).
+- **Node-story panel** (`GraphNodeStory.tsx`): a "decision history" section renders the story (madder-accented, links recenter the graph on the counterpart), with a one-line banner when this node's own belief was revised. The generic "came from" / "led to" lists now exclude supersession edges, so the mechanic reads once in its own section, not as a cryptic `supersedes` tag.
+- **Canvas summary** (`GraphCanvasView.tsx`): a graph-level "N links here mark a belief a recorded outcome later revised" line, honoring the "as of" time axis.
+
+Dormant-safe by construction: with zero supersession edges (the current state until the founder publishes + flips the flag) every surface renders nothing new. So this is `◐` until live-verify on a workspace with seeded outcome-driven edges.
+
 ## Deferred -> the next DBR increment (AI / attended lane)
 
 - ~~The contradiction / supersession **write engine**~~ — SHIPPED as DBR-1.5 (flag-gated OFF). Remaining: the Critic reasoning over the written edges multi-hop (DBR-2), which is the read-side AI spend, founder-gated.
@@ -59,7 +69,7 @@ A new `graph` tab on the existing `_authenticated.knowledge.tsx` (`validateSearc
 
 ## Testing
 
-- **Unit (`bun:test`) on the pure core:** node typing, degree/influence, bounding (`MAX_NODES` / `MAX_DEPTH` + `truncated`), the time filter, supersession-edge classification, deterministic layout, and the fail-safe empties.
+- **Unit (`bun:test`) on the pure core:** node typing, degree/influence, bounding (`MAX_NODES` / `MAX_DEPTH` + `truncated`), the time filter, supersession-edge classification, the supersession-story builder (direction + ordering + dedup + fail-safe), deterministic layout, and the fail-safe empties.
 - **Server fn + UI:** `tsc --noEmit` + `bun run build` green; live-verify on publish (so the row lands `partial`).
 
 ## Gate

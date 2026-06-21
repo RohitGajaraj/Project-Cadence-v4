@@ -6,8 +6,11 @@ import {
   classifyRelation,
   isSuperseding,
   nodeKey,
+  buildSupersessionStory,
+  isSupersessionRelation,
   type RawLineageEdge,
   type GraphNodeKind,
+  type LineageRowLike,
 } from "./knowledge-graph-view";
 
 const k = nodeKey;
@@ -207,5 +210,106 @@ describe("computeStaleness", () => {
     const r = computeStaleness(g, { thresholdDays: 90, nowMs: NOW });
     expect(r.datedCount).toBe(0);
     expect(r.staleCount).toBe(0);
+  });
+});
+
+describe("isSupersessionRelation", () => {
+  it("matches only the engine's two relations, case/space-insensitive", () => {
+    expect(isSupersessionRelation("supersedes")).toBe(true);
+    expect(isSupersessionRelation("  Contradicts ")).toBe(true);
+    expect(isSupersessionRelation("cites")).toBe(false);
+    expect(isSupersessionRelation("promoted")).toBe(false);
+    expect(isSupersessionRelation(null)).toBe(false);
+    expect(isSupersessionRelation(undefined)).toBe(false);
+  });
+});
+
+describe("buildSupersessionStory", () => {
+  // A lineage row as getLineage returns it (peer already hydrated).
+  const row = (o: Partial<LineageRowLike> & { id: string }): LineageRowLike => ({
+    relation: "promoted",
+    peer_title: null,
+    parent_kind: null,
+    parent_id: null,
+    child_kind: null,
+    child_id: null,
+    ...o,
+  });
+
+  it("reads an ancestor supersedes edge as 'Superseded by' and marks self revised", () => {
+    // parent (opportunity O) --supersedes--> THIS node => this node was superseded.
+    const ancestors = [
+      row({
+        id: "e1",
+        relation: "supersedes",
+        peer_title: "Drop live-chat",
+        parent_kind: "opportunity",
+        parent_id: "O",
+      }),
+    ];
+    const story = buildSupersessionStory(ancestors, []);
+    expect(story.revised).toBe(true);
+    expect(story.links).toHaveLength(1);
+    expect(story.links[0]).toMatchObject({
+      direction: "superseded-by",
+      label: "Superseded by",
+      peerTitle: "Drop live-chat",
+      peerKind: "opportunity",
+      peerId: "O",
+      retiresSelf: true,
+    });
+  });
+
+  it("reads a descendant contradicts edge as 'Contradicts' without marking self revised", () => {
+    // THIS node --contradicts--> child (prd P).
+    const descendants = [
+      row({
+        id: "e2",
+        relation: "contradicts",
+        peer_title: "Old pricing PRD",
+        child_kind: "prd",
+        child_id: "P",
+      }),
+    ];
+    const story = buildSupersessionStory([], descendants);
+    expect(story.revised).toBe(false);
+    expect(story.links[0]).toMatchObject({
+      direction: "contradicts",
+      label: "Contradicts",
+      peerTitle: "Old pricing PRD",
+      retiresSelf: false,
+    });
+  });
+
+  it("ignores non-supersession relations and lists self-revised links first", () => {
+    const ancestors = [
+      row({ id: "cite", relation: "cites", parent_kind: "signal", parent_id: "S" }),
+      row({ id: "sup", relation: "Supersedes", parent_kind: "prd", parent_id: "A" }),
+    ];
+    const descendants = [
+      row({ id: "down", relation: "supersedes", child_kind: "prd", child_id: "B" }),
+      row({ id: "promo", relation: "promoted", child_kind: "task", child_id: "T" }),
+    ];
+    const story = buildSupersessionStory(ancestors, descendants);
+    // Only the two supersession edges survive; the cite + promoted rows are dropped.
+    expect(story.links.map((l) => l.id)).toEqual(["sup", "down"]);
+    // Self-revised (ancestor) is ordered before this node's own assertion (descendant).
+    expect(story.links[0].retiresSelf).toBe(true);
+    expect(story.links[1].retiresSelf).toBe(false);
+  });
+
+  it("is fail-safe on null/empty/malformed input", () => {
+    expect(buildSupersessionStory(null, undefined)).toEqual({ links: [], revised: false });
+    expect(buildSupersessionStory([], [])).toEqual({ links: [], revised: false });
+    // Row missing an id is skipped, not thrown.
+    const bad = [{ relation: "supersedes" } as unknown as LineageRowLike];
+    expect(buildSupersessionStory(bad, []).links).toHaveLength(0);
+  });
+
+  it("dedups by edge id so a self-loop can't double-count", () => {
+    const same = row({ id: "loop", relation: "supersedes", parent_kind: "prd", parent_id: "X" });
+    const sameChild = row({ id: "loop", relation: "supersedes", child_kind: "prd", child_id: "X" });
+    const story = buildSupersessionStory([same], [sameChild]);
+    expect(story.links).toHaveLength(1);
   });
 });
