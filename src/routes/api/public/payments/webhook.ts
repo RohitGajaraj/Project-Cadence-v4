@@ -9,6 +9,13 @@ import {
   subscriptionStatusGrantsCredits,
   tierFromLookupKey,
 } from "@/lib/billing-tier";
+import {
+  isRenewalInvoice,
+  isTopupCheckout,
+  resolvePeriod,
+  resolvePriceLookup,
+  resolveTopupCredits,
+} from "@/lib/billing-webhook";
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
@@ -21,16 +28,13 @@ function getSupabase() {
   return _supabase;
 }
 
-function resolvePriceLookup(item: any): string {
-  return item?.price?.lookup_key || item?.price?.metadata?.lovable_external_id || item?.price?.id;
-}
-
 /**
  * Flip plan_tier on the user's account (and the workspaces shim for back-compat).
  * Service-role client, so RLS does not block. No-op if we cannot derive a tier
  * (e.g. top-up checkout, unrecognized lookup key) or the user has no account row.
  */
-async function applyTierForUser(userId: string, lookupKey: string, status: string) {
+async function applyTierForUser(userId: string, lookupKey: string | undefined, status: string) {
+  if (!lookupKey) return;
   const tier = tierFromLookupKey(lookupKey);
   if (!tier) return;
   // Keep paid access through dunning (past_due); downgrade to free on real termination.
@@ -105,8 +109,7 @@ async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
   const item = sub.items?.data?.[0];
   const priceId = resolvePriceLookup(item);
   const productId = item?.price?.product;
-  const periodStart = item?.current_period_start ?? sub.current_period_start;
-  const periodEnd = item?.current_period_end ?? sub.current_period_end;
+  const period = resolvePeriod(item, sub);
 
   await getSupabase()
     .from("subscriptions")
@@ -116,10 +119,12 @@ async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
         stripe_subscription_id: sub.id,
         stripe_customer_id: sub.customer,
         product_id: productId,
-        price_id: priceId,
+        // A valid subscription event always carries a price; assert for the strict
+        // upsert row type (behavior-identical to the prior inline resolver).
+        price_id: priceId!,
         status: sub.status,
-        current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
-        current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+        current_period_start: period.start,
+        current_period_end: period.end,
         cancel_at_period_end: sub.cancel_at_period_end || false,
         environment: env,
         updated_at: new Date().toISOString(),
@@ -134,8 +139,7 @@ async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
   const item = sub.items?.data?.[0];
   const priceId = resolvePriceLookup(item);
   const productId = item?.price?.product;
-  const periodStart = item?.current_period_start ?? sub.current_period_start;
-  const periodEnd = item?.current_period_end ?? sub.current_period_end;
+  const period = resolvePeriod(item, sub);
 
   await getSupabase()
     .from("subscriptions")
@@ -143,8 +147,8 @@ async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
       status: sub.status,
       product_id: productId,
       price_id: priceId,
-      current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
-      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      current_period_start: period.start,
+      current_period_end: period.end,
       cancel_at_period_end: sub.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
     })
@@ -167,17 +171,9 @@ async function handleSubscriptionDeleted(sub: any, env: StripeEnv) {
   if (userId && priceId) await applyTierForUser(userId, priceId, "canceled");
 }
 
-const TOPUP_CREDITS: Record<string, number> = {
-  topup_250: 250,
-  topup_1k: 1000,
-  topup_2_5k: 2500,
-};
-
 async function handleCheckoutCompleted(session: any, env: StripeEnv) {
-  if (session.mode !== "payment") return;
+  if (!isTopupCheckout(session)) return;
   const userId = session.metadata?.userId;
-  const kind = session.metadata?.kind;
-  if (!userId || kind !== "topup") return;
 
   const lineItems = await fetch(
     `https://connector-gateway.lovable.dev/stripe/v1/checkout/sessions/${session.id}/line_items`,
@@ -196,10 +192,8 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
 
   const lookupKey = lineItems.data?.[0]?.price?.lookup_key;
   // Resolve credits from the bundle's lookup_key first (covers ANY catalog bundle), then
-  // the static map as a fallback for legacy keys.
-  const credits =
-    (lookupKey ? creditsFromLookupKey(lookupKey) : null) ??
-    (lookupKey ? TOPUP_CREDITS[lookupKey] : undefined);
+  // the static map as a fallback for legacy keys. Pure + tested in billing-webhook.ts.
+  const credits = resolveTopupCredits(lookupKey);
   if (!credits) {
     console.error("Webhook: top-up has unknown lookup_key", lookupKey);
     return;
@@ -257,7 +251,7 @@ async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
   // On a renewal invoice (not the first), refill the cycle's included allowance. The first
   // invoice is billing_reason 'subscription_create' and is already covered by the
   // grant-on-subscribe path; only 'subscription_cycle' (a true renewal) refills here.
-  if (invoice.billing_reason !== "subscription_cycle") return;
+  if (!isRenewalInvoice(invoice)) return;
   const { data: sub } = await admin
     .from("subscriptions")
     .select("user_id")
