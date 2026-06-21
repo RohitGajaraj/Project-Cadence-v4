@@ -2,32 +2,40 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
+import { applyWorkspaceScope } from "@/lib/workspace-scope";
 
 export const listMeetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  // WM-F9b: optional active-workspace scope. Omitted / null => unfiltered
+  // (pre-WM-F9b behaviour); a concrete id narrows to that workspace's meetings.
+  // Purely additive — see workspace-scope.ts for the rule + the RLS security note.
+  .inputValidator((d: { workspaceId?: string | null } | undefined) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const run = () =>
-      context.supabase
+    const run = () => {
+      const q = context.supabase
         .from("meetings")
         .select(
           "id,title,start_at,end_at,stakeholder,summary,processed_at,action_items,decisions_made",
         )
-        .gte("start_at", since)
-        .order("start_at", { ascending: false });
+        .gte("start_at", since);
+      return applyWorkspaceScope(q, data.workspaceId).order("start_at", { ascending: false });
+    };
 
-    let { data, error } = await run();
+    let { data: rows, error } = await run();
     if (error) {
       // Retry once on transient upstream errors (e.g. Cloudflare 502 from the DB gateway).
       await new Promise((r) => setTimeout(r, 250));
-      ({ data, error } = await run());
+      ({ data: rows, error } = await run());
     }
     if (error) {
       console.error("[listMeetings] supabase error", error);
       // Don't surface raw HTML/gateway bodies to the client.
       throw new Error("Couldn't load meetings. Try again in a moment.");
     }
-    return { meetings: data ?? [] };
+    return { meetings: rows ?? [] };
   });
 
 export const getMeeting = createServerFn({ method: "GET" })

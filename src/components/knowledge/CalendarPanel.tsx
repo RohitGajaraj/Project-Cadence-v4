@@ -41,6 +41,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MeetingDetailBody } from "@/components/cadence/MeetingDetailBody";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { EmptyState, MonoLabel, VerdictChip } from "@/components/cadence/Primitives";
 
 type View = "list" | "month" | "year";
@@ -106,6 +107,10 @@ export function CalendarPanel({
 }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
+  // WM-F9b: scope the meetings read to the active workspace (and key the query
+  // by it so it refetches on a workspace switch — the WM-F8b refetch-on-switch
+  // win for meetings). A null id (pre-init) leaves the read unfiltered.
+  const { activeWorkspaceId } = useWorkspace();
   const fEvents = useServerFn(listCalendarEvents);
   const fSync = useServerFn(syncCalendar);
   const fCreate = useServerFn(createCalendarEvent);
@@ -119,7 +124,10 @@ export function CalendarPanel({
   const fDelete = useServerFn(deleteCalendarEvent);
   const fPlan = useServerFn(proposeWorkBlocks);
   const events = useQuery({ queryKey: ["calendar-events"], queryFn: () => fEvents() });
-  const meetings = useQuery({ queryKey: ["meetings"], queryFn: () => fMeetings() });
+  const meetings = useQuery({
+    queryKey: ["meetings", activeWorkspaceId],
+    queryFn: () => fMeetings({ data: { workspaceId: activeWorkspaceId ?? null } }),
+  });
   const connections = useQuery({ queryKey: ["calendar-connections"], queryFn: () => fListConns() });
 
   const [view, setView] = useState<View>("list");
