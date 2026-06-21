@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { webSearch, type WebSearchHit } from "@/lib/ai/tools/firecrawl.server";
+import { selectWebBackend } from "@/lib/ai/tools/web-search-fallback";
 import { retrieve } from "@/lib/rag/retriever.server";
 
 export type ResearchMode = "chat" | "web" | "internal" | "both";
@@ -316,7 +317,17 @@ export async function runResearch(opts: {
   emit: (status: ResearchStatus) => void;
 }): Promise<ResearchResult> {
   const { supabase, userId, query, mode, subQueries, emit } = opts;
-  const wantWeb = (mode === "web" || mode === "both") && !!process.env.FIRECRAWL_API_KEY;
+  // FIRECRAWL-FLOOR-b: gate web mode on whether ANY web backend is configured, not
+  // Firecrawl alone. `webSearch` already routes through `selectWebBackend` (Firecrawl
+  // first, else the self-host SearXNG floor), so a SearXNG-only deployment must reach
+  // the /research web leg too. Reusing the SAME selector keeps the gate from drifting
+  // from the backend `webSearch` actually picks.
+  const wantWeb =
+    (mode === "web" || mode === "both") &&
+    selectWebBackend({
+      FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
+      SEARXNG_URL: process.env.SEARXNG_URL,
+    }) !== "none";
   const wantInternal = mode === "internal" || mode === "both";
   const queryCount = Math.min(Math.max(subQueries.length, 1), MAX_SUB_QUERIES);
 

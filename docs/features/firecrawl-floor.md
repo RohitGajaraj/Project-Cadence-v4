@@ -45,3 +45,11 @@ This is the BBI doctrine made real: *a zero-external-paid-dep native default tha
 
 - [`../strategy/build-buy-integrate.md`](../strategy/build-buy-integrate.md) — the BBI gate (FIRECRAWL-FLOOR is the named SELF-HOST autonomy-floor example).
 - [`../strategy/sourcing-map.md`](../strategy/sourcing-map.md) — the per-cluster sourcing verdicts.
+
+## Update: FIRECRAWL-FLOOR-b (the /research pipeline inherits the floor)
+
+_2026-06-21 (Lane 3)._ The parent above wired the floor into the agent's `web.search` tool. The deep `/research` pipeline (`runResearch` in `src/lib/ai/research.server.ts`) had a separate web gate that still keyed on `FIRECRAWL_API_KEY` alone, so a SearXNG-only deployment got NO web research from `/research` even though the floor existed one layer down.
+
+**Fix (surgical):** the gate now reads `selectWebBackend({ FIRECRAWL_API_KEY, SEARXNG_URL }) !== "none"` — the SAME selector `webSearch` already uses to pick its backend, so the gate can never drift from the backend actually chosen. `gatherWeb` calls `webSearch`, which routes Firecrawl-first then the SearXNG floor, so widening only the gate is sufficient; no call-site rewrite. Firecrawl deployments are byte-identical (the selector returns `"firecrawl"`, non-`"none"`). A SearXNG-only deployment now reaches the web leg, and `gatherWeb`'s existing `.catch` still degrades to `[]` if the instance is down.
+
+**Verification:** `tsc --noEmit` 0; the gate predicate is covered transitively by `web-search-fallback.test.ts` (selectWebBackend: SearXNG-only → `"searxng"`, neither → `"none"`, blank-value handling); full suite green. Single-agent adversarial review: **APPROVE, 0 findings** (no Firecrawl regression, graceful degradation intact, gate/selector drift impossible, no orphaned raw `FIRECRAWL_API_KEY` guard left behind, no new injection surface — SearXNG returns snippets not scraped bodies, and web sources are already fenced as UNTRUSTED). ◐ live-verify on a `SEARXNG_URL`-only deployment: run `/research` in web/both mode and confirm web hits come from SearXNG.
