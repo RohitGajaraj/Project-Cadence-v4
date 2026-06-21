@@ -2,7 +2,9 @@
 
 > _Created: 2026-06-18 · Last updated: 2026-06-18_
 
-> Status · Always-fresh feed shipped 2026-06-18 (autonomous overnight cycle 11) · Per-product clustering shipped 2026-06-18 12:20 (cycle 17) · Auto-cluster cron built 2026-06-18 (opt-in, off by default; recurring-spend activation is a founder step) · Surface: `/product?tab=signals` · Owner: operator-facing
+> Status · ✅ **LIVE-VERIFIED on the published app 2026-06-22** (Lane 1). Always-fresh feed shipped 2026-06-18 (cycle 11) · Per-product clustering shipped 2026-06-18 (cycle 17) · Auto-cluster cron built 2026-06-18 (opt-in, off by default; recurring-spend activation is a founder step) · Surface: `/product?tab=signals` · Owner: operator-facing
+>
+> Live verify (Playwright, demo account, commit 662b5aec): switching to the Lumen product renders the per-product clustered feed with real data — a THEME / EVIDENCE / SOURCES / FRESH / CONF table of Scout-clustered themes ("Slow first-response on Tier-1 tickets · 3 items · intercom·slack·csat · conf 82", "Unsafe escalation on refund/legal · conf 91", "Tone too formal for SMB customers · conf 74", plus unclustered items), per-source attribution, freshness dates, confidence scores, "Cluster N · Scout themes them", and a "Draft spec" action per theme. The auto-cluster cron toggle renders in its gated state ("On · awaiting first run"). The BUILD is complete and proven live; the only remainder is the founder activating the auto-cluster cron (it commits recurring AI spend, so it ships gated off by design — not a build gap).
 
 ## What it does
 
