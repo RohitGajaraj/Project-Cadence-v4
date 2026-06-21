@@ -37,6 +37,7 @@ import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
+import { MemoryExpiryBanner } from "@/components/plg/MemoryExpiryBanner";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
 import { CostPerOutcomeChip } from "@/components/today/CostPerOutcomeChip";
 import { listOpportunities } from "@/lib/discovery.functions";
@@ -529,6 +530,10 @@ function Dashboard() {
             </div>
           </div>
         </section>
+
+        {/* PLG Phase 3 — memory-retention upgrade nudge (free plan + memory nearing
+            the retention window only; renders nothing otherwise). */}
+        <MemoryExpiryBanner workspaceId={activeWorkspace?.id ?? null} />
 
         {/* NEEDS YOU — the calls queue */}
         <section className="bento" style={{ padding: "14px var(--card-pad)", marginBottom: 24 }}>

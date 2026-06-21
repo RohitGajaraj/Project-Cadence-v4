@@ -7,10 +7,13 @@
  * daily ritual reads from here.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isSideEffectingTool } from "@/lib/tool-consequences";
 import type { CriticReview } from "@/lib/discovery.functions";
+import { entitlementsFor, normalizePlanTier, type PlanTier } from "@/lib/entitlements";
+import { assessMemoryExpiry, type MemoryExpiryState } from "@/lib/plg-memory-expiry";
 import {
   type CompoundingLearning,
   type CompoundingSummary,
@@ -365,4 +368,91 @@ export const getCompounding = createServerFn({ method: "GET" })
     const rescores = rescoresOf(learnings);
     const summary = summarizeCompounding(learnings);
     return { rescores, summary };
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLG Phase 3 — memory-retention upgrade nudge (getMemoryExpiry).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve a workspace's plan tier: the account's plan wins, falling back to the
+ * workspace `plan_tier` shim, then free. Pre-migration tolerant. (A minimal, read-
+ * only mirror of limits.functions.ts' private resolver — duplicated rather than
+ * exported across a server-fn boundary to keep each module self-contained.)
+ */
+async function resolveTier(supabase: SupabaseClient, workspaceId: string): Promise<PlanTier> {
+  let tier: PlanTier = "free";
+  let accountId: string | null = null;
+  try {
+    const { data: ws, error } = await supabase
+      .from("workspaces")
+      .select("plan_tier,account_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+    if (error) throw error;
+    const w = (ws ?? {}) as { plan_tier?: string | null; account_id?: string | null };
+    tier = normalizePlanTier(w.plan_tier);
+    accountId = w.account_id ?? null;
+  } catch {
+    try {
+      const { data: ws } = await supabase
+        .from("workspaces")
+        .select("plan_tier")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      tier = normalizePlanTier((ws as { plan_tier?: string | null } | null)?.plan_tier);
+    } catch {
+      /* keep the free default */
+    }
+  }
+  if (accountId) {
+    try {
+      const { data: acct } = await supabase
+        .from("accounts")
+        .select("plan_tier")
+        .eq("id", accountId)
+        .maybeSingle();
+      const a = (acct ?? {}) as { plan_tier?: string | null };
+      if (a.plan_tier != null) tier = normalizePlanTier(a.plan_tier);
+    } catch {
+      /* account row not readable yet; keep the workspace/free tier */
+    }
+  }
+  return tier;
+}
+
+/**
+ * PLG: the memory-retention nudge state for the active workspace. Free plans keep
+ * decision memory on a rolling window then it fades; this surfaces the upgrade
+ * value when the workspace's own memory nears that window. Paid plans always read
+ * `show:false`. RLS-scoped (the authed client only sees the caller's memory) and
+ * fail-safe — any error returns a non-showing state so it can never break Today.
+ */
+export const getMemoryExpiry = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid() }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<MemoryExpiryState> => {
+    const supabase = context.supabase as unknown as SupabaseClient;
+    try {
+      const tier = await resolveTier(supabase, data.workspaceId);
+      const retentionDays = entitlementsFor(tier).memoryRetentionDays;
+      // Paid: short-circuit before any memory read (memory never fades).
+      if (retentionDays === null) {
+        return { show: false, total: 0, retentionDays: null, expiringCount: 0, soonestDays: null };
+      }
+      const { data: rows } = await supabase
+        .from("agent_memory")
+        .select("created_at,expires_at")
+        .eq("workspace_id", data.workspaceId)
+        .limit(2000);
+      return assessMemoryExpiry({
+        memories: (rows ?? []) as { created_at: string | null; expires_at: string | null }[],
+        retentionDays,
+        nowMs: Date.now(),
+      });
+    } catch {
+      return { show: false, total: 0, retentionDays: null, expiringCount: 0, soonestDays: null };
+    }
   });
