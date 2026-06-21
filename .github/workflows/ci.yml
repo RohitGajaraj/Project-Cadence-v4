@@ -1,0 +1,39 @@
+name: CI
+
+# SANDBOX $0 floor (Build / execution spine): run the GREEN correctness gates on
+# every push to main and every PR, in GitHub Actions' free tier. This is the
+# native default behind the ExecProvider seam (src/lib/exec/provider.ts).
+#
+# `build` and the full `lint` are intentionally NOT run here: both carry
+# pre-existing baselines (the Lovable vite-config ESM-require cycle, and ~4k
+# legacy eslint findings in untouched files) that would make the floor red on day
+# one and drown out real regressions. `tsc --noEmit` + `bun test` are the gates
+# the repo already keeps green every cycle, so they are the floor's true signal.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same ref cancels the older in-flight run (saves free minutes).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Tests
+        run: bun test
