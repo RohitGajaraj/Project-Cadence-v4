@@ -37,7 +37,7 @@ Over a trailing window of the caller's own AI calls (`ai_events`), it reports:
 
 ## Wired into the UI (2026-06-21)
 
-A calm, silent-when-healthy `ReliabilityGlance` ([`../../src/components/cockpit/ReliabilityGlance.tsx`](../../src/components/cockpit/ReliabilityGlance.tsx)) on the Missions header consumes `getReliabilitySlo` (alongside `getRunawayMissions`) and surfaces a one-line "Heads up" **only** when the error budget is `warning`/`exhausted` (or a mission is spinning). It renders nothing when healthy, per the engine-room-doctrine (attention, not an always-on panel). Neutral ink tones (the role-color accents stay reserved). Gated through `impeccable`. ◐ renders on the founder's next publish.
+A calm, silent-when-healthy `ReliabilityGlance` ([`../../src/components/cockpit/ReliabilityGlance.tsx`](../../src/components/cockpit/ReliabilityGlance.tsx)) on the Missions header consumes `getReliabilitySlo` (alongside `getRunawayMissions`) and surfaces a one-line "Heads up" **only** when the error budget is `warning`/`exhausted` (or a mission is spinning). It renders nothing when healthy, per the engine-room-doctrine (attention, not an always-on panel). Neutral ink tones (the role-color accents stay reserved). Gated through `impeccable`. **✅ LIVE-VERIFIED 2026-06-22 (RELIABILITY-GLANCE, register #53):** on the published app the glance correctly fires (the demo's 7-day error budget is exhausted at 86.42% availability) and renders "Heads up · AI error budget spent, 86.42% of calls succeeded this week"; clicking it opens the runaway "Reliability Status" popover. Both the SLO and runaway reads are exercised by this one component.
 
 ## Out of scope / follow-ups
 

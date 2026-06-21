@@ -1,6 +1,6 @@
 # ENG-06 — Cost per outcome
 
-> _Created: 2026-06-17 · Last updated: 2026-06-19_
+> _Created: 2026-06-17 · Last updated: 2026-06-22 · Status: ✅ **LIVE-VERIFIED on the published app 2026-06-22** (Lane 1). The Missions-header cost glance renders real numbers ("This week the fleet shipped 7 decisions · 6 shipped for $0.05 · $92.49 of $250 this month"), and the Engine Room Analytics tab renders the full unit-economics roll-up with live data: SPEND·7D $0.03 (101 runs · 31 errors), TOKENS 174.9k, median latency 1.6s/p95 10.2s, UNIT ECONOMICS "COST PER OUTCOME $0.0039" (spend ÷ 13 outcomes), spend-by-surface, spend-by-agent (click-to-drill), and a per-model table — verified via Playwright against `cadence-flow-beta.lovable.app` (demo account, commit 662b5aec)._
 
 > The Engine-Room-Doctrine-safe answer to "how much are the agents consuming." Split across two surfaces by audience: a calm **cost-per-outcome line** on Today for the PM, and a **unit-economics roll-up** behind the Engine Room door for the operator. Born from the 2026-06-17 "agent manager" framing decision ([`../strategy/session-decisions.md`](../strategy/session-decisions.md)).
 

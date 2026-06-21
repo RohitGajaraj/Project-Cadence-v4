@@ -1,6 +1,6 @@
 # RUNAWAY-DETECT — runaway / loop mission detector
 
-> _Created: 2026-06-21 (lane 1). Status: ◐ detector + read fn shipped; operator surface is the wire-up follow-up._
+> _Created: 2026-06-21 (lane 1). Status: ✅ detector + read fn + operator surface shipped and **LIVE-VERIFIED on the published app 2026-06-22** (lane 1): clicking the Missions-header reliability glance opens the "Reliability Status" popover, which correctly reads "No spinning missions detected" against the live demo workspace (21 missions, none meeting the runaway thresholds — verified by Playwright). The `getRunawayMissions` live read over `missions`/`mission_steps`/`agent_runs` executes and returns the correct (empty) flagged set; the same detector also powers the RUNAWAY-INCIDENTS source, live-verified on the Engine Room → Incidents tab. Remaining is founder-gated: push alerting (cron → Attention) + auto-pause._
 
 Closes the `considerations.md` AI-safety-lens **P1** gap "Loop/runaway detection" (_"agents can spin; cap + detect"_). KI-15/16 shipped the **caps** (per-tick `MISSION_BATCH` + per-mission step-dispatch bound). This is the **detect** half: surface a mission whose hop / step / retry / spend has blown past those caps so an operator (or a future alert) sees it.
 
