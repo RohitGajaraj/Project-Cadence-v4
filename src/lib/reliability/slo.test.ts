@@ -65,6 +65,24 @@ describe("normalizeStatus (fail-visible coercion)", () => {
     expect(normalizeStatus(42)).toBe("error");
   });
 
+  it("recognizes known success synonyms (seed/legacy 'success') as ok, not error", () => {
+    // Live-confirmed: ai_events carries 'success' rows from seed/legacy telemetry. Counting them as
+    // errors would understate availability on a window that includes them. Fail-visible still holds
+    // for a genuinely unknown word.
+    expect(normalizeStatus("success")).toBe("ok");
+    expect(normalizeStatus("succeeded")).toBe("ok");
+    // a real success row must add to availability, not consume the error budget
+    const samples: CallSample[] = [
+      { status: normalizeStatus("ok"), latencyMs: 100 },
+      { status: normalizeStatus("success"), latencyMs: 100 },
+      { status: normalizeStatus("error"), latencyMs: 100 },
+    ];
+    const m = computeSlo(samples);
+    expect(m.ok).toBe(2);
+    expect(m.errors).toBe(1);
+    expect(m.availabilityPct).toBeCloseTo(66.67, 1);
+  });
+
   it("a junk status counts against availability (not hidden as blocked)", () => {
     const samples: CallSample[] = [
       { status: normalizeStatus("ok"), latencyMs: 100 },

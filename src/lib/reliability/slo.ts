@@ -30,9 +30,17 @@ export type CallStatus = "ok" | "error" | "blocked";
  * column, so an unknown/legacy/NULL value can exist. We fail VISIBLE: anything unrecognized maps to
  * `"error"`, never to the excluded `"blocked"` bucket — so an anomalous row can never silently
  * vanish from the denominator and inflate measured availability (hiding an outage).
+ *
+ * Known success synonyms are recognized as `"ok"`. The runtime chokepoint only ever writes the three
+ * canonical states, but `ai_events` also carries `"success"` rows from seed/legacy/imported telemetry
+ * (verified live: the demo workspace has 17 such rows). Counting a KNOWN success as an `"error"` would
+ * understate availability on any window that includes those rows — so we map them to `"ok"`. This does
+ * NOT weaken the fail-visible guarantee: it applies only to a recognized success word, while a
+ * genuinely unknown/NULL status still surfaces as `"error"`.
  */
 export function normalizeStatus(raw: unknown): CallStatus {
   if (raw === "ok" || raw === "error" || raw === "blocked") return raw;
+  if (raw === "success" || raw === "succeeded") return "ok";
   return "error";
 }
 

@@ -1,6 +1,6 @@
 # RELIABILITY-SLO — AI-surface SLO + error budget
 
-> _Created: 2026-06-21 (lane 1). Status: ◐ backend + read fn shipped; Engine Room glance is the wire-up follow-up._
+> _Created: 2026-06-21 (lane 1). Status: ✅ backend + read fn + Missions-header glance shipped and **LIVE-VERIFIED on the published app 2026-06-22** (lane 1): the Missions header renders "Heads up · AI error budget spent, 86.42% of calls succeeded this week" — and 86.42% is the exact `ok/(ok+error)` over the live 7-day `ai_events` window (70 ok / 81 evaluated, 20 blocked correctly excluded), so `getReliabilitySlo` + `computeSlo` are proven correct end-to-end against production data. A live-data review also surfaced and fixed a real correctness gap (success-synonym misclassification — see Verification). Remaining is the optional deep Engine Room breakdown (founder/design)._
 
 Closes the `considerations.md` SRE-lens **P1** gap "SLOs/SLAs + error budgets." APP-HEALTH answers _is the platform up right now?_ (a binary liveness/readiness probe for monitors and load balancers). This answers the next question an enterprise buyer and an on-call operator ask: _how reliable has the AI surface actually been, and how much of our error budget is left?_
 
@@ -17,6 +17,8 @@ Over a trailing window of the caller's own AI calls (`ai_events`), it reports:
 
 `ai_events.status` is `ok | error | blocked`. A naive SLO counts every non-`ok` row as downtime. But **`blocked` is a deliberate governance/credit halt — the guardrails working as designed**, not an outage. Folding it into the error rate would make the system look unreliable exactly when its safety rails fire. So `blocked` is **excluded** from the availability denominator and from the latency percentiles entirely. This is the single most important behavior in the module, and it has a dedicated test.
 
+`normalizeStatus` also recognizes the known success synonyms `success`/`succeeded` as `ok`. The runtime chokepoint only ever writes the three canonical states, but `ai_events` also carries `success` rows from seed/legacy/imported telemetry — counting those as errors would understate availability on any window that includes them. The fail-visible guarantee is unchanged: a genuinely unknown/NULL status still surfaces as `error`, never the excluded `blocked` bucket.
+
 ## How it works
 
 - **Pure engine** — [`../../src/lib/reliability/slo.ts`](../../src/lib/reliability/slo.ts): `computeSlo(samples, config)` plus the `percentile`, `errorBudgetStatus`, and `summarizeSlo` helpers. Deterministic and **total** (never throws) for every input: empty window, all-blocked, a zero-tolerance 100% target, and NaN/negative latency are all handled. Fully unit-tested (`slo.test.ts`, 18 cases) with no DB and no publish, so the hard correctness gate covers the whole calculation.
@@ -29,8 +31,9 @@ Over a trailing window of the caller's own AI calls (`ai_events`), it reports:
 
 ## Verification
 
-- `bunx tsc --noEmit` clean; `bun --bun run build` green; `bun test` 405 pass (18 new).
-- The pure engine is behaviorally complete and verified offline. The server fn's live read activates on the founder's next publish (consistent with the lane's ◐ convention; the live DB MCPs were intermittent this session).
+- `bunx tsc --noEmit` clean; `bun test src/lib/reliability/` 57 pass (`slo.test.ts` 23, +1 success-synonym regression).
+- **Live (2026-06-22):** the Missions-header glance renders "86.42% of calls succeeded this week" on the published app — the exact `getReliabilitySlo` 7-day computation over live `ai_events` (70 ok / 81 evaluated; the 20 `blocked` rows correctly excluded). Verified by Playwright against `cadence-flow-beta.lovable.app` (demo account, commit 662b5aec).
+- **Live-data correctness fix (2026-06-22):** querying the demo's 30-day window showed availability **75.66%** under the old `normalizeStatus` (the 17 seed `success` rows counted as errors) vs **84.66%** after recognizing `success` as `ok` — a 9-point correction proven directly against production data. The 7-day glance was already correct because no `success` rows fall in that window; the fix makes wider windows correct too.
 
 ## Wired into the UI (2026-06-21)
 
