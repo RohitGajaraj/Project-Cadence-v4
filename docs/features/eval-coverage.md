@@ -1,6 +1,6 @@
 # EVAL-COVERAGE — which AI surfaces have an eval guard
 
-> _Created: 2026-06-21 (lane 1). Status: ◐ scorer + read fn + EvalsPanel banner shipped; per-target chips + a dormant-by-default coverage-floor deploy-gate primitive added 2026-06-21 (lane 1)._
+> _Created: 2026-06-21 (lane 1). Status: ✅ scorer + read fn + EvalsPanel banner + per-target chips + one-click guard + a dormant-by-default coverage-floor deploy-gate primitive — **LIVE-VERIFIED on the published app 2026-06-22** (lane 1): `/govern?tab=evals` renders "Coverage · 7 of 7 AI surfaces have no eval guard" with all 7 per-surface chips, and clicking the "Chat, default" chip opened the New eval suite form pre-targeted (Name pre-filled "Chat, default", Target prompt combobox "Chat, default" selected, pass gate 70). The only remaining piece is wiring the (already-built, dormant) floor into the CI/deploy step — founder/infra._
 
 Closes the `considerations.md` AI-safety-lens **P1** gap "Eval coverage targets per surface/agent" (_"Today coverage is partial; autonomy needs broad coverage"_). The eval substrate already supported suite CRUD, score trends, and scheduled runs, but nothing answered the governance question: **which of the canonical AI surfaces have no eval guard at all.** This computes it, completing the "is the autonomy actually guarded" triad with [RELIABILITY-SLO](./reliability-slo.md) (is it reliable) and [RUNAWAY-DETECT](./runaway-detection.md) (is it spinning).
 
@@ -28,7 +28,8 @@ A suite's score **trend** answers "is the eval passing?"; coverage answers the m
 ## Verification
 
 - `bunx tsc --noEmit` clean; `eslint` 0 on the changed files; `bun test` 599 pass (`coverage.test.ts` now 34 cases). The production `bun run build` is red only on a pre-existing Lovable `vite-config` ESM-cycle baseline (fails at config load, before any of this source).
-- The scorer + the floor primitive are behaviorally complete and verified offline (incl. a 3-lens adversarial review: logic SHIP, security SHIP/0-findings, UX SHIP_WITH_FIXES — all real findings folded). The read fn's live query + the rendered chips verify on the founder's next publish (the lane's ◐ convention; DB MCPs intermittent this session).
+- The scorer + the floor primitive are behaviorally complete and verified offline (incl. a 3-lens adversarial review: logic SHIP, security SHIP/0-findings, UX SHIP_WITH_FIXES — all real findings folded).
+- **Live (2026-06-22):** `/govern?tab=evals` on the published app renders the Coverage headline ("7 of 7 AI surfaces have no eval guard" — correct: the seeded Lumen suite targets a product surface, not one of the 7 canonical targets), the full 7-chip per-surface map, and the one-click guard flow (clicking a chip opens `CreateSuiteForm` pre-targeted to that surface, with the combobox + name pre-seeded). The read fn's live query against `eval_suites`/`eval_runs` is exercised by this render. Verified by Playwright against `cadence-flow-beta.lovable.app` (demo account, commit 662b5aec).
 
 ## One-click guard (2026-06-21, lane 1)
 
