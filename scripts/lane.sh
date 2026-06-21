@@ -172,6 +172,33 @@ cmd_done() {
   echo "DONE-RECORDED $id (claim freed; future claims refused)"
 }
 
+# `next [count]`: DETERMINISTICALLY print the next eligible item IDs (lowest Rank first) -
+# this is "what to build next" with ZERO judgment. Eligible = register status ⬜ or ◐
+# (a ◐ is partial = it HAS remaining work, so it is ALWAYS continue-able, never "skip as
+# done") AND priority is an autonomous tier (Tier 1 or Tier 3; Tier 2 design + Tier 4 polish
+# are founder-prompted) AND not currently claimed AND not in the DONE registry. The lane runs
+# `for id in $(lane.sh next); do lane.sh claim "$id" <lane> "<globs>" && build && break; done`.
+# Empty output (exit 2) = the board is GENUINELY dry; anything else means build it, never long-poll.
+cmd_next() {
+  local count="${1:-8}" reg rank id n=0
+  _ensure
+  reg="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)/docs/planning/feature-dashboard.md"
+  [ -f "$reg" ] || { echo "register not found: $reg" >&2; return 1; }
+  while IFS=$'\t' read -r rank id; do
+    [ -d "$CLAIMS/$id" ] && continue        # already claimed by a lane
+    [ -e "$DONE/$id" ] && continue          # already completed (no re-pick)
+    echo "$id"
+    n=$((n + 1)); [ "$n" -ge "$count" ] && break
+  done < <(awk -F'|' '
+    /^\| [0-9]+ \|/{
+      r=$2; s=$3; id=$4; pr=$8;
+      gsub(/^[ \t]+|[ \t]+$/,"",r); gsub(/^[ \t]+|[ \t]+$/,"",s); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",pr);
+      if ((s=="\342\254\234" || s=="\342\227\220") && (pr=="Tier 1" || pr=="Tier 3")) printf "%d\t%s\n", r, id;
+    }' "$reg" | sort -n)
+  if [ "$n" = 0 ]; then echo "BOARD DRY: no eligible Tier-1/Tier-3 ⬜/◐ item unclaimed + not done" >&2; return 2; fi
+  return 0
+}
+
 cmd_heartbeat() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: heartbeat <ID>"
   local f="$CLAIMS/$id/meta"
@@ -268,6 +295,7 @@ case "$sub" in
   pin)       cmd_pin "$@" ;;
   release)   cmd_release "$@" ;;
   done)      cmd_done "$@" ;;
+  next)      cmd_next "$@" ;;
   heartbeat) cmd_heartbeat "$@" ;;
   list)      cmd_list "$@" ;;
   board)     cmd_board "$@" ;;
