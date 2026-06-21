@@ -49,6 +49,14 @@ export type RawLineageEdge = {
   relation: string | null;
   rationale: string | null;
   created_at: string | null;
+  /**
+   * Bi-temporal stamp (DBR-1.5): the time this supersession assertion stopped
+   * being current, because a LATER outcome reversed it (invalidate-don't-delete).
+   * Present only once the migration's `valid_to` column is live; absent (undefined)
+   * before then, in which case the edge reads as still-current. Always null on a
+   * non-supersession edge.
+   */
+  valid_to?: string | null;
 };
 
 export type GraphNode = {
@@ -75,10 +83,20 @@ export type GraphEdge = {
   rationale: string | null;
   /** = the edge's created_at; the honest time axis. */
   validFrom: string | null;
-  /** The supersession seam. Always null in v1; the engine fills it later. */
+  /**
+   * Bi-temporal: when this supersession assertion stopped being current (a later
+   * outcome reversed it). Null while the assertion still holds, and null on every
+   * non-supersession edge / before the migration is live (the seam was empty in v1).
+   */
   validTo: string | null;
   /** True for supersedes / contradicts edges (styled distinctly). */
   superseding: boolean;
+  /**
+   * The invalidate-don't-delete property made visible: a supersession edge whose
+   * own assertion was later reversed (`validTo` stamped). It stays on the canvas as
+   * faded history rather than being deleted. False until the engine + migration run.
+   */
+  retired: boolean;
 };
 
 export type KnowledgeGraph = {
@@ -240,6 +258,13 @@ export function projectGraph(
 
   const edges: GraphEdge[] = includedEdges.map((e) => {
     const relation = classifyRelation(e.raw.relation);
+    const superseding = isSuperseding(relation);
+    // Only a supersession edge can be "retired"; a stray valid_to on any other
+    // relation is ignored so the flag never lies.
+    const validTo =
+      superseding && typeof e.raw.valid_to === "string" && e.raw.valid_to.trim()
+        ? e.raw.valid_to
+        : null;
     return {
       id: e.raw.id,
       source: e.sourceKey,
@@ -247,8 +272,9 @@ export function projectGraph(
       relation,
       rationale: e.raw.rationale ?? null,
       validFrom: e.raw.created_at ?? null,
-      validTo: null,
-      superseding: isSuperseding(relation),
+      validTo,
+      superseding,
+      retired: validTo !== null,
     };
   });
 
@@ -286,7 +312,11 @@ export function filterByTime(graph: KnowledgeGraph, asOf: string | null): Knowle
     (n) => live.has(n.key) && (n.key === graph.focusKey || !n.createdAt || n.createdAt <= asOf),
   );
   const nodeKeys = new Set(nodes.map((n) => n.key));
-  const finalEdges = edges.filter((e) => nodeKeys.has(e.source) && nodeKeys.has(e.target));
+  const finalEdges = edges
+    .filter((e) => nodeKeys.has(e.source) && nodeKeys.has(e.target))
+    // Bi-temporal honesty: a supersession assertion reversed AFTER `asOf` was still
+    // current as of that instant, so it reads retired only once `validTo <= asOf`.
+    .map((e) => (e.superseding && e.validTo ? { ...e, retired: e.validTo <= asOf } : e));
 
   return {
     ...graph,

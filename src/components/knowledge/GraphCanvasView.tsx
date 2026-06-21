@@ -57,10 +57,17 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
   );
 
   // DBR-1.5 read-side: how many edges in view mark a belief a recorded outcome
-  // later revised (supersedes / contradicts). Derived from the already-loaded,
-  // time-filtered graph, so it honors the "as of" axis. Zero until the engine runs.
+  // later revised (supersedes / contradicts), split by bi-temporal state. Derived
+  // from the already-loaded, time-filtered graph, so both honor the "as of" axis.
+  // Zero until the engine runs (no supersession edges, no retirements).
   const revisedCount = useMemo(
-    () => (graph ? graph.edges.filter((e) => e.superseding).length : 0),
+    () => (graph ? graph.edges.filter((e) => e.superseding && !e.retired).length : 0),
+    [graph],
+  );
+  // Retired: a supersession assertion that was itself reversed by a later outcome
+  // and kept as faded history (invalidate-don't-delete).
+  const retiredCount = useMemo(
+    () => (graph ? graph.edges.filter((e) => e.retired).length : 0),
     [graph],
   );
 
@@ -191,6 +198,13 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
         <MonoLabel style={{ marginBottom: 8, color: "var(--madder, #b0573f)" }}>
           {revisedCount} {revisedCount === 1 ? "link" : "links"} here mark a belief a recorded
           outcome later revised (madder, dashed)
+        </MonoLabel>
+      )}
+
+      {retiredCount > 0 && (
+        <MonoLabel style={{ marginBottom: 8, color: "var(--ink-faint)" }}>
+          {retiredCount} {retiredCount === 1 ? "revision was" : "revisions were"} themselves later
+          reversed · kept as faded history (invalidate, don&rsquo;t delete)
         </MonoLabel>
       )}
 

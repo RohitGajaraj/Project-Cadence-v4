@@ -29,6 +29,7 @@ function edge(
     relation: opts.relation ?? "promoted",
     rationale: opts.rationale ?? null,
     created_at: opts.created_at ?? "2026-06-01T00:00:00.000Z",
+    valid_to: opts.valid_to,
   };
 }
 
@@ -150,6 +151,51 @@ describe("projectGraph - supersession seam", () => {
     const e = g.edges.find((x) => x.relation === "supersedes")!;
     expect(e.superseding).toBe(true);
     expect(e.validTo).toBeNull();
+    expect(e.retired).toBe(false);
+  });
+});
+
+describe("projectGraph - bi-temporal retired edges (DBR-1.5)", () => {
+  it("carries valid_to and marks a reversed supersession edge retired", () => {
+    const edges = [
+      edge(["decision", "d0"], ["decision", "d1"], {
+        relation: "supersedes",
+        valid_to: "2026-06-20T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(edges, new Map(), k("decision", "d1"));
+    const e = g.edges.find((x) => x.relation === "supersedes")!;
+    expect(e.validTo).toBe("2026-06-20T00:00:00.000Z");
+    expect(e.retired).toBe(true);
+  });
+
+  it("ignores valid_to on a NON-supersession edge so retired never lies", () => {
+    const edges = [
+      edge(["signal", "s0"], ["opportunity", "o1"], {
+        relation: "promoted",
+        valid_to: "2026-06-20T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(edges, new Map(), k("opportunity", "o1"));
+    const e = g.edges.find((x) => x.relation === "promoted")!;
+    expect(e.validTo).toBeNull();
+    expect(e.retired).toBe(false);
+  });
+
+  it("treats a blank/whitespace valid_to as still current", () => {
+    const edges = [
+      edge(["decision", "d0"], ["decision", "d1"], { relation: "supersedes", valid_to: "   " }),
+    ];
+    const g = projectGraph(edges, new Map(), k("decision", "d1"));
+    const e = g.edges.find((x) => x.relation === "supersedes")!;
+    expect(e.validTo).toBeNull();
+    expect(e.retired).toBe(false);
+  });
+
+  it("absent valid_to (pre-migration) reads as current - no regression", () => {
+    const edges = [edge(["decision", "d0"], ["decision", "d1"], { relation: "supersedes" })];
+    const g = projectGraph(edges, new Map(), k("decision", "d1"));
+    expect(g.edges[0].retired).toBe(false);
   });
 });
 
@@ -168,6 +214,48 @@ describe("filterByTime", () => {
   it("returns the graph unchanged when asOf is null", () => {
     const g = projectGraph(edges, new Map(), k("decision", "d1"));
     expect(filterByTime(g, null)).toBe(g);
+  });
+
+  it("reads a supersession reversed AFTER asOf as still current (bi-temporal)", () => {
+    // Asserted 2026-02, reversed 2026-06: as of 2026-04 it was still current.
+    const sup = [
+      edge(["decision", "d0"], ["decision", "d1"], {
+        relation: "supersedes",
+        created_at: "2026-02-01T00:00:00.000Z",
+        valid_to: "2026-06-01T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(sup, new Map(), k("decision", "d1"));
+    expect(g.edges[0].retired).toBe(true); // retired "now"
+    const asOf = filterByTime(g, "2026-04-01T00:00:00.000Z");
+    expect(asOf.edges[0].retired).toBe(false); // but current as of April
+  });
+
+  it("reads a supersession reversed BEFORE asOf as retired (kept, not dropped)", () => {
+    const sup = [
+      edge(["decision", "d0"], ["decision", "d1"], {
+        relation: "supersedes",
+        created_at: "2026-02-01T00:00:00.000Z",
+        valid_to: "2026-03-01T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(sup, new Map(), k("decision", "d1"));
+    const asOf = filterByTime(g, "2026-05-01T00:00:00.000Z");
+    expect(asOf.edges).toHaveLength(1); // invalidate-don't-delete: still shown
+    expect(asOf.edges[0].retired).toBe(true);
+  });
+
+  it("reads validTo EXACTLY at asOf as retired (half-open [validFrom, validTo))", () => {
+    const sup = [
+      edge(["decision", "d0"], ["decision", "d1"], {
+        relation: "supersedes",
+        created_at: "2026-02-01T00:00:00.000Z",
+        valid_to: "2026-04-01T00:00:00.000Z",
+      }),
+    ];
+    const g = projectGraph(sup, new Map(), k("decision", "d1"));
+    const asOf = filterByTime(g, "2026-04-01T00:00:00.000Z");
+    expect(asOf.edges[0].retired).toBe(true);
   });
 });
 

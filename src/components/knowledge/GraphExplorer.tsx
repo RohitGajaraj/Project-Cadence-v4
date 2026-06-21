@@ -109,6 +109,8 @@ export function GraphExplorer({
             const s = nodeByKey.get(e.source);
             const t = nodeByKey.get(e.target);
             if (!s || !t) return null;
+            // A retired supersession edge (its own assertion was later reversed) stays
+            // on the canvas as faded, finely-dotted history - invalidate, don't delete.
             return (
               <line
                 key={e.id}
@@ -117,9 +119,9 @@ export function GraphExplorer({
                 x2={t.x}
                 y2={t.y}
                 stroke={e.superseding ? "var(--madder, #b0573f)" : "var(--hairline, #d9d4cc)"}
-                strokeWidth={e.superseding ? 1.4 : 1}
-                strokeDasharray={e.superseding ? "4 3" : undefined}
-                opacity={0.7}
+                strokeWidth={e.retired ? 1 : e.superseding ? 1.4 : 1}
+                strokeDasharray={e.retired ? "2 4" : e.superseding ? "4 3" : undefined}
+                opacity={e.retired ? 0.3 : 0.7}
               />
             );
           })}

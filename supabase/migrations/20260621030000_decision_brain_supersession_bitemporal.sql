@@ -3,8 +3,10 @@
 -- Additive only: three nullable columns, no default, no NOT NULL, no index/lock change,
 -- idempotent (IF NOT EXISTS). The existing RLS policy ("own artifact_lineage all",
 -- FOR ALL USING auth.uid() = user_id) is column-agnostic, so it already covers these.
--- The read-side explorer (knowledge-graph-explorer.functions.ts) selects an explicit
--- column list that EXCLUDES these three, so the read surface stays byte-identical.
+-- The read-side explorer (knowledge-graph-view.functions.ts) probes for valid_to and
+-- selects it once live (bi-temporal legibility on the canvas); pre-migration it falls
+-- back to the base column list, so the read surface stays byte-identical until the
+-- column exists. invalidated_by/inference stay unread by the explorer.
 --
 -- These power invalidate-don't-delete: when a later recorded outcome supersedes or
 -- contradicts a prior decision, the retired belief edge keeps its row and gets stamped

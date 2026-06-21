@@ -50,6 +50,33 @@ const TITLE_TABLE: Record<GraphNodeKind, { table: string; col: string }> = {
 };
 
 const LINEAGE_COLS = "id,parent_kind,parent_id,child_kind,child_id,relation,rationale,created_at";
+/** Same row plus the bi-temporal `valid_to` stamp (DBR-1.5), used once the migration is live. */
+const LINEAGE_COLS_BITEMPORAL = `${LINEAGE_COLS},valid_to`;
+
+/** A PostgREST "column does not exist" error (42703) - the pre-migration signal for `valid_to`. */
+function isMissingColumnError(
+  err: { code?: string; message?: string } | null | undefined,
+): boolean {
+  if (!err) return false;
+  if (err.code === "42703") return true;
+  const m = (err.message ?? "").toLowerCase();
+  return m.includes("does not exist") && m.includes("valid_to");
+}
+
+/**
+ * Pick the lineage column set for THIS request: prefer the bi-temporal columns,
+ * but fall back to the base set if `valid_to` is not live yet (the DBR-1.5 migration
+ * applies on the founder's next publish). One cheap probe keeps the BFS itself simple
+ * and means adding `valid_to` here can never 42703 the whole graph to empty.
+ */
+async function resolveLineageCols(supabase: SupabaseClient): Promise<string> {
+  try {
+    const { error } = await supabase.from("artifact_lineage").select("valid_to").limit(1);
+    return isMissingColumnError(error) ? LINEAGE_COLS : LINEAGE_COLS_BITEMPORAL;
+  } catch {
+    return LINEAGE_COLS;
+  }
+}
 
 /** Batch `.in()` id lists so a PostgREST URL can never run long, even at the node cap. */
 const IN_BATCH = 25;
@@ -90,6 +117,7 @@ async function fetchSubgraph(
   supabase: SupabaseClient,
   focus: FocusNode,
   bounds: GraphBounds,
+  cols: string,
 ): Promise<{ edges: RawLineageEdge[]; nodes: Map<string, FocusNode> }> {
   const nodes = new Map<string, FocusNode>([[nodeKey(focus.kind, focus.id), focus]]);
   const edges: RawLineageEdge[] = [];
@@ -110,15 +138,21 @@ async function fetchSubgraph(
       for (const batch of chunk(ids, IN_BATCH)) {
         const { data: up } = await supabase
           .from("artifact_lineage")
-          .select(LINEAGE_COLS)
+          .select(cols)
           .eq("child_kind", kind)
           .in("child_id", batch);
         const { data: down } = await supabase
           .from("artifact_lineage")
-          .select(LINEAGE_COLS)
+          .select(cols)
           .eq("parent_kind", kind)
           .in("parent_id", batch);
-        const rows = [...((up ?? []) as RawLineageEdge[]), ...((down ?? []) as RawLineageEdge[])];
+        // The dynamic `cols` string defeats the client's row-type inference (it
+        // returns GenericStringError[]); cast through unknown, the same escape hatch
+        // hydrateTitles uses for its dynamic table name.
+        const rows = [
+          ...((up ?? []) as unknown as RawLineageEdge[]),
+          ...((down ?? []) as unknown as RawLineageEdge[]),
+        ];
         for (const e of rows) {
           if (!edgeIds.has(e.id)) {
             edgeIds.add(e.id);
@@ -199,7 +233,8 @@ export const getKnowledgeGraph = createServerFn({ method: "GET" })
       const focus = await resolveFocus(supabase, data.focusKind, data.focusId);
       if (!focus) return emptyGraph();
       const focusKey = nodeKey(focus.kind, focus.id);
-      const { edges, nodes } = await fetchSubgraph(supabase, focus, DEFAULT_BOUNDS);
+      const cols = await resolveLineageCols(supabase);
+      const { edges, nodes } = await fetchSubgraph(supabase, focus, DEFAULT_BOUNDS, cols);
       const titleMap = await hydrateTitles(supabase, nodes);
       return projectGraph(edges, titleMap, focusKey, DEFAULT_BOUNDS);
     } catch {
