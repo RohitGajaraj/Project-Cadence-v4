@@ -17,6 +17,8 @@ import {
   resolveTopupCredits,
 } from "@/lib/billing-webhook";
 
+import { invoiceSubscriptionId } from "@/lib/stripe-invoice";
+
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
   if (!_supabase) {
@@ -230,7 +232,8 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
  * per founder ruling, access is preserved while Stripe retries the card.
  */
 async function handleInvoicePaymentFailed(invoice: any, env: StripeEnv) {
-  const subId = invoice.subscription;
+  // Basil+ removed top-level invoice.subscription; resolve it version-robustly.
+  const subId = invoiceSubscriptionId(invoice);
   if (!subId) return;
   await getSupabase()
     .from("subscriptions")
@@ -240,7 +243,8 @@ async function handleInvoicePaymentFailed(invoice: any, env: StripeEnv) {
 }
 
 async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
-  const subId = invoice.subscription;
+  // Basil+ removed top-level invoice.subscription; resolve it version-robustly.
+  const subId = invoiceSubscriptionId(invoice);
   if (!subId) return;
   const admin = getSupabase() as unknown as SupabaseClient;
   await admin
