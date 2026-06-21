@@ -23,10 +23,14 @@ export function tierFromLookupKey(lookupKey: string | null | undefined): PlanTie
 /** Default monthly bundle lookup key for a tier, used when the user clicks "Upgrade" without picking a bundle size. */
 export function defaultMonthlyLookupKey(tier: PlanTier): string | null {
   switch (tier) {
-    case "pro":  return "cluster_1k_monthly";
-    case "max":  return "constellation_5k_monthly";
-    case "team": return "galaxy_1k_seat_monthly";
-    default:     return null;
+    case "pro":
+      return "cluster_1k_monthly";
+    case "max":
+      return "constellation_5k_monthly";
+    case "team":
+      return "galaxy_1k_seat_monthly";
+    default:
+      return null;
   }
 }
 
@@ -36,6 +40,49 @@ const TIER_PREFIX: Record<Exclude<PlanTier, "free" | "enterprise">, string> = {
   max: "constellation",
   team: "galaxy",
 };
+
+/**
+ * Parse a credits shorthand token into a credit count. Mirrors the shorthand
+ * `lookupKeyFor` emits, plus the `N_Mk` decimal form the seeded top-up keys use:
+ *   "500" -> 500 · "1k" -> 1000 · "10k" -> 10000 · "2500" -> 2500 · "2_5k" -> 2500
+ * Returns null for an unrecognized token. Pure.
+ */
+function parseCreditsToken(token: string): number | null {
+  let m = /^(\d+)k$/.exec(token);
+  if (m) return parseInt(m[1], 10) * 1000;
+  m = /^(\d+)_(\d+)k$/.exec(token);
+  if (m) {
+    const frac = parseInt(m[2], 10) / Math.pow(10, m[2].length);
+    return Math.round((parseInt(m[1], 10) + frac) * 1000);
+  }
+  m = /^(\d+)$/.exec(token);
+  if (m) return parseInt(m[1], 10);
+  return null;
+}
+
+/**
+ * Inverse of `lookupKeyFor`: the credit volume encoded in a subscription-bundle OR
+ * top-up `lookup_key`. The single, catalog-agnostic source the webhook uses to know
+ * how many credits a completed purchase grants, so ANY bundle the founder adds in the
+ * admin catalog credits correctly (no hardcoded per-key map to drift).
+ *   "cluster_1k_monthly" -> 1000 · "galaxy_2500_seat_monthly" -> 2500 ·
+ *   "constellation_25k_yearly" -> 25000 · "topup_250" -> 250 · "topup_2_5k" -> 2500
+ * Returns null if the key is unrecognized. Pure.
+ */
+export function creditsFromLookupKey(lookupKey: string | null | undefined): number | null {
+  if (!lookupKey) return null;
+  if (lookupKey.startsWith("topup_")) {
+    return parseCreditsToken(lookupKey.slice("topup_".length));
+  }
+  const tier = tierFromLookupKey(lookupKey);
+  if (!tier || tier === "free" || tier === "enterprise") return null;
+  const prefix = TIER_PREFIX[tier];
+  const token = lookupKey
+    .slice(prefix.length + 1) // strip "<prefix>_"
+    .replace(/_(monthly|yearly)$/, "")
+    .replace(/_seat$/, "");
+  return parseCreditsToken(token);
+}
 
 /**
  * Build the Stripe `lookup_key` for a (tier, credits, interval) bundle.
@@ -52,8 +99,7 @@ export function lookupKeyFor(
 ): string | null {
   if (tier === "free" || tier === "enterprise") return null;
   const prefix = TIER_PREFIX[tier];
-  const shorthand =
-    credits >= 1000 && credits % 1000 === 0 ? `${credits / 1000}k` : `${credits}`;
+  const shorthand = credits >= 1000 && credits % 1000 === 0 ? `${credits / 1000}k` : `${credits}`;
   const seat = tier === "team" ? "_seat" : "";
   return `${prefix}_${shorthand}${seat}_${interval}`;
 }

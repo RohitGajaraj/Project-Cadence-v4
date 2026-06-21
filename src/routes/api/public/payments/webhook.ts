@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { type StripeEnv, verifyWebhook } from '@/lib/stripe.server';
-import { tierFromLookupKey } from '@/lib/billing-tier';
+import { creditsFromLookupKey, tierFromLookupKey } from '@/lib/billing-tier';
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
@@ -47,6 +48,45 @@ async function applyTierForUser(userId: string, lookupKey: string, status: strin
   await sb.from('workspaces' as any).update({ plan_tier: effectiveTier }).eq('owner_id', userId);
 }
 
+/** Resolve the caller's account id (service-role; creates the default account if missing). */
+async function resolveAccountId(userId: string): Promise<string | null> {
+  try {
+    const admin = getSupabase() as unknown as SupabaseClient;
+    const { data } = await admin.rpc('ensure_user_default_account', { _user_id: userId });
+    return (data as string | null) ?? null;
+  } catch (e) {
+    console.error('resolveAccountId failed:', e);
+    return null;
+  }
+}
+
+/**
+ * Grant the bundle's monthly credit allowance to the user's account on an active
+ * subscription. The grant RPC is idempotent (a no-op when the allowance already matches,
+ * so retries and status-only updates do not re-grant) and UNGATED: it only sets the
+ * included balance, which is harmless while metering is off and keeps balances correct for
+ * the go-live flip. Credits resolve from the bundle's lookup_key, so any catalog bundle
+ * grants the right amount.
+ */
+async function grantForSubscription(
+  userId: string | undefined,
+  lookupKey: string | undefined,
+  status: string,
+): Promise<void> {
+  if (!userId || !lookupKey) return;
+  if (status !== 'active' && status !== 'trialing') return;
+  const credits = creditsFromLookupKey(lookupKey);
+  if (!credits || credits <= 0) return;
+  const accountId = await resolveAccountId(userId);
+  if (!accountId) return;
+  try {
+    const admin = getSupabase() as unknown as SupabaseClient;
+    await admin.rpc('grant_subscription_credits', { _account_id: accountId, _credits: credits });
+  } catch (e) {
+    console.error('grantForSubscription failed:', e);
+  }
+}
+
 async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
   const userId = sub.metadata?.userId;
   if (!userId) {
@@ -73,6 +113,7 @@ async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
     updated_at: new Date().toISOString(),
   }, { onConflict: 'stripe_subscription_id' });
   await applyTierForUser(userId, priceId, sub.status);
+  await grantForSubscription(userId, priceId, sub.status);
 }
 
 async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
@@ -97,6 +138,7 @@ async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
     .eq('environment', env);
   const userId = sub.metadata?.userId;
   if (userId) await applyTierForUser(userId, priceId, sub.status);
+  await grantForSubscription(userId, priceId, sub.status);
 }
 
 async function handleSubscriptionDeleted(sub: any, env: StripeEnv) {
@@ -136,23 +178,38 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   ).then((r) => r.json() as Promise<{ data: Array<{ price: { lookup_key?: string; id: string } }> }>);
 
   const lookupKey = lineItems.data?.[0]?.price?.lookup_key;
-  const credits = lookupKey ? TOPUP_CREDITS[lookupKey] : undefined;
+  // Resolve credits from the bundle's lookup_key first (covers ANY catalog bundle), then
+  // the static map as a fallback for legacy keys.
+  const credits =
+    (lookupKey ? creditsFromLookupKey(lookupKey) : null) ??
+    (lookupKey ? TOPUP_CREDITS[lookupKey] : undefined);
   if (!credits) {
     console.error('Webhook: top-up has unknown lookup_key', lookupKey);
     return;
   }
 
-  await getSupabase().from('credit_topups').upsert({
-    user_id: userId,
-    stripe_session_id: session.id,
-    stripe_payment_intent_id: session.payment_intent,
-    price_lookup_key: lookupKey!,
-    credits_added: credits,
-    amount_cents: session.amount_total ?? 0,
-    currency: session.currency ?? 'usd',
-    status: 'completed',
-    environment: env,
-  }, { onConflict: 'stripe_session_id' });
+  const accountId = await resolveAccountId(userId);
+  if (!accountId) {
+    console.error('Webhook: no account for top-up user', userId);
+    return;
+  }
+
+  // apply_topup_credits records the purchase, credits the spendable balance, and writes the
+  // ledger row atomically + idempotently (exactly once per Stripe session). This is the
+  // M-C-TOPUP fix: the old code wrote credit_topups but the credits never reached the
+  // balance, so a paying customer's top-up was lost.
+  const admin = getSupabase() as unknown as SupabaseClient;
+  await admin.rpc('apply_topup_credits', {
+    _user_id: userId,
+    _account_id: accountId,
+    _session_id: session.id,
+    _payment_intent_id: session.payment_intent ?? null,
+    _credits: credits,
+    _amount_cents: session.amount_total ?? 0,
+    _currency: session.currency ?? 'usd',
+    _lookup_key: lookupKey ?? null,
+    _env: env,
+  });
 }
 
 /**
@@ -174,11 +231,31 @@ async function handleInvoicePaymentFailed(invoice: any, env: StripeEnv) {
 async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
   const subId = invoice.subscription;
   if (!subId) return;
-  await getSupabase()
+  const admin = getSupabase() as unknown as SupabaseClient;
+  await admin
     .from('subscriptions')
     .update({ status: 'active', updated_at: new Date().toISOString() })
     .eq('stripe_subscription_id', subId)
     .eq('environment', env);
+  // On a renewal invoice (not the first), refill the cycle's included allowance. The first
+  // invoice is billing_reason 'subscription_create' and is already covered by the
+  // grant-on-subscribe path; only 'subscription_cycle' (a true renewal) refills here.
+  if (invoice.billing_reason !== 'subscription_cycle') return;
+  const { data: sub } = await admin
+    .from('subscriptions')
+    .select('user_id')
+    .eq('stripe_subscription_id', subId)
+    .eq('environment', env)
+    .maybeSingle();
+  const userId = (sub as { user_id?: string } | null)?.user_id;
+  if (!userId) return;
+  const accountId = await resolveAccountId(userId);
+  if (!accountId) return;
+  try {
+    await admin.rpc('reset_subscription_cycle', { _account_id: accountId });
+  } catch (e) {
+    console.error('reset_subscription_cycle failed:', e);
+  }
 }
 
 async function handleWebhook(req: Request, env: StripeEnv) {
