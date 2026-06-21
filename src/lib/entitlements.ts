@@ -183,7 +183,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
       return {
         tier: "pro",
         name: "Cluster",
-        price: "$39/mo",
+        // Mirrors the catalog recommended bundle (pro 1k/$25); keep in sync with pricing_bundles.
+        price: "$25/mo",
         tagline: "Your decision memory never fades, and it starts to compound.",
         highlights: [
           "Everything in Star, plus:",
@@ -202,7 +203,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
       return {
         tier: "max",
         name: "Constellation",
-        // Placeholder price, founder-gated (plan §7.1).
+        // Mirrors the catalog recommended bundle (max 5k/$99); keep in sync with pricing_bundles.
         price: "$99/mo",
         tagline: "More room to run, with priority and deeper memory.",
         highlights: [
@@ -222,8 +223,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
       return {
         tier: "team",
         name: "Galaxy",
-        // Placeholder per-seat price, founder-gated (plan §7.1).
-        price: "$25/seat/mo",
+        // Mirrors the catalog recommended bundle (team 1k/$30 per seat); keep in sync with pricing_bundles.
+        price: "$30/seat/mo",
         tagline: "Shared memory and approval lanes for the whole product team.",
         highlights: [
           "Everything in Constellation, plus:",

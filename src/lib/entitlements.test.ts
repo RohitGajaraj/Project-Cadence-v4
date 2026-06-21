@@ -161,3 +161,14 @@ describe("planPresentation", () => {
     expect(planPresentation("enterprise").price).toBe("Contact sales");
   });
 });
+
+describe("planPresentation prices mirror the catalog recommended bundles (M-C-PRICE-SYNC drift guard)", () => {
+  it("pins the public/marketing price per tier to the recommended pricing_bundles", () => {
+    // pro 1k/$25, max 5k/$99, team 1k/$30 per seat. If the catalog changes, change both.
+    expect(planPresentation("free").price).toBe("$0");
+    expect(planPresentation("pro").price).toBe("$25/mo");
+    expect(planPresentation("max").price).toBe("$99/mo");
+    expect(planPresentation("team").price).toBe("$30/seat/mo");
+    expect(planPresentation("enterprise").price).toBe("Contact sales");
+  });
+});

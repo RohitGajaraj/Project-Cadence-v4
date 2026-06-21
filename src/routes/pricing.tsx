@@ -27,7 +27,7 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const TIERS: PlanTier[] = ["free", "pro", "team"];
+const TIERS: PlanTier[] = ["free", "pro", "max", "team"];
 
 function PricingPage() {
   return (
