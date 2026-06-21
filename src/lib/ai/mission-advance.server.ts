@@ -343,6 +343,11 @@ export async function dispatchReadySteps(
         /* recall failure is non-fatal — dispatch proceeds without refs */
       }
 
+      // No `artifacts` here BY DESIGN: an orchestrated dispatch is a pure-planning
+      // hop, so the A2A evidence gate (validateHandoff) is a guaranteed no-op for
+      // it even when HANDOFF_EVIDENCE_GATE=enforce. If you ever add `artifacts` to
+      // this payload, also thread `evidence_ids` (or `memory_refs`) or an enforced
+      // gate will reject the hop and burn this step's retries down to 'failed'.
       const payload: HandoffPayload = {
         task: step.sub_goal,
         context: {

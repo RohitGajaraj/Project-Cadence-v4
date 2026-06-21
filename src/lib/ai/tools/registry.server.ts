@@ -2284,7 +2284,7 @@ const webCrawlTool = def({
 const agentHandoff = def({
   name: "agent.handoff",
   description:
-    "Hand the current mission off to another agent with a structured payload (task + context + artifacts + open questions + constraints). Use when your stage is done and a different specialist should pick up. Requires you to be inside a mission (the operator started it that way).",
+    "Hand the current mission off to another agent with a structured payload (task + context + artifacts + open questions + constraints + evidence). Use when your stage is done and a different specialist should pick up. Requires you to be inside a mission (the operator started it that way). When you list artifacts, also cite evidence_ids: the signals/themes/opportunities/PRDs/decisions/memory that justify them, so the receiver can verify your claim instead of taking it on trust (the runtime can reject an evidence-free handoff).",
   category: "write",
   argsSchema: z.object({
     to_agent_slug: z.string().min(1).max(60),
@@ -2302,6 +2302,16 @@ const agentHandoff = def({
       .optional(),
     open_questions: z.array(z.string().min(1).max(400)).max(10).optional(),
     constraints: z.array(z.string().min(1).max(400)).max(10).optional(),
+    evidence_ids: z
+      .array(
+        z.object({
+          kind: z.string().min(1).max(40),
+          id: z.string().min(1).max(200),
+          note: z.string().max(280).optional(),
+        }),
+      )
+      .max(20)
+      .optional(),
   }),
   preview: (a) => `Handoff to ${a.to_agent_slug}: "${a.task.slice(0, 80)}"`,
   run: async (
@@ -2323,6 +2333,7 @@ const agentHandoff = def({
       artifacts: a.artifacts,
       open_questions: a.open_questions,
       constraints: a.constraints,
+      evidence_ids: a.evidence_ids,
     };
     const result = await enqueueHandoff(supabase, userId, {
       mission_id: missionId,
