@@ -333,6 +333,14 @@ function byoConfig(model: string): { provider: string; url: string; model: strin
       url: "https://api.openai.com/v1/chat/completions",
       model: model.replace(/^openai\//, ""),
     };
+  // BYO Gemini: route google/* to Google's OpenAI-compatible endpoint with the user's key, so a
+  // pasted Gemini key bypasses the gateway for completions (no LOVABLE_API_KEY change needed).
+  if (model.startsWith("google/"))
+    return {
+      provider: "google",
+      url: GOOGLE_OPENAI_GATEWAY,
+      model: model.replace(/^google\//, ""),
+    };
   if (model.startsWith("deepseek/"))
     return {
       provider: "deepseek",

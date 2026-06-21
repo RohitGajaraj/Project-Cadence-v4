@@ -9,6 +9,7 @@ export const BYO_PROVIDERS = [
   { id: "xai", label: "Grok (xAI)", placeholder: "xai-…" },
   { id: "ollama", label: "Ollama", placeholder: "http://localhost:11434 (base URL)" },
   { id: "openai", label: "OpenAI (direct)", placeholder: "sk-…" },
+  { id: "google", label: "Gemini (Google)", placeholder: "AIza…" },
   { id: "github_pat", label: "GitHub PAT", placeholder: "ghp_…" },
 ] as const;
 
@@ -20,16 +21,18 @@ function maskFromPrefix(prefix: string | null | undefined): string {
 export const listApiKeys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as never as {
-      from: (t: string) => {
-        select: (q: string) => {
-          order: (
-            c: string,
-            o: { ascending: boolean },
-          ) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+    const { data, error } = await (
+      context.supabase as never as {
+        from: (t: string) => {
+          select: (q: string) => {
+            order: (
+              c: string,
+              o: { ascending: boolean },
+            ) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+          };
         };
-      };
-    })
+      }
+    )
       .from("user_api_keys")
       .select("id, provider, label, base_url, created_at, api_key_prefix")
       .order("created_at", { ascending: false });
@@ -107,6 +110,8 @@ function defaultModelFor(provider: string): string {
       return "anthropic/claude-3-5-haiku-20241022";
     case "openai":
       return "openai/gpt-4o-mini";
+    case "google":
+      return "google/gemini-2.5-flash-lite";
     case "deepseek":
       return "deepseek/deepseek-chat";
     case "xai":
