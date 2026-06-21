@@ -30,9 +30,12 @@ A suite's score **trend** answers "is the eval passing?"; coverage answers the m
 - `bunx tsc --noEmit` clean; `eslint` 0 on the changed files; `bun test` 599 pass (`coverage.test.ts` now 34 cases). The production `bun run build` is red only on a pre-existing Lovable `vite-config` ESM-cycle baseline (fails at config load, before any of this source).
 - The scorer + the floor primitive are behaviorally complete and verified offline (incl. a 3-lens adversarial review: logic SHIP, security SHIP/0-findings, UX SHIP_WITH_FIXES — all real findings folded). The read fn's live query + the rendered chips verify on the founder's next publish (the lane's ◐ convention; DB MCPs intermittent this session).
 
+## One-click guard (2026-06-21, lane 1)
+
+Each uncovered/stale coverage chip is now a button: clicking it opens the existing `CreateSuiteForm` pre-targeted to that surface (and pre-filled with the surface label as the suite name), so the operator goes from "this surface has no guard" to a pre-seeded new suite in one click. Covered chips stay static. The form validates the seeded target against the canonical `SURFACE_KEYS` (an unknown target falls back to the default, never an invalid surface/key), is re-keyed on the prefill so clicking a different gap chip while the form is open re-seeds it, and a manual "New suite" / empty-state open stays unseeded. Reviewed (single-agent, SHIP, 0 defects; folded one defensive prefill-clear). UI: `/govern?tab=evals`.
+
 ## Out of scope / follow-ups
 
-- **One-click "create a guard for this uncovered surface"** affordance from a chip.
 - **Wire the floor into the actual deploy pipeline.** `evaluateCoverageFloor` is the reusable primitive; a CI/pre-deploy step (alongside KI-14's regression-blocks-deploy) can call it and block the ship when the verdict fails, once the founder sets the floor env. Today the verdict only surfaces in the panel.
 
 ## Related

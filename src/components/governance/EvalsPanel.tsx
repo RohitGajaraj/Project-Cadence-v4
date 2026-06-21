@@ -59,6 +59,14 @@ export function EvalsPanel() {
   const coverageFloor = coverageQ.data?.floor;
 
   const [createOpen, setCreateOpen] = useState(false);
+  // One-click "guard this surface": an uncovered/stale coverage chip seeds the create-suite form
+  // with that surface so the PM goes from "this surface has no guard" to a pre-targeted new suite in
+  // one click. Cleared whenever the form closes so a later manual "New suite" opens unseeded.
+  const [prefill, setPrefill] = useState<{ target: string; name: string } | null>(null);
+  const openGuardFor = (t: { surface: string; key: string; label: string }) => {
+    setPrefill({ target: `${t.surface}/${t.key}`, name: t.label });
+    setCreateOpen(true);
+  };
 
   const suites = (suitesQ.data ?? []) as SuiteRow[];
   const trends = trendsQ.data?.trends ?? {};
@@ -89,7 +97,13 @@ export function EvalsPanel() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => setCreateOpen((v) => !v)}>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => {
+            setPrefill(null); // a manual open is unseeded; only a gap chip pre-targets
+            setCreateOpen((v) => !v);
+          }}
+        >
           New suite · targets a prompt
         </button>
       </div>
@@ -143,33 +157,55 @@ export function EvalsPanel() {
                           bg: "color-mix(in oklab, var(--rose) 8%, transparent)",
                           text: "var(--ink)",
                         };
-                return (
+                // A gap chip (uncovered/stale) is a one-click affordance to start guarding that
+                // surface; a covered chip is static (nothing to fill).
+                const interactive = t.state !== "covered";
+                const chipStyle = {
+                  display: "inline-flex" as const,
+                  alignItems: "center" as const,
+                  gap: 5,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  border: `1px ${meta.borderStyle} ${meta.border}`,
+                  background: meta.bg,
+                  color: meta.text,
+                  font: "inherit",
+                  cursor: interactive ? "pointer" : "default",
+                };
+                const dot = (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 999,
+                      background: meta.dot,
+                      flex: "none",
+                    }}
+                  />
+                );
+                return interactive ? (
+                  <button
+                    key={`${t.surface}/${t.key}`}
+                    type="button"
+                    className="mono-label"
+                    aria-label={`Create an eval guard for ${t.label} (${meta.word})`}
+                    title={`Create an eval guard for ${t.label}`}
+                    onClick={() => openGuardFor(t)}
+                    style={chipStyle}
+                  >
+                    {dot}
+                    {t.label}
+                  </button>
+                ) : (
                   <span
                     key={`${t.surface}/${t.key}`}
                     className="mono-label"
                     aria-label={`${t.label}: ${meta.word}`}
                     title={`${t.label}: ${meta.word}`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                      padding: "2px 8px",
-                      borderRadius: 999,
-                      border: `1px ${meta.borderStyle} ${meta.border}`,
-                      background: meta.bg,
-                      color: meta.text,
-                    }}
+                    style={chipStyle}
                   >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 999,
-                        background: meta.dot,
-                        flex: "none",
-                      }}
-                    />
+                    {dot}
                     {t.label}
                   </span>
                 );
@@ -204,9 +240,18 @@ export function EvalsPanel() {
 
       {createOpen ? (
         <CreateSuiteForm
-          onClose={() => setCreateOpen(false)}
+          // Re-key on the prefill so clicking a different gap chip while the form is already open
+          // remounts it with the new surface seeded (useState seeds on mount only).
+          key={prefill?.target ?? "manual"}
+          initialTarget={prefill?.target}
+          initialName={prefill?.name}
+          onClose={() => {
+            setCreateOpen(false);
+            setPrefill(null);
+          }}
           onCreated={(id) => {
             setCreateOpen(false);
+            setPrefill(null);
             openSuite(id);
           }}
         />
@@ -229,7 +274,10 @@ export function EvalsPanel() {
           title="No eval suites yet"
           body="An eval suite is a regression test on a prompt — golden cases, an LLM judge, and a pass gate. Quality drops get caught before they ship."
           cta="New suite · targets a prompt"
-          onCta={() => setCreateOpen(true)}
+          onCta={() => {
+            setPrefill(null); // empty-state CTA is a manual open: keep it unseeded
+            setCreateOpen(true);
+          }}
         />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
@@ -323,16 +371,27 @@ export function EvalsPanel() {
 function CreateSuiteForm({
   onClose,
   onCreated,
+  initialTarget,
+  initialName,
 }: {
   onClose: () => void;
   onCreated: (id: string) => void;
+  /** Pre-selected "surface/key" when opened from a coverage gap chip (one-click guard). */
+  initialTarget?: string;
+  /** Pre-filled suite name when opened from a coverage gap chip. */
+  initialName?: string;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createEvalSuite);
+  // Seed from a coverage gap chip when present; the picker only offers the canonical targets, so an
+  // unknown initialTarget falls back to the default rather than an invalid surface/key.
+  const seededTarget = SURFACE_KEYS.some((s) => `${s.surface}/${s.key}` === initialTarget)
+    ? (initialTarget as string)
+    : "chat/default";
   const [form, setForm] = useState({
-    name: "",
+    name: initialName ?? "",
     description: "",
-    target: "chat/default",
+    target: seededTarget,
     pass_threshold: 70,
   });
   const m = useMutation({
