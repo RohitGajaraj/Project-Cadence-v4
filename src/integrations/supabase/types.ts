@@ -1163,11 +1163,14 @@ export type Database = {
           created_at: string
           created_by_agent: string | null
           id: string
+          inference: Json | null
+          invalidated_by: string | null
           parent_id: string
           parent_kind: string
           rationale: string | null
           relation: string
           user_id: string
+          valid_to: string | null
           workspace_id: string
         }
         Insert: {
@@ -1177,11 +1180,14 @@ export type Database = {
           created_at?: string
           created_by_agent?: string | null
           id?: string
+          inference?: Json | null
+          invalidated_by?: string | null
           parent_id: string
           parent_kind: string
           rationale?: string | null
           relation?: string
           user_id: string
+          valid_to?: string | null
           workspace_id?: string
         }
         Update: {
@@ -1191,11 +1197,14 @@ export type Database = {
           created_at?: string
           created_by_agent?: string | null
           id?: string
+          inference?: Json | null
+          invalidated_by?: string | null
           parent_id?: string
           parent_kind?: string
           rationale?: string | null
           relation?: string
           user_id?: string
+          valid_to?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -4331,6 +4340,53 @@ export type Database = {
           },
         ]
       }
+      roadmap_audit: {
+        Row: {
+          action: string
+          created_at: string
+          from_bucket: string | null
+          id: string
+          measure: string | null
+          opportunity_id: string
+          outcome: string | null
+          to_bucket: string | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          from_bucket?: string | null
+          id?: string
+          measure?: string | null
+          opportunity_id: string
+          outcome?: string | null
+          to_bucket?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          from_bucket?: string | null
+          id?: string
+          measure?: string | null
+          opportunity_id?: string
+          outcome?: string | null
+          to_bucket?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_audit_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduler_proposals: {
         Row: {
           calendar_event_id: string | null
@@ -5593,6 +5649,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _erasure_delete_by_column: {
+        Args: { _col: string; _id: string }
+        Returns: Json
+      }
       accept_workspace_invitation: { Args: { _token: string }; Returns: string }
       admin_add_admin_by_email: { Args: { _email: string }; Returns: string }
       admin_add_workspace_member: {
@@ -6100,6 +6160,9 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      erasure_residue: { Args: { _workspace_id: string }; Returns: Json }
+      forget_account: { Args: { _account_id: string }; Returns: Json }
+      forget_workspace: { Args: { _workspace_id: string }; Returns: Json }
       get_active_banner: {
         Args: never
         Returns: {
@@ -6329,6 +6392,7 @@ export type Database = {
       }
       redeem_voucher: { Args: { _code: string }; Returns: Json }
       revoke_mcp_token: { Args: { _token_id: string }; Returns: undefined }
+      right_to_erasure_enabled: { Args: never; Returns: boolean }
       seed_default_agent_tools: {
         Args: { _user_id: string }
         Returns: undefined
