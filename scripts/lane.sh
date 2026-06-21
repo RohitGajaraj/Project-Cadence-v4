@@ -180,7 +180,7 @@ cmd_done() {
 # `for id in $(lane.sh next); do lane.sh claim "$id" <lane> "<globs>" && build && break; done`.
 # Empty output (exit 2) = the board is GENUINELY dry; anything else means build it, never long-poll.
 cmd_next() {
-  local count="${1:-8}" reg rank id n=0
+  local count="${1:-500}" reg rank id n=0   # effectively the full eligible list (claim down it until one wins)
   _ensure
   reg="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)/docs/planning/feature-dashboard.md"
   [ -f "$reg" ] || { echo "register not found: $reg" >&2; return 1; }
