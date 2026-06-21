@@ -57,6 +57,7 @@ import { getPricingCatalog } from "@/lib/pricing.functions";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
+import { HealthCard } from "@/components/settings/HealthCard";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 
@@ -69,6 +70,7 @@ type SectionId =
   | "credits"
   | "interop"
   | "profile"
+  | "health"
   | "data";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile).
@@ -89,6 +91,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "credits", label: "Credits" },
   { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
+  { id: "health", label: "Health" },
   { id: "data", label: "Data" },
 ];
 
@@ -185,6 +188,7 @@ function SettingsPage() {
         {active === "credits" && <CreditsTab />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
+        {active === "health" && <HealthCard />}
         {active === "data" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <DataExportCard workspaceId={activeWorkspace?.id} />
@@ -386,7 +390,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
       {/* Horizontal Lovable-style plan table: free · 3 paid · enterprise.
           Per-card credits dropdown drives the live price. */}
       <PlanTable currentTier={currentTier} canSelect={state?.isOwner ?? false} />
-
     </div>
   );
 }
@@ -399,7 +402,6 @@ function BillingTab({ checkout }: { checkout?: string }) {
    block honestly says so instead of pretending a 0 is meaningful. ---- */
 
 function CreditsTab() {
-
   return <CreditsTabInner />;
 }
 
@@ -647,21 +649,39 @@ function CreditsTabInner() {
 
       {/* ===== Pick a bundle ===== */}
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
           <div>
-            <div className="mono-label" style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}>
+            <div
+              className="mono-label"
+              style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}
+            >
               One-time top-ups
             </div>
-            <div className="font-display" style={{ fontSize: 22, marginTop: 4, fontWeight: 500, letterSpacing: "-0.01em" }}>
+            <div
+              className="font-display"
+              style={{ fontSize: 22, marginTop: 4, fontWeight: 500, letterSpacing: "-0.01em" }}
+            >
               Buy credits without changing your plan
             </div>
             <p style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", margin: "4px 0 0" }}>
-              Credits land in your balance and stay until used. Higher bundles unlock a better per-credit rate.
+              Credits land in your balance and stay until used. Higher bundles unlock a better
+              per-credit rate.
             </p>
           </div>
           {selectedBundle && (
             <div style={{ textAlign: "right" }}>
-              <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+              <div
+                className="mono-label"
+                style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
+              >
                 Your selection
               </div>
               <div className="font-display" style={{ fontSize: 28, lineHeight: 1, marginTop: 4 }}>
@@ -677,7 +697,15 @@ function CreditsTabInner() {
 
         {/* Starter tiers */}
         <div style={{ marginTop: 18 }}>
-          <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+          <div
+            className="mono-label"
+            style={{
+              fontSize: 9,
+              color: "var(--ink-faint, #8a8377)",
+              letterSpacing: "0.14em",
+              marginBottom: 8,
+            }}
+          >
             Starter packs
           </div>
           <BundleGrid
@@ -694,7 +722,15 @@ function CreditsTabInner() {
         {/* Scale tiers */}
         {scaleBundles.length > 0 && (
           <div style={{ marginTop: 18 }}>
-            <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em", marginBottom: 8 }}>
+            <div
+              className="mono-label"
+              style={{
+                fontSize: 9,
+                color: "var(--ink-faint, #8a8377)",
+                letterSpacing: "0.14em",
+                marginBottom: 8,
+              }}
+            >
               At scale &middot; better per-credit rate
             </div>
             <BundleGrid
@@ -721,7 +757,8 @@ function CreditsTabInner() {
                 )
               }
             >
-              Buy {selectedBundle.credits.toLocaleString()} credits &middot; {fmtPrice(selectedBundle.priceCents)}
+              Buy {selectedBundle.credits.toLocaleString()} credits &middot;{" "}
+              {fmtPrice(selectedBundle.priceCents)}
             </button>
           </div>
         )}
@@ -730,9 +767,13 @@ function CreditsTabInner() {
           <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "12px 0 0" }}>
             This cycle: {data.cycleTopupCredits.toLocaleString()} of{" "}
             {data.cycleTopupCapCredits.toLocaleString()} top-up credits used. Need more? &nbsp;
-            <a href="mailto:sales@cadence.app?subject=Enterprise%20credits" style={{ color: "var(--ember, #c2602e)" }}>
+            <a
+              href="mailto:sales@cadence.app?subject=Enterprise%20credits"
+              style={{ color: "var(--ember, #c2602e)" }}
+            >
               Talk to sales for volume pricing
-            </a>.
+            </a>
+            .
           </p>
         )}
       </div>
