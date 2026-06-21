@@ -1,6 +1,6 @@
 # L2 — Customer announcements (backend + approval-to-publish governance)
 
-> Status · ◐ Backend + governance shipped 2026-06-21 (lane 3) and **live-verified on prod 2026-06-22 (lane 2, no drift)**; the **public announcement page shipped 2026-06-22 (lane 2)** on the existing `/p/$slug` route. Remaining: the in-app authoring UI (L2b-2). · Route(s): `/p/$slug` (public read; shared with prototype shares) · Owner: the Launch lane
+> Status · ✅ Feature-complete 2026-06-22 (Lane 2). Backend + governance shipped 2026-06-21 (lane 3) and **live-verified on prod 2026-06-22 (lane 2, no drift)**; the **public announcement page shipped 2026-06-22 (lane 2)** on `/p/$slug`; the **in-app authoring UI (L2b-2) shipped 2026-06-22 (lane 2)** on Product > Releases. Only remaining is the visual live-render of the new authoring UI on the founder's next publish (standard for freshly-built UI). · Route(s): `/product?tab=releases` (authoring) · `/p/$slug` (public read; shared with prototype shares) · Owner: the Launch lane
 
 ## What it does
 
@@ -16,6 +16,7 @@ Lets a workspace publish customer-facing **announcements** through a governed li
 - **`supabase/migrations/20260621200000_l2_announcements.sql`**: the `announcements` table, the RLS policies, and the `publish_announcement` RPC.
 - **`src/lib/announcements.functions.ts`**: `listAnnouncements`, `createAnnouncement`, `updateAnnouncement`, `submitForApproval`, `approveAndPublish`.
 - **`src/routes/p.$slug.tsx`** (L2b public page): resolves a slug to a public prototype share OR, on miss, a `status='published'` announcement, rendering a calm reader layout. Reuses the existing public route (no new file = no `routeTree.gen.ts` churn). The pure `publicAnnouncementView(row)` in `announcements.ts` is the third published-only guard (after the RLS policy and the query filter).
+- **`src/components/product/AnnouncementsManager.tsx`** (L2b-2 authoring UI): the in-app list/create/edit/submit/publish surface, rendered on the **Product > Releases** tab (the "Ship" station per the `home-and-today-ia` rubric). Wires the existing server fns; role gates (New/Submit for owner/admin/member, Publish for owner/admin, viewer read-only) are derived from the SAME `TRANSITION_ROLES` table the DB mirrors, so the UI and DB cannot disagree — and the gate is UX-only defense-in-depth (the publish RPC + RLS are the real enforcement). Published rows link to `/p/<slug>`. Wired in `src/routes/_authenticated.product.tsx` (existing route → no `routeTree.gen.ts` churn).
 
 ## How it works
 
@@ -33,12 +34,13 @@ Lets a workspace publish customer-facing **announcements** through a governed li
 ## Deferred (L2b / later)
 
 - ~~**Public read + route:**~~ **SHIPPED 2026-06-22 (lane 2)** — the published-announcement page renders on the existing `/p/$slug` route via a client-side anon read (the RLS published-only policy gates it; no separate anon server fn needed), guarded a third time by the pure `publicAnnouncementView`. A draft/pending row can never render.
-- **Authoring/approval UI (L2b-2)** (list, editor, submit-for-approval, the owner/admin approve action) in the authenticated shell — wire the existing `announcements.functions.ts` fns onto an EXISTING surface (avoid a new route / `routeTree.gen.ts`). This is the remaining slice before L2 is ✅; until it lands, announcements are created via the server functions, not a product surface.
+- ~~**Authoring/approval UI (L2b-2)**~~ **SHIPPED 2026-06-22 (Lane 2)** — `AnnouncementsManager` on the Product > Releases tab: list (newest-first, status chips), create-draft composer, inline edit of draft/pending, submit-for-approval, and the owner/admin publish action, plus a View link to the public page for published rows. Wires the existing `announcements.functions.ts` fns onto the existing `/product` route (no new route / `routeTree.gen.ts` churn). Announcements are now authored from a product surface, not only the server functions.
 - **Column-immutability + transition-guard trigger** (a `BEFORE UPDATE` trigger rejecting `pending -> draft` reverse transitions and changes to `workspace_id`/`created_by`/`slug`). These are bounded soft edges today (a member can only move a row between workspaces they already belong to, and the publish gate + draft-safety are unaffected); the trigger would make the DB fully mirror `applyTransition`.
 - Scheduled/expiring announcements, categories, per-announcement audience.
 
 ## Verification checklist
 
-- [x] `bunx tsc --noEmit` clean; `bun test` green (`src/lib/announcements.test.ts`, 12 cases: the full transition matrix incl. role gating + reverse/no-op rejection, public-visibility, slug generation/validation/bounds). Build "red" is the known pre-existing Lovable vite-config ESM baseline, not this change.
-- [x] Adversarial review (security/RLS draft-safety + correctness/governance).
-- [ ] On the founder's next publish (migration applies): dry-run-verify that anon cannot SELECT a draft/pending row; that a member cannot flip a row to `published` via a plain update; that `publish_announcement` rejects a non-owner/admin caller and a non-pending row; that the member create/update/submit path works.
+- [x] `bunx tsc --noEmit` clean; `bun test` green (`src/lib/announcements.test.ts`, 17 cases: the full transition matrix incl. role gating + reverse/no-op rejection, public-visibility, slug generation/validation/bounds; 947 in the full suite). Build "red" is the known pre-existing Lovable vite-config ESM baseline, not this change.
+- [x] Adversarial review (security/RLS draft-safety + correctness/governance; the L2b-2 UI got a 2-lens governance + React-runtime adversarial pass).
+- [x] Backend live-verified on prod 2026-06-22 (Lane 2): the `announcements` table is RLS-on with all 4 policies + the publish RPC exactly as source; anon SELECT is `status='published'`-only; the member UPDATE with-check forbids self-publish; `publish_announcement` is SECURITY DEFINER + anon_exec=false. Table is queryable (0 rows), so the authoring surface renders its empty state cleanly.
+- [ ] On the founder's next publish: visual-verify the authoring UI renders on Product > Releases (owner sees New/Submit/Publish; create→submit→publish round-trip; the published row's View link opens `/p/<slug>`). The server fns + governance are already live-verified; this is the new component's render check.

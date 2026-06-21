@@ -26,6 +26,7 @@ import { OpportunitiesPanel } from "@/components/product/OpportunitiesPanel";
 import { OpportunityDetail } from "@/components/product/OpportunityDetail";
 import { SpecsPanel } from "@/components/product/SpecsPanel";
 import { ReleasesPanel } from "@/components/product/ReleasesPanel";
+import { AnnouncementsManager } from "@/components/product/AnnouncementsManager";
 import { RoadmapBoard } from "@/components/product/RoadmapBoard";
 import { PortfolioBoard } from "@/components/product/PortfolioBoard";
 
@@ -129,7 +130,14 @@ function ProductPage() {
         {tab === "opportunities" && (opp ? <OpportunityDetail id={opp} /> : <OpportunitiesPanel />)}
         {tab === "roadmap" && <RoadmapBoard />}
         {tab === "specs" && <SpecsPanel />}
-        {tab === "releases" && <ReleasesPanel />}
+        {tab === "releases" && (
+          <>
+            {/* L2b-2: customer-facing announcement authoring (the Ship surface) sits
+                above the internal build-session history. */}
+            <AnnouncementsManager />
+            <ReleasesPanel />
+          </>
+        )}
       </div>
     </AppShell>
   );
