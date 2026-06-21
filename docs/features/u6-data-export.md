@@ -2,7 +2,9 @@
 
 > _Created: 2026-06-18 · Last updated: 2026-06-18_
 
-> Status · Core shipped 2026-06-18 (autonomous overnight cycle 1) · Route: `/settings?section=data` · Owner: operator-triggered
+> Status · ✅ **LIVE-VERIFIED END-TO-END on the published app 2026-06-22** (Lane 1). Core shipped 2026-06-18 (cycle 1); audit log + Recent-exports history UI added (cycles 48/52). Route: `/settings?section=data` · Owner: operator-triggered.
+>
+> Live verify (Playwright, demo account, commit 662b5aec): Settings → Data → "Export your data" renders the per-section wizard (Products, Signals, Opportunities & decisions, Specs, Tasks, Outcomes, Agent memory) + "Download workspace export" + "Recent exports". Clicking download actually produced `cadence-workspace-export-2026-06-21.json` (483 KB) whose JSON carries `workspace_id`, `exported_by`, `exported_at`, a `counts` summary, and every section — projects:2, signals:9, opportunities:5, specs:2, tasks:9, learnings:1, memory:23 — exactly matching the demo workspace seed, i.e. RLS-scoped to the caller's workspace. The whole data-portability round-trip works in production.
 
 ## What it does
 
