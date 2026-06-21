@@ -13,6 +13,7 @@ import {
   getRoadmap,
   updateRoadmapItem,
   commitRoadmapItem,
+  bulkUpdateRoadmapItems,
   type RoadmapItem,
   type RoadmapBucket,
 } from "@/lib/roadmap.functions";
@@ -26,27 +27,45 @@ const COLS: { key: RoadmapBucket | null; label: string }[] = [
   { key: "later", label: "Later" },
 ];
 
+/** The ["roadmap"] query cache shape (items + the governance-gap count). */
+type RoadmapData = { items: RoadmapItem[]; governanceGaps: number };
+
 export function RoadmapBoard() {
   const qc = useQueryClient();
   const fRoadmap = useServerFn(getRoadmap);
   const roadmap = useQuery({ queryKey: ["roadmap"], queryFn: () => fRoadmap() });
   const fUpdate = useServerFn(updateRoadmapItem);
   const fCommit = useServerFn(commitRoadmapItem);
+  const fBulk = useServerFn(bulkUpdateRoadmapItems);
 
   const [dragId, setDragId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [outcome, setOutcome] = useState("");
   const [measure, setMeasure] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string, on: boolean) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   const mMove = useMutation({
     mutationFn: (v: { id: string; bucket: RoadmapBucket | null }) =>
       fUpdate({ data: { id: v.id, bucket: v.bucket } }),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: ["roadmap"] });
-      const prev = qc.getQueryData<{ items: RoadmapItem[] }>(["roadmap"]);
-      qc.setQueryData<{ items: RoadmapItem[] }>(["roadmap"], (old) =>
+      const prev = qc.getQueryData<RoadmapData>(["roadmap"]);
+      // Spread `...old` so the optimistic write preserves governanceGaps (else the
+      // gap-count line flickers to 0 on every move until the refetch lands).
+      qc.setQueryData<RoadmapData>(["roadmap"], (old) =>
         old
-          ? { items: old.items.map((it) => (it.id === v.id ? { ...it, bucket: v.bucket } : it)) }
+          ? {
+              ...old,
+              items: old.items.map((it) => (it.id === v.id ? { ...it, bucket: v.bucket } : it)),
+            }
           : old,
       );
       return { prev };
@@ -86,6 +105,41 @@ export function RoadmapBoard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // H2-WRITES: bulk re-prioritize the selected set into one bucket (the lenient,
+  // place-first path; outcome+measure governance still applies per item). Optimistic,
+  // mirrors mMove; the server records a move audit per item via the shared classifier.
+  const mBulk = useMutation({
+    mutationFn: (v: { ids: string[]; bucket: RoadmapBucket | null }) =>
+      fBulk({ data: { ids: v.ids, bucket: v.bucket } }),
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: ["roadmap"] });
+      const prev = qc.getQueryData<RoadmapData>(["roadmap"]);
+      const sel = new Set(v.ids);
+      qc.setQueryData<RoadmapData>(["roadmap"], (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.map((it) => (sel.has(it.id) ? { ...it, bucket: v.bucket } : it)),
+            }
+          : old,
+      );
+      return { prev };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["roadmap"], ctx.prev);
+      toast.error(e.message);
+    },
+    onSuccess: (res) => {
+      setSelectedIds(new Set());
+      if (res.moved > 0) {
+        toast.success(`Moved ${res.moved}${res.skipped ? ` · ${res.skipped} unchanged` : ""}`);
+      } else {
+        toast.success("Nothing to move");
+      }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["roadmap"] }),
+  });
+
   const items = roadmap.data?.items ?? [];
   const gaps = roadmap.data?.governanceGaps ?? 0;
 
@@ -96,6 +150,54 @@ export function RoadmapBoard() {
           {gaps} {gaps === 1 ? "commitment needs" : "commitments need"} a declared outcome and
           measure.
         </p>
+      )}
+      {/* H2-WRITES: bulk re-prioritize bar — appears only once a set is selected (calm front). */}
+      {selectedIds.size > 0 && (
+        <div
+          className="bento"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "7px 12px",
+            background: "var(--surface-1)",
+          }}
+        >
+          <span className="mono-label" style={{ color: "var(--ink-subtle)" }}>
+            {selectedIds.size} selected
+          </span>
+          <span style={{ display: "flex", gap: 6, marginLeft: "auto", alignItems: "center" }}>
+            <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+              move to
+            </span>
+            {COLS.map((col) => (
+              <button
+                key={String(col.key)}
+                className="mono-label"
+                disabled={mBulk.isPending}
+                onClick={() => mBulk.mutate({ ids: [...selectedIds], bucket: col.key })}
+                style={{
+                  color: col.key === "now" ? "var(--ember)" : "var(--action-blue)",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 5,
+                  padding: "2px 8px",
+                  background: "transparent",
+                  cursor: mBulk.isPending ? "default" : "pointer",
+                  opacity: mBulk.isPending ? 0.5 : 1,
+                }}
+              >
+                {col.label}
+              </button>
+            ))}
+            <button
+              className="mono-label"
+              onClick={() => setSelectedIds(new Set())}
+              style={{ color: "var(--ink-faint)", marginLeft: 4 }}
+            >
+              clear
+            </button>
+          </span>
+        </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
         {COLS.map((col) => {
@@ -163,14 +265,39 @@ export function RoadmapBoard() {
                     >
                       <span
                         style={{
-                          fontSize: 12,
-                          color: "var(--ink)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {it.title}
+                        {/* H2-WRITES: multi-select for bulk re-prioritize. Stop click
+                            propagation so selecting never starts a card drag. */}
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${it.title}`}
+                          checked={selectedIds.has(it.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => toggleSelect(it.id, e.target.checked)}
+                          style={{
+                            flexShrink: 0,
+                            width: 12,
+                            height: 12,
+                            cursor: "pointer",
+                            accentColor: "var(--ember)",
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "var(--ink)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {it.title}
+                        </span>
                       </span>
                       <span
                         style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}

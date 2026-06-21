@@ -26,8 +26,13 @@ import {
   type RoadmapAuditAction,
   type RoadmapAuditRow,
 } from "@/lib/roadmap-audit";
+import { planBulkMove, BULK_MOVE_CAP } from "@/lib/roadmap-bulk";
 
 export type { RoadmapBucket };
+
+/** Coerce a raw DB bucket value to the typed bucket (migration-tolerant, mirrors getRoadmap). */
+const asBucket = (b: unknown): RoadmapBucket | null =>
+  b === "now" || b === "next" || b === "later" ? b : null;
 
 /**
  * H2-AUDIT: record a roadmap decision, best-effort. Never throws into the caller
@@ -235,6 +240,121 @@ export const commitRoadmapItem = createServerFn({ method: "POST" })
       measure: data.measure,
     });
     return { ok: true };
+  });
+
+/**
+ * H2-WRITES · BULK re-prioritize. Move a SELECTED SET of opportunities into one
+ * bucket in a single round-trip — the multi-item analogue of the lenient drag
+ * (`updateRoadmapItem`), for re-sequencing a board ("push these three to Next").
+ *
+ * Lenient like the drag (place-first; per-item outcome+measure governance still
+ * applies and the gap surface flags the moved items), NOT the governed commit.
+ * The pure `planBulkMove` decides what actually changes: it de-dups the
+ * selection, drops unknown ids and no-ops (so the audit gets no phantom rows),
+ * and caps the batch. The write is one RLS-scoped `.update(...).in(ids)` and each
+ * moved row records a "move" audit carrying its real from-bucket via the same
+ * shared classifier as the single-item path. Returns honest counts.
+ */
+export const bulkUpdateRoadmapItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(BULK_MOVE_CAP),
+        bucket: z.enum(["now", "next", "later"]).nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<{ moved: number; skipped: number }> => {
+    // Read the current state for the selected ids (RLS + explicit user_id scope) so the
+    // plan moves only what changes and each audit carries the real from-bucket.
+    const { data: prevRows, error: prevErr } = await context.supabase
+      .from("opportunities")
+      .select("id, workspace_id, roadmap_bucket, roadmap_outcome, roadmap_measure")
+      .in("id", data.ids)
+      .eq("user_id", context.userId);
+    if (prevErr) throw new Error(prevErr.message);
+
+    // Cast the array up front: the roadmap_* columns aren't in the generated DB
+    // types (pre-migration), so the inferred select row collapses (mirrors getRoadmap).
+    const prevTyped = (prevRows ?? []) as Array<{
+      id: string;
+      workspace_id?: string | null;
+      roadmap_bucket: unknown;
+      roadmap_outcome: string | null;
+      roadmap_measure: string | null;
+    }>;
+    const prevById = new Map(prevTyped.map((r) => [r.id, r] as const));
+
+    const plan = planBulkMove(
+      data.ids,
+      data.bucket,
+      [...prevById.values()].map((r) => ({ id: r.id, bucket: asBucket(r.roadmap_bucket) })),
+    );
+    if (plan.moves.length === 0) {
+      return { moved: 0, skipped: plan.skippedNoop + plan.skippedUnknown + plan.skippedOverCap };
+    }
+
+    const movedIds = plan.moves.map((m) => m.id);
+    // One write for the whole batch; the explicit user_id + .select() make an
+    // RLS-blocked or vanished row drop out of the result instead of lying ok.
+    const { data: rows, error } = await context.supabase
+      .from("opportunities")
+      .update({ roadmap_bucket: data.bucket })
+      .in("id", movedIds)
+      .eq("user_id", context.userId)
+      .select("id, workspace_id, roadmap_bucket, roadmap_outcome, roadmap_measure");
+    if (error) throw new Error(error.message);
+
+    const updated = (rows ?? []) as Array<{
+      id: string;
+      workspace_id?: string | null;
+      roadmap_bucket: unknown;
+      roadmap_outcome: string | null;
+      roadmap_measure: string | null;
+    }>;
+
+    // H2-AUDIT: record each moved row's decision with full provenance, via the
+    // shared pure classifier (a bulk move never touches outcome/measure, so this
+    // yields exactly a "move" carrying the from-bucket + still-promised outcome).
+    for (const row of updated) {
+      const prev = prevById.get(row.id);
+      if (!prev) continue;
+      const decisions = classifyRoadmapWrite(
+        {
+          bucket: asBucket(prev.roadmap_bucket),
+          outcome: prev.roadmap_outcome,
+          measure: prev.roadmap_measure,
+        },
+        {
+          bucket: asBucket(row.roadmap_bucket),
+          outcome: row.roadmap_outcome,
+          measure: row.roadmap_measure,
+        },
+      );
+      for (const d of decisions) {
+        await recordRoadmapDecision(context.supabase, {
+          opportunityId: row.id,
+          workspaceId: row.workspace_id ?? null,
+          action: d.action,
+          fromBucket: d.fromBucket,
+          toBucket: d.toBucket,
+          outcome: d.outcome,
+          measure: d.measure,
+        });
+      }
+    }
+
+    // moved = rows the DB actually updated (RLS-confirmed); skipped = every other
+    // unique selected id (no-op / unknown / over-cap / vanished between read+write).
+    return {
+      moved: updated.length,
+      skipped:
+        plan.skippedNoop +
+        plan.skippedUnknown +
+        plan.skippedOverCap +
+        (plan.moves.length - updated.length),
+    };
   });
 
 /**
