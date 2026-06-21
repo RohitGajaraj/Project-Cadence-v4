@@ -4,6 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { embedOne } from "./embed.server";
+import { quarantineUntrusted } from "@/lib/ai/guardrails-injection.server";
 
 export type RetrievedChunk = {
   id: string;
@@ -119,10 +120,25 @@ function xmlEscape(str: string): string {
 export function formatContextBlock(chunks: RetrievedChunk[]): string {
   if (chunks.length === 0) return "";
   const lines = chunks.map((c, i) => {
-    const escapedContent = xmlEscape(c.content);
+    // FND-0.7: hard-quarantine a chunk the learned classifier scores as a
+    // probable prompt-injection attempt before it is fenced and embedded. The
+    // seam is fail-open, so a benign chunk is byte-identical to the prior
+    // behaviour (assessment.text === c.content, no extra attribute).
+    const assessment = quarantineUntrusted(c.content);
+    if (assessment.quarantined) {
+      // Observability so over-redaction (false positives) can be measured and
+      // the threshold tuned on real data. Never logs the chunk content.
+      console.warn("[injection-defense] quarantined a RAG chunk before embedding", {
+        source_kind: c.source_kind,
+        score: assessment.verdict.score,
+        signals: assessment.verdict.signals.map((s) => s.name),
+      });
+    }
+    const escapedContent = xmlEscape(assessment.text);
     const escapedKind = xmlEscape(c.source_kind);
     const escapedTitle = xmlEscape(c.title || "");
-    return `<untrusted_context_chunk index="${i + 1}" source_kind="${escapedKind}" title="${escapedTitle}">\n${escapedContent}\n</untrusted_context_chunk>`;
+    const quarantinedAttr = assessment.quarantined ? ` quarantined="true"` : "";
+    return `<untrusted_context_chunk index="${i + 1}" source_kind="${escapedKind}" title="${escapedTitle}"${quarantinedAttr}>\n${escapedContent}\n</untrusted_context_chunk>`;
   });
   return `The following <untrusted_context_chunk> blocks contain context retrieved from the user's workspace.
 Cite sources inline as [1], [2], etc. (matching the index attribute) when referencing them.
