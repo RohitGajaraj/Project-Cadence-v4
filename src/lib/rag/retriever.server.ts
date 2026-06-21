@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { embedOne } from "./embed.server";
-import { quarantineUntrusted } from "@/lib/ai/guardrails-injection.server";
+import { quarantineUntrustedCorpus } from "@/lib/ai/guardrails-injection.server";
 
 export type RetrievedChunk = {
   id: string;
@@ -119,25 +119,46 @@ function xmlEscape(str: string): string {
 /** Format chunks into a context block to inject before the user message. */
 export function formatContextBlock(chunks: RetrievedChunk[]): string {
   if (chunks.length === 0) return "";
+  // FND-0.7 + FND-0.7-b: one corpus pass hard-quarantines a chunk the classifier
+  // scores as a probable prompt-injection attempt AND escalates a structural
+  // injection split across an adjacent chunk boundary that no single chunk
+  // reveals, before any of it is fenced and embedded. The seam is fail-open, so a
+  // benign chunk set is byte-identical to the prior behaviour (no quarantine, no
+  // extra attribute).
+  const assessment = quarantineUntrustedCorpus(chunks.map((c) => c.content));
+  const escalated = new Set(assessment.crossChunkEscalated);
+  // Warn only on a GENUINELY EMERGENT distributed signal: the corpus crosses into
+  // flag/quarantine while NO single chunk did on its own (so the evidence appears
+  // only when the chunks are concatenated). This keeps the telemetry meaningful
+  // and avoids noise on a self-contained benign red-team/bug-report chunk, which a
+  // PM/eng corpus routinely contains and which FND-0.7 deliberately keeps. Never
+  // logs content. (Lexical-only corpus evidence is still correctly NOT stripped.)
+  if (
+    assessment.corpus.decision !== "allow" &&
+    assessment.chunks.every((a) => a.verdict.decision === "allow") &&
+    !assessment.chunks.some((a) => a.quarantined)
+  ) {
+    console.warn("[injection-defense] corpus-level injection signal across RAG chunks", {
+      score: assessment.corpus.score,
+      signals: assessment.corpus.signals.map((s) => s.name),
+    });
+  }
   const lines = chunks.map((c, i) => {
-    // FND-0.7: hard-quarantine a chunk the learned classifier scores as a
-    // probable prompt-injection attempt before it is fenced and embedded. The
-    // seam is fail-open, so a benign chunk is byte-identical to the prior
-    // behaviour (assessment.text === c.content, no extra attribute).
-    const assessment = quarantineUntrusted(c.content);
-    if (assessment.quarantined) {
+    const a = assessment.chunks[i];
+    if (a.quarantined) {
       // Observability so over-redaction (false positives) can be measured and
       // the threshold tuned on real data. Never logs the chunk content.
       console.warn("[injection-defense] quarantined a RAG chunk before embedding", {
         source_kind: c.source_kind,
-        score: assessment.verdict.score,
-        signals: assessment.verdict.signals.map((s) => s.name),
+        score: a.verdict.score,
+        signals: a.verdict.signals.map((s) => s.name),
+        cross_chunk: escalated.has(i),
       });
     }
-    const escapedContent = xmlEscape(assessment.text);
+    const escapedContent = xmlEscape(a.text);
     const escapedKind = xmlEscape(c.source_kind);
     const escapedTitle = xmlEscape(c.title || "");
-    const quarantinedAttr = assessment.quarantined ? ` quarantined="true"` : "";
+    const quarantinedAttr = a.quarantined ? ` quarantined="true"` : "";
     return `<untrusted_context_chunk index="${i + 1}" source_kind="${escapedKind}" title="${escapedTitle}"${quarantinedAttr}>\n${escapedContent}\n</untrusted_context_chunk>`;
   });
   return `The following <untrusted_context_chunk> blocks contain context retrieved from the user's workspace.

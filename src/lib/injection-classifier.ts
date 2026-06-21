@@ -403,3 +403,119 @@ export function assessAndQuarantine(input: unknown): {
   }
   return { text: original, verdict, quarantined: false };
 }
+
+// --- Cross-chunk aggregation (FND-0.7-b) ---------------------------------------
+//
+// Per-chunk classification (above) cannot see an injection split across several
+// retrieved chunks: the attacker keeps each fragment below the per-chunk
+// threshold, so each chunk passes, yet the reassembled corpus is an attack. This
+// closes that gap with two passes, BOTH preserving FND-0.7's load-bearing
+// over-redaction guard (only STRUCTURAL evidence can ever strip first-party
+// content):
+//
+//  1. Adjacent-boundary reconstruction -> `escalate`. A small window straddling
+//     each adjacent chunk boundary is classified; the pair is escalated only when
+//     that window's own decision is `quarantine` (a structural marker AND a high
+//     score) AND it also carries a LEXICAL injection signal, while NEITHER chunk
+//     was quarantined alone. The lexical co-signal requirement is load-bearing
+//     for the over-redaction guard: a bare structural tag alone reaches the
+//     quarantine score by itself (sigmoid(BIAS + fence_breakout) > threshold), so
+//     without it a benign first-party doc that merely MENTIONS a fence tag
+//     (`</system>`, `</context>`, `</untrusted_context_chunk>`, ...) and happens
+//     to be chunked mid-tag would be stripped. A real cross-chunk breakout always
+//     pairs the tag with an instruction (override / probe / exfil), so requiring
+//     the lexical co-signal keeps real attacks caught while never stripping a
+//     benign tag mention. (The per-chunk `decision==="quarantine"` skip means a
+//     tag fully contained in one chunk is handled there, not here, so this branch
+//     only ever sees markers genuinely split across the seam.)
+//  2. Whole-corpus classification -> `corpus`. Catches a distributed LEXICAL
+//     instruction (override tokens spread across chunks). Lexical-only corpus
+//     evidence never strips content; it is surfaced for observability/tuning (and
+//     downstream reactor coverage), exactly mirroring the per-chunk flag policy.
+//
+// Pure, deterministic, total, and bounded: per-chunk + boundary windows + one
+// capped corpus scan. Accepted residuals (false-NEGATIVE only; the fence + the
+// treat-as-data instruction remain the primary defense, and none can over-redact):
+// a structural marker whose halves land more than BOUNDARY_WINDOW chars from the
+// seam, a marker split three-ways across chunks, and an empty/whitespace chunk
+// sitting between the two fragments (it breaks the strict-adjacent pairing).
+
+/** Per-side character window scanned at each chunk boundary for split payloads. */
+const BOUNDARY_WINDOW = 256;
+
+/**
+ * Hard cap on the corpus concatenation length before classification, so the
+ * observability pass costs O(cap), not O(total corpus bytes), regardless of how
+ * many / how large the chunks a caller passes (the live RAG seam passes a small
+ * `k`, but these helpers are exported for general use). A few multiples of the
+ * classifier's own scan cap keeps the distributed signal meaningful.
+ */
+const CORPUS_SCAN_CAP = MAX_SCAN_CHARS * 4;
+
+export type CorpusInjectionResult = {
+  /** Per-chunk verdicts, in input order. */
+  perChunk: InjectionVerdict[];
+  /**
+   * Chunk indices the cross-chunk pass escalates to hard-quarantine because a
+   * structural injection marker is reconstructed across an adjacent boundary that
+   * neither chunk reveals alone. Ascending, de-duplicated.
+   */
+  escalate: number[];
+  /**
+   * Verdict over the bounded concatenation of all chunks. Distributed-injection
+   * observability; on its own it never strips content (lexical-only).
+   */
+  corpus: InjectionVerdict;
+};
+
+function coerce(input: unknown): string {
+  return typeof input === "string" ? input : input == null ? "" : String(input);
+}
+
+/**
+ * Aggregate prompt-injection assessment across a set of untrusted chunks. See the
+ * section comment above for the two passes and why neither can over-redact benign
+ * first-party prose.
+ */
+export function assessCorpusInjection(inputs: unknown): CorpusInjectionResult {
+  const texts = (Array.isArray(inputs) ? inputs : []).map(coerce);
+  const perChunk = texts.map((t) => classifyInjection(t));
+
+  const escalate = new Set<number>();
+  for (let i = 0; i + 1 < texts.length; i++) {
+    // Per-chunk already owns a chunk it quarantined; never let that drag a
+    // (possibly benign) neighbour into a strip.
+    if (perChunk[i].decision === "quarantine" || perChunk[i + 1].decision === "quarantine") {
+      continue;
+    }
+    const left = texts[i];
+    const right = texts[i + 1];
+    if (!left || !right) continue;
+    // No separator: a marker can be split mid-token (".../untrusted_cont" + "ext_chunk>").
+    const window =
+      left.slice(Math.max(0, left.length - BOUNDARY_WINDOW)) + right.slice(0, BOUNDARY_WINDOW);
+    const boundary = classifyInjection(window);
+    // Escalate only on a real split injection: a structural marker reconstructed
+    // across the seam (decision==="quarantine" implies that) PLUS a lexical
+    // injection signal. The lexical co-signal is what stops a benign first-party
+    // doc that merely mentions a fence tag, split mid-tag by the chunker, from
+    // being stripped (a bare reconstructed tag would otherwise clear the
+    // quarantine score on its own).
+    const hasLexical = boundary.signals.some((s) => !STRUCTURAL_SIGNALS.has(s.name));
+    if (boundary.decision === "quarantine" && hasLexical) {
+      escalate.add(i);
+      escalate.add(i + 1);
+    }
+  }
+
+  const joined = texts.join("\n");
+  const corpus = classifyInjection(
+    joined.length > CORPUS_SCAN_CAP ? joined.slice(0, CORPUS_SCAN_CAP) : joined,
+  );
+
+  return {
+    perChunk,
+    escalate: [...escalate].sort((a, b) => a - b),
+    corpus,
+  };
+}
