@@ -1,6 +1,6 @@
 # L2 — Customer announcements (backend + approval-to-publish governance)
 
-> Status · ◐ Backend + governance shipped 2026-06-21 (lane 3); live on the founder's next publish (migration applies then). Public route + UI deferred to L2b. · Route(s): none yet (server functions + DB) · Owner: the Launch lane
+> Status · ◐ Backend + governance shipped 2026-06-21 (lane 3) and **live-verified on prod 2026-06-22 (lane 2, no drift)**; the **public announcement page shipped 2026-06-22 (lane 2)** on the existing `/p/$slug` route. Remaining: the in-app authoring UI (L2b-2). · Route(s): `/p/$slug` (public read; shared with prototype shares) · Owner: the Launch lane
 
 ## What it does
 
@@ -15,6 +15,7 @@ Lets a workspace publish customer-facing **announcements** through a governed li
 - **`src/lib/announcements.ts`** (pure, no IO): the `AnnouncementStatus` + `WorkspaceRole` types, `applyTransition` (the `draft -> pending -> published` state machine + which role may perform each), `isPubliclyVisible`, and `generateSlug` / `isValidSlug`. The single shared governance rule.
 - **`supabase/migrations/20260621200000_l2_announcements.sql`**: the `announcements` table, the RLS policies, and the `publish_announcement` RPC.
 - **`src/lib/announcements.functions.ts`**: `listAnnouncements`, `createAnnouncement`, `updateAnnouncement`, `submitForApproval`, `approveAndPublish`.
+- **`src/routes/p.$slug.tsx`** (L2b public page): resolves a slug to a public prototype share OR, on miss, a `status='published'` announcement, rendering a calm reader layout. Reuses the existing public route (no new file = no `routeTree.gen.ts` churn). The pure `publicAnnouncementView(row)` in `announcements.ts` is the third published-only guard (after the RLS policy and the query filter).
 
 ## How it works
 
@@ -31,8 +32,8 @@ Lets a workspace publish customer-facing **announcements** through a governed li
 
 ## Deferred (L2b / later)
 
-- **Public read + route:** a `getPublic(slug)` server function on the anon client + a public route (`/p/...` or `/a/$slug`) — deferred to avoid touching the generated `routeTree.gen.ts` and the design pass. The DB already enforces published-only public reads.
-- **Authoring/approval UI** (list, editor, the approve action) in the authenticated shell.
+- ~~**Public read + route:**~~ **SHIPPED 2026-06-22 (lane 2)** — the published-announcement page renders on the existing `/p/$slug` route via a client-side anon read (the RLS published-only policy gates it; no separate anon server fn needed), guarded a third time by the pure `publicAnnouncementView`. A draft/pending row can never render.
+- **Authoring/approval UI (L2b-2)** (list, editor, submit-for-approval, the owner/admin approve action) in the authenticated shell — wire the existing `announcements.functions.ts` fns onto an EXISTING surface (avoid a new route / `routeTree.gen.ts`). This is the remaining slice before L2 is ✅; until it lands, announcements are created via the server functions, not a product surface.
 - **Column-immutability + transition-guard trigger** (a `BEFORE UPDATE` trigger rejecting `pending -> draft` reverse transitions and changes to `workspace_id`/`created_by`/`slug`). These are bounded soft edges today (a member can only move a row between workspaces they already belong to, and the publish gate + draft-safety are unaffected); the trigger would make the DB fully mirror `applyTransition`.
 - Scheduled/expiring announcements, categories, per-announcement audience.
 

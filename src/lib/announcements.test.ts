@@ -4,6 +4,7 @@ import {
   isPubliclyVisible,
   generateSlug,
   isValidSlug,
+  publicAnnouncementView,
   type WorkspaceRole,
 } from "./announcements";
 
@@ -84,5 +85,48 @@ describe("generateSlug + isValidSlug", () => {
     expect(isValidSlug("a")).toBe(false); // too short
     expect(isValidSlug("x".repeat(81))).toBe(false); // too long
     expect(isValidSlug("ok-slug-9")).toBe(true);
+  });
+});
+
+describe("publicAnnouncementView (L2b public-page guard)", () => {
+  test("maps a published row to a view model with split body lines", () => {
+    const v = publicAnnouncementView({
+      title: "Smart Routing is live",
+      body: "Line one.\nLine two.",
+      status: "published",
+      published_at: "2026-06-22T10:00:00Z",
+    });
+    expect(v).not.toBeNull();
+    expect(v?.title).toBe("Smart Routing is live");
+    expect(v?.bodyLines).toEqual(["Line one.", "Line two."]);
+    expect(v?.publishedAt).toBe("2026-06-22T10:00:00Z");
+  });
+
+  test("returns null for any NON-published status (a draft/pending can never render)", () => {
+    expect(publicAnnouncementView({ title: "x", status: "draft" })).toBeNull();
+    expect(publicAnnouncementView({ title: "x", status: "pending" })).toBeNull();
+    expect(publicAnnouncementView({ title: "x", status: "" })).toBeNull();
+    expect(publicAnnouncementView({ title: "x", status: "archived" })).toBeNull();
+  });
+
+  test("is total + defensive: null / non-object / missing status yields null, never throws", () => {
+    expect(publicAnnouncementView(null)).toBeNull();
+    expect(publicAnnouncementView(undefined)).toBeNull();
+    expect(publicAnnouncementView("nope")).toBeNull();
+    expect(publicAnnouncementView(42)).toBeNull();
+    expect(publicAnnouncementView({})).toBeNull();
+  });
+
+  test("a missing/blank title falls back so the page never renders an empty heading", () => {
+    expect(publicAnnouncementView({ status: "published" })?.title).toBe("Announcement");
+    expect(publicAnnouncementView({ title: "   ", status: "published" })?.title).toBe(
+      "Announcement",
+    );
+  });
+
+  test("handles a missing body and a missing published_at", () => {
+    const v = publicAnnouncementView({ title: "Hi", status: "published" });
+    expect(v?.bodyLines).toEqual([""]);
+    expect(v?.publishedAt).toBeNull();
   });
 });

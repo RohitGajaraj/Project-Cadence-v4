@@ -53,6 +53,36 @@ export function isPubliclyVisible(status: AnnouncementStatus): boolean {
   return status === "published";
 }
 
+/** The safe, minimal shape the public announcement page renders. */
+export type PublicAnnouncementView = {
+  title: string;
+  bodyLines: string[];
+  publishedAt: string | null;
+};
+
+/**
+ * Map a raw announcement DB row to the public view model, or null if it must NOT
+ * be shown publicly (L2b). Total + defensive: a null/partial row, a non-object,
+ * or ANY non-published status yields null, so the public page can never render a
+ * draft/pending row even if one were somehow fetched. This is defense-in-depth on
+ * top of the published-only RLS policy and the query's own status filter. The body
+ * is split into lines (line breaks preserved); a missing/blank title falls back so
+ * the page never renders an empty heading.
+ */
+export function publicAnnouncementView(row: unknown): PublicAnnouncementView | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  const status =
+    typeof r.status === "string" ? (r.status as AnnouncementStatus) : ("" as AnnouncementStatus);
+  if (!isPubliclyVisible(status)) return null;
+  const title = typeof r.title === "string" && r.title.trim() !== "" ? r.title : "Announcement";
+  const body = typeof r.body === "string" ? r.body : "";
+  const bodyLines = body.split(/\r?\n/);
+  const publishedAt =
+    typeof r.published_at === "string" && r.published_at.trim() !== "" ? r.published_at : null;
+  return { title, bodyLines, publishedAt };
+}
+
 const SLUG_MAX = 80;
 const SLUG_MIN = 4;
 const SLUG_SUFFIX_LEN = 6;
