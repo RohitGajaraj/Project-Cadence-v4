@@ -5649,6 +5649,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _ensure_account_credits: {
+        Args: { _account_id: string }
+        Returns: undefined
+      }
       _erasure_delete_by_column: {
         Args: { _col: string; _id: string }
         Returns: Json
@@ -6108,10 +6112,25 @@ export type Database = {
             }
             Returns: string
           }
+      apply_topup_credits: {
+        Args: {
+          _account_id: string
+          _amount_cents: number
+          _credits: number
+          _currency: string
+          _env: string
+          _lookup_key: string
+          _payment_intent_id: string
+          _session_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       auto_advance_agent_arc: {
         Args: { p_agent_id: string; p_user_id: string }
         Returns: string
       }
+      backfill_account_credits: { Args: never; Returns: Json }
       can_manage_account: { Args: { account: string }; Returns: boolean }
       can_manage_workspace: { Args: { ws: string }; Returns: boolean }
       check_mission_caps: {
@@ -6190,6 +6209,10 @@ export type Database = {
           state: string
           workspace_id: string
         }[]
+      }
+      grant_subscription_credits: {
+        Args: { _account_id: string; _credits: number }
+        Returns: Json
       }
       halt_agent_run: {
         Args: { _reason: string; _run_id: string }
@@ -6391,6 +6414,7 @@ export type Database = {
         Returns: undefined
       }
       redeem_voucher: { Args: { _code: string }; Returns: Json }
+      reset_subscription_cycle: { Args: { _account_id: string }; Returns: Json }
       revoke_mcp_token: { Args: { _token_id: string }; Returns: undefined }
       right_to_erasure_enabled: { Args: never; Returns: boolean }
       seed_default_agent_tools: {
