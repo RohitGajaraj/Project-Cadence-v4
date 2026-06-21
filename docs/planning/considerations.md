@@ -101,7 +101,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | ----------------------------------------- | -------------------------------------------------------- | -------- |
 | CI/CD + environments (dev/staging/prod)   | Safe autonomous shipping needs real pipelines            | P0       |
 | Feature flags + safe rollout/rollback     | Ship behind flags; revert fast                           | P1       |
-| Migration rollback strategy               | Schema changes are risky; data.md forbids in-place edits | P1       |
+| Migration rollback strategy               | Schema changes are risky; data.md forbids in-place edits | P1 — ◐ MIG-LINT (lane 3, 2026-06-21): a static, OFFLINE apply-safety linter (`src/lib/migration-lint.ts` + `scripts/lint-migrations.ts`, wired into `check-migrations.sh`) fails the build on a migration whose SQL would FAIL to apply (`CREATE POLICY/TRIGGER ... IF NOT EXISTS` = the recurring broken-parallel-ship class), so it never surfaces on publish. 0 false positives across all 168 migrations. Down-migration/rollback authoring stays open. Spec: [`../features/migration-lint.md`](../features/migration-lint.md). |
 | Test coverage gates beyond "Cadence core" | Autonomous build must not regress                        | P1       |
 
 ### Finance / monetization

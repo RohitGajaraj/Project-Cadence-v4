@@ -17,6 +17,15 @@ if [ ! -d "$MIG_DIR" ]; then
   exit 0
 fi
 
+# Offline apply-safety lint (no DB needed): catch SQL that would FAIL on apply
+# (e.g. CREATE POLICY ... IF NOT EXISTS) before it ships. Runs first so a broken
+# migration is caught even on a laptop without DB credentials.
+if command -v bun >/dev/null 2>&1; then
+  bun scripts/lint-migrations.ts || exit 1
+else
+  echo "[migrations] bun not found; skipping offline apply-safety lint"
+fi
+
 if [ -z "${PGHOST:-}" ]; then
   echo "[migrations] PGHOST not set; skipping check (no DB access in this env)"
   exit 0
