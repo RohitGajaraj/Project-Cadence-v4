@@ -60,6 +60,7 @@ import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
 import { HealthCard } from "@/components/settings/HealthCard";
+import { RedeemCodeCard } from "@/components/settings/RedeemCodeCard";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 
@@ -609,6 +610,8 @@ function CreditsTabInner() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PaymentTestModeBanner />
+      {/* Voucher redeem entry point (the user-facing caller for redeemVoucher). */}
+      <RedeemCodeCard />
 
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
         <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
