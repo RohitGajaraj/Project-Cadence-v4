@@ -12,10 +12,7 @@
  * Never imported by client code (`.server.ts`).
  */
 
-import {
-  assessAndQuarantine,
-  type InjectionVerdict,
-} from "@/lib/injection-classifier";
+import { assessAndQuarantine, type InjectionVerdict } from "@/lib/injection-classifier";
 
 export type UntrustedAssessment = {
   /** Safe text to embed: the neutralized placeholder when quarantined, else the original. */
