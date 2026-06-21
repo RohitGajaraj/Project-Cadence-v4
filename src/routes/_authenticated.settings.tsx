@@ -1250,8 +1250,8 @@ function ByoKeysSection() {
     <div className="bento" style={{ padding: "var(--card-pad)" }}>
       <MonoLabel style={{ marginBottom: 4 }}>Bring your own AI keys</MonoLabel>
       <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
-        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, or a GitHub PAT. Stored encrypted per
-        user.
+        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, Gemini (Google), or a GitHub PAT.
+        Stored encrypted per user.
       </p>
 
       <form
