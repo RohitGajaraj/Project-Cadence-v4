@@ -19,6 +19,19 @@ function bucketLabel(b: RoadmapAuditRow["to_bucket"]): string {
   return b ?? "backlog";
 }
 
+/**
+ * The bucket phrase for one event. A move with a recorded source bucket reads "now → next" so the
+ * re-prioritization provenance is visible; a commit (in place) or a move whose source was not
+ * recorded (legacy rows, or a move from backlog where the source is ambiguous) shows just the
+ * destination, never fabricating a "from".
+ */
+function eventBuckets(e: RoadmapAuditRow): string {
+  if (e.action === "move" && e.from_bucket != null && e.from_bucket !== e.to_bucket) {
+    return `${bucketLabel(e.from_bucket)} → ${bucketLabel(e.to_bucket)}`;
+  }
+  return bucketLabel(e.to_bucket);
+}
+
 export function RoadmapHistory({ opportunityId }: { opportunityId: string }) {
   const [open, setOpen] = useState(false);
   const fHistory = useServerFn(getRoadmapHistory);
@@ -76,7 +89,7 @@ export function RoadmapHistory({ opportunityId }: { opportunityId: string }) {
             {events.map((e) => (
               <div key={e.id} style={{ borderTop: "1px solid var(--hairline)", paddingTop: 6 }}>
                 <p className="mono-label" style={{ color: "var(--ink-subtle)" }}>
-                  {e.action === "commit" ? "committed" : "moved"} · {bucketLabel(e.to_bucket)} ·{" "}
+                  {e.action === "commit" ? "committed" : "moved"} · {eventBuckets(e)} ·{" "}
                   {fmtWhen(e.created_at)}
                 </p>
                 {e.action === "commit" && e.outcome ? (
