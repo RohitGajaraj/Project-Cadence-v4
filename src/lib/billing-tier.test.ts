@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   creditsFromLookupKey,
   defaultMonthlyLookupKey,
+  effectiveTierForStatus,
   lookupKeyFor,
+  subscriptionStatusGrantsCredits,
   tierFromLookupKey,
 } from "./billing-tier";
 import type { PlanTier } from "./entitlements";
@@ -78,6 +80,50 @@ describe("creditsFromLookupKey", () => {
     expect(creditsFromLookupKey("cluster__monthly")).toBeNull();
     expect(creditsFromLookupKey("garbage")).toBeNull();
     expect(creditsFromLookupKey("topup_abc")).toBeNull();
+  });
+});
+
+describe("effectiveTierForStatus — the access-preservation rule the webhook applies", () => {
+  it("keeps the paid tier while the subscription is entitlement-bearing", () => {
+    for (const status of ["active", "trialing", "past_due"]) {
+      expect(effectiveTierForStatus("pro", status)).toBe("pro");
+      expect(effectiveTierForStatus("max", status)).toBe("max");
+      expect(effectiveTierForStatus("team", status)).toBe("team");
+    }
+  });
+  it("preserves access through past_due (dunning, not termination)", () => {
+    // The founder ruling: do not yank access while Stripe retries the card.
+    expect(effectiveTierForStatus("pro", "past_due")).toBe("pro");
+  });
+  it("drops to free on every terminal / non-paying status", () => {
+    for (const status of [
+      "canceled",
+      "unpaid",
+      "incomplete",
+      "incomplete_expired",
+      "paused",
+      "",
+      "unknown_future_status",
+    ]) {
+      expect(effectiveTierForStatus("pro", status)).toBe("free");
+      expect(effectiveTierForStatus("max", status)).toBe("free");
+    }
+  });
+});
+
+describe("subscriptionStatusGrantsCredits — only a paying state mints credits", () => {
+  it("grants on active and trialing", () => {
+    expect(subscriptionStatusGrantsCredits("active")).toBe(true);
+    expect(subscriptionStatusGrantsCredits("trialing")).toBe(true);
+  });
+  it("does NOT grant on past_due — access is kept, but no fresh allowance until payment clears", () => {
+    // Distinct from effectiveTierForStatus, which DOES preserve the tier on past_due.
+    expect(subscriptionStatusGrantsCredits("past_due")).toBe(false);
+  });
+  it("does NOT grant on any terminal / non-paying status", () => {
+    for (const status of ["canceled", "unpaid", "incomplete", "incomplete_expired", "paused", ""]) {
+      expect(subscriptionStatusGrantsCredits(status)).toBe(false);
+    }
   });
 });
 

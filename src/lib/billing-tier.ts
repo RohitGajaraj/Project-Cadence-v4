@@ -85,6 +85,34 @@ export function creditsFromLookupKey(lookupKey: string | null | undefined): numb
 }
 
 /**
+ * Stripe subscription statuses that KEEP the customer's paid entitlements. `active` and `trialing`
+ * are obviously entitled; `past_due` is preserved DELIBERATELY (founder ruling: keep access while
+ * Stripe retries the card — this is dunning, not termination). Every other status (`canceled`,
+ * `unpaid`, `incomplete`, `incomplete_expired`, `paused`, …) drops the customer to `free`.
+ */
+const TIER_PRESERVING_STATUSES: ReadonlySet<string> = new Set(["active", "trialing", "past_due"]);
+
+/**
+ * The tier a customer should hold given their mapped plan tier and Stripe subscription `status`.
+ * Returns `tier` while the subscription is entitlement-bearing, else `"free"`. Pure — the single
+ * source the payments webhook uses to flip `accounts.plan_tier`, so the access-preservation rule
+ * (keep paid access through `past_due`, downgrade on real termination) cannot drift across the
+ * subscription created / updated / deleted handlers.
+ */
+export function effectiveTierForStatus(tier: PlanTier, status: string): PlanTier {
+  return TIER_PRESERVING_STATUSES.has(status) ? tier : "free";
+}
+
+/**
+ * Whether a subscription in this `status` should receive its included monthly credit grant. Only a
+ * genuinely paying state (`active` / `trialing`) mints credits; `past_due` keeps ACCESS (see
+ * {@link effectiveTierForStatus}) but does NOT grant a fresh allowance until payment clears. Pure.
+ */
+export function subscriptionStatusGrantsCredits(status: string): boolean {
+  return status === "active" || status === "trialing";
+}
+
+/**
  * Build the Stripe `lookup_key` for a (tier, credits, interval) bundle.
  * Convention: `<prefix>_<credits-shorthand>[_seat]_<monthly|yearly>`.
  * - credits < 1000 -> raw number (e.g. `500`)

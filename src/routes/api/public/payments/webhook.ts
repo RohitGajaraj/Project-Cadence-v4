@@ -3,7 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { type StripeEnv, verifyWebhook } from '@/lib/stripe.server';
-import { creditsFromLookupKey, tierFromLookupKey } from '@/lib/billing-tier';
+import {
+  creditsFromLookupKey,
+  effectiveTierForStatus,
+  subscriptionStatusGrantsCredits,
+  tierFromLookupKey,
+} from '@/lib/billing-tier';
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
@@ -30,10 +35,9 @@ function resolvePriceLookup(item: any): string {
 async function applyTierForUser(userId: string, lookupKey: string, status: string) {
   const tier = tierFromLookupKey(lookupKey);
   if (!tier) return;
-  // Treat anything that is not an active-ish status as "back to free" for tier purposes.
-  const effectiveTier = (status === 'active' || status === 'trialing' || status === 'past_due')
-    ? tier
-    : 'free';
+  // Keep paid access through dunning (past_due); downgrade to free on real termination.
+  // The rule is the tested `effectiveTierForStatus` so the three subscription handlers can't drift.
+  const effectiveTier = effectiveTierForStatus(tier, status);
   const sb = getSupabase();
   // Account-level (preferred): every account row owned by this user.
   const { data: accounts } = await sb
@@ -74,7 +78,8 @@ async function grantForSubscription(
   status: string,
 ): Promise<void> {
   if (!userId || !lookupKey) return;
-  if (status !== 'active' && status !== 'trialing') return;
+  // Only a genuinely paying state mints credits; past_due keeps access but not a fresh allowance.
+  if (!subscriptionStatusGrantsCredits(status)) return;
   const credits = creditsFromLookupKey(lookupKey);
   if (!credits || credits <= 0) return;
   const accountId = await resolveAccountId(userId);
