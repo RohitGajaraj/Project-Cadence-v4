@@ -11,6 +11,8 @@ import { embedOne } from "@/lib/rag/embed.server";
 import { withIdempotency } from "@/lib/runtime/idempotency.server";
 import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
+import { enqueueFanout, fanoutEnabled } from "@/lib/ai/fanout.server";
+import { FANOUT_MAX_CHILDREN, fanoutDepthOf, canSpawnAtDepth } from "@/lib/ai/fanout";
 import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
 import {
   missionPlan,
@@ -2354,6 +2356,106 @@ const agentHandoff = def({
   },
 });
 
+/**
+ * agent.spawn: fan out independent, parallelizable subwork across N bounded
+ * ephemeral sub-agents of ONE specialist (e.g. one per source to ingest, per spec
+ * section, per file to build), each under a split of the mission budget. Each child
+ * is a normal A2A handoff, so the existing mission engine carries and completes them;
+ * results flow back into the mission. Capped at FANOUT_MAX_CHILDREN per spawn and
+ * gated OFF by default (AGENT_FANOUT), so it errors until the founder enables it.
+ */
+const agentSpawn = def({
+  name: "agent.spawn",
+  description: `Fan out independent, parallelizable subtasks across up to ${FANOUT_MAX_CHILDREN} bounded sub-agents of one specialist (e.g. one per source to ingest, per spec section to draft, per file to build), each running under a split of the mission budget. Use ONLY for genuinely independent subtasks that can run in parallel; for a single next step use agent.handoff. Requires you to be inside a mission.`,
+  category: "write",
+  argsSchema: z.object({
+    to_agent_slug: z.string().min(1).max(60),
+    items: z
+      .array(
+        z.object({
+          task: z.string().min(1).max(1000),
+          context: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .min(1)
+      .max(FANOUT_MAX_CHILDREN),
+  }),
+  preview: (a) => `Spawn ${a.items.length} ${a.to_agent_slug} sub-agent(s)`,
+  run: async (
+    a,
+    { supabase, userId, agentId, agentSlug, traceId, runId, missionId, workspaceId },
+  ) => {
+    if (!fanoutEnabled())
+      throw new Error("agent.spawn: fan-out is not enabled (set AGENT_FANOUT=1).");
+    if (!missionId)
+      throw new Error("agent.spawn requires a mission_id (start the run with a mission)");
+    if (!workspaceId) throw new Error("agent.spawn requires a workspace_id");
+
+    // The current run carries (a) its fan-out depth, via the inbound fan-out handoff
+    // that started it, and (b) its own cap + usage. Read both.
+    let myDepth = 0;
+    let spendCap: number | null = null;
+    let tokenCap: number | null = null;
+    let spendUsed = 0;
+    let tokenUsed = 0;
+    if (runId) {
+      const [{ data: run }, { data: inbound }] = await Promise.all([
+        supabase
+          .from("agent_runs")
+          .select("mission_spend_cap_usd,mission_token_cap,spend_used_usd,tokens_used")
+          .eq("id", runId)
+          .maybeSingle(),
+        supabase
+          .from("agent_messages")
+          .select("payload")
+          .eq("consumed_by_run_id", runId)
+          .eq("kind", "handoff")
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      spendCap = (run?.mission_spend_cap_usd as number | null) ?? null;
+      tokenCap = (run?.mission_token_cap as number | null) ?? null;
+      spendUsed = (run?.spend_used_usd as number | null) ?? 0;
+      tokenUsed = (run?.tokens_used as number | null) ?? 0;
+      myDepth = fanoutDepthOf(inbound?.payload ?? null);
+    }
+
+    // Bound nested fan-out: a spawned worker (depth >= FANOUT_MAX_DEPTH) may not itself
+    // spawn, so a chain can never explode. This, plus the per-spawn count cap, is the
+    // real runaway guard (NOT the per-run budget, which is null on live runs today).
+    if (!canSpawnAtDepth(myDepth)) {
+      throw new Error(
+        "agent.spawn: a spawned sub-agent cannot itself fan out (nested fan-out is bounded to prevent runaway).",
+      );
+    }
+
+    // Split the REMAINING budget (cap minus what this run already used) as per-child
+    // hints; null caps leave children uncapped per-run (same as any handoff child).
+    const remainingSpend = typeof spendCap === "number" ? Math.max(0, spendCap - spendUsed) : null;
+    const remainingTokens = typeof tokenCap === "number" ? Math.max(0, tokenCap - tokenUsed) : null;
+
+    const res = await enqueueFanout(supabase, userId, {
+      mission_id: missionId,
+      workspace_id: workspaceId,
+      from_agent_id: agentId ?? null,
+      from_agent_slug: agentSlug ?? null,
+      to_agent_slug: a.to_agent_slug,
+      items: a.items,
+      parent_depth: myDepth,
+      source_run_id: runId ?? null,
+      source_trace_id: traceId ?? null,
+      spend_cap_usd: remainingSpend,
+      token_cap: remainingTokens,
+    });
+    return {
+      spawned: res.spawned.length,
+      dropped: res.dropped,
+      to_agent_slug: a.to_agent_slug,
+      mission_id: missionId,
+    };
+  },
+});
+
 // DEC-02-LOOP — the Critic as a routable, gating-exempt loop tool. Lets the
 // orchestrator (or any specialist) red-team an opportunity/PRD in-loop, not
 // only via the inline promotion/spec paths. category 'planning' + membership in
@@ -2402,6 +2504,7 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     prdDraft,
     backlogPrioritize,
     agentHandoff,
+    agentSpawn,
     webSearchTool,
     webFetchTool,
     webMapTool,
