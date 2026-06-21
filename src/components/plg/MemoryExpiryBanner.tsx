@@ -27,13 +27,15 @@ export function MemoryExpiryBanner({ workspaceId }: { workspaceId: string | null
   if (!state?.show) return null;
 
   const { expiringCount, soonestDays, retentionDays } = state;
-  const noun = expiringCount === 1 ? "memory" : "memories";
-  const whenPhrase =
+  const subject =
+    expiringCount === 1 ? "1 decision memory" : `${expiringCount} decision memories`;
+  const verb = expiringCount === 1 ? "is" : "are";
+  const timing =
     soonestDays === null || soonestDays === 0
-      ? "are reaching"
+      ? "at that limit now"
       : soonestDays === 1
-        ? "reach it tomorrow —"
-        : `reach it in ${soonestDays} days —`;
+        ? "one day from it"
+        : `${soonestDays} days from it`;
 
   return (
     <section
@@ -54,9 +56,8 @@ export function MemoryExpiryBanner({ workspaceId }: { workspaceId: string | null
           Memory · free plan
         </MonoLabel>
         <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0, lineHeight: 1.5 }}>
-          {expiringCount} decision {noun} {whenPhrase} your free {retentionDays}-day retention
-          window. On the free plan, decision memory is kept {retentionDays} days then fades. Keep it
-          and let it compound across decisions.
+          On the free plan, decision memory is kept {retentionDays} days, then it fades. {subject}{" "}
+          {verb} {timing}. Keep it and let it compound across your decisions.
         </p>
       </div>
       <Link
