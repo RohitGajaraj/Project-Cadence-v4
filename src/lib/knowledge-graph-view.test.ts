@@ -9,6 +9,7 @@ import {
   nodeKey,
   buildSupersessionStory,
   isSupersessionRelation,
+  pickLineageFocus,
   type RawLineageEdge,
   type GraphNodeKind,
   type LineageRowLike,
@@ -72,6 +73,48 @@ describe("projectGraph - empty + fail-safe", () => {
     // @ts-expect-error deliberately malformed row
     const g = projectGraph([{ id: "x" }], new Map(), k("decision", "d1"));
     expect(g.nodes.length).toBeGreaterThanOrEqual(1); // just the focus
+  });
+});
+
+describe("pickLineageFocus - lineage-anchored fallback focus", () => {
+  it("returns the child of the most-recently-created edge", () => {
+    const rows = [
+      edge(["signal", "s1"], ["theme", "t1"], {
+        relation: "promoted",
+        created_at: "2026-06-01T00:00:00.000Z",
+      }),
+      edge(["signal", "s2"], ["theme", "t2"], {
+        relation: "promoted",
+        created_at: "2026-06-04T00:00:00.000Z",
+      }),
+    ];
+    // t2's edge is newer, so the focus anchors on theme:t2.
+    expect(pickLineageFocus(rows)).toEqual({ kind: "theme", id: "t2" });
+  });
+
+  it("is order-independent (picks max created_at, not array order)", () => {
+    const rows = [
+      edge(["signal", "s2"], ["theme", "t2"], { created_at: "2026-06-04T00:00:00.000Z" }),
+      edge(["signal", "s1"], ["theme", "t1"], { created_at: "2026-06-01T00:00:00.000Z" }),
+    ];
+    expect(pickLineageFocus(rows)).toEqual({ kind: "theme", id: "t2" });
+  });
+
+  it("returns null on empty / null / malformed input", () => {
+    expect(pickLineageFocus([])).toBeNull();
+    expect(pickLineageFocus(null)).toBeNull();
+    expect(pickLineageFocus(undefined)).toBeNull();
+    // @ts-expect-error deliberately malformed row (no child)
+    expect(pickLineageFocus([{ id: "x" }])).toBeNull();
+  });
+
+  it("skips malformed rows but still anchors on a valid one", () => {
+    const rows = [
+      // missing child fields - must be skipped
+      { id: "bad", parent_kind: "signal", parent_id: "s9" } as unknown as RawLineageEdge,
+      edge(["signal", "s1"], ["opportunity", "o1"], { created_at: "2026-06-02T00:00:00.000Z" }),
+    ];
+    expect(pickLineageFocus(rows)).toEqual({ kind: "opportunity", id: "o1" });
   });
 });
 

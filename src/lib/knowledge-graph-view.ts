@@ -116,6 +116,31 @@ export function nodeKey(kind: string, id: string): string {
   return `${kind}:${id}`;
 }
 
+/** A node addressed by kind + id - the graph focus. */
+export type GraphFocus = { kind: GraphNodeKind; id: string };
+
+/**
+ * PURE. Pick a lineage-anchored focus from raw lineage rows: the CHILD of the
+ * most-recently-created edge (the "newer" artifact in a promoted/derived link).
+ *
+ * Used as a FALLBACK focus by getKnowledgeGraph: the auto-focus is the caller's
+ * most recent decision, but a workspace's lineage may live entirely off that
+ * decision (e.g. signal->theme promotions with no decision attached). Without this
+ * fallback the canvas wrongly reads "No lineage to map yet" even though edges exist.
+ * Anchoring on a node that actually participates in lineage guarantees the graph
+ * draws whenever the workspace has ANY edge. Returns null on empty/malformed input.
+ */
+export function pickLineageFocus(rows: RawLineageEdge[] | null | undefined): GraphFocus | null {
+  let best: RawLineageEdge | null = null;
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r || typeof r.child_kind !== "string" || typeof r.child_id !== "string" || !r.child_id) {
+      continue;
+    }
+    if (!best || (r.created_at ?? "") > (best.created_at ?? "")) best = r;
+  }
+  return best ? { kind: best.child_kind, id: best.child_id } : null;
+}
+
 /** Normalise a raw relation string; empty becomes the `promoted` default. */
 export function classifyRelation(raw: string | null | undefined): GraphRelation | string {
   const r = (raw ?? "").trim().toLowerCase();

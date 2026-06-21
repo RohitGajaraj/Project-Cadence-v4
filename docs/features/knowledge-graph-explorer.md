@@ -36,6 +36,8 @@ A pure, server-free module so it is unit-testable in isolation (`bun:test`).
 ### Server - `src/lib/knowledge-graph-explorer.functions.ts`
 
 - `getKnowledgeGraph({ focusKind?, focusId? })`: walks `artifact_lineage` **both** directions from the focus (bounded), hydrates artifact titles (reuses the `hydrateTitles` shape from `lineage.functions.ts`), and returns `projectGraph(...)`. **RLS-scoped** via the authed Supabase client (only the caller's edges + artifacts). **Fail-safe**: returns an empty graph on any error, never throws to the UI.
+  - **Auto-focus**: with no explicit `focusId`, the focus defaults to the caller's most recent decision -> opportunity -> prd (the "why is this decision here" framing).
+  - **Lineage-anchored fallback** (O1 close, 2026-06-22): a workspace's lineage often lives entirely off its newest decision (e.g. early `signal->theme` promotions with no decision attached). When the auto-focus has **zero** incident edges, `getKnowledgeGraph` re-anchors on the child of the most recent `artifact_lineage` row (`resolveLineageFocus` -> pure `pickLineageFocus`) and re-runs the BFS, so a workspace that HAS edges never renders the empty state just because its newest decision is disconnected. An **explicit** focus the user clicked is always respected (the fallback is gated on `!focusId`), even when it stands alone.
 - Node "story" reuses the existing `getLineage` (immediate parents/children) + `getProvenance` (root signals). No redundant fetch path.
 
 ### UI - `/knowledge?tab=graph`

@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   projectGraph,
   nodeKey,
+  pickLineageFocus,
   DEFAULT_BOUNDS,
   GRAPH_NODE_KINDS,
   type GraphNodeKind,
@@ -110,6 +111,25 @@ async function resolveFocus(
     if (id) return { kind, id };
   }
   return null;
+}
+
+/**
+ * Lineage-anchored focus: the child of the caller's most recent `artifact_lineage`
+ * edge (RLS-scoped). Used only as a FALLBACK when the decision-centric focus has no
+ * lineage of its own - so a workspace that HAS edges never renders the empty state
+ * just because its newest decision happens to be disconnected from the graph.
+ */
+async function resolveLineageFocus(
+  supabase: SupabaseClient,
+  cols: string,
+): Promise<FocusNode | null> {
+  const { data } = await supabase
+    .from("artifact_lineage")
+    .select(cols)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  // Same dynamic-`cols` cast the BFS uses (defeats the client's row-type inference).
+  return pickLineageFocus((data ?? []) as unknown as RawLineageEdge[]);
 }
 
 /** Bounded both-directions BFS over artifact_lineage. Collects edges + visited node ids. */
@@ -230,13 +250,25 @@ export const getKnowledgeGraph = createServerFn({ method: "GET" })
   .handler(async ({ context, data }): Promise<KnowledgeGraph> => {
     const { supabase } = context;
     try {
-      const focus = await resolveFocus(supabase, data.focusKind, data.focusId);
-      if (!focus) return emptyGraph();
-      const focusKey = nodeKey(focus.kind, focus.id);
       const cols = await resolveLineageCols(supabase);
-      const { edges, nodes } = await fetchSubgraph(supabase, focus, DEFAULT_BOUNDS, cols);
-      const titleMap = await hydrateTitles(supabase, nodes);
-      return projectGraph(edges, titleMap, focusKey, DEFAULT_BOUNDS);
+      let focus = await resolveFocus(supabase, data.focusKind, data.focusId);
+      let sub = focus ? await fetchSubgraph(supabase, focus, DEFAULT_BOUNDS, cols) : null;
+      // Lineage-anchored fallback: when the auto-focus (most recent decision) is
+      // disconnected from the workspace's lineage, re-anchor on a node that actually
+      // participates in an edge so the canvas never shows the empty state while edges
+      // exist. Only for the auto-focus path - an explicit focus the user clicked is
+      // always respected, even when it stands alone.
+      if (!data.focusId && (!focus || !sub || sub.edges.length === 0)) {
+        const lineageFocus = await resolveLineageFocus(supabase, cols);
+        if (lineageFocus) {
+          focus = lineageFocus;
+          sub = await fetchSubgraph(supabase, lineageFocus, DEFAULT_BOUNDS, cols);
+        }
+      }
+      if (!focus || !sub) return emptyGraph();
+      const focusKey = nodeKey(focus.kind, focus.id);
+      const titleMap = await hydrateTitles(supabase, sub.nodes);
+      return projectGraph(sub.edges, titleMap, focusKey, DEFAULT_BOUNDS);
     } catch {
       return emptyGraph();
     }
