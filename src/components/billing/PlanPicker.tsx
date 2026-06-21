@@ -33,7 +33,10 @@ const AUDIENCE_SUB: Record<Audience, string> = {
   teams: "Shared memory, roles, and SSO — for the whole product org.",
 };
 
-const TIER_ICON: Record<PlanTier, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+export const TIER_ICON: Record<
+  PlanTier,
+  React.ComponentType<{ size?: number; strokeWidth?: number }>
+> = {
   free: Sparkle,
   pro: Star,
   max: Stars,

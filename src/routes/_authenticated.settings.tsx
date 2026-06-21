@@ -53,7 +53,7 @@ import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheck
 import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanner";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useConfirm } from "@/hooks/use-confirm";
-import { PlanTable } from "@/components/billing/PlanPicker";
+import { PlanTable, TIER_ICON } from "@/components/billing/PlanPicker";
 import { CreditCapsCard } from "@/components/billing/CreditCapsCard";
 import { getPricingCatalog } from "@/lib/pricing.functions";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
@@ -293,6 +293,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const state: BillingState | undefined = billing.data;
   const currentTier: PlanTier = state?.planTier ?? "free";
   const current = planPresentation(currentTier);
+  const TierGlyph = TIER_ICON[currentTier];
   const sub = mySub.data;
   const hasSub = !!sub?.hasSubscription;
   const renews = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
@@ -307,7 +308,13 @@ function BillingTab({ checkout }: { checkout?: string }) {
         <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
           Current plan
         </div>
-        <div className="font-display" style={{ fontSize: 20, marginTop: 4 }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 20, marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}
+        >
+          <span style={{ color: "var(--ember, #c2602e)", display: "inline-flex" }}>
+            <TierGlyph size={20} strokeWidth={1.5} />
+          </span>
           {current.name}
         </div>
         <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "6px 0 0" }}>
