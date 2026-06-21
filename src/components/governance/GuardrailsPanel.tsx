@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Shield } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { useConfirm } from "@/hooks/use-confirm";
+import { InjectionDefenseCard } from "./InjectionDefenseCard";
 import {
   getGuardrailOverview,
   upsertGuardrailRule,
@@ -643,6 +644,9 @@ export function GuardrailsPanel() {
           </div>
         </div>
       ) : null}
+
+      {/* FND-0.7-d: the weighted-evidence injection defense behind the regex rules. */}
+      <InjectionDefenseCard />
     </div>
   );
 }
