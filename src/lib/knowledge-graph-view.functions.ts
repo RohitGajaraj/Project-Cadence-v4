@@ -69,7 +69,7 @@ function isMissingColumnError(
  * applies on the founder's next publish). One cheap probe keeps the BFS itself simple
  * and means adding `valid_to` here can never 42703 the whole graph to empty.
  */
-async function resolveLineageCols(supabase: SupabaseClient): Promise<string> {
+export async function resolveLineageCols(supabase: SupabaseClient): Promise<string> {
   try {
     const { error } = await supabase.from("artifact_lineage").select("valid_to").limit(1);
     return isMissingColumnError(error) ? LINEAGE_COLS : LINEAGE_COLS_BITEMPORAL;

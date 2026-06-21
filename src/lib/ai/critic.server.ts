@@ -11,8 +11,53 @@
  */
 import { callModel } from "@/lib/ai/runtime.server";
 import { formatDecisionPrecedent, type DecisionPrecedentRow } from "@/lib/ai/outcome-memory";
-import { loadDecisionPrecedent } from "@/lib/ai/decision-precedent.server";
+import { loadDecisionPrecedent, type PrecedentMatch } from "@/lib/ai/decision-precedent.server";
+import {
+  selectContradictionHistory,
+  formatContradictionHistory,
+} from "@/lib/ai/contradiction-history";
+import type { RawLineageEdge } from "@/lib/knowledge-graph-view";
+import { resolveLineageCols } from "@/lib/knowledge-graph-view.functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * DBR-2 loader: fetch the workspace's supersedes/contradicts edges that touch any of
+ * the focus artifact ids (the decision under review + its semantically-similar
+ * precedents). `.server`-only. Migration-tolerant: reuses `resolveLineageCols` to read
+ * `valid_to` when the DBR-1.5 column is live (so the pure core's current-before-retired
+ * ranking and the "later reversed" framing become real) and to fall back to the base
+ * columns pre-migration (a 42703 can never empty the result). Newest-first ordering so
+ * the `.limit(50)` window is the most recent edges, not an arbitrary slice. Fail-safe:
+ * returns [] on any error (the Critic must never break on a missing/odd graph). Only
+ * uuid-shaped ids reach the PostgREST `.or(... in ...)` filter, so it can never be
+ * filter-injected.
+ */
+async function loadContradictionEdges(
+  supabase: SupabaseClient,
+  userId: string,
+  focusIds: string[],
+): Promise<RawLineageEdge[]> {
+  const ids = Array.from(new Set(focusIds.filter((id) => UUID_RE.test(id))));
+  if (!ids.length) return [];
+  try {
+    const cols = await resolveLineageCols(supabase);
+    const list = ids.join(",");
+    const { data, error } = await supabase
+      .from("artifact_lineage")
+      .select(cols)
+      .eq("user_id", userId)
+      .in("relation", ["supersedes", "contradicts"])
+      .or(`parent_id.in.(${list}),child_id.in.(${list})`)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error || !data) return [];
+    return data as unknown as RawLineageEdge[];
+  } catch {
+    return [];
+  }
+}
 
 export type CriticReview = {
   verdict: "ship" | "revise" | "kill";
@@ -84,10 +129,38 @@ Be specific. No filler. Use "ship" only when risks are bounded and evidence is s
     excludeId: undefined,
   });
   const precedent = formatDecisionPrecedent(precedentRows as DecisionPrecedentRow[]);
-  const userContent = precedent ? `${subject}\n\n${precedent}` : subject;
-  const systemContent = precedent
-    ? `${system}\nIf a "Decision precedent" block is present, weigh it: cite a relevant past outcome (especially a MISSED one) in risks or missing_evidence when it bears on this judgment.`
-    : system;
+
+  // DBR-2: the Critic also reasons over the typed decision GRAPH, not just flat
+  // precedent. Surface outcome-labeled supersedes/contradicts edges bearing on this
+  // decision OR on the semantically-similar precedents (their prd/opportunity ids),
+  // so it can cite "a decision like this was contradicted by a later outcome", which
+  // the query flat RAG cannot answer. Best-effort + fail-safe: any failure yields "" and
+  // the Critic is byte-identical (and stays so until the decision graph has edges).
+  let contradictions = "";
+  try {
+    const matches = precedentRows as PrecedentMatch[];
+    const focusIds = [target.id, ...matches.flatMap((m) => [m.prdId ?? "", m.opportunityId ?? ""])];
+    const edges = await loadContradictionEdges(supabase, userId, focusIds);
+    contradictions = formatContradictionHistory(
+      selectContradictionHistory(edges, focusIds, { targetId: target.id }),
+    );
+  } catch {
+    contradictions = "";
+  }
+
+  const blocks = [precedent, contradictions].filter(Boolean);
+  const userContent = blocks.length ? `${subject}\n\n${blocks.join("\n\n")}` : subject;
+  const guidance = [
+    precedent
+      ? 'If a "Decision precedent" block is present, weigh it: cite a relevant past outcome (especially a MISSED one) in risks or missing_evidence when it bears on this judgment.'
+      : "",
+    contradictions
+      ? 'If a "Contradiction history" block is present, it lists this workspace\'s OWN outcome-labeled supersedes/contradicts edges: treat a prior decision that a later outcome CONTRADICTED or SUPERSEDED as strong evidence against repeating its reasoning. Entries are ordered most-relevant first (edges on this exact decision before ones on merely similar past decisions); weigh how directly each bears on the decision under review, and cite the relevant ones in risks or missing_evidence.'
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const systemContent = guidance ? `${system}\n${guidance}` : system;
 
   const model = "google/gemini-2.5-pro";
   try {
