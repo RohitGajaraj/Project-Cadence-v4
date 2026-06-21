@@ -56,8 +56,12 @@ export const issueMCPToken = createServerFn({ method: "POST" })
       .parse(i ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { supabase, auth } = context;
-    if (!auth.user?.id) throw new Error("Unauthorized");
+    // requireSupabaseAuth puts the caller on context.userId (not context.auth);
+    // the old `auth.user.id` threw "Cannot read properties of undefined
+    // (reading 'user')", which 500'd every token issue and made the whole MCP
+    // server unreachable (no token could ever be minted).
+    const { supabase, userId } = context;
+    if (!userId) throw new Error("Unauthorized");
 
     // Generate random secret and hash
     const crypto = await import("crypto");
@@ -69,7 +73,7 @@ export const issueMCPToken = createServerFn({ method: "POST" })
 
     const { data: token, error } = await supabase.rpc("issue_mcp_token", {
       _workspace_id: data.workspace_id,
-      _user_id: auth.user.id,
+      _user_id: userId,
       _slug: data.slug,
       _secret_hash: secretHash,
       _rate_limit_per_min: data.rate_limit_per_min || 60,
