@@ -1,6 +1,6 @@
 # SUBPROC-DISCLOSURE — Sub-processor disclosure registry
 
-> Status: ◐ Backend shipped 2026-06-20 (overnight cycle 49); calm-front Settings UI wired 2026-06-20 (cycle 51, the front-end pivot). The registry + read fn are unit-verified and the "Where your data goes" card is gate-green (renders on publish, not yet render-verified locally); the public trust page + the legal-reviewed copy/DPA remain deferred to the design/legal pass.
+> Status: ◐ Backend shipped 2026-06-20 (overnight cycle 49); calm-front Settings UI wired 2026-06-20 (cycle 51, the front-end pivot); PUBLIC trust page shipped 2026-06-21 (Lane 1). The registry + read fn are unit-verified, the in-app "Where your data goes" card is gate-green, and the public `/subprocessors` page renders the same registry without a login (gate-green; renders on the founder's publish, not yet render-verified locally). Only the legal-reviewed copy/regions/DPA now remain deferred to the founder/legal pass.
 
 ## What it does (one paragraph)
 
@@ -12,7 +12,9 @@ Maintains the canonical list of the third parties that process customer data on 
 
 ## Where to find it (nav path, route, panels)
 
-**Settings > Data > "Where your data goes"** (cycle 51): a calm-front `SubprocessorsCard` (`src/components/settings/SubprocessorsCard.tsx`) renders the active list (each provider's name + category + purpose + the data categories it receives), beside the data-export card. Still also available programmatically via the `getSubprocessors` server function and the pure `@/lib/compliance/subprocessors` module (client-safe, no secrets). A separate PUBLIC trust page is still a future (design/legal) home.
+**Settings > Data > "Where your data goes"** (cycle 51): a calm-front `SubprocessorsCard` (`src/components/settings/SubprocessorsCard.tsx`) renders the active list (each provider's name + category + purpose + the data categories it receives), beside the data-export card.
+
+**Public: `/subprocessors`** (Lane 1, 2026-06-21): a login-free trust page (`src/routes/subprocessors.tsx`) a security reviewer can read directly. It imports the pure `@/lib/compliance/subprocessors` module DIRECTLY (no auth, no server fn, no secrets — the module header sanctions this) and renders the same catalog-derived registry, partitioned into **"Currently processing your data"** (active) and **"Available with your own key"** (the inactive/BYO providers, listed for transparency about where data would flow if enabled). Engine-Room calm front; the active/inactive distinction uses neutral ink tones (role-color law: it is informational, not a verdict). The list is always available programmatically via the authenticated `getSubprocessors` server fn too.
 
 ## How it works (server fns, modules)
 
@@ -33,13 +35,14 @@ Maintains the canonical list of the third parties that process customer data on 
 
 - [x] `bunx tsc --noEmit` clean; `bun run build` ✓; `bunx eslint` clean on the 3 new files.
 - [x] `bun test src/lib/compliance/subprocessors.test.ts` 11/11 (shape, unique ids, infra present + active, ollama never listed, active-only-when-live derivation against an injected catalog, active-before-inactive ordering, active = active subset of all). Full suite 298/298.
-- [ ] Live: a logged-in call to `getSubprocessors` returns the active list (verify on the next publish — GET server fn not behaviorally run unattended).
-- [ ] Trust-page UI renders the list (design pass).
+- [x] Public trust page `/subprocessors` shipped (Lane 1, 2026-06-21): pure render of `allSubprocessors()`, partitioned active vs BYO; route tree regenerated (standalone `@tanstack/router-generator`, purely additive diff); tsc 0 / eslint 0; 2-lens adversarial review (privacy/leak + correctness/doctrine, each finding verified) returned **0 must-fix** (privacy invariant confirmed: no secret/env/tenant data reaches the public page; model ids used only as React keys, never rendered).
+- [ ] Live: a logged-in call to `getSubprocessors` returns the active list, and `/subprocessors` renders (verify on the next publish — not render-verified locally; the build is on the pre-existing Lovable vite-config baseline).
+- [ ] Trust-page COPY: legal-reviewed wording, processing regions, and the DPA link (founder/legal pass).
 
 ## Known limits / out of scope
 
-- **UI deferred** to the design pass (the founder's batch-UI ruling).
-- **Legal copy, exact processing regions, and the DPA** are a founder/legal pass on top of this factual base; this module is the data layer, not the legal document.
+- **UI shipped** (the in-app Settings card + the public `/subprocessors` page); only the broader trust-center framing (security practices, certifications) is a future design pass.
+- **Legal copy, exact processing regions, and the DPA** are a founder/legal pass on top of this factual base; this module is the data layer, not the legal document. The public page renders only the factual registry and explicitly defers the DPA/regions to the account team, so it asserts nothing unverified.
 - The list reflects the AI data path; non-AI sub-processors beyond the three infra entries (e.g. email/analytics) get added here as those integrations go live.
 
 ## Related

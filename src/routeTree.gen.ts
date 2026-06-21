@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrustRouteImport } from './routes/trust'
+import { Route as SubprocessorsRouteImport } from './routes/subprocessors'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -98,6 +99,11 @@ import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
   path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubprocessorsRoute = SubprocessorsRouteImport.update({
+  id: '/subprocessors',
+  path: '/subprocessors',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -554,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/trust': typeof TrustRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/agents': typeof AuthenticatedAgentsRoute
@@ -639,6 +646,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/trust': typeof TrustRoute
   '/agents': typeof AuthenticatedAgentsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/trust': typeof TrustRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
@@ -814,6 +823,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/signup'
+    | '/subprocessors'
     | '/trust'
     | '/admin'
     | '/agents'
@@ -899,6 +909,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/signup'
+    | '/subprocessors'
     | '/trust'
     | '/agents'
     | '/analytics'
@@ -984,6 +995,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/signup'
+    | '/subprocessors'
     | '/trust'
     | '/_authenticated/admin'
     | '/_authenticated/agents'
@@ -1072,6 +1084,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SubprocessorsRoute: typeof SubprocessorsRoute
   TrustRoute: typeof TrustRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiMcpRoute: typeof ApiMcpRoute
@@ -1109,6 +1122,13 @@ declare module '@tanstack/react-router' {
       path: '/trust'
       fullPath: '/trust'
       preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subprocessors': {
+      id: '/subprocessors'
+      path: '/subprocessors'
+      fullPath: '/subprocessors'
+      preLoaderRoute: typeof SubprocessorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1859,6 +1879,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  SubprocessorsRoute: SubprocessorsRoute,
   TrustRoute: TrustRoute,
   ApiChatRoute: ApiChatRoute,
   ApiMcpRoute: ApiMcpRoute,
