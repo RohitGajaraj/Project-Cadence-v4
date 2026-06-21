@@ -33,6 +33,16 @@ Completes the M1 demo path: signals → opportunity → spec → **task graph** 
 - Re-generate → the graph replaces (count stays sane); any manually-added task survives.
 - Before sync: the button still creates tasks (flat); the toast notes graph fields apply after sync.
 
+## Consumption — the read side (H1-TASKS, shipped 2026-06-21, ◐)
+
+Generation wrote the DAG; this makes it READABLE. The stored `seq` + `depends_on` are now turned back into a usable graph on the PRD detail surface:
+
+- **Pure core** `src/lib/task-graph.ts` (zero db/AI, 13 tests): `sanitizeDependsOn` (a stricter superset of the write-side guard), `validateTaskGraph` (cycle / missing-dep / self-dep / forward-ref integrity, DFS-based, so it stays honest even if the data is malformed), `topoOrder` (Kahn's, stable by seq, TOTAL on a cycle so nothing is ever dropped), `readyTasks` (not-done with every dependency done; a missing dep keeps a task blocked), `summarizeTaskGraph` (the done/ready/blocked readiness partition + remaining-effort estimate + percent-complete).
+- **Read fn** `getTaskGraph(prdId)` (`src/lib/task-graph.functions.ts`): RLS-scoped (mirrors `listTasks`), reads generated tasks (`seq NOT NULL`), returns `{ nodes: topo-ordered, summary, issues }`.
+- **Surface** `src/components/product/TaskGraphPanel.tsx` on `/prds/$id`: a calm "Build readiness" line (N of M done · ready · blocked · ~Xh left), the ready-now seqs, and any DAG integrity issues (in `--rose`, the failure-role color). Silent until a graph exists; refetches when the graph is regenerated.
+- **Verification:** a 2-lens adversarial-review Workflow (topology/RLS · reuse/wiring/honesty) returned 0 blockers, SHIP_WITH_FIXES; folded a stale-panel cache-invalidation defect + a role-color fix + the self-dep double-report. tsc 0 / eslint 0 / 551 tests.
+- **Deferred (lane boundary):** the task-graph → mission-steps bridge (auto-plan a Build mission from the DAG) needs `studio.functions.ts` (Build lane); follow-up.
+
 ## Related
 
 - [`../../plan.md`](../../plan.md) §4, build log
