@@ -13,11 +13,26 @@
 //   • prd/opp — a review call (Open + Critic verdict via CriticBadge)
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronRight, Clock, ExternalLink, Undo2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  ShieldAlert,
+  Undo2,
+  X,
+} from "lucide-react";
 import { StepDot } from "@/components/cadence/Primitives";
 import { CriticBadge } from "@/components/governance/CriticBadge";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
-import { toolConsequence, REVERSIBILITY_LABEL, type Reversibility } from "@/lib/tool-consequences";
+import {
+  toolConsequence,
+  toolRisk,
+  REVERSIBILITY_LABEL,
+  RISK_LABEL,
+  type Reversibility,
+} from "@/lib/tool-consequences";
 import type { CriticReview } from "@/lib/discovery.functions";
 
 export type DecisionGateItem = {
@@ -139,6 +154,12 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
             <Undo2 size={10} strokeWidth={1.75} />
             {REVERSIBILITY_LABEL[c.reversible]}
           </MetaChip>
+          {toolRisk(item.toolName) === "high" && (
+            <MetaChip color="var(--rose)">
+              <ShieldAlert size={10} strokeWidth={1.75} />
+              {RISK_LABEL.high}
+            </MetaChip>
+          )}
           {item.estCostUsd != null && <MetaChip>{fmtCost(item.estCostUsd)}</MetaChip>}
           {item.model && <MetaChip>{item.model}</MetaChip>}
           <button

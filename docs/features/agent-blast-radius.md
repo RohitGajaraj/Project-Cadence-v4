@@ -1,0 +1,40 @@
+# Agent blast-radius limits (FND-0.5)
+
+> Per-agent tool allow-list + scope so an agent cannot reach beyond its remit. Governance / AI-safety, Tier 3. Register row R4-adjacent `FND-0.5`. Status: ◐ (the static blast-radius model + the pure allow-list primitive are shipped + unit-verified; loop enforcement is the founder-attended chokepoint step).
+
+## Why
+
+An autonomous agent that can call any enabled tool has an unbounded blast radius: a single mis-step can merge a PR, write to a tracker, or change a calendar. FND-0.5 makes the blast radius of each tool an explicit, static property and gives the platform a pure building block to cap what any one agent may do.
+
+## The model: blast radius = reversibility x scope
+
+Blast radius is two STATIC axes (safe to state plainly — never model output, so the claim never outruns the wiring):
+
+1. **Reversibility** (already catalogued in `src/lib/tool-consequences.ts`): `reversible` / `partial` / `irreversible`.
+2. **Scope**: does the effect reach a system OUTSIDE the Cadence workspace (a repo, a tracker, a calendar)? An external write is wider blast than an internal workspace write even when reversible — so the two axes are genuinely independent (opening a PR is *reversible* yet *external*).
+
+`toolRisk(name)` folds them into one tier:
+
+| | internal | external |
+| --- | --- | --- |
+| reversible | **low** | **medium** |
+| partial | **medium** | **high** |
+| irreversible | **high** | **high** |
+
+An uncatalogued tool is **medium** (unknown blast radius → prompt review, never silently low or loud high).
+
+## What shipped (as built)
+
+All in `src/lib/tool-consequences.ts` (pure, client-safe; 19 unit tests in `tool-consequences.test.ts`):
+
+- `toolRisk(name) -> "low" | "medium" | "high"` and `isHighRiskTool(name)`.
+- `isExternalTool(name)` over an `EXTERNAL_TOOLS` set (the github/studio/calendar/tracker writers).
+- `RISK_RANK` (low<medium<high) + `RISK_LABEL` ("Low/Medium/High blast radius").
+- `filterToolsByRisk(tools, maxRisk) -> { allowed, blocked }` — the **allow-list pre-filter**: the pure building block for per-agent scoping. A high-blast agent keeps every tool; a `maxRisk: "low"` agent is held to reversible internal writes. De-dups while preserving order so a caller can hand it the raw enabled-tool list; blocked tools carry their tier so a caller can explain the cap.
+
+**Driven surface:** the human approval card (`src/components/today/DecisionCard.tsx`) now shows a "High blast radius" chip (ShieldAlert, `--rose`) on a gate whose tool is high-risk, beside the existing reversibility chip — distinct information (reaches-outside / high-stakes vs can't-undo), surfaced only for the loudest tier to keep the front calm.
+
+## What remains (not autonomous)
+
+- **Loop enforcement**: wiring `filterToolsByRisk` into the agent loop so an agent's `maxRisk` actually pre-filters the tools it can call lives at the chokepoint (`src/lib/ai/loop.server.ts` / `registry.server.ts`, pinned) and is a founder-attended step.
+- **Per-agent scope storage + UI**: an `agents.max_tool_risk` (or explicit allow-list) column + a Staff-tab control to set it per agent (migration + server fn + UI), so the cap is configurable, then enforced via the seam above.

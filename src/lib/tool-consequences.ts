@@ -170,3 +170,96 @@ export const REVERSIBILITY_LABEL: Record<Reversibility, string> = {
   irreversible: "Irreversible",
   partial: "Partly reversible",
 };
+
+// ---------------------------------------------------------------------------
+// FND-0.5 — agent blast-radius limits (per-agent tool allow-list).
+//
+// "Blast radius" = two static axes that are SAFE to state (not model output):
+// reversibility (above) + whether the effect reaches OUTSIDE the workspace. An
+// external write (a repo, a tracker, a calendar) has a wider blast radius than an
+// internal workspace write even when reversible, so the two axes are independent
+// (e.g. opening a PR is reversible but external). `toolRisk` folds them into one
+// low/medium/high tier; `filterToolsByRisk` is the pure allow-list pre-filter that
+// per-agent scoping (and, once wired at the loop, enforcement) consumes. Client-safe.
+// ---------------------------------------------------------------------------
+
+/**
+ * Tools whose effect reaches a system OUTSIDE the Cadence workspace (repo / tracker / calendar).
+ * Excluded deliberately: `studio.stage` (stages the local git index only, nothing leaves the repo
+ * until `studio.commit`) and `scheduler.propose` (a workspace-local proposal, nothing books on the
+ * calendar until `calendar.create`) — both are internal until their committing companion runs.
+ */
+const EXTERNAL_TOOLS = new Set<string>([
+  "github.pr.open",
+  "studio.pr.open",
+  "studio.pr.merge",
+  "github.issue.create",
+  "github.commit.append",
+  "studio.commit",
+  "calendar.create",
+  "prd.link_issue",
+]);
+
+export type ToolRisk = "low" | "medium" | "high";
+
+/** Ordered so a numeric compare answers "is this within the cap?" (low < medium < high). */
+export const RISK_RANK: Record<ToolRisk, number> = { low: 0, medium: 1, high: 2 };
+
+export const RISK_LABEL: Record<ToolRisk, string> = {
+  low: "Low blast radius",
+  medium: "Medium blast radius",
+  high: "High blast radius",
+};
+
+/** True for tools whose effect leaves the workspace. */
+export function isExternalTool(toolName: string | null | undefined): boolean {
+  return !!toolName && EXTERNAL_TOOLS.has(toolName);
+}
+
+/**
+ * Static blast-radius tier from (reversibility x scope). Irreversible is always high;
+ * an external partial write is high; an external reversible write or an internal partial
+ * write is medium; an internal reversible write is low. An uncatalogued tool is medium
+ * (unknown blast radius, so prompt review rather than over- or under-claim).
+ */
+export function toolRisk(toolName: string | null | undefined): ToolRisk {
+  if (!toolName) return "medium";
+  const cat = CONSEQUENCES[toolName];
+  if (!cat) return "medium";
+  if (cat.reversible === "irreversible") return "high";
+  const external = EXTERNAL_TOOLS.has(toolName);
+  if (external) return cat.reversible === "partial" ? "high" : "medium";
+  return cat.reversible === "partial" ? "medium" : "low";
+}
+
+export function isHighRiskTool(toolName: string | null | undefined): boolean {
+  return toolRisk(toolName) === "high";
+}
+
+export interface ToolAllowResult {
+  /** Tools within the agent's permitted blast radius (risk <= cap), input order preserved. */
+  allowed: string[];
+  /** Tools that exceed the cap, paired with their tier so a caller can explain the block. */
+  blocked: { tool: string; risk: ToolRisk }[];
+}
+
+/**
+ * Allow-list pre-filter: partition a tool set by an agent's maximum permitted blast radius.
+ * The pure building block for per-agent scoping (FND-0.5) — a high-blast agent keeps every
+ * tool; a `maxRisk: "low"` agent is held to reversible internal writes only. De-dups while
+ * preserving first-occurrence order so a caller can hand it the raw enabled-tool list.
+ */
+export function filterToolsByRisk(tools: string[], maxRisk: ToolRisk): ToolAllowResult {
+  const cap = RISK_RANK[maxRisk];
+  const allowed: string[] = [];
+  const blocked: { tool: string; risk: ToolRisk }[] = [];
+  const seen = new Set<string>();
+  for (const tool of tools) {
+    if (seen.has(tool)) continue;
+    seen.add(tool);
+    const risk = toolRisk(tool);
+    if (RISK_RANK[risk] <= cap) allowed.push(tool);
+    else blocked.push({ tool, risk });
+  }
+  return { allowed, blocked };
+}
