@@ -9,7 +9,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 import { getKnowledgeGraph } from "@/lib/knowledge-graph-view.functions";
-import { filterByTime, computeStaleness, computeContradictionDrift, type GraphNodeKind } from "@/lib/knowledge-graph-view";
+import {
+  filterByTime,
+  computeStaleness,
+  computeContradictionDrift,
+  type GraphNodeKind,
+} from "@/lib/knowledge-graph-view";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { GraphExplorer, KIND_COLOR, KIND_LABEL } from "./GraphExplorer";
 import { GraphNodeStory } from "./GraphNodeStory";
@@ -203,8 +208,9 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
 
       {contradictionDrift && contradictionDrift.driftedCount > 0 && (
         <MonoLabel style={{ marginBottom: 8, color: "var(--madder, #b0573f)" }}>
-          {contradictionDrift.driftedCount} {contradictionDrift.driftedCount === 1 ? "fact has" : "facts have"} been
-          contradicted or superseded by a recorded outcome · their revised state is current
+          {contradictionDrift.driftedCount}{" "}
+          {contradictionDrift.driftedCount === 1 ? "fact has" : "facts have"} been contradicted or
+          superseded by a recorded outcome · their revised state is current
         </MonoLabel>
       )}
 

@@ -457,9 +457,7 @@ describe("computeContradictionDrift", () => {
       [k("decision", "d2"), "Checkout v2"],
     ]);
     // d1 (an old decision) is superseded by d2 (a newer one)
-    const edges = [
-      edge(["decision", "d2"], ["decision", "d1"], { relation: "supersedes" }),
-    ];
+    const edges = [edge(["decision", "d2"], ["decision", "d1"], { relation: "supersedes" })];
     const g = projectGraph(edges, titles, k("decision", "d1"));
     const r = computeContradictionDrift(g);
     // d1 is the target of a supersedes edge (its belief was revised by d2)
@@ -502,9 +500,7 @@ describe("computeContradictionDrift", () => {
       [k("decision", "d2"), "Launch now"],
     ]);
     // d2 contradicts d1 (its belief was wrong, not just superseded)
-    const edges = [
-      edge(["decision", "d2"], ["decision", "d1"], { relation: "contradicts" }),
-    ];
+    const edges = [edge(["decision", "d2"], ["decision", "d1"], { relation: "contradicts" })];
     const g = projectGraph(edges, titles, k("decision", "d1"));
     const r = computeContradictionDrift(g);
     expect(r.driftedKeys.has(k("decision", "d1"))).toBe(true);
