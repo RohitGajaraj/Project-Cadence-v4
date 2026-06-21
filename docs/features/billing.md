@@ -2,7 +2,9 @@
 
 > _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: cancel/resume + Stripe-id lockdown)_
 
-> Status · Phase 1-2 landed 2026-06-20 (Stripe enabled in sandbox; admin-editable pricing catalog + service-role billing vault tables). **Phase 5 partial: Stripe Checkout + customer portal + cancel/resume wired.** Webhook handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`. Sandbox env active; live env gated on the founder.
+> Status · Stripe rail SHIPPED 2026-06-20 (Stripe-capable in sandbox; admin-editable pricing catalog + service-role billing vault tables). **Checkout + customer portal + cancel/resume + top-up checkout are all wired in `src/lib/payments.functions.ts`, plus the live webhook at `src/routes/api/public/payments/webhook.ts`.** Webhook handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`. Sandbox/test env active; live env gated on the founder.
+>
+> _Reconciled 2026-06-21 against shipped code: dropped the "TBD Phase 5" framing - checkout, top-up, portal, and the webhook are all shipped. The live rail is `src/lib/payments.functions.ts` + `src/routes/api/public/payments/webhook.ts` (via the Lovable connector gateway). The older `src/routes/api/stripe/webhook.ts` is dead/legacy and is NOT live._
 
 ## Update 2026-06-20 (Lovable cycle: cancel / resume / portal as shipped)
 
@@ -38,13 +40,14 @@ The end-to-end Stripe subscription + portal rail for Cadence. Tiers are feature 
 - **Catalog tables** (`pricing_plans`, `pricing_bundles`, `pricing_features`, `pricing_topup_bundles`): public read, service-role write. Seeded with the placeholder shape above. Edits from the admin console clone-and-archive Stripe Prices so existing subscribers stay on their original price.
 - **Billing vaults** (`account_billing_secrets`, `workspace_billing_secrets`): service-role-only storage for Stripe customer/subscription ids. Replaces the legacy columns on `accounts` / `workspaces` (column-level SELECT revoked from members; fixes the EXPOSED_SENSITIVE_DATA findings).
 - **Admin role** (`public.app_role` enum + `user_roles` table + `has_role()` security-definer fn): canonical separate-table role storage. `/admin/*` routes gate on `has_role(uid,'admin')`.
-- **Server fns** (TBD Phase 5): `createCheckoutSession({tier, bundleId, recurrence})`, `createTopUpCheckout({bundleId})`, `createBillingPortalSession()`. All Stripe calls go through `src/lib/stripe.server.ts` via the connector gateway.
-- **Webhook** (TBD Phase 5): `/api/public/payments/webhook?env=…` handles `checkout.session.completed`, `invoice.payment_succeeded`, `customer.subscription.{updated,deleted}` → writes vault + `accounts.plan_tier` + calls `grantMonthlyAllowance` / `resetCreditCycle`.
+- **Server fns** (SHIPPED, `src/lib/payments.functions.ts`): `createCheckoutSession({tier, bundleId, recurrence})`, `createTopUpCheckout({bundleId})`, `createPortalSession()`, `getMySubscription()`, `cancelMySubscription()` / `resumeMySubscription()`. All Stripe calls route through the Lovable connector gateway (`connector-gateway.lovable.dev/stripe`). Read-only billing state is `getBillingState` and lives separately in `src/lib/billing.functions.ts` (not the payments module). Price tiers resolve via `lookup_keys` in `src/lib/billing-tier.ts`.
+- **Webhook** (SHIPPED, `src/routes/api/public/payments/webhook.ts`): `/api/public/payments/webhook?env=…` handles `checkout.session.completed`, `customer.subscription.{updated,deleted}` and writes vault + plan tier. Note: the older `src/routes/api/stripe/webhook.ts` is dead/legacy (different `STRIPE_WEBHOOK_SECRET` env var, hardcodes the `pro` tier, writes only now-revoked `stripe_*` columns) and is NOT the live path. KNOWN BUG (dashboard row `M-C-TOPUP-BUG`): `handleCheckoutCompleted` writes the `credit_topups` row but never increments `account_credits.topup_credits` or inserts a `credit_ledger` row, so purchased top-ups do not reach the spendable balance even once `credits_enabled()` flips on.
+- **Test coverage:** only pure math is unit-tested (`entitlements.test.ts`, `credits.test.ts`, `ai/pricing.test.ts`). There are no automated tests yet for any Stripe server fn, the webhook, or voucher redemption.
 
 ## How to verify (per phase)
 
 - **Phase 2 (done):** `select * from pricing_plans;` returns 5 rows · `select * from pricing_bundles;` returns 13 rows · `select * from pricing_topup_bundles;` returns 3 rows · service-role-only vaults exist with backfilled rows · column-level SELECT revoked on legacy Stripe id columns.
-- **Phase 5:** sandbox checkout for each tier × bundle × recurrence creates a Stripe sub and writes vault row · portal opens for an authed customer · webhook flips `plan_tier`.
+- **Checkout / portal / webhook (shipped):** sandbox checkout for each tier × bundle × recurrence creates a Stripe sub and writes a vault row · portal opens for an authed customer · webhook flips plan tier. (No automated tests cover these yet - verify manually in sandbox.)
 - **Phase 8:** admin edits Cluster 1k price → new Stripe Price cloned → `/pricing` shows new amount · existing subs untouched.
 
 ## Related
@@ -52,5 +55,5 @@ The end-to-end Stripe subscription + portal rail for Cadence. Tiers are feature 
 - [`./credits.md`](./credits.md) — separate top-up page + credit engine surfaces
 - [`./admin-console.md`](./admin-console.md) — `/admin/*` hub + pricing console
 - [`./pricing.md`](./pricing.md) — legacy entitlements doc (3-tier shape, superseded by this rail)
-- [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) — board group G12 (this rail)
+- [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) — row M-C-PRICE (plus the M-C-* / ADM-* rows) for this rail
 - [`../../supabase/migrations/`](../../supabase/migrations/) — `stripe_rail_pricing_catalog_and_admin_role`

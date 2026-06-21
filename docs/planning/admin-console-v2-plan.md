@@ -6,6 +6,8 @@
 >
 > This is the cold-buildable spec. Any agent (Lovable Cloud / Claude Code / Antigravity) should be able to pick this up, run the migration, ship the server fns, and wire the UI without re-deriving intent.
 
+> _Reconciled 2026-06-21 against shipped code: (1) section 6 specified two cron hooks but the shipped reality is a single hook `admin-expiry-tick.ts` -> `cron_tick_admin_expiries()` that clears expired plan overrides AND invitations atomically; (2) `adminRevokeSessions` (section 3) and `adminSystemHealth()` (section 3) were specced but did NOT ship - both deferred; (3) the admin plan override is stored as `subscriptions.plan_override_tier` (text slug), not the specced `plan_override_id` (uuid fk). The pricing/entitlements/admin block now lives on `feature-dashboard.md` (row M-C-PRICE + the M-C-* / ADM-* rows)._
+
 ---
 
 ## 0. Why three tabs, not five
@@ -50,7 +52,8 @@ One migration file. All new tables in `public`. Every table gets GRANT + RLS + p
 ### 2.2 Column additions
 
 - `profiles.suspended` (bool, default false) - soft account lock; auth gate must check this.
-- `subscriptions.plan_override_id` (uuid, fk -> `pricing_plans`, nullable), `plan_override_expires_at` (timestamptz, nullable), `plan_override_reason` (text, nullable) - admin temporary plan grant; nightly cron expires them.
+- `subscriptions.plan_override_tier` (text slug, nullable), `plan_override_expires_at` (timestamptz, nullable), `plan_override_reason` (text, nullable) - admin temporary plan grant; nightly cron expires them.
+  > _Reconciled 2026-06-21 against shipped code: the override is a TEXT tier slug (`free`/`pro`/`max`/`team`/`enterprise`), NOT the originally specced `plan_override_id` (uuid fk -> `pricing_plans`). The shipped RPC `admin_override_user_plan` takes `_tier text` and writes `subscriptions.plan_override_tier`._
 
 ### 2.3 RLS posture
 
@@ -76,7 +79,7 @@ All in `src/lib/` (client-safe path, NOT `src/server/`). All gate on `has_role(a
 - `adminResetCreditCycle({ userId })` - clears monthly counter (preserves one-time grants).
 - `adminOverrideUserPlan({ userId, planId, expiresAt, reason })`
 - `adminSuspendUser({ userId, suspend, reason })` - flips `profiles.suspended`.
-- `adminRevokeSessions({ userId })` - Supabase auth admin invalidates refresh tokens.
+- ~~`adminRevokeSessions({ userId })` - Supabase auth admin invalidates refresh tokens.~~ **DEFERRED / NOT SHIPPED** _(reconciled 2026-06-21: specced but did not ship)._
 
 ### `src/lib/admin-invitations.functions.ts` - People · Invitations panel
 - `adminCreateInvitation`, `adminBulkCreateInvitations({ csv })`, `adminListInvitations`, `adminRevokeInvitation`.
@@ -101,7 +104,7 @@ All in `src/lib/` (client-safe path, NOT `src/server/`). All gate on `has_role(a
 - `adminListFlags`, `adminUpsertFlag`, `adminDeleteFlag`.
 - `adminGetBanner`, `adminSetBanner`.
 - `adminListAuditLog({ actorUserId?, targetKind?, targetId?, since?, limit, offset })`.
-- `adminSystemHealth()` - thin pass-through to `/api/public/health`; deep-link to `/govern`.
+- ~~`adminSystemHealth()` - thin pass-through to `/api/public/health`; deep-link to `/govern`.~~ **DEFERRED / NOT SHIPPED** _(reconciled 2026-06-21: specced but did not ship)._
 
 ### Public-readable helpers (SECURITY DEFINER, no admin gate)
 - `get_active_banner()` - used by the app shell.
@@ -144,9 +147,14 @@ All in `src/lib/` (client-safe path, NOT `src/server/`). All gate on `has_role(a
 
 ## 6. Cron hooks
 
-- `src/routes/api/public/hooks/plan-override-tick.ts` - nightly: clears `plan_override_*` where `expires_at < now()`; one audit row per expiry.
-- `src/routes/api/public/hooks/invitation-expire-tick.ts` - nightly: marks expired invitations.
-- Both follow `/api/public/hooks/*` cron-key auth (see `architecture/integrations.md`).
+> _Reconciled 2026-06-21 against shipped code: the original two-hook design (`plan-override-tick.ts` + `invitation-expire-tick.ts`) is SUPERSEDED. The shipped reality is a SINGLE hook that does both jobs atomically. The two-hook spec is kept below struck-through for history._
+
+**Shipped:**
+- `src/routes/api/public/hooks/admin-expiry-tick.ts` -> calls `cron_tick_admin_expiries()` - nightly: in one RPC, clears expired plan overrides (`subscriptions.plan_override_*` where `expires_at < now()`) AND marks expired invitations, with one audit row per expiry. Follows `/api/public/hooks/*` cron-key auth (see `architecture/integrations.md`).
+
+**Superseded (original spec, did NOT ship as two hooks):**
+- ~~`src/routes/api/public/hooks/plan-override-tick.ts` - nightly: clears `plan_override_*` where `expires_at < now()`; one audit row per expiry.~~
+- ~~`src/routes/api/public/hooks/invitation-expire-tick.ts` - nightly: marks expired invitations.~~
 
 ---
 
@@ -160,7 +168,7 @@ Strict order. Each step is one commit. Per-step gates: tsc 0 + build green + tar
 4. **`admin-vouchers.functions.ts`** + `redeem-voucher.functions.ts` + Vouchers panel + signup wiring.
 5. **`admin-workspaces.functions.ts`** + Workspaces tab.
 6. **`admin-platform.functions.ts`** + Platform tab + `useFlag` hook + banner renderer in app shell.
-7. **Cron hooks** for plan-override + invitation expiry.
+7. **Cron hook** for plan-override + invitation expiry. _(Shipped as a single hook `admin-expiry-tick.ts` -> `cron_tick_admin_expiries()`, not two; see section 6.)_
 8. **Doc-loop close:** flip `feature-dashboard.md` row, append `plan.md` §4 line, update `docs/features/admin-console.md` Status from "v2 planned" to "v2 shipped".
 
 ---
