@@ -14,9 +14,34 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runEvalSuite } from "./ai/eval-runner.server";
 import {
   assessEvalCoverage,
+  evaluateCoverageFloor,
   type SuiteCoverageInput,
   type CoverageReport,
+  type CoverageFloorPolicy,
+  type CoverageGateVerdict,
 } from "@/lib/evals/coverage";
+
+/**
+ * The coverage-floor deploy gate, read from env (dormant by default). EVAL_COVERAGE_FLOOR_PCT is a
+ * minimum coverage percentage; EVAL_COVERAGE_REQUIRED_SURFACES is a comma list of surface ids that
+ * must be covered. With neither set the gate is dormant and never blocks, matching the
+ * flag-gated-default-off convention.
+ */
+function readCoverageFloorPolicy(): CoverageFloorPolicy {
+  const raw = process.env.EVAL_COVERAGE_FLOOR_PCT;
+  const pct = raw !== undefined && raw !== "" ? Number(raw) : NaN;
+  // Clamp a fat-fingered floor to <= 100 so "120" degrades to "require full coverage" (an
+  // unsatisfiable gate) rather than permanently and confusingly blocking every deploy.
+  const minCoveragePct = Number.isFinite(pct) ? Math.min(100, pct) : undefined;
+  const requiredSurfaces = (process.env.EVAL_COVERAGE_REQUIRED_SURFACES ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { minCoveragePct, requiredSurfaces };
+}
+
+/** The coverage report plus the deploy-gate verdict the panel renders. */
+export type EvalCoverageResult = CoverageReport & { floor: CoverageGateVerdict };
 
 export const listEvalSuites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -76,7 +101,7 @@ export const listEvalSuites = createServerFn({ method: "GET" })
  */
 export const getEvalCoverage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<CoverageReport> => {
+  .handler(async ({ context }): Promise<EvalCoverageResult> => {
     const { supabase, userId } = context;
     const { data: suites, error } = await supabase
       .from("eval_suites")
@@ -122,7 +147,9 @@ export const getEvalCoverage = createServerFn({ method: "GET" })
       lastRunStatus: lastStatus.get(s.id as string) ?? null,
     }));
 
-    return assessEvalCoverage(inputs);
+    const report = assessEvalCoverage(inputs);
+    const floor = evaluateCoverageFloor(report, readCoverageFloorPolicy());
+    return { ...report, floor };
   });
 
 export const getEvalSuite = createServerFn({ method: "POST" })

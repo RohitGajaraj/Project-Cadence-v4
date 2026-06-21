@@ -61,6 +61,14 @@ export type SuiteCoverageInput = {
 
 export type TargetState = "covered" | "stale" | "uncovered";
 
+/** One canonical target with its resolved coverage state. The ordered source for per-surface chips. */
+export type TargetCoverage = {
+  surface: string;
+  key: string;
+  label: string;
+  state: TargetState;
+};
+
 export type CoverageReport = {
   /** Number of canonical targets considered. */
   total: number;
@@ -74,6 +82,11 @@ export type CoverageReport = {
   uncovered: string[];
   /** A guard exists but has never completed a run (never run, errored, or only in flight). */
   stale: string[];
+  /**
+   * Per-target breakdown in canonical order. The single source the EvalsPanel renders as
+   * per-surface coverage chips, so the chips can never drift from the covered/uncovered/stale split.
+   */
+  targets: TargetCoverage[];
   /** One calm operator line, or "" when every target is covered (the caller stays silent). */
   summary: string;
 };
@@ -111,9 +124,11 @@ export function assessEvalCoverage(
   const covered: string[] = [];
   const uncovered: string[] = [];
   const stale: string[] = [];
+  const perTarget: TargetCoverage[] = [];
 
   for (const t of targets) {
     const state = targetState(t, suites);
+    perTarget.push({ surface: t.surface, key: t.key, label: t.label, state });
     if (state === "covered") covered.push(t.label);
     else if (state === "uncovered") uncovered.push(t.label);
     else stale.push(t.label);
@@ -130,6 +145,7 @@ export function assessEvalCoverage(
     covered,
     uncovered,
     stale,
+    targets: perTarget,
     summary: "",
   };
   report.summary = summarizeCoverage(report);
@@ -148,4 +164,82 @@ export function summarizeCoverage(report: CoverageReport): string {
   if (u > 0) parts.push(`${u} of ${report.total} AI surfaces have no eval guard`);
   if (s > 0) parts.push(`${s} guard${s === 1 ? "" : "s"} unproven`);
   return parts.join(" · ");
+}
+
+/**
+ * A coverage-floor deploy-gate policy. Both fields are optional: a policy with neither set is
+ * DORMANT (the gate is off and always passes), which is the default. The server fn reads this from
+ * env (EVAL_COVERAGE_FLOOR_PCT / EVAL_COVERAGE_REQUIRED_SURFACES), so the floor never blocks a
+ * deploy until the founder opts in, mirroring the flag-gated-default-off convention.
+ */
+export type CoverageFloorPolicy = {
+  /**
+   * The minimum coverage percentage a deploy requires. Unset or <= 0 = not enforced. Compared
+   * against the TRUE (unrounded) coverage ratio, not the rounded display percent, so a floor of 86
+   * is not silently met by a true 85.7% that rounds up. The env reader clamps fat-fingered values
+   * to <= 100 so an impossible floor (e.g. 120) degrades to "require full coverage".
+   */
+  minCoveragePct?: number;
+  /** Surface ids that MUST be `covered` (not stale, not uncovered). Unset or empty = not enforced. */
+  requiredSurfaces?: string[];
+};
+
+/** The verdict of a coverage floor against a report. */
+export type CoverageGateVerdict = {
+  /** True only when the policy constrains something. When false the gate is dormant and `pass` is true. */
+  configured: boolean;
+  /** True when the floor is met, or when the gate is dormant. */
+  pass: boolean;
+  /** Why the gate failed, as authored operator copy (no em/en dashes). Empty when it passes. */
+  reasons: string[];
+};
+
+/**
+ * Evaluate a coverage report against a deploy-gate floor. Pure and total: any report + any policy
+ * yields a defined verdict, no throw. A dormant policy (nothing set) always passes so an unconfigured
+ * environment is never blocked. A configured policy fails (with reasons) when the coverage percentage
+ * is below the floor or any required surface is not `covered`.
+ */
+export function evaluateCoverageFloor(
+  report: CoverageReport,
+  policy: CoverageFloorPolicy = {},
+): CoverageGateVerdict {
+  const minPct =
+    typeof policy.minCoveragePct === "number" &&
+    Number.isFinite(policy.minCoveragePct) &&
+    policy.minCoveragePct > 0
+      ? policy.minCoveragePct
+      : undefined;
+  // Dedupe so a copy-paste typo (EVAL_COVERAGE_REQUIRED_SURFACES="chat,chat") does not inflate the
+  // missing count or repeat a name in the reason.
+  const required = [
+    ...new Set((policy.requiredSurfaces ?? []).map((s) => s.trim()).filter(Boolean)),
+  ];
+  const configured = minPct !== undefined || required.length > 0;
+  if (!configured) return { configured: false, pass: true, reasons: [] };
+
+  const reasons: string[] = [];
+  if (minPct !== undefined) {
+    // Compare the TRUE ratio, not the 0dp-rounded coveragePct: 6/7 displays as 86% but is 85.7%, and
+    // a floor of 86 must FAIL it, not pass on the rounded-up number. (total 0 = vacuously full = 100.)
+    const trueCoveragePct = report.total === 0 ? 100 : (report.coveredCount / report.total) * 100;
+    if (trueCoveragePct < minPct) {
+      const shown = Number.isInteger(trueCoveragePct)
+        ? String(trueCoveragePct)
+        : trueCoveragePct.toFixed(1);
+      reasons.push(`coverage ${shown}% is below the ${minPct}% floor`);
+    }
+  }
+  if (required.length > 0) {
+    const coveredSurfaces = new Set(
+      report.targets.filter((t) => t.state === "covered").map((t) => t.surface),
+    );
+    const missing = required.filter((s) => !coveredSurfaces.has(s));
+    if (missing.length > 0) {
+      reasons.push(
+        `${missing.length} required surface${missing.length === 1 ? "" : "s"} not covered: ${missing.join(", ")}`,
+      );
+    }
+  }
+  return { configured: true, pass: reasons.length === 0, reasons };
 }

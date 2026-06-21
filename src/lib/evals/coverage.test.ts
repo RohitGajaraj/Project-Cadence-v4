@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import {
   assessEvalCoverage,
+  evaluateCoverageFloor,
   targetState,
   summarizeCoverage,
   EVAL_COVERAGE_TARGETS,
@@ -138,6 +139,143 @@ describe("assessEvalCoverage", () => {
 
   it("is idempotent (same input, same report)", () => {
     expect(assessEvalCoverage(fullCoverage)).toEqual(assessEvalCoverage(fullCoverage));
+  });
+});
+
+describe("assessEvalCoverage.targets (per-surface chip source)", () => {
+  it("returns one entry per canonical target, in canonical order, all covered at full coverage", () => {
+    const r = assessEvalCoverage(fullCoverage);
+    expect(r.targets).toHaveLength(EVAL_COVERAGE_TARGETS.length);
+    expect(r.targets.map((t) => t.surface)).toEqual(EVAL_COVERAGE_TARGETS.map((t) => t.surface));
+    expect(r.targets.every((t) => t.state === "covered")).toBe(true);
+  });
+
+  it("marks every target uncovered when there are no suites", () => {
+    const r = assessEvalCoverage([]);
+    expect(r.targets).toHaveLength(EVAL_COVERAGE_TARGETS.length);
+    expect(r.targets.every((t) => t.state === "uncovered")).toBe(true);
+  });
+
+  it("resolves per-target state for a mixed input (covered / stale / uncovered)", () => {
+    const suites: SuiteCoverageInput[] = [
+      {
+        surface: "chat",
+        promptKey: "default",
+        enabled: true,
+        caseCount: 1,
+        lastRunStatus: "completed",
+      },
+      {
+        surface: "copilot",
+        promptKey: "daily_brief",
+        enabled: true,
+        caseCount: 1,
+        lastRunStatus: "error",
+      },
+    ];
+    const r = assessEvalCoverage(suites);
+    const byState = (st: string) => r.targets.filter((t) => t.state === st).map((t) => t.surface);
+    expect(byState("covered")).toEqual(["chat"]);
+    expect(byState("stale")).toEqual(["copilot"]);
+    expect(byState("uncovered").length).toBe(5);
+    // The chip source agrees with the label arrays (no drift).
+    expect(r.targets.filter((t) => t.state === "covered").map((t) => t.label)).toEqual(r.covered);
+  });
+});
+
+describe("evaluateCoverageFloor (deploy gate)", () => {
+  const full = assessEvalCoverage(fullCoverage); // coveragePct 100, all surfaces covered
+  const empty = assessEvalCoverage([]); // coveragePct 0, all uncovered
+
+  it("is dormant (configured:false, pass:true) with no policy", () => {
+    const v = evaluateCoverageFloor(full);
+    expect(v).toEqual({ configured: false, pass: true, reasons: [] });
+  });
+
+  it("treats a zero/negative minCoveragePct as not enforced (still dormant)", () => {
+    expect(evaluateCoverageFloor(empty, { minCoveragePct: 0 }).configured).toBe(false);
+    expect(evaluateCoverageFloor(empty, { minCoveragePct: -5 }).configured).toBe(false);
+  });
+
+  it("passes when coveragePct meets the floor", () => {
+    const v = evaluateCoverageFloor(full, { minCoveragePct: 80 });
+    expect(v.configured).toBe(true);
+    expect(v.pass).toBe(true);
+    expect(v.reasons).toEqual([]);
+  });
+
+  it("fails when coveragePct is below the floor, naming both numbers", () => {
+    const v = evaluateCoverageFloor(empty, { minCoveragePct: 80 });
+    expect(v.pass).toBe(false);
+    expect(v.reasons[0]).toContain("0%");
+    expect(v.reasons[0]).toContain("80%");
+  });
+
+  it("passes when every required surface is covered", () => {
+    const v = evaluateCoverageFloor(full, { requiredSurfaces: ["chat", "agent"] });
+    expect(v.pass).toBe(true);
+  });
+
+  it("fails and names the missing required surfaces (plural)", () => {
+    const v = evaluateCoverageFloor(empty, { requiredSurfaces: ["chat", "agent"] });
+    expect(v.pass).toBe(false);
+    expect(v.reasons[0]).toContain("2 required surfaces not covered");
+    expect(v.reasons[0]).toContain("chat");
+    expect(v.reasons[0]).toContain("agent");
+  });
+
+  it("uses singular grammar for one missing required surface", () => {
+    const v = evaluateCoverageFloor(empty, { requiredSurfaces: ["chat"] });
+    expect(v.reasons[0]).toContain("1 required surface not covered");
+    expect(v.reasons[0]).not.toContain("surfaces");
+  });
+
+  it("a stale guard does NOT satisfy a required surface (must be covered)", () => {
+    const stale = assessEvalCoverage([
+      {
+        surface: "chat",
+        promptKey: "default",
+        enabled: true,
+        caseCount: 1,
+        lastRunStatus: "error",
+      },
+    ]);
+    expect(evaluateCoverageFloor(stale, { requiredSurfaces: ["chat"] }).pass).toBe(false);
+  });
+
+  it("accumulates both a pct and a required-surface reason", () => {
+    const v = evaluateCoverageFloor(empty, { minCoveragePct: 50, requiredSurfaces: ["chat"] });
+    expect(v.reasons).toHaveLength(2);
+    expect(v.pass).toBe(false);
+  });
+
+  it("ignores blank entries in requiredSurfaces (trim + filter)", () => {
+    const v = evaluateCoverageFloor(full, { requiredSurfaces: ["", "  ", "chat"] });
+    expect(v.configured).toBe(true);
+    expect(v.pass).toBe(true);
+  });
+
+  it("carries no em or en dashes in any reason (humanized-output Tier 2)", () => {
+    const v = evaluateCoverageFloor(empty, { minCoveragePct: 90, requiredSurfaces: ["chat"] });
+    expect(v.reasons.join(" ")).not.toMatch(/[—–]/);
+  });
+
+  it("dedupes requiredSurfaces so a repeated id is not double-counted in the reason", () => {
+    const v = evaluateCoverageFloor(empty, { requiredSurfaces: ["chat", "chat"] });
+    expect(v.pass).toBe(false);
+    expect(v.reasons[0]).toContain("1 required surface not covered: chat");
+    expect(v.reasons[0]).not.toContain("chat, chat");
+  });
+
+  it("gates on the TRUE coverage ratio, not the rounded display percent", () => {
+    // 6 of 7 covered: coveragePct DISPLAYS as 86 (rounds up from 85.71), but the gate must compare
+    // the true 85.71. A floor of 86 must FAIL; a floor of 85 must PASS.
+    const sixOfSeven = assessEvalCoverage(fullCoverage.slice(0, EVAL_COVERAGE_TARGETS.length - 1));
+    expect(sixOfSeven.coveragePct).toBe(86); // the rounded display number
+    const failed = evaluateCoverageFloor(sixOfSeven, { minCoveragePct: 86 });
+    expect(failed.pass).toBe(false);
+    expect(failed.reasons[0]).toContain("85.7%"); // the honest, unrounded number in the message
+    expect(evaluateCoverageFloor(sixOfSeven, { minCoveragePct: 85 }).pass).toBe(true);
   });
 });
 

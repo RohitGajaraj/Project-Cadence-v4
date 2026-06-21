@@ -55,6 +55,8 @@ export function EvalsPanel() {
   const coverageFn = useServerFn(getEvalCoverage);
   const coverageQ = useQuery({ queryKey: ["eval_coverage"], queryFn: () => coverageFn() });
   const coverageSummary = coverageQ.data?.summary ?? "";
+  const coverageTargets = coverageQ.data?.targets ?? [];
+  const coverageFloor = coverageQ.data?.floor;
 
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -92,23 +94,111 @@ export function EvalsPanel() {
         </button>
       </div>
 
-      {/* EVAL-COVERAGE: a calm, silent-when-fully-covered line naming the AI surfaces with no
-          eval guard. Neutral ink (the role-color accents stay reserved); degrades to silent on a
-          query error. The full per-target breakdown lives in the suite grid below. */}
+      {/* EVAL-COVERAGE: a calm, silent-when-fully-covered headline naming how many AI surfaces have
+          no eval guard, then a per-surface chip map so the gap is actionable (covered chips stay
+          quiet; only the gaps draw the eye). Degrades to silent on a query error; at full coverage
+          the summary is "" and the whole block stays hidden. The chip map is the read-side of the
+          same per-target report (no drift with the summary). */}
       {coverageSummary ? (
+        <div style={{ marginBottom: 12 }}>
+          <div
+            className="mono-label tabular-nums"
+            style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}
+          >
+            <span style={{ color: "var(--ink-faint)" }}>Coverage</span>
+            <span style={{ color: "var(--ink)" }}>{coverageSummary}</span>
+          </div>
+          {coverageTargets.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {coverageTargets.map((t) => {
+                // covered = success (emerald, quiet); uncovered = alert (rose, solid); stale =
+                // unproven, rendered NEUTRAL + dashed (not amber) so it (a) keeps --saffron reserved
+                // for celebration per the color-role contract and (b) is distinguishable from
+                // uncovered without relying on hue (colorblind-safe). The word also rides aria-label
+                // so state is announced, not color-only.
+                const meta =
+                  t.state === "covered"
+                    ? {
+                        word: "covered",
+                        dot: "var(--emerald)",
+                        border: "color-mix(in oklab, var(--emerald) 22%, transparent)",
+                        borderStyle: "solid",
+                        bg: "transparent",
+                        text: "var(--ink-subtle)",
+                      }
+                    : t.state === "stale"
+                      ? {
+                          word: "unproven",
+                          dot: "var(--ink-faint)",
+                          border: "color-mix(in oklab, var(--ink-faint) 55%, transparent)",
+                          borderStyle: "dashed",
+                          bg: "color-mix(in oklab, var(--ink) 4%, transparent)",
+                          text: "var(--ink)",
+                        }
+                      : {
+                          word: "no guard",
+                          dot: "var(--rose)",
+                          border: "color-mix(in oklab, var(--rose) 45%, transparent)",
+                          borderStyle: "solid",
+                          bg: "color-mix(in oklab, var(--rose) 8%, transparent)",
+                          text: "var(--ink)",
+                        };
+                return (
+                  <span
+                    key={`${t.surface}/${t.key}`}
+                    className="mono-label"
+                    aria-label={`${t.label}: ${meta.word}`}
+                    title={`${t.label}: ${meta.word}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      border: `1px ${meta.borderStyle} ${meta.border}`,
+                      background: meta.bg,
+                      color: meta.text,
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 999,
+                        background: meta.dot,
+                        flex: "none",
+                      }}
+                    />
+                    {t.label}
+                  </span>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Coverage-floor deploy gate: silent unless a floor is configured (EVAL_COVERAGE_FLOOR_PCT /
+          EVAL_COVERAGE_REQUIRED_SURFACES) AND not met. Dormant by default so it never nags. */}
+      {coverageFloor?.configured && !coverageFloor.pass ? (
         <div
-          className="mono-label tabular-nums"
           style={{
             display: "flex",
             alignItems: "baseline",
             gap: 8,
             flexWrap: "wrap",
             marginBottom: 12,
-            color: "var(--ink-subtle)",
           }}
         >
-          <span style={{ color: "var(--ink-faint)" }}>Coverage</span>
-          <span style={{ color: "var(--ink)" }}>{coverageSummary}</span>
+          {/* Short mono chrome label (uppercase reads fine), but the reason PROSE stays sentence
+              case — mono-label would shout the authored sentences. */}
+          <span className="mono-label" style={{ color: "var(--rose)" }}>
+            Coverage floor not met
+          </span>
+          <span style={{ fontSize: 12.5, color: "var(--ink)" }}>
+            {coverageFloor.reasons.join(" · ")}
+          </span>
         </div>
       ) : null}
 
