@@ -6,6 +6,15 @@ export type LineageNode = {
   title: string | null;
   rationale: string | null;
   relation: string;
+  /**
+   * Bi-temporal stamp (DBR-1.5 / #3): the time the supersession edge that links this
+   * node to its parent stopped being current, because a still-later outcome reversed
+   * it. Null on a non-supersession edge or a current one. Carried so the tree view can
+   * show the "we changed our mind back" history as faded, matching the canvas.
+   */
+  validTo: string | null;
+  /** True when this node arrived via a CURRENTLY-reversed supersession edge (validTo set). */
+  retired: boolean;
   children: LineageNode[];
   depth: number;
 };
@@ -18,7 +27,14 @@ type LineageEdgeRaw = {
   relation: string;
   rationale: string | null;
   created_at: string;
+  /** Present only once the DBR-1.5 migration's `valid_to` column is live (else undefined). */
+  valid_to?: string | null;
 };
+
+/** A supersession edge whose own assertion can be retired (invalidate-don't-delete). */
+function isSupersedingRelation(relation: string): boolean {
+  return relation === "supersedes" || relation === "contradicts";
+}
 
 /**
  * Build a tree from lineage edges, depth-first from a root node.
@@ -51,6 +67,8 @@ export function buildLineageTree(
       title: null,
       rationale: null,
       relation: "cycle",
+      validTo: null,
+      retired: false,
       children: [],
       depth,
     };
@@ -75,9 +93,16 @@ export function buildLineageTree(
         maxDepth,
         visited,
       );
-      // Attach edge metadata to the child
+      // Attach edge metadata to the child, including the bi-temporal stamp so the
+      // tree can fade a reversed-and-retired supersession (the moat's "we changed
+      // our mind back" history), matching the canvas.
       child.rationale = edge.rationale;
       child.relation = edge.relation;
+      child.validTo = edge.valid_to ?? null;
+      child.retired =
+        isSupersedingRelation(edge.relation) &&
+        typeof edge.valid_to === "string" &&
+        edge.valid_to.trim().length > 0;
       children.push(child);
     }
   }
@@ -88,6 +113,8 @@ export function buildLineageTree(
     title: null, // Will be hydrated separately
     rationale: null,
     relation: isRoot ? "root" : "child",
+    validTo: null,
+    retired: false,
     children,
     depth,
   };

@@ -13,6 +13,7 @@ import type { LineageNode } from "@/lib/knowledge-graph-explorer";
 function TreeNodeRenderer({ node }: { node: LineageNode }) {
   const [expanded, setExpanded] = useState(node.depth === 0);
   const hasChildren = node.children.length > 0;
+  const superseding = node.relation === "supersedes" || node.relation === "contradicts";
   return (
     <div style={{ marginLeft: node.depth * 20 }}>
       <div
@@ -24,6 +25,9 @@ function TreeNodeRenderer({ node }: { node: LineageNode }) {
           borderRadius: 4,
           backgroundColor: node.depth === 0 ? "var(--surface-2)" : "transparent",
           marginBottom: 4,
+          // #3: a reversed-and-retired supersession reads as faded history,
+          // matching the canvas (invalidate-don't-delete, kept not removed).
+          opacity: node.retired ? 0.5 : 1,
         }}
       >
         {hasChildren ? (
@@ -42,6 +46,20 @@ function TreeNodeRenderer({ node }: { node: LineageNode }) {
           {node.kind}
         </span>
         <span style={{ fontSize: 13, color: "var(--ink)" }}>{node.title || "Untitled"}</span>
+        {superseding && (
+          <span
+            className="mono-label"
+            style={{ fontSize: 8.5, color: "var(--madder, #b0573f)" }}
+            title={
+              node.retired
+                ? "This supersession was itself later reversed (kept as history)"
+                : "A later outcome revised this belief"
+            }
+          >
+            {node.relation}
+            {node.retired ? " (reversed)" : ""}
+          </span>
+        )}
         {node.rationale && (
           <span style={{ fontSize: 11, color: "var(--ink-subtle)", marginLeft: "auto" }}>
             {node.rationale}

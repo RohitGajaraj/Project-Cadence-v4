@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ARTIFACT_KINDS, type ArtifactKind } from "./lineage.functions";
 import { buildLineageTree, hydrateTreeTitles, type LineageNode } from "./knowledge-graph-explorer";
+import { resolveLineageCols } from "./knowledge-graph-view.functions";
 
 const KindSchema = z.enum(ARTIFACT_KINDS);
 
@@ -42,10 +43,15 @@ export const getLineageTree = createServerFn({ method: "GET" })
     const { supabase } = context;
 
     // Fetch all edges for this workspace/user
-    // The artifact_lineage table is RLS-scoped to user_id
+    // The artifact_lineage table is RLS-scoped to user_id.
+    // #3: read the bi-temporal `valid_to` when the DBR-1.5 column is live (via the
+    // shared migration-tolerant resolver, the same one the canvas read uses) so the
+    // tree can fade a reversed-and-retired supersession; pre-migration it falls back
+    // to the base columns and every node reads as current.
+    const cols = await resolveLineageCols(supabase);
     const { data: edgesRaw, error: edgesErr } = await supabase
       .from("artifact_lineage")
-      .select("parent_kind,parent_id,child_kind,child_id,relation,rationale,created_at");
+      .select(cols);
 
     if (edgesErr || !edgesRaw) {
       throw new Error(`Failed to fetch lineage edges: ${edgesErr?.message}`);
@@ -53,7 +59,7 @@ export const getLineageTree = createServerFn({ method: "GET" })
 
     // Build the tree
     const tree = buildLineageTree(
-      edgesRaw as Array<{
+      edgesRaw as unknown as Array<{
         parent_kind: ArtifactKind;
         parent_id: string;
         child_kind: ArtifactKind;
@@ -61,6 +67,7 @@ export const getLineageTree = createServerFn({ method: "GET" })
         relation: string;
         rationale: string | null;
         created_at: string;
+        valid_to?: string | null;
       }>,
       data.kind,
       data.id,

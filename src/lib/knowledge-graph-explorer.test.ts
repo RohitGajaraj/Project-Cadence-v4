@@ -12,6 +12,8 @@ describe("buildLineageTree", () => {
       title: null,
       rationale: null,
       relation: "root",
+      validTo: null,
+      retired: false,
       children: [],
       depth: 0,
     });
@@ -173,5 +175,61 @@ describe("buildLineageTree", () => {
 
     expect(node.children).toHaveLength(1);
     // Should build without infinite recursion
+  });
+
+  it("#3: carries valid_to and flags retired for a reversed supersession edge", () => {
+    const edges = [
+      {
+        parent_kind: "prd" as const,
+        parent_id: "prd-new",
+        child_kind: "prd" as const,
+        child_id: "prd-old",
+        relation: "supersedes",
+        rationale: "shipped, it worked",
+        created_at: "2026-06-20T00:00:00Z",
+        valid_to: "2026-09-01T00:00:00Z", // a still-later outcome reversed it
+      },
+    ];
+    const node = buildLineageTree(edges, "prd", "prd-new", 0);
+    expect(node.children[0]).toMatchObject({
+      id: "prd-old",
+      relation: "supersedes",
+      validTo: "2026-09-01T00:00:00Z",
+      retired: true,
+    });
+  });
+
+  it("#3: a CURRENT supersession (no valid_to) is not retired", () => {
+    const edges = [
+      {
+        parent_kind: "prd" as const,
+        parent_id: "prd-new",
+        child_kind: "prd" as const,
+        child_id: "prd-old",
+        relation: "contradicts",
+        rationale: null,
+        created_at: "2026-06-20T00:00:00Z",
+      },
+    ];
+    const child = buildLineageTree(edges, "prd", "prd-new", 0).children[0];
+    expect(child.retired).toBe(false);
+    expect(child.validTo).toBeNull();
+  });
+
+  it("#3: a valid_to on a NON-supersession relation never marks retired", () => {
+    const edges = [
+      {
+        parent_kind: "opportunity" as const,
+        parent_id: "opp-1",
+        child_kind: "theme" as const,
+        child_id: "theme-1",
+        relation: "derived",
+        rationale: null,
+        created_at: "2026-06-20T00:00:00Z",
+        valid_to: "2026-09-01T00:00:00Z", // stray stamp; must be ignored for non-supersession
+      },
+    ];
+    const child = buildLineageTree(edges, "opportunity", "opp-1", 0).children[0];
+    expect(child.retired).toBe(false);
   });
 });
