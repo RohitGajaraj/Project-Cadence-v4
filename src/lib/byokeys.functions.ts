@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
+import { assertSafeBaseUrl } from "@/lib/url-safety";
 
 export const BYO_PROVIDERS = [
   { id: "anthropic", label: "Claude (Anthropic)", placeholder: "sk-ant-…" },
@@ -57,11 +58,21 @@ export const listApiKeys = createServerFn({ method: "GET" })
     };
   });
 
+function validateBaseUrl(v: string | null | undefined): string | null | undefined {
+  if (v === null || v === undefined || v === "") return v;
+  return assertSafeBaseUrl(v);
+}
+
 const SaveSchema = z.object({
   provider: z.string().min(1).max(40),
   label: z.string().max(80).nullable().optional(),
   api_key: z.string().min(4).max(500),
-  base_url: z.string().max(300).nullable().optional(),
+  base_url: z
+    .string()
+    .max(300)
+    .nullable()
+    .optional()
+    .transform((v) => validateBaseUrl(v) ?? null),
 });
 
 export const saveApiKey = createServerFn({ method: "POST" })
@@ -101,7 +112,12 @@ export const deleteApiKey = createServerFn({ method: "POST" })
 const TestSchema = z.object({
   provider: z.string().min(1).max(40),
   api_key: z.string().min(4).max(500),
-  base_url: z.string().max(300).nullable().optional(),
+  base_url: z
+    .string()
+    .max(300)
+    .nullable()
+    .optional()
+    .transform((v) => validateBaseUrl(v) ?? null),
 });
 
 function defaultModelFor(provider: string): string {
