@@ -606,6 +606,7 @@ export type Database = {
           enabled: boolean
           id: string
           last_scheduled_run_at: string | null
+          max_tool_risk: string | null
           name: string
           role: string
           slug: string
@@ -621,6 +622,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           last_scheduled_run_at?: string | null
+          max_tool_risk?: string | null
           name: string
           role: string
           slug: string
@@ -636,6 +638,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           last_scheduled_run_at?: string | null
+          max_tool_risk?: string | null
           name?: string
           role?: string
           slug?: string
@@ -1070,6 +1073,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ai_surface_budgets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          submitted_at: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          submitted_at?: string | null
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          submitted_at?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -6388,6 +6441,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      publish_announcement: {
+        Args: { _announcement_id: string; _workspace_id: string }
+        Returns: undefined
       }
       purge_old_telemetry: {
         Args: { _older_than_days?: number }
