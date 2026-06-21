@@ -3,6 +3,7 @@ import {
   projectGraph,
   filterByTime,
   computeStaleness,
+  computeContradictionDrift,
   classifyRelation,
   isSuperseding,
   nodeKey,
@@ -446,5 +447,91 @@ describe("buildSupersessionStory", () => {
       valid_to: "   ",
     });
     expect(buildSupersessionStory([blank], []).links[0].retired).toBe(false);
+  });
+});
+
+describe("computeContradictionDrift", () => {
+  it("identifies nodes whose belief has been contradicted/superseded and that revision is current", () => {
+    const titles = new Map([
+      [k("decision", "d1"), "Checkout v1"],
+      [k("decision", "d2"), "Checkout v2"],
+    ]);
+    // d1 (an old decision) is superseded by d2 (a newer one)
+    const edges = [
+      edge(["decision", "d2"], ["decision", "d1"], { relation: "supersedes" }),
+    ];
+    const g = projectGraph(edges, titles, k("decision", "d1"));
+    const r = computeContradictionDrift(g);
+    // d1 is the target of a supersedes edge (its belief was revised by d2)
+    expect(r.driftedKeys.has(k("decision", "d1"))).toBe(true);
+    expect(r.driftedCount).toBe(1);
+    expect(r.nodeCount).toBe(2);
+  });
+
+  it("ignores retired supersessions (the revision was itself later reversed)", () => {
+    const titles = new Map([
+      [k("decision", "d1"), "Checkout v1"],
+      [k("decision", "d2"), "Checkout v2"],
+      [k("decision", "d3"), "Checkout v1 again"],
+    ]);
+    // d1 -> d2 (retired, later reversed), d2 -> d3 (current)
+    const edges = [
+      edge(["decision", "d2"], ["decision", "d1"], {
+        id: "old-super",
+        relation: "supersedes",
+        valid_to: "2026-06-18T00:00:00.000Z",
+      }),
+      edge(["decision", "d3"], ["decision", "d2"], {
+        id: "new-super",
+        relation: "supersedes",
+        valid_to: null,
+      }),
+    ];
+    const g = projectGraph(edges, titles, k("decision", "d1"));
+    const r = computeContradictionDrift(g);
+    // d1's supersession is retired (not current), so d1 is not drifted
+    expect(r.driftedKeys.has(k("decision", "d1"))).toBe(false);
+    // d2's supersession is current, so d2 IS drifted
+    expect(r.driftedKeys.has(k("decision", "d2"))).toBe(true);
+    expect(r.driftedCount).toBe(1);
+  });
+
+  it("handles contradicts edges the same way", () => {
+    const titles = new Map([
+      [k("decision", "d1"), "Defer launch"],
+      [k("decision", "d2"), "Launch now"],
+    ]);
+    // d2 contradicts d1 (its belief was wrong, not just superseded)
+    const edges = [
+      edge(["decision", "d2"], ["decision", "d1"], { relation: "contradicts" }),
+    ];
+    const g = projectGraph(edges, titles, k("decision", "d1"));
+    const r = computeContradictionDrift(g);
+    expect(r.driftedKeys.has(k("decision", "d1"))).toBe(true);
+    expect(r.driftedCount).toBe(1);
+  });
+
+  it("ignores non-supersession edges (cites, promoted, etc.)", () => {
+    const titles = new Map([
+      [k("decision", "d1"), "Checkout v1"],
+      [k("opportunity", "o1"), "Faster checkout"],
+    ]);
+    const edges = [
+      edge(["decision", "d1"], ["opportunity", "o1"], { relation: "cites" }),
+      edge(["opportunity", "o1"], ["decision", "d1"], { relation: "promoted" }),
+    ];
+    const g = projectGraph(edges, titles, k("decision", "d1"));
+    const r = computeContradictionDrift(g);
+    // No supersession edges, so no drifted nodes
+    expect(r.driftedCount).toBe(0);
+    expect(r.driftedKeys.size).toBe(0);
+  });
+
+  it("never throws on empty graph", () => {
+    const g = projectGraph([], new Map(), k("decision", "d1"));
+    expect(() => computeContradictionDrift(g)).not.toThrow();
+    const r = computeContradictionDrift(g);
+    expect(r.driftedCount).toBe(0);
+    expect(r.nodeCount).toBe(1); // just the focus
   });
 });
