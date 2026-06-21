@@ -1,0 +1,34 @@
+-- WM-F3 fix: drop the dead-but-dangerous "account members read" policy on public.accounts.
+--
+-- Found by a 6-lens adversarial RLS leak-hunt over the LIVE prod policy set (2026-06-22),
+-- then verified directly on the prod DB.
+--
+-- ROOT CAUSE (a latent SQL-scoping bug in the source, NOT a Lovable apply error):
+--   The original WM-F3 migration (20260619210000) wrote
+--       create policy "account members read" on public.accounts for select
+--         using (exists (select 1 from public.account_members m
+--                        where m.account_id = id and m.user_id = auth.uid()));
+--   intending the unqualified `id` to mean accounts.id (the outer row). But inside that
+--   subquery `account_members` is in scope and ALSO has an `id` column, so Postgres binds
+--   the unqualified `id` to the INNER table -> the stored qual is `m.account_id = m.id`.
+--   That EXISTS is uncorrelated with the outer accounts row: it returns the same boolean for
+--   every candidate accounts row. Today it is a DEAD no-op (0 of N account_members rows satisfy
+--   id = account_id, since both are independent random UUIDs), so it grants nothing under
+--   PERMISSIVE OR-ing. But it is a LATENT LANDMINE: any future seed / import / admin path that
+--   ever creates a membership row whose id equals its account_id flips the EXISTS to
+--   always-true and exposes the ENTIRE accounts table to that caller.
+--
+-- WHY DROP RATHER THAN RE-CORRELATE:
+--   The correctly-correlated sibling policy "account members read account" (added in
+--   20260619212731) already serves member reads via the SECURITY DEFINER `is_account_member(id)`
+--   (body: m.account_id = account AND m.user_id = auth.uid()), and "account owner manage"
+--   covers owner updates. So "account members read" is fully redundant once correct; dropping
+--   it removes both the redundancy and the footgun. Verified behavior-preserving on prod:
+--   the dead policy matched 0 rows and every account owner is an account_member (so reads are
+--   already served by is_account_member(id)) -- dropping it changes no live access.
+--
+-- Idempotent / additive / forward-only. The live prod policy was already dropped via the
+-- Lovable DB this session; this migration keeps the repo source in lockstep so a fresh apply
+-- ends in the same (correct) state.
+
+drop policy if exists "account members read" on public.accounts;
