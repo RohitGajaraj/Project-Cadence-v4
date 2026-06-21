@@ -13,6 +13,8 @@ import { callModel } from "@/lib/ai/runtime.server";
 import { enqueueHandoff, resolveAgent, type HandoffPayload } from "@/lib/ai/handoff.server";
 import { enqueueFanout, fanoutEnabled } from "@/lib/ai/fanout.server";
 import { FANOUT_MAX_CHILDREN, fanoutDepthOf, canSpawnAtDepth } from "@/lib/ai/fanout";
+import { submitDelegation } from "@/lib/delegate/openhands.server";
+import { DELEGATE_TASK_MAX_CHARS } from "@/lib/delegate/provider";
 import { webSearch, webFetch, webMap, webCrawl } from "./firecrawl.server";
 import {
   missionPlan,
@@ -2456,6 +2458,61 @@ const agentSpawn = def({
   },
 });
 
+/**
+ * delegate.openhands: governed delegate-out to an EXTERNAL coding agent (v4 Law 5,
+ * frontier-absorption). Wires the dormant provider seam (src/lib/delegate, lane 3)
+ * under our governance: the delegation MUST cite evidence_ids (the rows that justify
+ * the work), it is in HIGH_RISK_FORCE_REVIEW so a human ALWAYS approves before it
+ * leaves, and it is catalogued irreversible/external for the blast-radius cap. The
+ * seam itself is dormant by default (DELEGATE_OUTBOUND_ENABLED + OPENHANDS_ENDPOINT):
+ * when disabled, submitDelegation resolves to the null floor and returns an
+ * accepted:false verdict with NO network call, so this is safe even before config.
+ */
+const delegateOpenhands = def({
+  name: "delegate.openhands",
+  description:
+    "Delegate a heavy, well-bounded build task to an EXTERNAL coding agent (OpenHands) working against a repo, UNDER our governance. You MUST cite evidence_ids (the rows that justify the work); the delegation is ALWAYS human-reviewed before it leaves, and the result folds back into the mission. Provide repo_url + base_branch. Use only for build work an external agent is better at; for in-house work hand off to the builder. Requires a mission.",
+  category: "write",
+  argsSchema: z.object({
+    task: z.string().min(1).max(DELEGATE_TASK_MAX_CHARS),
+    repo_url: z.string().min(1).max(400),
+    base_branch: z.string().min(1).max(200),
+    evidence_ids: z
+      .array(
+        z.object({
+          kind: z.string().min(1).max(40),
+          id: z.string().min(1).max(200),
+        }),
+      )
+      .min(1)
+      .max(20),
+  }),
+  preview: (a) =>
+    `Delegate to OpenHands: "${a.task.slice(0, 60)}" on ${a.repo_url}#${a.base_branch}`,
+  run: async (a, { runId, missionId }) => {
+    if (!missionId)
+      throw new Error("delegate.openhands requires a mission_id (start the run with a mission)");
+    const verdict = await submitDelegation(
+      {
+        task: a.task,
+        repoUrl: a.repo_url,
+        baseBranch: a.base_branch,
+        context: { evidence_ids: a.evidence_ids },
+        cadenceRunId: runId ?? null,
+      },
+      "openhands",
+    );
+    return {
+      provider: verdict.provider,
+      accepted: verdict.accepted,
+      external_job_id: verdict.externalJobId,
+      reason: verdict.reason,
+      evidence_count: a.evidence_ids.length,
+      mission_id: missionId,
+    };
+  },
+});
+
 // DEC-02-LOOP — the Critic as a routable, gating-exempt loop tool. Lets the
 // orchestrator (or any specialist) red-team an opportunity/PRD in-loop, not
 // only via the inline promotion/spec paths. category 'planning' + membership in
@@ -2505,6 +2562,7 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     backlogPrioritize,
     agentHandoff,
     agentSpawn,
+    delegateOpenhands,
     webSearchTool,
     webFetchTool,
     webMapTool,

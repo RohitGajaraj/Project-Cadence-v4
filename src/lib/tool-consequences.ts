@@ -34,6 +34,12 @@ const CONSEQUENCES: Record<string, ToolConsequence> = {
     reversible: "irreversible",
     undo: "Already merged — undoing means a revert PR.",
   },
+  "delegate.openhands": {
+    effect:
+      "Hands a build task to an external coding agent (OpenHands), which works against the repo on its own.",
+    reversible: "irreversible",
+    undo: "The external agent has started; you cannot recall it. Review its result before merging anything.",
+  },
   "github.issue.create": {
     effect: "Creates an issue in the repo.",
     reversible: "reversible",
@@ -198,6 +204,7 @@ const EXTERNAL_TOOLS = new Set<string>([
   "studio.commit",
   "calendar.create",
   "prd.link_issue",
+  "delegate.openhands",
 ]);
 
 export type ToolRisk = "low" | "medium" | "high";

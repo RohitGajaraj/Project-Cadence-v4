@@ -141,3 +141,12 @@ describe("FND-0.5 min-confirm floor coverage (loop gate uses isHighRiskTool)", (
     expect(isHighRiskTool("tasks.create")).toBe(false);
   });
 });
+
+describe("delegate.openhands (governed delegate-out, #5 wiring)", () => {
+  it("is catalogued irreversible, external, and high blast radius", () => {
+    expect(toolConsequence("delegate.openhands").reversible).toBe("irreversible");
+    expect(isExternalTool("delegate.openhands")).toBe(true);
+    expect(toolRisk("delegate.openhands")).toBe("high");
+    expect(isHighRiskTool("delegate.openhands")).toBe(true);
+  });
+});
