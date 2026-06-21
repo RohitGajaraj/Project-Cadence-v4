@@ -389,6 +389,46 @@ export function computeStaleness(
   return { staleKeys, staleCount: staleKeys.size, datedCount, thresholdDays };
 }
 
+export type ContradictionDriftResult = {
+  /** Node keys whose most recent supporting edge is a CURRENT supersession. */
+  driftedKeys: Set<string>;
+  /** Count of nodes whose belief has been contradicted/superseded and that revision is still in effect. */
+  driftedCount: number;
+  /** Total nodes in the graph (denominator for UI display). */
+  nodeCount: number;
+};
+
+/**
+ * O3 (contradiction drift, outcome-driven half): flag facts whose most recent
+ * supporting evidence is a CURRENT (non-retired) `supersedes` or `contradicts`
+ * edge. These nodes represent beliefs that have been revised by a later outcome,
+ * and the revision is still in effect (not itself reversed and retired). Pure and
+ * deterministic. This uses the bi-temporal plumbing (the `retired` boolean, set by
+ * DBR-1.5 when the migration's `valid_to` column is live) to distinguish CURRENT
+ * revisions from reversed-and-retired ones (the invalidate-don't-delete moat).
+ */
+export function computeContradictionDrift(graph: KnowledgeGraph): ContradictionDriftResult {
+  const driftedKeys = new Set<string>();
+
+  // A node is "drifted" when the newest edge pointing TO it (target) is a
+  // current supersession. That edge's relation is supersedes/contradicts, and
+  // it is NOT retired (still in effect).
+  for (const e of graph.edges) {
+    // Only superseding relations (relation field is already classified).
+    if (!isSuperseding(e.relation)) continue;
+    // Only current revisions (not retired = the assertion is still true).
+    if (e.retired) continue;
+    // The TARGET node is the one whose belief was revised.
+    driftedKeys.add(e.target);
+  }
+
+  return {
+    driftedKeys,
+    driftedCount: driftedKeys.size,
+    nodeCount: graph.nodes.length,
+  };
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // DBR-1.5 read-side (F-IA-BRAIN-GRAPH): make the supersession mechanic legible.
 //
