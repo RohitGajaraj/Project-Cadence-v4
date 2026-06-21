@@ -172,3 +172,22 @@ describe("planPresentation prices mirror the catalog recommended bundles (M-C-PR
     expect(planPresentation("enterprise").price).toBe("Contact sales");
   });
 });
+
+describe("limitFor matches the SQL tier-limit functions (WM-M5 / M-C-BILLING-TESTS parity guard)", () => {
+  // Pinned to public.tier_product_limit / public.tier_workspace_limit, verified EQUAL on the
+  // live DB 2026-06-21 for every tier. The SQL triggers (WM-M5 migration) and this TS table
+  // must stay in lockstep: if you change one, change the other, or a paid user is mis-gated.
+  const expected: Record<string, { product: number | null; workspace: number | null }> = {
+    free: { product: 2, workspace: 1 },
+    pro: { product: 3, workspace: null },
+    max: { product: 5, workspace: null },
+    team: { product: null, workspace: null },
+    enterprise: { product: null, workspace: null },
+  };
+  it("pins product + workspace limits per tier", () => {
+    for (const tier of PLAN_TIERS) {
+      expect(limitFor(tier, "product")).toBe(expected[tier].product);
+      expect(limitFor(tier, "workspace")).toBe(expected[tier].workspace);
+    }
+  });
+});

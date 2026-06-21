@@ -54,7 +54,7 @@ The user-facing surface for AI credits, isolated from the main billing page (Ant
 
 ## Test coverage
 
-The pure credit math is unit-tested (`credits.test.ts` / `entitlements.test.ts` / `ai/pricing.test.ts`); `creditsFromLookupKey` has 7 tests (`billing-tier.test.ts`); the webhook signature gate has 7 tests (`stripe.server.test.ts`). The grant / top-up / renewal RPCs were dry-run-verified on the live DB (idempotency + balance math + top-up preservation, then the test account restored). Remaining: integration tests for the webhook DB writes + admin/voucher RPC authorization (dashboard row M-C-BILLING-TESTS).
+**71 unit tests in CI** across `entitlements.test.ts` / `credits.test.ts` / `billing-tier.test.ts` / `ai/pricing.test.ts` / `stripe.server.test.ts`: the pure credit + entitlement math, `creditsFromLookupKey` (7), the webhook signature gate (7), and a **SQL/TS tier-limit parity guard** (pins `limitFor()` to the SQL `tier_*_limit` fns so they cannot drift). **Live-verified 2026-06-21** (the repo's standard for DB-gated paths): the grant / top-up / renewal RPCs (idempotency + balance math + top-up preservation, then the test account restored); the tier-limit SQL equals the TS for every tier; and the admin-RPC authorization (50 of 51 `admin_*` RPCs gate on `has_role`, the one exception being the intentional `admin_bootstrap_self_as_admin`). Remaining (a repo-wide infra gap, not billing-specific): in-CI DB-integration tests for the webhook DB-writes + voucher redemption, which would need a Supabase mock harness the project does not yet have. Dashboard row `M-C-BILLING-TESTS` (◐).
 
 ## Related
 
