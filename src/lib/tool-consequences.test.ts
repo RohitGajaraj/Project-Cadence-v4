@@ -116,3 +116,25 @@ describe("filterToolsByRisk (FND-0.5 allow-list pre-filter)", () => {
     expect(r.blocked).toEqual([]);
   });
 });
+
+describe("FND-0.5 min-confirm floor coverage (loop gate uses isHighRiskTool)", () => {
+  // The loop gate floors a tool to `confirm` when HIGH_RISK_MIN_CONFIRM.has(name) OR
+  // isHighRiskTool(name). These lock the systematic half: every high-blast tool is covered,
+  // including the one the hand-maintained set missed, while medium/low tools are NOT escalated
+  // by the systematic rule (they rely only on the curated manual set).
+  it("catches github.commit.append — the high-blast tool the manual set missed", () => {
+    expect(isHighRiskTool("github.commit.append")).toBe(true);
+  });
+  it("covers the other irreversible / external-partial writers", () => {
+    expect(isHighRiskTool("studio.commit")).toBe(true);
+    expect(isHighRiskTool("studio.pr.merge")).toBe(true);
+  });
+  it("does not over-escalate medium tools (they floor only via the curated manual set)", () => {
+    expect(isHighRiskTool("github.pr.open")).toBe(false);
+    expect(isHighRiskTool("calendar.create")).toBe(false);
+  });
+  it("never floors low-blast internal writes (they stay auto-eligible)", () => {
+    expect(isHighRiskTool("memory.remember")).toBe(false);
+    expect(isHighRiskTool("tasks.create")).toBe(false);
+  });
+});

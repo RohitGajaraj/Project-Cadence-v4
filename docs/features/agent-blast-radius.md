@@ -34,7 +34,10 @@ All in `src/lib/tool-consequences.ts` (pure, client-safe; 19 unit tests in `tool
 
 **Driven surface:** the human approval card (`src/components/today/DecisionCard.tsx`) now shows a "High blast radius" chip (ShieldAlert, `--rose`) on a gate whose tool is high-risk, beside the existing reversibility chip — distinct information (reaches-outside / high-stakes vs can't-undo), surfaced only for the loudest tier to keep the front calm.
 
+## Enforcement: the systematic min-confirm floor (shipped)
+
+The agent loop's existing high-risk approval floor (`src/lib/ai/loop.server.ts`) now uses the systematic classifier: a tool is held to at least human `confirm` when `HIGH_RISK_MIN_CONFIRM.has(tool) OR isHighRiskTool(tool)`. This connects the blast-radius model to the live gate, so **every** high-blast tool — and any future side-effecting tool — can never run unattended (`auto`), with no hand-maintained list to drift. It closed a real gap: `github.commit.append` (external + partial → high) was missing from the manual set and could previously auto-run. Safe-by-construction — the branch only raises `auto`→`confirm`, never lowers a gate. This is a GLOBAL floor (applies to every agent); live agent-run verification is deferred until API keys/gateway credits are available.
+
 ## What remains (not autonomous)
 
-- **Loop enforcement**: wiring `filterToolsByRisk` into the agent loop so an agent's `maxRisk` actually pre-filters the tools it can call lives at the chokepoint (`src/lib/ai/loop.server.ts` / `registry.server.ts`, pinned) and is a founder-attended step.
-- **Per-agent scope storage + UI**: an `agents.max_tool_risk` (or explicit allow-list) column + a Staff-tab control to set it per agent (migration + server fn + UI), so the cap is configurable, then enforced via the seam above.
+- **Per-agent scope storage + UI**: an `agents.max_tool_risk` column + a Staff-tab control to set a per-agent cap, then a loop filter via `filterToolsByRisk` so a scoped agent loses high-blast tools entirely (stricter than the global floor). Needs a migration + server fn + UI; deferred while another lane holds the migrations directory.

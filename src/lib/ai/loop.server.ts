@@ -18,6 +18,7 @@ import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
 import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
+import { isHighRiskTool } from "@/lib/tool-consequences";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
 
@@ -666,7 +667,14 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
     const dialedMode = resolveApprovalMode(rawToolMode, arc);
     let mode: ToolMode = dialedMode;
     if (HIGH_RISK_FORCE_REVIEW.has(call.name)) mode = "review";
-    else if (HIGH_RISK_MIN_CONFIRM.has(call.name) && mode === "auto") mode = "confirm";
+    // FND-0.5 blast-radius floor: a high-blast-radius tool can never run unattended.
+    // The manual set is the curated stricter policy (also floors some medium-external
+    // tools like calendar.create / studio.pr.open); `isHighRiskTool` is the SYSTEMATIC
+    // classifier (reversibility x scope) so every high-blast tool — including ones the
+    // hand-maintained set missed (e.g. github.commit.append) and any future side-effecting
+    // tool — is floored to `confirm` without the list drifting. Only ever raises auto->confirm.
+    else if ((HIGH_RISK_MIN_CONFIRM.has(call.name) || isHighRiskTool(call.name)) && mode === "auto")
+      mode = "confirm";
     const isWrite = def.category === "write" || def.category === "planning";
 
     if (!isControlFlow && isWrite && (mode === "confirm" || mode === "review")) {
