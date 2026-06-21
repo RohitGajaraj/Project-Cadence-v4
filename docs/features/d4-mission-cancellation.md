@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-18 · Last updated: 2026-06-18_
 
-**Status:** ◐ Partial (cancellation shipped 2026-06-18; replay-and-branch shipped 2026-06-18 cycle 25; the rich checkpoint-diff remains as D4b). **Lane:** G2 Decide & Plan / autonomous-spine control. **Pairs with:** [`trust-and-autonomy.md`](./trust-and-autonomy.md) (FND-0.6 kill-switch is the global brake; this is the per-mission brake).
+**Status:** ✅ Shipped (cancellation 2026-06-18; replay-and-branch 2026-06-18 cycle 25; the rich replay-vs-original checkpoint-diff D4b 2026-06-22). **Lane:** G2 Decide & Plan / autonomous-spine control. **Pairs with:** [`trust-and-autonomy.md`](./trust-and-autonomy.md) (FND-0.6 kill-switch is the global brake; this is the per-mission brake).
 
 ## What it delivers
 
@@ -52,7 +52,22 @@ No migration: `missions.status` and `agent_runs.status` carry no CHECK constrain
 3. For a Build mission holding file claims: confirm `builder_file_claims` for the mission are `released` after cancel (a later build on the same paths is not blocked).
 4. If the mission had a pending approval, confirm it clears from the Attention feed.
 
+## D4b — replay vs original checkpoint-diff (2026-06-22)
+
+The replay-and-branch leg records a `replayed_from_mission_id` link on every replay. D4b makes that branch legible: on a replay mission, a **side-by-side diff** shows what the re-run changed.
+
+### Pure core — `src/lib/mission-diff.ts`
+
+- `deriveMissionSide(MissionDetail)` rolls one mission into its comparable side: hop count, cost, tokens in/out, total / failed / unattended tool calls, duration (`completed_at - created_at`, null while unfinished), the distinct agent chain, and the final output (last hop that HAS output).
+- `alignHops(original, replay)` lines hops up by position, flagging `same-agent`, `output drift`, and `original-only` / `replay-only` presence.
+- `diffMissions(original, replay)` returns both sides + `deltas` (always **replay − original**, so a negative cost/duration means the replay was cheaper/faster; the `durationMs` delta is null unless BOTH sides completed, so a still-running replay never reports a false time saving) + `finalOutputChanged`.
+- Server-free + totally defined (any field may be missing and it still computes); 11 bun:test cases.
+
+### Surface — `src/components/missions/MissionDiff.tsx`
+
+Rendered on a replay mission (one with `replayed_from_mission_id`), behind a collapsed **"Compare with original"** toggle in the detail body. It fetches the original via the existing `getMission` (RLS-scoped, same caller), runs `diffMissions`, and shows the metric columns with signed deltas, the per-hop drift list, and the "final answer changed" headline. Calm by design (engine-room doctrine): neutral ink + ▲/▼ glyphs carry the signal, `--rose` appears only on a genuine regression (more cost / more failed tool calls than the original). Degrade-silent — a missing/forbidden original renders nothing.
+
 ## Not built (D4 remainder)
 
-- Replay-and-branch: re-run a completed/failed run with a different model or prompt and diff the result.
-- Checkpoint-diff: compare two checkpoints of a run.
+- Reverse direction: from an ORIGINAL mission, jump to / diff its replay(s) (needs a `replays-of-this-mission` read; the replay→original direction ships here).
+- Intra-run step-by-step checkpoint scrubbing (diffing two `agent_run_checkpoints` of the SAME run, vs the mission-vs-mission diff shipped here).

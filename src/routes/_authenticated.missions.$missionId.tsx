@@ -30,6 +30,7 @@ import { toolConsequence, REVERSIBILITY_LABEL } from "@/lib/tool-consequences";
 import { MissionGraph, type MissionGraphStep } from "@/components/cadence/MissionGraph";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
 import { AgentRelay } from "@/components/agents/AgentRelay";
+import { MissionDiff } from "@/components/missions/MissionDiff";
 import { MODELS } from "@/lib/ai/models";
 import { listProjects } from "@/lib/projects.functions";
 import { getMission, cancelMission, type MissionDetail } from "@/lib/missions.functions";
@@ -732,6 +733,8 @@ function MissionDetailPage() {
   // different model (the server already accepts model), and record the branch
   // link so the new mission shows "Replayed from" this one.
   const [replayModel, setReplayModel] = useState<string>("");
+  // D4b: collapsed side-by-side checkpoint-diff vs the original (replay missions only).
+  const [showDiff, setShowDiff] = useState(false);
   const replay = useMutation({
     mutationFn: () => {
       const mission = m.data?.mission;
@@ -1076,6 +1079,40 @@ function MissionDetailPage() {
 
           {/* N3 · Mission Compounding View — the moat made visible per mission. */}
           <MissionCompounding data={data} />
+
+          {/* D4b · side-by-side checkpoint-diff vs the original (replay missions only). */}
+          {data.mission.replayed_from_mission_id ? (
+            <div style={{ marginBottom: 16 }}>
+              <button
+                onClick={() => setShowDiff((v) => !v)}
+                className="mono-label"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 9,
+                  padding: "3px 10px",
+                  borderRadius: 5,
+                  border: "1px solid color-mix(in oklab, var(--ink-faint) 45%, transparent)",
+                  color: "var(--ink-muted)",
+                  background: "transparent",
+                  marginBottom: showDiff ? 10 : 0,
+                }}
+                title="Compare this replay with the mission it was replayed from"
+                aria-expanded={showDiff}
+              >
+                {showDiff ? (
+                  <ChevronDown style={{ width: 11, height: 11 }} />
+                ) : (
+                  <ChevronRight style={{ width: 11, height: 11 }} />
+                )}
+                {showDiff ? "Hide comparison" : "Compare with original"}
+              </button>
+              {showDiff ? (
+                <MissionDiff current={data} counterpartId={data.mission.replayed_from_mission_id} />
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Steps — plan list or live graph */}
           <section className="bento" style={{ padding: "var(--card-pad)", marginBottom: 16 }}>
