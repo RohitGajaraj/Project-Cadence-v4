@@ -16,6 +16,7 @@ import { Brain, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
+import { MemoryUpgradeNudge } from "@/components/billing/MemoryUpgradeNudge";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { getBrainStatus, getCompanyBrainStats } from "@/lib/brain.functions";
@@ -175,6 +176,8 @@ function KnowledgePage() {
             everything here is what Ask reasons over — one brain
           </span>
         </div>
+
+        <MemoryUpgradeNudge />
 
         <TabRow
           tabs={[
