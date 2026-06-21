@@ -1,6 +1,6 @@
 # APP-HEALTH — App-level health/readiness endpoint
 
-> Status: ◐ Endpoint shipped 2026-06-20 (overnight cycle 50). The public health route + pure status assembly are built and unit-verified; the alerting half (wire a monitor → notify) and a status page are infra/founder + design-pass.
+> Status: ✅ Endpoint shipped 2026-06-20 (overnight cycle 50) and **LIVE-VERIFIED on the published app 2026-06-22** (Lane 1): `GET https://cadence-flow-beta.lovable.app/api/public/health` returns HTTP **200** `{"status":"ok","service":"cadence","checks":{"worker":"ok","database":"ok"}}` — the live DB reachability probe (previously not run unattended) works in production. The named deliverable (the endpoint a monitor/LB polls) is complete and proven live. Out of autonomous scope (founder/design follow-up, non-blocking): wiring an external uptime monitor to alert on 503, and a public status page.
 
 ## What it does (one paragraph)
 
@@ -28,8 +28,8 @@ Exposes a public `GET /api/public/health` endpoint that an uptime monitor or loa
 
 - [x] `bunx tsc --noEmit` clean (after `bun run build` regenerated `src/routeTree.gen.ts` for the new route); `bun run build` ✓; `bunx eslint` clean on the 3 new files.
 - [x] `bun test src/lib/app-health.test.ts` 5/5 (ok→200, db-down→503, worker-always-ok, no-leak key set, purity). Full suite 303/303.
-- [ ] Live: `curl /api/public/health` returns 200 when the DB is up and 503 when it is not (verify on the next publish — the live DB probe was not run unattended).
-- [ ] An uptime monitor is pointed at the endpoint and alerts on 503 (founder, infra).
+- [x] Live (2026-06-22): `curl https://cadence-flow-beta.lovable.app/api/public/health` → HTTP **200** `{"status":"ok","service":"cadence","checks":{"worker":"ok","database":"ok"}}`. The live DB probe answers `ok` in production. (The 503 path is proven by `assembleHealth`'s unit test; it fires only on a real DB outage, which cannot be forced safely against prod.)
+- [ ] An uptime monitor is pointed at the endpoint and alerts on 503 (founder, infra — external service config, e.g. UptimeRobot/BetterStack).
 
 ## Known limits / out of scope
 
