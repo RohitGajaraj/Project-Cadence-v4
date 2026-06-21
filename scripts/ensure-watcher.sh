@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ensure the active-claims live-status watcher is installed + running.
+# Ensure the register-status watcher (keeps feature-dashboard.md fast-forwarded) is installed + running.
 # Idempotent and safe to call on every lane start / session start / boot - it does nothing
 # if the watcher is already up. The launchd agent (RunAtLoad + KeepAlive) is the primary
 # always-on mechanism; this is the belt-and-suspenders so a fresh checkout or a manual lane

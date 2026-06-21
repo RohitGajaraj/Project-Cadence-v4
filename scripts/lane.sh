@@ -42,16 +42,12 @@ set -uo pipefail
 LEDGER="${CADENCE_LEDGER:-$HOME/.cadence-parallel}"
 CLAIMS="$LEDGER/claims"
 
-# Best-effort: regenerate the git-visible "Active claims" mirror in feature-dashboard.md
-# from this ledger after any state change, so the board is real-time and never rots.
-# Runs AFTER the claim/release succeeds and swallows all errors, so it can never affect
-# the claim outcome or break a live lane.
-_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
-_sync_board() {
-  [ -n "$_SELF_DIR" ] && command -v python3 >/dev/null 2>&1 \
-    && [ -f "$_SELF_DIR/sync-active-claims.py" ] \
-    && python3 "$_SELF_DIR/sync-active-claims.py" >/dev/null 2>&1 || true
-}
+# DONE registry: the ledger remembers recently-COMPLETED items (not just active claims),
+# so `claim` REFUSES an item another lane already finished - the mechanical fix so two
+# sessions never re-pick the same done work. `lane.sh done <ID>` records a completion;
+# `reap` prunes old markers (by then the ✅ is in the register, caught by `git pull`).
+DONE="$LEDGER/done"
+_sync_board() { :; }   # retired 2026-06-21: status lives in feature-dashboard.md, not a separate file
 
 _now() { date +%s; }
 _die() { echo "lane.sh: $*" >&2; exit 2; }
@@ -102,6 +98,12 @@ cmd_claim() {
   [ -n "$id" ] && [ -n "$lane" ] || _die "usage: claim <ID> <lane> \"globs\" [note]"
   _ensure
   local dir="$CLAIMS/$id"
+
+  # 0) already COMPLETED by another lane? refuse - do NOT redo finished work.
+  if [ -e "$DONE/$id" ]; then
+    echo "DONE $id (already completed: $(cat "$DONE/$id" 2>/dev/null)); pick another item"
+    return 4
+  fi
 
   # 1) atomic per-item mutex
   if ! mkdir "$dir" 2>/dev/null; then
@@ -157,7 +159,17 @@ cmd_release() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: release <ID>"
   local dir="$CLAIMS/$id"
   if [ -d "$dir" ]; then rm -rf "$dir"; echo "RELEASED $id"; else echo "not held: $id"; fi
-  _sync_board
+}
+
+# `done <ID>`: mark an item fully COMPLETED (✅). Frees the active claim AND records a DONE
+# marker so no other lane re-picks it. Call this only on a true ✅ completion; a ◐ partial
+# uses `release` instead (it stays re-pickable so a later lane can continue the remainder).
+cmd_done() {
+  local id="${1:-}"; [ -n "$id" ] || _die "usage: done <ID>"
+  _ensure; mkdir -p "$DONE"
+  rm -rf "${CLAIMS:?}/$id" 2>/dev/null || true
+  echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) lane=${2:-?}" > "$DONE/$id"
+  echo "DONE-RECORDED $id (claim freed; future claims refused)"
 }
 
 cmd_heartbeat() {
@@ -243,7 +255,10 @@ cmd_reap() {
       rm -rf "$dir"; echo "REAPED $id (stale > ${ttl_h}h)"
     fi
   done
-  _sync_board
+  # prune DONE markers older than 48h (by then the ✅ is in the register, caught by git pull)
+  if [ -d "$DONE" ]; then
+    find "$DONE" -type f -mmin +2880 -delete 2>/dev/null || true
+  fi
 }
 
 sub="${1:-}"; shift || true
@@ -252,6 +267,7 @@ case "$sub" in
   claim)     cmd_claim "$@" ;;
   pin)       cmd_pin "$@" ;;
   release)   cmd_release "$@" ;;
+  done)      cmd_done "$@" ;;
   heartbeat) cmd_heartbeat "$@" ;;
   list)      cmd_list "$@" ;;
   board)     cmd_board "$@" ;;

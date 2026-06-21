@@ -83,6 +83,3 @@ docs/screenshots/
 !design-reference/**/*.jpg
 !design-reference/**/*.gif
 !design-reference/**/*.webp
-
-# Real-time build-status view, generated from the lane ledger by scripts/active-claims-watch.sh (never committed)
-docs/planning/active-claims.live.md
