@@ -1,0 +1,1 @@
+CREATE POLICY "system_banner read authenticated" ON public.system_banner FOR SELECT TO authenticated USING (true);

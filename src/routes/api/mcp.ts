@@ -530,7 +530,9 @@ export const Route = createFileRoute("/api/mcp")({
             },
           );
         } catch (err) {
-          const error = err instanceof Error ? err.message : "Unknown error";
+          const internalError = err instanceof Error ? err.message : "Unknown error";
+          console.error("[mcp]", internalError);
+          const error = "internal error";
 
           // Attempt to log the error
           if (token_id && workspace_id) {
@@ -545,7 +547,7 @@ export const Route = createFileRoute("/api/mcp")({
                 workspace_id,
                 tool_name: mcpReq.method,
                 result: "error",
-                error_message: error,
+                error_message: internalError,
               },
               supabase,
             );
