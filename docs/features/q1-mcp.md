@@ -2,11 +2,11 @@
 
 > _Created: 2026-06-17 · Last updated: 2026-06-21_
 
-**Status:** ◐ Partial (Phases 1-3 + Phase 4a complete: backend + token UI + native MCP transport handshake shipped; Phase 4b / Q2 future)  
-**Lanes:** F (INTEROP / the neutral brain)  
+**Status:** ✅ Shipped (Phases 1-4a: backend + token UI + native MCP transport handshake; Phase 4b / Q2 future-deferred)  
+**Lanes:** F (INTEROP / the neutral brain); verified live 2026-06-21 (lane 3)  
 **P-tier:** Tier 1 (Build Sequence #11 — the neutral-brain moat)  
-**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17, Phase 4a transport 2026-06-21  
-**What's next:** Phase 4b (Q2, future) — OAuth client registration + auto-discovery, SSE/streamable-HTTP session streaming, and full write CRUD with per-lane scope.
+**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17, Phase 4a transport 2026-06-21 (lane 1; token-issuance bug fixed 1f0ace8450)  
+**What's next:** Phase 4b (Q2, founder-gated future) — OAuth client registration + auto-discovery, SSE/streamable-HTTP session streaming, and full write CRUD with per-lane scope.
 
 ---
 
