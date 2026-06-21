@@ -547,7 +547,7 @@ export const Route = createFileRoute("/api/mcp")({
                 workspace_id,
                 tool_name: mcpReq.method,
                 result: "error",
-                error_message: error,
+                error_message: internalError,
               },
               supabase,
             );
