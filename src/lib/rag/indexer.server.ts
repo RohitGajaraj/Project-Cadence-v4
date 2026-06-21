@@ -68,7 +68,14 @@ export async function indexItems(
     });
     if (toEmbedIdx.length === 0) continue;
 
-    const vectors = await embedTexts(toEmbedIdx.map((i) => pieces[i]));
+    const vectors = await embedTexts(
+      toEmbedIdx.map((i) => pieces[i]),
+      {
+        supabase,
+        userId,
+        surfaceRef: item.source_kind,
+      },
+    );
     const rows = toEmbedIdx.map((idx, k) => ({
       user_id: userId,
       source_kind: item.source_kind,
