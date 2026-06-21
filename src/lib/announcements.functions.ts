@@ -23,6 +23,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { applyTransition, generateSlug, type WorkspaceRole } from "./announcements";
+import { scanEgressForSecrets, describeEgressSecrets } from "./egress-guardrails";
 
 export type AnnouncementRow = {
   id: string;
@@ -84,6 +85,10 @@ export const createAnnouncement = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }): Promise<{ id: string; slug: string }> => {
+    // Egress floor: refuse to even STORE a title/body carrying a high-confidence
+    // secret, so a credential can never reach the anon-readable published state.
+    const scan = scanEgressForSecrets(`${data.title}\n${data.body}`);
+    if (scan.blocked) throw new Error(describeEgressSecrets(scan.ruleNames));
     const sb = context.supabase as never as AnySupabase;
     // The slug is globally unique; on the (vanishingly rare) collision, retry with
     // fresh entropy a couple of times rather than surfacing a raw constraint error.
@@ -127,6 +132,12 @@ export const updateAnnouncement = createServerFn({ method: "POST" })
     if (data.title !== undefined) patch.title = data.title;
     if (data.body !== undefined) patch.body = data.body;
     if (Object.keys(patch).length === 0) return { ok: true };
+    // Egress floor on the fields being set (a secret must not be written into a row
+    // that can later be published anon-readable).
+    const scan = scanEgressForSecrets(
+      [data.title, data.body].filter((v): v is string => typeof v === "string").join("\n"),
+    );
+    if (scan.blocked) throw new Error(describeEgressSecrets(scan.ruleNames));
     // RLS ("members update", draft/pending only) scopes the write; .select() makes a
     // blocked / published-row update fail loudly rather than returning a phantom ok.
     const { data: rows, error } = await (context.supabase as never as AnySupabase)

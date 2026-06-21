@@ -59,7 +59,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | ---------------------------------------------- | -------------------------------------------------------------------------- | -------- |
 | Sandboxed execution for agent-run code         | Agents that write+run code can exfiltrate or break things                  | P0       |
 | Supply-chain security (agents installing deps) | Agent-installed packages are an attack surface; need allow-list + scanning | P0       |
-| Secret scanning + SAST in the build pipeline   | Agent code could leak/introduce secrets or vulns                           | P1       |
+| Secret scanning + SAST in the build pipeline   | Agent code could leak/introduce secrets or vulns                           | P1 — ◐ SEC-EGRESS-GUARD (lane 3, 2026-06-21): the existing guardrails secret-detection engine now also runs as a FLOOR on the public-egress write path (L2 announcements are anon-readable), reusing `evaluateGuardrails` with a self-contained high-confidence rule set so a credential can't be stored/published world-readable. Build-pipeline SAST on agent-written code (the original gap) stays open — its drive point is the pinned registry/build chokepoint. Spec: [`../features/egress-secret-guard.md`](../features/egress-secret-guard.md). |
 | Key rotation + compromise response             | BYO keys, gateway keys, DB creds                                           | P1       |
 | Pen-test + threat model for MCP/A2A surface    | External agents acting in a governed org                                   | P1       |
 
