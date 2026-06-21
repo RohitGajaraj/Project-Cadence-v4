@@ -5170,30 +5170,39 @@ export type Database = {
       }
       user_api_keys: {
         Row: {
+          api_key_cipher: string | null
+          api_key_iv: string | null
           api_key_prefix: string | null
           base_url: string | null
           created_at: string
           id: string
+          key_version: number | null
           label: string | null
           provider: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          api_key_cipher?: string | null
+          api_key_iv?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
           id?: string
+          key_version?: number | null
           label?: string | null
           provider: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          api_key_cipher?: string | null
+          api_key_iv?: string | null
           api_key_prefix?: string | null
           base_url?: string | null
           created_at?: string
           id?: string
+          key_version?: number | null
           label?: string | null
           provider?: string
           updated_at?: string
