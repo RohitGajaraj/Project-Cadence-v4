@@ -54,6 +54,7 @@ import { PaymentTestModeBanner } from "@/components/billing/PaymentTestModeBanne
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useConfirm } from "@/hooks/use-confirm";
 import { PlanTable } from "@/components/billing/PlanPicker";
+import { CreditCapsCard } from "@/components/billing/CreditCapsCard";
 import { getPricingCatalog } from "@/lib/pricing.functions";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
@@ -684,9 +685,7 @@ function CreditsTabInner() {
               </div>
               {a.byProduct.slice(0, 8).map((p) => (
                 <div key={p.id ?? "unattributed"} style={{ display: "grid", gap: 4 }}>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}
-                  >
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
                     <span style={{ color: "var(--ink, #1d1a14)" }}>{p.name}</span>
                     <span style={{ color: "var(--ink-subtle, #6b6457)" }}>
                       {p.credits.toLocaleString()}
@@ -719,6 +718,8 @@ function CreditsTabInner() {
           );
         })()}
       </div>
+
+      <CreditCapsCard />
 
       {/* ===== Pick a bundle ===== */}
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>

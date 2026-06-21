@@ -374,8 +374,7 @@ export const createTopUpCheckout = createServerFn({ method: "POST" })
 
     // Resolve bundle: prefer admin-managed catalog (pricing_topup_bundles),
     // fall back to the static map so legacy lookup keys keep working.
-    let bundle: { credits: number; label: string } | null =
-      TOPUP_BUNDLES[data.priceId] ?? null;
+    let bundle: { credits: number; label: string } | null = TOPUP_BUNDLES[data.priceId] ?? null;
     if (!bundle) {
       const m = data.priceId.match(/^topup_(\d+)(k?)$/);
       if (m) {
@@ -518,4 +517,170 @@ export const getCreditAttribution = createServerFn({ method: "GET" })
       byMember: attr.byMember,
       totalDebited: attr.totalDebited,
     };
+  });
+
+// ---------------------------------------------------------------------------
+// WM-M14: owner-set per-product spend caps. The owner caps how many credits a
+// product can draw per window; assertCreditCaps enforces it on the hot path when
+// metering is on. Reads/writes via the caller's RLS-scoped client (owner-write
+// policy added in migration 20260621140000); inert until credits_enabled().
+// ---------------------------------------------------------------------------
+
+export type CreditCapRow = {
+  id: string;
+  scope: "product" | "member";
+  targetId: string | null;
+  targetName: string;
+  capCredits: number;
+  windowKind: "cycle" | "day" | "month";
+  enabled: boolean;
+};
+export type CreditCapsView = {
+  isOwner: boolean;
+  caps: CreditCapRow[];
+  products: { id: string; name: string }[];
+};
+
+async function resolveAccount(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+): Promise<string | null> {
+  try {
+    const { data } = await supabase.rpc(
+      "ensure_user_default_account" as never,
+      { _user_id: userId } as never,
+    );
+    return (data as string | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export const getCreditCaps = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CreditCapsView> => {
+    const { supabase, userId } = context;
+    const empty: CreditCapsView = { isOwner: false, caps: [], products: [] };
+    const accountId = await resolveAccount(supabase, userId);
+    if (!accountId) return empty;
+
+    let isOwner = false;
+    try {
+      const { data: a } = await supabase
+        .from("accounts")
+        .select("owner_id")
+        .eq("id", accountId)
+        .maybeSingle();
+      isOwner = (a as { owner_id?: string } | null)?.owner_id === userId;
+    } catch {
+      /* default false */
+    }
+
+    const [capsRes, prodRes] = await Promise.all([
+      supabase
+        .from("credit_caps")
+        .select("id, scope, target_id, cap_credits, window_kind, enabled")
+        .eq("account_id", accountId),
+      supabase.from("projects").select("id, name"),
+    ]);
+
+    const products = ((prodRes.data ?? []) as Array<{ id: string; name: string }>).map((p) => ({
+      id: p.id,
+      name: p.name,
+    }));
+    const nameOf = new Map(products.map((p) => [p.id, p.name]));
+    const caps: CreditCapRow[] = (
+      (capsRes.data ?? []) as Array<{
+        id: string;
+        scope: "product" | "member";
+        target_id: string | null;
+        cap_credits: number;
+        window_kind: "cycle" | "day" | "month";
+        enabled: boolean;
+      }>
+    ).map((r) => ({
+      id: r.id,
+      scope: r.scope,
+      targetId: r.target_id,
+      targetName:
+        r.scope === "product"
+          ? r.target_id
+            ? (nameOf.get(r.target_id) ?? "Untitled product")
+            : "Any product"
+          : "Member",
+      capCredits: Number(r.cap_credits),
+      windowKind: r.window_kind,
+      enabled: !!r.enabled,
+    }));
+
+    return { isOwner, caps, products };
+  });
+
+export const setCreditCap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      scope: "product" | "member";
+      targetId: string;
+      capCredits: number;
+      windowKind: "cycle" | "day" | "month";
+      enabled?: boolean;
+    }) => {
+      if (d.scope !== "product" && d.scope !== "member") throw new Error("Invalid scope");
+      if (!d.targetId) throw new Error("A target is required");
+      if (!Number.isFinite(d.capCredits) || d.capCredits < 0) throw new Error("Cap must be >= 0");
+      if (!["cycle", "day", "month"].includes(d.windowKind)) throw new Error("Invalid window");
+      return d;
+    },
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true } | { error: string }> => {
+    const { supabase, userId } = context;
+    const accountId = await resolveAccount(supabase, userId);
+    if (!accountId) return { error: "No account found." };
+    const enabled = data.enabled ?? true;
+    // Find an existing cap for this (account, scope, target) and update it, else insert.
+    // RLS (owner-write) is what authorizes the write; a non-owner's write is rejected.
+    const { data: existing } = await supabase
+      .from("credit_caps")
+      .select("id")
+      .eq("account_id", accountId)
+      .eq("scope", data.scope)
+      .eq("target_id", data.targetId)
+      .maybeSingle();
+    if (existing && (existing as { id: string }).id) {
+      const { error } = await supabase
+        .from("credit_caps")
+        .update({
+          cap_credits: data.capCredits,
+          window_kind: data.windowKind,
+          enabled,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", (existing as { id: string }).id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("credit_caps").insert({
+        account_id: accountId,
+        scope: data.scope,
+        target_id: data.targetId,
+        cap_credits: data.capCredits,
+        window_kind: data.windowKind,
+        enabled,
+      });
+      if (error) return { error: error.message };
+    }
+    return { ok: true };
+  });
+
+export const removeCreditCap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => {
+    if (!d.id) throw new Error("id required");
+    return d;
+  })
+  .handler(async ({ data, context }): Promise<{ ok: true } | { error: string }> => {
+    const { supabase } = context;
+    const { error } = await supabase.from("credit_caps").delete().eq("id", data.id);
+    if (error) return { error: error.message };
+    return { ok: true };
   });
