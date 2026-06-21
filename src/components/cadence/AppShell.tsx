@@ -43,6 +43,7 @@ import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
 import { updateProject, moveProduct } from "@/lib/projects.functions";
+import { moveDestinationWorkspaces } from "@/lib/workspace-move";
 import { amIAdmin } from "@/lib/pricing.functions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -313,9 +314,12 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     .toUpperCase();
 
   const activeProduct = products.find((p) => p.id === activeProductId) ?? null;
-  // Move-product destinations: the user's other workspaces (products in the list
-  // all belong to the active workspace). The move_product RPC enforces same-account.
-  const otherWorkspaces = workspaces.filter((w) => w.id !== activeWorkspaceId);
+  // Move-product destinations (WM-F6c): the user's OTHER workspaces in the SAME
+  // account (products in the list all belong to the active workspace). The
+  // move_product RPC is the authoritative same-account guard; this filter just
+  // avoids offering a cross-account destination it would reject. Fails open when
+  // an account id is unknown, so it can never wrongly hide a valid destination.
+  const otherWorkspaces = moveDestinationWorkspaces(workspaces, activeWorkspaceId);
 
   async function createWorkspace() {
     const name = await prompt({

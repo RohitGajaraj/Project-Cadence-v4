@@ -9,6 +9,11 @@ export type Workspace = {
   owner_id: string;
   slug: string | null;
   created_at: string;
+  // WM-M2 account link, surfaced for WM-F6c same-account move-destination
+  // filtering. Optional + nullable: the workspaces query selects "*" so it is
+  // present once WM-M2's schema is the deployed read schema, and absent before.
+  // The move filter treats an absent/null value as "unknown" and fails open.
+  account_id?: string | null;
 };
 
 export type Product = {
