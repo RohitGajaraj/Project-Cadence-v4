@@ -6513,6 +6513,16 @@ export type Database = {
         Args: { _new_owner_id: string; _workspace_id: string }
         Returns: undefined
       }
+      workspace_members_with_identity: {
+        Args: { _workspace_id: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          role: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "member"
