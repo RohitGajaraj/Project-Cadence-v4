@@ -86,7 +86,8 @@ export async function loadDecisionPrecedent(
   const text = args.text?.trim();
   if (!text) return [];
   try {
-    const v = await embedOne(text);
+    // EMBED-CHOKEPOINT: thread context so this precedent embedding logs + BYO-routes.
+    const v = await embedOne(text, { supabase, userId: args.userId, surfaceRef: "precedent" });
     if (!Array.isArray(v) || v.length === 0) return [];
     const base = {
       query_embedding: v as unknown as string,

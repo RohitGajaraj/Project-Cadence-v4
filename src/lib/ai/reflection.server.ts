@@ -146,7 +146,8 @@ export async function autoReflect(
 
     let emb: number[] | null = null;
     try {
-      emb = await embedOne(lesson);
+      // EMBED-CHOKEPOINT: thread context so this reflection embedding logs + BYO-routes.
+      emb = await embedOne(lesson, { supabase, userId: input.userId, surfaceRef: "reflection" });
     } catch {
       /* embedding is optional */
     }

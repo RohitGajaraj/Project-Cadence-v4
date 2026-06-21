@@ -46,7 +46,11 @@ export async function retrieve(
   const query = (opts.query ?? "").slice(0, 4000);
   if (!query.trim()) return [];
 
-  const qVec = await embedOne(query).catch(() => null);
+  // EMBED-CHOKEPOINT: thread user context so the query embedding routes through the chokepoint
+  // with cost + ai_events telemetry + BYO-key routing (was an unattributed gateway call).
+  const qVec = await embedOne(query, { supabase, userId, surfaceRef: "retrieval" }).catch(
+    () => null,
+  );
 
   const ann: RetrievedChunk[] = [];
   if (qVec) {

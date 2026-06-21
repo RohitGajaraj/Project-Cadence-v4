@@ -31,7 +31,8 @@ export async function indexFinding(
 
     let embedding: number[] | null = null;
     try {
-      embedding = await embedOne(content);
+      // EMBED-CHOKEPOINT: thread context so this finding embedding logs + BYO-routes.
+      embedding = await embedOne(content, { supabase, userId, surfaceRef: "finding" });
     } catch (e) {
       console.error("[brain] embedding unavailable — storing finding without vector:", e);
     }
