@@ -26,6 +26,17 @@
 
 ## Decision log
 
+### 2026-06-21 · Founder-gate review: un-gate what the agent can decide; mark only genuine founder items
+
+**Context.** Many items were marked `Gated` (founder-gated) under earlier positioning; the founder asked to re-review against the shifted positioning + the autonomy doctrine (ask the founder ONLY for secrets / OAuth / spend / accounts / outward-facing / taste-or-strategic; the agent decides everything else), to minimize what sits on the founder and maximize what the lanes can build top-down.
+
+**Decisions (19 Gated items reviewed).**
+- **UN-GATED 4 (now buildable by the lanes):** `PLG` → Tier 3 (the memory-expiry banner + onboarding are buildable; only the paid-conversion leg is Lovable's and the expiry-flip timing is the founder's); `SANDBOX` → Tier 1 (build the ExecProvider seam + the GitHub Actions $0 floor now; the paid provider is a small spend-confirm, not a blocker); `BLD-04` → Tier 3 (build the OpenHands self-host delegate adapter behind the internal A2A contract; does not need the outward Q2); `A6/ENG-08` → Deferred (already built via WM-F3/F4/F5; deeper team-RBAC is M-D, not founder-gated).
+- **KEPT GATED + marked 👤 FOUNDER (15, each with exactly what you must provide):** `SEN-01` + `F-CONN` (register an OAuth client = secrets/accounts); `SEN-05` + `F-ANALYTICS-1/2` (connect a product-analytics provider = OAuth + spend); `Q2` (approve an OUTWARD A2A surface + posture = security call); `M-C-EXPIRY` (flip free-tier memory-expiry = product-timing/taste); `CMD (H2)` (un-park the Command Canvas = scope/taste); `BYO-P1a..P5` (ONE greenlight for the all-in-one platform = strategic scope + infra/spend, sequenced behind the Decision Brain).
+- **`BYO` ruling:** kept gated as one strategic greenlight, NOT un-gated unilaterally - building a managed all-in-one platform + hosting is a major scope + spend commitment, and moat.md sequences hosting after the loop is proven (never the differentiator). The founder greenlights it when ready.
+
+**Result.** Gated dropped 19 → 15; the 15 are unambiguously the founder's (each `👤 FOUNDER:` notes the exact secret/spend/account/taste/strategic call). The lanes now have `PLG`/`SANDBOX`/`BLD-04` added to the autonomous board. Nothing sits on the founder that the agent could decide from research + the BBI gate.
+
 ### 2026-06-21 · The web-search autonomy floor (FIRECRAWL-FLOOR), and shipping it in-scope vs scope-creep
 **Decision:** Make the agent's `web.search` provider-agnostic with a native, zero-paid-dependency SearXNG self-host fallback, delivered as an ADDITIVE seam (the paid Firecrawl path stays byte-identical) scoped strictly to the row's literal surface (`firecrawl.server.ts` + a sibling). The deep-research pipeline's separate web gate (`research.server.ts`) is left as a tracked follow-up (FIRECRAWL-FLOOR-b), NOT folded in.
 **Why:** The BBI doctrine's autonomy floor — "a zero-external-paid-dep native default must always be able to hold" — was violated: `webSearch` hard-threw on a missing `FIRECRAWL_API_KEY`, so any deployment without a paid key had no agent web search. A self-hosted SearXNG fallback restores the floor with no vendor lock-in. Lane-1 context: after MOAT-METRIC, the clean Tier-1 Governance/Cockpit vein was exhausted (the moat rows are the knowledge lane's / forbidden / held by the active Lane 2); the NEVER-STOP rule forbids pausing on "nothing clean left," so the lane roamed to the lowest-Rank eligible non-forbidden row (a leaf web tool, not the chokepoint).
