@@ -93,6 +93,17 @@ export const MCP_TOOLS: McpTool[] = [
       required: ["opportunity_id", "decision"],
     },
   },
+  {
+    name: "export_skillpack",
+    description:
+      "Export a versioned, content-hashed bundle of this workspace's decision lessons (outcomes that validated, missed, or revised a decision) for an external agent to load as context",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", default: 200 },
+      },
+    },
+  },
 ];
 
 export const MCP_TOOL_NAMES: readonly string[] = MCP_TOOLS.map((t) => t.name);
@@ -236,7 +247,7 @@ export function buildInitializeResult(protocolVersion: string) {
     },
     serverInfo: { name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION },
     instructions:
-      "Cadence exposes read access to product signals, opportunities, and PRDs, plus an approval-gated decision append. Call tools/list to enumerate, then tools/call to invoke.",
+      "Cadence exposes read access to product signals, opportunities, and PRDs, an approval-gated decision append, and a versioned decision-lessons skill pack. Call tools/list to enumerate, then tools/call to invoke.",
   };
 }
 

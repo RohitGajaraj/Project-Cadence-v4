@@ -6,6 +6,7 @@ import {
   searchOpportunities,
   getPRD,
   appendDecision,
+  exportSkillpack,
   logMCPCall,
 } from "@/lib/mcp.functions";
 import {
@@ -208,6 +209,13 @@ async function dispatchTool(
           decision_text,
           metadata,
         );
+        return { success: true, data };
+      }
+
+      case "export_skillpack": {
+        // Optional `limit`; exportSkillpack clamps it into [1, 500].
+        const limit = typeof params.limit === "number" ? params.limit : undefined;
+        const data = await exportSkillpack(supabase, workspace_id, limit);
         return { success: true, data };
       }
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildSkillpack, clampSkillpackLimit, type SkillpackLessonInput } from "./skillpack";
 
 /**
  * Q1-MCP · Read-only MCP (Model Context Protocol) server functions.
@@ -66,10 +67,7 @@ export const issueMCPToken = createServerFn({ method: "POST" })
     // Generate random secret and hash
     const crypto = await import("crypto");
     const secret = crypto.randomBytes(32).toString("hex");
-    const secretHash = crypto
-      .createHash("sha256")
-      .update(secret)
-      .digest("hex");
+    const secretHash = crypto.createHash("sha256").update(secret).digest("hex");
 
     const { data: token, error } = await supabase.rpc("issue_mcp_token", {
       _workspace_id: data.workspace_id,
@@ -166,9 +164,7 @@ export async function searchSignals(
 ) {
   let q = supabaseClient
     .from("signals")
-    .select(
-      "id, title, source, summary, product_id, created_at, products!inner(id, name)",
-    )
+    .select("id, title, source, summary, product_id, created_at, products!inner(id, name)")
     .eq("workspace_id", workspace_id);
 
   if (query) {
@@ -217,11 +213,7 @@ export async function searchOpportunities(
  * Get a specific PRD by ID with cited signals.
  * Called by the MCP server route handler.
  */
-export async function getPRD(
-  supabaseClient: any,
-  workspace_id: string,
-  prd_id: string,
-) {
+export async function getPRD(supabaseClient: any, workspace_id: string, prd_id: string) {
   const { data: prd, error: prdError } = await supabaseClient
     .from("prd")
     .select(
@@ -262,14 +254,12 @@ export async function appendDecision(
   if (error) throw new Error(error.message);
 
   // Queue for approval (no auto-apply from external source)
-  const { error: queueError } = await supabaseClient
-    .from("decision_queue")
-    .insert({
-      workspace_id,
-      decision_id: decision.id,
-      status: "pending_review",
-      external_source: "mcp",
-    });
+  const { error: queueError } = await supabaseClient.from("decision_queue").insert({
+    workspace_id,
+    decision_id: decision.id,
+    status: "pending_review",
+    external_source: "mcp",
+  });
 
   if (queueError) {
     console.warn("Failed to queue decision for approval:", queueError);
@@ -281,4 +271,76 @@ export async function appendDecision(
     status: "pending_review",
     created_at: decision.created_at,
   };
+}
+
+/**
+ * Export a versioned skill pack: the workspace's distilled outcome->lesson
+ * `learnings` (validated / missed / mixed decisions, with the ICE move each
+ * caused), bundled by the pure `buildSkillpack` into a deterministic,
+ * content-fingerprinted envelope an external agent can load as context.
+ *
+ * Scoped EXPLICITLY by `workspace_id` (the MCP route runs service-role, so the
+ * `.eq("workspace_id", ...)` filter is the tenant boundary, not RLS), mirroring
+ * the other read tools. Read-only: no writes, no AI, no spend.
+ */
+export async function exportSkillpack(supabaseClient: any, workspace_id: string, limit?: number) {
+  const cap = clampSkillpackLimit(limit);
+  // The `id` secondary sort is LOAD-BEARING for the content_hash promise, not
+  // cosmetic: `ORDER BY created_at DESC LIMIT cap` alone returns an arbitrary
+  // subset of any rows whose created_at ties at the LIMIT boundary, so two
+  // exports of an UNCHANGED workspace (>cap learnings, millisecond-clustered
+  // timestamps) could fetch different boundary rows and hash differently. Adding
+  // `id ASC` matches buildSkillpack's in-memory tiebreak, so the DB top-N is
+  // stable and the version fingerprint is reproducible.
+  //
+  // Tenant scope: `.eq("workspace_id", ...)` on `learnings` is the only boundary
+  // (the route runs service-role, RLS OFF). The `opportunity` embed has no
+  // workspace predicate, so it is safe ONLY because a learning is co-tenant with
+  // its opportunity by construction (recordOutcome writes both from one PRD; WM-F6
+  // move_product reassigns them in lockstep). A future migration that lets a
+  // learning point at a cross-workspace opportunity would need its own guard here.
+  const { data, error } = await supabaseClient
+    .from("learnings")
+    .select(
+      "id, verdict, summary, prior_ice, new_ice, created_at, opportunity:opportunities(title)",
+    )
+    .eq("workspace_id", workspace_id)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
+    .limit(cap);
+
+  if (error) throw new Error(error.message);
+
+  // Flatten the to-one opportunity embed (PostgREST may widen it to an array),
+  // mirroring getCompounding/listLearnings so the wire shape stays flat.
+  type Wire = {
+    id: string;
+    verdict: string;
+    summary: string | null;
+    prior_ice: number | string | null;
+    new_ice: number | string | null;
+    created_at: string;
+    opportunity: { title: string | null } | { title: string | null }[] | null;
+  };
+  const lessons: SkillpackLessonInput[] = ((data ?? []) as Wire[]).map(
+    ({ opportunity, ...rest }) => {
+      const opp = Array.isArray(opportunity) ? opportunity[0] : opportunity;
+      return {
+        id: rest.id,
+        verdict: rest.verdict,
+        summary: rest.summary ?? "",
+        prior_ice: rest.prior_ice,
+        new_ice: rest.new_ice,
+        created_at: rest.created_at,
+        opportunity_title: opp?.title ?? null,
+      };
+    },
+  );
+
+  return buildSkillpack({
+    workspaceId: workspace_id,
+    lessons,
+    generatedAt: new Date().toISOString(),
+    limit: cap,
+  });
 }
