@@ -1,20 +1,20 @@
 // BYO API key vault helpers — encrypt at rest via the connector AES-256-GCM
-// vault, decrypt at use. Legacy rows that still have a plaintext `api_key`
-// value are returned as-is so the runtime keeps working during the rollover.
+// vault, decrypt at use. The legacy plaintext `api_key` column was dropped from
+// user_api_keys (migration 20260620211507) once all rows moved to the cipher
+// columns, so this module reads/writes ONLY the encrypted columns.
 // Server-only (uses CONNECTOR_SECRETS_KEY).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decryptSecret, encryptSecret } from "@/lib/connectors/crypto.server";
 
 type KeyRow = {
-  api_key: string | null;
   api_key_cipher: string | null;
   api_key_iv: string | null;
   key_version: number | null;
 };
 
 /**
- * Load the plaintext BYO key for a (user, provider). Prefers the encrypted
- * cipher columns; falls back to a legacy plaintext row if present.
+ * Load the plaintext BYO key for a (user, provider) by decrypting the stored
+ * cipher columns. Returns null when there is no row or it can't be decrypted.
  */
 export async function loadBYOKey(
   supabase: SupabaseClient,
@@ -23,7 +23,7 @@ export async function loadBYOKey(
 ): Promise<{ api_key: string } | null> {
   const { data } = await supabase
     .from("user_api_keys")
-    .select("api_key,api_key_cipher,api_key_iv,key_version")
+    .select("api_key_cipher,api_key_iv,key_version")
     .eq("user_id", userId)
     .eq("provider", provider)
     .maybeSingle();
@@ -38,19 +38,18 @@ export async function loadBYOKey(
       });
       return { api_key: pt };
     } catch (e) {
-      console.error("[byokeys] decrypt failed; falling back to legacy plaintext", e);
+      console.error("[byokeys] decrypt failed", e);
     }
   }
-  return row.api_key ? { api_key: row.api_key } : null;
+  return null;
 }
 
 /**
- * Build the columns to upsert when saving a BYO key. Encrypts the plaintext
- * and stores cipher + iv + version + short prefix; the legacy `api_key`
- * column is explicitly null'd so plaintext is not retained at rest.
+ * Build the columns to upsert when saving a BYO key: the AES-GCM cipher + iv +
+ * key version + a short non-secret prefix for display. The plaintext column no
+ * longer exists, so nothing plaintext is written.
  */
 export async function buildEncryptedKeyColumns(plaintext: string): Promise<{
-  api_key: null;
   api_key_cipher: string;
   api_key_iv: string;
   key_version: number;
@@ -58,7 +57,6 @@ export async function buildEncryptedKeyColumns(plaintext: string): Promise<{
 }> {
   const { ciphertext, iv, keyVersion } = await encryptSecret(plaintext);
   return {
-    api_key: null,
     api_key_cipher: ciphertext,
     api_key_iv: iv,
     key_version: keyVersion,

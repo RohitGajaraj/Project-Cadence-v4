@@ -1,21 +1,29 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateEmbedTokens, resolveEmbedRoute, EMB_MODEL, EMB_DIMS } from "./embed.server";
+import { buildEncryptedKeyColumns } from "@/lib/byokeys-vault.server";
 
 // Minimal stub of the supabase chain loadBYOKey uses: from().select().eq().eq().maybeSingle().
-function stubSupabaseWithKey(apiKey: string | null): SupabaseClient {
+// Returns whatever single row (or null) the caller supplies.
+function stubSupabaseRow(row: Record<string, unknown> | null): SupabaseClient {
   const chain: Record<string, unknown> = {
     select: () => chain,
     eq: () => chain,
-    maybeSingle: async () => ({ data: apiKey ? { api_key: apiKey } : null }),
+    maybeSingle: async () => ({ data: row }),
   };
   return { from: () => chain } as unknown as SupabaseClient;
 }
 
-const savedKey = process.env.LOVABLE_API_KEY;
+// A base64 string for exactly 32 bytes — what CONNECTOR_SECRETS_KEY requires.
+const TEST_VAULT_KEY = Buffer.from(new Uint8Array(32)).toString("base64");
+
+const savedLovable = process.env.LOVABLE_API_KEY;
+const savedVault = process.env.CONNECTOR_SECRETS_KEY;
 afterEach(() => {
-  if (savedKey === undefined) delete process.env.LOVABLE_API_KEY;
-  else process.env.LOVABLE_API_KEY = savedKey;
+  if (savedLovable === undefined) delete process.env.LOVABLE_API_KEY;
+  else process.env.LOVABLE_API_KEY = savedLovable;
+  if (savedVault === undefined) delete process.env.CONNECTOR_SECRETS_KEY;
+  else process.env.CONNECTOR_SECRETS_KEY = savedVault;
 });
 
 describe("back-compat exports", () => {
@@ -46,7 +54,11 @@ describe("resolveEmbedRoute", () => {
   });
 
   it("auto-loads an OpenAI BYO key when user context is present", async () => {
-    const r = await resolveEmbedRoute({ supabase: stubSupabaseWithKey("sk-vault"), userId: "u1" });
+    process.env.CONNECTOR_SECRETS_KEY = TEST_VAULT_KEY;
+    // Store the key the way the vault actually does (cipher columns), then confirm loadBYOKey
+    // decrypts it and resolveEmbedRoute routes BYO.
+    const cols = await buildEncryptedKeyColumns("sk-vault");
+    const r = await resolveEmbedRoute({ supabase: stubSupabaseRow(cols), userId: "u1" });
     expect(r.via).toBe("byo");
     expect(r.key).toBe("sk-vault");
     expect(r.url).toBe("https://api.openai.com/v1/embeddings");
@@ -54,7 +66,7 @@ describe("resolveEmbedRoute", () => {
 
   it("falls back to the gateway when context has no BYO key", async () => {
     process.env.LOVABLE_API_KEY = "lov-key";
-    const r = await resolveEmbedRoute({ supabase: stubSupabaseWithKey(null), userId: "u1" });
+    const r = await resolveEmbedRoute({ supabase: stubSupabaseRow(null), userId: "u1" });
     expect(r.via).toBe("gateway");
     expect(r.provider).toBe("lovable");
     expect(r.key).toBe("lov-key");
