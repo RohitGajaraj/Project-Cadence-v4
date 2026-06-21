@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
+import { computeCreditAttribution } from "@/lib/credits.functions";
 
 type CheckoutResult = { clientSecret: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
@@ -456,4 +457,65 @@ export const createTopUpCheckout = createServerFn({ method: "POST" })
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
     }
+  });
+
+// ---------------------------------------------------------------------------
+// WM-M16: credit usage attribution (the "where did my credits go" view).
+// Reads the account's debit ledger via the caller's RLS-scoped client, rolls it
+// up per product + per member (pure, in credits.functions.ts), and enriches
+// product ids with their names. Empty until the engine has debits (metering on).
+// ---------------------------------------------------------------------------
+
+export type CreditAttributionView = {
+  byProduct: { id: string | null; name: string; credits: number }[];
+  byMember: { id: string | null; credits: number }[];
+  totalDebited: number;
+};
+
+export const getCreditAttribution = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { sinceIso?: string | null }) => data ?? {})
+  .handler(async ({ data, context }): Promise<CreditAttributionView> => {
+    const { supabase, userId } = context;
+    const empty: CreditAttributionView = { byProduct: [], byMember: [], totalDebited: 0 };
+
+    let accountId: string | null = null;
+    try {
+      const { data: acc } = await supabase.rpc(
+        "ensure_user_default_account" as never,
+        { _user_id: userId } as never,
+      );
+      accountId = (acc as string | null) ?? null;
+    } catch {
+      /* RPC missing pre-publish; degrade gracefully */
+    }
+    if (!accountId) return empty;
+
+    const attr = await computeCreditAttribution(supabase, accountId, {
+      sinceIso: data?.sinceIso ?? null,
+    });
+
+    // Enrich product ids -> names (best-effort; RLS-scoped, falls back to a label).
+    const names = new Map<string, string>();
+    const pids = attr.byProduct.map((b) => b.id).filter((x): x is string => !!x);
+    if (pids.length) {
+      try {
+        const { data: rows } = await supabase.from("projects").select("id, name").in("id", pids);
+        for (const r of (rows ?? []) as Array<{ id: string; name: string }>) {
+          names.set(r.id, r.name);
+        }
+      } catch {
+        /* names are best-effort */
+      }
+    }
+
+    return {
+      byProduct: attr.byProduct.map((b) => ({
+        id: b.id,
+        name: b.id ? (names.get(b.id) ?? "Untitled product") : "Unattributed",
+        credits: b.credits,
+      })),
+      byMember: attr.byMember,
+      totalDebited: attr.totalDebited,
+    };
   });

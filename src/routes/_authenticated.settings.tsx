@@ -46,6 +46,7 @@ import {
   cancelMySubscription,
   resumeMySubscription,
   getMyCreditsView,
+  getCreditAttribution,
 } from "@/lib/payments.functions";
 import { planPresentation, type PlanTier } from "@/lib/entitlements";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
@@ -502,6 +503,7 @@ function BundleGrid({
 function CreditsTabInner() {
   const fGetCredits = useServerFn(getMyCreditsView);
   const fGetCatalog = useServerFn(getPricingCatalog);
+  const fGetAttribution = useServerFn(getCreditAttribution);
 
   let envSafe: ReturnType<typeof getStripeEnvironment> | null = null;
   try {
@@ -518,6 +520,10 @@ function CreditsTabInner() {
   const catalog = useQuery({
     queryKey: ["pricing-catalog"],
     queryFn: () => fGetCatalog(),
+  });
+  const attribution = useQuery({
+    queryKey: ["credit-attribution"],
+    queryFn: () => fGetAttribution({ data: {} }),
   });
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -645,6 +651,73 @@ function CreditsTabInner() {
             once metering turns on.
           </p>
         )}
+      </div>
+
+      {/* ===== Where your credits go (WM-M16 usage attribution) ===== */}
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
+        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
+          Where your credits go
+        </div>
+        {(() => {
+          const a = attribution.data;
+          if (attribution.isLoading) {
+            return (
+              <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+                Loading…
+              </p>
+            );
+          }
+          if (!a || a.totalDebited <= 0) {
+            return (
+              <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "10px 0 0" }}>
+                {data && !data.enabled
+                  ? "Usage breakdown appears once metering is on. You'll see which products and teammates spent credits this cycle."
+                  : "No credits spent this cycle yet. Usage by product and teammate will appear here."}
+              </p>
+            );
+          }
+          const max = Math.max(...a.byProduct.map((p) => p.credits), 1);
+          return (
+            <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+              <div style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
+                {a.totalDebited.toLocaleString()} credits spent this cycle
+              </div>
+              {a.byProduct.slice(0, 8).map((p) => (
+                <div key={p.id ?? "unattributed"} style={{ display: "grid", gap: 4 }}>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}
+                  >
+                    <span style={{ color: "var(--ink, #1d1a14)" }}>{p.name}</span>
+                    <span style={{ color: "var(--ink-subtle, #6b6457)" }}>
+                      {p.credits.toLocaleString()}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 6,
+                      borderRadius: 99,
+                      background: "var(--hairline, rgba(0,0,0,0.08))",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.round((p.credits / max) * 100)}%`,
+                        height: "100%",
+                        background: "var(--ember, #c2602e)",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {a.byMember.length > 1 && (
+                <div style={{ fontSize: 11, color: "var(--ink-faint, #8a8377)", marginTop: 4 }}>
+                  Across {a.byMember.length} teammates this cycle.
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ===== Pick a bundle ===== */}
