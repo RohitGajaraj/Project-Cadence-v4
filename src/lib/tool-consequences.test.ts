@@ -50,8 +50,11 @@ describe("toolRisk (FND-0.5 blast radius)", () => {
     expect(isExternalTool("studio.stage")).toBe(false);
     expect(toolRisk("studio.stage")).toBe("low");
   });
-  it("rates an uncatalogued tool medium (unknown blast radius, prompt review)", () => {
-    expect(toolRisk("nope.unknown")).toBe("medium");
+  it("fails closed: a real but uncatalogued tool is high (unknown blast radius = maximal)", () => {
+    expect(toolRisk("nope.unknown")).toBe("high");
+    expect(isHighRiskTool("nope.unknown")).toBe(true);
+  });
+  it("a null/absent tool name (a non-tool gate) stays neutral medium, never the high chip", () => {
     expect(toolRisk(null)).toBe("medium");
     expect(toolRisk(undefined)).toBe("medium");
   });

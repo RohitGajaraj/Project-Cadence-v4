@@ -171,6 +171,27 @@ export const updateAgentSchedule = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// FND-0.5 — set a per-agent blast-radius cap (max_tool_risk). null clears the cap (unrestricted).
+// The agent loop drops any enabled tool whose tier exceeds this when dispatching the agent.
+const ToolCapSchema = z.object({
+  agentId: z.string().uuid(),
+  maxToolRisk: z.enum(["low", "medium", "high"]).nullable(),
+});
+
+export const setAgentToolCap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => ToolCapSchema.parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("agents")
+      .update({ max_tool_risk: data.maxToolRisk })
+      .eq("id", data.agentId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /**
  * F-AGENT-2 — Recent reflections for an agent. Reads via the
  * `recent_agent_reflections` SECURITY DEFINER RPC so it can't leak across

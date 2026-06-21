@@ -19,6 +19,7 @@ import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./tr
 import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
 import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
 import { isHighRiskTool } from "@/lib/tool-consequences";
+import { capToolsByRisk } from "@/lib/agent-tool-cap";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
 
@@ -166,7 +167,7 @@ export async function runAgentLoop(
 
   const { data: agent } = await supabase
     .from("agents")
-    .select("id,slug,name,role,system_prompt,enabled")
+    .select("id,slug,name,role,system_prompt,enabled,max_tool_risk")
     .eq("user_id", userId)
     .eq("slug", input.agentSlug)
     .maybeSingle();
@@ -252,7 +253,13 @@ export async function runAgentLoop(
     .select("tool_name,mode,enabled")
     .eq("user_id", userId)
     .eq("enabled", true);
-  const tools = (toolRows ?? []).filter((t: { tool_name: string }) => TOOL_REGISTRY[t.tool_name]);
+  // FND-0.5 per-agent cap: drop any enabled tool whose blast-radius tier exceeds this agent's
+  // max_tool_risk so a scoped agent can't reach (or even see in its prompt) a tool beyond its
+  // remit. Null cap = unrestricted = byte-identical.
+  const tools = capToolsByRisk(
+    (toolRows ?? []).filter((t: { tool_name: string }) => TOOL_REGISTRY[t.tool_name]),
+    (agent as { max_tool_risk?: string | null }).max_tool_risk,
+  );
   const modeOf = new Map<string, string>(
     tools.map((t) => [t.tool_name as string, t.mode as string]),
   );
@@ -843,8 +850,9 @@ export async function resumeAgentLoop(
 
   const { data: agent } = await supabase
     .from("agents")
-    .select("id,slug,name,role,system_prompt")
+    .select("id,slug,name,role,system_prompt,max_tool_risk")
     .eq("id", run.agent_id)
+    .eq("user_id", run.user_id)
     .maybeSingle();
   if (!agent) throw new Error(`agent not found for run ${runId}`);
 
@@ -914,7 +922,11 @@ export async function resumeAgentLoop(
     .select("tool_name,mode,enabled")
     .eq("user_id", run.user_id)
     .eq("enabled", true);
-  const tools = (toolRows ?? []).filter((t: { tool_name: string }) => TOOL_REGISTRY[t.tool_name]);
+  // FND-0.5 per-agent cap (resume path mirrors the fresh-dispatch path above).
+  const tools = capToolsByRisk(
+    (toolRows ?? []).filter((t: { tool_name: string }) => TOOL_REGISTRY[t.tool_name]),
+    (agent as { max_tool_risk?: string | null }).max_tool_risk,
+  );
   const modeOf = new Map<string, string>(
     tools.map((t) => [t.tool_name as string, t.mode as string]),
   );

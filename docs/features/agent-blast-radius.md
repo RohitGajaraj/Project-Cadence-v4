@@ -38,6 +38,11 @@ All in `src/lib/tool-consequences.ts` (pure, client-safe; 19 unit tests in `tool
 
 The agent loop's existing high-risk approval floor (`src/lib/ai/loop.server.ts`) now uses the systematic classifier: a tool is held to at least human `confirm` when `HIGH_RISK_MIN_CONFIRM.has(tool) OR isHighRiskTool(tool)`. This connects the blast-radius model to the live gate, so **every** high-blast tool — and any future side-effecting tool — can never run unattended (`auto`), with no hand-maintained list to drift. It closed a real gap: `github.commit.append` (external + partial → high) was missing from the manual set and could previously auto-run. Safe-by-construction — the branch only raises `auto`→`confirm`, never lowers a gate. This is a GLOBAL floor (applies to every agent); live agent-run verification is deferred until API keys/gateway credits are available.
 
+## Per-agent cap (shipped)
+
+A per-agent `max_tool_risk` ceiling (`agents.max_tool_risk`, nullable = unrestricted) — stricter than the global floor: a scoped agent's over-cap tools are dropped from its tool list, `modeOf`, and system prompt entirely (it cannot call or even see them), at both loop tool-resolution sites (fresh dispatch + resume). Set per agent in Settings → Staff ("Tool reach": Unrestricted / Low / Medium / High) via the RLS-scoped `setAgentToolCap`. The filter is the pure tested `capToolsByRisk` (`src/lib/agent-tool-cap.ts`), guarded so a null cap is byte-identical to today. Uncatalogued tools fail **closed** (treated as `high`), so an un-vetted tool can never slip a low/medium cap. Migration applies + live filtering verifies on the founder's next publish (deferred per the build-now/test-later ruling).
+
 ## What remains (not autonomous)
 
-- **Per-agent scope storage + UI**: an `agents.max_tool_risk` column + a Staff-tab control to set a per-agent cap, then a loop filter via `filterToolsByRisk` so a scoped agent loses high-blast tools entirely (stricter than the global floor). Needs a migration + server fn + UI; deferred while another lane holds the migrations directory.
+- **Live verification** of the migration + the loop filter + the approval-card chip (needs the founder's publish + API keys).
+- **Catalogue completeness**: keep every `TOOL_REGISTRY` tool entered in `CONSEQUENCES` so the fail-closed `high` default never over-gates a genuinely low-risk new tool.

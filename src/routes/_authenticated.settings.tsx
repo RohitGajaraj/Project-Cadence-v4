@@ -18,7 +18,7 @@ import { TopBar } from "@/components/cadence/TopBar";
 import { MonoLabel, StepDot, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
-import { listAgents } from "@/lib/agents.functions";
+import { listAgents, setAgentToolCap } from "@/lib/agents.functions";
 import { MODELS } from "@/lib/ai/models";
 import {
   listIntegrations,
@@ -1321,7 +1321,74 @@ function ByoKeysSection() {
    Production has no disable-agent capability — the toggle states the truth
    (gated in Govern), exactly the reference's honest toast. ---- */
 
-type AgentRow = { id: string; slug: string; name: string; role: string; enabled: boolean };
+type AgentRow = {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  enabled: boolean;
+  max_tool_risk?: string | null;
+};
+
+// FND-0.5 per-agent blast-radius cap control. Sets agents.max_tool_risk; the agent loop then drops
+// any tool whose blast-radius tier exceeds the cap. "Unrestricted" (null) is the default.
+const TOOL_CAP_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Unrestricted" },
+  { value: "low", label: "Low reach" },
+  { value: "medium", label: "Medium reach" },
+  { value: "high", label: "High reach" },
+];
+
+function AgentToolCap({ agent }: { agent: AgentRow }) {
+  const qc = useQueryClient();
+  const fSet = useServerFn(setAgentToolCap);
+  const m = useMutation({
+    mutationFn: (v: string) =>
+      fSet({
+        data: {
+          agentId: agent.id,
+          maxToolRisk: v === "" ? null : (v as "low" | "medium" | "high"),
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents"] });
+      toast(`${agent.name}: tool reach updated`);
+    },
+    onError: (e) => toast((e as Error).message),
+  });
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span
+        className="mono-label"
+        style={{ fontSize: 8.5, color: "var(--ink-faint)", flexShrink: 0 }}
+      >
+        Tool reach
+      </span>
+      <select
+        value={agent.max_tool_risk ?? ""}
+        disabled={m.isPending}
+        onChange={(e) => m.mutate(e.target.value)}
+        title="Cap the blast radius of the tools this agent can call"
+        style={{
+          flex: 1,
+          minWidth: 0,
+          fontSize: 11,
+          padding: "3px 6px",
+          borderRadius: 6,
+          border: "1px solid var(--hairline)",
+          background: "var(--canvas)",
+          color: "var(--ink)",
+        }}
+      >
+        {TOOL_CAP_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function StaffTab() {
   const fAgents = useServerFn(listAgents);
@@ -1373,48 +1440,51 @@ function StaffTab() {
         <div
           key={a.slug}
           className="bento"
-          style={{ padding: 14, display: "flex", alignItems: "center", gap: 10 }}
+          style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="font-display" style={{ fontSize: 15 }}>
-              {a.name}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="font-display" style={{ fontSize: 15 }}>
+                {a.name}
+              </div>
+              <div className="mono-label" style={{ fontSize: 8.5 }}>
+                {a.role}
+              </div>
             </div>
-            <div className="mono-label" style={{ fontSize: 8.5 }}>
-              {a.role}
-            </div>
-          </div>
-          <button
-            role="switch"
-            aria-checked={a.enabled}
-            title={`${a.name} ${a.enabled ? "enabled" : "disabled"}`}
-            onClick={() =>
-              toast(
-                a.enabled
-                  ? `${a.name} stays on. Disabling agents is gated in Govern.`
-                  : `${a.name} stays off. Enabling agents is gated in Govern.`,
-              )
-            }
-            style={{
-              width: 30,
-              height: 17,
-              borderRadius: 99,
-              background: a.enabled ? "var(--deep-green)" : "var(--surface-2)",
-              position: "relative",
-              flexShrink: 0,
-            }}
-          >
-            <span
+            <button
+              role="switch"
+              aria-checked={a.enabled}
+              title={`${a.name} ${a.enabled ? "enabled" : "disabled"}`}
+              onClick={() =>
+                toast(
+                  a.enabled
+                    ? `${a.name} stays on. Disabling agents is gated in Govern.`
+                    : `${a.name} stays off. Enabling agents is gated in Govern.`,
+                )
+              }
               style={{
-                position: "absolute",
-                ...(a.enabled ? { right: 2 } : { left: 2 }),
-                top: 2,
-                width: 13,
-                height: 13,
+                width: 30,
+                height: 17,
                 borderRadius: 99,
-                background: "var(--canvas)",
+                background: a.enabled ? "var(--deep-green)" : "var(--surface-2)",
+                position: "relative",
+                flexShrink: 0,
               }}
-            ></span>
-          </button>
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  ...(a.enabled ? { right: 2 } : { left: 2 }),
+                  top: 2,
+                  width: 13,
+                  height: 13,
+                  borderRadius: 99,
+                  background: "var(--canvas)",
+                }}
+              ></span>
+            </button>
+          </div>
+          <AgentToolCap agent={a} />
         </div>
       ))}
     </div>

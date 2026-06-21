@@ -219,13 +219,19 @@ export function isExternalTool(toolName: string | null | undefined): boolean {
 /**
  * Static blast-radius tier from (reversibility x scope). Irreversible is always high;
  * an external partial write is high; an external reversible write or an internal partial
- * write is medium; an internal reversible write is low. An uncatalogued tool is medium
- * (unknown blast radius, so prompt review rather than over- or under-claim).
+ * write is medium; an internal reversible write is low.
+ *
+ * Fail-closed for the unknown cases since this gates enforcement (the per-agent cap drops a
+ * tool above its tier; the min-confirm floor gates high-blast tools): a REAL tool name we have
+ * not catalogued is treated as `high` (unknown blast radius = maximal), so an un-vetted tool can
+ * never slip past a low/medium cap and is always floored. Catalogue every TOOL_REGISTRY tool in
+ * CONSEQUENCES to keep this from over-gating a genuinely low-risk new tool. A null/absent tool
+ * name (a non-tool gate, not a tool) stays neutral `medium` — it just never shows the high chip.
  */
 export function toolRisk(toolName: string | null | undefined): ToolRisk {
   if (!toolName) return "medium";
   const cat = CONSEQUENCES[toolName];
-  if (!cat) return "medium";
+  if (!cat) return "high";
   if (cat.reversible === "irreversible") return "high";
   const external = EXTERNAL_TOOLS.has(toolName);
   if (external) return cat.reversible === "partial" ? "high" : "medium";
