@@ -110,7 +110,8 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
 
           return json({ ok: true, created: rows.length });
         } catch (e) {
-          return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+          console.error("[ingest-signals]", e);
+          return json({ ok: false, error: "internal error" }, 500);
         }
       },
     },
