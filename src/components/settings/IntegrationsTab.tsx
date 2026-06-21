@@ -6,11 +6,14 @@
 // operator issue and revoke per-workspace MCP tokens and copy the connection
 // details, so an external agent can use Cadence as a governed tool.
 //
-// Honesty note: /api/mcp is a JSON-RPC-over-HTTP endpoint (bearer auth), not
-// the full MCP streamable-HTTP transport. So the connection panel leads with a
-// working curl example and the exact method list, not a fabricated desktop
-// client config that would not handshake (the "claim never outruns wiring"
-// law).
+// Honesty note (Phase 4a, 2026-06-21): /api/mcp now speaks the native MCP
+// request/response methods (initialize / ping / tools.list / tools.call /
+// notifications) over JSON-RPC-over-HTTP, so a standards-compliant MCP client
+// that accepts a single JSON response and a manually-pasted bearer header
+// completes the handshake. SSE/streamable streaming and OAuth auto-discovery
+// remain Phase 4b, so the panel still leads with the working curl + bearer
+// contract rather than promising zero-config desktop discovery ("claim never
+// outruns wiring").
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -337,7 +340,9 @@ export function IntegrationsTab() {
         <MonoLabel style={{ marginBottom: 4 }}>How to connect</MonoLabel>
         <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
           Point any MCP-aware or HTTP client at the endpoint below, with your token as a bearer
-          header. It speaks JSON-RPC 2.0.
+          header. It speaks the native MCP handshake (initialize, tools/list, tools/call) over
+          JSON-RPC 2.0, so a standards client connects with a pasted bearer header. The curl below
+          works as-is.
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>

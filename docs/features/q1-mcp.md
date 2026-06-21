@@ -1,12 +1,12 @@
 # Q1-MCP · Read-only Model Context Protocol (MCP) server
 
-> _Created: 2026-06-17 · Last updated: 2026-06-17_
+> _Created: 2026-06-17 · Last updated: 2026-06-21_
 
-**Status:** ◐ Partial (Phases 1-3 complete: backend + token UI shipped; Phase 4 / Q2 future)  
+**Status:** ◐ Partial (Phases 1-3 + Phase 4a complete: backend + token UI + native MCP transport handshake shipped; Phase 4b / Q2 future)  
 **Lanes:** F (INTEROP / the neutral brain)  
-**P-tier:** P1 (pull forward — the neutral-brain moat)  
-**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17  
-**What's next:** Phase 4 (Q2, future) — full CRUD + external agent discovery + full MCP streamable-HTTP transport handshake.
+**P-tier:** Tier 1 (Build Sequence #11 — the neutral-brain moat)  
+**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17, Phase 4a transport 2026-06-21  
+**What's next:** Phase 4b (Q2, future) — OAuth client registration + auto-discovery, SSE/streamable-HTTP session streaming, and full write CRUD with per-lane scope.
 
 ---
 
@@ -15,6 +15,7 @@
 **Cadence as a neutral brain:** external agents (Claude with MCP, Cursor, ChatGPT, other AI frameworks) can read signals, opportunities, PRDs and append decisions via HTTP, governed by workspace scope, rate limits, and audit logging.
 
 The MCP server exposes four read-only + one write tool:
+
 - **`search_signals`** — keyword/theme search with pagination (limit/offset)
 - **`search_opportunities`** — ICE-filtered search by title/problem
 - **`get_prd`** — fetch a specific PRD spec by ID
@@ -25,7 +26,7 @@ All calls require a bearer token (workspace-scoped), enforce per-token rate limi
 
 ### The moat
 
-If the loop closes on real data, *and* the data is readable by other agents, then the incumbent threat (a PM using their own Claude instance + Cadence's output) vanishes. The data lives here; other agents are tools, not competitors.
+If the loop closes on real data, _and_ the data is readable by other agents, then the incumbent threat (a PM using their own Claude instance + Cadence's output) vanishes. The data lives here; other agents are tools, not competitors.
 
 ---
 
@@ -34,6 +35,7 @@ If the loop closes on real data, *and* the data is readable by other agents, the
 ### Tables (migration `20260617150000`)
 
 **`mcp_tokens`** — issued per workspace + user, revocable, rate-limited.
+
 - `id` (UUID, PK)
 - `workspace_id` (FK workspaces) — scopes token to one workspace
 - `user_id` (FK auth.users) — who issued the token
@@ -45,6 +47,7 @@ If the loop closes on real data, *and* the data is readable by other agents, the
 - **RLS:** workspace members can read (SELECT). Service-role only for INSERT/UPDATE/DELETE.
 
 **`api_calls`** — audit trail for all MCP tool calls.
+
 - `id` (UUID, PK)
 - `token_id` (FK mcp_tokens, CASCADE)
 - `workspace_id` (FK workspaces)
@@ -70,9 +73,15 @@ If the loop closes on real data, *and* the data is readable by other agents, the
 8. **Return MCP response** — `{ jsonrpc, result, id }` (success) or `{ jsonrpc, error, id }` (error)
 
 **Error codes:**
-- `-32003` (Invalid Request) — missing/malformed token
+
+- `-32003` (Invalid Request) — missing/malformed token (HTTP 401)
 - `-32002` (Server Error, rate limit) — rate limit exceeded (HTTP 429)
-- `-32603` (Internal Error) — tool execution failed or server error (HTTP 400/500)
+- `-32601` (Method not found) — unknown method (HTTP 200, request-level error; see below)
+- `-32602` (Invalid params) — unknown or missing `tools/call` tool name (HTTP 200)
+- `-32600` (Invalid Request) — unsupported `MCP-Protocol-Version` request header (HTTP 400)
+- `-32603` (Internal Error) — server exception (HTTP 500)
+
+**HTTP-status convention (Phase 4a):** transport/auth failures use HTTP status codes (401/429/400/500); request-level JSON-RPC errors (unknown method, bad tool name) return **HTTP 200 with a JSON-RPC `error` body** per the MCP-over-HTTP transport, so a client reads the error from the body. A legacy flat-method tool-execution failure still returns HTTP 400 (unchanged). Tool-execution errors from the standard `tools/call` are reported in the result as `{ content, isError: true }` (not a JSON-RPC error), so a calling model can see them.
 
 **Service-role client:** token validation and tool dispatch both use `createClient(SUPABASE_SERVICE_ROLE_KEY)` — no user context. RLS gates reads to the workspace.
 
@@ -110,11 +119,12 @@ Placeholder in the schema (`input_tokens`, `output_tokens`, `cost_usd` on `api_c
 - [x] Rate-limit enforcement (per-token, per-minute)
 - [x] All four tools wired (search_signals, search_opportunities, get_prd, append_decision)
 - [x] Audit logging on every call (success/error/rate-limit)
-- [x] CORS headers (Access-Control-Allow-Origin: *)
+- [x] CORS headers (Access-Control-Allow-Origin: \*)
 - [x] OPTIONS preflight support
 - [x] Build: tsc clean + bundle succeeds
 
 **Test vector (manual):**
+
 ```bash
 # Issue a token (via Settings > Integrations in Phase 3, or direct RPC call)
 curl -X POST https://<host>/api/mcp \
@@ -132,24 +142,43 @@ curl -X POST https://<host>/api/mcp \
 **Surface:** Settings → **Integrations** tab (`/settings?section=interop`).
 
 **What shipped:**
+
 - **Issue a token:** name input (`slug`) + per-minute rate limit (1-1000, default 60) → `issueMCPToken` → the full `slug:secret` renders once in an ember-tinted box with an explicit "copy it now, it will not be shown again" warning + copy button. The secret is generated server-side, returned once, never persisted plaintext (only the SHA256 hash is stored), and never logged.
 - **Active tokens:** `listMCPTokens` table — name, created, last used, rate limit, active/revoked.
 - **Revoke:** confirm-gated (destructive `useConfirm`) → `revokeMCPToken` sets `revoked_at`; the row dims to revoked. Any external agent on that token stops immediately.
 - **How to connect:** the live endpoint (`<origin>/api/mcp`), the `Authorization: Bearer slug:secret` contract, a copy-paste **working `curl`** example, and the four-method list.
 
-**Honesty note (claim-never-outruns-wiring):** `/api/mcp` is a **JSON-RPC-over-HTTP** endpoint with bearer auth, not the full MCP streamable-HTTP transport (no `initialize`/SSE session handshake). So the UI leads with a `curl` example that genuinely works against the implemented route, and frames it as "point any MCP-aware or HTTP client here" rather than shipping a Claude Desktop `mcpServers` config that would not handshake. A full MCP-transport adapter is the documented Phase 4 fast-follow.
+**Honesty note (claim-never-outruns-wiring), updated 2026-06-21:** as of Phase 4a, `/api/mcp` now speaks the native MCP request/response methods (`initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `prompts/list`, `notifications/*`) over JSON-RPC-over-HTTP, so a standards-compliant MCP client that accepts a single `application/json` response and a manually-pasted bearer header (e.g. Claude Desktop with custom headers) completes the handshake. Two MCP transport MUSTs remain Phase 4b, so the claim stays honest: (1) **no SSE/streamable session** (the endpoint always replies in JSON mode; it does not negotiate `text/event-stream` or implement a GET stream), and (2) **no OAuth auto-discovery** (the 401 carries no `WWW-Authenticate` metadata, so connection requires a manually-supplied `Authorization: Bearer <slug>:<secret>`; OAuth client registration is Phase 4b). The legacy flat methods + the working `curl` are unchanged.
 
 **Files:**
+
 - `src/components/settings/IntegrationsTab.tsx` (new) — the whole tab (issue / list / revoke / connect).
 - `src/routes/_authenticated.settings.tsx` — `SectionId` adds `"interop"`, one `TABS` entry ("Integrations"), one render branch. No new server fn, no migration (consumes the shipped Phase 1 `mcp.functions.ts`).
 
 ---
 
-## Phase 4 (Q2, future): Full CRUD + external discovery
+## Phase 4a (shipped 2026-06-21): native MCP transport handshake
+
+Closes the "full streamable-HTTP transport handshake" half of the Phase 4 fast-follow so a standards-compliant MCP client can connect (the OAuth/CRUD half is Phase 4b, below).
+
+**What shipped:**
+
+- New **pure** `src/lib/mcp-protocol.ts` (32 unit tests): the wire protocol as a side-effect-free layer. `classifyMcpRequest` returns a discriminated union (`initialize` / `ping` / `tools/list` / `resources/list` / `prompts/list` / `tools/call` / `notification` / `legacy` / `error`); `buildInitializeResult` (capabilities + `serverInfo` + version negotiation via `negotiateProtocolVersion`, echo-if-supported else latest); `buildToolsListResult` (single-source tool catalog `MCP_TOOLS`); `buildToolCallResult` (the `{ content: [{type:"text",text}], isError }` envelope); `isNotification` (no `id` OR `notifications/*` => no response); and `jsonRpcResult`/`jsonRpcError` builders.
+- `src/routes/api/mcp.ts` now classifies every request and routes standard methods to spec-correct handlers, **before** the unchanged legacy flat-method dispatch. The legacy `tools`/`resources` discovery now reads the same `MCP_TOOLS` catalog (no drift). Notifications get a `202` with no body. An unsupported `MCP-Protocol-Version` request header returns `400`.
+- Capabilities advertise only `tools` (not `resources`/`prompts`, which answer empty for tolerance but have no read path until Phase 4b).
+
+**Back-compat (byte-identical for existing callers):** the four legacy flat methods + the legacy discovery are dispatched through the original code path unchanged, including their HTTP statuses. Two observable, more-spec-correct behavior changes: an `id`-less request is now a JSON-RPC **notification** (`202`, no body) and an unknown method now returns **HTTP 200** with a JSON-RPC error body (was 400). No external clients are registered yet (registration is Phase 4b), so there is no production consumer affected.
+
+**Scope boundary (honest):** JSON response mode only (no SSE session), and manual bearer header only (no OAuth discovery). Both are Phase 4b.
+
+---
+
+## Phase 4b (Q2, future): OAuth discovery + SSE streaming + full CRUD
 
 - **Q2** — peer agents discover Cadence + call us with scoped/audited writes
+  - OAuth client registration + `WWW-Authenticate` / `.well-known/oauth-protected-resource` metadata for auto-discovery
+  - SSE / streamable-HTTP session transport (`Accept: text/event-stream`, GET stream)
   - Full CRUD (signals, opps, PRDs, missions, outcomes) with approval gates
-  - OAuth client registration for external agents
   - Scoped read/write (agent can only touch opps/specs in a specific lane)
 - Not in scope for this session; part of the M-D (Launch & Learn) milestone.
 
@@ -157,10 +186,10 @@ curl -X POST https://<host>/api/mcp \
 
 ## Known quirks / next steps
 
-1. **Cost tracking:** placeholder values (0 tokens, $0). Wire up actual counts in Phase 3 if cost attribution is live.
+1. **Cost tracking:** placeholder values (0 tokens, $0). Wire up actual counts when cost attribution is live.
 2. **Fail-open rate limiting:** if DB query fails, the call proceeds. This is intentional (availability over strictness), but means a DB outage isn't a hard gate.
 3. **Approval gate on append_decision:** writes go to decision_queue (pending_review). The human must approve; no auto-execution from external source.
-4. **No versioning on tools:** if the tool schema changes (params, return shape), external agents break. Phase 4 will add a `version` param or namespace the tools.
+4. **No versioning on tools:** if the tool schema changes (params, return shape), external agents break. Phase 4b will add a `version` param or namespace the tools.
 
 ---
 

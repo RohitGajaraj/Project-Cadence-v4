@@ -8,6 +8,21 @@ import {
   appendDecision,
   logMCPCall,
 } from "@/lib/mcp.functions";
+import {
+  buildInitializeResult,
+  buildToolCallResult,
+  buildToolsListResult,
+  classifyMcpRequest,
+  jsonRpcError,
+  jsonRpcResult,
+  JSONRPC_INVALID_REQUEST,
+  SUPPORTED_PROTOCOL_VERSIONS,
+} from "@/lib/mcp-protocol";
+
+const JSON_HEADERS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+} as const;
 
 /**
  * Q1-MCP · Model Context Protocol (MCP) server — Phase 2.
@@ -198,63 +213,9 @@ async function dispatchTool(
 
       case "tools":
       case "resources":
-        // Standard MCP discovery endpoints
-        return {
-          success: true,
-          data: {
-            tools: [
-              {
-                name: "search_signals",
-                description: "Search discovery signals by keyword, theme, or product",
-                inputSchema: {
-                  type: "object",
-                  properties: {
-                    query: { type: "string" },
-                    limit: { type: "number", default: 20 },
-                    offset: { type: "number", default: 0 },
-                  },
-                },
-              },
-              {
-                name: "search_opportunities",
-                description: "Search opportunities by title/problem or ICE score",
-                inputSchema: {
-                  type: "object",
-                  properties: {
-                    query: { type: "string" },
-                    min_ice: { type: "number", default: 0 },
-                    limit: { type: "number", default: 20 },
-                    offset: { type: "number", default: 0 },
-                  },
-                },
-              },
-              {
-                name: "get_prd",
-                description: "Fetch a specific PRD with cited signals and requirements",
-                inputSchema: {
-                  type: "object",
-                  properties: {
-                    prd_id: { type: "string" },
-                  },
-                  required: ["prd_id"],
-                },
-              },
-              {
-                name: "append_decision",
-                description: "Append a decision to an opportunity (approval-gated)",
-                inputSchema: {
-                  type: "object",
-                  properties: {
-                    opportunity_id: { type: "string" },
-                    decision: { type: "string" },
-                    metadata: { type: "object" },
-                  },
-                  required: ["opportunity_id", "decision"],
-                },
-              },
-            ],
-          },
-        };
+        // Legacy discovery aliases. The tool catalog lives in mcp-protocol.ts
+        // so legacy discovery and the standard tools/list never drift.
+        return { success: true, data: buildToolsListResult() };
 
       default:
         return { success: false, error: `Unknown method: ${method}` };
@@ -284,6 +245,38 @@ export const Route = createFileRoute("/api/mcp")({
             id: (body as any).id,
           };
 
+          // 1b. Classify the request (pure; no auth/DB). MCP notifications
+          //     (e.g. notifications/initialized) carry no id and MUST get no
+          //     response body, so acknowledge with 202 before any auth/DB work.
+          const dispatch = classifyMcpRequest(mcpReq);
+          if (dispatch.kind === "notification") {
+            return new Response(null, {
+              status: 202,
+              headers: { "Access-Control-Allow-Origin": "*" },
+            });
+          }
+
+          // 1c. Transport: reject a pinned MCP-Protocol-Version we cannot speak
+          //     (Streamable HTTP MUST). Absent is lenient (negotiated at
+          //     initialize); a well-behaved client only ever pins a version we
+          //     returned, so this fires only for a broken client.
+          const pinnedVersion = request.headers.get("mcp-protocol-version");
+          if (
+            pinnedVersion &&
+            !(SUPPORTED_PROTOCOL_VERSIONS as readonly string[]).includes(pinnedVersion)
+          ) {
+            return new Response(
+              JSON.stringify(
+                jsonRpcError(
+                  mcpReq.id,
+                  JSONRPC_INVALID_REQUEST,
+                  `Unsupported MCP-Protocol-Version: ${pinnedVersion}`,
+                ),
+              ),
+              { status: 400, headers: JSON_HEADERS },
+            );
+          }
+
           // 2. Extract and validate bearer token
           const authHeader = request.headers.get("authorization");
           if (!authHeader?.startsWith("Bearer ")) {
@@ -293,7 +286,7 @@ export const Route = createFileRoute("/api/mcp")({
                 error: { code: -32003, message: "Missing bearer token" },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 401, headers: { "Content-Type": "application/json" } }
+              { status: 401, headers: { "Content-Type": "application/json" } },
             );
           }
 
@@ -306,21 +299,18 @@ export const Route = createFileRoute("/api/mcp")({
                 error: { code: -32003, message: "Invalid token format" },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 401, headers: { "Content-Type": "application/json" } }
+              { status: 401, headers: { "Content-Type": "application/json" } },
             );
           }
 
           // 3. Hash the secret and validate token
-          const secretHash = crypto
-            .createHash("sha256")
-            .update(secret)
-            .digest("hex");
+          const secretHash = crypto.createHash("sha256").update(secret).digest("hex");
 
           // Create service-role client to validate token (no user context)
           const supabase = createClient(
             process.env.SUPABASE_URL || "",
             process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-            { auth: { persistSession: false } }
+            { auth: { persistSession: false } },
           ) as any;
 
           const validation = await validateToken(supabase, slug, secretHash);
@@ -334,7 +324,7 @@ export const Route = createFileRoute("/api/mcp")({
                 },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 401, headers: { "Content-Type": "application/json" } }
+              { status: 401, headers: { "Content-Type": "application/json" } },
             );
           }
 
@@ -348,7 +338,7 @@ export const Route = createFileRoute("/api/mcp")({
                 error: { code: -32003, message: "Token validation failed" },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 401, headers: { "Content-Type": "application/json" } }
+              { status: 401, headers: { "Content-Type": "application/json" } },
             );
           }
 
@@ -368,7 +358,7 @@ export const Route = createFileRoute("/api/mcp")({
                 tool_name: mcpReq.method,
                 result: "rate_limit",
               },
-              supabase
+              supabase,
             );
 
             return new Response(
@@ -380,16 +370,110 @@ export const Route = createFileRoute("/api/mcp")({
                 },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 429, headers: { "Content-Type": "application/json" } }
+              { status: 429, headers: { "Content-Type": "application/json" } },
             );
           }
 
-          // 5. Dispatch the tool
+          // 5a. Standard MCP methods get spec-correct handlers. Legacy flat
+          //     methods (search_signals, etc.) and the legacy tools/resources
+          //     discovery fall through to the unchanged block below, so every
+          //     existing HTTP caller stays byte-identical.
+          if (
+            dispatch.kind === "initialize" ||
+            dispatch.kind === "ping" ||
+            dispatch.kind === "tools/list" ||
+            dispatch.kind === "resources/list" ||
+            dispatch.kind === "prompts/list"
+          ) {
+            const result =
+              dispatch.kind === "initialize"
+                ? buildInitializeResult(dispatch.protocolVersion)
+                : dispatch.kind === "tools/list"
+                  ? buildToolsListResult()
+                  : dispatch.kind === "resources/list"
+                    ? { resources: [] }
+                    : dispatch.kind === "prompts/list"
+                      ? { prompts: [] }
+                      : {}; // ping
+            await logMCPCall(
+              {
+                token_id,
+                workspace_id,
+                tool_name: dispatch.kind,
+                result: "success",
+                metadata: { elapsed_ms: Date.now() - startTime },
+              },
+              supabase,
+            );
+            return new Response(JSON.stringify(jsonRpcResult(mcpReq.id, result)), {
+              status: 200,
+              headers: JSON_HEADERS,
+            });
+          }
+
+          // 5b. Classification-level errors (unknown method / unknown or
+          //     missing tool name). Reported as a JSON-RPC error over HTTP 200
+          //     per the MCP-over-HTTP transport (clients read the body).
+          if (dispatch.kind === "error") {
+            // For a tools/call rejection the method is "tools/call"; record the
+            // attempted tool name so the audit trail shows what was probed.
+            const attemptedTool =
+              typeof mcpReq.params?.name === "string" ? mcpReq.params.name : undefined;
+            await logMCPCall(
+              {
+                token_id,
+                workspace_id,
+                tool_name: mcpReq.method,
+                result: "error",
+                error_message: dispatch.error.message,
+                metadata: { elapsed_ms: Date.now() - startTime, attempted_tool: attemptedTool },
+              },
+              supabase,
+            );
+            return new Response(
+              JSON.stringify(jsonRpcError(mcpReq.id, dispatch.error.code, dispatch.error.message)),
+              { status: 200, headers: JSON_HEADERS },
+            );
+          }
+
+          // 5c. Standard tools/call: dispatch the named tool, then wrap the
+          //     output in the MCP content envelope. Tool EXECUTION errors are
+          //     reported in the result (isError) so a calling model sees them,
+          //     not as a JSON-RPC protocol error.
+          if (dispatch.kind === "tools/call") {
+            const callResult = await dispatchTool(
+              supabase,
+              dispatch.toolName,
+              workspace_id,
+              dispatch.args,
+            );
+            await logMCPCall(
+              {
+                token_id,
+                workspace_id,
+                tool_name: dispatch.toolName,
+                result: callResult.success ? "success" : "error",
+                error_message: callResult.error,
+                metadata: { elapsed_ms: Date.now() - startTime },
+              },
+              supabase,
+            );
+            const envelope = buildToolCallResult(
+              callResult.success ? callResult.data : (callResult.error ?? "Tool execution failed"),
+              !callResult.success,
+            );
+            return new Response(JSON.stringify(jsonRpcResult(mcpReq.id, envelope)), {
+              status: 200,
+              headers: JSON_HEADERS,
+            });
+          }
+
+          // 5. Dispatch the tool (legacy flat-method path, unchanged)
           const toolResult = await dispatchTool(
             supabase,
             mcpReq.method,
             workspace_id,
-            mcpReq.params || {}
+            mcpReq.params || {},
           );
 
           // 6. Log the call (success or failure)
@@ -405,7 +489,7 @@ export const Route = createFileRoute("/api/mcp")({
                 elapsed_ms: elapsedMs,
               },
             },
-            supabase
+            supabase,
           );
 
           if (!toolResult.success) {
@@ -418,7 +502,7 @@ export const Route = createFileRoute("/api/mcp")({
                 },
                 id: mcpReq.id,
               } as MCPResponse),
-              { status: 400, headers: { "Content-Type": "application/json" } }
+              { status: 400, headers: { "Content-Type": "application/json" } },
             );
           }
 
@@ -435,7 +519,7 @@ export const Route = createFileRoute("/api/mcp")({
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
               },
-            }
+            },
           );
         } catch (err) {
           const error = err instanceof Error ? err.message : "Unknown error";
@@ -445,7 +529,7 @@ export const Route = createFileRoute("/api/mcp")({
             const supabase = createClient(
               process.env.SUPABASE_URL || "",
               process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-              { auth: { persistSession: false } }
+              { auth: { persistSession: false } },
             ) as any;
             await logMCPCall(
               {
@@ -455,7 +539,7 @@ export const Route = createFileRoute("/api/mcp")({
                 result: "error",
                 error_message: error,
               },
-              supabase
+              supabase,
             );
           }
 
@@ -465,7 +549,7 @@ export const Route = createFileRoute("/api/mcp")({
               error: { code: -32603, message: error },
               id: mcpReq.id,
             } as MCPResponse),
-            { status: 500, headers: { "Content-Type": "application/json" } }
+            { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
       },
@@ -476,8 +560,7 @@ export const Route = createFileRoute("/api/mcp")({
           headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers":
-              "Content-Type, Authorization, Accept",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
           },
         }),
     },
