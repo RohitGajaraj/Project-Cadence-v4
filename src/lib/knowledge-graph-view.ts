@@ -399,11 +399,20 @@ export type SupersessionLink = {
   peerId: string;
   /** True when this link means the selected node's OWN belief was revised by a later outcome. */
   retiresSelf: boolean;
+  /**
+   * Bi-temporal: this supersession assertion is no longer current (its `valid_to`
+   * was stamped because a later outcome reversed it). Invalidate-don't-delete, so
+   * the retired belief stays visible as history. False until the engine + the
+   * migration's `valid_to` column are live (the field is simply absent before then).
+   */
+  retired: boolean;
+  /** When the assertion stopped being current (ISO), or null while it still holds. */
+  retiredAt: string | null;
 };
 
 export type SupersessionStory = {
   links: SupersessionLink[];
-  /** The selected node's belief was later superseded or contradicted by a recorded outcome. */
+  /** The node's belief is CURRENTLY superseded/contradicted (excludes reversed-and-retired revisions). */
   revised: boolean;
 };
 
@@ -416,6 +425,8 @@ export type LineageRowLike = {
   parent_id?: string | null;
   child_kind?: string | null;
   child_id?: string | null;
+  /** Bi-temporal stamp; present once the DBR-1.5 migration is live, else undefined. */
+  valid_to?: string | null;
 };
 
 /** PURE. True for the two relations the supersession engine writes. */
@@ -435,8 +446,10 @@ export function isSupersessionRelation(raw: string | null | undefined): boolean 
  *  - descendant + `supersedes`  => THIS node supersedes child => "Supersedes child"
  *  - descendant + `contradicts` => "Contradicts child"
  *
- * Self-revised links are listed first (the most important signal). Fail-safe on
- * malformed / non-array input; dedups by edge id so a self-loop can't double-count.
+ * Self-revised links are listed first, and CURRENT links before retired ones (the
+ * bi-temporal `valid_to`): a reversed-and-retired assertion stays visible as history
+ * but is de-emphasized. Fail-safe on malformed / non-array input; dedups by edge id
+ * so a self-loop can't double-count.
  */
 export function buildSupersessionStory(
   ancestors: LineageRowLike[] | null | undefined,
@@ -458,6 +471,7 @@ export function buildSupersessionStory(
       seen.add(r.id);
       const peerKind = (peerSide === "parent" ? r.parent_kind : r.child_kind) ?? "";
       const peerId = (peerSide === "parent" ? r.parent_id : r.child_id) ?? "";
+      const retiredAt = typeof r.valid_to === "string" && r.valid_to.trim() ? r.valid_to : null;
       links.push({
         id: r.id,
         direction,
@@ -466,6 +480,8 @@ export function buildSupersessionStory(
         peerKind,
         peerId,
         retiresSelf: direction === "superseded-by" || direction === "contradicted-by",
+        retired: retiredAt !== null,
+        retiredAt,
       });
     }
   };
@@ -474,5 +490,10 @@ export function buildSupersessionStory(
   collect(ancestors, "parent", { supersedes: "superseded-by", contradicts: "contradicted-by" });
   collect(descendants, "child", { supersedes: "supersedes", contradicts: "contradicts" });
 
-  return { links, revised: links.some((l) => l.retiresSelf) };
+  // Current links before retired ones (insertion order preserved within each group).
+  const ordered = [...links.filter((l) => !l.retired), ...links.filter((l) => l.retired)];
+
+  // "Revised" reflects the node's belief RIGHT NOW: a self-retiring link that has
+  // itself been reversed (retired) no longer means the belief is currently revised.
+  return { links: ordered, revised: ordered.some((l) => l.retiresSelf && !l.retired) };
 }

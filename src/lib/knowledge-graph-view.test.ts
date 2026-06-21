@@ -312,4 +312,51 @@ describe("buildSupersessionStory", () => {
     const story = buildSupersessionStory([same], [sameChild]);
     expect(story.links).toHaveLength(1);
   });
+
+  it("treats a current link as not retired (valid_to absent or null)", () => {
+    const a = row({ id: "cur", relation: "supersedes", parent_kind: "prd", parent_id: "A" });
+    const story = buildSupersessionStory([a], []);
+    expect(story.links[0].retired).toBe(false);
+    expect(story.links[0].retiredAt).toBeNull();
+    expect(story.revised).toBe(true);
+  });
+
+  it("marks a stamped valid_to as retired and EXCLUDES it from 'revised' (reversed revision)", () => {
+    const retired = row({
+      id: "rev",
+      relation: "supersedes",
+      parent_kind: "prd",
+      parent_id: "A",
+      valid_to: "2026-06-20T00:00:00.000Z",
+    });
+    const story = buildSupersessionStory([retired], []);
+    expect(story.links[0].retired).toBe(true);
+    expect(story.links[0].retiredAt).toBe("2026-06-20T00:00:00.000Z");
+    // The only self-retiring link has itself been reversed, so the belief is NOT currently revised.
+    expect(story.revised).toBe(false);
+  });
+
+  it("orders current links before retired ones", () => {
+    const retired = row({
+      id: "old",
+      relation: "supersedes",
+      parent_kind: "prd",
+      parent_id: "A",
+      valid_to: "2026-06-19T00:00:00.000Z",
+    });
+    const current = row({ id: "new", relation: "contradicts", child_kind: "prd", child_id: "B" });
+    const story = buildSupersessionStory([retired], [current]);
+    expect(story.links.map((l) => l.id)).toEqual(["new", "old"]);
+  });
+
+  it("treats a blank/whitespace valid_to as still current", () => {
+    const blank = row({
+      id: "blank",
+      relation: "supersedes",
+      parent_kind: "prd",
+      parent_id: "A",
+      valid_to: "   ",
+    });
+    expect(buildSupersessionStory([blank], []).links[0].retired).toBe(false);
+  });
 });

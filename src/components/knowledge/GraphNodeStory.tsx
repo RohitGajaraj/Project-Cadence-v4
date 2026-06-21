@@ -213,13 +213,20 @@ function SupersessionSection({
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {story.links.slice(0, 8).map((l) => {
           const canFocus = !!l.peerKind && !!l.peerId;
+          // Guard the date so a malformed valid_to can never render "Invalid Date".
+          const retiredOn =
+            l.retiredAt && !Number.isNaN(Date.parse(l.retiredAt))
+              ? new Date(l.retiredAt).toLocaleDateString()
+              : null;
           return (
             <button
               key={l.id}
               type="button"
               disabled={!canFocus}
               onClick={() => canFocus && onFocus(l.peerKind, l.peerId)}
-              aria-label={`${l.label} ${l.peerTitle || "untitled"}`}
+              aria-label={`${l.label} ${l.peerTitle || "untitled"}${
+                l.retired ? " (no longer current)" : ""
+              }`}
               style={{
                 background: "none",
                 border: "none",
@@ -235,6 +242,8 @@ function SupersessionSection({
                 alignItems: "baseline",
                 fontSize: 12,
                 color: "var(--ink-muted)",
+                // Retired (reversed) assertions stay visible as history, de-emphasized.
+                opacity: l.retired ? 0.5 : 1,
               }}
             >
               <span
@@ -247,13 +256,30 @@ function SupersessionSection({
                   borderRadius: 4,
                   padding: "1px 4px",
                   opacity: 0.85,
+                  textDecoration: l.retired ? "line-through" : undefined,
                 }}
               >
                 {l.label}
               </span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  minWidth: 0,
+                  flexShrink: 1,
+                }}
+              >
                 {l.peerTitle || "(untitled)"}
               </span>
+              {l.retired && (
+                <span
+                  className="mono-label"
+                  style={{ fontSize: 8, color: "var(--ink-faint)", flexShrink: 0 }}
+                >
+                  {retiredOn ? `· no longer current · ${retiredOn}` : "· no longer current"}
+                </span>
+              )}
             </button>
           );
         })}
