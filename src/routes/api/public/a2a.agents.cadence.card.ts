@@ -70,6 +70,13 @@ export const Route = createFileRoute("/api/public/a2a/agents/cadence/card")({
                 "Summarize recent agent traces with cost, latency, judge scores, and guardrail outcomes.",
               tags: ["aiops", "telemetry"],
             },
+            {
+              id: "knowledge.export_skillpack",
+              name: "Export a skill-pack",
+              description:
+                "Export the workspace's distilled, citable lessons as a versioned, content-hashed skill-pack for a peer agent to reuse.",
+              tags: ["knowledge", "memory", "interop"],
+            },
           ],
           policies: {
             destructive_actions_require_approval: true,

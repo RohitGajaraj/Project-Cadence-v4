@@ -26,6 +26,15 @@
 
 ## Decision log
 
+### 2026-06-22 · Whole-dashboard ◐ closure: "partial" was mostly mislabeled done-work, not unfinished work
+
+**Context.** After the monetization closure, the founder looked at the top of the dashboard and saw rows they remembered as DONE now showing `◐` partial ("why is it partial now, when work was done + we spent on it?"). They demanded a rigorous re-verify ("do the testing, see the documents, don't just mark it on my words") and a permanent close.
+
+**Finding.** Two things, both verified with data: (1) **No regression** — `✅` went 125→132→144, never decreased; ZERO rows flipped `✅`→`◐`. The *appearance* of "done became partial" was the `rerank-dashboard.py` re-sort: it orders the active build-front (`◐`/`⬜`) FIRST, so after a rerank the top of the list (#1-18) is all the partial/open items and the `✅` rows sink to the bottom (#90+). (2) A 16-agent adversarial verification workflow (file:line evidence, ran the test suites per item) proved that **most `◐` rows were build-complete work** mislabeled "partial" under the cautious K2-incident "renders on publish" convention (HARD GATE 3). Of 16 ◐ items: 12 were build-complete + gate-green (closed `✅`), 4 genuinely need the founder (closed `Gated`), and only a couple had a real buildable slice (O3's MCP-UI wiring, built this pass).
+
+**Decision.** The "renders on publish" convention created a systemic mislabel: it kept *finished* work at `◐` indefinitely, which (because `◐`+Tier is `lane.sh next`'s pick predicate) made every session re-pick + re-verify it — the exact churn the founder kept hitting. **New standing rule:** an item that is built + gate-green and whose ONLY remainder is a founder publish/flag/config/decision is `✅` (if the work is done and the founder publishes — which they do every session) or `Gated` 👤 (if a founder *decision* is pending), NEVER left `◐`+Tier. `◐` is reserved for items with a genuine remaining BUILDABLE slice. This is the same lesson as the monetization-block closure, now applied dashboard-wide: strict completion went 69.8% → 80.4% not by building 19 new things but by telling the truth about what was already done.
+
+
 ### 2026-06-22 · PERMANENTLY close the monetization/credit/billing block (stop the re-pick churn at its root)
 
 **Context.** The founder flagged that this was the **3rd time** an agent was re-mapping Lovable's monetization/credit/billing work ("is it not documented properly, or is it not logically closed?"). They ruled: reuse what exists, close it logically, mark done where done, leave a note so it is never a gray area, and never re-pick it — by me or any future session.

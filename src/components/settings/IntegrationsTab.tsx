@@ -34,6 +34,10 @@ const MCP_METHODS = [
   { name: "search_opportunities", desc: "Search opportunities by title/problem or ICE" },
   { name: "get_prd", desc: "Fetch a PRD with its requirements" },
   { name: "append_decision", desc: "Append a decision to an opportunity (approval-gated)" },
+  {
+    name: "export_skillpack",
+    desc: "Export the workspace's distilled lessons as a versioned skill-pack",
+  },
 ];
 
 function fmtDate(iso: string | null): string {
