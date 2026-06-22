@@ -15,9 +15,21 @@ import {
 
 const ROWS: { key: "Approvals" | "Health" | "Budget" | "Drift"; label: string; desc: string }[] = [
   { key: "Approvals", label: "Approvals Needed", desc: "Tool runs waiting on human decision." },
-  { key: "Health", label: "Loop Health & Stalls", desc: "Stalled agent runs and run status flags." },
-  { key: "Budget", label: "Spend & Budgets", desc: "Spend nearing daily or monthly limit thresholds." },
-  { key: "Drift", label: "Output Drift & Trends", desc: "Tripped drift detections and output quality shifts." },
+  {
+    key: "Health",
+    label: "Loop Health & Stalls",
+    desc: "Stalled agent runs and run status flags.",
+  },
+  {
+    key: "Budget",
+    label: "Spend & Budgets",
+    desc: "Spend nearing daily or monthly limit thresholds.",
+  },
+  {
+    key: "Drift",
+    label: "Output Drift & Trends",
+    desc: "Tripped drift detections and output quality shifts.",
+  },
 ];
 
 const TH: React.CSSProperties = {

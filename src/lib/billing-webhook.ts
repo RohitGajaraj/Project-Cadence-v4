@@ -100,7 +100,15 @@ type SubscriptionLike = {
   current_period_start?: number | null;
   current_period_end?: number | null;
   metadata?: { userId?: string } | null;
-  items?: { data?: Array<PriceLike & { current_period_start?: number | null; current_period_end?: number | null; price?: { product?: string } | null }> } | null;
+  items?: {
+    data?: Array<
+      PriceLike & {
+        current_period_start?: number | null;
+        current_period_end?: number | null;
+        price?: { product?: string } | null;
+      }
+    >;
+  } | null;
 };
 
 /** The `subscriptions` row we write on a `customer.subscription.created` upsert.
@@ -164,7 +172,10 @@ export function buildSubscriptionUpsert(
 }
 
 /** PURE. Assemble the `subscriptions` update patch from a `subscription.updated` event. */
-export function buildSubscriptionUpdate(sub: SubscriptionLike, nowIso: string): SubscriptionUpdateRow {
+export function buildSubscriptionUpdate(
+  sub: SubscriptionLike,
+  nowIso: string,
+): SubscriptionUpdateRow {
   const item = sub?.items?.data?.[0];
   const period = resolvePeriod(item, sub);
   return {
