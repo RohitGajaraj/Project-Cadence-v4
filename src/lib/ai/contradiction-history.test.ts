@@ -165,9 +165,19 @@ describe("edge-confidence ranking (DBR-EDGE-CONF-CRITIC)", () => {
     const out = selectContradictionHistory(
       [
         // newer but weaker
-        edge({ id: "weak", child_id: "x", created_at: "2026-06-10T00:00:00Z", inference: { confidence: 0.45 } }),
+        edge({
+          id: "weak",
+          child_id: "x",
+          created_at: "2026-06-10T00:00:00Z",
+          inference: { confidence: 0.45 },
+        }),
         // older but strong
-        edge({ id: "strong", child_id: "x", created_at: "2026-06-01T00:00:00Z", inference: { confidence: 0.95 } }),
+        edge({
+          id: "strong",
+          child_id: "x",
+          created_at: "2026-06-01T00:00:00Z",
+          inference: { confidence: 0.95 },
+        }),
       ],
       ["x"],
     );
