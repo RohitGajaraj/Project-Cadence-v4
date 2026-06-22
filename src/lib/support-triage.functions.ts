@@ -26,6 +26,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { clusterTickets, clusterToSignal, type SupportTicket } from "./support/triage";
 import { templateDraftProvider, type DraftRequest, type DraftVerdict } from "./support/draft";
+import { injectionScreenDecision, INJECTION_REVIEW_TAG } from "./support/screening";
 
 export interface SupportTicketRow {
   id: string;
@@ -173,7 +174,12 @@ export const runSupportTriage = createServerFn({ method: "POST" })
     async ({
       context,
       data,
-    }): Promise<{ clusters: number; signalsEmitted: number; ticketsTriaged: number }> => {
+    }): Promise<{
+      clusters: number;
+      signalsEmitted: number;
+      ticketsTriaged: number;
+      quarantined: number;
+    }> => {
       const sb = context.supabase as never as AnySupabase;
       const { data: rows, error } = await sb
         .from("support_tickets")
@@ -187,15 +193,30 @@ export const runSupportTriage = createServerFn({ method: "POST" })
       const tickets = ((rows ?? []) as Parameters<typeof toTicket>[0][]).map(toTicket);
       const clusters = clusterTickets(tickets);
       if (clusters.length === 0) {
-        return { clusters: 0, signalsEmitted: 0, ticketsTriaged: 0 };
+        return { clusters: 0, signalsEmitted: 0, ticketsTriaged: 0, quarantined: 0 };
       }
 
       let signalsEmitted = 0;
       let ticketsTriaged = 0;
+      let quarantined = 0;
       const triagedAt = new Date().toISOString();
 
       for (const cluster of clusters) {
+        // SEC-INGEST-INJECTION (considerations #3, P0): screen the cluster's raw, untrusted
+        // ticket text BEFORE it can become a trusted Discover signal that feeds agents. A
+        // poisoned cluster is QUARANTINED (no signal emitted; its tickets stay open for a
+        // human, and are re-screened on the next run); a borderline one is emitted but tagged
+        // for review. The screen is the existing injection classifier (pure).
+        const decision = injectionScreenDecision(
+          cluster.tickets.map((t) => `${t.subject ?? ""} ${t.body ?? ""}`),
+        );
+        if (decision === "quarantine") {
+          quarantined++;
+          continue; // never let poisoned untrusted text ride into Discover
+        }
+
         const payload = clusterToSignal(cluster);
+        const tags = decision === "flag" ? [...payload.tags, INJECTION_REVIEW_TAG] : payload.tags;
         const { data: sig, error: sigErr } = await sb
           .from("signals")
           .insert({
@@ -204,7 +225,7 @@ export const runSupportTriage = createServerFn({ method: "POST" })
             title: payload.title,
             content: payload.content,
             source: payload.source,
-            tags: payload.tags,
+            tags,
           })
           .select("id")
           .single();
@@ -226,7 +247,7 @@ export const runSupportTriage = createServerFn({ method: "POST" })
         ticketsTriaged += ids.length;
       }
 
-      return { clusters: clusters.length, signalsEmitted, ticketsTriaged };
+      return { clusters: clusters.length, signalsEmitted, ticketsTriaged, quarantined };
     },
   );
 

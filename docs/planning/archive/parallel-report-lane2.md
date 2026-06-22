@@ -92,4 +92,14 @@ Continued the held DBR umbrella: wired v1 into the shared-premise walk so same-i
 
 **Adversarial review = SOUND for ship (no fatal/high).** Byte-identical when off (flag block skipped, same object refs) and when nothing collapses. Folded two mediums: chunk the title `.in()` at `IN_BATCH=25` (an over-long IN would 414 → fail-safe silent no-op on large graphs); resolve collapse PER KIND (a node never merges onto its own same-titled derived artifact). The residual same-title false-merge is by-design and is what the founder's precision review must measure before flipping the flag.
 
-**Gate:** tsc 0 / eslint 0 (5 files) / 26 entity-resolution + 27 shared-premise tests / **1189 full suite** / no em/en-dash. **State:** committing + FF-push. `DBR (H1)` claim **HELD**.
+**Gate:** tsc 0 / eslint 0 (5 files) / 26 entity-resolution + 27 shared-premise tests / **1189 full suite** / no em/en-dash. **State:** committed + FF-pushed (`57a363ab8b..38968679bf`). `DBR (H1)` RELEASED (◐; my entity-res/shared-premise arc complete — remaining DBR work is cross-lane or founder-gated).
+
+## 2026-06-22 — SEC-INGEST-INJECTION: injection screening on the support-triage trust boundary (P0)
+
+Released DBR (arc complete) and pivoted to a fresh, self-contained security item mined from `considerations.md` #3 (P0 — "the product's defining risk": untrusted input feeding agents). Support tickets are untrusted; the triage loop turns a cluster into a Discover signal that feeds agents — the exact boundary to screen.
+
+**Shipped (◐, reuses existing infra, never touches the AI chokepoint, no schema change):** pure `src/lib/support/screening.ts` (`injectionScreenDecision` wrapping the battle-tested `classifyInjection`/`assessCorpusInjection`) wired into `runSupportTriage` at the signal-emission boundary — a structural attack QUARANTINES the cluster (never emitted; tickets stay open + re-screened), a lexical-only override is emitted but tagged `needs-review`, ALLOW is normal.
+
+**Key correctness property (tested):** a genuine ticket merely QUOTING an injection is NOT over-quarantined — only a real structural attack is — so it hardens the path without dropping legitimate tickets. Proportionate self-review (small change reusing a thoroughly-tested pure classifier; no new columns; the screen is driven). +7 screening tests.
+
+**Gate:** tsc 0 / eslint 0 (3 files) / 40 support tests / **1196 full suite** / no em/en-dash. **State:** committing + FF-push; `done`-marked (support-triage scope complete; the LIVE signal-ingest webhook + MCP/A2A screen is a separate future item). `considerations.md` #3 marked PARTIALLY ADDRESSED.
