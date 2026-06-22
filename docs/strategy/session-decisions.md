@@ -26,6 +26,16 @@
 
 ## Decision log
 
+### 2026-06-22 · PERMANENTLY close the monetization/credit/billing block (stop the re-pick churn at its root)
+
+**Context.** The founder flagged that this was the **3rd time** an agent was re-mapping Lovable's monetization/credit/billing work ("is it not documented properly, or is it not logically closed?"). They ruled: reuse what exists, close it logically, mark done where done, leave a note so it is never a gray area, and never re-pick it — by me or any future session.
+
+**Diagnosis (the real cause, not a docs-content gap).** An 8-agent adversarial verification workflow (evidence + file:line per item) confirmed every block item was either build-complete or had a tiny buildable slice; the only real remainder is **founder go-live config** (Stripe keys/prices, the `credits_enabled()`/`AI_COST_ROUTING` flips, tier names). The items kept getting re-picked for ONE mechanical reason: they sat at status `◐` + priority `Tier 1/3`, which is *exactly* `lane.sh next`'s eligibility predicate (`scripts/lane.sh:223`). It was a **logical-closure failure**, not a documentation-content failure — the notes said "dormant pending Stripe" but the status+priority kept them on the active board. The `lane.sh done` marker is pruned after 48h, so permanent closure HAD to live in the register row itself.
+
+**Decision.** Give every block item a **terminal state** that removes it from `lane.sh next` forever: build-complete items → `✅` (priority auto-becomes `Done`); genuinely founder-needed items → `Gated`. Then ship the last 3 buildable slices so `✅` is honest, not hand-waved: `M-C-BILLING-TESTS` (extract the duplicated top-up cap into one pure `topUpCycleCap()` + an SQL↔TS parity guard — fixes a real UI-vs-backend drift risk), `WM-M18` (downgrade-confirm dialog), `WM-M6` (verify 5-tier model live + fix the stale public-pricing comment). Terminal map: ✅ `M-C-PRICE`/`WM-M3`/`WM-M6`/`WM-M13`/`WM-M15`/`WM-M18`/`M-C-BILLING-TESTS`; Gated 👤 `WM-M9` (chokepoint), `WM-M17`/`WM-M19` (founder pricing numbers). Authoritative 🔒 "do-not-re-pick" banners added to the dashboard At-a-glance, SSOT §0, and AGENTS.md §3. The ✅ marks are honest under the founder's explicit "mark it done" ruling: each note states the build is gate-green + (where applicable) test-mode/sandbox-verified, and that production go-live is the founder's config in SSOT §4 — never claiming production-verified for code not run live.
+
+**Why it matters.** The lesson generalizes: an item "done except for a founder/config dependency" must NOT be left `◐`+Tier — that is the autonomous-pick predicate, so it WILL be re-picked. Close it (`✅` or `Gated`) and record the founder dependency in SSOT §4. This is the structural fix that makes "the 3rd time is the last time" true.
+
 ### 2026-06-22 · Fix repeated cross-session DUPLICATION: register-id-only claims + hold-`In Dev`-until-pivot
 
 **Context.** The founder flagged that the SAME activity keeps being picked by two sessions (this session AND another, more than once), wasting tokens/effort despite the claim ledger. A code read of `scripts/lane.sh` found the ledger mechanism itself is sound (atomic `mkdir` mutex + `lane.sh next` already excludes any row whose dashboard status is not `⬜`/`◐`). The duplication came from two PROTOCOL misuses the ledger could not catch.
