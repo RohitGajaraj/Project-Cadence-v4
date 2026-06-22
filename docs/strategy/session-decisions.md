@@ -26,6 +26,16 @@
 
 ## Decision log
 
+### 2026-06-22 · Fix repeated cross-session DUPLICATION: register-id-only claims + hold-`In Dev`-until-pivot
+
+**Context.** The founder flagged that the SAME activity keeps being picked by two sessions (this session AND another, more than once), wasting tokens/effort despite the claim ledger. A code read of `scripts/lane.sh` found the ledger mechanism itself is sound (atomic `mkdir` mutex + `lane.sh next` already excludes any row whose dashboard status is not `⬜`/`◐`). The duplication came from two PROTOCOL misuses the ledger could not catch.
+
+**Root cause (two bugs).** (1) **Sub-id bypass:** lanes claimed a private sub-id (e.g. `DBR-EDGE-CONF`) instead of the register row (`DBR (H1)`), so the umbrella row stayed eligible in every other lane's `lane.sh next` and a second lane re-picked it; the glob check only catches FILE overlap, not "same item." (2) **Release-and-reclaim churn:** lanes (including this one) released the claim AND flipped the dashboard row back to `◐` after every micro-increment, so between cycles the item looked free and another lane / Lovable grabbed it.
+
+**The call made (the fix, codified everywhere all tools read).** (a) **Claim the EXACT register-row id `lane.sh next` printed — never a private sub-id;** `lane.sh claim` now prints a `WARN:` on a non-register id (advisory, smoke-tested); sub-increments are tracked in the dashboard NOTE, not as new ledger ids. (b) **The `🔨 In Dev` dashboard status IS the cross-tool lock** (every tool reading the board, incl. Lovable, plus `lane.sh next`, skips a non-`⬜`/`◐` row): **hold the row `🔨 In Dev` + the claim across ALL increments on an item, releasing/flipping to `◐`/`✅` ONLY when you PIVOT to a different register item.** Codified in `AGENTS.md` §3, `autonomous-build-loop.md` §15, the lane bootstrap (`scripts/parallel-build.sh`), and `LANE.md`, plus the `lane.sh` guard. `lane.test.sh` 9/9.
+
+**Why it matters.** The ledger was load-bearing but the protocol around it had two holes that let two sessions converge on one item; closing them (register-id-only + hold-until-pivot) makes "two sessions never work the same item" actually true, which is the founder's efficiency requirement. This session also OWNED the bug (its own release-per-increment churn on the DBR umbrella contributed) and corrected its own behavior going forward.
+
 ### 2026-06-22 · Go deeper on the moat now: governing-decision retrieval (DBR-3a), and the graph-RAG seam principle
 
 **Context.** Starting an overnight/autonomous run, the founder asked to begin with the core USP / moat / foundational items and to surface where founder input is genuinely needed. The #1 item is the Decision Brain. A read of the code + canon showed its autonomously-buildable increments (DBR-0/1/1.5/2, Ambient Precedent, the bitemporal tree, `memory_refs` threading) are ALL shipped but DORMANT (flag-gated; the supersession migration is not yet applied live), and the documented next depth is the founder-parked "enrichment" (storage crossover, viz-at-scale, ambient aggressiveness). That is a real founder fork, so it was surfaced with three concrete options (go deeper now / activate what's shipped / broaden to the next pillar).
