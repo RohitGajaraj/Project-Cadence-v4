@@ -38,8 +38,10 @@ T1 = ["DBR-1.5", "MOAT-VIS", "F-IA-BRAIN-GRAPH", "MOAT-METRIC", "EMBED-CHOKEPOIN
       "FIRECRAWL-FLOOR", "H1-TASKS", "W1-AUTO", "O1", "O3", "Q1 / ENG-07 / F-MCP-V1"]
 T1ORD = {k: i for i, k in enumerate(T1)}
 
-LOVABLE = {"M-C-PRICE", "WM-M3", "WM-M6", "WM-M7", "WM-M8", "WM-M13", "WM-M10", "WM-M11",
-           "WM-M12", "WM-M14", "WM-M16", "WM-M17", "WM-M18", "WM-M19", "BYO-P4"}
+# RETIRED 2026-06-22 (founder ruling): the `Lovable` priority class is dead — there is no
+# Lovable scope, and the monetization/credit/billing block is CLOSED (terminal states set on
+# every row). Kept empty so the classifier can never re-introduce the class from a legacy id.
+LOVABLE: set[str] = set()
 DEFERRED = {"SEN-04", "F-AUDIO-1", "F-AUDIO-2", "K1-deploy", "F-COCKPIT-MACHINE-MODE",
             "WM-S1", "WM-S2", "WM-S3", "WM-S4", "WM-S5"}
 TIER4 = {"HUMAN-SWEEP"}
