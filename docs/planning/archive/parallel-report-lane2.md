@@ -68,3 +68,15 @@ Before building, the claim of `M1 / LRN-01` returned a false `HELD`: the atomic 
 **State:** committed + FF-pushed to `origin/main` (`f42e383846..c476c27c95`). `M1 / LRN-01` is **`done`-marked** (◐): the autonomous core is complete and NO further autonomous slice remains — all three remainders need the founder (UI-surface PLACEMENT is a taste/IA call; inbound channel = connector OAuth + spend; AI-written draft = chokepoint + spend). Docs: `docs/features/m1-support-triage.md` (new), dashboard row (◐), `plan.md` §4, `session-decisions.md`.
 
 **Board state after this cycle:** with the founder's constraint this run (untouched `⬜` only, no `◐` partials, no chokepoint / Stripe / BYO / input-needed), the autonomous pick-list went **dry** — `lane.sh next` returns only `DBR (H1)`, a `◐` PARTIAL. **Founder decision (2026-06-22): ALLOW `◐` partials** — the loop returns to its default (continue partials), still off chokepoint / Stripe / BYO / input-needed. Next cycle resumes the loop default starting with `DBR (H1)` (Decision Brain; shared-premise is complete, so the next slice is a NEW sub-area — e.g. dormant entity-resolution v1 / guardrail #4, compute-only, no chokepoint).
+
+## 2026-06-22 — DBR (H1): entity-resolution v1 (guardrail #4)
+
+**Picked:** `DBR (H1)` (the only eligible item; partials now allowed). Shared-premise is complete, so this is a NEW DBR sub-area. Claimed the register row + **held** it.
+
+**Shipped (◐ compute-only/dormant, never touches the AI chokepoint):** a pure, deterministic entity-resolution module (`src/lib/ai/entity-resolution.ts`, 24 tests) that groups decision-graph nodes naming the SAME initiative under different titles into one canonical entity, so a later increment can collapse those fragments before the supersession / shared-premise / precedent walks run (guardrail #4 — "entity resolution early, or the graph fragments"). **Precision-first:** merges only on an exact normalized-key match (surface variants) OR an explicit declared alias (codename↔description when stated); the fuzzy inference case is the founder-gated AI layer.
+
+**Adversarial review (false-merge hunt):** caught + folded **two HIGH false-merge bugs** before commit — an over-greedy noise list ("Story editor" merged with "Editor redesign") and an ASCII-only tokenizer ("結帳 API" merged with "付款 API" on "api") — plus an `entityId` over-claim (now content-addressed from title keys, documented re-resolve-don't-persist). +5 regression tests.
+
+**Gate:** tsc 0 / eslint 0 (2 files) / 24 entity-resolution tests / **1184 full suite** / no em/en-dash.
+
+**State:** committing + FF-push to `origin/main`. `DBR (H1)` claim **HELD** for the next DBR slice. ◐ compute-only (nothing drives it yet; the wiring into the walks is behavior-changing and needs a precision gate on real data). Docs: `docs/features/decision-brain.md` (DBR-ENTITY-RES + guardrail #4), `plan.md` §4, `session-decisions.md`.
