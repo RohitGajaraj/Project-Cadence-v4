@@ -33,3 +33,16 @@ Second increment on the held DBR umbrella. Extended DBR-3f's resolver from the C
 **Gate:** tsc 0 / **1110 full suite** / no em/en-dash in UI copy. Renders nothing until derivation edges + outcomes exist.
 
 **State:** committed + FF-pushed to `origin/main`. `DBR (H1)` claim still **HELD**. IA note: three decision asides now stack on these surfaces (precedent / shared-premise / currency) — flagged as a candidate for the founder-prompted IA-consolidation pass.
+
+## 2026-06-22 — DBR-3h: name the shared premise (felt-voice completion)
+
+Third increment on the held DBR umbrella. The shared-premise precedent now names WHICH premise two decisions share ("the same opportunity 'Mobile checkout revamp'") instead of "the same ground".
+
+- `collectSharedPremiseCousins` additively tracks premise provenance (a `seedOf` map; BFS first-reach from all ancestors = the closest common ancestor / LCA → the most-specific shared premise). Existing DBR-3f tests stayed green (additive fields).
+- New fail-safe, `user_id`-scoped `attachPremiseTitles` resolves the premise title per kind; `formatSharedPremisePrecedent` + `SharedPremiseNudge` name it, generic fallback when unresolved.
+
+**Review:** focused code-review = **SHIP_WITH_FIXES** — LCA provenance confirmed correct + dormant-safe; folded both (defense-in-depth `user_id` on title queries; deterministic `ancestorKind` preferring the node's own `child_kind`).
+
+**Gate:** tsc 0 / **1113 full suite** / +3 tests (24 in the file) / no em/en-dash. Byte-identical / generic phrasing until premise titles resolve.
+
+**State:** committed + FF-pushed to `origin/main`. `DBR (H1)` claim still **HELD** (shared-premise feature now complete across Critic + nudge + named premise).

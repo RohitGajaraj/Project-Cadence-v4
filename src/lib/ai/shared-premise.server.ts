@@ -132,6 +132,71 @@ async function loadOutcomes(
   }
 }
 
+/** Tables backing each premise node kind, for resolving a premise's human title. Mirrors the
+ * lineage TABLE map; a premise is usually a signal/theme/opportunity but any kind resolves. */
+const PREMISE_TABLE: Record<string, string> = {
+  signal: "signals",
+  theme: "themes",
+  opportunity: "opportunities",
+  prd: "prds",
+  roadmap_item: "roadmap_items",
+  task: "tasks",
+  meeting: "meetings",
+  decision: "decisions",
+  mission: "missions",
+};
+
+/**
+ * Resolve the human TITLE of each precedent's SHARED premise so a surface can name it ("the
+ * opportunity 'Mobile checkout'") instead of an opaque id. Premise ids are grouped by kind and
+ * looked up in the backing table (RLS-scoped via the authed client). Best-effort + fail-safe:
+ * the items are returned title-less on any error, and the formatter falls back to the generic
+ * "the same upstream premise" phrasing.
+ */
+async function attachPremiseTitles(
+  supabase: SupabaseClient,
+  userId: string,
+  items: SharedPremisePrecedentItem[],
+): Promise<SharedPremisePrecedentItem[]> {
+  const byKind = new Map<string, Set<string>>();
+  for (const it of items) {
+    if (!it.premiseKind || !it.premiseId || !UUID_RE.test(it.premiseId)) continue;
+    if (!PREMISE_TABLE[it.premiseKind]) continue;
+    const set = byKind.get(it.premiseKind) ?? new Set<string>();
+    set.add(it.premiseId);
+    byKind.set(it.premiseKind, set);
+  }
+  if (!byKind.size) return items;
+  const titles = new Map<string, string>(); // `${kind}:${id}` -> title
+  try {
+    const queries: PromiseLike<void>[] = [];
+    for (const [kind, idSet] of byKind) {
+      queries.push(
+        supabase
+          .from(PREMISE_TABLE[kind])
+          .select("id,title")
+          .eq("user_id", userId)
+          .in("id", Array.from(idSet))
+          .then(({ data }) => {
+            for (const r of (data ?? []) as Array<{ id: string; title: string | null }>) {
+              if (r?.id && typeof r.title === "string" && r.title.trim()) {
+                titles.set(`${kind}:${r.id}`, r.title);
+              }
+            }
+          }),
+      );
+    }
+    await Promise.all(queries);
+  } catch {
+    return items;
+  }
+  if (!titles.size) return items;
+  return items.map((it) => {
+    const t = it.premiseId ? titles.get(`${it.premiseKind}:${it.premiseId}`) : undefined;
+    return t ? { ...it, premiseTitle: t } : it;
+  });
+}
+
 /**
  * Resolve the SHARED-PREMISE precedents for a decision as STRUCTURED items: assemble the
  * premise ancestors (up-closure) and their descendants (down-closure), derive the cousins
@@ -158,7 +223,8 @@ export async function resolveSharedPremiseItems(
     if (!prdIds.length) return [];
     const outcomes = await loadOutcomes(supabase, prdIds);
     if (!outcomes.size) return [];
-    return selectSharedPremisePrecedents(cousins, outcomes, { max: opts.max });
+    const items = selectSharedPremisePrecedents(cousins, outcomes, { max: opts.max });
+    return await attachPremiseTitles(supabase, userId, items);
   } catch {
     return [];
   }

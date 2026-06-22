@@ -56,6 +56,12 @@ export type SharedPremisePrecedentItem = {
   verdict: SharedPremiseVerdict;
   summary: string | null;
   checkedAt: string | null;
+  /** The premise this precedent SHARES with the decision under review (the closest common
+   * derivation ancestor). The kind/id come from the pure walk; the human title is resolved
+   * server-side (null until then, or when it cannot resolve), so a surface can name it. */
+  premiseKind?: string | null;
+  premiseId?: string | null;
+  premiseTitle?: string | null;
 };
 
 /** A derivation edge that contributes to the premise walk (parent = premise, child =
@@ -111,7 +117,7 @@ export function collectSharedPremiseCousins(
   target: { kind: string; id: string },
   ancestors: readonly string[],
   edges: readonly RawLineageEdge[],
-): { kind: string; id: string }[] {
+): { kind: string; id: string; premiseKind: string; premiseId: string }[] {
   const childrenByParent = new Map<string, RawLineageEdge[]>();
   for (const e of edges) {
     if (!isDerivationEdge(e)) continue;
@@ -141,19 +147,47 @@ export function collectSharedPremiseCousins(
   }
 
   const ancestorSet = new Set<string>(ancestors);
-  const cousins = new Map<string, { kind: string; id: string }>();
+  // The kind of each ancestor (so a named premise can say "the opportunity 'X'", not just an
+  // id). A node's kind is most reliably its OWN child_kind (the node as the derived child in
+  // an up-edge); fall back to parent_kind only for a root premise that is never a child. Two
+  // passes, child_kind first, so a mixed (up + down) edge list can never mislabel an ancestor.
+  const ancestorKind = new Map<string, string>();
+  for (const e of edges) {
+    if (!isDerivationEdge(e)) continue;
+    if (ancestorSet.has(e.child_id) && !ancestorKind.has(e.child_id)) {
+      ancestorKind.set(e.child_id, e.child_kind);
+    }
+  }
+  for (const e of edges) {
+    if (!isDerivationEdge(e)) continue;
+    if (ancestorSet.has(e.parent_id) && !ancestorKind.has(e.parent_id)) {
+      ancestorKind.set(e.parent_id, e.parent_kind);
+    }
+  }
+  // Premise provenance: the premise a cousin SHARES with the target is the ancestor at the
+  // root of the cousin's branch. BFS from all ancestors at once means the FIRST reach is via
+  // the closest ancestor (the lowest common ancestor on the derivation graph), so a cousin's
+  // seed is the most-specific shared premise (the opportunity over the signal above it).
+  const seedOf = new Map<string, { kind: string; id: string }>();
+  for (const a of ancestors) seedOf.set(a, { kind: ancestorKind.get(a) ?? "opportunity", id: a });
+
+  const cousins = new Map<string, { kind: string; id: string; premiseKind: string; premiseId: string }>();
   const seen = new Set<string>(ancestors);
   let frontier = [...ancestors];
   for (let hop = 0; hop < MAX_HOPS && frontier.length && seen.size < MAX_NODES; hop++) {
     const next: string[] = [];
     for (const id of frontier) {
+      const seed = seedOf.get(id) ?? { kind: "opportunity", id };
       for (const e of childrenByParent.get(id) ?? []) {
         const cid = e.child_id;
         if (seen.has(cid)) continue;
         seen.add(cid);
+        if (!seedOf.has(cid)) seedOf.set(cid, seed); // inherit the branch's premise seed
         next.push(cid);
         if (cid === target.id || targetSubtree.has(cid) || ancestorSet.has(cid)) continue;
-        if (!cousins.has(cid)) cousins.set(cid, { kind: e.child_kind, id: cid });
+        if (!cousins.has(cid)) {
+          cousins.set(cid, { kind: e.child_kind, id: cid, premiseKind: seed.kind, premiseId: seed.id });
+        }
       }
     }
     frontier = next;
@@ -168,7 +202,7 @@ export function collectSharedPremiseCousins(
  * reassuring one. Deduped by id, capped. Empty / outcome-less input yields [].
  */
 export function selectSharedPremisePrecedents(
-  cousins: readonly { kind: string; id: string }[],
+  cousins: readonly { kind: string; id: string; premiseKind?: string; premiseId?: string }[],
   outcomeById: ReadonlyMap<string, SharedPremiseOutcome>,
   opts: { max?: number } = {},
 ): SharedPremisePrecedentItem[] {
@@ -190,6 +224,8 @@ export function selectSharedPremisePrecedents(
       verdict: oc.verdict,
       summary: oc.summary ?? null,
       checkedAt: oc.checkedAt ?? null,
+      premiseKind: c.premiseKind ?? null,
+      premiseId: c.premiseId ?? null,
     });
   }
   const rank = (v: SharedPremiseVerdict) => (v === "missed" ? 0 : v === "mixed" ? 1 : 2);
@@ -213,7 +249,12 @@ export function formatSharedPremisePrecedent(items: SharedPremisePrecedentItem[]
   const bullets = items.map((it) => {
     const named = it.title?.trim() ? `"${it.title.trim()}"` : `(${it.id})`;
     const why = it.summary?.trim() ? `: ${it.summary.trim().slice(0, 200)}` : "";
-    return `- a past ${it.kind} ${named}, derived from the same upstream premise as this one, ${fate(it.verdict)}${why}`;
+    // Name the SHARED premise when its title resolved ("the opportunity 'X'"), so the Critic
+    // sees exactly what they have in common; fall back to the generic phrasing otherwise.
+    const premise = it.premiseTitle?.trim()
+      ? `the same ${it.premiseKind ?? "upstream"} ("${it.premiseTitle.trim()}")`
+      : "the same upstream premise";
+    return `- a past ${it.kind} ${named}, derived from ${premise} as this one, ${fate(it.verdict)}${why}`;
   });
   return [
     "Shared-premise precedent (this workspace's decision graph: past decisions DERIVED FROM the same upstream signal/opportunity/theme as this one, and the outcome each reached - they are linked by a shared structural premise, not by similar text, so a flat similarity search would surface them only by accident of wording, if at all):",
