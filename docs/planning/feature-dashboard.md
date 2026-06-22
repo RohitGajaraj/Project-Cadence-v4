@@ -142,14 +142,14 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
-| ✅ Done | 144 | 100% | 144.0 |
-| ◐ Partial | 5 | per-row `[~NN%]` (avg ~60%) | 3.0 |
+| ✅ Done | 145 | 100% | 145.0 |
+| ◐ Partial | 6 | per-row `[~NN%]` (avg ~59%) | 3.55 |
 | ⏸️ Paused | 3 | 50% | 1.5 |
-| 🔨 In Dev | 1 | 50% | 0.5 |
+| 🔨 In Dev | 0 | 50% | 0.0 |
 | ⬜ Open (ready to pick up) | 16 | 0% | 0.0 |
 | ⏭️ Deferred | 10 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **179** | - | **149.00 / 179 = 83.2%** |
+| **Total** | **180** | - | **150.05 / 180 = 83.4%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -158,7 +158,7 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | Data/Privacy | 3 | 3 | 0 | 100% |
 | Credit | 7 | 7 | 0 | 100% |
 | Decide | 15 | 15 | 0 | 100% |
-| Governance | 21 | 21 | 0 | 100% |
+| Governance | 22 | 22 | 0 | 100% |
 | Reliability | 3 | 3 | 0 | 100% |
 | Foundational | 26 | 22 | 4 | 92% |
 | Cockpit | 22 | 20 | 2 | 91% |
@@ -168,7 +168,7 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | Launch | 10 | 7 | 3 | 70% |
 | Sense | 10 | 4 | 6 | 50% |
 | BYO | 8 | 1 | 7 | 12% |
-| **Total** | **179** | **144** | **35** | **83.0%** |
+| **Total** | **180** | **145** | **35** | **83.4%** |
 
 > **Pick-order is THE BUILD SEQUENCE above** (founder ruling 2026-06-21): build the lowest open number, do not deliberate. The tier law (foundation/core/USP, then design, then non-essential, then final polish) and the rationale live in the Build Sequence section + [`../../AGENTS.md`](../../AGENTS.md) §3 "Build Sequence" + the SSOT ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0). Positioning rationale: v10 ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16) + moat.md. **The TOPMOST priority is the Decision Brain (H1); the monetization + credit + billing + admin block (WM-M*, M-C-*, BYO-P4) is CLOSED 🔒 (build-complete; founder go-live config only — do NOT re-pick, see the 🔒 banner above); the WM tenancy spine (WM-F*) stays Claude-owned; BYO (BYO-*) awaits founder greenlight.** The Priority column on each row is now superseded by the Build Sequence number for pick-order; it stays as a coarse tier hint.
 
