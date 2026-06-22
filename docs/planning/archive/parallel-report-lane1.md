@@ -2,6 +2,16 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (15:57) — DBR-3e: decision precedent cited in chat/Ask
+
+The 5th "value at every step" moment — the brain now volunteers DECISION precedent IN CONVERSATION.
+- One file (`src/routes/api/chat.ts`): a fail-safe block loads `loadDecisionPrecedent` for the user's message and pushes a `formatDecisionPrecedent` block into the chat answer's `systemParts`, so the assistant grounds in the workspace's own outcome history ("you shipped a similar bet and it missed").
+- **Adversarial review (code-reviewer) on the live chat route = SHIP_WITH_FIXES; folded all 3:** verdict tags flagged as labels not `[n]` citations; added the passive-text/no-injection rider; a min-length floor (>= 4 words) so trivial messages skip the embed.
+- **Gates:** tsc 0 · `bun test` 1064/1064 · eslint + prettier clean. Collision-safe (chat.ts not chokepoint-pinned).
+- **◐ render-on-publish**, byte-identical until the workspace has outcome memories. Four of the five "value at every step" moments are now live (Critic, nudge, currency banner, chat). **Breadcrumb:** any chat (Ask) conversation on a decision question.
+
+---
+
 ## 2026-06-22 (15:39) — DBR-3d: decision-currency banner (flag the VIEWED decision)
 
 Governing-decision (3a/3b/3c) flagged stale PRECEDENTS; this flags the decision you're VIEWING if IT has been superseded/contradicted — so you never unknowingly act on a stale decision.
