@@ -44,8 +44,13 @@ an announcement body is blocked. This is rare, recoverable (the message names th
 can rephrase), and the security value (blocking real card leaks on a public surface) outweighs
 it. The system "Test mode" banner is not a user announcement and is unaffected.
 
+## Surfaces covered
+
+Both public-egress floors (secrets via `scanEgressForSecrets`, PII via `scanEgressForPii`) now run on **every user-free-text write that crosses to an anon-readable boundary**:
+
+1. **Announcements** — `createAnnouncement` / `updateAnnouncement` (before store).
+2. **Shared Critic teardowns** — `setTeardownShared` (before flipping an opportunity's teardown `is_public=true`, the title + Critic review are scanned; un-sharing needs no scan). This closes the `/t/<slug>` public surface.
+
 ## Remaining (not blocking)
 
-Other public-egress surfaces (shareable Critic-teardown links, public product pages) could reuse
-`scanEgressForPii` the same way; announcements is the established floor and the highest-risk
-free-text public write today. Optional future: a config to downgrade block → warn per workspace.
+The `p.$slug` public product page is fed from structured product fields, not a free-text paste box, so it is lower-risk; if a free-text public field is ever added there, reuse the same two scans. Optional future: a per-workspace config to downgrade block → warn.

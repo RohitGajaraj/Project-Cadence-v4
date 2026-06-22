@@ -23,6 +23,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase as anonSupabase } from "@/integrations/supabase/client";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkPublicDecisionRateLimit } from "@/lib/decisions-ratelimit.server";
+import { scanEgressForSecrets, describeEgressSecrets } from "@/lib/egress-guardrails";
+import { scanEgressForPii, describeEgressPii } from "@/lib/pii-egress";
 import type { CriticReview } from "@/lib/discovery.functions";
 
 /**
@@ -89,6 +91,28 @@ export const setTeardownShared = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), isPublic: z.boolean() }).parse(i),
   )
   .handler(async ({ context, data }): Promise<TeardownShareState> => {
+    // Public-egress floor: before making a teardown anon-readable, refuse if its title or
+    // Critic review carries a high-confidence secret or customer PII — the same floor as
+    // announcements (SEC-EGRESS-GUARD + SEC-PII-EGRESS). Un-sharing needs no scan.
+    if (data.isPublic) {
+      const { data: content } = await context.supabase
+        .from("opportunities")
+        .select("title,critic_review")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (content) {
+        const c = content as { title?: string | null; critic_review?: unknown };
+        const review =
+          typeof c.critic_review === "string"
+            ? c.critic_review
+            : JSON.stringify(c.critic_review ?? "");
+        const text = `${c.title ?? ""}\n${review}`;
+        const secret = scanEgressForSecrets(text);
+        if (secret.blocked) throw new Error(describeEgressSecrets(secret.ruleNames));
+        const pii = scanEgressForPii(text);
+        if (pii.blocked) throw new Error(describeEgressPii(pii.types));
+      }
+    }
     const { data: row, error } = await context.supabase
       .from("opportunities")
       // `as never` escapes the pre-migration generated types (the column lands on sync).
