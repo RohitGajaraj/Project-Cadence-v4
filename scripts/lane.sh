@@ -91,6 +91,24 @@ _globs_overlap() { # <csvA> <csvB>
   return 1
 }
 
+# Path to the feature-dashboard register (the single ranked source of truth).
+_register_path() {
+  printf '%s' "$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)/docs/planning/feature-dashboard.md"
+}
+
+# 0 (true) if <id> is an EXACT register-row id (the 3rd `|`-field of a `| N | status | id |`
+# row). Used to warn against private sub-ids that bypass the register-item mutex (the cause
+# of repeated cross-session duplication: a sub-id claim leaves the whole register item still
+# showing as eligible in `lane.sh next`, so a second lane picks it).
+_is_register_id() {
+  local id="$1" reg; reg="$(_register_path)"
+  [ -f "$reg" ] || return 1
+  awk -F'|' -v want="$id" '
+    /^\| [0-9]+ \|/{ v=$4; gsub(/^[ \t]+|[ \t]+$/,"",v); if (v==want){found=1; exit} }
+    END{ exit(found?0:1) }
+  ' "$reg"
+}
+
 cmd_init() { _ensure; echo "ledger ready at $LEDGER"; }
 
 cmd_claim() {
@@ -149,6 +167,15 @@ cmd_claim() {
     echo "beat=$ts"
   } > "$dir/meta"
   [ "${PINNED:-false}" = "true" ] && echo "PINNED $id by lane $lane" || echo "CLAIMED $id by lane $lane"
+  # Anti-duplication guard: a private sub-id (e.g. claiming "DBR-EDGE-CONF" instead of the
+  # register row "DBR (H1)") leaves the whole item still eligible in every other lane's
+  # `lane.sh next`, so a second lane re-picks it and wastes effort. Claim the REGISTER id.
+  if [ "${PINNED:-false}" != "true" ] && ! _is_register_id "$id"; then
+    echo "WARN: '$id' is not a feature-dashboard register-row id." >&2
+    echo "      If this is sub-work of a tracked item, claim that item's REGISTER id instead" >&2
+    echo "      (so every other lane's \`lane.sh next\` excludes the whole item and never" >&2
+    echo "      duplicates it). Only claim a non-register id for genuinely new / meta work." >&2
+  fi
   _sync_board
   return 0
 }
