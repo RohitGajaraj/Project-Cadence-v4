@@ -2,6 +2,25 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (14:45) — Decision Brain depth: DBR-3a governing-decision retrieval (founder "go deeper now")
+
+**Directive (founder, this run):** run the autonomous loop; start with core USP / moat / foundational items; surface where founder input is genuinely needed. The #1 item is the Decision Brain; its autonomous increments are all shipped-but-dormant and the next depth was founder-parked "enrichment," so that fork was surfaced with 3 options. Founder chose **"go deeper now."**
+
+**Shipped ◐ — DBR-3a governing-decision retrieval** (the moat's "current belief, not the similar old one"):
+- NEW pure `src/lib/ai/governing-decision.ts` — `resolveGoverning` (supersedes-chain walk, current-only, cycle-guarded), `selectGoverningDecisions`, `formatGoverningDecisions`, `nextSupersessionFrontier`; **27 unit tests**.
+- DRIVEN into `runCritic` (`critic.server.ts`) via a bounded fail-safe forward-closure loader (`loadSupersedesClosure`) so the chain reaches the TRUE current decision, then a corrective "Governing decision" prompt block (distinct from DBR-2, which only lists edges).
+- **3-lens adversarial review (ultracode) = SHIP_WITH_FIXES;** the one cross-lens should-fix (similarity-bounded edges truncated multi-hop → could name a stale intermediate as "current") was **fixed at root** with the closure loader + a loop-simulation test.
+- **Gates:** tsc 0 · `bun test` 1030/1030 (+5) · eslint clean (3 files). Build stays red locally (node 20.9 < 20.19, pre-existing) → offline gates only.
+- **◐ not ✅:** dormant + byte-identical until the founder publishes (applies the DBR-1.5 migration) + flips `DECISION_BRAIN_SUPERSESSION`; the live Critic-cites-a-governing-decision path verifies then.
+
+**Also this cycle:** cleared two stale prettier-only files from the tree (`NotificationsTab`, `billing-webhook`) as a standalone style commit so the lane started clean. **Collision-safe:** Lane 2 concurrently built `supersession-confidence` (disjoint globs).
+
+**Pending founder publish-verify:** open the Critic on an opportunity/spec after publishing + flag-on + a seeded supersession edge; confirm the verdict cites the current governing decision over the superseded match.
+
+**Next DBR-3 (autonomous):** richer typed-edge auto-extraction (`validates`/`cites`/`depends-on`). **Founder-gated:** the deep-graph enrichment (storage crossover, viz-at-scale, ambient aggressiveness).
+
+---
+
 ## 2026-06-22 — Founder partial-closure cruise (live-verify on the published app)
 
 **Directive (founder, this session):** cruise the partial (`◐`) items one by one; if a partial needs building (incl. frontend + wiring) build it fully; do not punt "Lovable" items to Lovable — pick them up and close them; logically/live test, mark ✅ in the dashboard + registry with proper docs; stay collision-safe with the other live session.
