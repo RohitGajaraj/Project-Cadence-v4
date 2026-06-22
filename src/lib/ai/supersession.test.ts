@@ -8,6 +8,7 @@ import {
   resolveEndpoints,
   selectSupersessions,
 } from "./supersession";
+import { SUPERSESSION_TENTATIVE_FLOOR } from "./supersession-confidence";
 
 describe("classifySupersession (the pure verdict-conflict matrix)", () => {
   const hi = 0.9;
@@ -173,5 +174,84 @@ describe("selectSupersessions (classify + resolve + cap)", () => {
     expect(out).toHaveLength(1);
     expect(out[0].score).toBe(0.9);
     expect(out[0].child).toEqual({ kind: "opportunity", id: "shared-opp" });
+  });
+});
+
+describe("selectSupersessions — edge-confidence precision (DBR-EDGE-CONF)", () => {
+  const next = { prdId: "new-prd", opportunityId: "new-opp", verdict: "missed" };
+
+  test("stamps a confidence, tier, and reasons on each kept edge", () => {
+    const out = selectSupersessions(next, [
+      { prdId: "p1", opportunityId: "o1", verdict: "validated", score: 0.9 },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].confidence).toBe(0.729);
+    expect(out[0].tier).toBe("strong");
+    expect(out[0].reasons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("shared opportunity lineage raises confidence (same problem area)", () => {
+    const out = selectSupersessions(
+      { prdId: "new-prd", opportunityId: "shared", verdict: "missed" },
+      [{ prdId: "p1", opportunityId: "shared", verdict: "validated", score: 0.9 }],
+    );
+    expect(out[0].confidence).toBe(0.929);
+    expect(out[0].reasons.join(" ")).toContain("opportunity");
+  });
+
+  test("default (no minConfidence) keeps even a marginal edge — back-compat with the live engine", () => {
+    const out = selectSupersessions(next, [
+      { prdId: "p1", opportunityId: "o1", verdict: "validated", score: 0.3 },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].confidence).toBe(0.3);
+    expect(out[0].tier).toBe("drop");
+  });
+
+  test("minConfidence drops the marginal edges the engine should never assert", () => {
+    const out = selectSupersessions(
+      next,
+      [{ prdId: "p1", opportunityId: "o1", verdict: "validated", score: 0.3 }],
+      { minConfidence: SUPERSESSION_TENTATIVE_FLOOR },
+    );
+    expect(out).toHaveLength(0);
+  });
+
+  test("a dropped low-confidence edge does not consume a cap slot", () => {
+    const out = selectSupersessions(
+      next,
+      [
+        { prdId: "p-low", opportunityId: "x", verdict: "validated", score: 0.3 }, // 0.3 → drop
+        { prdId: "p-high", opportunityId: "y", verdict: "validated", score: 0.9 }, // 0.729 → keep
+      ],
+      { minConfidence: SUPERSESSION_TENTATIVE_FLOOR, max: 1 },
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].child).toEqual({ kind: "prd", id: "p-high" });
+  });
+});
+
+describe("buildSupersessionEdge — confidence provenance (DBR-EDGE-CONF)", () => {
+  test("threads confidence, tier, and reasons into the inference blob when provided", () => {
+    const edge = buildSupersessionEdge({
+      userId: "u1",
+      parent: { kind: "prd", id: "new" },
+      child: { kind: "prd", id: "old" },
+      relation: "contradicts",
+      verdict: "missed",
+      score: 0.77,
+      confidence: 0.729,
+      tier: "strong",
+      reasons: ["clean outcome reversal (missed vs validated)"],
+    });
+    expect(edge.inference).toEqual({
+      verdict: "missed",
+      score: 0.77,
+      source: SUPERSESSION_AGENT,
+      ai_event_id: null,
+      confidence: 0.729,
+      tier: "strong",
+      reasons: ["clean outcome reversal (missed vs validated)"],
+    });
   });
 });

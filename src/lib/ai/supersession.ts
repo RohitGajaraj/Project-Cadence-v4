@@ -13,6 +13,11 @@
  * an edge, so the graph never fills with weak or same-verdict links.
  */
 
+import {
+  type SupersessionConfidenceTier,
+  scoreSupersessionConfidence,
+} from "./supersession-confidence";
+
 export type SupersessionRelation = "supersedes" | "contradicts";
 
 /** A same-kind artifact_lineage endpoint. Edges never cross kinds. */
@@ -87,7 +92,17 @@ export type SupersessionEdge = {
   // edge stamped retired while it is actually the current belief.
   valid_to: null;
   invalidated_by: null;
-  inference: { verdict: string; score: number; source: string; ai_event_id: string | null };
+  inference: {
+    verdict: string;
+    score: number;
+    source: string;
+    ai_event_id: string | null;
+    // Edge-confidence provenance (DBR-EDGE-CONF). Present only when the caller scored the
+    // edge, so a confidence-unaware caller's row stays byte-identical to the original shape.
+    confidence?: number;
+    tier?: SupersessionConfidenceTier;
+    reasons?: string[];
+  };
 };
 
 /** PURE. Map a resolved endpoint pair + relation + provenance to the row to upsert. */
@@ -100,6 +115,9 @@ export function buildSupersessionEdge(args: {
   score: number;
   summary?: string | null;
   aiEventId?: string | null;
+  confidence?: number;
+  tier?: SupersessionConfidenceTier;
+  reasons?: string[];
 }): SupersessionEdge {
   return {
     user_id: args.userId,
@@ -117,6 +135,9 @@ export function buildSupersessionEdge(args: {
       score: args.score,
       source: SUPERSESSION_AGENT,
       ai_event_id: args.aiEventId ?? null,
+      ...(typeof args.confidence === "number" ? { confidence: args.confidence } : {}),
+      ...(args.tier ? { tier: args.tier } : {}),
+      ...(args.reasons && args.reasons.length ? { reasons: args.reasons } : {}),
     },
   };
 }
@@ -128,6 +149,11 @@ export type ClassifiedSupersession = {
   relation: SupersessionRelation;
   score: number;
   priorVerdict: string;
+  // Edge-confidence precision (DBR-EDGE-CONF): a graded trust score + tier + reasons, so the
+  // orchestrator can drop marginal edges and stamp the survivors for the read side to weight.
+  confidence: number;
+  tier: SupersessionConfidenceTier;
+  reasons: string[];
 };
 
 /**
@@ -144,7 +170,7 @@ export function selectSupersessions(
     verdict: string;
     score: number;
   }>,
-  opts: { threshold?: number; max?: number } = {},
+  opts: { threshold?: number; max?: number; minConfidence?: number } = {},
 ): ClassifiedSupersession[] {
   const threshold = opts.threshold ?? SUPERSESSION_THRESHOLD;
   const max = opts.max ?? SUPERSESSION_MAX;
@@ -163,12 +189,33 @@ export function selectSupersessions(
     const key = `${ep.parent.id}|${ep.child.id}|${relation}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    // Edge-confidence precision (DBR-EDGE-CONF). Both decisions share a problem area when they
+    // trace to the same opportunity — a far stronger signal than a coincidental semantic match.
+    const sharedLineage = !!(
+      next.opportunityId &&
+      c.opportunityId &&
+      next.opportunityId === c.opportunityId
+    );
+    const { confidence, tier, reasons } = scoreSupersessionConfidence({
+      newVerdict: next.verdict,
+      priorVerdict: c.verdict,
+      score: c.score,
+      sharedLineage,
+      simThreshold: threshold,
+    });
+    // Opt-in precision gate: when the orchestrator passes minConfidence, drop the marginal
+    // edges BEFORE they are written (a `continue` here, so a drop never consumes a cap slot).
+    // Default (undefined) keeps every classified edge → byte-identical to the pre-hardening engine.
+    if (opts.minConfidence != null && confidence < opts.minConfidence) continue;
     out.push({
       parent: ep.parent,
       child: ep.child,
       relation,
       score: c.score,
       priorVerdict: c.verdict,
+      confidence,
+      tier,
+      reasons,
     });
   }
   return out;

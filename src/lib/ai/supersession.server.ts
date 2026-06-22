@@ -15,15 +15,38 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadDecisionPrecedent } from "./decision-precedent.server";
 import { SUPERSESSION_AGENT, buildSupersessionEdge, selectSupersessions } from "./supersession";
+import { SUPERSESSION_TENTATIVE_FLOOR } from "./supersession-confidence";
+
+/** The feature_flags key the activation gate reads (operator flips it with one SQL upsert). */
+export const SUPERSESSION_FLAG_KEY = "decision_brain_supersession";
 
 /**
- * AI-spend gate. Mirrors costRoutingEnabled() / providerFallbackEnabled() in
- * runtime.server.ts: default OFF, so inferSupersession's first line returns early →
- * zero embed, zero write, recordOutcome byte-identical.
+ * AI-spend / activation gate. DB-backed via the feature_flags get_flag RPC — the same idiom as
+ * credits_enabled() / limit_gates_enabled() — so an operator can flip the moat's signature
+ * mechanic live with one SQL statement and NO redeploy (a Worker env var would need both infra
+ * access and a deploy). The env var stays a hard override: an explicit value wins (tests + an
+ * emergency kill switch). Default OFF, and fail-safe — any DB error reads as OFF, so a flaky DB
+ * can never silently arm edge-writing. inferSupersession's first line awaits this, so a disabled
+ * flag means zero embed, zero write, and a byte-identical recordOutcome.
  */
-export function supersessionEnabled(): boolean {
-  const v = process.env.DECISION_BRAIN_SUPERSESSION;
-  return v === "1" || v === "true";
+export async function supersessionEnabled(supabase?: SupabaseClient): Promise<boolean> {
+  // 1) Env override: an explicit value always wins (test harness + emergency kill).
+  const env = process.env.DECISION_BRAIN_SUPERSESSION;
+  if (env === "1" || env === "true") return true;
+  if (env === "0" || env === "false") return false;
+  // 2) DB-backed flag (the live, no-redeploy toggle). Fail-safe OFF.
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.rpc(
+      "get_flag" as never,
+      { _key: SUPERSESSION_FLAG_KEY } as never,
+    );
+    if (error) return false;
+    const row = Array.isArray(data) ? data[0] : data;
+    return !!(row && (row as { enabled?: boolean }).enabled);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -47,7 +70,7 @@ export async function inferSupersession(
 ): Promise<void> {
   // Dormant by default: this MUST be the first statement so a disabled flag means zero
   // embed spend, zero DB write, and a byte-identical recordOutcome.
-  if (!supersessionEnabled()) return;
+  if (!(await supersessionEnabled(supabase))) return;
 
   try {
     const text = args.text?.trim();
@@ -73,6 +96,10 @@ export async function inferSupersession(
         verdict: c.verdict,
         score: c.score,
       })),
+      // Edge-confidence precision (DBR-EDGE-CONF): drop the marginal edges before they are ever
+      // written, so the first edges the Critic cites are trustworthy and the graph cannot rot
+      // with confident-but-false "this was contradicted" links.
+      { minConfidence: SUPERSESSION_TENTATIVE_FLOOR },
     );
     if (!selected.length) return;
 
@@ -88,6 +115,11 @@ export async function inferSupersession(
         score: s.score,
         summary: args.summary ?? null,
         aiEventId: args.aiEventId ?? null,
+        // Persist the confidence provenance so the read side (Critic, canvas) can prefer
+        // strong edges and a future tuning pass can audit precision on real data.
+        confidence: s.confidence,
+        tier: s.tier,
+        reasons: s.reasons,
       });
 
       // 1) Write the typed edge. Idempotent on the unique key (incl. relation), so a
