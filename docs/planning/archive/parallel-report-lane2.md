@@ -46,3 +46,23 @@ Third increment on the held DBR umbrella. The shared-premise precedent now names
 **Gate:** tsc 0 / **1113 full suite** / +3 tests (24 in the file) / no em/en-dash. Byte-identical / generic phrasing until premise titles resolve.
 
 **State:** committed + FF-pushed to `origin/main`. `DBR (H1)` claim still **HELD** (shared-premise feature now complete across Critic + nudge + named premise).
+
+## 2026-06-22 — lane.sh slash-id fix (unblock claiming slash-named register items)
+
+Before building, the claim of `M1 / LRN-01` returned a false `HELD`: the atomic mutex `mkdir "$CLAIMS/$id"` splits on the `/` into a nonexistent nested path, so it failed and was misread as "held" — every slash-named register item (`M1 / LRN-01`, `LCH-01 / L1`) was permanently unclaimable. Fix: one `_cdir()` helper replacing ONLY `/` (every existing id stays byte-identical), routed through all 7 CLAIMS/DONE path sites; logical id kept in `meta id=`. +2 regression tests (`scripts/lane.test.sh` 11/11, was 9/9). Committed + pushed. Files: `scripts/lane.sh`, `scripts/lane.test.sh`.
+
+## 2026-06-22 — M1 / LRN-01: Support triage loop, increment 1 (autonomous core)
+
+**Picked:** `M1 / LRN-01` (Support triage) — the founder's constraint this run was "untouched items only, start from zero, no AI chokepoint / Stripe / BYO keys." Of all 18 `⬜` rows it was the ONLY one not Gated/Deferred/chokepoint; the rerank put it at #2. Claimed the register row and **held** it for the increment.
+
+**Shipped (◐ dormant-correct, never touches the AI chokepoint):** the loop "tickets → recurring clusters → Discover signals," server + engine only.
+- `support_tickets` table (workspace-scoped, RLS via `is_workspace_member`; migration `20260622090000`, forward-only, applies on the founder's next publish).
+- PURE `src/lib/support/triage.ts` — Unicode-aware tokenizer + **greedy-leader clustering against each cluster's common core** + signal-payload shaping (deterministic, 24 tests).
+- `src/lib/support/draft.ts` — deterministic humanized template reply (works with no AI) + a dormant `DraftProvider` seam for the founder-gated AI layer (routes through an EXISTING `CallSurface` when wired; no new surface).
+- `src/lib/support-triage.functions.ts` — add/bulk/list tickets, `runSupportTriage` (emits each recurring cluster as a `source='support-triage'` signal → feeds Discover), `listSupportClusters`, `draftSupportReply`.
+
+**Adversarial review:** two reviewers (runtime-fatal + clustering-logic). Runtime: **no fatal bugs** — columns/RLS/call-shapes clean, verified against the LIVE DB (`signals` insert columns + FK/helper targets all exist; `support_tickets` correctly absent in prod = dormant). Logic: determinism exhaustively sound, but a **HIGH** false-positive — single-link union-find welds two unrelated themes via one broad "bridge" ticket. **Folded every real fix before commit:** greedy-leader-against-the-core (kills the bridge merge + a long-ticket false-negative), Unicode-folding tokenizer, hardened `clusterKey` (top-6, no collision); +5 regression tests.
+
+**Gate:** tsc 0 / eslint 0 (5 files) / 33 support tests / **1146 full suite** / no em/en-dash in generated strings.
+
+**State:** committing + FF-push to `origin/main`. `M1 / LRN-01` claim **HELD** for increment 2 (the `/support` UI route + panel, autonomous). Founder-gated remainders flagged (inbound channel connector; AI-written draft). Docs: `docs/features/m1-support-triage.md` (new), dashboard row (◐/In Dev), `plan.md` §4, `session-decisions.md`.
