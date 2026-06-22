@@ -51,8 +51,13 @@ const TITLE_TABLE: Record<GraphNodeKind, { table: string; col: string }> = {
 };
 
 const LINEAGE_COLS = "id,parent_kind,parent_id,child_kind,child_id,relation,rationale,created_at";
-/** Same row plus the bi-temporal `valid_to` stamp (DBR-1.5), used once the migration is live. */
-const LINEAGE_COLS_BITEMPORAL = `${LINEAGE_COLS},valid_to`;
+/**
+ * Same row plus the bi-temporal `valid_to` stamp AND the `inference` provenance blob
+ * (edge-confidence, DBR-EDGE-CONF). Both columns shipped in the same migration
+ * (`20260621030000`), so the single `valid_to` probe below gates both — used once the
+ * migration is live; otherwise the base set is returned and the canvas degrades cleanly.
+ */
+const LINEAGE_COLS_BITEMPORAL = `${LINEAGE_COLS},valid_to,inference`;
 
 /** A PostgREST "column does not exist" error (42703) - the pre-migration signal for `valid_to`. */
 function isMissingColumnError(

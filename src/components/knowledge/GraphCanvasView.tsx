@@ -13,6 +13,7 @@ import {
   filterByTime,
   computeStaleness,
   computeContradictionDrift,
+  summarizeEdgeConfidence,
   type GraphNodeKind,
 } from "@/lib/knowledge-graph-view";
 import { MonoLabel } from "@/components/cadence/Primitives";
@@ -80,6 +81,14 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
   // and kept as faded history (invalidate-don't-delete).
   const retiredCount = useMemo(
     () => (graph ? graph.edges.filter((e) => e.retired).length : 0),
+    [graph],
+  );
+
+  // Edge-confidence (DBR-EDGE-CONF): how trustworthy the current revisions are, from the
+  // supersession engine's own scoring. Surfaced so the trust the engine built at write-time
+  // is legible on the graph (and degrades to nothing before any scored edge exists).
+  const confidence = useMemo(
+    () => (graph ? summarizeEdgeConfidence(graph.edges) : { scored: 0, strong: 0, tentative: 0 }),
     [graph],
   );
 
@@ -225,6 +234,15 @@ export function GraphCanvasView({ focusKind, focusId }: { focusKind?: string; fo
         <MonoLabel style={{ marginBottom: 8, color: "var(--ink-faint)" }}>
           {retiredCount} {retiredCount === 1 ? "revision was" : "revisions were"} themselves later
           reversed · kept as faded history (invalidate, don&rsquo;t delete)
+        </MonoLabel>
+      )}
+
+      {confidence.scored > 0 && (
+        <MonoLabel style={{ marginBottom: 8, color: "var(--ink-muted)" }}>
+          {confidence.strong} of {confidence.scored}{" "}
+          {confidence.scored === 1 ? "current revision is" : "current revisions are"}{" "}
+          high-confidence
+          {confidence.tentative > 0 ? ` · ${confidence.tentative} tentative` : ""}
         </MonoLabel>
       )}
 

@@ -10,6 +10,7 @@ import {
   buildSupersessionStory,
   isSupersessionRelation,
   pickLineageFocus,
+  summarizeEdgeConfidence,
   type RawLineageEdge,
   type GraphNodeKind,
   type LineageRowLike,
@@ -32,8 +33,95 @@ function edge(
     rationale: opts.rationale ?? null,
     created_at: opts.created_at ?? "2026-06-01T00:00:00.000Z",
     valid_to: opts.valid_to,
+    inference: opts.inference,
   };
 }
+
+describe("edge confidence on the canvas (DBR-EDGE-CONF-READ)", () => {
+  const titles = new Map<string, string>();
+
+  it("threads inference confidence + tier onto a supersession edge", () => {
+    const g = projectGraph(
+      [
+        edge(["prd", "new"], ["prd", "old"], {
+          relation: "contradicts",
+          inference: { confidence: 0.93, tier: "strong" },
+        }),
+      ],
+      titles,
+      k("prd", "new"),
+    );
+    const e = g.edges.find((x) => x.relation === "contradicts");
+    expect(e?.confidence).toBe(0.93);
+    expect(e?.confidenceTier).toBe("strong");
+  });
+
+  it("ignores inference on a non-supersession edge (confidence never lies)", () => {
+    const g = projectGraph(
+      [
+        edge(["signal", "s1"], ["theme", "t1"], {
+          relation: "promoted",
+          inference: { confidence: 0.99, tier: "strong" },
+        }),
+      ],
+      titles,
+      k("signal", "s1"),
+    );
+    const e = g.edges.find((x) => x.relation === "promoted");
+    expect(e?.confidence).toBeNull();
+    expect(e?.confidenceTier).toBeNull();
+  });
+
+  it("a supersession edge with no inference reads null confidence (pre-engine / pre-migration)", () => {
+    const g = projectGraph(
+      [edge(["prd", "new"], ["prd", "old"], { relation: "supersedes" })],
+      titles,
+      k("prd", "new"),
+    );
+    const e = g.edges.find((x) => x.relation === "supersedes");
+    expect(e?.confidence).toBeNull();
+    expect(e?.confidenceTier).toBeNull();
+  });
+
+  it("summarizeEdgeConfidence counts strong vs tentative among CURRENT revisions only", () => {
+    // All edges incident to the focus so the bounded BFS includes them.
+    const g = projectGraph(
+      [
+        edge(["prd", "a"], ["prd", "a0"], {
+          relation: "contradicts",
+          inference: { confidence: 0.9, tier: "strong" },
+        }),
+        edge(["prd", "a"], ["prd", "b0"], {
+          relation: "supersedes",
+          inference: { confidence: 0.5, tier: "tentative" },
+        }),
+        // retired (reversed) — must NOT count toward the current summary
+        edge(["prd", "a"], ["prd", "c0"], {
+          relation: "contradicts",
+          valid_to: "2026-06-05T00:00:00.000Z",
+          inference: { confidence: 0.95, tier: "strong" },
+        }),
+        // a plain promoted edge — not superseding, never scored
+        edge(["signal", "s1"], ["prd", "a"], { relation: "promoted" }),
+      ],
+      titles,
+      k("prd", "a"),
+    );
+    const s = summarizeEdgeConfidence(g.edges);
+    expect(s.scored).toBe(2);
+    expect(s.strong).toBe(1);
+    expect(s.tentative).toBe(1);
+  });
+
+  it("summarizeEdgeConfidence is empty when no scored current revisions exist", () => {
+    const g = projectGraph(
+      [edge(["signal", "s1"], ["theme", "t1"], { relation: "promoted" })],
+      titles,
+      k("signal", "s1"),
+    );
+    expect(summarizeEdgeConfidence(g.edges)).toEqual({ scored: 0, strong: 0, tentative: 0 });
+  });
+});
 
 describe("classifyRelation", () => {
   it("defaults empty to promoted, lowercases, passes through", () => {

@@ -57,6 +57,12 @@ export type RawLineageEdge = {
    * non-supersession edge.
    */
   valid_to?: string | null;
+  /**
+   * Edge-confidence provenance (DBR-EDGE-CONF), written into the `inference` jsonb by the
+   * supersession engine. Present only on engine-written supersession edges once the column
+   * is live; absent on promoted/human edges and before the migration. Read fail-safe.
+   */
+  inference?: { confidence?: number; tier?: string } | null;
 };
 
 export type GraphNode = {
@@ -97,6 +103,14 @@ export type GraphEdge = {
    * faded history rather than being deleted. False until the engine + migration run.
    */
   retired: boolean;
+  /**
+   * Edge-confidence (DBR-EDGE-CONF): how trustworthy the supersession engine judged this
+   * edge, from its `inference` provenance. Null on non-supersession edges and on edges
+   * written before the confidence layer (so the canvas only ever fades a genuinely-scored,
+   * low-confidence revision — never an unscored one).
+   */
+  confidence: number | null;
+  confidenceTier: "strong" | "tentative" | "drop" | string | null;
 };
 
 export type KnowledgeGraph = {
@@ -290,6 +304,14 @@ export function projectGraph(
       superseding && typeof e.raw.valid_to === "string" && e.raw.valid_to.trim()
         ? e.raw.valid_to
         : null;
+    // Edge-confidence (DBR-EDGE-CONF): only a supersession edge can carry it, so a stray
+    // inference blob on any other relation is ignored and the canvas never mis-fades.
+    const inf =
+      superseding && e.raw.inference && typeof e.raw.inference === "object"
+        ? e.raw.inference
+        : null;
+    const confidence = inf && typeof inf.confidence === "number" ? inf.confidence : null;
+    const confidenceTier = inf && typeof inf.tier === "string" ? inf.tier : null;
     return {
       id: e.raw.id,
       source: e.sourceKey,
@@ -300,6 +322,8 @@ export function projectGraph(
       validTo,
       superseding,
       retired: validTo !== null,
+      confidence,
+      confidenceTier,
     };
   });
 
@@ -315,6 +339,25 @@ export function projectGraph(
     },
     truncated,
   };
+}
+
+/**
+ * PURE (DBR-EDGE-CONF). Summarize the edge-confidence of the CURRENT supersession revisions:
+ * among non-retired supersedes/contradicts edges that carry an engine confidence tier, how
+ * many are strong vs tentative. Retired (reversed) and unscored edges are excluded, so the
+ * canvas only ever claims the trust it actually has.
+ */
+export function summarizeEdgeConfidence(
+  edges: GraphEdge[],
+): { scored: number; strong: number; tentative: number } {
+  let strong = 0;
+  let tentative = 0;
+  for (const e of edges) {
+    if (!e.superseding || e.retired || !e.confidenceTier) continue;
+    if (e.confidenceTier === "strong") strong++;
+    else if (e.confidenceTier === "tentative") tentative++;
+  }
+  return { scored: strong + tentative, strong, tentative };
 }
 
 /**
