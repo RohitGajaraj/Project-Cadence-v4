@@ -16,6 +16,7 @@
  * and stays byte-identical until the decision graph actually has edges.
  */
 import { classifyRelation, isSuperseding, type RawLineageEdge } from "@/lib/knowledge-graph-view";
+import { SUPERSESSION_STRONG_THRESHOLD } from "./supersession-confidence";
 
 export type ContradictionItem = {
   edgeId: string;
@@ -37,6 +38,12 @@ export type ContradictionItem = {
    * Critic is told to weigh their relevance.
    */
   incident: boolean;
+  /**
+   * The supersession engine's edge-confidence (DBR-EDGE-CONF), 0..1, or null for an edge
+   * written before the confidence layer. Higher-confidence edges rank first (within the same
+   * incident/retired bucket), so the Critic cites the most trustworthy contradictions first.
+   */
+  confidence: number | null;
 };
 
 /**
@@ -78,12 +85,17 @@ export function selectContradictionHistory(
       retired: typeof e.valid_to === "string" && e.valid_to.trim().length > 0,
       focusRole: pIn && cIn ? "both" : pIn ? "parent" : "child",
       incident: !!targetId && (e.parent_id === targetId || e.child_id === targetId),
+      confidence:
+        e.inference && typeof e.inference.confidence === "number" ? e.inference.confidence : null,
     });
   }
 
   items.sort((a, b) => {
     if (a.incident !== b.incident) return a.incident ? -1 : 1; // edges on the target itself first
     if (a.retired !== b.retired) return a.retired ? 1 : -1; // then current before retired
+    const ca = a.confidence ?? 0;
+    const cb = b.confidence ?? 0;
+    if (ca !== cb) return cb - ca; // then the more trustworthy edge (higher confidence) first
     return (b.createdAt ?? "").localeCompare(a.createdAt ?? ""); // then newest first
   });
   return items.slice(0, max);
@@ -101,16 +113,22 @@ export function formatContradictionHistory(items: ContradictionItem[]): string {
   const bullets = items.map((it) => {
     const verb = it.relation === "contradicts" ? "CONTRADICTED" : "SUPERSEDED";
     const reversed = it.retired ? " (this assertion was itself later reversed)" : "";
+    // Hand the Critic the meaning, not the raw score: a below-strong-confidence edge is
+    // flagged so the verdict weighs it less (the felt-voice register for a metric).
+    const weak =
+      it.confidence != null && it.confidence < SUPERSESSION_STRONG_THRESHOLD
+        ? " (weaker signal)"
+        : "";
     const why = it.rationale?.trim() ? `: ${it.rationale.trim().slice(0, 200)}` : "";
     if (it.focusRole === "child") {
       // The strongest signal: a PRIOR belief (the child) that a LATER outcome overturned.
-      return `- a prior ${it.childKind} (${it.childId}) was ${verb} by a later outcome${reversed}${why}`;
+      return `- a prior ${it.childKind} (${it.childId}) was ${verb} by a later outcome${reversed}${weak}${why}`;
     }
     // parent / both: the focus is (also) the later outcome that did the overturning. Say
     // "this" only when the edge touches the decision under review (incident); otherwise
     // "a", so a precedent-neighbor edge never reads as if it were the subject's own outcome.
     const subj = it.incident ? "this" : "a";
-    return `- ${subj} ${it.parentKind}'s outcome ${verb} a prior ${it.childKind} (${it.childId})${reversed}${why}`;
+    return `- ${subj} ${it.parentKind}'s outcome ${verb} a prior ${it.childKind} (${it.childId})${reversed}${weak}${why}`;
   });
   return [
     "Contradiction history (this workspace's OWN decision graph; outcome-labeled supersedes/contradicts edges bearing on this decision or ones like it):",

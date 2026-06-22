@@ -13,6 +13,7 @@ function edge(p: Partial<RawLineageEdge> & { id: string }): RawLineageEdge {
     rationale: p.rationale ?? null,
     created_at: p.created_at ?? "2026-06-01T00:00:00Z",
     valid_to: p.valid_to,
+    inference: p.inference,
   };
 }
 
@@ -143,5 +144,63 @@ describe("formatContradictionHistory (DBR-2 prompt block)", () => {
     );
     expect(neighbor).toContain("a prd's outcome CONTRADICTED a prior prd (old)");
     expect(neighbor).not.toContain("this prd's outcome");
+  });
+});
+
+describe("edge-confidence ranking (DBR-EDGE-CONF-CRITIC)", () => {
+  it("stamps the edge confidence from inference, null when absent", () => {
+    const out = selectContradictionHistory(
+      [
+        edge({ id: "scored", child_id: "x", inference: { confidence: 0.8 } }),
+        edge({ id: "unscored", child_id: "x" }),
+      ],
+      ["x"],
+    );
+    const byId = Object.fromEntries(out.map((i) => [i.edgeId, i.confidence]));
+    expect(byId["scored"]).toBe(0.8);
+    expect(byId["unscored"]).toBeNull();
+  });
+
+  it("cites the higher-confidence contradiction first, even when it is older", () => {
+    const out = selectContradictionHistory(
+      [
+        // newer but weaker
+        edge({ id: "weak", child_id: "x", created_at: "2026-06-10T00:00:00Z", inference: { confidence: 0.45 } }),
+        // older but strong
+        edge({ id: "strong", child_id: "x", created_at: "2026-06-01T00:00:00Z", inference: { confidence: 0.95 } }),
+      ],
+      ["x"],
+    );
+    expect(out[0].edgeId).toBe("strong");
+    expect(out[1].edgeId).toBe("weak");
+  });
+
+  it("incident still wins over confidence (a weaker edge on the target outranks a strong neighbor)", () => {
+    const out = selectContradictionHistory(
+      [
+        edge({ id: "neighbor", child_id: "precedent", inference: { confidence: 0.95 } }),
+        edge({ id: "onTarget", child_id: "target", inference: { confidence: 0.45 } }),
+      ],
+      ["target", "precedent"],
+      { targetId: "target" },
+    );
+    expect(out[0].edgeId).toBe("onTarget");
+  });
+
+  it("the prompt block flags a weaker-signal (low-confidence) edge, not a strong one", () => {
+    const weak = formatContradictionHistory(
+      selectContradictionHistory(
+        [edge({ id: "e1", child_id: "x", inference: { confidence: 0.45 } })],
+        ["x"],
+      ),
+    );
+    expect(weak.toLowerCase()).toContain("weaker signal");
+    const strong = formatContradictionHistory(
+      selectContradictionHistory(
+        [edge({ id: "e1", child_id: "x", inference: { confidence: 0.95 } })],
+        ["x"],
+      ),
+    );
+    expect(strong.toLowerCase()).not.toContain("weaker signal");
   });
 });
