@@ -47,8 +47,7 @@ function Delta({
   const glyph = up ? "▲" : "▼";
   // Only colour a genuine regression (more cost / more failures than the original);
   // everything else stays calm neutral and lets the number speak.
-  const regressed =
-    (desirable === "lower" && up) || (desirable === "higher" && !up) ? true : false;
+  const regressed = (desirable === "lower" && up) || (desirable === "higher" && !up) ? true : false;
   return (
     <span
       style={{

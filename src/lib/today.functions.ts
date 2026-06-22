@@ -430,9 +430,7 @@ async function resolveTier(supabase: SupabaseClient, workspaceId: string): Promi
  */
 export const getMemoryExpiry = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ workspaceId: z.string().uuid() }).parse(i ?? {}),
-  )
+  .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i ?? {}))
   .handler(async ({ context, data }): Promise<MemoryExpiryState> => {
     const supabase = context.supabase as unknown as SupabaseClient;
     try {

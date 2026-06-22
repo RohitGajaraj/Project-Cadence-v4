@@ -27,8 +27,7 @@ export function MemoryExpiryBanner({ workspaceId }: { workspaceId: string | null
   if (!state?.show) return null;
 
   const { expiringCount, soonestDays, retentionDays } = state;
-  const subject =
-    expiringCount === 1 ? "1 decision memory" : `${expiringCount} decision memories`;
+  const subject = expiringCount === 1 ? "1 decision memory" : `${expiringCount} decision memories`;
   const verb = expiringCount === 1 ? "is" : "are";
   const timing =
     soonestDays === null || soonestDays === 0

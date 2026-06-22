@@ -135,7 +135,10 @@ describe("deriveMissionSide", () => {
 describe("alignHops", () => {
   it("aligns by position, flags same-agent and output drift", () => {
     const orig = mission({
-      hops: [hop({ agent_slug: "scout", output: "A" }), hop({ agent_slug: "builder", output: "B" })],
+      hops: [
+        hop({ agent_slug: "scout", output: "A" }),
+        hop({ agent_slug: "builder", output: "B" }),
+      ],
     });
     const rep = mission({
       hops: [

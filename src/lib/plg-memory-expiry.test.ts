@@ -8,7 +8,8 @@ const NOW = Date.parse("2026-06-22T00:00:00.000Z");
 function mem(ageDays: number, expiresInDays?: number): MemoryExpiryRow {
   return {
     created_at: new Date(NOW - ageDays * DAY).toISOString(),
-    expires_at: expiresInDays === undefined ? null : new Date(NOW + expiresInDays * DAY).toISOString(),
+    expires_at:
+      expiresInDays === undefined ? null : new Date(NOW + expiresInDays * DAY).toISOString(),
   };
 }
 
@@ -94,7 +95,10 @@ describe("assessMemoryExpiry — edge cases", () => {
     expect(assessMemoryExpiry({ memories: [], retentionDays: 30, nowMs: NOW }).show).toBe(false);
     expect(assessMemoryExpiry({ memories: null, retentionDays: 30, nowMs: NOW }).total).toBe(0);
     const malformed = assessMemoryExpiry({
-      memories: [{ created_at: null, expires_at: null }, { created_at: "nonsense", expires_at: null }],
+      memories: [
+        { created_at: null, expires_at: null },
+        { created_at: "nonsense", expires_at: null },
+      ],
       retentionDays: 30,
       nowMs: NOW,
     });

@@ -19,13 +19,16 @@ export const TOPUP_CREDITS: Record<string, number> = {
 };
 
 /** A minimal shape of a Stripe subscription/line item's price (only the fields we read). */
-type PriceLike = {
-  price?: {
-    lookup_key?: string | null;
-    metadata?: { lovable_external_id?: string | null } | null;
-    id?: string | null;
-  } | null;
-} | null | undefined;
+type PriceLike =
+  | {
+      price?: {
+        lookup_key?: string | null;
+        metadata?: { lovable_external_id?: string | null } | null;
+        id?: string | null;
+      } | null;
+    }
+  | null
+  | undefined;
 
 /**
  * PURE. Resolve the price key from a subscription line item: prefer the catalog
@@ -58,10 +61,13 @@ export function unixSecondsToIso(sec: number | null | undefined): string | null 
 }
 
 /** A minimal Stripe checkout.session shape (only the fields the top-up gate reads). */
-type CheckoutSessionLike = {
-  mode?: string;
-  metadata?: { userId?: string; kind?: string } | null;
-} | null | undefined;
+type CheckoutSessionLike =
+  | {
+      mode?: string;
+      metadata?: { userId?: string; kind?: string } | null;
+    }
+  | null
+  | undefined;
 
 /**
  * PURE. True only for a genuine top-up purchase: a one-time `payment` checkout
@@ -87,8 +93,14 @@ export function isRenewalInvoice(invoice: { billing_reason?: string } | null | u
 
 /** PURE. The subscription period window as ISO, preferring the line-item period over the sub-level one. */
 export function resolvePeriod(
-  item: { current_period_start?: number | null; current_period_end?: number | null } | null | undefined,
-  sub: { current_period_start?: number | null; current_period_end?: number | null } | null | undefined,
+  item:
+    | { current_period_start?: number | null; current_period_end?: number | null }
+    | null
+    | undefined,
+  sub:
+    | { current_period_start?: number | null; current_period_end?: number | null }
+    | null
+    | undefined,
 ): { start: string | null; end: string | null } {
   return {
     start: unixSecondsToIso(item?.current_period_start ?? sub?.current_period_start),
