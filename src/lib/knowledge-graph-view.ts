@@ -347,9 +347,11 @@ export function projectGraph(
  * many are strong vs tentative. Retired (reversed) and unscored edges are excluded, so the
  * canvas only ever claims the trust it actually has.
  */
-export function summarizeEdgeConfidence(
-  edges: GraphEdge[],
-): { scored: number; strong: number; tentative: number } {
+export function summarizeEdgeConfidence(edges: GraphEdge[]): {
+  scored: number;
+  strong: number;
+  tentative: number;
+} {
   let strong = 0;
   let tentative = 0;
   for (const e of edges) {
