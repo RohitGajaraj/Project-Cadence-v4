@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkIngestRateLimit } from "@/lib/ingest-ratelimit.server";
+import { screenIngestText, INGEST_REVIEW_TAG } from "@/lib/ingest-guardrails";
 
 /**
  * F-V5-INGEST-WEBHOOK — public continuous-ingest door.
@@ -71,7 +72,11 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
           const rateLimitCheck = await checkIngestRateLimit(admin, tok.id);
           if (!rateLimitCheck.allowed) {
             return json(
-              { ok: false, error: "Rate limit exceeded", retryAfterSeconds: rateLimitCheck.retryAfterSeconds },
+              {
+                ok: false,
+                error: "Rate limit exceeded",
+                retryAfterSeconds: rateLimitCheck.retryAfterSeconds,
+              },
               429,
             );
           }
@@ -95,20 +100,46 @@ export const Route = createFileRoute("/api/public/ingest-signals")({
           }
           const items = "signals" in parsed.data ? parsed.data.signals : [parsed.data];
 
-          // --- Insert: same columns as createSignal (discovery.functions.ts),
-          // stamped with the token's user_id + workspace_id. signals.content is
-          // NOT NULL, so it falls back to the title.
-          const rows = items.map((s) => ({
-            user_id: tok.user_id,
-            workspace_id: tok.workspace_id,
-            title: s.title,
-            content: s.content?.trim() || s.title,
-            source: s.source?.trim() || "webhook",
-          }));
-          const { error: insertError } = await supabaseAdmin.from("signals").insert(rows);
-          if (insertError) throw new Error(insertError.message);
+          // --- SEC-SIGNAL-INGEST-INJECTION (considerations #3, P0): this is a LIVE, EXTERNAL
+          // untrusted-input door - a posted "signal" lands in `signals` and becomes trusted
+          // context the agents read. Screen each item BEFORE insert: a structural prompt
+          // injection (fence-breakout / forged-system-turn) is REJECTED (never stored); a
+          // borderline lexical-only override is stored but tagged for review. Reuses the
+          // structural-gate classifier, so an item merely QUOTING an injection is not dropped.
+          let quarantined = 0;
+          const rows: Array<{
+            user_id: string;
+            workspace_id: string;
+            title: string;
+            content: string;
+            source: string;
+            tags: string[];
+          }> = [];
+          for (const s of items) {
+            // Screen ALL attacker-controlled free text that reaches downstream context:
+            // title + content + source (the reactor copies `source` into the event payload).
+            const decision = screenIngestText(`${s.title} ${s.content ?? ""} ${s.source ?? ""}`);
+            if (decision === "quarantine") {
+              quarantined++;
+              continue; // never store a structural injection from an external caller
+            }
+            // --- Insert: same columns as createSignal (discovery.functions.ts), stamped with
+            // the token's user_id + workspace_id. signals.content is NOT NULL, falls back to title.
+            rows.push({
+              user_id: tok.user_id,
+              workspace_id: tok.workspace_id,
+              title: s.title,
+              content: s.content?.trim() || s.title,
+              source: s.source?.trim() || "webhook",
+              tags: decision === "flag" ? [INGEST_REVIEW_TAG] : [],
+            });
+          }
+          if (rows.length) {
+            const { error: insertError } = await supabaseAdmin.from("signals").insert(rows);
+            if (insertError) throw new Error(insertError.message);
+          }
 
-          return json({ ok: true, created: rows.length });
+          return json({ ok: true, created: rows.length, quarantined });
         } catch (e) {
           console.error("[ingest-signals]", e);
           return json({ ok: false, error: "internal error" }, 500);

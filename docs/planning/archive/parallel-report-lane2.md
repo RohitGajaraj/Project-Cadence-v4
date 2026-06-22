@@ -102,4 +102,14 @@ Released DBR (arc complete) and pivoted to a fresh, self-contained security item
 
 **Key correctness property (tested):** a genuine ticket merely QUOTING an injection is NOT over-quarantined — only a real structural attack is — so it hardens the path without dropping legitimate tickets. Proportionate self-review (small change reusing a thoroughly-tested pure classifier; no new columns; the screen is driven). +7 screening tests.
 
-**Gate:** tsc 0 / eslint 0 (3 files) / 40 support tests / **1196 full suite** / no em/en-dash. **State:** committing + FF-push; `done`-marked (support-triage scope complete; the LIVE signal-ingest webhook + MCP/A2A screen is a separate future item). `considerations.md` #3 marked PARTIALLY ADDRESSED.
+**Gate:** tsc 0 / eslint 0 (3 files) / 40 support tests / **1196 full suite** / no em/en-dash. **State:** committed + FF-pushed (`38968679bf..13981698ad`); `done`-marked. `considerations.md` #3 marked PARTIALLY ADDRESSED.
+
+## 2026-06-22 — SEC-SIGNAL-INGEST-INJECTION: screen the LIVE signal-ingest webhook (P0)
+
+The higher-value follow-up: the dormant support path was hardened last cycle; this hardens the LIVE, EXTERNAL door. The public `api/public/ingest-signals` webhook turns any external POST into `signals` rows (token-auth, service-role insert) — a real external attack surface.
+
+**Shipped (◐, reuses existing infra, no schema change, no chokepoint):** new GENERIC `src/lib/ingest-guardrails.ts` (`screenIngestText`, reuses the structural-gate `classifyInjection`; domain-neutral so MCP/A2A ingest can reuse it) wired into the webhook — each item's full attacker-controlled free text (title + content + source) is screened BEFORE insert; a structural attack is REJECTED (never stored), a borderline one stored with a `needs-review` tag; the response gains a `quarantined` count.
+
+**Focused adversarial review (external attack surface) = SOUND, no fatal/high/medium.** Confirmed: the screen is on the only insert path (no bypass), the empty-rows guard is safe (rate limit charged per-request before screening, so all-quarantine floods stay metered), `tags:[]`→`'{}'` is valid, and the classifier is ReDoS-safe (bounded quantifiers + 20k cap, 50×5000 char ceiling). **Folded the one LOW finding:** the `source` field reaches the reactor's agent-visible event payload, so it is now part of the screened text.
+
+**Gate:** tsc 0 / eslint 0 (3 files) / 5 ingest-guardrails tests / **1201 full suite** / no em/en-dash. **State:** committing + FF-push; `done`-marked (webhook scope complete; live-verify on publish; external MCP/A2A screen is the remaining third class). `considerations.md` #3 updated.
