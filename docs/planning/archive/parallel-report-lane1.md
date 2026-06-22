@@ -2,6 +2,16 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (17:51) — FINAL closure of the former-Lovable monetization/credit/billing block (founder-directed)
+
+The founder flagged this was the **3rd** re-map of Lovable's monetization work ("is it not documented properly, or not logically closed?") and ruled: close it logically + permanently, mark done where done, leave a note, never re-pick.
+
+- **Diagnosis (the real cause):** an 8-agent adversarial verification workflow (evidence + file:line per item) confirmed every block item was build-complete or had a tiny buildable slice; the only real remainder is **founder go-live config**. They kept being re-picked for ONE mechanical reason — they sat at `◐`+Tier-1/3, which is *exactly* `lane.sh next`'s eligibility. A **logical-closure failure**, not a docs-content gap. (`lane.sh done` is pruned after 48h, so closure had to live in the register row.)
+- **Built the 3 genuinely-buildable slices** (commit 48ff382cf3): **M-C-BILLING-TESTS** — extracted the top-up cap (duplicated across 2 fns, a verifier-flagged UI-vs-backend drift risk) into one pure `topUpCycleCap()` + an SQL↔TS parity guard; **WM-M18** — guarded downgrade-confirm dialog (`useConfirm` on paid→paid downgrade); **WM-M6** — verified 5-tier model live in-app + fixed the stale public-pricing comment. Adversarial review caught + fixed a self-introduced 5000→2500 cap drift before commit. Gate: tsc 0, lint clean, `bun test` 1085 pass.
+- **Closed the whole block to terminal states** (commit 71f99906ce): ✅ `M-C-PRICE`/`WM-M3`/`WM-M13`/`WM-M15` (+ the 3 above); Gated 👤 `WM-M9` (chokepoint), `WM-M17`/`WM-M19` (founder numbers). Authoritative 🔒 do-not-re-pick banners in the dashboard At-a-glance, SSOT §0, AGENTS.md §3; session-decisions entry. `lane.sh done` on all 7 ✅.
+- **Reconciled by-priority Done to ✅** (commit 18e8518aed, founder TASK 2): re-ran `rerank-dashboard.py` (its `classify()` maps ✅→Done) so by-priority **Done = 132 == ✅ status = 132** (was 81 vs 125). Emptied the dead `Lovable` set in the script. New tally: **179 rows; strict 132/179 = 73.7%, weighted 144.38/179 = 80.7%**.
+- **Net:** the monetization/credit/billing/admin block is build-complete + gate-green and will NEVER re-surface in `lane.sh next` (no item is `◐`+Tier-1/3 anymore). The only open monetization work is the founder's, in SSOT §4. **Breadcrumb:** Settings → Plan (downgrade confirm) · `/pricing` · Settings → Credits.
+
 ## 2026-06-22 (15:57) — DBR-3e: decision precedent cited in chat/Ask
 
 The 5th "value at every step" moment — the brain now volunteers DECISION precedent IN CONVERSATION.
