@@ -1,7 +1,10 @@
 // PLG · the public, unauthenticated /pricing marketing page (the deferred
-// increment named in docs/features/pricing.md). Renders the three plan tiers
-// straight from `planPresentation` in entitlements.ts — the same source of
-// truth the in-app Settings → Plan tab uses, so prices/features never drift.
+// increment named in docs/features/pricing.md). Renders the four self-serve plan
+// tiers (free · pro · max · team) straight from `planPresentation` in
+// entitlements.ts — the same source of truth the in-app Settings → Plan tab uses,
+// so prices/features never drift. Enterprise is deliberately a contact-sales path,
+// not a public price, so it is not in this list (the full 5-tier model, including
+// Enterprise, lives in the in-app PlanPicker's Teams & Enterprise view).
 // Leads with the decided positioning: free to start, pay to keep your memory
 // (the "charge for memory persistence" course-correction). Not under
 // _authenticated, so it works with no session. SSR for a real link preview.

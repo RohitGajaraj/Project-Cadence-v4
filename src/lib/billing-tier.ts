@@ -112,6 +112,23 @@ export function subscriptionStatusGrantsCredits(status: string): boolean {
   return status === "active" || status === "trialing";
 }
 
+/** Per-cycle top-up ceiling when the account has no included monthly grant (engine dormant). Matches the SQL RPC fallback. */
+export const FALLBACK_TOPUP_CAP = 5_000;
+
+/**
+ * The per-cycle capped-top-up ceiling for an account, given its included monthly grant.
+ * A paid account may top up to 2x its monthly allowance per cycle; an account with no grant
+ * (engine dormant / free) is held to {@link FALLBACK_TOPUP_CAP}. Pure — the SINGLE source the
+ * top-up checkout pre-check, the credits view, AND the `apply_topup_credits` SQL RPC all agree
+ * on, so the cap the UI shows can never drift from the cap the backend enforces. Mirrors the SQL
+ * `_cap := CASE WHEN monthly_grant > 0 THEN monthly_grant * 2 ELSE <fallback> END`
+ * (see `topup-cap-sql-parity.test.ts`).
+ */
+export function topUpCycleCap(monthlyGrantCredits: number | null | undefined): number {
+  const grant = Number(monthlyGrantCredits ?? 0);
+  return grant > 0 ? grant * 2 : FALLBACK_TOPUP_CAP;
+}
+
 /**
  * Build the Stripe `lookup_key` for a (tier, credits, interval) bundle.
  * Convention: `<prefix>_<credits-shorthand>[_seat]_<monthly|yearly>`.

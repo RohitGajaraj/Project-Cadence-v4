@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  FALLBACK_TOPUP_CAP,
   creditsFromLookupKey,
   defaultMonthlyLookupKey,
   effectiveTierForStatus,
   lookupKeyFor,
   subscriptionStatusGrantsCredits,
   tierFromLookupKey,
+  topUpCycleCap,
 } from "./billing-tier";
 import type { PlanTier } from "./entitlements";
 
@@ -124,6 +126,26 @@ describe("subscriptionStatusGrantsCredits — only a paying state mints credits"
     for (const status of ["canceled", "unpaid", "incomplete", "incomplete_expired", "paused", ""]) {
       expect(subscriptionStatusGrantsCredits(status)).toBe(false);
     }
+  });
+});
+
+describe("topUpCycleCap — the single source the checkout pre-check, credits view, and SQL RPC all agree on", () => {
+  it("caps a paying account at 2x its monthly grant", () => {
+    expect(topUpCycleCap(2500)).toBe(5000);
+    expect(topUpCycleCap(5000)).toBe(10000);
+    expect(topUpCycleCap(10000)).toBe(20000);
+    expect(topUpCycleCap(1)).toBe(2);
+  });
+  it("falls back to FALLBACK_TOPUP_CAP when there is no monthly grant (engine dormant / free)", () => {
+    expect(topUpCycleCap(0)).toBe(FALLBACK_TOPUP_CAP);
+    expect(topUpCycleCap(null)).toBe(FALLBACK_TOPUP_CAP);
+    expect(topUpCycleCap(undefined)).toBe(FALLBACK_TOPUP_CAP);
+  });
+  it("never returns a negative cap on a malformed negative grant (treats it as no grant)", () => {
+    expect(topUpCycleCap(-100)).toBe(FALLBACK_TOPUP_CAP);
+  });
+  it("FALLBACK_TOPUP_CAP is the documented dormant ceiling (must stay in lockstep with the SQL RPC fallback)", () => {
+    expect(FALLBACK_TOPUP_CAP).toBe(5000);
   });
 });
 

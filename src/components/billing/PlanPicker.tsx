@@ -19,6 +19,7 @@ import { getStripeEnvironment } from "@/lib/stripe";
 import { getPricingCatalog, type PricingBundle } from "@/lib/pricing.functions";
 import { lookupKeyFor } from "@/lib/billing-tier";
 import { planPresentation, type PlanTier } from "@/lib/entitlements";
+import { useConfirm } from "@/hooks/use-confirm";
 
 type PaidTier = "pro" | "max" | "team";
 
@@ -497,6 +498,7 @@ function PaidTierCard({
   const selected = sorted.find((b) => b.id === selectedId) ?? sorted[0];
   const [open, setOpen] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const confirm = useConfirm();
   const effectiveInterval: "monthly" | "yearly" = allowYearly ? billing : "monthly";
 
   const monthlyEquivCents = selected
@@ -523,13 +525,24 @@ function PaidTierCard({
   const direction: "upgrade" | "downgrade" | "same" =
     cmp > 0 ? "upgrade" : cmp < 0 ? "downgrade" : "same";
 
-  function onSubscribe() {
+  async function onSubscribe() {
     if (!lookupKey) return;
     try {
       getStripeEnvironment();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Payments are not configured yet.");
       return;
+    }
+    // Guard a downgrade behind an explicit confirm: moving to a lower tier reduces the
+    // included monthly credits and capabilities, so it should never be one stray click.
+    if (direction === "downgrade") {
+      const ok = await confirm({
+        title: `Move down to ${p.name}?`,
+        body: `${p.name} includes fewer monthly credits and capabilities than your current plan. The change takes effect from your next billing cycle, and you can move back up at any time.`,
+        confirmLabel: `Move to ${p.name}`,
+        cancelLabel: "Keep my current plan",
+      });
+      if (!ok) return;
     }
     setOpen(true);
   }

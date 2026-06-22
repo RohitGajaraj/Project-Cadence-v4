@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 import { computeCreditAttribution } from "@/lib/credits.functions";
+import { topUpCycleCap } from "@/lib/billing-tier";
 
 type CheckoutResult = { clientSecret: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
@@ -264,8 +265,6 @@ export type CreditsView = {
   topups: CreditsTopupRow[];
 };
 
-const FALLBACK_TOPUP_CAP = 5000; // when monthly grant is 0 (engine still dormant)
-
 export const getMyCreditsView = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { environment: StripeEnv }) => data)
@@ -279,7 +278,7 @@ export const getMyCreditsView = createServerFn({ method: "GET" })
       topupCredits: 0,
       cycleAnchor: null,
       cycleTopupCredits: 0,
-      cycleTopupCapCredits: FALLBACK_TOPUP_CAP,
+      cycleTopupCapCredits: topUpCycleCap(0),
       ledger: [],
       topups: [],
     };
@@ -345,7 +344,7 @@ export const getMyCreditsView = createServerFn({ method: "GET" })
     const cycleTopups = topups
       .filter((t) => t.status === "completed" && new Date(t.created_at).getTime() >= sinceMs)
       .reduce((s, t) => s + Number(t.credits_added || 0), 0);
-    const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
+    const cap = topUpCycleCap(monthlyGrant);
 
     return {
       accountId,
@@ -429,7 +428,7 @@ export const createTopUpCheckout = createServerFn({ method: "POST" })
         )
           .filter((t) => t.status === "completed" && new Date(t.created_at).getTime() >= sinceMs)
           .reduce((s, t) => s + Number(t.credits_added || 0), 0);
-        const cap = monthlyGrant > 0 ? monthlyGrant * 2 : FALLBACK_TOPUP_CAP;
+        const cap = topUpCycleCap(monthlyGrant);
         if (cycleSpend + bundle.credits > cap) {
           return {
             error: `Top-up limit reached for this cycle (${cap.toLocaleString()} credits). Try a smaller bundle, or wait for the next cycle.`,
