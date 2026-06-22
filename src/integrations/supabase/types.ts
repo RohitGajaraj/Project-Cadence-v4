@@ -6508,6 +6508,7 @@ export type Database = {
       }
       seed_studio_tools: { Args: { _user_id: string }; Returns: undefined }
       tier_product_limit: { Args: { _tier: string }; Returns: number }
+      tier_seat_limit: { Args: { _tier: string }; Returns: number }
       tier_workspace_limit: { Args: { _tier: string }; Returns: number }
       transfer_workspace_ownership: {
         Args: { _new_owner_id: string; _workspace_id: string }
