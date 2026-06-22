@@ -258,8 +258,20 @@ describe("collectSharedPremiseCousins premise provenance (DBR-3h)", () => {
   it("shares the signal premise when cousins sit under sibling opportunities", () => {
     // S -> O1 (target), S -> O2, O2 -> Pb : O1 and O2 share signal S.
     const edges = [
-      edge({ id: "e1", parent_id: "S", child_id: "O1", parent_kind: "signal", child_kind: "opportunity" }),
-      edge({ id: "e2", parent_id: "S", child_id: "O2", parent_kind: "signal", child_kind: "opportunity" }),
+      edge({
+        id: "e1",
+        parent_id: "S",
+        child_id: "O1",
+        parent_kind: "signal",
+        child_kind: "opportunity",
+      }),
+      edge({
+        id: "e2",
+        parent_id: "S",
+        child_id: "O2",
+        parent_kind: "signal",
+        child_kind: "opportunity",
+      }),
       edge({ id: "e3", parent_id: "O2", child_id: "Pb", child_kind: "prd" }),
     ];
     const anc = collectPremiseAncestors("O1", edges);
@@ -272,9 +284,27 @@ describe("collectSharedPremiseCousins premise provenance (DBR-3h)", () => {
   it("shares the CLOSEST common ancestor (the opportunity, not the signal above it)", () => {
     // S -> O1; O1 -> Pa (target), O1 -> Pc : Pa and Pc share opportunity O1 (closer than S).
     const edges = [
-      edge({ id: "e1", parent_id: "S", child_id: "O1", parent_kind: "signal", child_kind: "opportunity" }),
-      edge({ id: "e2", parent_id: "O1", child_id: "Pa", parent_kind: "opportunity", child_kind: "prd" }),
-      edge({ id: "e3", parent_id: "O1", child_id: "Pc", parent_kind: "opportunity", child_kind: "prd" }),
+      edge({
+        id: "e1",
+        parent_id: "S",
+        child_id: "O1",
+        parent_kind: "signal",
+        child_kind: "opportunity",
+      }),
+      edge({
+        id: "e2",
+        parent_id: "O1",
+        child_id: "Pa",
+        parent_kind: "opportunity",
+        child_kind: "prd",
+      }),
+      edge({
+        id: "e3",
+        parent_id: "O1",
+        child_id: "Pc",
+        parent_kind: "opportunity",
+        child_kind: "prd",
+      }),
     ];
     const anc = collectPremiseAncestors("Pa", edges); // [O1, S]
     const cousins = collectSharedPremiseCousins({ kind: "prd", id: "Pa" }, anc, edges);

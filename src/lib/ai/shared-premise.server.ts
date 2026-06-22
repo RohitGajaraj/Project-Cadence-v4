@@ -241,5 +241,7 @@ export async function resolveSharedPremisePrecedent(
   target: { kind: string; id: string },
   opts: { max?: number } = {},
 ): Promise<string> {
-  return formatSharedPremisePrecedent(await resolveSharedPremiseItems(supabase, userId, target, opts));
+  return formatSharedPremisePrecedent(
+    await resolveSharedPremiseItems(supabase, userId, target, opts),
+  );
 }

@@ -171,7 +171,10 @@ export function collectSharedPremiseCousins(
   const seedOf = new Map<string, { kind: string; id: string }>();
   for (const a of ancestors) seedOf.set(a, { kind: ancestorKind.get(a) ?? "opportunity", id: a });
 
-  const cousins = new Map<string, { kind: string; id: string; premiseKind: string; premiseId: string }>();
+  const cousins = new Map<
+    string,
+    { kind: string; id: string; premiseKind: string; premiseId: string }
+  >();
   const seen = new Set<string>(ancestors);
   let frontier = [...ancestors];
   for (let hop = 0; hop < MAX_HOPS && frontier.length && seen.size < MAX_NODES; hop++) {
@@ -186,7 +189,12 @@ export function collectSharedPremiseCousins(
         next.push(cid);
         if (cid === target.id || targetSubtree.has(cid) || ancestorSet.has(cid)) continue;
         if (!cousins.has(cid)) {
-          cousins.set(cid, { kind: e.child_kind, id: cid, premiseKind: seed.kind, premiseId: seed.id });
+          cousins.set(cid, {
+            kind: e.child_kind,
+            id: cid,
+            premiseKind: seed.kind,
+            premiseId: seed.id,
+          });
         }
       }
     }
