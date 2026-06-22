@@ -112,4 +112,16 @@ The higher-value follow-up: the dormant support path was hardened last cycle; th
 
 **Focused adversarial review (external attack surface) = SOUND, no fatal/high/medium.** Confirmed: the screen is on the only insert path (no bypass), the empty-rows guard is safe (rate limit charged per-request before screening, so all-quarantine floods stay metered), `tags:[]`→`'{}'` is valid, and the classifier is ReDoS-safe (bounded quantifiers + 20k cap, 50×5000 char ceiling). **Folded the one LOW finding:** the `source` field reaches the reactor's agent-visible event payload, so it is now part of the screened text.
 
-**Gate:** tsc 0 / eslint 0 (3 files) / 5 ingest-guardrails tests / **1201 full suite** / no em/en-dash. **State:** committing + FF-push; `done`-marked (webhook scope complete; live-verify on publish; external MCP/A2A screen is the remaining third class). `considerations.md` #3 updated.
+**Gate:** tsc 0 / eslint 0 (3 files) / 5 ingest-guardrails tests / **1201 full suite** / no em/en-dash. **State:** committed + FF-pushed (`d262f521f5..9c576c3390`); `done`-marked (webhook scope complete; live-verify on publish; external MCP/A2A screen is the remaining third class). `considerations.md` #3 updated.
+
+---
+
+## ▶ SESSION CLOSED — 2026-06-22 night (founder: "pick up tomorrow")
+
+Founder paused the autonomous run. **Everything committed + fast-forward pushed to `origin/main`; tree clean, 0 ahead/0 behind; no ledger claims held** (DBR released, both SEC items done-marked). To resume: re-invoke `/overnight-build`.
+
+**This session shipped 7 commits to `main`** (all gate-green + adversarially reviewed + documented): the `lane.sh` slash-id harness fix; M1 Support-triage core; DBR entity-resolution v1; the entity-resolution → shared-premise wiring (flag-gated OFF); and two P0 injection screens (support-triage boundary + the live signal-ingest webhook) — which together close considerations #3 for every non-chokepoint path. Suite grew **1113 → 1201** tests. Never touched the AI chokepoint / Stripe / BYO.
+
+**WHY HOLDED:** the clean autonomous backlog within the founder's constraints (no chokepoint / Stripe / BYO / input-needed) is verifiably exhausted — the board's only eligible row (`DBR (H1)`) has only cross-lane (Lane 1's files) or founder-gated work left; the last injection surface (MCP/A2A) is in the chokepoint.
+
+**WHERE TO PICK UP (founder-gated, the founder's call):** (a) flip `DBR_ENTITY_ALIASING` after a precision review on real data; (b) connect a support inbound channel + make the M1 `/support` UI-placement call; (c) decide on chokepoint work (MCP/A2A screen, WM-M9) and/or cross-lane DBR wiring; (d) the queued founder activations (Stripe go-live, `credits_enabled()`/`AI_COST_ROUTING`, `DECISION_BRAIN_SUPERSESSION`); (e) the one-time §14 design pass when the product is final. Canonical pickup note: `SOURCE-OF-TRUTH.md` §0 (the SESSION CLOSED note at the top); full per-commit detail: `plan.md` §4 (2026-06-22 entries).
