@@ -121,6 +121,46 @@ _is_register_id() {
   ' "$reg"
 }
 
+# Repo root for the worktree this script lives in.
+_repo_root() { cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd; }
+
+# Read the FRESHEST register. The collision bug (two lanes on one item) is a STALE-READ
+# race: `next` picks from THIS worktree's local dashboard, but a sibling lane may have
+# ALREADY flipped that row to `🔨 In Dev` + pushed to origin/main; until this worktree
+# pulls, its local copy still shows the row eligible, so both lanes target it. Fixing the
+# read at the source: fetch origin (fast, refs-only) and read `origin/main`'s dashboard, so
+# `next`/`claim` see what every other lane has already committed. Falls back to the local
+# file when offline / not a git repo / `LANE_NO_FETCH=1` (tests). This is what makes
+# "pick only items no other session is handling" true even before this lane rebases.
+_fresh_register() {
+  local root; root="$(_repo_root)"
+  if [ "${LANE_NO_FETCH:-}" != "1" ] && git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+    git -C "$root" fetch -q origin main 2>/dev/null || true
+    git -C "$root" show origin/main:docs/planning/feature-dashboard.md 2>/dev/null && return 0
+  fi
+  cat "$root/docs/planning/feature-dashboard.md" 2>/dev/null
+}
+
+# Print the lane number currently holding <id> as `🔨 In Dev (laneN, ...)` in the FRESH
+# register, or nothing. Used by `claim` as a SECOND, independent lock (besides the ledger
+# mutex): a row another lane has flipped In-Dev on origin must never be claimed here, even
+# if that lane's ledger claim was reaped or the timing lagged.
+_indev_lane_of() {
+  local id="$1"
+  _fresh_register | awk -F'|' -v want="$id" '
+    /^\| [0-9]+ \|/{
+      v=$4; gsub(/^[ \t]+|[ \t]+$/,"",v);
+      if (v==want) {
+        s=$3; gsub(/^[ \t]+|[ \t]+$/,"",s);
+        if (s ~ /^🔨/ && s ~ /In Dev \(/) {
+          t=s; sub(/.*In Dev \(/,"",t); sub(/[,)].*/,"",t);
+          gsub(/^[ \t]+|[ \t]+$/,"",t); print t;
+        }
+        exit
+      }
+    }'
+}
+
 cmd_init() { _ensure; echo "ledger ready at $LEDGER"; }
 
 cmd_claim() {
@@ -141,6 +181,21 @@ cmd_claim() {
     local h; h="$(_meta_get "$dir" lane 2>/dev/null || echo '?')"
     echo "HELD $id by lane $h (since $(_meta_get "$dir" started 2>/dev/null))"
     return 1
+  fi
+
+  # 1.5) dashboard In-Dev cross-check (SECOND, independent lock). The ledger mutex above only
+  #      sees ACTIVE ledger claims; a sibling lane may have flipped this row `🔨 In Dev` on
+  #      origin/main without a live ledger claim (timing lag, or a reaped claim). Refuse if so,
+  #      so two lanes never work the same item even across the ledger/dashboard gap. (Pins and
+  #      same-lane re-claims are exempt: a pin is a deliberate area reservation; a lane re-claiming
+  #      its own in-dev row is the umbrella-continue case.)
+  if [ "${PINNED:-false}" != "true" ]; then
+    local indev; indev="$(_indev_lane_of "$id" 2>/dev/null || true)"
+    if [ -n "$indev" ] && [ "$indev" != "$lane" ] && [ "$indev" != "lane $lane" ]; then
+      rmdir "$dir" 2>/dev/null || rm -rf "$dir"   # back out my just-won mutex
+      echo "IN-DEV $id is 🔨 In Dev by lane $indev on origin/main; pick another item"
+      return 1
+    fi
   fi
 
   # 2) file-glob reservation: reject if my globs overlap ANOTHER LANE's active claim.
@@ -221,22 +276,23 @@ cmd_done() {
 # `for id in $(lane.sh next); do lane.sh claim "$id" <lane> "<globs>" && build && break; done`.
 # Empty output (exit 2) = the board is GENUINELY dry; anything else means build it, never long-poll.
 cmd_next() {
-  local count="${1:-500}" reg rank id n=0   # effectively the full eligible list (claim down it until one wins)
+  local count="${1:-500}" rank id n=0   # effectively the full eligible list (claim down it until one wins)
   _ensure
-  reg="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)/docs/planning/feature-dashboard.md"
-  [ -f "$reg" ] || { echo "register not found: $reg" >&2; return 1; }
+  # Read FRESH (origin/main) eligibility, not this worktree's possibly-stale local copy, so a
+  # row a sibling lane already flipped `🔨 In Dev` + pushed is excluded here too (it is no
+  # longer ⬜/◐). This is the source-level fix for the stale-read collision.
   while IFS=$'\t' read -r rank id; do
     local cdir; cdir="$(_cdir "$id")"
-    [ -d "$CLAIMS/$cdir" ] && continue      # already claimed by a lane
+    [ -d "$CLAIMS/$cdir" ] && continue      # already claimed by a lane (ledger mutex)
     [ -e "$DONE/$cdir" ] && continue        # already completed (no re-pick)
     echo "$id"
     n=$((n + 1)); [ "$n" -ge "$count" ] && break
-  done < <(awk -F'|' '
+  done < <(_fresh_register | awk -F'|' '
     /^\| [0-9]+ \|/{
       r=$2; s=$3; id=$4; pr=$8;
       gsub(/^[ \t]+|[ \t]+$/,"",r); gsub(/^[ \t]+|[ \t]+$/,"",s); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",pr);
       if ((s=="\342\254\234" || s=="\342\227\220") && (pr=="Tier 1" || pr=="Tier 3")) printf "%d\t%s\n", r, id;
-    }' "$reg" | sort -n)
+    }' | sort -n)
   if [ "$n" = 0 ]; then echo "BOARD DRY: no eligible Tier-1/Tier-3 ⬜/◐ item unclaimed + not done" >&2; return 2; fi
   return 0
 }
