@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
+import { ShareStatusButton } from "@/components/today/StatusUpdateDialog";
 import { CadenceMark, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { getDashboard } from "@/lib/dashboard.functions";
@@ -306,10 +307,13 @@ function Dashboard() {
       <TopBar
         crumbs={[activeWorkspace?.name ?? "Workspace", "Today"]}
         actions={
-          <StartMissionButton
-            pending={startMission.isPending}
-            onDispatch={(goal, onSuccess) => startMission.mutate({ goal }, { onSuccess })}
-          />
+          <>
+            <ShareStatusButton workspaceName={activeWorkspace?.name ?? null} />
+            <StartMissionButton
+              pending={startMission.isPending}
+              onDispatch={(goal, onSuccess) => startMission.mutate({ goal }, { onSuccess })}
+            />
+          </>
         }
       />
 

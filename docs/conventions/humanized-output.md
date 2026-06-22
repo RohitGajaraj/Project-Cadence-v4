@@ -1,6 +1,6 @@
 # Convention: humanized output, zero AI fingerprints
 
-> _Created: 2026-06-14 · Last updated: 2026-06-19_
+> _Created: 2026-06-14 · Last updated: 2026-06-22_
 
 > **What this is.** The master rule that no text we ship carries a machine fingerprint. It governs two levels (see **Priority and scope** below for how strictly each is enforced, and apply it at authoring time):
 >
@@ -49,6 +49,20 @@ Ship text that reads human and reads like *this* product. Two failure modes are 
 - **Concrete over abstract.** Name the thing, the number, the effect. "This deletes 3 missions" beats "This action may affect your data."
 - **Have a point of view.** The product has a voice (see `ui-voice.md`: clear, lightly playful in safe places, dry in governance and errors). Generic neutrality is the tell.
 - **Product texture.** Use our nouns (calls queue, the loop, decision card, Chief of Staff), not stock SaaS nouns. The goal is that a screenshot reads as Cadence and nothing else.
+
+## The felt voice: generated output must hand the user value (standing precedent, founder 2026-06-22)
+
+The bans above are the floor. Clearing them is necessary, not sufficient. Anything the product **generates** for a user (status updates, briefs, summaries, decision rationales, Critic verdicts, digests, nudges, drafts) must be **felt as valuable**: the user receives the thing they wanted, already put well, and gets it in one pass without effort. Five rules:
+
+1. **Signal first.** Lead with the one thing that matters (the takeaway, the outcome, the call), then the supporting detail. The reader gets the point from the first line and reads on only if they want more.
+2. **Short and precise.** Say exactly what it needs to say, then stop. Cut every word the user would skim. No preamble, no assistant framing ("Here's your update", "Hey", "Certainly"), no restating what the surface already shows.
+3. **Context picks the voice.** Match the register to the content: a product-narrative line (what shipped, what is in flight) reads like a sharp colleague's note; a metric line is precise and interpreted, not a raw dump ("every reviewed bet held up", not "100.0% validated"); a governance or error line is dry and exact. One product, several registers, chosen by what is being said.
+4. **Hand over meaning, not data.** If a surface only emits numbers and lists, it is not done. It must give the user the meaning they came for. A status update is a stakeholder note, not a table.
+5. **Honest when sparse.** Say "a quiet week" rather than pad with zeros, and never invent a figure to look fuller. Honesty is part of the voice.
+
+**The test (apply to every generated surface):** read the output cold. Did the user get exactly what they wanted, put well, in a single pass, feeling it was worth opening? If they have to work to extract the value, rewrite it.
+
+**Scope and durability.** This is a PRECEDENT, not a one-surface note: it governs every surface we generate, going forward, the same way the fingerprint bans do. For LLM-generated output, encode it in that surface's prompt voice (`prompts.server.ts`); for deterministic/composed output, encode it in the composer. The runtime `humanizeText()` sanitizer enforces the fingerprint floor; this felt voice is the craft above it, an authoring responsibility on every surface that a sanitizer cannot add after the fact.
 
 ## Level 2: enforce it on runtime AI output (spec)
 

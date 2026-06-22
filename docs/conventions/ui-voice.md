@@ -1,8 +1,10 @@
 # Convention: UI voice & language
 
-> _Created: 2026-06-06 · Last updated: 2026-06-19_
+> _Created: 2026-06-06 · Last updated: 2026-06-22_
 
 **Voice anchor.** Human, clear, lightly playful in safe places (empty states, success toasts). Dry in governance, errors, and destructive flows. Contractions on. Active voice. One idea per sentence. Linear-leaning, warmer in empty states.
+
+> **Generated output carries this voice too, and must be felt as valuable.** For anything the product GENERATES for a user (status updates, briefs, summaries, verdicts, digests), clearing the bans below is the floor, not the job. Signal first, short and precise, context picks the register, hand over meaning not data, honest when sparse. The standing precedent + the cold-read test: [`humanized-output.md`](./humanized-output.md) "The felt voice" (founder, 2026-06-22).
 
 **Length budgets.**
 
