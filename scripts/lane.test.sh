@@ -80,6 +80,29 @@ bash "$LANE" claim L1-ITEM 1 "src/lib/cockpit/incidents.ts" >/dev/null 2>&1; sel
 bash "$LANE" claim L3-ITEM 3 "src/lib/cockpit/incidents.ts" >/dev/null 2>&1; cross=$?   # other lane -> blocked
 { [ "$self" = 0 ] && [ "$cross" = 3 ]; } && ok "same-lane claim allowed ($self), cross-lane blocked ($cross)" || bad "lane-aware overlap wrong (self=$self cross=$cross)"
 
+# 10) a register id containing '/' (e.g. "M1 / LRN-01") is claimable, holds the mutex,
+#     and a second lane is correctly told HELD (regression: the raw '/' split the mkdir
+#     path into nested segments, so the claim silently failed and the item was unclaimable).
+echo "[10] slash-containing register id is claimable + mutually exclusive"
+bash "$LANE" claim "M1 / LRN-01" 2 "src/lib/support/**" "triage" >/dev/null 2>&1; s1=$?
+bash "$LANE" claim "M1 / LRN-01" 3 "src/lib/other.ts" >/dev/null 2>&1; s2=$?
+held_slash="$(bash "$LANE" held "M1 / LRN-01")"
+{ [ "$s1" = 0 ] && [ "$s2" = 1 ] && echo "$held_slash" | grep -q "lane=2"; } \
+  && ok "slash-id claimed (exit 0), re-claim HELD (exit 1), holder lane=2 + logical id shown" \
+  || bad "slash-id mutex wrong (s1=$s1 s2=$s2 held='$held_slash')"
+
+# 11) the slash-id is excluded from `next` once claimed, and re-offered after release
+echo "[11] slash-id excludes from next while held, re-appears after release"
+in_next_held="$(bash "$LANE" next 2>/dev/null | grep -c 'M1 / LRN-01' || true)"
+bash "$LANE" release "M1 / LRN-01" >/dev/null 2>&1
+# done-marker path must also honor the sanitized dir: mark done -> never re-offered
+bash "$LANE" claim "M1 / LRN-01" 2 "src/lib/support/**" >/dev/null 2>&1
+bash "$LANE" done "M1 / LRN-01" 2 >/dev/null 2>&1
+reclaim_done="$(bash "$LANE" claim "M1 / LRN-01" 4 "src/lib/support/**" 2>&1; echo "rc=$?")"
+{ [ "$in_next_held" = 0 ] && echo "$reclaim_done" | grep -q "rc=4"; } \
+  && ok "held -> absent from next; done -> claim refused (exit 4)" \
+  || bad "slash-id next/done handling wrong (in_next_held=$in_next_held reclaim='$reclaim_done')"
+
 echo
 echo "RESULT: $pass passed, $fail failed"
 [ "$fail" = 0 ]

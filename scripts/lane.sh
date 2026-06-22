@@ -54,6 +54,18 @@ _die() { echo "lane.sh: $*" >&2; exit 2; }
 
 _ensure() { mkdir -p "$CLAIMS" 2>/dev/null || true; }
 
+# Map a logical claim id to a filesystem-safe, SINGLE-segment dir name. The mkdir
+# mutex (and every claimed-check) needs ONE path segment, but register-row ids can
+# contain '/' (e.g. "M1 / LRN-01", "LCH-01 / L1"). A raw '/' splits the path into
+# nested segments whose parent does not exist, so `mkdir "$CLAIMS/$id"` fails ->
+# the code misreads EEXIST-vs-ENOENT as "HELD" and the item is unclaimable FOREVER
+# (it also never matches the `[ -d "$CLAIMS/$id" ]` claimed-check, so `next` keeps
+# offering it). Replacing ONLY '/' keeps every id that already worked (spaces,
+# parens, dots are valid single-segment chars) byte-identical, so this is a pure
+# unblock of slash-ids with zero impact on prior/active claims. The LOGICAL id is
+# still stored verbatim in meta's id= field, so display and dedup are unaffected.
+_cdir() { printf '%s' "${1//\//_}"; }
+
 # meta is simple key=value lines so it parses with no jq dependency.
 _meta_get() { # <claimdir> <key>
   local f="$1/meta" k="$2"
@@ -115,11 +127,12 @@ cmd_claim() {
   local id="${1:-}" lane="${2:-}" globs="${3:-}" note="${4:-}"
   [ -n "$id" ] && [ -n "$lane" ] || _die "usage: claim <ID> <lane> \"globs\" [note]"
   _ensure
-  local dir="$CLAIMS/$id"
+  local cdir; cdir="$(_cdir "$id")"
+  local dir="$CLAIMS/$cdir"
 
   # 0) already COMPLETED by another lane? refuse - do NOT redo finished work.
-  if [ -e "$DONE/$id" ]; then
-    echo "DONE $id (already completed: $(cat "$DONE/$id" 2>/dev/null)); pick another item"
+  if [ -e "$DONE/$cdir" ]; then
+    echo "DONE $id (already completed: $(cat "$DONE/$cdir" 2>/dev/null)); pick another item"
     return 4
   fi
 
@@ -184,7 +197,7 @@ cmd_pin() { PINNED=true cmd_claim "$@"; }
 
 cmd_release() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: release <ID>"
-  local dir="$CLAIMS/$id"
+  local dir="$CLAIMS/$(_cdir "$id")"
   if [ -d "$dir" ]; then rm -rf "$dir"; echo "RELEASED $id"; else echo "not held: $id"; fi
 }
 
@@ -194,8 +207,9 @@ cmd_release() {
 cmd_done() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: done <ID>"
   _ensure; mkdir -p "$DONE"
-  rm -rf "${CLAIMS:?}/$id" 2>/dev/null || true
-  echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) lane=${2:-?}" > "$DONE/$id"
+  local cdir; cdir="$(_cdir "$id")"
+  rm -rf "${CLAIMS:?}/$cdir" 2>/dev/null || true
+  echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) lane=${2:-?}" > "$DONE/$cdir"
   echo "DONE-RECORDED $id (claim freed; future claims refused)"
 }
 
@@ -212,8 +226,9 @@ cmd_next() {
   reg="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)/docs/planning/feature-dashboard.md"
   [ -f "$reg" ] || { echo "register not found: $reg" >&2; return 1; }
   while IFS=$'\t' read -r rank id; do
-    [ -d "$CLAIMS/$id" ] && continue        # already claimed by a lane
-    [ -e "$DONE/$id" ] && continue          # already completed (no re-pick)
+    local cdir; cdir="$(_cdir "$id")"
+    [ -d "$CLAIMS/$cdir" ] && continue      # already claimed by a lane
+    [ -e "$DONE/$cdir" ] && continue        # already completed (no re-pick)
     echo "$id"
     n=$((n + 1)); [ "$n" -ge "$count" ] && break
   done < <(awk -F'|' '
@@ -228,7 +243,7 @@ cmd_next() {
 
 cmd_heartbeat() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: heartbeat <ID>"
-  local f="$CLAIMS/$id/meta"
+  local f="$CLAIMS/$(_cdir "$id")/meta"
   [ -f "$f" ] || { echo "not held: $id"; return 1; }
   local ts; ts="$(_now)"
   if grep -q '^beat=' "$f"; then
@@ -241,7 +256,7 @@ cmd_heartbeat() {
 
 cmd_held() {
   local id="${1:-}"; [ -n "$id" ] || _die "usage: held <ID>"
-  local dir="$CLAIMS/$id"
+  local dir="$CLAIMS/$(_cdir "$id")"
   [ -d "$dir" ] || return 0
   echo "$id lane=$(_meta_get "$dir" lane) globs=$(_meta_get "$dir" globs) since=$(_meta_get "$dir" started)"
 }
@@ -251,7 +266,7 @@ _print_claims() { # <lane-filter-or-empty>
   now="$(_now)"
   for dir in "$CLAIMS"/*/; do
     [ -d "$dir" ] || continue
-    id="$(basename "${dir%/}")"
+    id="$(_meta_get "${dir%/}" id 2>/dev/null)"; [ -n "$id" ] || id="$(basename "${dir%/}")"
     lane="$(_meta_get "${dir%/}" lane)"
     [ -n "$filter" ] && [ "$lane" != "$filter" ] && continue
     globs="$(_meta_get "${dir%/}" globs)"
@@ -279,7 +294,8 @@ cmd_board() { # per-lane "who is building what right now"
       [ "$(_meta_get "${dir%/}" pinned)" = "true" ] && continue   # area reservations are not a "task"
       beat="$(_meta_get "${dir%/}" beat)"; [ -n "$beat" ] || beat="$(_meta_get "${dir%/}" epoch)"
       age=""; [ -n "$beat" ] && age=" ($(( (now - beat)/60 ))m)"
-      found="$found $(basename "${dir%/}")${age}"
+      local bid; bid="$(_meta_get "${dir%/}" id 2>/dev/null)"; [ -n "$bid" ] || bid="$(basename "${dir%/}")"
+      found="$found ${bid}${age}"
     done
     printf '  Lane %s: %s\n' "$n" "${found:-(idle / no active claim)}"
   done
@@ -301,7 +317,7 @@ cmd_reap() {
   ttl_s=$(( ttl_h * 3600 )); now="$(_now)"; _ensure
   for dir in "$CLAIMS"/*/; do
     [ -d "$dir" ] || continue
-    id="$(basename "${dir%/}")"
+    id="$(_meta_get "${dir%/}" id 2>/dev/null)"; [ -n "$id" ] || id="$(basename "${dir%/}")"
     [ "$(_meta_get "${dir%/}" pinned)" = "true" ] && continue   # reservations never expire
     beat="$(_meta_get "${dir%/}" beat)"; [ -n "$beat" ] || beat="$(_meta_get "${dir%/}" epoch)"
     [ -n "$beat" ] || continue
