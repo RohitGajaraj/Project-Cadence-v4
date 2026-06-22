@@ -65,4 +65,6 @@ Before building, the claim of `M1 / LRN-01` returned a false `HELD`: the atomic 
 
 **Gate:** tsc 0 / eslint 0 (5 files) / 33 support tests / **1146 full suite** / no em/en-dash in generated strings.
 
-**State:** committing + FF-push to `origin/main`. `M1 / LRN-01` claim **HELD** for increment 2 (the `/support` UI route + panel, autonomous). Founder-gated remainders flagged (inbound channel connector; AI-written draft). Docs: `docs/features/m1-support-triage.md` (new), dashboard row (◐/In Dev), `plan.md` §4, `session-decisions.md`.
+**State:** committed + FF-pushed to `origin/main` (`f42e383846..c476c27c95`). `M1 / LRN-01` is **`done`-marked** (◐): the autonomous core is complete and NO further autonomous slice remains — all three remainders need the founder (UI-surface PLACEMENT is a taste/IA call; inbound channel = connector OAuth + spend; AI-written draft = chokepoint + spend). Docs: `docs/features/m1-support-triage.md` (new), dashboard row (◐), `plan.md` §4, `session-decisions.md`.
+
+**Board state after this cycle:** with the founder's constraint this run (untouched `⬜` only, no `◐` partials, no chokepoint / Stripe / BYO / input-needed), the autonomous pick-list is now **dry** — `lane.sh next` returns only `DBR (H1)`, which is a `◐` PARTIAL (the constraint excludes it). Surfaced to the founder for a scope decision (continue into partials / build M1's UI with a chosen placement / hold).
