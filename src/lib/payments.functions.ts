@@ -68,6 +68,15 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       const isRecurring = stripePrice.type === "recurring";
       const isTopup = data.priceId.startsWith("topup_");
 
+      // Credit top-ups MUST go through createTopUpCheckout, which enforces the
+      // per-cycle ceiling. Refusing a top-up price here closes the bypass where a
+      // caller hits the generic checkout directly with a topup_* key (no cap). The
+      // UI already routes top-ups to createTopUpCheckout (StripeEmbeddedCheckout
+      // mode="topup"), so this only blocks a direct-API end-run.
+      if (isTopup) {
+        return { error: "Credit top-ups must use the top-up flow." };
+      }
+
       const customerId = await resolveOrCreateCustomer(stripe, { email, userId });
 
       let productDescription: string | undefined;
