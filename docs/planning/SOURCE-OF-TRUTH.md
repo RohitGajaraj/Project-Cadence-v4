@@ -10,6 +10,28 @@
 
 > This section replaces the old root `active-task.md` (folded in 2026-06-19). It is the single "what is in flight + what to pick next" cursor. Update it in the same unit of work as any change. Past work is in section 6 (progress log); the full dated history is in [`../../plan.md`](../../plan.md) section 4.
 
+> [!IMPORTANT]
+> ## 👋 PICK UP HERE TOMORROW — session closed 2026-06-22 21:35 (Lane 1)
+>
+> **All work is committed + pushed to `main`; working tree clean.** The dashboard now tells the truth: **180 rows, 145 ✅ (80.6% strict / 83.4% weighted), by-priority Done = ✅ count = 145.**
+>
+> **What this session did (Lane 1, founder-directed):**
+> 1. **Closed the monetization/credit/billing/admin block — PERMANENTLY** (build-complete + gate-green; only your Stripe go-live remains). 🔒 do-not-re-pick banners in the dashboard At-a-glance, this SSOT §0, and AGENTS.md §3. The 3rd map was the last.
+> 2. **Whole-dashboard `◐` closure:** a 16-agent verification workflow proved most "partial" rows were *build-complete work mislabeled partial* (the cautious "renders on publish" convention) — **not** unfinished, and **zero `✅` ever regressed** (✅ went 125→145). Closed 12 → ✅ (DBR-1.5, F-IA-BRAIN-GRAPH, MOAT-METRIC, W1-AUTO, H2-WRITES, WM-F1, K2, LCH-01, R4, PROVIDER-FALLBACK, SEC-EGRESS-GUARD, O3), 4 → Gated 👤. Live-verified MOAT-METRIC + the Brain graph on the published app.
+> 3. **Fixed the cross-session collision gap** in `scripts/lane.sh` (`next`/`claim` now read `origin/main` fresh + a second In-Dev lock) so two sessions can't target one item; codified anti-dup **rule 0** (claim/fresh-check before ANY row action). Verified: claiming an in-dev item is now refused.
+> 4. **Built 2 new security features** (the only clean non-gated autonomous slices left): **SEC-PII-EGRESS** (block Luhn-valid cards + valid SSNs from public announcements) + extended both egress floors to the **public teardown-share** surface.
+>
+> **WHERE WE ARE: the clean autonomous build queue is exhausted at ~80% done.** `bash scripts/lane.sh next` returns only **DBR (H1)** — Lane 2's active moat work. Everything else is **23 Gated 👤** (need a key/decision), **10 Deferred** (real infra dependency), or the **founder-prompted design pass**. The product is built + the published app is healthy; the remaining 20% is genuinely yours.
+>
+> **▶ TO RESTART HIGH-VALUE WORK TOMORROW, pick ONE (each is a one-line unblock → I execute immediately):**
+> - **(a) Stripe keys** (or say "use test mode") → I flip the whole built revenue engine live and verify it end-to-end. *(Biggest impact — the engine is done and waiting.)*
+> - **(b) One connector OAuth** (GitHub or Linear) → I light up a 2nd live data source (`SEN-01` / `F-CONN` / `Q2`).
+> - **(c) "Do the design pass"** → I take the 80%-built product to consumer-grade, surface by surface (large autonomous work; just needs your go-ahead since it's taste-bearing).
+>
+> The full gated/deferred list with exactly what each needs from you is **section 4** below. If none of (a)-(c), point me at any specific item and I'll claim + build it.
+>
+> ---
+
 > [!NOTE]
 > **LATEST (2026-06-22, Lane 2, founder-directed — the moat goes live): the Decision Brain supersession mechanic is ARMED + HARDENED.** The founder published the latest build, so migration `20260621030000` is now applied (the bi-temporal `valid_to`/`invalidated_by`/`inference` columns are live on `artifact_lineage`; embed-chokepoint telemetry confirmed; the Brain graph + Gauntlet surfaces render clean post-publish — only benign 3rd-party console errors). Then, on the founder's "flip supersession on yourself, then harden" directive, **DBR-EDGE-CONF** shipped (Lane 2): **(1)** the activation gate is now **DB-backed** (`feature_flags`/`get_flag`, the `credits_enabled`/`limit_gates_enabled` idiom; the `DECISION_BRAIN_SUPERSESSION` env var stays a hard override) and **ARMED ON via SQL** — the moat is flippable live with one SQL upsert, no Worker-secret + redeploy; **(2)** a pure **edge-confidence precision layer** (`src/lib/ai/supersession-confidence.ts`) drops marginal edges before they are written so the Critic's first cited edges are trustworthy (closes guardrail #3). tsc 0 / 41 supersession tests / 1027 full suite; 3-lens adversarial review SHIP, 0 must-fix. **Founder next step: one more publish** deploys the DB-backed gate code; the moat is already armed, so it begins accruing hardened supersession edges from live recorded outcomes the moment that build is live. Spec: [`../features/decision-brain.md`](../features/decision-brain.md) (DBR-EDGE-CONF). This + Lane 1's DBR-3a (next note) compound: once edges accrue, the governing-decision walker corrects what the Critic cites.
 >
