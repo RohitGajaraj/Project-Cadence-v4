@@ -236,7 +236,9 @@ The board is the single live truth: the next agent reads it to know exactly what
 3. **Tier 3, Non-essential / non-foundational:** privacy details, reliability / ops hygiene, enterprise-readiness, edge cases, the nontrivial non-core work. Built only after Tier 1's buildable items are exhausted; it never outranks core.
 4. **Tier 4, Final detailing + polish:** the humanization sweep + lint/prettier + AI-trace + final design detailing across the whole product, pre-launch. Founder-prompted, once, last (this is the rulings 2 + 9 end-stage).
 
-This exists to fix the drift the 2026-06-21 strategy reconciliation found: the loop built Tier-3 ops hygiene (data-retention, health, provider-fallback) while the Tier-1 moat work (the supersession engine, the loop-closers) had no rows to claim. **Monetization / credit / billing items are Lovable-owned and are NOT in this sequence** (Lovable builds them in parallel; see the Build Sequence's "Lovable-owned scope"). Canonical order: SSOT §0.
+This exists to fix the drift the 2026-06-21 strategy reconciliation found: the loop built Tier-3 ops hygiene (data-retention, health, provider-fallback) while the Tier-1 moat work (the supersession engine, the loop-closers) had no rows to claim. Canonical order: SSOT §0.
+
+> **⛔ NO MORE LOVABLE — everything is Claude-owned (founder ruling 2026-06-22, FINAL, applies to ALL sessions/lanes).** The earlier "Monetization / credit / billing items are Lovable-owned, frozen, do not touch" rule is RETIRED. There are no Lovable items: the founder is not handing any feature to Lovable. All 12 former `Lovable` rows in the dashboard were reassigned to Claude-owned Tiers (now claimable via `lane.sh next`); the `Lovable` priority class is dead. **Pick them up and CLOSE them:** for the monetization / credit / billing block (mostly already built + live-verified — the credit engine was taken live 2026-06-22), verify what is done vs not, fix any gap, mark the row honestly (`✅` only when verified, else `◐` with the gap named), document it, and commit + push. Treat former-Lovable rows exactly like any other Claude-owned row.
 
 ### AI-specific
 
