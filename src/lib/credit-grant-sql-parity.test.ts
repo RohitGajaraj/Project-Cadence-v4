@@ -25,7 +25,9 @@ const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 function readBackfillMigration(): string {
   const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"));
   const hit = files.find((f) =>
-    readFileSync(join(MIGRATIONS_DIR, f), "utf8").includes("function public.backfill_account_credits"),
+    readFileSync(join(MIGRATIONS_DIR, f), "utf8").includes(
+      "function public.backfill_account_credits",
+    ),
   );
   if (!hit) {
     throw new Error(
