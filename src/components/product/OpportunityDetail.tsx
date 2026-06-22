@@ -16,6 +16,7 @@ import { listOpportunities, generatePrd } from "@/lib/discovery.functions";
 import { listLearnings } from "@/lib/outcome.functions";
 import { getLineage, getProvenance, type ArtifactKind } from "@/lib/lineage.functions";
 import { PrecedentNudge } from "@/components/decision/PrecedentNudge";
+import { DecisionCurrencyBanner } from "@/components/decision/DecisionCurrencyBanner";
 
 type OppRow = {
   id: string;
@@ -175,6 +176,7 @@ export function OpportunityDetail({ id }: { id: string }) {
         }
       />
 
+      <DecisionCurrencyBanner kind="opportunity" targetId={id} className="mb-3" />
       <PrecedentNudge kind="opportunity" targetId={id} className="mb-3" />
 
       <div

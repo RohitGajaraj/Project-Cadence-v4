@@ -2,6 +2,16 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (15:39) — DBR-3d: decision-currency banner (flag the VIEWED decision)
+
+Governing-decision (3a/3b/3c) flagged stale PRECEDENTS; this flags the decision you're VIEWING if IT has been superseded/contradicted — so you never unknowingly act on a stale decision.
+- New `getDecisionCurrency` server fn (resolves the viewed entity's own currency via the shared `resolveGoverningForNodes`) + a fail-safe `DecisionCurrencyBanner` above the precedent nudge on the opportunity detail + PRD page ("superseded by 'X'. Act on the current one, not this.").
+- **Self-reviewed** (glue on already-reviewed engine); folded a real UI copy bug (double "by"). No new test (reuses the 32 governing tests).
+- **Gates:** tsc 0 · `bun test` 1064/1064 · eslint clean on my files (1 pre-existing PRD-page warning, not mine) · prettier clean. Collision-safe (only CHOKEPOINT was claimed).
+- **◐ render-on-publish**, byte-identical until the entity is graph-marked stale. **Breadcrumb:** opportunity detail / PRD page → banner above the nudge.
+
+---
+
 ## 2026-06-22 (15:25) — DBR-3c: NAME the governing decision
 
 Completes "return the governing DECISION, not the nearest text": the Critic block + precedent nudge now NAME the replacement by title ("replaced by 'New checkout flow'"), not an opaque id.
