@@ -48,21 +48,74 @@ export const getStakeholderUpdate = createServerFn({ method: "POST" })
       acceptRes,
       accuracyRes,
     ] = await Promise.all([
-      supabase.from("tasks").select("is_deep_work,status,created_at").gte("created_at", sevenAgo).limit(1000),
-      supabase.from("agent_approvals").select("id").eq("user_id", userId).not("decided_at", "is", null).gte("decided_at", sevenAgo).limit(1000),
-      supabase.from("learnings").select("id").eq("verdict", "validated").gte("created_at", sevenAgo).limit(1000),
-      supabase.from("learnings").select("verdict,created_at,opportunity:opportunities(title)").order("created_at", { ascending: false }).limit(1),
-      supabase.from("missions").select("title,status,updated_at").in("status", ["running", "in_progress"]).order("updated_at", { ascending: false }).limit(5),
-      supabase.from("opportunities").select("title,ice_score,roadmap_bucket,status").in("roadmap_bucket", ["now", "next"]).not("status", "in", "(shipped,dropped)").order("ice_score", { ascending: false }).limit(5),
-      supabase.from("agent_approvals").select("id").eq("user_id", userId).in("escalation_state", ["pending", "expired"]).limit(1000),
+      supabase
+        .from("tasks")
+        .select("is_deep_work,status,created_at")
+        .gte("created_at", sevenAgo)
+        .limit(1000),
+      supabase
+        .from("agent_approvals")
+        .select("id")
+        .eq("user_id", userId)
+        .not("decided_at", "is", null)
+        .gte("decided_at", sevenAgo)
+        .limit(1000),
+      supabase
+        .from("learnings")
+        .select("id")
+        .eq("verdict", "validated")
+        .gte("created_at", sevenAgo)
+        .limit(1000),
+      supabase
+        .from("learnings")
+        .select("verdict,created_at,opportunity:opportunities(title)")
+        .order("created_at", { ascending: false })
+        .limit(1),
+      supabase
+        .from("missions")
+        .select("title,status,updated_at")
+        .in("status", ["running", "in_progress"])
+        .order("updated_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("opportunities")
+        .select("title,ice_score,roadmap_bucket,status")
+        .in("roadmap_bucket", ["now", "next"])
+        .not("status", "in", "(shipped,dropped)")
+        .order("ice_score", { ascending: false })
+        .limit(5),
+      supabase
+        .from("agent_approvals")
+        .select("id")
+        .eq("user_id", userId)
+        .in("escalation_state", ["pending", "expired"])
+        .limit(1000),
       supabase.from("prds").select("id").eq("status", "review").limit(1000),
-      supabase.from("opportunities").select("id").filter("critic_review->>verdict", "in", '("revise","kill")').limit(1000),
+      supabase
+        .from("opportunities")
+        .select("id")
+        .filter("critic_review->>verdict", "in", '("revise","kill")')
+        .limit(1000),
       supabase.from("ai_events").select("est_cost_usd").gte("created_at", sevenAgo).limit(5000),
-      supabase.from("agent_approvals").select("status").eq("user_id", userId).not("decided_at", "is", null).gte("decided_at", fourteenAgo).limit(2000),
-      supabase.from("learnings").select("verdict").in("verdict", ["validated", "missed", "mixed"]).gte("created_at", ninetyAgo).limit(2000),
+      supabase
+        .from("agent_approvals")
+        .select("status")
+        .eq("user_id", userId)
+        .not("decided_at", "is", null)
+        .gte("decided_at", fourteenAgo)
+        .limit(2000),
+      supabase
+        .from("learnings")
+        .select("verdict")
+        .in("verdict", ["validated", "missed", "mixed"])
+        .gte("created_at", ninetyAgo)
+        .limit(2000),
     ]);
 
-    const tasks = (tasksRes.data ?? []) as { is_deep_work: boolean | null; status: string | null }[];
+    const tasks = (tasksRes.data ?? []) as {
+      is_deep_work: boolean | null;
+      status: string | null;
+    }[];
     const shipped = tasks.filter((t) => t.is_deep_work && t.status === "done").length;
     const decisions = (decidedRes.data ?? []).length;
     const validated = (validatedRes.data ?? []).length;
@@ -70,7 +123,10 @@ export const getStakeholderUpdate = createServerFn({ method: "POST" })
     // Latest reviewed outcome (best-effort; the join is to-one, shapes vary so handle both).
     let latestOutcome: { title: string; verdict: string } | null = null;
     const latestRow = (latestRes.data ?? [])[0] as
-      | { verdict: string | null; opportunity: { title: string | null } | { title: string | null }[] | null }
+      | {
+          verdict: string | null;
+          opportunity: { title: string | null } | { title: string | null }[] | null;
+        }
       | undefined;
     if (latestRow) {
       const opp = latestRow.opportunity;
@@ -101,12 +157,16 @@ export const getStakeholderUpdate = createServerFn({ method: "POST" })
     const decidedStates = ((acceptRes.data ?? []) as { status: string | null }[]).map(
       (a) => a.status,
     );
-    const approved = decidedStates.filter((s) => s === "approved" || s === "executed" || s === "failed").length;
+    const approved = decidedStates.filter(
+      (s) => s === "approved" || s === "executed" || s === "failed",
+    ).length;
     const rejected = decidedStates.filter((s) => s === "rejected").length;
     const acceptancePct = pct(approved, approved + rejected);
 
     // Outcome accuracy (90d): validated share of reviewed bets.
-    const verdicts = ((accuracyRes.data ?? []) as { verdict: string | null }[]).map((l) => l.verdict);
+    const verdicts = ((accuracyRes.data ?? []) as { verdict: string | null }[]).map(
+      (l) => l.verdict,
+    );
     const accuracyValidated = verdicts.filter((v) => v === "validated").length;
     const outcomeAccuracyPct = pct(accuracyValidated, verdicts.length);
 

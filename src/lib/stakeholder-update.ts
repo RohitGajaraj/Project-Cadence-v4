@@ -88,7 +88,11 @@ export function buildStakeholderUpdate(s: StakeholderSnapshot): StakeholderUpdat
   const approvedPhrase =
     acc == null ? null : acc === 100 ? "you approved every call" : `you approved ${acc}% of calls`;
   const heldUpPhrase =
-    out == null ? null : out === 100 ? "every reviewed bet held up" : `${out}% of reviewed bets held up`;
+    out == null
+      ? null
+      : out === 100
+        ? "every reviewed bet held up"
+        : `${out}% of reviewed bets held up`;
   const autonomyPhrase = auto == null ? null : `the loop ran ${auto}% of the work unattended`;
 
   // Lede: signal first. The one line that carries the gist before any detail.
@@ -116,7 +120,8 @@ export function buildStakeholderUpdate(s: StakeholderSnapshot): StakeholderUpdat
   }
   if (shippedBullets.length) sections.push({ title: "Shipped", bullets: shippedBullets });
 
-  if (s.activeMissions.length) sections.push({ title: "In flight", bullets: capList(s.activeMissions) });
+  if (s.activeMissions.length)
+    sections.push({ title: "In flight", bullets: capList(s.activeMissions) });
   if (s.upNext.length) sections.push({ title: "Next", bullets: capList(s.upNext) });
 
   // Health: interpreted metrics + spend. Null metrics are omitted, never shown as 0% or null.
@@ -137,6 +142,9 @@ export function buildStakeholderUpdate(s: StakeholderSnapshot): StakeholderUpdat
   }
   if (s.needsYou > 0) lines.push(`${count(s.needsYou, "call")} waiting on you.`);
 
-  const markdown = lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+  const markdown = lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
   return { headline, lede, sections, markdown };
 }

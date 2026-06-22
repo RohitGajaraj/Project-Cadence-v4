@@ -67,7 +67,9 @@ function StatusUpdateDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Share status</DialogTitle>
-          <DialogDescription>A ready-to-send update, read from this week's live state.</DialogDescription>
+          <DialogDescription>
+            A ready-to-send update, read from this week's live state.
+          </DialogDescription>
         </DialogHeader>
 
         {q.isLoading ? (
