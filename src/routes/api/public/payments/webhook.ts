@@ -10,9 +10,10 @@ import {
   tierFromLookupKey,
 } from "@/lib/billing-tier";
 import {
+  buildSubscriptionUpdate,
+  buildSubscriptionUpsert,
   isRenewalInvoice,
   isTopupCheckout,
-  resolvePeriod,
   resolvePriceLookup,
   resolveTopupCredits,
 } from "@/lib/billing-webhook";
@@ -108,52 +109,23 @@ async function handleSubscriptionCreated(sub: any, env: StripeEnv) {
     console.error("Webhook: subscription has no userId metadata", sub.id);
     return;
   }
-  const item = sub.items?.data?.[0];
-  const priceId = resolvePriceLookup(item);
-  const productId = item?.price?.product;
-  const period = resolvePeriod(item, sub);
+  const priceId = resolvePriceLookup(sub.items?.data?.[0]);
 
   await getSupabase()
     .from("subscriptions")
-    .upsert(
-      {
-        user_id: userId,
-        stripe_subscription_id: sub.id,
-        stripe_customer_id: sub.customer,
-        product_id: productId,
-        // A valid subscription event always carries a price; assert for the strict
-        // upsert row type (behavior-identical to the prior inline resolver).
-        price_id: priceId!,
-        status: sub.status,
-        current_period_start: period.start,
-        current_period_end: period.end,
-        cancel_at_period_end: sub.cancel_at_period_end || false,
-        environment: env,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "stripe_subscription_id" },
-    );
+    .upsert(buildSubscriptionUpsert(sub, env, new Date().toISOString()), {
+      onConflict: "stripe_subscription_id",
+    });
   await applyTierForUser(userId, priceId, sub.status);
   await grantForSubscription(userId, priceId, sub.status);
 }
 
 async function handleSubscriptionUpdated(sub: any, env: StripeEnv) {
-  const item = sub.items?.data?.[0];
-  const priceId = resolvePriceLookup(item);
-  const productId = item?.price?.product;
-  const period = resolvePeriod(item, sub);
+  const priceId = resolvePriceLookup(sub.items?.data?.[0]);
 
   await getSupabase()
     .from("subscriptions")
-    .update({
-      status: sub.status,
-      product_id: productId,
-      price_id: priceId,
-      current_period_start: period.start,
-      current_period_end: period.end,
-      cancel_at_period_end: sub.cancel_at_period_end || false,
-      updated_at: new Date().toISOString(),
-    })
+    .update(buildSubscriptionUpdate(sub, new Date().toISOString()))
     .eq("stripe_subscription_id", sub.id)
     .eq("environment", env);
   const userId = sub.metadata?.userId;

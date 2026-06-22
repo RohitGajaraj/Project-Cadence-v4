@@ -6,8 +6,30 @@ import {
   isTopupCheckout,
   isRenewalInvoice,
   resolvePeriod,
+  buildSubscriptionUpsert,
+  buildSubscriptionUpdate,
   TOPUP_CREDITS,
 } from "./billing-webhook";
+
+const NOW_ISO = "2026-06-22T00:00:00.000Z";
+function subEvent() {
+  return {
+    id: "sub_123",
+    customer: "cus_9",
+    status: "active",
+    cancel_at_period_end: false,
+    metadata: { userId: "user_1" },
+    items: {
+      data: [
+        {
+          price: { lookup_key: "pro_monthly", product: "prod_7", id: "price_1" },
+          current_period_start: 1_700_000_000,
+          current_period_end: 1_702_000_000,
+        },
+      ],
+    },
+  };
+}
 
 describe("resolvePriceLookup", () => {
   it("prefers lookup_key, then external id, then price id", () => {
@@ -106,5 +128,60 @@ describe("resolvePeriod", () => {
 
   it("is null/null when neither carries a period (never a fake epoch)", () => {
     expect(resolvePeriod(null, null)).toEqual({ start: null, end: null });
+  });
+});
+
+describe("buildSubscriptionUpsert", () => {
+  it("maps every field from the Stripe event (created upsert)", () => {
+    const row = buildSubscriptionUpsert(subEvent(), "sandbox", NOW_ISO);
+    expect(row).toEqual({
+      user_id: "user_1",
+      stripe_subscription_id: "sub_123",
+      stripe_customer_id: "cus_9",
+      product_id: "prod_7",
+      price_id: "pro_monthly",
+      status: "active",
+      current_period_start: "2023-11-14T22:13:20.000Z",
+      current_period_end: "2023-12-08T01:46:40.000Z",
+      cancel_at_period_end: false,
+      environment: "sandbox",
+      updated_at: NOW_ISO,
+    });
+  });
+
+  it("carries cancel_at_period_end through and defaults it to false", () => {
+    const s = subEvent();
+    s.cancel_at_period_end = true;
+    expect(buildSubscriptionUpsert(s, "live", NOW_ISO).cancel_at_period_end).toBe(true);
+    const s2 = subEvent();
+    delete (s2 as { cancel_at_period_end?: boolean }).cancel_at_period_end;
+    expect(buildSubscriptionUpsert(s2, "live", NOW_ISO).cancel_at_period_end).toBe(false);
+  });
+
+  it("falls back to the sub-level period when the line item lacks one", () => {
+    const s = subEvent();
+    delete s.items.data[0].current_period_start;
+    delete s.items.data[0].current_period_end;
+    (s as { current_period_start?: number }).current_period_start = 1_700_000_000;
+    const row = buildSubscriptionUpsert(s, "live", NOW_ISO);
+    expect(row.current_period_start).toBe("2023-11-14T22:13:20.000Z");
+    expect(row.current_period_end).toBeNull();
+  });
+});
+
+describe("buildSubscriptionUpdate", () => {
+  it("maps the mutable subset (no user_id / customer / environment)", () => {
+    const row = buildSubscriptionUpdate(subEvent(), NOW_ISO);
+    expect(row).toEqual({
+      status: "active",
+      product_id: "prod_7",
+      price_id: "pro_monthly",
+      current_period_start: "2023-11-14T22:13:20.000Z",
+      current_period_end: "2023-12-08T01:46:40.000Z",
+      cancel_at_period_end: false,
+      updated_at: NOW_ISO,
+    });
+    expect("user_id" in row).toBe(false);
+    expect("environment" in row).toBe(false);
   });
 });

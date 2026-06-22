@@ -91,6 +91,93 @@ export function isRenewalInvoice(invoice: { billing_reason?: string } | null | u
   return invoice?.billing_reason === "subscription_cycle";
 }
 
+/** A minimal Stripe subscription shape for building DB rows (only the fields we map). */
+type SubscriptionLike = {
+  id?: string;
+  customer?: string;
+  status?: string;
+  cancel_at_period_end?: boolean;
+  current_period_start?: number | null;
+  current_period_end?: number | null;
+  metadata?: { userId?: string } | null;
+  items?: { data?: Array<PriceLike & { current_period_start?: number | null; current_period_end?: number | null; price?: { product?: string } | null }> } | null;
+};
+
+/** The `subscriptions` row we write on a `customer.subscription.created` upsert.
+ *  The required-string fields match the table's Insert type; a real subscription
+ *  event always carries them (the inline handler relied on the same, via `any`). */
+export type SubscriptionUpsertRow = {
+  user_id: string;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  product_id: string;
+  price_id: string;
+  status: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  environment: string;
+  updated_at: string;
+};
+
+/** The mutable subset we write on a `customer.subscription.updated` patch. */
+export type SubscriptionUpdateRow = {
+  status: string;
+  product_id: string | undefined;
+  price_id: string | undefined;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  updated_at: string;
+};
+
+/**
+ * PURE. Assemble the `subscriptions` upsert row from a Stripe subscription event.
+ * Maps every field the same way the inline handler did (now testable, drift-proof).
+ * `nowIso` is injected so the row is deterministic. A valid subscription event always
+ * carries a price, asserted for the strict row type (behavior-identical to the inline
+ * `priceId!`); the builder is only ever called after the handler's `userId` guard.
+ */
+export function buildSubscriptionUpsert(
+  sub: SubscriptionLike,
+  env: string,
+  nowIso: string,
+): SubscriptionUpsertRow {
+  const item = sub?.items?.data?.[0];
+  const period = resolvePeriod(item, sub);
+  // The `!` assertions mirror the inline handler (which relied on `sub: any`): a real
+  // customer.subscription.created event always carries userId/id/customer/product/price,
+  // and the handler's userId guard runs before this. They keep the strict Insert row type.
+  return {
+    user_id: sub?.metadata?.userId!,
+    stripe_subscription_id: sub?.id!,
+    stripe_customer_id: sub?.customer!,
+    product_id: item?.price?.product!,
+    price_id: resolvePriceLookup(item)!,
+    status: sub?.status ?? "",
+    current_period_start: period.start,
+    current_period_end: period.end,
+    cancel_at_period_end: sub?.cancel_at_period_end || false,
+    environment: env,
+    updated_at: nowIso,
+  };
+}
+
+/** PURE. Assemble the `subscriptions` update patch from a `subscription.updated` event. */
+export function buildSubscriptionUpdate(sub: SubscriptionLike, nowIso: string): SubscriptionUpdateRow {
+  const item = sub?.items?.data?.[0];
+  const period = resolvePeriod(item, sub);
+  return {
+    status: sub?.status ?? "",
+    product_id: item?.price?.product,
+    price_id: resolvePriceLookup(item),
+    current_period_start: period.start,
+    current_period_end: period.end,
+    cancel_at_period_end: sub?.cancel_at_period_end || false,
+    updated_at: nowIso,
+  };
+}
+
 /** PURE. The subscription period window as ISO, preferring the line-item period over the sub-level one. */
 export function resolvePeriod(
   item:
