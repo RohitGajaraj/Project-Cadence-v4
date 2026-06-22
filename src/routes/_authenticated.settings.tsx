@@ -60,6 +60,7 @@ import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { DataExportCard } from "@/components/settings/DataExportCard";
 import { SubprocessorsCard } from "@/components/settings/SubprocessorsCard";
 import { HealthCard } from "@/components/settings/HealthCard";
+import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { RedeemCodeCard } from "@/components/settings/RedeemCodeCard";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { TeamCard } from "@/components/settings/TeamCard";
@@ -74,7 +75,8 @@ type SectionId =
   | "interop"
   | "profile"
   | "health"
-  | "data";
+  | "data"
+  | "notifications";
 
 // Tab order from the reference (Connectors · Models · Staff · … · Profile).
 // "Accounts" is the account-level OAuth surface (which provider logins you have
@@ -94,6 +96,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: "credits", label: "Credits" },
   { id: "interop", label: "Integrations" },
   { id: "profile", label: "Profile" },
+  { id: "notifications", label: "Notifications" },
   { id: "health", label: "Health" },
   { id: "data", label: "Data" },
 ];
@@ -191,6 +194,7 @@ function SettingsPage() {
         {active === "credits" && <CreditsTab />}
         {active === "interop" && <IntegrationsTab />}
         {active === "profile" && <ProfileTab />}
+        {active === "notifications" && <NotificationsTab />}
         {active === "health" && <HealthCard />}
         {active === "data" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
