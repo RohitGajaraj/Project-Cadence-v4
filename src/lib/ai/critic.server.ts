@@ -16,11 +16,8 @@ import {
   selectContradictionHistory,
   formatContradictionHistory,
 } from "@/lib/ai/contradiction-history";
-import {
-  selectGoverningDecisions,
-  formatGoverningDecisions,
-  nextSupersessionFrontier,
-} from "@/lib/ai/governing-decision";
+import { formatGoverningDecisions } from "@/lib/ai/governing-decision";
+import { resolveGoverningForNodes } from "@/lib/ai/governing-decision.server";
 import type { RawLineageEdge } from "@/lib/knowledge-graph-view";
 import { resolveLineageCols } from "@/lib/knowledge-graph-view.functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -59,54 +56,6 @@ async function loadContradictionEdges(
       .limit(50);
     if (error || !data) return [];
     return data as unknown as RawLineageEdge[];
-  } catch {
-    return [];
-  }
-}
-
-/** Bound on closure expansion rounds: real supersession chains are 1-3 hops, so 8 rounds
- * is generous while capping a pathological/cyclic graph. Each round is one indexed query. */
-const CLOSURE_MAX_ROUNDS = 8;
-/** Cap the per-round frontier so a fan-out can never build an unbounded `.in(...)`. */
-const CLOSURE_MAX_FRONTIER = 50;
-
-/**
- * DBR-3 forward-closure loader: assemble the `supersedes` CHAIN reachable from the seed
- * nodes (the precedents the Critic might cite), not just the focus-incident edges DBR-2
- * loads. A similarity-bounded fetch only returns edges that touch a precedent, so a chain
- * `C supersedes B supersedes A` where only A is a precedent never loads `C->B` and the walk
- * would stop at the stale intermediate B. This BFS follows `child_id -> parent_id` outward
- * one current edge at a time until the chain ends, so `resolveGoverning` reaches the true
- * terminal current node. Bounded (rounds + frontier + a `seen` set) so a cycle/fan-out can
- * never run away. Migration-tolerant (resolveLineageCols) + fail-safe (returns [] on error,
- * and 1 empty query when the graph is dormant). Only uuid-shaped ids reach the filter.
- */
-async function loadSupersedesClosure(
-  supabase: SupabaseClient,
-  userId: string,
-  seedIds: string[],
-): Promise<RawLineageEdge[]> {
-  let frontier = Array.from(new Set(seedIds.filter((id) => UUID_RE.test(id))));
-  if (!frontier.length) return [];
-  try {
-    const cols = await resolveLineageCols(supabase);
-    const byId = new Map<string, RawLineageEdge>();
-    const seen = new Set<string>(frontier);
-    for (let round = 0; round < CLOSURE_MAX_ROUNDS && frontier.length; round++) {
-      const { data, error } = await supabase
-        .from("artifact_lineage")
-        .select(cols)
-        .eq("user_id", userId)
-        .eq("relation", "supersedes")
-        .in("child_id", frontier.slice(0, CLOSURE_MAX_FRONTIER))
-        .limit(100);
-      if (error || !data) break;
-      const batch = data as unknown as RawLineageEdge[];
-      for (const e of batch) if (e && typeof e.id === "string") byId.set(e.id, e);
-      frontier = nextSupersessionFrontier(batch, seen).filter((id) => UUID_RE.test(id));
-      for (const id of frontier) seen.add(id);
-    }
-    return Array.from(byId.values());
   } catch {
     return [];
   }
@@ -211,19 +160,12 @@ Be specific. No filler. Use "ship" only when risks are bounded and evidence is s
       if (m.opportunityId) out.push({ kind: "opportunity", id: m.opportunityId });
       return out;
     });
-    // Assemble the full supersedes chain from the precedents (closure), then union with the
-    // focus edges (which carry any `contradicts` flags on the seeds) so resolveGoverning
-    // reaches the true terminal current decision, not a focus-incident intermediate.
-    const closure = await loadSupersedesClosure(
-      supabase,
-      userId,
-      precedentNodes.map((n) => n.id),
-    );
-    const govEdges = new Map<string, RawLineageEdge>();
-    for (const e of edges) if (e && typeof e.id === "string") govEdges.set(e.id, e);
-    for (const e of closure) if (e && typeof e.id === "string") govEdges.set(e.id, e);
+    // Resolve each precedent to its CURRENT governing decision. resolveGoverningForNodes
+    // assembles the supersedes chain (a bounded forward-closure - the focus-incident edges
+    // alone would stop at a stale intermediate and wrongly name IT as current) + the
+    // contradicts edges, reusing the DBR-2 focus edges we already loaded to avoid a re-query.
     governing = formatGoverningDecisions(
-      selectGoverningDecisions(Array.from(govEdges.values()), precedentNodes),
+      await resolveGoverningForNodes(supabase, userId, precedentNodes, { extraEdges: edges }),
     );
   } catch {
     contradictions = "";

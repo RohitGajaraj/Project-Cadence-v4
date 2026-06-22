@@ -47,12 +47,24 @@ export function PrecedentNudge({
       </p>
       <ul className="mt-2 space-y-1.5">
         {data.map((p) => (
-          <li key={p.id} className="flex items-start gap-2 text-sm">
-            <VerdictChip tone={VERDICT_TONE[p.verdict] ?? "ember"}>{p.verdict}</VerdictChip>
-            <span className="leading-snug">
-              {p.title ? <strong>{p.title}: </strong> : null}
-              {p.summary}
-            </span>
+          <li key={p.id} className="flex flex-col gap-0.5 text-sm">
+            <div className="flex items-start gap-2">
+              <VerdictChip tone={VERDICT_TONE[p.verdict] ?? "ember"}>{p.verdict}</VerdictChip>
+              <span className="leading-snug">
+                {p.title ? <strong>{p.title}: </strong> : null}
+                {p.summary}
+              </span>
+            </div>
+            {p.governing ? (
+              <span className="pl-1 text-xs text-muted-foreground">
+                <strong className="text-ink-muted">
+                  {p.governing.superseded ? "Superseded" : "Contradicted"}:
+                </strong>{" "}
+                {p.governing.superseded
+                  ? "a later decision replaced this; rely on the current one."
+                  : "a later outcome contradicted this; no longer a safe basis."}
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>

@@ -178,6 +178,28 @@ export function selectGoverningDecisions(
 }
 
 /**
+ * PURE. Find the governing-decision item for a precedent addressed by its prd OR
+ * opportunity id (a precedent row can carry either or both). Lets a surface annotate each
+ * precedent it shows with "this was superseded/contradicted" without re-resolving. Returns
+ * null when the precedent is still current. When a row carries BOTH ids and both have a
+ * governing item, the FIRST match in `items` wins; callers build the candidate list prd-
+ * before-opportunity (matching `resolveEndpoints`' prd-first preference), so the prd's
+ * governing decision is the one surfaced - a single, deterministic annotation per row.
+ */
+export function findGoverningFor(
+  prdId: string | null,
+  opportunityId: string | null,
+  items: readonly GoverningDecisionItem[],
+): GoverningDecisionItem | null {
+  for (const it of items) {
+    if ((prdId && it.fromId === prdId) || (opportunityId && it.fromId === opportunityId)) {
+      return it;
+    }
+  }
+  return null;
+}
+
+/**
  * PURE. Render the stale precedents as a compact, bounded "Governing decision" block for
  * the Critic prompt. Empty input returns "" (the caller omits the block). The framing is a
  * retrieval CORRECTION, distinct from DBR-2's red-team: it names the CURRENT decision that

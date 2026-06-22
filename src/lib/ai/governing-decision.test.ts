@@ -4,6 +4,7 @@ import {
   selectGoverningDecisions,
   formatGoverningDecisions,
   nextSupersessionFrontier,
+  findGoverningFor,
 } from "./governing-decision";
 import type { RawLineageEdge } from "@/lib/knowledge-graph-view";
 
@@ -290,5 +291,34 @@ describe("nextSupersessionFrontier (closure expansion)", () => {
     const r = resolveGoverning("prd", "A", collected);
     expect(r.governingId).toBe("C");
     expect(r.hops).toBe(2);
+  });
+});
+
+describe("findGoverningFor (annotate a precedent by id)", () => {
+  const items = selectGoverningDecisions(
+    [
+      edge({ id: "e1", parent_id: "B", child_id: "A" }), // prd A superseded by B
+      edge({ id: "e2", parent_id: "O", child_id: "Q", relation: "contradicts" }), // opp Q contradicted
+    ],
+    [
+      { kind: "prd", id: "A" },
+      { kind: "opportunity", id: "Q" },
+    ],
+  );
+
+  it("matches a precedent by its prd id", () => {
+    expect(findGoverningFor("A", null, items)?.governingId).toBe("B");
+  });
+
+  it("matches a precedent by its opportunity id", () => {
+    expect(findGoverningFor(null, "Q", items)?.contradicted).toBe(true);
+  });
+
+  it("returns null for a still-current precedent", () => {
+    expect(findGoverningFor("Z", "Z", items)).toBeNull();
+  });
+
+  it("returns null when both ids are null", () => {
+    expect(findGoverningFor(null, null, items)).toBeNull();
   });
 });

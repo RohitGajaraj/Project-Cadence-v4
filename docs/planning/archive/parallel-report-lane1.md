@@ -2,6 +2,17 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (15:10) — DBR-3b: governing-decision on the proactive precedent nudge
+
+Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3b extends it to the proactive precedent nudge** so a stale precedent is flagged the moment the brain surfaces it.
+- Extracted the closure loader to a reusable `src/lib/ai/governing-decision.server.ts` (`resolveGoverningForNodes`); refactored `runCritic` onto it (DRY, behavior-preserved).
+- `getDecisionPrecedent` annotates each precedent with its governing decision; `PrecedentNudge.tsx` flags "Superseded/Contradicted" inline. Pure `findGoverningFor` (+4 tests → 31).
+- **Adversarial review (code-reviewer) = SHIP_WITH_FIXES, all 3 folded:** skip a redundant query; **fixed a silent frontier truncation** (`.slice(0,50)` → chunked + 500-node cap); documented prd-first single-match.
+- **Gates:** tsc 0 · `bun test` 1034/1034 (+4) · eslint + prettier clean (6 files). Collision-safe (disjoint from Lane 2's `supersession.*`).
+- **◐ not ✅:** dormant + byte-identical until publish + `DECISION_BRAIN_SUPERSESSION` on. **Breadcrumb:** opportunity detail / PRD page → Precedent nudge.
+
+---
+
 ## 2026-06-22 (14:45) — Decision Brain depth: DBR-3a governing-decision retrieval (founder "go deeper now")
 
 **Directive (founder, this run):** run the autonomous loop; start with core USP / moat / foundational items; surface where founder input is genuinely needed. The #1 item is the Decision Brain; its autonomous increments are all shipped-but-dormant and the next depth was founder-parked "enrichment," so that fork was surfaced with 3 options. Founder chose **"go deeper now."**
