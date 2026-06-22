@@ -26,6 +26,15 @@
 
 ## Decision log
 
+### 2026-06-22 · Close the stale-read collision gap (two sessions on one item) at the source
+
+**Context.** Despite the 2026-06-22 claim-discipline ruling, sessions kept colliding on the same item (latest: M1 — a `/loop` lane was building it while a founder-directed session tried to park it Gated). The founder: "why is this mistake happening again and again? where is this gap?"
+
+**Root cause (three gaps, found by reading `scripts/lane.sh`).** (1) The ledger mutex (`mkdir` at `~/.cadence-parallel`) is atomic and sound — but `lane.sh next` picked eligibility from THIS worktree's LOCAL `feature-dashboard.md`, which goes stale: a sibling lane can flip a row `🔨 In Dev` + push to origin/main, and until this worktree pulls, its local copy still shows the row `⬜`/`◐` eligible, so both lanes target it (a read-then-act race). (2) `claim` only checked the ledger, not the dashboard `🔨` lock, so a reaped-but-still-🔨 row had no second guard. (3) Discipline: an item ACTION other than building (closing/parking/re-statusing a row) was being taken WITHOUT a claim — editing an unclaimed row is the same race as building one.
+
+**Decision / fix.** Fixed the read at the source instead of relying on each agent to rebase at exactly the right instant: `lane.sh next` now reads `origin/main` fresh (`_fresh_register` = `git fetch` + `git show origin/main:…dashboard`), so a row a sibling already flipped 🔨 + pushed is excluded here too; `lane.sh claim` adds a SECOND independent lock (refuse a row that is `🔨 In Dev` by a different lane on origin); and the anti-duplication invariant gains **rule 0: CLAIM (or fresh-check) before ANY row action — build, close, park, gate, re-status — not just before code.** All 11 `lane.test.sh` cases still pass. Verified live: claiming M1 (🔨 by lane 2 on origin) is now refused and `next` no longer lists it.
+
+
 ### 2026-06-22 · Whole-dashboard ◐ closure: "partial" was mostly mislabeled done-work, not unfinished work
 
 **Context.** After the monetization closure, the founder looked at the top of the dashboard and saw rows they remembered as DONE now showing `◐` partial ("why is it partial now, when work was done + we spent on it?"). They demanded a rigorous re-verify ("do the testing, see the documents, don't just mark it on my words") and a permanent close.
