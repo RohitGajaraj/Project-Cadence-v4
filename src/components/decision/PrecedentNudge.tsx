@@ -61,7 +61,9 @@ export function PrecedentNudge({
                   {p.governing.superseded ? "Superseded" : "Contradicted"}:
                 </strong>{" "}
                 {p.governing.superseded
-                  ? "a later decision replaced this; rely on the current one."
+                  ? p.governing.governingTitle
+                    ? `replaced by "${p.governing.governingTitle}"; rely on the current decision.`
+                    : "a later decision replaced this; rely on the current one."
                   : "a later outcome contradicted this; no longer a safe basis."}
               </span>
             ) : null}

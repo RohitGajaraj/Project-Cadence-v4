@@ -111,11 +111,65 @@ async function loadContradictsForNodes(
 }
 
 /**
+ * Resolve the human TITLE of each governing (replacement) decision so a surface can NAME
+ * it ("by 'New checkout flow'") instead of citing an opaque id - the literal point of
+ * "return the governing DECISION, not the nearest text". Only superseded items name a
+ * replacement (a contradicts has none). Titles are keyed by `kind:id` (prd and opportunity
+ * ids live in separate tables and could, in theory, collide). Best-effort + fail-safe: on
+ * any error the items are returned id-only, and the formatter falls back to the id.
+ */
+async function attachGoverningTitles(
+  supabase: SupabaseClient,
+  items: GoverningDecisionItem[],
+): Promise<GoverningDecisionItem[]> {
+  const superseded = items.filter((it) => it.superseded && UUID_RE.test(it.governingId));
+  if (!superseded.length) return items;
+  const prdIds = Array.from(
+    new Set(superseded.filter((i) => i.governingKind === "prd").map((i) => i.governingId)),
+  );
+  const oppIds = Array.from(
+    new Set(superseded.filter((i) => i.governingKind === "opportunity").map((i) => i.governingId)),
+  );
+  const titles = new Map<string, string>();
+  try {
+    // The Supabase query builder is a PromiseLike (thenable), not a full Promise;
+    // Promise.all accepts thenables, so type the list accordingly.
+    const queries: PromiseLike<void>[] = [];
+    const collect = (kind: string, table: string, idList: string[]) => {
+      if (!idList.length) return;
+      queries.push(
+        supabase
+          .from(table)
+          .select("id,title")
+          .in("id", idList)
+          .then(({ data }) => {
+            for (const r of (data ?? []) as Array<{ id: string; title: string | null }>) {
+              if (r?.id && typeof r.title === "string" && r.title.trim()) {
+                titles.set(`${kind}:${r.id}`, r.title);
+              }
+            }
+          }),
+      );
+    };
+    collect("prd", "prds", prdIds);
+    collect("opportunity", "opportunities", oppIds);
+    await Promise.all(queries);
+  } catch {
+    return items;
+  }
+  if (!titles.size) return items;
+  return items.map((it) => {
+    const t = it.superseded ? titles.get(`${it.governingKind}:${it.governingId}`) : undefined;
+    return t ? { ...it, governingTitle: t } : it;
+  });
+}
+
+/**
  * Resolve a set of decision nodes to their GOVERNING decisions: assemble the supersedes
  * chain (closure) + the contradicts edges on the seeds, optionally union with edges the
  * caller already loaded (the Critic reuses its DBR-2 focus edges to avoid re-querying),
- * then run the pure selector. Returns only the STALE nodes (superseded or contradicted).
- * Self-contained + fail-safe: any failure yields [].
+ * run the pure selector, then NAME each replacement decision by its title. Returns only the
+ * STALE nodes (superseded or contradicted). Self-contained + fail-safe: any failure yields [].
  */
 export async function resolveGoverningForNodes(
   supabase: SupabaseClient,
@@ -139,7 +193,8 @@ export async function resolveGoverningForNodes(
     for (const e of opts.extraEdges ?? []) if (e && typeof e.id === "string") byId.set(e.id, e);
     for (const e of closure) if (e && typeof e.id === "string") byId.set(e.id, e);
     for (const e of contradicts) if (e && typeof e.id === "string") byId.set(e.id, e);
-    return selectGoverningDecisions(Array.from(byId.values()), nodes);
+    const items = selectGoverningDecisions(Array.from(byId.values()), nodes);
+    return attachGoverningTitles(supabase, items);
   } catch {
     return [];
   }

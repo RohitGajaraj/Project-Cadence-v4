@@ -190,6 +190,23 @@ describe("formatGoverningDecisions", () => {
     expect(out).not.toContain("through"); // single hop has no chain suffix
   });
 
+  it("NAMES the replacement decision when a title resolved", () => {
+    const out = formatGoverningDecisions([
+      {
+        fromKind: "prd",
+        fromId: "A",
+        governingKind: "prd",
+        governingId: "B",
+        governingTitle: "New checkout flow",
+        superseded: true,
+        contradicted: false,
+        hops: 1,
+      },
+    ]);
+    expect(out).toContain('"New checkout flow"');
+    expect(out).toContain("B"); // id kept alongside the title
+  });
+
   it("notes the chain length for a multi-hop supersession", () => {
     const out = formatGoverningDecisions([
       {

@@ -132,6 +132,13 @@ export type GoverningDecisionItem = {
   /** The terminal, still-current decision after walking `supersedes` edges. */
   governingKind: string;
   governingId: string;
+  /**
+   * The governing decision's human title, resolved server-side (the pure selector leaves
+   * it undefined; the server layer fills it). Lets a surface NAME the replacement ("by 'New
+   * checkout flow'") instead of citing an opaque id - the whole point of "return the
+   * governing DECISION, not the nearest text". Absent/null when not resolvable.
+   */
+  governingTitle?: string | null;
   /** `governingId` differs from `fromId` - a later decision replaced the precedent. */
   superseded: boolean;
   /** A current `contradicts` edge targets the precedent - a later outcome invalidated it. */
@@ -211,7 +218,11 @@ export function formatGoverningDecisions(items: GoverningDecisionItem[]): string
     if (it.superseded) {
       const chain = it.hops > 1 ? ` (through ${it.hops} supersessions)` : "";
       const also = it.contradicted ? ", and a later outcome also CONTRADICTED it" : "";
-      return `- a past ${it.fromKind} (${it.fromId}) like this one was SUPERSEDED${chain} by a later ${it.governingKind} (${it.governingId})${also}; rely on the later one as the CURRENT governing decision, not the superseded ${it.fromKind}.`;
+      // Name the replacement when its title resolved; fall back to the id otherwise.
+      const named = it.governingTitle?.trim()
+        ? `"${it.governingTitle.trim()}" (${it.governingId})`
+        : `(${it.governingId})`;
+      return `- a past ${it.fromKind} (${it.fromId}) like this one was SUPERSEDED${chain} by a later ${it.governingKind} ${named}${also}; rely on the later one as the CURRENT governing decision, not the superseded ${it.fromKind}.`;
     }
     // Contradicted only: no replacement decision exists, so flag the node rather than redirect.
     return `- a past ${it.fromKind} (${it.fromId}) like this one was CONTRADICTED by a later outcome; it is no longer a safe basis.`;

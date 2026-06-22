@@ -2,6 +2,16 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-22 (15:25) — DBR-3c: NAME the governing decision
+
+Completes "return the governing DECISION, not the nearest text": the Critic block + precedent nudge now NAME the replacement by title ("replaced by 'New checkout flow'"), not an opaque id.
+- Optional `governingTitle` on `GoverningDecisionItem`; fail-safe server resolver `attachGoverningTitles` (batch `prds`/`opportunities` lookup, RLS-scoped, zero query when no stale items) threaded through `resolveGoverningForNodes` → both surfaces get titles with **no `critic.server.ts` change**. +1 test (32).
+- **Self-reviewed** (additive on already-reviewed code); table/column names confirmed by existing call sites; folded a real tsc fix (Supabase builder is `PromiseLike`, not `Promise`).
+- **Gates:** tsc 0 · `bun test` 1059/1059 (+1) · eslint + prettier clean (5 files). Collision-safe (disjoint from Lane 2's `knowledge-graph-view.*`).
+- **Context:** the moat is now armed live (founder published the migration; Lane 2's DB-backed flag), so DBR-3a/3b/3c light up automatically as edges accrue once THIS build publishes. **◐ render-on-publish.**
+
+---
+
 ## 2026-06-22 (15:10) — DBR-3b: governing-decision on the proactive precedent nudge
 
 Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3b extends it to the proactive precedent nudge** so a stale precedent is flagged the moment the brain surfaces it.
