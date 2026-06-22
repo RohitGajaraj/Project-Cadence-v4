@@ -18,6 +18,7 @@ import {
 } from "@/lib/ai/contradiction-history";
 import { formatGoverningDecisions } from "@/lib/ai/governing-decision";
 import { resolveGoverningForNodes } from "@/lib/ai/governing-decision.server";
+import { resolveSharedPremisePrecedent } from "@/lib/ai/shared-premise.server";
 import type { RawLineageEdge } from "@/lib/knowledge-graph-view";
 import { resolveLineageCols } from "@/lib/knowledge-graph-view.functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -172,7 +173,21 @@ Be specific. No filler. Use "ship" only when risks are bounded and evidence is s
     governing = "";
   }
 
-  const blocks = [precedent, contradictions, governing].filter(Boolean);
+  // DBR multi-hop: shared-premise precedent. The orthogonal graph-over-vectors query - not
+  // "what is similar in TEXT" (that is `precedent`) nor "what was overturned" (DBR-2/3), but
+  // "what happened the LAST time a decision rested on the SAME upstream premise as this one".
+  // Walks the derivation graph up to the premises and back down to their OTHER descendants,
+  // then reports each cousin PRD's recorded outcome. Independent + fail-safe: "" on any
+  // failure or empty graph, so the prompt is byte-identical until derivation edges + outcomes
+  // exist.
+  let sharedPremise = "";
+  try {
+    sharedPremise = await resolveSharedPremisePrecedent(supabase, userId, target);
+  } catch {
+    sharedPremise = "";
+  }
+
+  const blocks = [precedent, contradictions, governing, sharedPremise].filter(Boolean);
   const userContent = blocks.length ? `${subject}\n\n${blocks.join("\n\n")}` : subject;
   const guidance = [
     precedent
@@ -183,6 +198,9 @@ Be specific. No filler. Use "ship" only when risks are bounded and evidence is s
       : "",
     governing
       ? 'If a "Governing decision" block is present, a past decision similar to this one has been SUPERSEDED (or CONTRADICTED) by a later decision/outcome in this workspace: do NOT lean on the stale precedent; rely on the named CURRENT governing decision instead, and call out the correction in your reasoning.'
+      : "",
+    sharedPremise
+      ? 'If a "Shared-premise precedent" block is present, it reports past decisions DERIVED FROM the same upstream signal/opportunity/theme as this one and the outcome each reached (a structural link a text-similarity search can miss): weigh a same-premise decision that MISSED as evidence the shared premise carries risk, and cite the relevant ones in risks or missing_evidence.'
       : "",
   ]
     .filter(Boolean)
