@@ -22,6 +22,7 @@ import {
   formatSharedPremisePrecedent,
   type SharedPremiseOutcome,
   type SharedPremiseVerdict,
+  type SharedPremisePrecedentItem,
 } from "@/lib/ai/shared-premise";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -132,11 +133,41 @@ async function loadOutcomes(
 }
 
 /**
- * Resolve the SHARED-PREMISE precedent block for a decision under review: assemble the
+ * Resolve the SHARED-PREMISE precedents for a decision as STRUCTURED items: assemble the
  * premise ancestors (up-closure) and their descendants (down-closure), derive the cousins
- * with the pure walk, join the PRD cousins to their recorded outcomes, then render the
- * ranked block. Self-contained + fail-safe: any failure (or no data) yields "" so the
- * Critic prompt is byte-identical until the decision graph carries derivation + outcomes.
+ * with the pure walk, join the PRD cousins to their recorded outcomes, and rank. The one
+ * resolver behind both surfaces - the Critic (which formats it to a prompt block) and the
+ * proactive nudge (which renders the items) - so the moat stays "one graph in, every surface
+ * out". Self-contained + fail-safe: any failure (or no data) yields [].
+ */
+export async function resolveSharedPremiseItems(
+  supabase: SupabaseClient,
+  userId: string,
+  target: { kind: string; id: string },
+  opts: { max?: number } = {},
+): Promise<SharedPremisePrecedentItem[]> {
+  if (!target || typeof target.id !== "string" || !UUID_RE.test(target.id)) return [];
+  try {
+    const ancestorEdges = await closure(supabase, userId, [target.id], "child_id", "parent_id");
+    const ancestors = collectPremiseAncestors(target.id, ancestorEdges);
+    if (!ancestors.length) return [];
+    const descendantEdges = await closure(supabase, userId, ancestors, "parent_id", "child_id");
+    const edges = [...ancestorEdges, ...descendantEdges];
+    const cousins = collectSharedPremiseCousins(target, ancestors, edges);
+    const prdIds = cousins.filter((c) => c.kind === "prd").map((c) => c.id);
+    if (!prdIds.length) return [];
+    const outcomes = await loadOutcomes(supabase, prdIds);
+    if (!outcomes.size) return [];
+    return selectSharedPremisePrecedents(cousins, outcomes, { max: opts.max });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Render the shared-premise precedents as the Critic's prompt block. Thin wrapper over the
+ * structured resolver above; "" when there is nothing to report, so the Critic prompt stays
+ * byte-identical until the decision graph carries derivation edges + recorded outcomes.
  */
 export async function resolveSharedPremisePrecedent(
   supabase: SupabaseClient,
@@ -144,21 +175,5 @@ export async function resolveSharedPremisePrecedent(
   target: { kind: string; id: string },
   opts: { max?: number } = {},
 ): Promise<string> {
-  if (!target || typeof target.id !== "string" || !UUID_RE.test(target.id)) return "";
-  try {
-    const ancestorEdges = await closure(supabase, userId, [target.id], "child_id", "parent_id");
-    const ancestors = collectPremiseAncestors(target.id, ancestorEdges);
-    if (!ancestors.length) return "";
-    const descendantEdges = await closure(supabase, userId, ancestors, "parent_id", "child_id");
-    const edges = [...ancestorEdges, ...descendantEdges];
-    const cousins = collectSharedPremiseCousins(target, ancestors, edges);
-    const prdIds = cousins.filter((c) => c.kind === "prd").map((c) => c.id);
-    if (!prdIds.length) return "";
-    const outcomes = await loadOutcomes(supabase, prdIds);
-    if (!outcomes.size) return "";
-    const items = selectSharedPremisePrecedents(cousins, outcomes, { max: opts.max });
-    return formatSharedPremisePrecedent(items);
-  } catch {
-    return "";
-  }
+  return formatSharedPremisePrecedent(await resolveSharedPremiseItems(supabase, userId, target, opts));
 }

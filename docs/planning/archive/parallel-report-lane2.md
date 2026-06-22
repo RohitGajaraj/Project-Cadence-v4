@@ -19,3 +19,17 @@
 **Gate:** tsc 0 / 21 shared-premise tests / **1102 full suite** / no em/en-dash in generated strings. Byte-identical + fail-safe until derivation edges + recorded outcomes both exist.
 
 **State:** committed + fast-forward pushed to `origin/main`. `DBR (H1)` claim **HELD** (heartbeat) for the next increment (next: extend the same resolver to the proactive precedent nudge, mirroring DBR-3b's Critic → nudge fan-out). Docs: `decision-brain.md` (DBR-3f), dashboard row (Increment 8), `plan.md` §4.
+
+## 2026-06-22 — DBR-3g: shared-premise precedent on the proactive nudge (Critic → nudge fan-out)
+
+Second increment on the held DBR umbrella. Extended DBR-3f's resolver from the Critic to the PROACTIVE nudge ("value before you ask"), mirroring DBR-3b.
+
+- Refactored `src/lib/ai/shared-premise.server.ts` → structured `resolveSharedPremiseItems` (the Critic formatter is now a thin wrapper, behavior-preserved).
+- New `src/lib/shared-premise.functions.ts` (`getSharedPremisePrecedent`, RLS-scoped, fail-safe) + new `src/components/decision/SharedPremiseNudge.tsx` (mirror of PrecedentNudge; shows decisions built on the SAME upstream premise), mounted on `OpportunityDetail.tsx` + `_authenticated.prds.$id.tsx`.
+- Extended the held DBR ledger claim's globs to cover the new + touched files (cross-lane reservation).
+
+**Review:** focused code-review (feature-dev:code-reviewer) = **SHIP_WITH_FIXES** — refactor confirmed behavior-preserving, RLS clean, dormant-safe; folded both must-fixes (null-summary trailing-colon render; `enabled: !!targetId` guard).
+
+**Gate:** tsc 0 / **1110 full suite** / no em/en-dash in UI copy. Renders nothing until derivation edges + outcomes exist.
+
+**State:** committed + FF-pushed to `origin/main`. `DBR (H1)` claim still **HELD**. IA note: three decision asides now stack on these surfaces (precedent / shared-premise / currency) — flagged as a candidate for the founder-prompted IA-consolidation pass.
