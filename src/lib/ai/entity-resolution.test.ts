@@ -4,6 +4,7 @@ import {
   entityKey,
   resolveEntities,
   entityIdByNode,
+  canonicalNodeId,
   type DecisionNode,
 } from "./entity-resolution";
 
@@ -222,5 +223,27 @@ describe("entityIdByNode", () => {
     expect(map.get("A")).toBe(map.get("B")); // same entity
     expect(map.get("A")).not.toBe(map.get("C")); // different entity
     expect(map.size).toBe(3);
+  });
+});
+
+describe("canonicalNodeId", () => {
+  it("maps same-entity nodes to the smallest member id; singletons to themselves", () => {
+    const nodes = [
+      node("z9", "Checkout redesign"),
+      node("a1", "Checkout revamp"),
+      node("c3", "Onboarding"),
+    ];
+    const map = canonicalNodeId(nodes);
+    expect(map.get("z9")).toBe("a1"); // both reduce to {checkout} -> smallest id "a1"
+    expect(map.get("a1")).toBe("a1");
+    expect(map.get("c3")).toBe("c3"); // singleton -> itself
+    expect(map.size).toBe(3);
+  });
+
+  it("returns a REAL representative id (resolves in a table), never a synthetic ent: key", () => {
+    const map = canonicalNodeId([node("b", "Billing export"), node("a", "Billing export")]);
+    expect(map.get("a")).toBe("a");
+    expect(map.get("b")).toBe("a");
+    expect([...map.values()].every((v) => !v.startsWith("ent:"))).toBe(true);
   });
 });

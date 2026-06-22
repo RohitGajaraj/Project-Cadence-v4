@@ -5,6 +5,7 @@ import {
   collectSharedPremiseCousins,
   selectSharedPremisePrecedents,
   formatSharedPremisePrecedent,
+  canonicalizeEdges,
   type SharedPremiseOutcome,
 } from "./shared-premise";
 import type { RawLineageEdge } from "@/lib/knowledge-graph-view";
@@ -326,5 +327,67 @@ describe("collectSharedPremiseCousins premise provenance (DBR-3h)", () => {
     ]);
     expect(out).toContain("(abc-123)");
     expect(out).toContain("was VALIDATED");
+  });
+});
+
+describe("canonicalizeEdges (DBR entity-resolution wiring)", () => {
+  it("rewrites parent_id/child_id through canonicalId, keeping every other field", () => {
+    const edges = [
+      edge({
+        id: "e1",
+        parent_id: "A",
+        child_id: "B",
+        parent_kind: "opportunity",
+        child_kind: "prd",
+      }),
+    ];
+    const out = canonicalizeEdges(edges, (id) => (id === "B" ? "B0" : id));
+    expect(out[0].parent_id).toBe("A");
+    expect(out[0].child_id).toBe("B0");
+    expect(out[0].parent_kind).toBe("opportunity");
+    expect(out[0].child_kind).toBe("prd");
+    expect(out[0].relation).toBe(edges[0].relation);
+    expect(out[0].id).toBe("e1");
+  });
+
+  it("identity canonicalId leaves ids unchanged (byte-identical walk)", () => {
+    const edges = [edge({ id: "e1", parent_id: "A", child_id: "B" })];
+    const out = canonicalizeEdges(edges, (id) => id);
+    expect(out[0].parent_id).toBe("A");
+    expect(out[0].child_id).toBe("B");
+  });
+
+  it("collapsing two same-entity premises makes the walk find the cousin across them", () => {
+    // O1 -> Pa (target), O2 -> Pb. O1 and O2 are the SAME initiative (collapse O2 -> O1).
+    // Without collapse Pa and Pb have DIFFERENT premises (no shared cousin); after collapse
+    // they share premise O1, so Pb becomes a cousin of Pa.
+    const edges = [
+      edge({
+        id: "e1",
+        parent_id: "O1",
+        child_id: "Pa",
+        parent_kind: "opportunity",
+        child_kind: "prd",
+      }),
+      edge({
+        id: "e2",
+        parent_id: "O2",
+        child_id: "Pb",
+        parent_kind: "opportunity",
+        child_kind: "prd",
+      }),
+    ];
+    // baseline: no collapse -> Pa's only ancestor is O1, Pb sits under O2 -> not a cousin
+    const baseAnc = collectPremiseAncestors("Pa", edges);
+    expect(
+      collectSharedPremiseCousins({ kind: "prd", id: "Pa" }, baseAnc, edges).map((c) => c.id),
+    ).not.toContain("Pb");
+    // collapse O2 -> O1 -> Pb is now reachable down from Pa's premise O1
+    const collapsed = canonicalizeEdges(edges, (id) => (id === "O2" ? "O1" : id));
+    const anc = collectPremiseAncestors("Pa", collapsed);
+    expect(anc).toContain("O1");
+    expect(
+      collectSharedPremiseCousins({ kind: "prd", id: "Pa" }, anc, collapsed).map((c) => c.id),
+    ).toContain("Pb");
   });
 });

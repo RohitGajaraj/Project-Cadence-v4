@@ -79,4 +79,17 @@ Before building, the claim of `M1 / LRN-01` returned a false `HELD`: the atomic 
 
 **Gate:** tsc 0 / eslint 0 (2 files) / 24 entity-resolution tests / **1184 full suite** / no em/en-dash.
 
-**State:** committing + FF-push to `origin/main`. `DBR (H1)` claim **HELD** for the next DBR slice. ◐ compute-only (nothing drives it yet; the wiring into the walks is behavior-changing and needs a precision gate on real data). Docs: `docs/features/decision-brain.md` (DBR-ENTITY-RES + guardrail #4), `plan.md` §4, `session-decisions.md`.
+**State:** committed + FF-pushed to `origin/main` (`ff7fc5c695..7549f9001b`). `DBR (H1)` claim **HELD** for the next DBR slice. ◐ compute-only. Docs: `docs/features/decision-brain.md` (DBR-ENTITY-RES + guardrail #4), `plan.md` §4, `session-decisions.md`.
+
+## 2026-06-22 — DBR (H1): entity-resolution WIRING into the shared-premise walk (flag-gated OFF)
+
+Continued the held DBR umbrella: wired v1 into the shared-premise walk so same-initiative nodes collapse onto one canonical id and the walk connects cousins across fragments the derivation edges miss. Extended the claim globs to `src/lib/ai/shared-premise**` (disjoint).
+
+**Shipped (◐ flag-gated OFF `DBR_ENTITY_ALIASING`, never touches the AI chokepoint):**
+- pure `canonicalNodeId` (`entity-resolution.ts`) — node id → smallest member REAL id (not a synthetic `ent:` key, so id lookups still resolve).
+- pure `canonicalizeEdges` (`shared-premise.ts`) — rewrites edge ids through the canonical map, kinds untouched.
+- server glue in `resolveSharedPremiseItems` (`shared-premise.server.ts`) — behind the flag, loads node titles (RLS-scoped, chunked) + collapses (target, ancestors, edges) before the cousin walk.
+
+**Adversarial review = SOUND for ship (no fatal/high).** Byte-identical when off (flag block skipped, same object refs) and when nothing collapses. Folded two mediums: chunk the title `.in()` at `IN_BATCH=25` (an over-long IN would 414 → fail-safe silent no-op on large graphs); resolve collapse PER KIND (a node never merges onto its own same-titled derived artifact). The residual same-title false-merge is by-design and is what the founder's precision review must measure before flipping the flag.
+
+**Gate:** tsc 0 / eslint 0 (5 files) / 26 entity-resolution + 27 shared-premise tests / **1189 full suite** / no em/en-dash. **State:** committing + FF-push. `DBR (H1)` claim **HELD**.

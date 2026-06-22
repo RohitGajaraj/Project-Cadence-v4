@@ -274,3 +274,24 @@ export function entityIdByNode(
   }
   return map;
 }
+
+/**
+ * A map from each node id to a CANONICAL representative REAL id for its entity (the
+ * lexicographically smallest member id). Unlike {@link entityIdByNode} (a synthetic
+ * "ent:key"), this representative is a real node id that still resolves in the backing
+ * tables, so a caller can collapse aliased/surface-variant nodes onto ONE real id before
+ * a graph walk without breaking downstream id lookups. A node in a singleton entity maps
+ * to itself, so collapsing only ever affects nodes that genuinely resolve to one entity.
+ */
+export function canonicalNodeId(
+  nodes: DecisionNode[],
+  opts: EntityResolutionOptions = {},
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const group of resolveEntities(nodes, opts)) {
+    // members are id-sorted, so members[0].id is the smallest = the stable representative.
+    const rep = group.members[0].id;
+    for (const member of group.members) map.set(member.id, rep);
+  }
+  return map;
+}

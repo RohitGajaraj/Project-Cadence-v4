@@ -20,10 +20,12 @@ import {
   collectSharedPremiseCousins,
   selectSharedPremisePrecedents,
   formatSharedPremisePrecedent,
+  canonicalizeEdges,
   type SharedPremiseOutcome,
   type SharedPremiseVerdict,
   type SharedPremisePrecedentItem,
 } from "@/lib/ai/shared-premise";
+import { canonicalNodeId, type DecisionNode } from "@/lib/ai/entity-resolution";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -198,6 +200,102 @@ async function attachPremiseTitles(
 }
 
 /**
+ * Capability flag (DBR entity-resolution wiring, guardrail #4). Default OFF: collapsing
+ * surface-variant / aliased nodes onto one canonical id in the premise walk is OPT-IN, so
+ * the walk stays byte-identical until the founder enables it after a PRECISION REVIEW ON
+ * REAL DATA. When off, no titles are loaded and no canonicalization runs.
+ *
+ * What the precision review must measure before enabling: v1 collapses on a normalized
+ * TITLE match (no alias column exists yet), so two genuinely-different initiatives that
+ * normalize to the same key (e.g. two unrelated "Checkout redesign" opportunities) would
+ * be merged into one premise and manufacture a FALSE shared-premise cousin = false
+ * precedent. That false-merge rate is the gate. (Cross-kind merges are already prevented
+ * below - collapse is resolved per kind - so a node never merges with its own derived
+ * artifact.)
+ */
+export function entityAliasingEnabled(): boolean {
+  const v = process.env.DBR_ENTITY_ALIASING;
+  return v === "1" || v === "true";
+}
+
+/** Bound each PostgREST `.in()` to keep its URL short (repo convention; an over-long IN
+ * 414s and would, fail-safe, silently disable collapsing on exactly the large graphs it
+ * is meant for). Mirrors the `IN_BATCH` cap used by the knowledge-graph title loaders. */
+const TITLE_IN_BATCH = 25;
+
+/**
+ * Build a node-id -> canonical-representative-id map for the nodes in the assembled edges,
+ * so the walk can treat surface-variant / aliased nodes as one. Loads each node's TITLE
+ * from its backing table (RLS-scoped via the authed client, queried in bounded chunks),
+ * then runs the pure entity resolver PER KIND - so collapse never crosses kinds (an
+ * opportunity is never merged onto its own same-titled PRD, which is a derivation pair, not
+ * an alias). The map carries ONLY actually-collapsed ids (id != rep); an unmapped id is
+ * identity at the call site. Best-effort + fail-safe: any failure (or no titles) yields an
+ * empty map = no collapsing = a byte-identical walk.
+ */
+async function buildPremiseCanonicalId(
+  supabase: SupabaseClient,
+  userId: string,
+  edges: readonly RawLineageEdge[],
+): Promise<Map<string, string>> {
+  const kindOf = new Map<string, string>();
+  for (const e of edges) {
+    if (e.parent_id && UUID_RE.test(e.parent_id)) kindOf.set(e.parent_id, e.parent_kind);
+    if (e.child_id && UUID_RE.test(e.child_id)) kindOf.set(e.child_id, e.child_kind);
+  }
+  if (!kindOf.size) return new Map();
+  const byKind = new Map<string, string[]>();
+  for (const [id, kind] of kindOf) {
+    if (!PREMISE_TABLE[kind]) continue;
+    const arr = byKind.get(kind) ?? [];
+    arr.push(id);
+    byKind.set(kind, arr);
+  }
+  if (!byKind.size) return new Map();
+  const titleById = new Map<string, string>();
+  try {
+    const queries: PromiseLike<void>[] = [];
+    for (const [kind, ids] of byKind) {
+      for (let i = 0; i < ids.length; i += TITLE_IN_BATCH) {
+        const batch = ids.slice(i, i + TITLE_IN_BATCH);
+        queries.push(
+          supabase
+            .from(PREMISE_TABLE[kind])
+            .select("id,title")
+            .eq("user_id", userId)
+            .in("id", batch)
+            .then(({ data }) => {
+              for (const r of (data ?? []) as Array<{ id: string; title: string | null }>) {
+                if (r?.id && typeof r.title === "string" && r.title.trim()) {
+                  titleById.set(r.id, r.title);
+                }
+              }
+            }),
+        );
+      }
+    }
+    await Promise.all(queries);
+  } catch {
+    return new Map();
+  }
+  if (!titleById.size) return new Map();
+  // Resolve PER KIND, so an id never collapses onto a node of a different kind.
+  const canonical = new Map<string, string>();
+  for (const [kind, ids] of byKind) {
+    const nodes: DecisionNode[] = [];
+    for (const id of ids) {
+      const title = titleById.get(id);
+      if (title) nodes.push({ id, kind, title });
+    }
+    if (nodes.length < 2) continue; // a lone node cannot collapse
+    for (const [id, rep] of canonicalNodeId(nodes)) {
+      if (id !== rep) canonical.set(id, rep); // keep only real collapses
+    }
+  }
+  return canonical;
+}
+
+/**
  * Resolve the SHARED-PREMISE precedents for a decision as STRUCTURED items: assemble the
  * premise ancestors (up-closure) and their descendants (down-closure), derive the cousins
  * with the pure walk, join the PRD cousins to their recorded outcomes, and rank. The one
@@ -218,7 +316,25 @@ export async function resolveSharedPremiseItems(
     if (!ancestors.length) return [];
     const descendantEdges = await closure(supabase, userId, ancestors, "parent_id", "child_id");
     const edges = [...ancestorEdges, ...descendantEdges];
-    const cousins = collectSharedPremiseCousins(target, ancestors, edges);
+
+    // DBR entity-resolution wiring (guardrail #4), flag-gated OFF by default: collapse nodes
+    // that name the SAME initiative under different titles onto one canonical id, so the walk
+    // connects cousins across fragments the derivation graph alone would miss. Byte-identical
+    // when off (we skip it entirely) or when nothing collapses (the map leaves ids unchanged).
+    let walkTarget = target;
+    let walkAncestors = ancestors;
+    let walkEdges = edges;
+    if (entityAliasingEnabled()) {
+      const canonical = await buildPremiseCanonicalId(supabase, userId, edges);
+      if (canonical.size) {
+        const cid = (id: string) => canonical.get(id) ?? id;
+        walkEdges = canonicalizeEdges(edges, cid);
+        walkTarget = { kind: target.kind, id: cid(target.id) };
+        walkAncestors = Array.from(new Set(ancestors.map(cid)));
+      }
+    }
+
+    const cousins = collectSharedPremiseCousins(walkTarget, walkAncestors, walkEdges);
     const prdIds = cousins.filter((c) => c.kind === "prd").map((c) => c.id);
     if (!prdIds.length) return [];
     const outcomes = await loadOutcomes(supabase, prdIds);

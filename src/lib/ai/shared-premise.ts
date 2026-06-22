@@ -204,6 +204,26 @@ export function collectSharedPremiseCousins(
 }
 
 /**
+ * PURE. Rewrite each edge's `parent_id` / `child_id` through `canonicalId`, leaving every
+ * other field (kinds, relation, timestamps) untouched. Two ids that resolve to the same
+ * canonical id are thereby treated as ONE node by the walk - this is how DBR entity
+ * resolution collapses surface-variant / aliased nodes that the derivation graph would
+ * otherwise fragment into disconnected subgraphs (so the shared-premise walk connects
+ * cousins it would have missed). An identity `canonicalId` returns content-equivalent
+ * edges, so the walk is byte-identical when nothing collapses.
+ */
+export function canonicalizeEdges(
+  edges: readonly RawLineageEdge[],
+  canonicalId: (id: string) => string,
+): RawLineageEdge[] {
+  return edges.map((e) => ({
+    ...e,
+    parent_id: canonicalId(e.parent_id),
+    child_id: canonicalId(e.child_id),
+  }));
+}
+
+/**
  * PURE. Keep the cousins that reached a recorded outcome and shape them into ranked
  * precedents. Ranks the CAUTIONARY signal first - missed, then mixed, then validated -
  * then newest-checked, so the Critic sees "a same-premise decision MISSED" before a
