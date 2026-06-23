@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   searchSignals,
   searchOpportunities,
+  searchDecisions,
   getPRD,
   appendDecision,
   exportSkillpack,
@@ -177,6 +178,15 @@ async function dispatchTool(
           limit,
           offset,
         );
+        return { success: true, data };
+      }
+
+      case "search_decisions": {
+        const query = (params.query as string) || "";
+        const limit = Math.min((params.limit as number) || 20, 100);
+        const offset = (params.offset as number) || 0;
+
+        const data = await searchDecisions(supabase, workspace_id, query, limit, offset);
         return { success: true, data };
       }
 

@@ -222,3 +222,7 @@ Once the app is deployed (Lovable sync + publish), the `/api/mcp` route is live.
 - **Feature dashboard:** Q1-MCP row (P1 priority, Lane F)
 - **a2a-handoff.md:** sibling A2A contract (internal agent handoffs); MCP is external A2A
 - **Spec:** https://modelcontextprotocol.io/specification
+
+## INTEROP-V11 floor — read-only decision-brain access (2026-06-24, lane 2)
+
+Added a read-only `search_decisions` MCP tool: external agents (Claude/ChatGPT/Cursor) can now query the workspace decision brain — decisions (safe projection: title, rationale, status, decided-by, created_at) each tagged with the honest **standing/superseded** outcome (reuses the Trust Ledger `supersededChildIds` bitemporal rule, so the MCP read and the in-app ledger never disagree). Workspace-scoped + audited like the existing read tools; catalog entry in `mcp-protocol.ts`, dispatch case in `api/mcp.ts`, helper in `mcp.functions.ts` (`searchDecisions` + the pure `applyDecisionOutcomes`); 4 unit tests + the catalog-integrity tests updated (now 6 tools). **Remaining (INTEROP-V11 ◐):** roadmap/spec read tools + the outward WRITE/A2A scoped-token surface (founder-gated on scopes/audit).

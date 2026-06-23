@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildSkillpack, clampSkillpackLimit, type SkillpackLessonInput } from "./skillpack";
+import { supersededChildIds, type LineageEdgeLite } from "./trust-ledger.functions";
 
 /**
  * Q1-MCP · Read-only MCP (Model Context Protocol) server functions.
@@ -207,6 +208,68 @@ export async function searchOpportunities(
 
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+/**
+ * PURE (INTEROP-V11). Tag each decision with its honest provenance outcome
+ * ("standing" | "superseded") from the supersession map — the same bitemporal
+ * rule as the Trust Ledger, so the MCP read and the in-app ledger never disagree.
+ */
+export function applyDecisionOutcomes<T extends { id: string }>(
+  decisions: T[] | null | undefined,
+  superseded: Map<string, string>,
+): (T & { outcome: "standing" | "superseded" })[] {
+  return (Array.isArray(decisions) ? decisions : []).map((d) => ({
+    ...d,
+    outcome: superseded.has(d.id) ? ("superseded" as const) : ("standing" as const),
+  }));
+}
+
+/**
+ * INTEROP-V11 · Read-only decision-brain access for external agents. Returns the
+ * workspace's decisions (safe projection — no owner/workspace/linked ids) each
+ * tagged with its standing/superseded outcome, so a peer agent can query "what
+ * did this team decide, and did it hold up?". Workspace-scoped + audited like the
+ * other MCP read tools. Called by the MCP server route handler.
+ */
+export async function searchDecisions(
+  supabaseClient: any,
+  workspace_id: string,
+  query: string,
+  limit: number = 20,
+  offset: number = 0,
+) {
+  let q = supabaseClient
+    .from("decisions")
+    .select("id, title, rationale, status, source_kind, decided_by_agent_slug, created_at")
+    .eq("workspace_id", workspace_id);
+
+  if (query) {
+    q = q.or(`title.ilike.%${query}%, rationale.ilike.%${query}%`);
+  }
+
+  const { data: rows, error } = await q
+    .range(offset, offset + limit - 1)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const decisions = (rows || []) as Array<{ id: string }>;
+
+  // The honest provenance outcome via the bitemporal lineage. Tolerant: any error
+  // (incl. a pre-migration missing valid_to) leaves every decision "standing".
+  let superseded = new Map<string, string>();
+  if (decisions.length) {
+    const { data: edges, error: lErr } = await supabaseClient
+      .from("artifact_lineage")
+      .select("parent_id, child_id, relation, valid_to")
+      .eq("workspace_id", workspace_id)
+      .in(
+        "child_id",
+        decisions.map((d) => d.id),
+      )
+      .in("relation", ["supersedes", "contradicts"]);
+    if (!lErr && edges) superseded = supersededChildIds(edges as unknown as LineageEdgeLite[]);
+  }
+  return applyDecisionOutcomes(decisions as Array<{ id: string }>, superseded);
 }
 
 /**

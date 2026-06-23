@@ -182,6 +182,7 @@ describe("result builders", () => {
     expect(r.tools.map((t) => t.name)).toEqual([
       "search_signals",
       "search_opportunities",
+      "search_decisions",
       "get_prd",
       "append_decision",
       "export_skillpack",
@@ -218,8 +219,8 @@ describe("result builders", () => {
 });
 
 describe("MCP_TOOLS catalog integrity", () => {
-  test("exactly five tools, each well-formed", () => {
-    expect(MCP_TOOLS).toHaveLength(5);
+  test("exactly six tools, each well-formed", () => {
+    expect(MCP_TOOLS).toHaveLength(6);
     for (const t of MCP_TOOLS) {
       expect(typeof t.name).toBe("string");
       expect(t.name.length).toBeGreaterThan(0);
