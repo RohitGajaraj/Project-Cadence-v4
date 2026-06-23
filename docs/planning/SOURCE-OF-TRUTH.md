@@ -11,6 +11,19 @@
 > This section replaces the old root `active-task.md` (folded in 2026-06-19). It is the single "what is in flight + what to pick next" cursor. Update it in the same unit of work as any change. Past work is in section 6 (progress log); the full dated history is in [`../../plan.md`](../../plan.md) section 4.
 
 > [!IMPORTANT]
+> ## ⭐ THE GUIDING STAR (2026-06-23): v11 is now the standing strategy + build canon (read it before picking)
+>
+> **[`../strategy/v11-guiding-star.md`](../strategy/v11-guiding-star.md)** is the new strategy guiding star (the ranked build front lives in **[`feature-dashboard.md`](./feature-dashboard.md)**, the v11 items are #1-21 with a Why per row), produced from a code-and-live-DB-verified outsider teardown (investor / CTO / Head-of-Product / competitor / core-user lenses + a villain/defense pressure-test). **When v11 and an older doc disagree on direction, v11 wins.**
+>
+> **The reframe:** the engine is genuinely wired end-to-end (missions auto-advance via the `resume-runs` cron, agents hand off A2A, 27/31 missions completed in the live DB), but **the moat is cold** (0 outcome edges, 0 supersession edges, 1 learning) and **the demo renders empty** (the seed writes no `artifact_lineage` decision edges), so a built product *looks* fragmented. The core-user research confirms it is **not a design problem, it is a proof + trust-timing problem** (the product asks the PM to govern before showing them anything worth trusting). The fix is NOT new surface area: **light up and fuel the engine you already built, then make the Trust Ledger the hero.**
+>
+> **The v11 build front (capabilities-first; full detail + a Why per row in [`feature-dashboard.md`](./feature-dashboard.md), which carries this same list as its top callout):** `TEST-SEED` (#1, minimal dev data), then the ambient self-initiating loop (`EVENT-REACTOR-LIVE`, `AMBIENT-SENSE`, `AMBIENT-TRIGGER`), then `LOOP-PROVE` (the cold moat fills on real data), then the Trust Ledger (`TRUST-LEDGER`, `TRUST-SHARE`), then `BRAIN-UX-V11` (the Brain as an open analyst that also drives agent action), then `STITCH-LOOP`, then the core-user fixes (`CORE-UX-TRUST`, `CORE-UX-FELT`), then consumer-grade IA (`IA-NAV-V11`, `SETTINGS-SEGREGATE`, `CONNECTORS-V11`), then `ORCH-DELEGATE`, `INTEROP-V11`, `PLAYBOOK-REGISTRY`, `PM-IMPACT-LEDGER`, `STAKEHOLDER-PACK`, `POS-V11`, then `LANDING-PAGE-V11` (after the capabilities it showcases). The rich showcase seed (`DEMO-SEED-RICH`) and `SHIP-V11` are Tier-4, LAST. The Decision Brain (`DBR (H1)`) follows the front at #22.
+>
+> `SEN-01` / `F-CONN` (one real connector), the external-coding-agent half of `ORCH-DELEGATE`, and the outward write half of `INTEROP-V11` (`Q2`) are **founder-gated**. `bash scripts/lane.sh next` already surfaces the lowest-rank item first, so the lanes pick the v11 front before anything else. The pre-v11 "queue exhausted at ~80%, only DBR left" framing below is superseded: the v11 front IS the high-value work, and the Decision-Brain items are folded into it as the moat-fueling thrust.
+>
+> ---
+
+> [!IMPORTANT]
 > ## 👋 PICK UP HERE TOMORROW — session closed 2026-06-22 21:35 (Lane 1)
 >
 > **All work is committed + pushed to `main`; working tree clean.** The dashboard now tells the truth: **180 rows, 145 ✅ (80.6% strict / 83.4% weighted), by-priority Done = ✅ count = 145.**

@@ -34,7 +34,15 @@ GROUP = {"Tier 1": 0, "Tier 2": 1, "Tier 3": 2, "Tier 4": 3,
          "Gated": 4, "Lovable": 5, "Deferred": 6, "Done": 7}
 KNOWN = set(GROUP)
 # Tier-1 fine order (the active build front). Edit to reprioritize WITHIN Tier 1.
-T1 = ["DBR-1.5", "MOAT-VIS", "F-IA-BRAIN-GRAPH", "MOAT-METRIC", "EMBED-CHOKEPOINT",
+# v11 Guiding-Star front (2026-06-23) — topmost build order: fuel the moat, light the
+# ambient self-initiating layer, make the Trust Ledger the hero, fix the core-user felt
+# experience, then narrative + the research-surfaced opportunities. Detail: docs/strategy/v11-guiding-star.md
+T1 = ["TEST-SEED", "EVENT-REACTOR-LIVE", "AMBIENT-SENSE", "AMBIENT-TRIGGER", "LOOP-PROVE",
+      "TRUST-LEDGER", "TRUST-SHARE", "BRAIN-UX-V11", "STITCH-LOOP", "CORE-UX-TRUST", "CORE-UX-FELT",
+      "IA-NAV-V11", "SETTINGS-SEGREGATE", "CONNECTORS-V11",
+      "ORCH-DELEGATE", "INTEROP-V11", "PLAYBOOK-REGISTRY", "PM-IMPACT-LEDGER", "STAKEHOLDER-PACK", "POS-V11",
+      "LANDING-PAGE-V11",
+      "DBR-1.5", "MOAT-VIS", "F-IA-BRAIN-GRAPH", "MOAT-METRIC", "EMBED-CHOKEPOINT",
       "FIRECRAWL-FLOOR", "H1-TASKS", "W1-AUTO", "O1", "O3", "Q1 / ENG-07 / F-MCP-V1"]
 T1ORD = {k: i for i, k in enumerate(T1)}
 

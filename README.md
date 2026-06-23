@@ -5,6 +5,8 @@
 > **Run your entire product lifecycle end to end on Cadence.** The product operating system for the whole arc, discover, decide, define, build, ship, launch, and learn, as one governed, continuously-learning loop. The **moat is the decision layer** (what to build, and whether the call was right, the part with no fast oracle) plus the compounding memory; the build is a governed station within the loop (Cadence's own engine, or dispatched to Lovable / Cursor / Devin under the same governance). Vibe-coding is one station; **Cadence is the whole loop, with the decision layer as its brain.** You set intent and own the calls that matter; agents run the arc.
 >
 > One-line: **the end-to-end product OS; the decision layer is the moat.**
+>
+> **⭐ Current strategy canon (2026-06-23): [v11 Guiding Star](./docs/strategy/v11-guiding-star.md).** It frames the moat as the **decision and outcome layer** over three pillars (own the loop, sense continuously, keep the receipts), adds the corrected **ambient self-initiating** North Star, and supersedes v7 to v10 for direction. What to build next = the v11 build front (#1-21) in [the feature dashboard](./docs/planning/feature-dashboard.md). Deep positioning reconciliation is tracked as `POS-V11`.
 
 ---
 

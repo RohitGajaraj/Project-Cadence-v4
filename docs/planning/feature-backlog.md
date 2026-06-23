@@ -2,6 +2,9 @@
 
 > _Created: 2026-06-03 · Last updated: 2026-06-19_
 
+> [!WARNING]
+> **⚠ SUPERSEDED (2026-06-23). Do NOT add new items here; do NOT treat its ☐ markers as live status.** The single build register is now [`feature-dashboard.md`](./feature-dashboard.md) (the ranked rows + the v11 build front #1-21, each with a Why). Its ☐ markers below are STALE: most are already-shipped work the dashboard tracks correctly (the agent roster, A2A handoff, product memory, ship bundle, etc.). Per-feature acceptance detail now lives in the relevant [`../features/`](../features/) docs. The one genuinely-pending item not previously on the board, **DEF-04 (designer scaffolds)**, was salvaged into the dashboard on 2026-06-23. This file is retained only for historical F-ID references; its physical archive + a broader repo-structure declutter (it has ~25 live inbound links, so the move needs a same-commit link-update pass) is tracked as **`REPO-DECLUTTER-V11`** in the dashboard.
+
 > **SSOT first.** The single front-door tracker is [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (status, build queue, founder rulings, findings, progress). This file is the granular acceptance-criteria and scope ledger (the F-ID detail) it points to, not the tracker to follow day-to-day.
 
 > **What this is.** The exhaustive, sub-feature-level enumeration of _everything Cadence is built to ship_ — the dev-ready expansion of [`../plan.md`](../../plan.md) §2 (granular catalog). Every feature has a **stable ID** (e.g. `F2.3`) so it can become an issue/PR/spec and be referenced by traces, decisions, and the build log without re-describing scope.
