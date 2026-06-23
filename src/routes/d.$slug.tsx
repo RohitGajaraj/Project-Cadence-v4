@@ -152,28 +152,39 @@ function PublicDecisionPage() {
       <h1 className="font-display" style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 14px" }}>
         {decision.title}
       </h1>
-      <span
-        className="mono-label"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          fontSize: 10,
-          color: st.color,
-          marginBottom: 20,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
         <span
+          className="mono-label"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: st.color }}
+        >
+          <span
+            style={{ width: 6, height: 6, borderRadius: 99, background: st.color, display: "inline-block" }}
+          />
+          {st.label}
+        </span>
+        {/* TRUST-SHARE: the honest provenance outcome — does this call still stand? */}
+        <span
+          className="mono-label"
+          title={
+            decision.outcome === "superseded"
+              ? "A later decision superseded this one — shown for honest provenance."
+              : "This decision still stands; nothing has superseded it."
+          }
           style={{
-            width: 6,
-            height: 6,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 10,
+            padding: "2px 8px",
             borderRadius: 99,
-            background: st.color,
-            display: "inline-block",
+            color:
+              decision.outcome === "superseded" ? "var(--ink-subtle, #6b6457)" : "var(--emerald, #2f8f6b)",
+            border: `1px solid ${decision.outcome === "superseded" ? "var(--hairline, rgba(0,0,0,0.12))" : "color-mix(in srgb, var(--emerald, #2f8f6b) 35%, transparent)"}`,
           }}
-        />
-        {st.label}
-      </span>
+        >
+          {decision.outcome === "superseded" ? "Superseded" : "Still stands"}
+        </span>
+      </div>
       <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
         <div
           className="mono-label"

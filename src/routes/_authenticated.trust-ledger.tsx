@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ScrollText, Gavel, Zap, User, Bot, History, Link2, Search } from "lucide-react";
+import { ScrollText, Gavel, Zap, User, Bot, History, Link2, Search, Share2, Copy, Check } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { SurfaceHeader, TabRow, EmptyState, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listTrustReceipts, type TrustReceipt } from "@/lib/trust-ledger.functions";
+import { setDecisionShared } from "@/lib/decisions-share.functions";
 
 export const Route = createFileRoute("/_authenticated/trust-ledger")({
   component: TrustLedgerPage,
@@ -64,6 +65,76 @@ function OutcomePill({ outcome, supersededBy }: { outcome: TrustReceipt["outcome
       {superseded ? <History size={10} strokeWidth={2} /> : null}
       {superseded ? "Superseded" : "Standing"}
     </span>
+  );
+}
+
+/**
+ * TRUST-SHARE: publish a decision's receipt as a public provenance artifact.
+ * The publish act is USER-INITIATED (a click), per the v11 ruling that sharing is
+ * outward-facing — nothing auto-publishes. On success it surfaces the public
+ * `/d/<slug>` link to copy (what a PM forwards to their VP).
+ */
+function ShareControl({ decisionId }: { decisionId: string }) {
+  const fShare = useServerFn(setDecisionShared);
+  const [copied, setCopied] = useState(false);
+  const m = useMutation({ mutationFn: () => fShare({ data: { id: decisionId, isPublic: true } }) });
+
+  const slug = m.data?.share_slug ?? null;
+  const link =
+    slug && typeof window !== "undefined" ? `${window.location.origin}/d/${slug}` : slug ? `/d/${slug}` : null;
+
+  const chip: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    fontFamily: "var(--font-mono)",
+    fontSize: 10,
+    color: "var(--ink-subtle)",
+    background: "transparent",
+    border: "1px solid var(--hairline)",
+    borderRadius: 99,
+    padding: "2px 8px",
+    cursor: "pointer",
+  };
+
+  if (link) {
+    return (
+      <button
+        type="button"
+        title={link}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(link);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            /* clipboard blocked — the link is in the title for manual copy */
+          }
+        }}
+        style={chip}
+      >
+        {copied ? <Check size={11} strokeWidth={2} /> : <Copy size={11} strokeWidth={1.8} />}
+        {copied ? "Link copied" : "Copy public link"}
+      </button>
+    );
+  }
+  if (m.data && m.data.available === false) {
+    return (
+      <span style={{ ...chip, cursor: "default", color: "var(--ink-faint)" }} title="Sharing lands on the next deploy">
+        Sharing not available yet
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => m.mutate()}
+      disabled={m.isPending}
+      style={{ ...chip, opacity: m.isPending ? 0.6 : 1 }}
+    >
+      <Share2 size={11} strokeWidth={1.8} />
+      {m.isPending ? "Sharing…" : m.isError ? "Retry share" : "Share"}
+    </button>
   );
 }
 
@@ -144,6 +215,8 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
                 {r.evidenceCount} evidence
               </span>
             ) : null}
+            {/* TRUST-SHARE: only decisions are publicly shareable (reuse /d/$slug). */}
+            {r.kind === "decision" ? <ShareControl decisionId={r.id} /> : null}
             <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-faint)" }}>
               {relTime(r.occurredAt)}
             </span>

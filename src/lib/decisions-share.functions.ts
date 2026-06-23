@@ -23,6 +23,35 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase as anonSupabase } from "@/integrations/supabase/client";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkPublicDecisionRateLimit } from "@/lib/decisions-ratelimit.server";
+import { isSupersessionRelation, type LineageEdgeLite } from "@/lib/trust-ledger.functions";
+
+/** v1 provenance outcome surfaced on the public receipt — the honest "did it hold up?". */
+export type PublicDecisionOutcome = "standing" | "superseded";
+
+/**
+ * PURE (TRUST-SHARE). The parent ids of ACTIVE supersedes/contradicts edges whose
+ * child is one of the decision's own/source ids — i.e. the artifacts that overrode
+ * this decision (same bitemporal rule as the Trust Ledger; a retired `valid_to`
+ * edge is a reversal and is excluded). Returns the SUPERSEDERS so the caller can
+ * gate disclosure on whether the superseder is itself public (privacy: a PRIVATE
+ * override must never surface on a PUBLIC receipt).
+ */
+export function supersedingParentIds(
+  childIds: (string | null | undefined)[],
+  edges: LineageEdgeLite[] | null | undefined,
+): string[] {
+  const childSet = new Set(childIds.filter((x): x is string => typeof x === "string" && x !== ""));
+  const parents = new Set<string>();
+  for (const e of Array.isArray(edges) ? edges : []) {
+    if (!e || !isSupersessionRelation(e.relation)) continue;
+    const retired = typeof e.valid_to === "string" && e.valid_to.trim() !== "";
+    if (retired) continue;
+    if (typeof e.child_id === "string" && childSet.has(e.child_id) && typeof e.parent_id === "string" && e.parent_id) {
+      parents.add(e.parent_id);
+    }
+  }
+  return [...parents];
+}
 
 /**
  * Resolve the caller's IP for the per-IP public-read rate limit. Cloudflare
@@ -113,7 +142,60 @@ export type PublicDecision = {
   status: string;
   decided_by_agent_slug: string | null;
   created_at: string;
+  /** TRUST-SHARE: the honest provenance outcome — does this call still stand? */
+  outcome: PublicDecisionOutcome;
 };
+
+/**
+ * Server-side (admin) supersession check for a public decision. Anon CANNOT read
+ * `artifact_lineage` (its RLS is workspace-membership), so the boolean is computed
+ * here and ONLY the safe enum is returned — the decision id + source ids never
+ * leave the server. Fully tolerant: any miss / pre-migration column defaults to
+ * "standing" (a public receipt never errors over a provenance lookup).
+ */
+async function computePublicOutcome(slug: string): Promise<PublicDecisionOutcome> {
+  try {
+    const admin = supabaseAdmin as unknown as SupabaseClient;
+    const { data: row } = await admin
+      .from("decisions")
+      .select("id,mission_id,prd_id,meeting_id")
+      .eq("share_slug", slug)
+      .eq("is_public", true)
+      .maybeSingle();
+    if (!row) return "standing";
+    const r = row as {
+      id: string;
+      mission_id: string | null;
+      prd_id: string | null;
+      meeting_id: string | null;
+    };
+    const childIds = [r.id, r.mission_id, r.prd_id, r.meeting_id].filter(
+      (x): x is string => typeof x === "string" && x !== "",
+    );
+    if (!childIds.length) return "standing";
+    const { data: edges, error } = await admin
+      .from("artifact_lineage")
+      .select("parent_id,child_id,relation,valid_to")
+      .in("child_id", childIds)
+      .in("relation", ["supersedes", "contradicts"]);
+    if (error || !edges) return "standing";
+    const parentIds = supersedingParentIds(childIds, edges as unknown as LineageEdgeLite[]);
+    if (!parentIds.length) return "standing";
+    // PRIVACY: only reveal "superseded" when the superseding decision is ITSELF
+    // public. A private override must never leak onto a public receipt — the
+    // owner controls what is public, so the public artifact reflects only public
+    // provenance. A non-decision (or private) superseder leaves it "standing".
+    const { data: pub } = await admin
+      .from("decisions")
+      .select("id")
+      .in("id", parentIds)
+      .eq("is_public", true)
+      .limit(1);
+    return pub && pub.length ? "superseded" : "standing";
+  } catch {
+    return "standing";
+  }
+}
 
 /** PUBLIC (no auth) — the safe, minimal projection behind /d/<slug>. */
 export const getPublicDecision = createServerFn({ method: "GET" })
@@ -148,12 +230,14 @@ export const getPublicDecision = createServerFn({ method: "GET" })
       if (error || !row) return null;
       const r = row as PublicDecision & { is_public?: boolean };
       if (!r.is_public) return null; // belt-and-suspenders over the RLS gate
+      const outcome = await computePublicOutcome(data.slug);
       return {
         title: r.title,
         rationale: r.rationale ?? null,
         status: r.status,
         decided_by_agent_slug: r.decided_by_agent_slug ?? null,
         created_at: r.created_at,
+        outcome,
       };
     } catch {
       return null;

@@ -32,6 +32,14 @@ v11 names the decision-and-outcome layer as the moat and "trust is the thing peo
 - All reads go through the authed `context.supabase` (publishable key + user JWT) — RLS applies. Every query is `.eq("workspace_id", workspaceId)`; a caller-supplied `workspaceId` cannot leak another tenant's rows because the live SELECT policies are `is_workspace_member(...)` (verified live 2026-06-24: `decisions`, `agent_approvals`, `artifact_lineage` are all workspace-membership-scoped).
 - `args` from `agent_approvals` is attacker-influencable but is rendered as escaped JSX text (no `dangerouslySetInnerHTML`) and length-capped; no XSS or DOM-injection vector.
 
+## Sharing (TRUST-SHARE)
+
+A decision receipt can be published as a clean public **provenance artifact** — what a PM forwards to their VP to justify a call.
+
+- **Share affordance** on each decision card (`ShareControl`): a user-initiated click calls `setDecisionShared(id, true)` (authed, RLS-owned — only the owner can publish their own decision; verified live: the `decisions` UPDATE policy is `is_workspace_member AND user_id = auth.uid()`), then surfaces the copyable public `/d/<share_slug>` link. Nothing auto-publishes (v11: sharing is outward-facing).
+- **The public page** (`/d/$slug`, anon, reuses the existing viral route) now renders the honest provenance outcome — **Still stands** or **Superseded** — alongside the title/why/who/date, turning it from a decision blurb into a receipt.
+- **Privacy:** the outcome is computed server-side (service-role admin; anon never reads `artifact_lineage`) and **only reveals "Superseded" when the superseding decision is ITSELF public** (`supersedingParentIds` → an `is_public` parent check). A private override never leaks onto a public artifact. Only the safe enum is returned — no ids, titles, or workspace data. Fully tolerant (any lookup miss → "Still stands").
+
 ## Known limits / follow-ons
 
 - **"Proven right"** is not yet a distinct outcome — v1 models `standing | superseded`. Linking recorded outcomes to a decision to show "proven" is a follow-on (ties to LOOP-PROVE).
