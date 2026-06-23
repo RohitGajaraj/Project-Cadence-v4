@@ -28,6 +28,7 @@ import { LearningDetail } from "@/components/knowledge/LearningDetail";
 import { DocsPanel } from "@/components/knowledge/DocsPanel";
 import { CalendarPanel } from "@/components/knowledge/CalendarPanel";
 import { GraphPanel } from "@/components/knowledge/GraphPanel";
+import { InsightsPanel } from "@/components/knowledge/InsightsPanel";
 
 // Brain (formerly Knowledge) — the product's brain: one substrate of everything
 // it knows. The "memory" tab is the compounding agent-recall (the moat, folded
@@ -35,10 +36,11 @@ import { GraphPanel } from "@/components/knowledge/GraphPanel";
 // feed (the tab kept id "memory" until this restructure — now re-id'd to
 // "learnings" so the agent-recall tab can own "memory"). Founder ruling
 // 2026-06-16: Knowledge→Brain, /chat→Ask, /memory folds in here.
-type Tab = "calendar" | "memory" | "learnings" | "decisions" | "graph" | "docs";
-const TABS: Tab[] = ["calendar", "memory", "learnings", "decisions", "graph", "docs"];
+type Tab = "insights" | "calendar" | "memory" | "learnings" | "decisions" | "graph" | "docs";
+const TABS: Tab[] = ["insights", "calendar", "memory", "learnings", "decisions", "graph", "docs"];
 
 const KNOWLEDGE_DESC: Record<string, string> = {
+  insights: "Human lenses on the brain: what still stands, what you have learned, and how it accrued.",
   calendar: "Events and meeting transcripts. Open a meeting to capture and extract.",
   memory:
     "What the loop recalls: reflections agents wrote and outcomes they distilled, the compounding product memory.",
@@ -63,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   } => {
     const t = search.tab;
     return {
-      tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "calendar",
+      tab: (TABS as string[]).includes(t as string) ? (t as Tab) : "insights",
       meeting: typeof search.meeting === "string" ? search.meeting : undefined,
       decision: typeof search.decision === "string" ? search.decision : undefined,
       learning: typeof search.learning === "string" ? search.learning : undefined,
@@ -181,6 +183,7 @@ function KnowledgePage() {
 
         <TabRow
           tabs={[
+            { id: "insights", label: "Insights" },
             { id: "calendar", label: "Calendar" },
             { id: "memory", label: "Memory" },
             { id: "learnings", label: "Learnings" },
@@ -193,6 +196,7 @@ function KnowledgePage() {
           desc={KNOWLEDGE_DESC}
         />
 
+        {tab === "insights" && <InsightsPanel />}
         {tab === "calendar" && <CalendarPanel meetingId={meeting} onMeetingChange={setMeeting} />}
         {tab === "memory" && <MemoryList />}
         {tab === "learnings" &&
