@@ -283,6 +283,27 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — INTEROP-V11 ◐: MCP read surface repaired + completed)
+
+**WHY:** v11 #16 wants external agents + platforms to read Cadence. While adding the named "roadmap/spec read tools," a live-schema audit via the Lovable MCP found the existing read surface was broken by schema drift — so the strong move was to repair it AND complete it, not bolt new tools onto broken ones.
+
+**Found (live-schema audit, Lovable MCP):** 3 of the existing MCP read tools selected columns/tables that do not exist in production —
+- `search_signals` → `summary` (real column: `content`) + a `products!inner` embed (no `products` table exists);
+- `search_opportunities` → `predicted_ice` / `roadmap_status` (real: `ice_score` / `roadmap_bucket`);
+- `get_prd` → table `prd` (real: `prds`) + columns `definition`/`acceptance_criteria`/`success_metrics` (real: `body_md`).
+Each would throw against prod. (My cycle-5 `search_decisions` was correct.) Logged as KI-40 (resolved same cycle).
+
+**Shipped (lane 2):**
+- **Repaired** all 3 drifted tools against the verified prod schema.
+- **Added** `search_prds` (keyword/status spec discovery — the find half of `get_prd`) and `get_roadmap` (opportunities grouped now/next/later/unbucketed via the pure `groupByRoadmapBucket`, highest-ICE first). MCP catalog 6 → **8 tools**.
+- **Hardened** every search tool with `sanitizeIlikeQuery` against PostgREST `.or()` filter-injection (a crafted keyword could otherwise widen results within the caller's own workspace); the ICE floor now skips when `min_ice = 0` so unscored opportunities are not silently dropped.
+
+**Adversarial review (ts + security):** security — tenant isolation **clean** (workspace_id is the sole boundary and present on every path; no cross-tenant leak); flagged the pre-existing `.or()` injection → **fixed**. TS — confirmed no remaining drift; fixed the `groupByRoadmapBucket` non-string-bucket throw + the NULL-ICE silent-drop. All regression-guarded.
+
+**Gate:** tsc 0 · **1318 tests** · no migration · no chokepoint. Docs: `q1-mcp.md`, `known-issues.md` (KI-40), dashboard row #16 + top-summary #16.
+
+**Remaining (◐):** the outward WRITE/A2A scoped-token surface (scopes + audit) — founder-gated.
+
 ### 2026-06-24 (lane 2 — CORE-UX-TRUST ◐: the per-agent track record at the point of decision)
 
 **WHY:** v11 core-user research found the approval queue is a babysitting tax with the trust payoff deferred. The fix is to move trust TO the point of decision — so a human deciding a gate sees the agent's standing, not a blind yes/no.

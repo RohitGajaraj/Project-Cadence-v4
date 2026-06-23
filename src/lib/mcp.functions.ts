@@ -153,6 +153,20 @@ export async function logMCPCall(input: LogAPICallInput, supabaseClient: any) {
 // ─────────────────────────────────────────────────────────────────────
 
 /**
+ * PURE. Sanitize a caller-supplied keyword before it is interpolated into a
+ * PostgREST `.or(...)` filter string. The `.or()` grammar is a comma-separated
+ * list of conditions with parenthesized nesting, so a raw comma/paren/backslash
+ * in the query could inject an extra OR branch (e.g. an always-true condition
+ * that widens the result set within the caller's own workspace). The tenant
+ * boundary still holds (workspace_id is a separate AND'd filter), but we strip
+ * the structural characters so the keyword can only ever be a literal `ilike`
+ * pattern. `%`/`_` are left intact — they are the intended wildcards.
+ */
+export function sanitizeIlikeQuery(query: string | null | undefined): string {
+  return (query ?? "").replace(/[,()\\]/g, "").trim();
+}
+
+/**
  * Search signals by keyword, theme, or product.
  * Called by the MCP server route handler.
  */
@@ -163,13 +177,17 @@ export async function searchSignals(
   limit: number = 20,
   offset: number = 0,
 ) {
+  // Live-schema-correct projection (verified against the production schema): the
+  // body column is `content` (not `summary`), and there is no `products` table to
+  // embed. Safe projection — no owner/workspace ids leak to the external caller.
   let q = supabaseClient
     .from("signals")
-    .select("id, title, source, summary, product_id, created_at, products!inner(id, name)")
+    .select("id, title, source, content, product_id, created_at")
     .eq("workspace_id", workspace_id);
 
-  if (query) {
-    q = q.or(`title.ilike.%${query}%, summary.ilike.%${query}%`);
+  const safe = sanitizeIlikeQuery(query);
+  if (safe) {
+    q = q.or(`title.ilike.%${safe}%, content.ilike.%${safe}%`);
   }
 
   const { data, error } = await q
@@ -192,19 +210,28 @@ export async function searchOpportunities(
   limit: number = 20,
   offset: number = 0,
 ) {
+  // Live-schema-correct projection: the ICE column is `ice_score` (not
+  // `predicted_ice`) and the roadmap column is `roadmap_bucket` (not
+  // `roadmap_status`). Safe projection — no owner/workspace ids.
   let q = supabaseClient
     .from("opportunities")
-    .select("id, title, problem, hypothesis, predicted_ice, roadmap_status, created_at")
+    .select("id, title, problem, hypothesis, ice_score, roadmap_bucket, created_at")
     .eq("workspace_id", workspace_id);
 
-  if (query) {
-    q = q.or(`title.ilike.%${query}%, problem.ilike.%${query}%`);
+  const safe = sanitizeIlikeQuery(query);
+  if (safe) {
+    q = q.or(`title.ilike.%${safe}%, problem.ilike.%${safe}%`);
+  }
+  // Only apply the ICE floor when a real minimum is requested. `ice_score >= 0`
+  // would silently drop unscored (NULL ICE) opportunities — `NULL >= 0` is NULL,
+  // so they would vanish from a default (min_ice = 0) search.
+  if (min_ice > 0) {
+    q = q.gte("ice_score", min_ice);
   }
 
   const { data, error } = await q
-    .gte("predicted_ice", min_ice)
     .range(offset, offset + limit - 1)
-    .order("predicted_ice", { ascending: false });
+    .order("ice_score", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data || [];
@@ -244,8 +271,9 @@ export async function searchDecisions(
     .select("id, title, rationale, status, source_kind, decided_by_agent_slug, created_at")
     .eq("workspace_id", workspace_id);
 
-  if (query) {
-    q = q.or(`title.ilike.%${query}%, rationale.ilike.%${query}%`);
+  const safe = sanitizeIlikeQuery(query);
+  if (safe) {
+    q = q.or(`title.ilike.%${safe}%, rationale.ilike.%${safe}%`);
   }
 
   const { data: rows, error } = await q
@@ -273,21 +301,122 @@ export async function searchDecisions(
 }
 
 /**
- * Get a specific PRD by ID with cited signals.
+ * Get a specific PRD (spec) by ID.
  * Called by the MCP server route handler.
+ *
+ * Live-schema-correct: the table is `prds` (not `prd`) and the spec body is
+ * `body_md` (the columns `definition`/`acceptance_criteria`/`success_metrics`
+ * never existed in production). Safe projection — no owner/workspace ids.
  */
 export async function getPRD(supabaseClient: any, workspace_id: string, prd_id: string) {
   const { data: prd, error: prdError } = await supabaseClient
-    .from("prd")
-    .select(
-      "id, title, opportunity_id, definition, acceptance_criteria, success_metrics, created_at",
-    )
+    .from("prds")
+    .select("id, title, opportunity_id, status, body_md, created_at, shipped_at")
     .eq("workspace_id", workspace_id)
     .eq("id", prd_id)
     .single();
 
   if (prdError) throw new Error("PRD not found");
   return prd;
+}
+
+/**
+ * INTEROP-V11 · Read-only SPEC DISCOVERY for external agents. `get_prd` needs the
+ * exact id; this lets a peer agent FIND specs by keyword (title or body) and/or
+ * status, the missing half of the spec-read surface. Workspace-scoped + audited
+ * like the other MCP read tools. Called by the MCP server route handler.
+ */
+export async function searchPRDs(
+  supabaseClient: any,
+  workspace_id: string,
+  query: string,
+  status: string = "",
+  limit: number = 20,
+  offset: number = 0,
+) {
+  let q = supabaseClient
+    .from("prds")
+    .select("id, title, status, opportunity_id, created_at, shipped_at")
+    .eq("workspace_id", workspace_id);
+
+  const safe = sanitizeIlikeQuery(query);
+  if (safe) {
+    q = q.or(`title.ilike.%${safe}%, body_md.ilike.%${safe}%`);
+  }
+  if (status) {
+    q = q.eq("status", status);
+  }
+
+  const { data, error } = await q
+    .range(offset, offset + limit - 1)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export type RoadmapItemLite = {
+  id: string;
+  title: string;
+  ice_score: number | null;
+  roadmap_bucket: string | null;
+};
+
+export type RoadmapView = {
+  now: RoadmapItemLite[];
+  next: RoadmapItemLite[];
+  later: RoadmapItemLite[];
+  unbucketed: RoadmapItemLite[];
+};
+
+/**
+ * PURE (INTEROP-V11). Group opportunities into the roadmap buckets an external
+ * agent expects (now / next / later), with everything else under `unbucketed`
+ * (the bucket is optional in the live schema, so this is honest, not empty).
+ * Within a bucket, highest ICE first.
+ */
+export function groupByRoadmapBucket(
+  rows: RoadmapItemLite[] | null | undefined,
+): RoadmapView {
+  const view: RoadmapView = { now: [], next: [], later: [], unbucketed: [] };
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r || typeof r.id !== "string" || !r.id) continue;
+    // String() coerces a non-string bucket (a future/misconfigured column type)
+    // safely to "unbucketed" instead of throwing on .trim().
+    const bucket = String(r.roadmap_bucket ?? "").trim().toLowerCase();
+    if (bucket === "now") view.now.push(r);
+    else if (bucket === "next") view.next.push(r);
+    else if (bucket === "later") view.later.push(r);
+    else view.unbucketed.push(r);
+  }
+  const byIce = (a: RoadmapItemLite, b: RoadmapItemLite) => (b.ice_score ?? 0) - (a.ice_score ?? 0);
+  view.now.sort(byIce);
+  view.next.sort(byIce);
+  view.later.sort(byIce);
+  view.unbucketed.sort(byIce);
+  return view;
+}
+
+/**
+ * INTEROP-V11 · Read-only ROADMAP access for external agents — the workspace's
+ * opportunities arranged into now/next/later buckets (+ unbucketed), highest ICE
+ * first. Workspace-scoped + audited. Called by the MCP server route handler.
+ */
+export async function getRoadmap(
+  supabaseClient: any,
+  workspace_id: string,
+  limit: number = 200,
+): Promise<RoadmapView> {
+  const capped = Math.max(1, Math.min(limit, 500));
+  const { data, error } = await supabaseClient
+    .from("opportunities")
+    .select("id, title, ice_score, roadmap_bucket")
+    .eq("workspace_id", workspace_id)
+    .order("ice_score", { ascending: false })
+    .limit(capped);
+
+  if (error) throw new Error(error.message);
+  return groupByRoadmapBucket((data ?? []) as RoadmapItemLite[]);
 }
 
 /**

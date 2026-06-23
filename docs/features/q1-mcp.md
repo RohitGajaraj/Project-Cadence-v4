@@ -14,15 +14,21 @@
 
 **Cadence as a neutral brain:** external agents (Claude with MCP, Cursor, ChatGPT, other AI frameworks) can read signals, opportunities, PRDs and append decisions via HTTP, governed by workspace scope, rate limits, and audit logging.
 
-The MCP server exposes four read-only + one write tool:
+The MCP server exposes seven read-only + one write tool (8 in the `tools/list` catalog):
 
-- **`search_signals`** — keyword/theme search with pagination (limit/offset)
+- **`search_signals`** — keyword search over title/content with pagination (limit/offset)
 - **`search_opportunities`** — ICE-filtered search by title/problem
+- **`search_decisions`** — decision-brain search, each tagged standing/superseded (INTEROP-V11)
+- **`search_prds`** — spec discovery by keyword (title/body) and/or status — the find half of `get_prd` (INTEROP-V11, 2026-06-24)
 - **`get_prd`** — fetch a specific PRD spec by ID
+- **`get_roadmap`** — opportunities arranged into now/next/later buckets, highest ICE first (INTEROP-V11, 2026-06-24)
 - **`append_decision`** — write a decision to an opportunity (queues for human approval)
-- **`tools` / `resources`** — MCP discovery endpoints (list available tools)
+- **`export_skillpack`** — a versioned, content-hashed bundle of decision lessons
+- **`tools` / `resources`** — legacy MCP discovery endpoints (list available tools)
 
 All calls require a bearer token (workspace-scoped), enforce per-token rate limits (default 60 calls/minute), and log to the audit trail (`api_calls` table).
+
+> **Schema-drift repair (2026-06-24, lane 2; KI-40).** A live-schema audit via the Lovable MCP found `search_signals`, `search_opportunities`, and `get_prd` were each selecting columns/tables that don't exist in production (e.g. `summary`→`content`, `predicted_ice`→`ice_score`, table `prd`→`prds`) and would error on the first external call. All three were repaired against the verified prod schema in the same cycle, and every search tool was hardened with `sanitizeIlikeQuery` against PostgREST `.or()` filter-injection (a crafted keyword could otherwise widen results within the caller's own workspace). The tenant boundary (`workspace_id`) was never affected.
 
 ### The moat
 

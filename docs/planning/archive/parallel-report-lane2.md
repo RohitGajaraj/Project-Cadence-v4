@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-06-24 — Cycle 8: INTEROP-V11 ◐ — MCP read surface repaired + completed
+
+**Picked:** `INTEROP-V11` (#16, ◐). Lane 1 was on PLAYBOOK-REGISTRY (#17, claimed 4 min before) + the chokepoint pin held `ai/*` — no MCP overlap. Claimed #16 atomically + pushed the `🔨 In Dev` dashboard claim before code.
+
+**Found (the cycle's headline):** building the named "roadmap/spec read tools," a live-schema audit via the Lovable MCP found **3 existing MCP read tools broken by schema drift** — `search_signals` (`summary`→`content`, dead `products` embed), `search_opportunities` (`predicted_ice`/`roadmap_status`→`ice_score`/`roadmap_bucket`), `get_prd` (table `prd`→`prds`, dead cols→`body_md`). Each would error against prod on first external call. Logged KI-40.
+
+**Shipped (◐ — read surface now correct + complete):**
+- **Repaired** all 3 drifted tools against the verified prod schema.
+- **Added** `search_prds` (keyword/status spec discovery) + `get_roadmap` (now/next/later/unbucketed via pure `groupByRoadmapBucket`, ICE-desc). Catalog 6 → **8 tools**.
+- **Hardened** every search tool with `sanitizeIlikeQuery` vs PostgREST `.or()` filter-injection; ICE floor skips at `min_ice=0` so unscored opps aren't dropped.
+
+**Adversarial review (ts + security):** security — tenant isolation **clean** (workspace_id sole boundary, present everywhere, no cross-tenant leak); fixed the pre-existing `.or()` injection it flagged. TS — no remaining drift; fixed `groupByRoadmapBucket` non-string throw + NULL-ICE silent-drop. Regression-guarded.
+
+**Gate:** tsc 0 · **1318 full suite** · no migration · no chokepoint. Docs: `q1-mcp.md`, `known-issues.md` (KI-40), dashboard row #16 + top-summary #16, `plan.md` §4.
+
+**Remaining (◐, founder-gated):** the outward WRITE/A2A scoped-token surface (scopes + audit).
+
+**State:** committed + FF-pushed to `origin/main`; claim released as ◐.
+
+---
+
 ## 2026-06-24 — Cycle 7: CORE-UX-TRUST ◐ — per-agent track record at the point of decision
 
 **Triage first:** `lane.sh next` rank 1 was #9 STITCH-LOOP — but its value lives in the "felt"/UX-design layer (own Why: "at the UX layer") + it touches the global shell, i.e. the design pass the founder DEFERRED to a founder-prompted pre-launch stage, and it belongs with the coordinated IA/design cycle (#11/#12/#14). Parked it (not a thin model-only ship) and took the next strong, non-design, autonomous capability core. (#18 PM-IMPACT-LEDGER had been closed ✅ by lane 1.)

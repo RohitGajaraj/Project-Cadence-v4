@@ -5,7 +5,9 @@ import {
   searchSignals,
   searchOpportunities,
   searchDecisions,
+  searchPRDs,
   getPRD,
+  getRoadmap,
   appendDecision,
   exportSkillpack,
   logMCPCall,
@@ -190,6 +192,16 @@ async function dispatchTool(
         return { success: true, data };
       }
 
+      case "search_prds": {
+        const query = (params.query as string) || "";
+        const status = (params.status as string) || "";
+        const limit = Math.min((params.limit as number) || 20, 100);
+        const offset = (params.offset as number) || 0;
+
+        const data = await searchPRDs(supabase, workspace_id, query, status, limit, offset);
+        return { success: true, data };
+      }
+
       case "get_prd": {
         const prd_id = params.prd_id as string;
         if (!prd_id) {
@@ -197,6 +209,12 @@ async function dispatchTool(
         }
 
         const data = await getPRD(supabase, workspace_id, prd_id);
+        return { success: true, data };
+      }
+
+      case "get_roadmap": {
+        const limit = typeof params.limit === "number" ? params.limit : undefined;
+        const data = await getRoadmap(supabase, workspace_id, limit);
         return { success: true, data };
       }
 

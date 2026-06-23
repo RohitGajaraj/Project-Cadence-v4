@@ -85,12 +85,37 @@ export const MCP_TOOLS: McpTool[] = [
     },
   },
   {
+    name: "search_prds",
+    description:
+      "Search specs (PRDs) by keyword (title or body) and/or status (draft/review/approved/shipped). Discover specs without knowing their id — the find half of get_prd.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        status: { type: "string" },
+        limit: { type: "number", default: 20 },
+        offset: { type: "number", default: 0 },
+      },
+    },
+  },
+  {
     name: "get_prd",
     description: "Fetch a specific PRD with cited signals and requirements",
     inputSchema: {
       type: "object",
       properties: { prd_id: { type: "string" } },
       required: ["prd_id"],
+    },
+  },
+  {
+    name: "get_roadmap",
+    description:
+      "Fetch the workspace roadmap: opportunities arranged into now / next / later buckets (plus unbucketed), highest ICE first.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", default: 200 },
+      },
     },
   },
   {
