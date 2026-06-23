@@ -230,6 +230,19 @@ App is published; founder asked to test #2 + #3 live. **EVENT-REACTOR-LIVE: ✅ 
 
 Picked a strong, self-contained capability in the Interop lane (skipped the IA/UX-heavy #9-#14 as shared-surface/design-cycle work, LOOP-PROVE as verification proven live this session). Added a read-only `search_decisions` MCP tool exposing the decision brain (decisions + standing/superseded outcome, reusing the Trust Ledger supersession rule) to external agents — workspace-scoped + audited like the existing read tools. Catalog + dispatch + helper + 4 tests; updated the catalog-integrity tests (5→6 tools). **Gate:** tsc 0 / 1260 tests green. ◐ released — remaining: roadmap/spec read tools + founder-gated WRITE/A2A. Files: `mcp.functions.ts`, `mcp-protocol.ts`, `api/mcp.ts`, `mcp-decisions.test.ts`, `mcp-protocol.test.ts`, `q1-mcp.md`, dashboard, plan.
 
+### ▶ RESUME CURSOR — overnight run state (2026-06-24 ~05:00, after 8 cycles)
+
+**Compaction-checkpoint update (cycles 6-8, this context):**
+- Cycle 6: BRAIN-UX-V11 (#8) ◐ — added the per-decision "why" (rationale + revisedBy) + "what's unresolved" (open contradictions + mixed) lenses; revised-vs-contested kept disjoint; 22 tests. Only the AI ceiling remains (gated).
+- Cycle 7: CORE-UX-TRUST (#10) ◐ — per-agent track record ("approved 44/47") inline on the Today DecisionCard; honest (failed-exec=yes, no fabricated rollbacks); 10 tests. Auto-clear-gates + rejection-learning halves stay founder-gated. (Parked #9 STITCH-LOOP = deferred UX/felt-design layer → the founder-prompted design cycle.)
+- Cycle 8: INTEROP-V11 (#16) ◐ — **a live-schema audit (Lovable MCP) found 3 existing MCP read tools broken by schema drift (KI-40); repaired all 3 + added `search_prds`/`get_roadmap` + hardened `.or()` injection.** 8 MCP tools.
+- **Published via Lovable MCP at the 3-cycle mark:** `get_project` confirms `latest_commit_sha` = pushed HEAD, `status: ready`, `error: null`, `is_published: true`; app serves HTTP 200; INTEROP fix data-verified live. No migration needed (all 3 cycles code-only).
+- All committed + FF-pushed (0/0). Lane 1 closed #5 LOOP-PROVE, #17 PLAYBOOK-REGISTRY, #18 PM-IMPACT-LEDGER, #19 STAKEHOLDER-PACK, #3 AMBIENT-SENSE, #4 AMBIENT-TRIGGER, #1 TEST-SEED.
+
+**Remaining open by rank (next picks):** #11 CORE-UX-FELT (chokepoint AI brief + design → park), #12 IA-NAV / #13 SETTINGS-SEGREGATE / #14 CONNECTORS (IA/design-layer → the deferred founder-prompted design cycle), #15 ORCH-DELEGATE (touches the chokepoint-pinned `registry.server.ts` → blocked), #20 POS-V11 (positioning docs = founder voice), #21 LANDING-PAGE-V11 (showcase, design, sequenced last), #22 DBR(H1) (cross-lane/founder-gated). **Most of the remaining board is now genuinely design/founder/chokepoint-gated — verify each before building; prefer any clean data/capability core.**
+
+---
+
 ### ▶ RESUME CURSOR — overnight run state (2026-06-24 ~04:00, after 5 cycles)
 
 **Lane 2 shipped this run (all committed + FF-pushed to origin/main, gate-green tsc+tests):**
