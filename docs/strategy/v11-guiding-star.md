@@ -93,7 +93,9 @@ The moat is the **decision-and-outcome layer**, and it stands on three pillars (
 
 **The one honest caveat to hold in your head** (an investor will probe it): the moat is real in architecture but cold in data today (zero outcome edges, the demo renders empty). So you do not sell the moat's current size; you sell the only architecture that can accrue it, plus a credible plan to fill it. That is exactly what the v11 build front (#1-21) does: light the loop, fuel the moat on real data, make the Trust Ledger the hero.
 
-**The reusable sentence:** Cadence is the autonomous decision-and-outcome OS for product teams, and its moat is the one thing no frontier model and no single-suite incumbent can backfill or neutrally own: a cross-tool, auditable, compounding record of what your team decided and whether it was right.
+**Breadth AND depth (do not let the headline collapse to just the record):** the moat is two things, not one. The **breadth** is owning the whole autonomous loop, a governed system-of-record that runs the entire lifecycle end to end (sense to decide to build to ship to learn) is months of integration depth to match, which is exactly why the incumbents are co-pilots not autopilots and the point tools own one station not the loop (pillar 1). The **depth** is owning the compounding decision-and-outcome record, which cannot be backfilled (pillar 3). Say both; "we remember your decisions" alone is a feature an incumbent can bolt on, "we autonomously run your whole product lifecycle" is the claim they cannot make.
+
+**The reusable sentence (stitches both):** Cadence runs your entire product lifecycle autonomously, and owns the two things no frontier model or single-suite incumbent can match: the whole governed loop end to end, and the cross-tool, auditable, compounding record of what your team decided and whether it was right (the part no one can backfill).
 
 ---
 
