@@ -16,7 +16,7 @@
 
 ## 1. The one-line thesis
 
-**Cadence is the end-to-end product operating system: it runs your whole product lifecycle (discover to decide to define to build to ship to launch to learn) as one governed loop. Its moat is the decision layer, what to build and whether the call was right, the part with no fast oracle. Vibe-coding tools own one station (the build); Cadence owns the whole loop, and out-scopes them rather than out-building them. The build is a governed station within the loop (our engine, or dispatched to Lovable / Cursor / Devin under the same governance).**
+**Cadence is the decision and outcome operating system for product teams: it runs the whole product lifecycle (sense to decide to define to build to ship to learn) as one governed, self-initiating loop, an AI operating system that owns the loop and an action system where the work is done, not an AI feature or a chatbot. Its moat is the decision-and-outcome layer over three pillars: own the loop, sense continuously, and keep the receipts (the auditable, compounding record of what was decided and whether it was right). Vibe-coding tools own one station (the build); Cadence owns the whole loop and orchestrates them under its governance rather than out-building them.**
 
 The PM does not lack a builder. They lack a decision system. Lovable will build you the wrong feature, beautifully, in ten minutes. Cadence stops you from building the wrong thing, and proves which thing was right.
 
