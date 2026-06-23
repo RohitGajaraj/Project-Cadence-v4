@@ -6,7 +6,7 @@
 // follow-on. Ember chrome; honest empty/sparse states (no-filler law).
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, AlertTriangle, Activity, Scale, GraduationCap } from "lucide-react";
+import { TrendingUp, AlertTriangle, Activity, Scale, GraduationCap, Lightbulb, HelpCircle } from "lucide-react";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { getBrainInsights, type BrainInsight, type TimelineBucket } from "@/lib/brain-insights.functions";
 
@@ -127,6 +127,74 @@ export function InsightsPanel() {
               : `Across ${d.learned.total} recorded outcome${d.learned.total === 1 ? "" : "s"}.`}
           </p>
         </div>
+      </div>
+
+      {/* Per-decision WHY — current beliefs in plain language: why decided, and (if revised) what changed it. */}
+      {d.recentBeliefs.length > 0 ? (
+        <div className="bento" style={{ padding: 16 }}>
+          <MonoLabel icon={Lightbulb} style={{ marginBottom: 12 }}>
+            Why we believe this
+          </MonoLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {d.recentBeliefs.map((b, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    className="mono-label"
+                    style={{ fontSize: 8.5, color: b.superseded ? "var(--ink-faint)" : "var(--emerald)", flexShrink: 0, textTransform: "uppercase" }}
+                  >
+                    {b.superseded ? "revised" : "stands"}
+                  </span>
+                  <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.4, textDecoration: b.superseded ? "line-through" : "none", textDecorationColor: "var(--ink-faint)" }}>
+                    {b.title}
+                  </span>
+                </div>
+                {b.rationale ? (
+                  <span style={{ fontSize: 12, color: "var(--ink-muted, #4a443c)", lineHeight: 1.5, paddingLeft: 2 }}>
+                    {b.rationale}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 11.5, color: "var(--ink-faint)", fontStyle: "italic", paddingLeft: 2 }}>
+                    No rationale was recorded for this decision.
+                  </span>
+                )}
+                {b.superseded && b.revisedBy ? (
+                  <span className="mono-label" style={{ fontSize: 9, color: "var(--ember)", paddingLeft: 2 }}>
+                    now superseded by: {b.revisedBy}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* What's unresolved — the open questions: decisions in active conflict + unsettled outcomes. */}
+      <div className="bento" style={{ padding: 16, borderLeft: d.unresolved.count > 0 ? "2px solid var(--coral)" : undefined }}>
+        <MonoLabel icon={HelpCircle} style={{ marginBottom: 10 }}>
+          What is unresolved
+        </MonoLabel>
+        {d.unresolved.count === 0 ? (
+          <p style={{ fontSize: 12.5, color: "var(--ink-faint)", lineHeight: 1.5 }}>
+            Nothing open right now — no recorded decisions are in active conflict, and no outcomes are sitting mixed.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {d.unresolved.contradictions.map((c, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 9 }}>
+                <AlertTriangle size={13} strokeWidth={1.9} color="var(--coral)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 12.5, color: "var(--ink)", lineHeight: 1.5 }}>
+                  <span style={{ color: "var(--ink-muted, #4a443c)" }}>{c.title}</span> — {c.detail}
+                </span>
+              </div>
+            ))}
+            {d.unresolved.mixedOutcomes > 0 ? (
+              <p style={{ fontSize: 11.5, color: "var(--ink-faint)", lineHeight: 1.5, marginTop: 2 }}>
+                {d.unresolved.mixedOutcomes} outcome{d.unresolved.mixedOutcomes === 1 ? "" : "s"} came back mixed — partial signal, still waiting on a clean result.
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Timeline. */}

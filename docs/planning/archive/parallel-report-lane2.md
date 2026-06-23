@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-24 — Cycle 6: BRAIN-UX-V11 ◐ — per-decision "why" + "what's unresolved" lenses
+
+**Picked:** `BRAIN-UX-V11` (#8, `lane.sh next` rank 1; lane 1 held no claim). Claimed atomically for lane 2 + pushed the dashboard `🔨 In Dev` claim BEFORE any code (anti-duplication doctrine).
+
+**Pre-cycle hygiene:** the working tree carried a pure Prettier reformat of 11 files (a format-on-save; `git diff --ignore-all-space` showed zero logic). Per the founder velocity ruling (batch lint/prettier to a pre-launch stage, never mid-build) I **discarded** it rather than ship a 439-line churn commit that would also collide with lane 1 on rebase.
+
+**Shipped (◐ → only the AI ceiling remains):** the two named rule-based remainder lenses for the Brain Insights tab.
+- **Why we believe this** — `getBrainInsights` returns each recent decision's `rationale` + `revisedBy` (the title that replaced it). Per-decision plain-language "why".
+- **What is unresolved** — an `unresolved` lens: active `contradicts` pairs touching a decision that no `supersedes` settled, + mixed outcomes; honest empty state.
+- Pure helpers `supersedingIdFor` / `supersedesParentMap` / `resolvedChildIds` / `activeContradictions` / `deriveUnresolved` (`src/lib/brain-insights.functions.ts`); UI `InsightsPanel.tsx`. 11 floor + 11 new = **22 tests**.
+
+**Adversarial review (ts + security):** security **clean** (RLS-scoped, no new sink, no cross-tenant path). TS reviewer found **2 real defects, both fixed + regression-guarded:** (1) `revisedBy` was drawing from the shared `supersededChildIds` (which lumps `contradicts` with `supersedes`), so a mere conflict read "now superseded by X" and could show as both revised AND unresolved — fixed with a `supersedes`-ONLY map keeping the two states disjoint; (2) the unresolved `count` under-counted when the list cap fired — now the honest pre-cap total.
+
+**Gate:** tsc 0 · **1278 full suite** · no migration · no chokepoint. Docs: `brain-insights.md`, dashboard row #8 + top-summary #8, `plan.md` §4.
+
+**State:** committed + FF-pushed to `origin/main`; claim **released** as ◐ (the AI open-analyst ceiling is the only remaining slice, chokepoint-gated → founder).
+
+---
+
 ## 2026-06-22 — DBR-3f: shared-premise precedent (DBR multi-hop, graph-over-vectors)
 
 **Picked:** `DBR (H1)` (`lane.sh next` rank 3; ranks 1-2 WM-M15/WM-M9 are chokepoint-pinned / attended → skipped inline). Claimed the register row atomically and **held** it for the increment.

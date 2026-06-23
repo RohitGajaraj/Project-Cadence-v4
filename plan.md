@@ -283,6 +283,19 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — BRAIN-UX-V11 ◐: the per-decision "why" + "what's unresolved" human lenses)
+
+**WHY:** v11 #8 wants the Brain to be a human-useful open analyst, not a node graph. The floor (beliefs / learned / timeline / observations) shipped earlier 2026-06-24; this closes the two named rule-based remainder lenses so the only ◐ left is the AI ceiling (chokepoint-gated, not lane-touchable).
+
+**Shipped (lane 2, `/knowledge` → Insights):**
+- **Why we believe this** — `getBrainInsights` now returns each recent decision's recorded `rationale` + a `revisedBy` (the title of the decision that replaced it). Per-decision plain-language "why it's the current belief / why it changed".
+- **What is unresolved** — an `unresolved` lens: active `contradicts` pairs touching a recorded decision that no later `supersedes` settled, plus mixed/inconclusive outcomes. Honest empty state.
+- New pure, unit-tested helpers in `src/lib/brain-insights.functions.ts`: `supersedingIdFor`, `supersedesParentMap`, `resolvedChildIds`, `activeContradictions`, `deriveUnresolved` (11 floor + 11 new = **22 tests**). UI: `src/components/knowledge/InsightsPanel.tsx`.
+- **Adversarial review (ts + security) → 2 defects fixed + regression-guarded:** (1) "revised" now uses a `supersedes`-ONLY map so a mere contradiction is never mislabeled "now superseded by X" (revised vs contested kept disjoint); (2) the unresolved `count` is the honest pre-cap total. Security: clean (RLS-scoped, no new sink, no cross-tenant path).
+- Gate: `tsc` 0 · 1278 tests · no migration · no chokepoint. Doc: `docs/features/brain-insights.md`.
+
+**Remaining (◐):** ONLY the AI open-analyst CEILING (predictions / next-best-action / volunteered intelligence) — needs the pinned AI chokepoint, founder-gated.
+
 ### 2026-06-23 (v11 Guiding Star: the standing strategy canon + the agentic build plan, founder-directed)
 
 **WHY:** the founder asked for a brutally honest outsider teardown (market + product), a single standing guiding-star document, and a detailed agentic implementation plan so the system knows what to build next after this session. Produced from 5 code-and-live-DB-verified ground-truth probes (strategy-doc audit, build-state audit, technical-defensibility audit, live-app inspection, market/competitor map) + 2 deep dives (the embed-skills verdict, market sizing and pricing) + an adversarial villain/defense pass + 2 core-user research passes (felt experience; pains and the future of the PM role) + 7 founder reference images that independently corroborated the three-pillar moat.

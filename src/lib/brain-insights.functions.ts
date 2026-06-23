@@ -16,7 +16,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supersededChildIds, type LineageEdgeLite } from "@/lib/trust-ledger.functions";
+import type { LineageEdgeLite } from "@/lib/trust-ledger.functions";
 
 export type BrainBeliefs = { standing: number; superseded: number };
 
@@ -43,7 +43,27 @@ export type RecentLearning = {
   createdAt: string;
 };
 
-export type RecentBelief = { title: string; status: string; superseded: boolean; createdAt: string };
+export type RecentBelief = {
+  title: string;
+  status: string;
+  superseded: boolean;
+  createdAt: string;
+  /** The decision's own recorded "why" — null when none was captured. */
+  rationale: string | null;
+  /** The title of the decision that superseded this one (the "why it changed"), when known. */
+  revisedBy: string | null;
+};
+
+/** An open question: two recorded artifacts flagged as in tension, not yet reconciled. */
+export type OpenContradiction = { title: string; detail: string };
+
+export type UnresolvedQuestions = {
+  /** Total open items (listed contradictions + mixed/inconclusive outcomes). */
+  count: number;
+  contradictions: OpenContradiction[];
+  /** Outcomes that came back mixed/inconclusive — unsettled signal. */
+  mixedOutcomes: number;
+};
 
 export type BrainInsights = {
   beliefs: BrainBeliefs;
@@ -52,6 +72,7 @@ export type BrainInsights = {
   insights: BrainInsight[];
   recentLearnings: RecentLearning[];
   recentBeliefs: RecentBelief[];
+  unresolved: UnresolvedQuestions;
 };
 
 type DecisionLite = {
@@ -59,6 +80,7 @@ type DecisionLite = {
   title: string;
   status: string;
   created_at: string;
+  rationale: string | null;
   mission_id: string | null;
   prd_id: string | null;
   meeting_id: string | null;
@@ -181,6 +203,109 @@ export function derivePatterns(beliefs: BrainBeliefs, learned: LearnedSummary): 
   return out;
 }
 
+/**
+ * PURE. The id of the artifact that superseded a decision — checked via the
+ * decision's own id AND its source artifacts (a decision is revised when its
+ * source prd/mission/meeting is). Returns the superseding parent id, or null.
+ * This powers the per-decision "why it changed" lens.
+ */
+export function supersedingIdFor(
+  d: Pick<DecisionLite, "id" | "mission_id" | "prd_id" | "meeting_id">,
+  superseded: Map<string, string>,
+): string | null {
+  for (const id of [d.id, d.mission_id, d.prd_id, d.meeting_id]) {
+    if (typeof id === "string" && id !== "" && superseded.has(id)) {
+      return superseded.get(id) || null;
+    }
+  }
+  return null;
+}
+
+/**
+ * PURE. child -> superseding parent for ACTIVE `supersedes` edges ONLY. This is
+ * the narrow "revised" map for the Brain panel: a decision is "revised" when a
+ * later decision genuinely REPLACED it. `contradicts` is deliberately excluded —
+ * a contradiction is an OPEN conflict (it routes to the unresolved lens), not a
+ * settled revision. (The shared `supersededChildIds` lumps both together because
+ * the Trust Ledger asks the different question "is this still the active belief".)
+ */
+export function supersedesParentMap(edges: LineageEdgeLite[] | null | undefined): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const e of Array.isArray(edges) ? edges : []) {
+    if (!e || (e.relation ?? "").trim().toLowerCase() !== "supersedes") continue;
+    const retired = typeof e.valid_to === "string" && e.valid_to.trim() !== "";
+    if (retired) continue;
+    if (typeof e.child_id === "string" && e.child_id) {
+      out.set(e.child_id, typeof e.parent_id === "string" ? e.parent_id : "");
+    }
+  }
+  return out;
+}
+
+/**
+ * PURE. childIds that were genuinely RESOLVED by an active `supersedes` edge
+ * (NOT a `contradicts` flag). A contradiction whose endpoint was later
+ * superseded is settled; one that was not is still an open question.
+ */
+export function resolvedChildIds(edges: LineageEdgeLite[] | null | undefined): Set<string> {
+  return new Set(supersedesParentMap(edges).keys());
+}
+
+export type ContradictionPair = { aId: string; bId: string };
+
+/** PURE. Active (`valid_to` null) `contradicts` edges, deduped to unordered id pairs. */
+export function activeContradictions(edges: LineageEdgeLite[] | null | undefined): ContradictionPair[] {
+  const out: ContradictionPair[] = [];
+  const seen = new Set<string>();
+  for (const e of Array.isArray(edges) ? edges : []) {
+    if (!e || (e.relation ?? "").trim().toLowerCase() !== "contradicts") continue;
+    const retired = typeof e.valid_to === "string" && e.valid_to.trim() !== "";
+    if (retired) continue;
+    const a = typeof e.parent_id === "string" ? e.parent_id : "";
+    const b = typeof e.child_id === "string" ? e.child_id : "";
+    if (!a || !b) continue;
+    const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ aId: a, bId: b });
+  }
+  return out;
+}
+
+/**
+ * PURE. The "what's unresolved" lens. An open contradiction is an ACTIVE
+ * `contradicts` pair that touches a known decision AND was not settled by a real
+ * supersession on either endpoint. Mixed/inconclusive outcomes are surfaced as a
+ * second, honest class of unsettled signal. Voice: signal-first, honest.
+ */
+export function deriveUnresolved(
+  decisions: Pick<DecisionLite, "id" | "title">[],
+  contradictions: ContradictionPair[],
+  resolved: Set<string>,
+  learned: LearnedSummary,
+  limit = 6,
+): UnresolvedQuestions {
+  const titleById = new Map<string, string>();
+  for (const d of Array.isArray(decisions) ? decisions : []) {
+    if (d && typeof d.id === "string" && d.id) titleById.set(d.id, d.title ?? "");
+  }
+  const out: OpenContradiction[] = [];
+  let openCount = 0; // count ALL qualifying contradictions (pre-cap) so `count` stays an honest total
+  for (const c of Array.isArray(contradictions) ? contradictions : []) {
+    if (resolved.has(c.aId) || resolved.has(c.bId)) continue; // a real supersession settled it
+    const known = titleById.has(c.aId) ? c.aId : titleById.has(c.bId) ? c.bId : null;
+    if (!known) continue; // keep the lens decision-focused
+    openCount++;
+    if (out.length < limit) {
+      out.push({
+        title: titleById.get(known) || "A recorded decision",
+        detail: "Flagged as conflicting with another recorded decision — not yet reconciled.",
+      });
+    }
+  }
+  return { count: openCount + learned.mixed, contradictions: out, mixedOutcomes: learned.mixed };
+}
+
 const Schema = z.object({ workspaceId: z.string().uuid().optional() }).partial();
 
 export const getBrainInsights = createServerFn({ method: "GET" })
@@ -200,13 +325,14 @@ export const getBrainInsights = createServerFn({ method: "GET" })
       insights: derivePatterns({ standing: 0, superseded: 0 }, summarizeLearnings([])),
       recentLearnings: [],
       recentBeliefs: [],
+      unresolved: { count: 0, contradictions: [], mixedOutcomes: 0 },
     };
     if (!workspaceId) return empty;
 
     const [decisionsRes, learningsRes] = await Promise.all([
       supabase
         .from("decisions")
-        .select("id,title,status,created_at,mission_id,prd_id,meeting_id")
+        .select("id,title,status,created_at,rationale,mission_id,prd_id,meeting_id")
         .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
         .limit(500),
@@ -235,7 +361,10 @@ export const getBrainInsights = createServerFn({ method: "GET" })
       }
       if (!res.error) edges = (res.data ?? []) as unknown as LineageEdgeLite[];
     }
-    const superseded = supersededChildIds(edges);
+    // "Revised" in the Brain panel = a true `supersedes` replacement only.
+    // `contradicts` is an OPEN conflict and routes to the unresolved lens below,
+    // so the "revised" and "unresolved" states stay disjoint (no decision is both).
+    const superseded = supersedesParentMap(edges);
 
     let standing = 0,
       supersededCount = 0;
@@ -243,12 +372,28 @@ export const getBrainInsights = createServerFn({ method: "GET" })
     const beliefs: BrainBeliefs = { standing, superseded: supersededCount };
     const learned = summarizeLearnings(learnings);
 
-    const recentBeliefs: RecentBelief[] = decisions.slice(0, 6).map((d) => ({
-      title: d.title,
-      status: d.status,
-      superseded: isDecisionSuperseded(d, superseded),
-      createdAt: d.created_at,
-    }));
+    // "Why it changed" needs the superseding decision's title; map id -> title once.
+    const titleById = new Map(decisions.map((d) => [d.id, d.title]));
+    const recentBeliefs: RecentBelief[] = decisions.slice(0, 6).map((d) => {
+      const supersedingId = supersedingIdFor(d, superseded);
+      return {
+        title: d.title,
+        status: d.status,
+        superseded: isDecisionSuperseded(d, superseded),
+        createdAt: d.created_at,
+        rationale: (d.rationale ?? "").trim() || null,
+        revisedBy: supersedingId ? titleById.get(supersedingId) ?? null : null,
+      };
+    });
+
+    // The "what's unresolved" lens: open contradictions (not settled by a real
+    // supersession) + mixed outcomes. Reuses the already-fetched lineage edges.
+    const unresolved = deriveUnresolved(
+      decisions,
+      activeContradictions(edges),
+      resolvedChildIds(edges),
+      learned,
+    );
     const recentLearnings: RecentLearning[] = learnings.slice(0, 6).map((l) => ({
       summary: l.summary ?? "",
       verdict: l.verdict ?? "",
@@ -268,5 +413,6 @@ export const getBrainInsights = createServerFn({ method: "GET" })
       insights: derivePatterns(beliefs, learned),
       recentLearnings,
       recentBeliefs,
+      unresolved,
     };
   });
