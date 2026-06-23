@@ -8,11 +8,11 @@
 > **Live status per item** (✅ done · ◐ partial, autonomous slice shipped, gated remainder named in the row · 🔨 in dev right now · ⬜ open). These markers are kept in sync with the register rows below every cycle (founder ruling 2026-06-24: item-level status must be visible at the top, not only in the table).
 >
 > 1. ✅ **TEST-SEED** - minimal dev/test data so the data surfaces render while we build them (rich showcase seed is LAST). _v11._ **Done (lane 1, 2026-06-24).**
-> 2. ◐ **EVENT-REACTOR-LIVE** - turn on the dormant event reactor: the nervous system of the self-initiating loop. _v11 North Star._ **Pipeline wired+scheduled (lane 2); remainder is founder-republish + a CHECK-widen migration.**
+> 2. ◐ **EVENT-REACTOR-LIVE** - turn on the dormant event reactor: the nervous system of the self-initiating loop. _v11 North Star._ **Pipeline wired+scheduled + KI-27 migration applied live via Lovable MCP (lane 2, 2026-06-24; KI-38 resolved, auto path unblocked); remainder is the new-event-types CHECK-widen migration + live proof (LOOP-PROVE).**
 > 3. 🔨 **AMBIENT-SENSE** - continuous sense / normalize / tag / cluster, no human start. _v11 North Star._ **In dev (lane 1, 2026-06-24).**
 > 4. ⬜ **AMBIENT-TRIGGER** - self-initiate a mission at the right phase when a signal/outcome/insight crosses a threshold. _v11 North Star (the self-driving behavior)._
 > 5. ⬜ **LOOP-PROVE** - prove the loop closes on real data so the cold moat (DBR / LRN-02 / W1-AUTO) visibly fills. _v11 (fuels the Decision Brain)._
-> 6. 🔨 **TRUST-LEDGER** - the receipts (what changed / why / evidence / who / was-it-right) as the hero surface. _v11 pillar 3 (trust is what people pay for; corroborates v9 wedge)._ **In dev (lane 2).**
+> 6. ✅ **TRUST-LEDGER** - the receipts (what changed / why / evidence / who / was-it-right) as the hero surface. _v11 pillar 3 (trust is what people pay for; corroborates v9 wedge)._ **Done (lane 2, 2026-06-24): `/trust-ledger` surface live (sidebar Trust row), composes decisions+approvals+bitemporal supersession; 14 tests, adversarially reviewed.**
 > 7. ⬜ **TRUST-SHARE** - shareable provenance artifact: the viral + regulated-buyer proof. _v11._
 > 8. ⬜ **BRAIN-UX-V11** - the Brain as a human-useful open analyst that also DRIVES action (discover -> derive -> act), not a node graph. _v11 (builds on F-IA-BRAIN-GRAPH / DBR)._
 > 9. ⬜ **STITCH-LOOP** - wire the surfaces into one continuous felt loop (fixes the "fragmented" feel). _v11._
