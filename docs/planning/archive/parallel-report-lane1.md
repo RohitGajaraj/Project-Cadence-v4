@@ -108,3 +108,6 @@ Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3
 ### Collision notes
 - One rebase conflict resolved cleanly (kept Lane 2's AMBIENT-ARC ✅ + my ENG-06 ✅).
 - Every close: ledger `claim` → flip own row → commit explicit paths + WHY → ff-push → `done`-mark.
+
+## Cycle (2026-06-24, autonomous loop) — TEST-SEED ✅
+- **TEST-SEED (v11 #1, Tier 1 Foundational)** — minimal deterministic dev/test seed. New migration `20260624030000_test_seed_dev_surfaces.sql`: per demo account, one closed outcome→supersession→governing-decision loop (2 opps, 2 decisions, 16 learnings cohort, 16 memory rows, 3 lineage edges incl. live `supersedes` + bitemporal retired). Schema verified live via Lovable MCP; applied + verified live (supersedes 0→1, memory-depth lift now computes ~55-63 pts, Trust Ledger/memory/provenance render). Idempotent (sentinel), demo-scoped, lint-clean. `lane.sh done TEST-SEED`.
