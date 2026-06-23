@@ -171,3 +171,18 @@ App is published; founder asked to test #2 + #3 live. **EVENT-REACTOR-LIVE: ✅ 
 ### Cycle 5 · INTEROP-V11 floor (#16) → ◐ released
 
 Picked a strong, self-contained capability in the Interop lane (skipped the IA/UX-heavy #9-#14 as shared-surface/design-cycle work, LOOP-PROVE as verification proven live this session). Added a read-only `search_decisions` MCP tool exposing the decision brain (decisions + standing/superseded outcome, reusing the Trust Ledger supersession rule) to external agents — workspace-scoped + audited like the existing read tools. Catalog + dispatch + helper + 4 tests; updated the catalog-integrity tests (5→6 tools). **Gate:** tsc 0 / 1260 tests green. ◐ released — remaining: roadmap/spec read tools + founder-gated WRITE/A2A. Files: `mcp.functions.ts`, `mcp-protocol.ts`, `api/mcp.ts`, `mcp-decisions.test.ts`, `mcp-protocol.test.ts`, `q1-mcp.md`, dashboard, plan.
+
+### ▶ RESUME CURSOR — overnight run state (2026-06-24 ~04:00, after 5 cycles)
+
+**Lane 2 shipped this run (all committed + FF-pushed to origin/main, gate-green tsc+tests):**
+1. EVENT-REACTOR-LIVE (#2) ◐ — verified the reactor pipeline is wired+scheduled live; **applied KI-27 migration to prod via Lovable MCP (KI-38 resolved)**; **proven live end-to-end** (test signal → trigger → event → cron → mission, cleaned up).
+2. TRUST-LEDGER (#6) ✅ — `/trust-ledger` receipts surface (decisions+approvals+supersession); public path verified live.
+3. TRUST-SHARE (#7) ✅ — public `/d/$slug` receipt + Share affordance; privacy-hardened (private overrides never leak).
+4. BRAIN-UX-V11 (#8) ◐ — `/knowledge` Insights tab (beliefs/learned+hitrate/timeline/observations); floor only, AI ceiling chokepoint-gated.
+5. INTEROP-V11 (#16) ◐ — read-only `search_decisions` MCP tool (decision brain to external agents).
+
+**Ops:** applied 1 migration via Lovable MCP; triggered 3 publishes via MCP; fixed the dashboard top-summary sync gap (now update BOTH register row + top #1-21 list every cycle).
+
+**Founder-gated / open (do NOT close autonomously):** KI-39 (schedule sense/cluster crons = recurring AI spend); EVENT-REACTOR new event types (migration, was migration-locked); LOOP-PROVE (DBR-engine verification); the IA/UX-heavy #9-#14 (STITCH-LOOP, CORE-UX-TRUST/FELT, IA-NAV, SETTINGS-SEGREGATE, CONNECTORS) better as a coordinated/design cycle; INTEROP WRITE/A2A surface (scopes/audit founder call); the AI "open analyst" ceiling for BRAIN-UX (chokepoint).
+
+**Next picks (autonomous, by rank):** continue BRAIN-UX floor (per-decision why + unresolved lenses) or other clean migration-free capability rows. Goal: close every autonomously-buildable item by morning.
