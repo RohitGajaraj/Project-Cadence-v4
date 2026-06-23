@@ -5651,10 +5651,12 @@ export type Database = {
         Row: {
           account_id: string
           auto_cluster_enabled: boolean
+          auto_sense_enabled: boolean
           created_at: string
           deleted_at: string | null
           id: string
           last_auto_cluster_at: string | null
+          last_auto_sense_at: string | null
           name: string
           owner_id: string
           plan_tier: string
@@ -5667,10 +5669,12 @@ export type Database = {
         Insert: {
           account_id: string
           auto_cluster_enabled?: boolean
+          auto_sense_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
+          last_auto_sense_at?: string | null
           name: string
           owner_id: string
           plan_tier?: string
@@ -5683,10 +5687,12 @@ export type Database = {
         Update: {
           account_id?: string
           auto_cluster_enabled?: boolean
+          auto_sense_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
+          last_auto_sense_at?: string | null
           name?: string
           owner_id?: string
           plan_tier?: string

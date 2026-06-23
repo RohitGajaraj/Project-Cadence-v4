@@ -111,3 +111,6 @@ Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3
 
 ## Cycle (2026-06-24, autonomous loop) — TEST-SEED ✅
 - **TEST-SEED (v11 #1, Tier 1 Foundational)** — minimal deterministic dev/test seed. New migration `20260624030000_test_seed_dev_surfaces.sql`: per demo account, one closed outcome→supersession→governing-decision loop (2 opps, 2 decisions, 16 learnings cohort, 16 memory rows, 3 lineage edges incl. live `supersedes` + bitemporal retired). Schema verified live via Lovable MCP; applied + verified live (supersedes 0→1, memory-depth lift now computes ~55-63 pts, Trust Ledger/memory/provenance render). Idempotent (sentinel), demo-scoped, lint-clean. `lane.sh done TEST-SEED`.
+
+## Cycle (2026-06-24, autonomous loop) — AMBIENT-SENSE ◐
+- **AMBIENT-SENSE (v11 #3, Tier 1 Sense)** — sensing front-half feeding cluster-tick. New pure tagger `src/lib/sensing/normalize.ts` (13 tests) + `sense-tick` cron (mirrors cluster-tick) + migration `20260624040000_ambient_sense.sql` (auto_sense flag, applied live via Lovable). Rule-based, zero AI spend, off-by-default. Adversarial fix: workspace-scoped. Route-tree + supabase types hand-registered (node20 blocks the vite generator). Gate: tsc 0, 1214 tests, lint clean. ◐ + `lane.sh done`; remainder founder-gated (real source, cron schedule, AI enrichment).
