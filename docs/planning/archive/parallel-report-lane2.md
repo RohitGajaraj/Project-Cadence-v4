@@ -125,3 +125,15 @@ Founder paused the autonomous run. **Everything committed + fast-forward pushed 
 **WHY HOLDED:** the clean autonomous backlog within the founder's constraints (no chokepoint / Stripe / BYO / input-needed) is verifiably exhausted — the board's only eligible row (`DBR (H1)`) has only cross-lane (Lane 1's files) or founder-gated work left; the last injection surface (MCP/A2A) is in the chokepoint.
 
 **WHERE TO PICK UP (founder-gated, the founder's call):** (a) flip `DBR_ENTITY_ALIASING` after a precision review on real data; (b) connect a support inbound channel + make the M1 `/support` UI-placement call; (c) decide on chokepoint work (MCP/A2A screen, WM-M9) and/or cross-lane DBR wiring; (d) the queued founder activations (Stripe go-live, `credits_enabled()`/`AI_COST_ROUTING`, `DECISION_BRAIN_SUPERSESSION`); (e) the one-time §14 design pass when the product is final. Canonical pickup note: `SOURCE-OF-TRUTH.md` §0 (the SESSION CLOSED note at the top); full per-commit detail: `plan.md` §4 (2026-06-22 entries).
+
+---
+
+## ▶ SESSION RESUMED — 2026-06-24 (continuous lane loop, autonomous)
+
+### Cycle 1 · EVENT-REACTOR-LIVE (#2) → ◐ verified-built + retired (`done`)
+
+Claimed EVENT-REACTOR-LIVE (lane 2); TEST-SEED (#1) skipped (held by lane 1). **Finding (live-audited via Lovable MCP vs prod `371dd588…`): the reactor is NOT unbuilt — it is already wired + scheduled end to end.** Emit = 3 `*_reactor_fanout` triggers + 12 enabled default subscriptions (path-agnostic `AFTER INSERT`, so every write path already fans out — no non-redundant TS emit to add). Consume = `event-reactor-tick` pg_cron, `active`, `* * * * *`, with KI-27/28 hardening in-handler. It is cold only for INPUT volume (`event_queue` = 1 all-time row, an `opportunity.scored`/`confirm` event correctly awaiting an operator) — a data gap owned by TEST-SEED/AMBIENT-SENSE, not a code gap.
+
+**Prod gap surfaced → KI-38 (founder republish):** live `event_queue` lacks `attempt_count`/`next_attempt_at` (`ki27_cols_present=0`), so KI-27's migration `20260620220500` was never applied to Lovable's DB despite KI-27 being marked RESOLVED (its note records only a `BEGIN..ROLLBACK` dry-run). The deployed consume-tick `.select`s those columns → any `auto` (`signal.created`) dispatch will error until a republish applies them.
+
+**No clean migration-free, non-redundant CODE slice exists** for this row right now (trigger emit already covers everything; new event types need a blocked migration; republish is founder-gated). So: documented the verified architecture + gap in `f-agent-3-event-reactor.md`, logged KI-38, re-scoped the dashboard row ⬜→◐, and `lane.sh done`-retired it from the auto-picker. **No feature code shipped (correct: shipping redundant emit code would be dead code).** Remaining = (a) founder republish [KI-38, gated]; (b) new event types [migration, blocked while a migration lane holds the `supabase/migrations` prefix lock]; (c) live proof [overlaps LOOP-PROVE]. Gate: doc-only, tree clean. Next: pick the next ranked unclaimed item.

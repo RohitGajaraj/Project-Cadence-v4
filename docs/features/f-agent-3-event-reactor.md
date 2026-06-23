@@ -1,8 +1,18 @@
 # F-AGENT-3: Event reactor + auto-pipelines
 
-> _Created: 2026-06-06 · Last updated: 2026-06-14_
+> _Created: 2026-06-06 · Last updated: 2026-06-24_
 
 > **Status:** ✅ Shipped 2026-06-06 · **Route:** `/governance` (Auto-pipelines · Reactor activity) · **Owner agents:** any agent named as a target in a subscription
+
+> [!IMPORTANT]
+> **Live-state verification (2026-06-24, lane 2 · register item `EVENT-REACTOR-LIVE`).** The v11 row asked to "turn on the dormant reactor." A code + live-DB audit (via the Lovable MCP against the production project) shows the reactor **is already wired and scheduled end-to-end** — it is cold for lack of input volume, not because the pipeline is unbuilt:
+> - **Emit (live):** the three `*_reactor_fanout` `AFTER INSERT/UPDATE` triggers exist; `event_subscriptions` holds **12 enabled default rows** across the workspaces (the three seeded types). An `AFTER INSERT` trigger is path-agnostic, so every signal/opportunity/PRD write path already fans out — there is **no non-redundant application-level emit code to add** for the existing types.
+> - **Consume (live):** the `event-reactor-tick` pg_cron job is **present and `active`, schedule `* * * * *`** (every minute), with the KI-27 reaper + bounded-retry hardening in the handler.
+> - **Why it looks dormant:** `event_queue` has a single all-time row — an `opportunity.scored` / `confirm` event from 2026-06-11 correctly **waiting for an operator** (confirm rows never auto-dispatch). The coldness is an _input/data_ gap (no connectors bound, near-zero live signals), owned by `TEST-SEED` + `AMBIENT-SENSE`, not a reactor-code gap.
+>
+> **⚠ Probable production gap surfaced (founder-gated — needs a Lovable republish, NOT a hot apply):** the live `event_queue` table is **missing `attempt_count` and `next_attempt_at`** (`ki27_cols_present = 0`), but the deployed consume-tick (`event-reactor-tick.ts`) and `dispatchEvent()` **`select`/`update` those columns**. So the migration `supabase/migrations/20260620220500_ki27_reactor_reaper_retry.sql` was never applied to Lovable's DB. Any `auto` (`signal.created`) dispatch will error on the missing column until the founder republishes/syncs so Lovable applies that migration. Tracked in [`../planning/known-issues.md`](../planning/known-issues.md).
+>
+> **Remaining scope (re-scoped, not "turn it on"):** (a) **founder republish** to apply KI-27 to live [founder-gated]; (b) **new event types** — `signal.clustered`, `outcome.recorded`, `decision.made`, `drift.detected` — each needs the `event_subscriptions.event_type` `CHECK` widened + new fanout triggers, i.e. a **migration** (do once a migration lane is free — migrations are serialized one-lane-at-a-time by the claim ledger's `supabase/migrations` prefix lock); (c) **live exercise / proof** overlaps `LOOP-PROVE` and needs seeded/live input.
 
 ## What it does
 
