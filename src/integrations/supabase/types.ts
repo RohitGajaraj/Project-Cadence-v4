@@ -5652,11 +5652,13 @@ export type Database = {
           account_id: string
           auto_cluster_enabled: boolean
           auto_sense_enabled: boolean
+          auto_trigger_enabled: boolean
           created_at: string
           deleted_at: string | null
           id: string
           last_auto_cluster_at: string | null
           last_auto_sense_at: string | null
+          last_auto_trigger_at: string | null
           name: string
           owner_id: string
           plan_tier: string
@@ -5670,11 +5672,13 @@ export type Database = {
           account_id: string
           auto_cluster_enabled?: boolean
           auto_sense_enabled?: boolean
+          auto_trigger_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
           last_auto_sense_at?: string | null
+          last_auto_trigger_at?: string | null
           name: string
           owner_id: string
           plan_tier?: string
@@ -5688,11 +5692,13 @@ export type Database = {
           account_id?: string
           auto_cluster_enabled?: boolean
           auto_sense_enabled?: boolean
+          auto_trigger_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
           last_auto_sense_at?: string | null
+          last_auto_trigger_at?: string | null
           name?: string
           owner_id?: string
           plan_tier?: string

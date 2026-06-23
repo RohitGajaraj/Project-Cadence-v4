@@ -91,6 +91,7 @@ import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
 import { Route as ApiPublicHooksCreditTickRouteImport } from './routes/api/public/hooks/credit-tick'
 import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
+import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
 import { Route as ApiPublicHooksClusterTickRouteImport } from './routes/api/public/hooks/cluster-tick'
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
@@ -530,6 +531,12 @@ const ApiPublicHooksSenseTickRoute =
     path: '/api/public/hooks/sense-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTriggerTickRoute =
+  ApiPublicHooksTriggerTickRouteImport.update({
+    id: '/api/public/hooks/trigger-tick',
+    path: '/api/public/hooks/trigger-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksClusterTickRoute =
   ApiPublicHooksClusterTickRouteImport.update({
     id: '/api/public/hooks/cluster-tick',
@@ -640,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -727,6 +735,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -818,6 +827,7 @@ export interface FileRoutesById {
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -909,6 +919,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -996,6 +1007,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -1086,6 +1098,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -1125,6 +1138,7 @@ export interface RootRouteChildren {
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
+  ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
   ApiPublicHooksClusterTickRoute: typeof ApiPublicHooksClusterTickRoute
   ApiPublicHooksCreditTickRoute: typeof ApiPublicHooksCreditTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
@@ -1717,6 +1731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/trigger-tick': {
+      id: '/api/public/hooks/trigger-tick'
+      path: '/api/public/hooks/trigger-tick'
+      fullPath: '/api/public/hooks/trigger-tick'
+      preLoaderRoute: typeof ApiPublicHooksTriggerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/cluster-tick': {
       id: '/api/public/hooks/cluster-tick'
       path: '/api/public/hooks/cluster-tick'
@@ -1937,6 +1958,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
+  ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicHooksClusterTickRoute: ApiPublicHooksClusterTickRoute,
   ApiPublicHooksCreditTickRoute: ApiPublicHooksCreditTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,

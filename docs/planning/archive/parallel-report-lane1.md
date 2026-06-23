@@ -114,3 +114,6 @@ Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3
 
 ## Cycle (2026-06-24, autonomous loop) — AMBIENT-SENSE ◐
 - **AMBIENT-SENSE (v11 #3, Tier 1 Sense)** — sensing front-half feeding cluster-tick. New pure tagger `src/lib/sensing/normalize.ts` (13 tests) + `sense-tick` cron (mirrors cluster-tick) + migration `20260624040000_ambient_sense.sql` (auto_sense flag, applied live via Lovable). Rule-based, zero AI spend, off-by-default. Adversarial fix: workspace-scoped. Route-tree + supabase types hand-registered (node20 blocks the vite generator). Gate: tsc 0, 1214 tests, lint clean. ◐ + `lane.sh done`; remainder founder-gated (real source, cron schedule, AI enrichment).
+
+## Cycle (2026-06-24, autonomous loop) — AMBIENT-TRIGGER ◐
+- **AMBIENT-TRIGGER (v11 #4, Tier 1 Sense)** — self-driving policy layer. Pure `src/lib/sensing/trigger.ts` (`evaluateTriggers`, 10 tests) + `trigger-tick` cron: self-originates `proposed` missions (zero spend, resume-runs ignores them = reversibility gate) + Trust-Ledger `decisions` receipts when clusters/outcomes cross a threshold. Migration `20260624050000_ambient_trigger.sql` (auto_trigger flag, applied live; demo input verified 6 clusters/8 missed). tsc 0, 1238 tests, lint clean. Route+types hand-registered. ◐ + `lane.sh done`; remainder founder-gated (cron, execution/promotion, competitor source).
