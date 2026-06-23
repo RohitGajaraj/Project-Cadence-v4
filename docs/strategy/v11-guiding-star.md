@@ -34,7 +34,7 @@ On 2026-06-23 the founder asked for a brutally honest, outsider strategic teardo
 | Operating rules for all tools | [../../AGENTS.md](../../AGENTS.md) |
 
 ### 0.4 Table of contents
-1. Executive summary · 2. Ground truth · 3. The corrected North Star (ambient self-initiation) · 4. The agent operating model · 5. Positioning · 6. The core user (felt experience, pains, the future) · 7. The Brain · 8. The moat · 9. The villain and the defense · 10. Market · 11. Business model and pricing · 12. The Playbook Registry (embed-skills verdict) · 13. Orchestrate the builders (mechanics + BBI + economics) · 14. Consumer-grade: IA, the design layer, the landing page, connectors · 15. Scope: reuse, reposition, club, flag · 16. Missing capabilities and adjacent markets · 17. Extended stakeholders · 18. PMF and founder-market fit · 19. Risk register · 20. The agentic doctrine · 21. The build plan (to consumer-ready) · 22. The pitch · 23. Metrics and gates · 24. Session inputs and decisions (2026-06-23) · 25. Provenance · **26. Appendix: the full research record (the groundwork)**.
+1. Executive summary · **1A. The canonical answer (what is Cadence + the moat, use verbatim)** · 2. Ground truth · 3. The corrected North Star (ambient self-initiation) · 4. The agent operating model · 5. Positioning · 6. The core user (felt experience, pains, the future) · 7. The Brain · 8. The moat · 9. The villain and the defense · 10. Market · 11. Business model and pricing · 12. The Playbook Registry (embed-skills verdict) · 13. Orchestrate the builders (mechanics + BBI + economics) · 14. Consumer-grade: IA, the design layer, the landing page, connectors · 15. Scope: reuse, reposition, club, flag · 16. Missing capabilities and adjacent markets · 17. Extended stakeholders · 18. PMF and founder-market fit · 19. Risk register · 20. The agentic doctrine · 21. The build plan (to consumer-ready) · 22. The pitch · 23. Metrics and gates · 24. Session inputs and decisions (2026-06-23) · 25. Provenance · **26. Appendix: the full research record (the groundwork)**.
 
 > **If any section above feels too brief, its full-depth version is in the Appendix (§26):** A1 the complete villain/defense, A2-A6 the five ground-truth probes (strategy-doc, build-state, technical, live-app, market), A7-A8 the core-user research (felt experience + pains + future of PM), A9 the Playbook Registry, A10 market/pricing, A11 orchestration economics, A12 the IA audit, A13 the reference images, A14 the raw artifacts, **A15 the full session narrative** (every founder steer and how it shaped the work), and **A16 the decision rationale** (the how-we-decided behind every call). Agents: read the appendix for full context before building a v11 item.
 
@@ -55,6 +55,45 @@ On 2026-06-23 the founder asked for a brutally honest, outsider strategic teardo
 **The build doctrine for the pitch window (15 to 20 days):** do not add surface area (that is what makes it *feel* fragmented). **Light up and fuel the engine you already built, then make the Trust Ledger the hero, then stitch and design it to consumer-grade.** The journey is build → stitch → wire → design → ship, and the rich showcase content comes last (founder ruling). The v11 build front is ranked #1-18 in the dashboard, capabilities-first.
 
 **One sentence for the pitch:** *Cadence is the decision and outcome operating system for product teams: it senses what is happening, decides what is worth building, executes the work autonomously, keeps a trustworthy record of every call and whether it was right, and gets smarter about your product with every outcome, in the one layer frontier models and single-suite incumbents structurally will not own.*
+
+---
+
+## 1A. The canonical answer: "What is Cadence?" and "What is the moat?" (use this verbatim)
+
+> The ready-to-use answer for any investor, YC application, recruit, or customer. The fuller drill-down is in §5 (positioning) and §8 (the moat); the complete defense is in Appendix A1; the alternate one-liner is in Appendix A17. Lead with this.
+
+### What is Cadence?
+
+**One line:** Cadence is the **decision and outcome operating system for product teams.** It senses what's happening, decides what's worth building, runs the work autonomously, and keeps a trustworthy record of every call and whether it was right.
+
+**If someone asks "but what IS it," in plain terms:** most "AI for product" tools are an AI feature bolted onto an app (it drafts, it suggests, it waits) or a chatbot (it hands you a paragraph and the work is still yours). Cadence is the other thing: an **AI operating system that owns the loop**, and an **action system where the work is actually done.** You give it intent, and a swarm of governed agents carries it end to end across the whole product lifecycle (sense, decide, define, build, ship, learn), pausing only for the few calls that genuinely need a human. Agents execute; you decide and stay accountable.
+
+**What it is NOT (this is half the clarity):**
+- Not a PM tool with AI sprinkled on top.
+- Not a chatbot or a copilot that drafts and waits.
+- Not a codegen tool. It does not compete with Cursor or Lovable or Devin; it sits one layer above them, decides what deserves to be built, and orchestrates them.
+
+**Who it's for:** the front door is the individual PM (entry via the Critic teardown, "see why your pet feature is wrong, with receipts"); it expands to the product team as their decision system of record, then to the org.
+
+### What is the moat?
+
+The moat is the **decision-and-outcome layer**, and it stands on three pillars (each is a thing the product *does*, not a slogan):
+
+1. **Own the loop:** a governed, autonomous engine that runs the lifecycle end to end. (Verified real in the code: missions self-advance via cron, agents hand off, the work completes.)
+2. **Sense continuously:** it self-initiates from live signals at every phase, not only when a human presses go.
+3. **Keep the receipts:** the Trust Ledger (what changed, why, on what evidence, who approved it, and was the call later proven right or superseded). Trust is not a feature; it is the thing serious buyers pay for.
+
+**Why that moat actually holds (the deeper "why," not the pillars):**
+- **There is no fast oracle for "what to build."** Code commoditized because it compiles in seconds. Deciding what to build gets feedback in weeks to quarters, so it does not commoditize the way codegen did. The thing the frontier labs are best at is the thing this domain has least of.
+- **The labs decline this vertical.** They ship the substrate (personal memory, search, connectors). Team-shared, permissioned, auditable product-decision memory is a different data model they show no intent to build. OpenAI is actively removing its memory audit trail; you would be adding one.
+- **Single-suite incumbents cannot be neutral.** Atlassian will never read Linear and Figma and decide against keeping you in Jira. The neutral, cross-tool decision brain is a seat only an independent can hold.
+- **The outcome ledger cannot be backfilled.** A competitor with all your raw data still cannot reconstruct which calls your team made, on what evidence, and whether they paid off, accrued over time. That is the part that compounds and makes leaving costly.
+
+**The sharpest one-sentence version of the moat** (the one that survives the "won't a frontier model just do this?" objection): the model recites generic PM method; it does not hold your workspace's 18-month ledger of decisions, evidence, and outcomes. Method is commodity; method bound to your accumulated, outcome-labeled judgment is the asset.
+
+**The one honest caveat to hold in your head** (an investor will probe it): the moat is real in architecture but cold in data today (zero outcome edges, the demo renders empty). So you do not sell the moat's current size; you sell the only architecture that can accrue it, plus a credible plan to fill it. That is exactly what the v11 build front (#1-21) does: light the loop, fuel the moat on real data, make the Trust Ledger the hero.
+
+**The reusable sentence:** Cadence is the autonomous decision-and-outcome OS for product teams, and its moat is the one thing no frontier model and no single-suite incumbent can backfill or neutrally own: a cross-tool, auditable, compounding record of what your team decided and whether it was right.
 
 ---
 
