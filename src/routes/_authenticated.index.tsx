@@ -597,6 +597,7 @@ function Dashboard() {
                     estCostUsd: a.est_cost_usd,
                     expiresAt: a.expires_at,
                     escalationState: a.escalation_state,
+                    track: ny?.trackByAgent?.[a.agent_slug] ?? null,
                   }}
                   onApprove={(id) =>
                     decideApproval.mutate({ approvalId: id, decision: "approved" })

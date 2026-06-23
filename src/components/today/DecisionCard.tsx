@@ -26,6 +26,7 @@ import {
 import { StepDot } from "@/components/cadence/Primitives";
 import { CriticBadge } from "@/components/governance/CriticBadge";
 import { agentDisplayName } from "@/lib/agent-vocabulary";
+import { formatTrackRecord, type AgentTrackRecord } from "@/lib/agent-track-record";
 import {
   toolConsequence,
   toolRisk,
@@ -46,6 +47,9 @@ export type DecisionGateItem = {
   estCostUsd: number | null;
   expiresAt: string | null;
   escalationState: string;
+  /** CORE-UX-TRUST: this agent's decided-approval standing, or null when it has
+   *  no history yet. Surfaced inline so trust lives at the point of decision. */
+  track?: AgentTrackRecord | null;
 };
 
 export type DecisionReviewItem = {
@@ -119,6 +123,7 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
     const c = toolConsequence(item.toolName);
     const agent = agentDisplayName(item.agentSlug);
     const expired = item.escalationState === "expired";
+    const trackLabel = formatTrackRecord(item.track);
     return (
       <div className="fade-up lift" style={cardStyle}>
         {/* Header: who + the call */}
@@ -126,7 +131,17 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
           <StepDot status="gate" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="mono-label" style={{ color: "var(--agent)", fontSize: 10 }}>
-              {agent} · needs your approval · {item.toolName}
+              {agent}
+              {trackLabel && (
+                <span
+                  style={{ color: "var(--ink-faint)" }}
+                  title="This agent's decided-approval record across your past gates"
+                >
+                  {" "}
+                  · {trackLabel}
+                </span>
+              )}{" "}
+              · needs your approval · {item.toolName}
             </div>
             <div style={{ fontSize: 13.5, color: "var(--ink)", fontWeight: 600, marginTop: 2 }}>
               {c.effect}

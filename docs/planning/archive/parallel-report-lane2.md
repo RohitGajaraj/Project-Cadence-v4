@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-06-24 — Cycle 7: CORE-UX-TRUST ◐ — per-agent track record at the point of decision
+
+**Triage first:** `lane.sh next` rank 1 was #9 STITCH-LOOP — but its value lives in the "felt"/UX-design layer (own Why: "at the UX layer") + it touches the global shell, i.e. the design pass the founder DEFERRED to a founder-prompted pre-launch stage, and it belongs with the coordinated IA/design cycle (#11/#12/#14). Parked it (not a thin model-only ship) and took the next strong, non-design, autonomous capability core. (#18 PM-IMPACT-LEDGER had been closed ✅ by lane 1.)
+
+**Picked:** `CORE-UX-TRUST` (#10). Claimed atomically for lane 2 + pushed the `🔨 In Dev` dashboard claim BEFORE any code.
+
+**Shipped (◐ — the data core):** the per-agent TRACK RECORD inline on the Today `DecisionCard` — "Scout · approved 44/47", so trust lives at the point of decision (the v11 core-user fix for the babysitting tax). `getNeedsYou` returns `trackByAgent` from the caller's own decided `agent_approvals`; new pure `src/lib/agent-track-record.ts` (`summarizeAgentRecords`/`formatTrackRecord`/`trackRecordsToObject`, **10 tests**). Honest by construction: approved = approved+executed+failed (a failed execution was still a human yes); rollbacks NOT fabricated.
+
+**Adversarial review (ts + security):** security **clean** (user_id + RLS double-fence, parameterized `.in()`, React-escaped, no new exposure). TS reviewer found 1 real defect — `failed`-execution gates (human-approved) silently dropped, understating the record — **fixed** (count as approved) + regression-guarded; the limit-1000 ceiling documented as benign.
+
+**Gate:** tsc 0 · **1300 full suite** · no migration · no chokepoint. Docs: dashboard row #10 + top-summary #10, `plan.md` §4.
+
+**Remaining (◐, parked to founder):** auto-clear reversible tool gates (agent gating-behavior change) + visible rejection-learning.
+
+**State:** committed + FF-pushed to `origin/main`; claim released as ◐.
+
+---
+
 ## 2026-06-24 — Cycle 6: BRAIN-UX-V11 ◐ — per-decision "why" + "what's unresolved" lenses
 
 **Picked:** `BRAIN-UX-V11` (#8, `lane.sh next` rank 1; lane 1 held no claim). Claimed atomically for lane 2 + pushed the dashboard `🔨 In Dev` claim BEFORE any code (anti-duplication doctrine).

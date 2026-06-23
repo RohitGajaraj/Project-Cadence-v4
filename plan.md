@@ -283,6 +283,20 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — CORE-UX-TRUST ◐: the per-agent track record at the point of decision)
+
+**WHY:** v11 core-user research found the approval queue is a babysitting tax with the trust payoff deferred. The fix is to move trust TO the point of decision — so a human deciding a gate sees the agent's standing, not a blind yes/no.
+
+**Shipped (lane 2, Today DecisionCard):** the per-agent TRACK RECORD — "Scout · approved 44/47" inline on each gate. `getNeedsYou` now returns `trackByAgent` (the caller's own decided `agent_approvals` tallied by agent). New pure, unit-tested `src/lib/agent-track-record.ts` (`summarizeAgentRecords` / `formatTrackRecord` / `trackRecordsToObject`, 10 tests). Honest by construction (claim-never-outruns-wiring): approved = the human said yes (approved + executed + **failed**, since a failed execution was still an approval); rollbacks are NOT shown (no per-gate rollback signal exists — no fabricated "0 rollbacks"). RLS-scoped to the caller (`user_id` + RLS double-fence).
+
+**Adversarial review:** security **clean** (no cross-user leak, parameterized `.in()`, React-escaped). TS reviewer caught one real defect — `failed`-execution gates (human-approved) were silently dropped, understating the record; fixed to count them as approved + regression-guarded.
+
+**Gate:** tsc 0 · **1300 tests** · no migration · no chokepoint.
+
+**Remaining (◐):** the row's other two halves — auto-clear reversible tool gates (changes agent gating behavior → founder-gated) + visible rejection-learning — are NOT built. Parked to the founder.
+
+**Also (triage):** parked #9 STITCH-LOOP — its value is in the "felt"/UX-design layer (its own Why says "at the UX layer") + it touches the global shell; that is the design pass the founder deferred to a founder-prompted pre-launch stage, and it belongs with the coordinated IA/design cycle (#11/#12/#14). Built #10's strong data core instead.
+
 ### 2026-06-24 (lane 2 — BRAIN-UX-V11 ◐: the per-decision "why" + "what's unresolved" human lenses)
 
 **WHY:** v11 #8 wants the Brain to be a human-useful open analyst, not a node graph. The floor (beliefs / learned / timeline / observations) shipped earlier 2026-06-24; this closes the two named rule-based remainder lenses so the only ◐ left is the AI ceiling (chokepoint-gated, not lane-touchable).
