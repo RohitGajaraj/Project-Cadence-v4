@@ -47,6 +47,7 @@ import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
 import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
+import { Route as AuthenticatedTrustLedgerRouteImport } from './routes/_authenticated.trust-ledger'
 import { Route as AuthenticatedGovernRouteImport } from './routes/_authenticated.govern'
 import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
@@ -286,6 +287,11 @@ const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
 const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
   id: '/governance',
   path: '/governance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTrustLedgerRoute = AuthenticatedTrustLedgerRouteImport.update({
+  id: '/trust-ledger',
+  path: '/trust-ledger',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedGovernRoute = AuthenticatedGovernRouteImport.update({
@@ -576,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/evals': typeof AuthenticatedEvalsRoute
   '/govern': typeof AuthenticatedGovernRoute
   '/governance': typeof AuthenticatedGovernanceRoute
+  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -661,6 +668,7 @@ export interface FileRoutesByTo {
   '/evals': typeof AuthenticatedEvalsRoute
   '/govern': typeof AuthenticatedGovernRoute
   '/governance': typeof AuthenticatedGovernanceRoute
+  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -749,6 +757,7 @@ export interface FileRoutesById {
   '/_authenticated/evals': typeof AuthenticatedEvalsRoute
   '/_authenticated/govern': typeof AuthenticatedGovernRoute
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
+  '/_authenticated/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
@@ -839,6 +848,7 @@ export interface FileRouteTypes {
     | '/evals'
     | '/govern'
     | '/governance'
+    | '/trust-ledger'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -924,6 +934,7 @@ export interface FileRouteTypes {
     | '/evals'
     | '/govern'
     | '/governance'
+    | '/trust-ledger'
     | '/guardrails'
     | '/inbox'
     | '/integrations'
@@ -1011,6 +1022,7 @@ export interface FileRouteTypes {
     | '/_authenticated/evals'
     | '/_authenticated/govern'
     | '/_authenticated/governance'
+    | '/_authenticated/trust-ledger'
     | '/_authenticated/guardrails'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
@@ -1381,6 +1393,13 @@ declare module '@tanstack/react-router' {
       path: '/governance'
       fullPath: '/governance'
       preLoaderRoute: typeof AuthenticatedGovernanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/trust-ledger': {
+      id: '/_authenticated/trust-ledger'
+      path: '/trust-ledger'
+      fullPath: '/trust-ledger'
+      preLoaderRoute: typeof AuthenticatedTrustLedgerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/govern': {
@@ -1793,6 +1812,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
   AuthenticatedGovernRoute: typeof AuthenticatedGovernRoute
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
+  AuthenticatedTrustLedgerRoute: typeof AuthenticatedTrustLedgerRoute
   AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
@@ -1838,6 +1858,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
   AuthenticatedGovernRoute: AuthenticatedGovernRoute,
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
+  AuthenticatedTrustLedgerRoute: AuthenticatedTrustLedgerRoute,
   AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,

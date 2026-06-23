@@ -18,6 +18,7 @@ import {
   Moon,
   Search,
   Hammer,
+  ScrollText,
   Plus,
   Trash2,
   MoreHorizontal,
@@ -128,6 +129,7 @@ const trustLinks: {
   { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
   { to: "/govern", label: "Spend", icon: Gauge, search: { tab: "budgets" } },
   { to: "/govern", label: "Engine Room", icon: ShieldAlert },
+  { to: "/trust-ledger", label: "Trust Ledger", icon: ScrollText },
   { to: "/sync", label: "Connectors", icon: Plug },
 ];
 
