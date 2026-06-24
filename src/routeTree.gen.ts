@@ -25,10 +25,12 @@ import { Route as DSlugRouteImport } from './routes/d.$slug'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedTrustLedgerRouteImport } from './routes/_authenticated.trust-ledger'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated.sync'
 import { Route as AuthenticatedSwarmRouteImport } from './routes/_authenticated.swarm'
+import { Route as AuthenticatedStakeholderRouteImport } from './routes/_authenticated.stakeholder'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated.roadmap'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated.prompts'
@@ -43,21 +45,19 @@ import { Route as AuthenticatedMemoryRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated.meetings'
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated.learn'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated.knowledge'
-import { Route as AuthenticatedImpactRouteImport } from './routes/_authenticated.impact'
-import { Route as AuthenticatedDelegateRouteImport } from './routes/_authenticated.delegate'
-import { Route as AuthenticatedFleetRouteImport } from './routes/_authenticated.fleet'
-import { Route as AuthenticatedStakeholderRouteImport } from './routes/_authenticated.stakeholder'
-import { Route as AuthenticatedEvalHealthRouteImport } from './routes/_authenticated.eval-health'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
+import { Route as AuthenticatedImpactRouteImport } from './routes/_authenticated.impact'
 import { Route as AuthenticatedGuardrailsRouteImport } from './routes/_authenticated.guardrails'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated.governance'
-import { Route as AuthenticatedTrustLedgerRouteImport } from './routes/_authenticated.trust-ledger'
 import { Route as AuthenticatedGovernRouteImport } from './routes/_authenticated.govern'
+import { Route as AuthenticatedFleetRouteImport } from './routes/_authenticated.fleet'
 import { Route as AuthenticatedEvalsRouteImport } from './routes/_authenticated.evals'
+import { Route as AuthenticatedEvalHealthRouteImport } from './routes/_authenticated.eval-health'
 import { Route as AuthenticatedDriftRouteImport } from './routes/_authenticated.drift'
 import { Route as AuthenticatedDocsRouteImport } from './routes/_authenticated.docs'
 import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authenticated.discovery'
+import { Route as AuthenticatedDelegateRouteImport } from './routes/_authenticated.delegate'
 import { Route as AuthenticatedCockpitRouteImport } from './routes/_authenticated.cockpit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
@@ -85,6 +85,8 @@ import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminPlatformRouteImport } from './routes/_authenticated.admin.platform'
 import { Route as AuthenticatedAdminPeopleRouteImport } from './routes/_authenticated.admin.people'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
+import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
@@ -95,8 +97,6 @@ import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/
 import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
 import { Route as ApiPublicHooksCreditTickRouteImport } from './routes/api/public/hooks/credit-tick'
-import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
-import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
 import { Route as ApiPublicHooksClusterTickRouteImport } from './routes/api/public/hooks/cluster-tick'
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
@@ -183,6 +183,12 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTrustLedgerRoute =
+  AuthenticatedTrustLedgerRouteImport.update({
+    id: '/trust-ledger',
+    path: '/trust-ledger',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTracesRoute = AuthenticatedTracesRouteImport.update({
   id: '/traces',
   path: '/traces',
@@ -203,6 +209,12 @@ const AuthenticatedSwarmRoute = AuthenticatedSwarmRouteImport.update({
   path: '/swarm',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedStakeholderRoute =
+  AuthenticatedStakeholderRouteImport.update({
+    id: '/stakeholder',
+    path: '/stakeholder',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -275,31 +287,6 @@ const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedImpactRoute = AuthenticatedImpactRouteImport.update({
-  id: '/impact',
-  path: '/impact',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDelegateRoute = AuthenticatedDelegateRouteImport.update({
-  id: '/delegate',
-  path: '/delegate',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedFleetRoute = AuthenticatedFleetRouteImport.update({
-  id: '/fleet',
-  path: '/fleet',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedStakeholderRoute = AuthenticatedStakeholderRouteImport.update({
-  id: '/stakeholder',
-  path: '/stakeholder',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedEvalHealthRoute = AuthenticatedEvalHealthRouteImport.update({
-  id: '/eval-health',
-  path: '/eval-health',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedIntegrationsRoute =
   AuthenticatedIntegrationsRouteImport.update({
     id: '/integrations',
@@ -309,6 +296,11 @@ const AuthenticatedIntegrationsRoute =
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedImpactRoute = AuthenticatedImpactRouteImport.update({
+  id: '/impact',
+  path: '/impact',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedGuardrailsRoute = AuthenticatedGuardrailsRouteImport.update({
@@ -321,19 +313,24 @@ const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
   path: '/governance',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedTrustLedgerRoute = AuthenticatedTrustLedgerRouteImport.update({
-  id: '/trust-ledger',
-  path: '/trust-ledger',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedGovernRoute = AuthenticatedGovernRouteImport.update({
   id: '/govern',
   path: '/govern',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFleetRoute = AuthenticatedFleetRouteImport.update({
+  id: '/fleet',
+  path: '/fleet',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedEvalsRoute = AuthenticatedEvalsRouteImport.update({
   id: '/evals',
   path: '/evals',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEvalHealthRoute = AuthenticatedEvalHealthRouteImport.update({
+  id: '/eval-health',
+  path: '/eval-health',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDriftRoute = AuthenticatedDriftRouteImport.update({
@@ -349,6 +346,11 @@ const AuthenticatedDocsRoute = AuthenticatedDocsRouteImport.update({
 const AuthenticatedDiscoveryRoute = AuthenticatedDiscoveryRouteImport.update({
   id: '/discovery',
   path: '/discovery',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDelegateRoute = AuthenticatedDelegateRouteImport.update({
+  id: '/delegate',
+  path: '/delegate',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCockpitRoute = AuthenticatedCockpitRouteImport.update({
@@ -497,6 +499,17 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTriggerTickRoute =
+  ApiPublicHooksTriggerTickRouteImport.update({
+    id: '/api/public/hooks/trigger-tick',
+    path: '/api/public/hooks/trigger-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSenseTickRoute = ApiPublicHooksSenseTickRouteImport.update({
+  id: '/api/public/hooks/sense-tick',
+  path: '/api/public/hooks/sense-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRetentionTickRoute =
   ApiPublicHooksRetentionTickRouteImport.update({
     id: '/api/public/hooks/retention-tick',
@@ -555,18 +568,6 @@ const ApiPublicHooksCreditTickRoute =
     path: '/api/public/hooks/credit-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSenseTickRoute =
-  ApiPublicHooksSenseTickRouteImport.update({
-    id: '/api/public/hooks/sense-tick',
-    path: '/api/public/hooks/sense-tick',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksTriggerTickRoute =
-  ApiPublicHooksTriggerTickRouteImport.update({
-    id: '/api/public/hooks/trigger-tick',
-    path: '/api/public/hooks/trigger-tick',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksClusterTickRoute =
   ApiPublicHooksClusterTickRouteImport.update({
     id: '/api/public/hooks/cluster-tick',
@@ -620,22 +621,20 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
+  '/delegate': typeof AuthenticatedDelegateRoute
   '/discovery': typeof AuthenticatedDiscoveryRoute
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
+  '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/fleet': typeof AuthenticatedFleetRoute
   '/govern': typeof AuthenticatedGovernRoute
   '/governance': typeof AuthenticatedGovernanceRoute
-  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/impact': typeof AuthenticatedImpactRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
-  '/impact': typeof AuthenticatedImpactRoute
-  '/delegate': typeof AuthenticatedDelegateRoute
-  '/fleet': typeof AuthenticatedFleetRoute
-  '/stakeholder': typeof AuthenticatedStakeholderRoute
-  '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/memory': typeof AuthenticatedMemoryRoute
@@ -649,10 +648,12 @@ export interface FileRoutesByFullPath {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/stakeholder': typeof AuthenticatedStakeholderRoute
   '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -681,8 +682,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
-  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -694,6 +693,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
@@ -713,22 +714,20 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
+  '/delegate': typeof AuthenticatedDelegateRoute
   '/discovery': typeof AuthenticatedDiscoveryRoute
   '/docs': typeof AuthenticatedDocsRoute
   '/drift': typeof AuthenticatedDriftRoute
+  '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/evals': typeof AuthenticatedEvalsRoute
+  '/fleet': typeof AuthenticatedFleetRoute
   '/govern': typeof AuthenticatedGovernRoute
   '/governance': typeof AuthenticatedGovernanceRoute
-  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/impact': typeof AuthenticatedImpactRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
-  '/impact': typeof AuthenticatedImpactRoute
-  '/delegate': typeof AuthenticatedDelegateRoute
-  '/fleet': typeof AuthenticatedFleetRoute
-  '/stakeholder': typeof AuthenticatedStakeholderRoute
-  '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/memory': typeof AuthenticatedMemoryRoute
@@ -741,10 +740,12 @@ export interface FileRoutesByTo {
   '/prompts': typeof AuthenticatedPromptsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/stakeholder': typeof AuthenticatedStakeholderRoute
   '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -774,8 +775,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
-  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -787,6 +786,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
@@ -809,22 +810,20 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/cockpit': typeof AuthenticatedCockpitRoute
+  '/_authenticated/delegate': typeof AuthenticatedDelegateRoute
   '/_authenticated/discovery': typeof AuthenticatedDiscoveryRoute
   '/_authenticated/docs': typeof AuthenticatedDocsRoute
   '/_authenticated/drift': typeof AuthenticatedDriftRoute
+  '/_authenticated/eval-health': typeof AuthenticatedEvalHealthRoute
   '/_authenticated/evals': typeof AuthenticatedEvalsRoute
+  '/_authenticated/fleet': typeof AuthenticatedFleetRoute
   '/_authenticated/govern': typeof AuthenticatedGovernRoute
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
-  '/_authenticated/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/_authenticated/guardrails': typeof AuthenticatedGuardrailsRoute
+  '/_authenticated/impact': typeof AuthenticatedImpactRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
-  '/_authenticated/impact': typeof AuthenticatedImpactRoute
-  '/_authenticated/delegate': typeof AuthenticatedDelegateRoute
-  '/_authenticated/fleet': typeof AuthenticatedFleetRoute
-  '/_authenticated/stakeholder': typeof AuthenticatedStakeholderRoute
-  '/_authenticated/eval-health': typeof AuthenticatedEvalHealthRoute
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRouteWithChildren
   '/_authenticated/memory': typeof AuthenticatedMemoryRoute
@@ -838,10 +837,12 @@ export interface FileRoutesById {
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/stakeholder': typeof AuthenticatedStakeholderRoute
   '/_authenticated/swarm': typeof AuthenticatedSwarmRoute
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
+  '/_authenticated/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/mcp': typeof ApiMcpRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -871,8 +872,6 @@ export interface FileRoutesById {
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
-  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
@@ -884,6 +883,8 @@ export interface FileRoutesById {
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
   '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
@@ -907,22 +908,20 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/chat'
     | '/cockpit'
+    | '/delegate'
     | '/discovery'
     | '/docs'
     | '/drift'
+    | '/eval-health'
     | '/evals'
+    | '/fleet'
     | '/govern'
     | '/governance'
-    | '/trust-ledger'
     | '/guardrails'
+    | '/impact'
     | '/inbox'
     | '/integrations'
     | '/knowledge'
-    | '/impact'
-    | '/delegate'
-    | '/fleet'
-    | '/stakeholder'
-    | '/eval-health'
     | '/learn'
     | '/meetings'
     | '/memory'
@@ -936,10 +935,12 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
+    | '/stakeholder'
     | '/swarm'
     | '/sync'
     | '/tasks'
     | '/traces'
+    | '/trust-ledger'
     | '/api/chat'
     | '/api/mcp'
     | '/checkout/return'
@@ -968,8 +969,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
-    | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -981,6 +980,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
@@ -1000,22 +1001,20 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/chat'
     | '/cockpit'
+    | '/delegate'
     | '/discovery'
     | '/docs'
     | '/drift'
+    | '/eval-health'
     | '/evals'
+    | '/fleet'
     | '/govern'
     | '/governance'
-    | '/trust-ledger'
     | '/guardrails'
+    | '/impact'
     | '/inbox'
     | '/integrations'
     | '/knowledge'
-    | '/impact'
-    | '/delegate'
-    | '/fleet'
-    | '/stakeholder'
-    | '/eval-health'
     | '/learn'
     | '/meetings'
     | '/memory'
@@ -1028,10 +1027,12 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/roadmap'
     | '/settings'
+    | '/stakeholder'
     | '/swarm'
     | '/sync'
     | '/tasks'
     | '/traces'
+    | '/trust-ledger'
     | '/api/chat'
     | '/api/mcp'
     | '/checkout/return'
@@ -1061,8 +1062,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
-    | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -1074,6 +1073,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
@@ -1095,22 +1096,20 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/chat'
     | '/_authenticated/cockpit'
+    | '/_authenticated/delegate'
     | '/_authenticated/discovery'
     | '/_authenticated/docs'
     | '/_authenticated/drift'
+    | '/_authenticated/eval-health'
     | '/_authenticated/evals'
+    | '/_authenticated/fleet'
     | '/_authenticated/govern'
     | '/_authenticated/governance'
-    | '/_authenticated/trust-ledger'
     | '/_authenticated/guardrails'
+    | '/_authenticated/impact'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
     | '/_authenticated/knowledge'
-    | '/_authenticated/impact'
-    | '/_authenticated/delegate'
-    | '/_authenticated/fleet'
-    | '/_authenticated/stakeholder'
-    | '/_authenticated/eval-health'
     | '/_authenticated/learn'
     | '/_authenticated/meetings'
     | '/_authenticated/memory'
@@ -1124,10 +1123,12 @@ export interface FileRouteTypes {
     | '/_authenticated/prompts'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
+    | '/_authenticated/stakeholder'
     | '/_authenticated/swarm'
     | '/_authenticated/sync'
     | '/_authenticated/tasks'
     | '/_authenticated/traces'
+    | '/_authenticated/trust-ledger'
     | '/api/chat'
     | '/api/mcp'
     | '/checkout/return'
@@ -1157,8 +1158,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
-    | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/trigger-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
     | '/api/public/hooks/drift-tick'
@@ -1170,6 +1169,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outcome-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
@@ -1197,8 +1198,6 @@ export interface RootRouteChildren {
   ApiPublicHooksAdminExpiryTickRoute: typeof ApiPublicHooksAdminExpiryTickRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
-  ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
-  ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
   ApiPublicHooksClusterTickRoute: typeof ApiPublicHooksClusterTickRoute
   ApiPublicHooksCreditTickRoute: typeof ApiPublicHooksCreditTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
@@ -1210,6 +1209,8 @@ export interface RootRouteChildren {
   ApiPublicHooksOutcomeTickRoute: typeof ApiPublicHooksOutcomeTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicHooksRetentionTickRoute: typeof ApiPublicHooksRetentionTickRoute
+  ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
+  ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicConnectGithubCallbackRoute: typeof ApiPublicConnectGithubCallbackRoute
   ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
@@ -1329,6 +1330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/trust-ledger': {
+      id: '/_authenticated/trust-ledger'
+      path: '/trust-ledger'
+      fullPath: '/trust-ledger'
+      preLoaderRoute: typeof AuthenticatedTrustLedgerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/traces': {
       id: '/_authenticated/traces'
       path: '/traces'
@@ -1355,6 +1363,13 @@ declare module '@tanstack/react-router' {
       path: '/swarm'
       fullPath: '/swarm'
       preLoaderRoute: typeof AuthenticatedSwarmRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/stakeholder': {
+      id: '/_authenticated/stakeholder'
+      path: '/stakeholder'
+      fullPath: '/stakeholder'
+      preLoaderRoute: typeof AuthenticatedStakeholderRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -1455,41 +1470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/impact': {
-      id: '/_authenticated/impact'
-      path: '/impact'
-      fullPath: '/impact'
-      preLoaderRoute: typeof AuthenticatedImpactRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/delegate': {
-      id: '/_authenticated/delegate'
-      path: '/delegate'
-      fullPath: '/delegate'
-      preLoaderRoute: typeof AuthenticatedDelegateRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/fleet': {
-      id: '/_authenticated/fleet'
-      path: '/fleet'
-      fullPath: '/fleet'
-      preLoaderRoute: typeof AuthenticatedFleetRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/stakeholder': {
-      id: '/_authenticated/stakeholder'
-      path: '/stakeholder'
-      fullPath: '/stakeholder'
-      preLoaderRoute: typeof AuthenticatedStakeholderRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/eval-health': {
-      id: '/_authenticated/eval-health'
-      path: '/eval-health'
-      fullPath: '/eval-health'
-      preLoaderRoute: typeof AuthenticatedEvalHealthRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/integrations': {
       id: '/_authenticated/integrations'
       path: '/integrations'
@@ -1502,6 +1482,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/inbox'
       preLoaderRoute: typeof AuthenticatedInboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/impact': {
+      id: '/_authenticated/impact'
+      path: '/impact'
+      fullPath: '/impact'
+      preLoaderRoute: typeof AuthenticatedImpactRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/guardrails': {
@@ -1518,13 +1505,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGovernanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/trust-ledger': {
-      id: '/_authenticated/trust-ledger'
-      path: '/trust-ledger'
-      fullPath: '/trust-ledger'
-      preLoaderRoute: typeof AuthenticatedTrustLedgerRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/govern': {
       id: '/_authenticated/govern'
       path: '/govern'
@@ -1532,11 +1512,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGovernRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/fleet': {
+      id: '/_authenticated/fleet'
+      path: '/fleet'
+      fullPath: '/fleet'
+      preLoaderRoute: typeof AuthenticatedFleetRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/evals': {
       id: '/_authenticated/evals'
       path: '/evals'
       fullPath: '/evals'
       preLoaderRoute: typeof AuthenticatedEvalsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/eval-health': {
+      id: '/_authenticated/eval-health'
+      path: '/eval-health'
+      fullPath: '/eval-health'
+      preLoaderRoute: typeof AuthenticatedEvalHealthRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/drift': {
@@ -1558,6 +1552,13 @@ declare module '@tanstack/react-router' {
       path: '/discovery'
       fullPath: '/discovery'
       preLoaderRoute: typeof AuthenticatedDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/delegate': {
+      id: '/_authenticated/delegate'
+      path: '/delegate'
+      fullPath: '/delegate'
+      preLoaderRoute: typeof AuthenticatedDelegateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/cockpit': {
@@ -1749,6 +1750,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/trigger-tick': {
+      id: '/api/public/hooks/trigger-tick'
+      path: '/api/public/hooks/trigger-tick'
+      fullPath: '/api/public/hooks/trigger-tick'
+      preLoaderRoute: typeof ApiPublicHooksTriggerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sense-tick': {
+      id: '/api/public/hooks/sense-tick'
+      path: '/api/public/hooks/sense-tick'
+      fullPath: '/api/public/hooks/sense-tick'
+      preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/retention-tick': {
       id: '/api/public/hooks/retention-tick'
       path: '/api/public/hooks/retention-tick'
@@ -1817,20 +1832,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/credit-tick'
       fullPath: '/api/public/hooks/credit-tick'
       preLoaderRoute: typeof ApiPublicHooksCreditTickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/sense-tick': {
-      id: '/api/public/hooks/sense-tick'
-      path: '/api/public/hooks/sense-tick'
-      fullPath: '/api/public/hooks/sense-tick'
-      preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/trigger-tick': {
-      id: '/api/public/hooks/trigger-tick'
-      path: '/api/public/hooks/trigger-tick'
-      fullPath: '/api/public/hooks/trigger-tick'
-      preLoaderRoute: typeof ApiPublicHooksTriggerTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/cluster-tick': {
@@ -1943,22 +1944,20 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCockpitRoute: typeof AuthenticatedCockpitRoute
+  AuthenticatedDelegateRoute: typeof AuthenticatedDelegateRoute
   AuthenticatedDiscoveryRoute: typeof AuthenticatedDiscoveryRoute
   AuthenticatedDocsRoute: typeof AuthenticatedDocsRoute
   AuthenticatedDriftRoute: typeof AuthenticatedDriftRoute
+  AuthenticatedEvalHealthRoute: typeof AuthenticatedEvalHealthRoute
   AuthenticatedEvalsRoute: typeof AuthenticatedEvalsRoute
+  AuthenticatedFleetRoute: typeof AuthenticatedFleetRoute
   AuthenticatedGovernRoute: typeof AuthenticatedGovernRoute
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
-  AuthenticatedTrustLedgerRoute: typeof AuthenticatedTrustLedgerRoute
   AuthenticatedGuardrailsRoute: typeof AuthenticatedGuardrailsRoute
+  AuthenticatedImpactRoute: typeof AuthenticatedImpactRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
-  AuthenticatedImpactRoute: typeof AuthenticatedImpactRoute
-  AuthenticatedDelegateRoute: typeof AuthenticatedDelegateRoute
-  AuthenticatedFleetRoute: typeof AuthenticatedFleetRoute
-  AuthenticatedStakeholderRoute: typeof AuthenticatedStakeholderRoute
-  AuthenticatedEvalHealthRoute: typeof AuthenticatedEvalHealthRoute
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRouteWithChildren
   AuthenticatedMemoryRoute: typeof AuthenticatedMemoryRoute
@@ -1972,10 +1971,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStakeholderRoute: typeof AuthenticatedStakeholderRoute
   AuthenticatedSwarmRoute: typeof AuthenticatedSwarmRoute
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
+  AuthenticatedTrustLedgerRoute: typeof AuthenticatedTrustLedgerRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedBuildMissionIdRoute: typeof AuthenticatedBuildMissionIdRoute
   AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
@@ -1994,22 +1995,20 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCockpitRoute: AuthenticatedCockpitRoute,
+  AuthenticatedDelegateRoute: AuthenticatedDelegateRoute,
   AuthenticatedDiscoveryRoute: AuthenticatedDiscoveryRoute,
   AuthenticatedDocsRoute: AuthenticatedDocsRoute,
   AuthenticatedDriftRoute: AuthenticatedDriftRoute,
+  AuthenticatedEvalHealthRoute: AuthenticatedEvalHealthRoute,
   AuthenticatedEvalsRoute: AuthenticatedEvalsRoute,
+  AuthenticatedFleetRoute: AuthenticatedFleetRoute,
   AuthenticatedGovernRoute: AuthenticatedGovernRoute,
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
-  AuthenticatedTrustLedgerRoute: AuthenticatedTrustLedgerRoute,
   AuthenticatedGuardrailsRoute: AuthenticatedGuardrailsRoute,
+  AuthenticatedImpactRoute: AuthenticatedImpactRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
-  AuthenticatedImpactRoute: AuthenticatedImpactRoute,
-  AuthenticatedDelegateRoute: AuthenticatedDelegateRoute,
-  AuthenticatedFleetRoute: AuthenticatedFleetRoute,
-  AuthenticatedStakeholderRoute: AuthenticatedStakeholderRoute,
-  AuthenticatedEvalHealthRoute: AuthenticatedEvalHealthRoute,
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRouteWithChildren,
   AuthenticatedMemoryRoute: AuthenticatedMemoryRoute,
@@ -2023,10 +2022,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStakeholderRoute: AuthenticatedStakeholderRoute,
   AuthenticatedSwarmRoute: AuthenticatedSwarmRoute,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
+  AuthenticatedTrustLedgerRoute: AuthenticatedTrustLedgerRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedBuildMissionIdRoute: AuthenticatedBuildMissionIdRoute,
   AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
@@ -2062,8 +2063,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAdminExpiryTickRoute: ApiPublicHooksAdminExpiryTickRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
-  ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
-  ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicHooksClusterTickRoute: ApiPublicHooksClusterTickRoute,
   ApiPublicHooksCreditTickRoute: ApiPublicHooksCreditTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
@@ -2075,6 +2074,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOutcomeTickRoute: ApiPublicHooksOutcomeTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicHooksRetentionTickRoute: ApiPublicHooksRetentionTickRoute,
+  ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
+  ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicConnectGithubCallbackRoute: ApiPublicConnectGithubCallbackRoute,
   ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
