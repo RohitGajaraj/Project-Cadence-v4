@@ -4,6 +4,34 @@
 
 ---
 
+## RESUME CURSOR (read first) — after 10 cycles
+
+**State:** 10 cycles done this run (BRAIN-UX `◐` #8, INTEROP `◐` #16, CORE-UX-TRUST `◐` #10, CORE-UX-FELT `◐` #11, then **STITCH-LOOP `✅` #9** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+
+**Two NEW founder steers now STANDING (documented + in memory `build-dont-overpark`):**
+1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs the founder's specific input (positioning/pricing WORDING, secrets/keys, recurring-AI-spend/cron activation, outward security-scope/audit) or is chokepoint-pinned (`ai/*`). Design polish alone is not a reason to park.
+2. **Whole-register coverage + class-of-work order** (founder ruling 2026-06-24, NOW in [`AGENTS.md`](../../../AGENTS.md) §3): don't stop at the v11 front — the whole register is in scope. Class order = untouched `⬜` FIRST → partial `◐` SECOND (top-down) → pure design THIRD. Halt ONLY on a genuine founder-creative/strategic call or a secret I don't hold. A UI I can't visually verify is NOT a halt (gate tsc + tests, live-verify on publish).
+3. **Compact AFTER each completed cycle (committed + pushed + docs-looped + released), NEVER mid-cycle** — via ScheduleWakeup a fresh turn, then continue without halt.
+
+**NEXT PICKS (top-down, class order):** the remaining `◐` front items each have only founder-gated/chokepoint remainders (BRAIN-UX = AI ceiling; INTEROP = outward WRITE/A2A; CORE-UX-TRUST = auto-clear gates; CORE-UX-FELT = cold-gateway/de-jargon — buildable, a candidate). Untouched `⬜` front: **#14 CONNECTORS-V11** (one connectors home), **#15 ORCH-DELEGATE** (check founder-gate on external coding-agent scope), **#21 LANDING-PAGE-V11** (PARK — landing copy is founder voice). #12 IA-NAV-V11 + #13 SETTINGS-SEGREGATE are lane-1/done. Below the front, sweep untouched `⬜` Tier-1/Tier-3 register rows by Rank. **PARK #20 POS-V11** (positioning wording). Use `bash scripts/lane.sh next` + reap each cycle; lane 1 runs concurrently.
+
+---
+
+## 2026-06-24 — Cycle 10: STITCH-LOOP ✅ — one felt loop across the surfaces (v11 #9)
+
+**Pick:** lowest-Rank fully-open buildable item. #8 BRAIN-UX `◐` parked (remainder = the AI open-analyst ceiling, chokepoint-gated). Lane 1 held IA-NAV-V11 (#12) — avoided.
+
+**Built:** a calm "loop position" strip that makes the engine's one continuous loop FELT across the surfaces (fixes the v11 "feels fragmented" perception), WITHOUT touching `AppShell`/`nav-model` (lane 1's IA-NAV territory).
+- **Pure model** `src/lib/loop-surfaces.ts` — the 7 loop surfaces in order (Today → Product → PRD → Build → Missions → Brain → Trust), each with its forward `produces` payload; `loopIndexForPath` (longest-prefix; `/` exact-only), `isLoopSurface`, cyclic `loopNeighbors` (Trust→Today wraps). Type derived from the `as const` array so `to` stays a literal route union (TanStack `<Link>` validates routes at compile time). 10 tests.
+- **Component** `src/components/cadence/LoopThread.tsx` — route-derived (`useRouterState`), renders null off-loop, current emphasized, next in action-blue, handoff caption "{produces} → {next}", cyclic glyph. Calm chrome (Engine-Room doctrine).
+- **Wiring** — one render in `TopBar` (covers 6 surfaces that mount it) + one on PRD detail (`prds.$id`, the lone loop surface without TopBar).
+
+**Gate:** tsc 0 · `bun test` 1377/1377 (10 new). **Review:** TS + security agents — security clean (static-constant hrefs/titles; pathname only an index lookup); 2 TS nits folded (literal-route-union `to` restores compile-time validation; removed duplicate next-index). Pre-existing out-of-scope note from security: `prds.$id` line ~227 puts `github_issue_url` directly in an `href` — fine today (server-written), would be a `javascript:` risk if ever user-editable (→ KI).
+
+**Status:** `✅` — defined scope (legible/felt loop across surfaces) delivered. Future enhancement (not unfinished scope): data-driven cross-surface handoffs (the actual opportunity → this PRD; contextual forward-CTAs).
+
+**Doc-loop:** dashboard #9 → `✅` (top summary + register row) + tally; plan.md §4; this report; AGENTS.md §3 founder rule; KI for the github-href note. Committed, rebased, FF-pushed; claim released.
+
 ## 2026-06-24 — Cycle 9: CORE-UX-FELT ◐ — brief leads with stakes + the Today home declutter
 
 **Founder steer this cycle:** stop over-parking #11-#21 — build the ranked board top-down and make the design/IA calls myself; park ONLY what needs the founder's specific input (saved to memory: `build-dont-overpark`). So I released TRUST-VERIFY (#26, no code written) and took **#11 CORE-UX-FELT** top-down. Mid-cycle the founder ALSO gave a specific UX ask: the Today home over-populates with the full approvals list — collapse it to one subtle bar that opens the detail. Folded that in (it IS CORE-UX-FELT) as the priority.

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
+import { LoopThread } from "@/components/cadence/LoopThread";
 import { listProjects } from "@/lib/projects.functions";
 import {
   getPrd,
@@ -199,6 +200,7 @@ function PrdEditor() {
 
   return (
     <AppShell projects={projects.data?.projects ?? []}>
+      <LoopThread />
       <div className="px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
         <Link
           to="/prds"

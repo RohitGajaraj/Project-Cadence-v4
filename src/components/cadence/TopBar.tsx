@@ -12,6 +12,7 @@ import { Calendar, ChevronRight } from "lucide-react";
 import { AmbientChip } from "./AmbientChip";
 import { AttentionBell } from "./AttentionBell";
 import { CookingBanner, ConstructionPill } from "./CookingBanner";
+import { LoopThread } from "./LoopThread";
 
 export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactNode }) {
   const [today, setToday] = useState("");
@@ -82,6 +83,7 @@ export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactN
         </span>
         <AmbientChip inline />
       </header>
+      <LoopThread />
       <CookingBanner />
     </>
   );

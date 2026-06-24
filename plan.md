@@ -283,6 +283,19 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — STITCH-LOOP ✅: one felt loop across the surfaces)
+
+**WHY:** v11 #9 (Cockpit, Tier 1) + the founder's "stitching + wiring". The engine is already one continuous loop (Sense → Decide → Define → Build → Ship → Learn + receipts), but the surfaces the operator walks between read as separate screens — the "feels fragmented" perception. This makes the one-system continuity felt at the UX layer. _Founder steer this session: build the ranked board top-down, decide IA myself; STITCH-LOOP was the lowest-Rank fully-open buildable item (BRAIN-UX #8 is chokepoint-gated → parked)._
+
+**Shipped (lane 2):**
+- **The loop model** — new pure `src/lib/loop-surfaces.ts`: the seven loop surfaces in order (Today → Product → PRD → Build → Missions → Brain → Trust) each with what it `produces` (the forward handoff), `loopIndexForPath` (longest-prefix match so detail routes resolve; `/` matches only exactly), `isLoopSurface`, and cyclic `loopNeighbors` (Trust → Today wraps). Typed by deriving from the `as const` array so each `to` keeps its literal route type and TanStack's `<Link to>` validates it against the real route tree (a future route rename fails `tsc` instead of dead-linking). 10 tests.
+- **The felt strip** — new `src/components/cadence/LoopThread.tsx`: a thin, calm rail showing the seven surfaces in order, the current one emphasized, the next in action-blue, a cyclic glyph, and a quiet "{produces} → {next}" handoff caption. Route-derived via `useRouterState` (the position can never be passed wrong by a page); renders `null` off the loop (settings/admin/evals). Engine-Room calm chrome — names the outcome of each stage, not the mechanism.
+- **Wired in one place** — rendered inside `TopBar` (covers Today/Product/Build/Missions/Brain/Trust, which all mount TopBar) + dropped on the PRD detail (`prds.$id`, the one loop surface without TopBar). No change to `AppShell`/`nav-model` (lane 1's IA-NAV territory) — a deliberate non-colliding stitch.
+
+**Verification (ran):** tsc 0, `bun test` 1377/1377 (10 new). Adversarial review (TS + security) clean: security found no in-scope vector (all hrefs/titles are static-constant-derived; pathname used only for an index lookup); TS folded 2 nits — narrowed `to` to the literal route union (restores compile-time route validation) + removed a duplicate next-index derivation. **✅:** the defined scope — make the loop legible/felt across surfaces — is delivered; a richer data-driven handoff (showing the actual opportunity that became this PRD, contextual forward-CTAs) is a noted future enhancement, not unfinished scope.
+
+**Also (founder standing rule, documented this cycle):** added the **"Whole-register coverage + the class-of-work order"** ruling to [`AGENTS.md`](./AGENTS.md) §3 — don't stop at the v11 front; the whole register is in scope; class order = untouched `⬜` first → partial `◐` second (top-down) → pure design third; halt ONLY on a genuine founder-creative/strategic call or a secret/key I don't hold; a UI I can't visually verify is NOT a halt. (The `build-dont-overpark` memory had asserted this was in AGENTS.md; it was not — now it is.)
+
 ### 2026-06-24 (lane 2 — CORE-UX-FELT ◐: brief leads with stakes + the Today home declutter)
 
 **WHY:** v11 core-user fix (#11) + a direct founder ask. Two felt fixes: a chief-of-staff brief that opens with what is AT STAKE (not a task count), and a Today home that does not over-populate with a full gate-approval list (it read as a babysitting queue). _Founder steer this session: build the ranked board top-down and make the design/IA calls myself; park ONLY what needs the founder's specific input. Memory: build-dont-overpark._
