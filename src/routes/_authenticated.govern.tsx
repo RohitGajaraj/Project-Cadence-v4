@@ -11,7 +11,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Shield } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { SurfaceHeader, TabRow, type TabRowItem } from "@/components/cadence/Primitives";
+import { SubTabs, SurfaceHeader, TabRow, type TabRowItem } from "@/components/cadence/Primitives";
+import {
+  ENGINE_ROOM_BANDS,
+  bandForTab,
+  tabsInBand,
+  primaryTabForBand,
+  findBand,
+  type EngineRoomTab,
+} from "@/lib/engine-room-bands";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { listTraces } from "@/lib/traces.functions";
@@ -38,20 +46,11 @@ import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
 // Tab labels are outcome-named per the Engine-Room Doctrine; the ?tab=<id> ids are the routing
 // contract and stay unchanged. See docs/conventions/engine-room-doctrine.md.
 
-type Tab =
-  | "attention"
-  | "controls"
-  | "team"
-  | "approvals"
-  | "guardrails"
-  | "budgets"
-  | "prompts"
-  | "evals"
-  | "analytics"
-  | "gauntlet"
-  | "traces"
-  | "drift"
-  | "incidents";
+// The tab id set + band grouping live in the pure, unit-tested
+// @/lib/engine-room-bands module (IA-DEPTH-V11 #23): the 13 tabs are presented in
+// 3 calm bands (Needs you / Trust & safety / Quality & insight) while every ?tab=
+// id is preserved unchanged so deep links keep landing.
+type Tab = EngineRoomTab;
 
 // Engine-Room Doctrine: ids are the routing contract (unchanged); labels name the outcome, not the mechanism.
 const TABS: { id: Tab; label: string }[] = [
@@ -173,6 +172,20 @@ function GovernPage() {
 
   const setTab = (next: string) => navigate({ search: { tab: next as Tab } });
 
+  // IA-DEPTH-V11 (#23): the 13 tabs are grouped into 3 bands. Tier 1 selects a
+  // band (landing on its first tab); tier 2 is the existing TabRow filtered to
+  // the active band's tabs (badges + descriptions preserved). The ?tab= id stays
+  // the routing key, so deep links into any tab keep working.
+  const activeBand = bandForTab(tab);
+  const bandTabIds = tabsInBand(activeBand);
+  const bandTabs = bandTabIds
+    .map((id) => tabs.find((t) => t.id === id))
+    .filter((t): t is TabRowItem => Boolean(t));
+  const setBand = (label: string) => {
+    const band = ENGINE_ROOM_BANDS.find((b) => b.label === label);
+    if (band) navigate({ search: { tab: primaryTabForBand(band.id) } });
+  };
+
   return (
     <AppShell projects={projects.data?.projects ?? []}>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Engine Room"]} />
@@ -186,7 +199,16 @@ function GovernPage() {
           title="Engine Room"
           sub="Every autonomous action is cited, observable, gated, and reversible."
         />
-        <TabRow tabs={tabs} active={tab} onSet={setTab} desc={GOVERN_DESC} />
+        {/* Tier 1: the 3 calm bands (IA-DEPTH-V11). Tier 2: the active band's
+            tabs, with their live badges + per-tab descriptions preserved. */}
+        <div style={{ marginBottom: 4 }}>
+          <SubTabs
+            tabs={ENGINE_ROOM_BANDS.map((b) => b.label)}
+            active={findBand(activeBand)?.label ?? ENGINE_ROOM_BANDS[0]!.label}
+            onSet={setBand}
+          />
+        </div>
+        <TabRow tabs={bandTabs} active={tab} onSet={setTab} desc={GOVERN_DESC} />
 
         {tab === "controls" && <ControlsPanel onOpenQueue={() => setTab("approvals")} />}
         {tab === "attention" && <NotificationsPanel />}
