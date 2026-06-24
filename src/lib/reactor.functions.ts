@@ -18,7 +18,18 @@ import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
 import { quarantineUntrusted } from "@/lib/ai/guardrails-injection.server";
 
-const EVENT_TYPES = ["signal.created", "opportunity.scored", "prd.approved"] as const;
+const EVENT_TYPES = [
+  "signal.created",
+  "opportunity.scored",
+  "prd.approved",
+  // Ambient-loop event types (EVENT-REACTOR-LIVE, migration 20260624130000): a workspace can now
+  // subscribe an agent to these. They are fanned out by the themes / learnings / decisions
+  // triggers and dispatched generically via target_agent_slug. No default subscription is seeded,
+  // so they stay dormant until a user/founder opts in (no overlap with the ambient trigger-tick).
+  "signal.clustered",
+  "outcome.recorded",
+  "decision.made",
+] as const;
 
 export const listEventSubscriptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -28,7 +28,13 @@ import {
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { relTime, fmtUsd } from "@/components/product/format";
 
-type EventType = "signal.created" | "opportunity.scored" | "prd.approved";
+type EventType =
+  | "signal.created"
+  | "opportunity.scored"
+  | "prd.approved"
+  | "signal.clustered"
+  | "outcome.recorded"
+  | "decision.made";
 
 /* The reference pill toggle — 44×24 for the kill switch, 34×19 for
    pipeline rows. Track turns `onColor` when on; knob slides. */
@@ -411,6 +417,9 @@ export function ControlsPanel({ onOpenQueue }: { onOpenQueue?: () => void }) {
                 <option value="signal.created">signal.created</option>
                 <option value="opportunity.scored">opportunity.scored</option>
                 <option value="prd.approved">prd.approved</option>
+                <option value="signal.clustered">signal.clustered</option>
+                <option value="outcome.recorded">outcome.recorded</option>
+                <option value="decision.made">decision.made</option>
               </select>
               <input
                 className="input"

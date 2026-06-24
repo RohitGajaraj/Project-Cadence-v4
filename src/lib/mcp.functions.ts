@@ -377,15 +377,15 @@ export type RoadmapView = {
  * (the bucket is optional in the live schema, so this is honest, not empty).
  * Within a bucket, highest ICE first.
  */
-export function groupByRoadmapBucket(
-  rows: RoadmapItemLite[] | null | undefined,
-): RoadmapView {
+export function groupByRoadmapBucket(rows: RoadmapItemLite[] | null | undefined): RoadmapView {
   const view: RoadmapView = { now: [], next: [], later: [], unbucketed: [] };
   for (const r of Array.isArray(rows) ? rows : []) {
     if (!r || typeof r.id !== "string" || !r.id) continue;
     // String() coerces a non-string bucket (a future/misconfigured column type)
     // safely to "unbucketed" instead of throwing on .trim().
-    const bucket = String(r.roadmap_bucket ?? "").trim().toLowerCase();
+    const bucket = String(r.roadmap_bucket ?? "")
+      .trim()
+      .toLowerCase();
     if (bucket === "now") view.now.push(r);
     else if (bucket === "next") view.next.push(r);
     else if (bucket === "later") view.later.push(r);
