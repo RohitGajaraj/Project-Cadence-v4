@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, AlertTriangle, Activity, Scale, GraduationCap, Lightbulb, HelpCircle } from "lucide-react";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import { getBrainInsights, type BrainInsight, type TimelineBucket } from "@/lib/brain-insights.functions";
+import { LoopClosureBadge } from "@/components/knowledge/LoopClosureBadge";
 
 const TONE: Record<BrainInsight["tone"], { color: string; Icon: typeof TrendingUp }> = {
   positive: { color: "var(--emerald)", Icon: TrendingUp },
@@ -78,6 +79,8 @@ export function InsightsPanel() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* LOOP-PROVE - is the decision/outcome/supersession loop closing on this workspace's data? */}
+      <LoopClosureBadge />
       {/* Headline observations — what the data supports, in plain language. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {d.insights.map((ins, i) => {
