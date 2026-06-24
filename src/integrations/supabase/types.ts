@@ -4930,6 +4930,79 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          body: string
+          cluster_key: string | null
+          created_at: string
+          external_id: string | null
+          id: string
+          product_id: string | null
+          requester: string | null
+          signal_id: string | null
+          source: string
+          status: string
+          subject: string | null
+          triaged_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          body: string
+          cluster_key?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          product_id?: string | null
+          requester?: string | null
+          signal_id?: string | null
+          source?: string
+          status?: string
+          subject?: string | null
+          triaged_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Update: {
+          body?: string
+          cluster_key?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          product_id?: string | null
+          requester?: string | null
+          signal_id?: string | null
+          source?: string
+          status?: string
+          subject?: string | null
+          triaged_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_mappings: {
         Row: {
           conflict: boolean
