@@ -100,7 +100,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 ## Related
 
 - [`../README.md`](../README.md), parent docs index
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md), live status board + ledger
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md), live status board + ledger
 - [`agent-ecosystem-plan.md`](./archive/agent-ecosystem-plan.md), F-AGENT-1→4 bundle strategy
 - [`agent-experience.md`](./agent-experience.md), the agent roster model, faces, identity, and the relay (the "19 vs 6" resolution, built on the F-AGENT-1→4 substrate)
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md), agent orchestration contract

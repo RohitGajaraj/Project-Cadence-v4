@@ -49,4 +49,4 @@ Beyond the inline auto-attach, the Critic is a **registered agent-loop tool**: `
 
 - [`prd-rag-citations.md`](./prd-rag-citations.md): the companion slice that gives the Scribe its evidence trail.
 - [`../strategy/archive/v4-feature-map.md`](../strategy/archive/v4-feature-map.md): DEC-02 (opportunities) + DEF-03 (specs) entries.
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): live status board entry.
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md): live status board entry.

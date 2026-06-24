@@ -56,5 +56,5 @@ The founder's instinct to make the "agent manager" role explicit was right, but 
 
 - Decision + reasoning: [`../strategy/session-decisions.md`](../strategy/session-decisions.md) · [`../strategy/strategic-inputs-log.md`](../strategy/strategic-inputs-log.md) (2026-06-17 "year of the agent manager") · [`../strategy/v9-decision-wedge-and-build-next.md`](../strategy/v9-decision-wedge-and-build-next.md) §2.
 - Doctrine: [`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md).
-- Backlog: `ENG-06 / F-GOV-COST-SURFACE` in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) and [`../planning/feature-backlog.md`](../planning/feature-backlog.md).
+- Backlog: `ENG-06 / F-GOV-COST-SURFACE` in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md) and [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md).
 - Build log: [`../../plan.md`](../../plan.md) §4.

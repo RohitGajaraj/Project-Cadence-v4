@@ -30,7 +30,7 @@
 | The launch wedge / competitor posture | [v9](./v9-decision-wedge-and-build-next.md) | decision lens |
 | The raw reasoning + the fundraising/YC narrative | [strategic-inputs-log.md](./strategic-inputs-log.md) | source reasoning |
 | Why a decision was made | [session-decisions.md](./session-decisions.md) | decision log |
-| Granular acceptance criteria per feature | [feature-backlog.md](../planning/feature-backlog.md) | granular ledger |
+| Granular acceptance criteria per feature | [feature-backlog.md](../planning/archive/feature-backlog.md) | granular ledger |
 | Milestone exit criteria | [../planning/SOURCE-OF-TRUTH.md](../planning/SOURCE-OF-TRUTH.md) (sections 2-3) + [../planning/v10_implementation-plan.md](../planning/v10_implementation-plan.md) | milestone narrative |
 | Open bugs | [known-issues.md](../planning/known-issues.md) | bug list |
 | Engine / 19-agent mesh / handoff contract detail | [v4-feature-map](archive/v4-feature-map.md) | engine reference |
@@ -86,7 +86,7 @@ If the current version of strategy changes:
 1. Update `v3-positioning-cadence-YYYY-MM-DD.md` (or create a new version) in the same session
 2. Review and update `../../README.md` (product thesis, personas, MOAT, USP)
 3. Review and update `../../AGENTS.md` §0 (the one-paragraph goal statement)
-4. Review and update `../../docs/planning/feature-backlog.md` (new features section if features change)
+4. Review and update `../planning/archive/feature-backlog.md` (new features section if features change)
 5. Review and update `../../plan.md` (persona descriptions if they change)
 6. Update the tool-specific configs if framing language changes: `../../CLAUDE.md`, `../../GEMINI.md`, `../../.lovable-config.txt`
 7. Update [`moat.md`](./moat.md) (the moat / competition / positioning canon) and run the **Repositioning Ripple Review** in its §11 (pricing/gating, feature priority, IA/messaging, build-next, tests), so a positioning change ripples across the platform, not just the docs.
@@ -100,6 +100,6 @@ Every strategy doc, decision record, information-gathering note, and answer to a
 ## References
 
 - Current product truth: [`../../README.md`](../../README.md)
-- Feature list: [`../../docs/planning/feature-backlog.md`](../../docs/planning/feature-backlog.md)
+- Feature list: [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md)
 - Build plan: [`../../plan.md`](../../plan.md)
 - Operating rules: [`../../AGENTS.md`](../../AGENTS.md)

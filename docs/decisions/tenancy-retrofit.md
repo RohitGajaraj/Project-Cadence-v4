@@ -2,7 +2,7 @@
 
 > _Created: 2026-06-03 · Last updated: 2026-06-11_
 
-> Status: **DESIGN NOTE (ready to implement).** Date: 2026-05-30. Owner: founder. Implements `FND-TENANCY` (backlog [`../planning/feature-backlog.md`](../planning/feature-backlog.md) 0.1) per the [`../planning/archive/foundation-audit.md`](../planning/archive/foundation-audit.md) finding that the DB is single-key (`user_id`) today. Stack/Lovable context: [`tech-stack.md`](./tech-stack.md). Data rules (forward-only, additive migrations): [`../../architecture/data.md`](../../architecture/data.md).
+> Status: **DESIGN NOTE (ready to implement).** Date: 2026-05-30. Owner: founder. Implements `FND-TENANCY` (backlog [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md) 0.1) per the [`../planning/archive/foundation-audit.md`](../planning/archive/foundation-audit.md) finding that the DB is single-key (`user_id`) today. Stack/Lovable context: [`tech-stack.md`](./tech-stack.md). Data rules (forward-only, additive migrations): [`../../architecture/data.md`](../../architecture/data.md).
 >
 > **Purpose:** make the actual migration safe to hand to either Claude Code or Lovable — table-by-table scope (now vs later), the RLS pattern, the backfill shape, and the convention new code must follow so the debt doesn't re-accumulate.
 >

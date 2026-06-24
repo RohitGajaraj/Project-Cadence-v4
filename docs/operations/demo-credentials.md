@@ -63,4 +63,4 @@ These accounts are public knowledge by design. Do not store any real customer or
 
 - [`AGENTS.md`](../../AGENTS.md) — operating manual
 - [`README.md`](../README.md) — product thesis
-- [`docs/planning/feature-backlog.md`](../planning/feature-backlog.md) — live status board
+- [`docs/planning/feature-backlog.md`](../planning/archive/feature-backlog.md) — live status board

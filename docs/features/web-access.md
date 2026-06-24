@@ -67,5 +67,5 @@ Pass criteria: `tool_calls` shows real Firecrawl calls, the final artifact cites
 - [`../../architecture/runtime.md`](../../architecture/runtime.md): chokepoint contract; web results re-enter as untrusted input.
 - [`../../architecture/integrations.md`](../../architecture/integrations.md): connector catalogue, including Firecrawl.
 - [`../../architecture/security.md`](../../architecture/security.md): kill-switch and approval gates.
-- [`feature-backlog.md`](../planning/feature-backlog.md): live status of this feature.
+- [`feature-backlog.md`](../planning/archive/feature-backlog.md): live status of this feature.
 - [`README.md`](./README.md): docs index.

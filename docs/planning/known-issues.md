@@ -8,7 +8,7 @@
 >
 > **Update rule.** Add a row the moment an issue is confirmed; flip status in the same commit that resolves it. An issue is not "known" until it is in this table. Standing design gaps (not bugs) stay in [`considerations.md`](./considerations.md).
 >
-> **Related:** [`feature-backlog.md`](./feature-backlog.md) (Live status board · Blocked/stuck), [`considerations.md`](./considerations.md) (gap register), [`archive/foundation-audit.md`](./archive/foundation-audit.md) (point-in-time audit), [`../operations/fnd-runtime-restart-playbook.md`](../operations/fnd-runtime-restart-playbook.md), [`../../plan.md`](../../plan.md) §4.
+> **Related:** [`archive/feature-backlog.md`](archive/feature-backlog.md) (Live status board · Blocked/stuck), [`considerations.md`](./considerations.md) (gap register), [`archive/foundation-audit.md`](./archive/foundation-audit.md) (point-in-time audit), [`../operations/fnd-runtime-restart-playbook.md`](../operations/fnd-runtime-restart-playbook.md), [`../../plan.md`](../../plan.md) §4.
 
 ## Open
 

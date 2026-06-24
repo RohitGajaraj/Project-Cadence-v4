@@ -33,4 +33,4 @@ The Scribe (PRD generation) now retrieves workspace evidence (signals, docs, mee
 
 - [`critic-agent.md`](./critic-agent.md): the companion slice that runs after generation.
 - [`../../architecture/runtime.md`](../../architecture/runtime.md): RAG retrieval contract.
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): live status board entry.
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md): live status board entry.

@@ -8,7 +8,7 @@
 >
 > **Update rule.** When a session produces a strategic decision, a major tradeoff resolution, or a significant positioning or architecture change, add an entry here in the same session. This is not a one-time activity; it is a constant update obligation. Reference: `docs/strategy/README.md` (cascade rule).
 >
-> **Cross-references.** Versioned positioning: [`archive/v2-positioning.md`](./archive/v2-positioning.md). Feature backlog: [`../planning/feature-backlog.md`](../planning/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
+> **Cross-references.** Versioned positioning: [`archive/v2-positioning.md`](./archive/v2-positioning.md). Feature backlog: [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
 
 ---
 
@@ -826,7 +826,7 @@
 
 **Tradeoffs considered:** D (Phase 2 finishing) was lower leverage than A because phase 1 isn't closed. Splitting C across multiple owners was rejected for this pass, the audits are coherent and a single triage avoids contradictions. Reopening Cadence the product name was held (audit §10 Q2), and the operator-grade voice anchor was kept (audit §10 Q4) rather than benchmarked against Linear/Vercel/Paxel.
 
-**Impact:** New addressable index at [`../planning/feature-backlog.md` § v3 Audit Triage](../planning/feature-backlog.md#v3-audit-triage-2026-06-06). Audit docs gained Triage status sections with rec→F-ID maps. `plan.md` §4 + the Live status board reflect Phase B as next-up.
+**Impact:** New addressable index at [`../planning/archive/feature-backlog.md` § v3 Audit Triage](../planning/archive/feature-backlog.md#v3-audit-triage-2026-06-06). Audit docs gained Triage status sections with rec→F-ID maps. `plan.md` §4 + the Live status board reflect Phase B as next-up.
 
 ### 2026-06-06, Cross-tool memory: move rules from `mem://` into git-tracked `docs/conventions/`
 
@@ -870,7 +870,7 @@
 - **Implement the safest fixes (login tagline + empty states) immediately without an audit doc**: rejected. The whole point is to fix the discipline gap (closed-doc loop breaking at the most-seen surface), not to patch one symptom; a documented voice guide + naming matrix is what stops the next drift.
 - **Defer until after the IA rename actually ships**: rejected. The renames _are_ an output of this audit; you can't sequence them before doing it.
 
-**Impact:** New [`./archive/v3-audit-language.md`](./archive/v3-audit-language.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship, zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
+**Impact:** New [`./archive/v3-audit-language.md`](./archive/v3-audit-language.md). Indexed in [`./README.md`](./README.md) as a v3 companion. Recommendations (LANG-01..10, TOOLTIP-DEL, TOOLTIP-REW, LANG-IA-12, LANG-NEW-OUTCOME, LANG-CHIP) listed in [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md) Live status board as awaiting operator triage. Headline ask: pick the P0 set (LANG-01 login rewrite, LANG-02 delete Phase/Bundle labels, LANG-06 Today/Swarm empty states, LANG-08 sentence-case H1s) for a week-1 ship, zero engineering risk, fixes the 10-second test the main v3 audit failed. No code or behavior changes in this turn.
 
 ### 2026-06-06, Commission v3 end-to-end product & platform audit
 

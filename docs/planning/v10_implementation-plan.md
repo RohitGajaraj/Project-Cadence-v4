@@ -6,7 +6,7 @@
 
 **Date: 2026-06-17. Status: CURRENT execution plan.** This is the *how* that pairs with the [v10 master blueprint](../strategy/v10-master-blueprint.md) (the *what/why*) and the [feature dashboard](./feature-dashboard.md) (the *live status*). v10 says what to build and in what priority; this doc says how each item is built, verified, and shipped, how lanes run in parallel, and what gate each milestone must pass.
 
-> **Three docs, three roles, no overlap.** Blueprint = target + priority + lane ([v10](../strategy/v10-master-blueprint.md)). Implementation plan = execution mechanics + sequence + gates (this doc). Dashboard = the live cursor ([feature-dashboard](./feature-dashboard.md)). Granular ledger of acceptance criteria stays in [feature-backlog](./feature-backlog.md). Milestone exit criteria stay in [SOURCE-OF-TRUTH](./SOURCE-OF-TRUTH.md) (sections 2-3). Open bugs in [known-issues](./known-issues.md).
+> **Three docs, three roles, no overlap.** Blueprint = target + priority + lane ([v10](../strategy/v10-master-blueprint.md)). Implementation plan = execution mechanics + sequence + gates (this doc). Dashboard = the live cursor ([feature-dashboard](./feature-dashboard.md)). Granular ledger of acceptance criteria stays in [feature-backlog](archive/feature-backlog.md). Milestone exit criteria stay in [SOURCE-OF-TRUTH](./SOURCE-OF-TRUTH.md) (sections 2-3). Open bugs in [known-issues](./known-issues.md).
 
 ---
 
@@ -98,4 +98,4 @@ After P0 proves the loop. `F-SHARE-TEARDOWN` + `PLG` + `M-C-PRICE` (revenue + vi
 
 ## 6. Cross-references (not an orphan)
 
-Up: [v10 blueprint](../strategy/v10-master-blueprint.md), [v7](../strategy/v7-agentic-product-os.md)/[v8](../strategy/v8-calm-front-deep-engine.md)/[v9](../strategy/v9-decision-wedge-and-build-next.md), [session-decisions](../strategy/session-decisions.md). Sideways: [feature-dashboard](./feature-dashboard.md) (status), [feature-backlog](./feature-backlog.md) (granular ledger), [SOURCE-OF-TRUTH](./SOURCE-OF-TRUTH.md) (sections 2-3, milestones), [known-issues](./known-issues.md). Out: [`../../AGENTS.md`](../../AGENTS.md) section 1 (the build loop is the operational form of the pre-action protocol), [`../../plan.md`](../../plan.md) (build log), [`../../architecture/`](../../architecture/).
+Up: [v10 blueprint](../strategy/v10-master-blueprint.md), [v7](../strategy/v7-agentic-product-os.md)/[v8](../strategy/v8-calm-front-deep-engine.md)/[v9](../strategy/v9-decision-wedge-and-build-next.md), [session-decisions](../strategy/session-decisions.md). Sideways: [feature-dashboard](./feature-dashboard.md) (status), [feature-backlog](archive/feature-backlog.md) (granular ledger), [SOURCE-OF-TRUTH](./SOURCE-OF-TRUTH.md) (sections 2-3, milestones), [known-issues](./known-issues.md). Out: [`../../AGENTS.md`](../../AGENTS.md) section 1 (the build loop is the operational form of the pre-action protocol), [`../../plan.md`](../../plan.md) (build log), [`../../architecture/`](../../architecture/).

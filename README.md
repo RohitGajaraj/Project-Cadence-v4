@@ -66,7 +66,7 @@ Five statements that should never drift:
 
 ### The portability commitment
 
-> **Your data is always yours.** Export everything (decisions, memory, signals, agent configs) in open formats, anytime. We earn your trust through value, not friction. See Epic U in [`docs/planning/feature-backlog.md`](./docs/planning/feature-backlog.md).
+> **Your data is always yours.** Export everything (decisions, memory, signals, agent configs) in open formats, anytime. We earn your trust through value, not friction. See Epic U in [`docs/planning/archive/feature-backlog.md`](docs/planning/archive/feature-backlog.md).
 
 ---
 

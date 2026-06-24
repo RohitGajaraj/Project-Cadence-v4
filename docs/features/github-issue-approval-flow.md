@@ -98,7 +98,7 @@ If the rotation was emergency (suspected leak), also revoke the old PAT in the G
 
 ## Related
 
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): Bundle 6 entry with the "How to use / verify" cross-pointer.
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md): Bundle 6 entry with the "How to use / verify" cross-pointer.
 - [`./trust-and-autonomy.md`](./trust-and-autonomy.md): why `confirm` mode is the floor for write tools and how the autonomy dial composes with it.
 - [`./a2a-handoff.md`](./a2a-handoff.md): how the Discovery → Strategist → Planner mission reaches this approval gate in the first place.
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md): Lifecycle-close paragraph references this doc as the canonical operator guide.

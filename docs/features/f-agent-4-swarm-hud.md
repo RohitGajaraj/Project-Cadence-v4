@@ -80,7 +80,7 @@ F-AGENT-1 made Cadence plan, F-AGENT-2 made it learn, F-AGENT-3 made it react. T
 
 - [`../../plan.md`](../../plan.md) §4: 2026-06-06 F-AGENT-4 entry
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md): agent orchestration contract (Swarm HUD bullet)
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md): F-AGENT-4 ledger row
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md): F-AGENT-4 ledger row
 - [`./f-agent-1-orchestrator.md`](./f-agent-1-orchestrator.md), [`./f-agent-2-memory-reflection.md`](./f-agent-2-memory-reflection.md), [`./f-agent-3-event-reactor.md`](./f-agent-3-event-reactor.md)
 - [`./trust-and-autonomy.md`](./trust-and-autonomy.md): what the arc pills on the Agents grid mean
 - [`./a2a-handoff.md`](./a2a-handoff.md): the contract behind the Handoff feed

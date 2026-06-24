@@ -64,5 +64,5 @@ Code, schema, sync dispatcher, month-grid view, inline create/edit/delete, conne
 ## Related
 
 - [`../../architecture/integrations.md`](../../architecture/integrations.md)
-- [`../planning/feature-backlog.md`](../planning/feature-backlog.md) — `F-CALENDAR-PERUSER`
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md) — `F-CALENDAR-PERUSER`
 - [`../../plan.md`](../../plan.md) §4 — build log

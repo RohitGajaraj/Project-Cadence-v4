@@ -141,5 +141,5 @@ AutonomyCard when an agent crosses into a new arc.
 - Orchestration contract (approval modes, sweeper, mission lifecycle): [`../../architecture/orchestration.md`](../../architecture/orchestration.md)
 - Governance & approval gates (kill-switch, caps, Decision Queue): [`../../architecture/security.md`](../../architecture/security.md)
 - AI runtime chokepoint (where the gate is enforced server-side): [`../../architecture/runtime.md`](../../architecture/runtime.md)
-- Feature ticket (C6, Trust score + Autonomy dial): [`feature-backlog.md`](../planning/feature-backlog.md)
+- Feature ticket (C6, Trust score + Autonomy dial): [`feature-backlog.md`](../planning/archive/feature-backlog.md)
 - Parent index: [`README.md`](./README.md)
