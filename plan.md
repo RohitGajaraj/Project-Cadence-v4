@@ -283,6 +283,19 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — CORE-UX-TRUST ◐: visible rejection-learning at the point of decision)
+
+**WHY:** v11 #10, continuing the partial. Untouched ⬜ is exhausted on the autonomous front, so per the class-of-work order this is the lowest-rank buildable `◐`. When you reject an agent's proposed action, that correction is signal — but the queue forgot it. This makes your rejections visible and registered. _(The other remainder — auto-suppressing a repeatedly-declined gate — is a loop approval-mode change in the pinned `ai/loop.server.ts` chokepoint + a founder-gated agent-behavior call, so it stays gated.)_
+
+**Shipped (lane 2):**
+- **The signal** — new pure `src/lib/rejection-learning.ts`: `summarizeRejections(rows)` tallies the caller's REJECTED decided rows per (agent, tool) — count + the most recent decline reason — keyed by a NUL-joined composite; `rejectionCountFor` / `rejectionPatternCount`. 6 tests.
+- **Wired with zero extra cost** — `listGovernApprovals` already fetched the decided history for the per-agent track record; rejected rows ARE decided rows, so it now derives `rejectionsByKey` from that SAME RLS-scoped fetch (no new query) and returns it.
+- **At the point of decision** — the `ApprovalsPanel` card now shows a quiet "declined N× before" chip on a pending gate whose (agent, tool) the caller has rejected before — so the correction registers instead of the agent silently re-asking.
+
+**Verification (ran):** tsc 0, `bun test` 1452/1452 (6 new). **Adversarial review (ts + security):** security CLEAN (tenant-isolation correct — only the caller's own rejections, scoped by `user_id` + RLS; the decline reason is computed but never rendered, only the count). TS folded one HIGH: an inner `rows` binding shadowed the outer pending-approval `rows` — renamed to `histRows`.
+
+**Status ◐ (marked done on the board — no autonomous slice remains):** the track record (cycle 9) + visible rejection-learning are both shipped; the only remaining sub-part (auto-clear/suppress reversible gates) is chokepoint + founder-gated. Row → `◐ [~75%]`.
+
 ### 2026-06-24 (lane 2 — DEF-04 ◐: design readiness from a spec — the deterministic half)
 
 **WHY:** v11 #27, the lowest-rank UNTOUCHED item with a clean autonomous slice. DEF-04's headline (a generated mockup + a live sandbox preview) needs the AI chokepoint / the gated SANDBOX provider — neither is mine to wire. But the part a spec answers on its own — _is it ready to design?_ — is deterministic, so I built that: a design-readiness check that turns a PRD into a design brief. _(Class order: untouched ⬜ first; ORCH-DELEGATE is Linear-key-gated, REPO-DECLUTTER's named target is a contested-as-live doc, POS/LANDING are founder-voice copy.)_

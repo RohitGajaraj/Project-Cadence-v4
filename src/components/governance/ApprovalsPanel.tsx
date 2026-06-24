@@ -15,6 +15,7 @@ import { toast } from "@/lib/notify";
 import { decideApproval } from "@/lib/agent_loop.functions";
 import { listGovernApprovals, extendApprovalTtl } from "@/lib/governance.functions";
 import { formatTrackRecord, type AgentTrackRecord } from "@/lib/agent-track-record";
+import { rejectionCountFor } from "@/lib/rejection-learning";
 import { MonoLabel, RiskTag, StepDot } from "@/components/cadence/Primitives";
 
 type GovernApproval = Awaited<ReturnType<typeof listGovernApprovals>>["approvals"][number];
@@ -196,6 +197,7 @@ export function ApprovalsPanel() {
               key={a.id}
               a={a}
               track={q.data?.trackByAgent?.[a.agent_slug ?? ""] ?? null}
+              declines={rejectionCountFor(q.data?.rejectionsByKey, a.agent_slug, a.tool_name)}
               busy={decide.isPending && decide.variables?.approvalId === a.id}
               extending={extend.isPending && extend.variables === a.id}
               onApprove={() =>
@@ -218,6 +220,7 @@ export function ApprovalsPanel() {
 function ApprovalCard({
   a,
   track,
+  declines,
   busy,
   extending,
   onApprove,
@@ -226,6 +229,7 @@ function ApprovalCard({
 }: {
   a: GovernApproval;
   track: AgentTrackRecord | null;
+  declines: number;
   busy: boolean;
   extending: boolean;
   onApprove: () => void;
@@ -278,6 +282,15 @@ function ApprovalCard({
             {a.tool_name}
           </span>
           <RiskTag risk={a.risk} />
+          {!resolved && declines > 0 && (
+            <span
+              className="mono-label"
+              style={{ color: "var(--ember)", fontSize: 9.5 }}
+              title="You have declined this agent + tool before. Cadence has registered it."
+            >
+              declined {declines}&times; before
+            </span>
+          )}
           {a.mission_title ? (
             <>
               <span style={{ fontSize: 12, color: "var(--ink-faint)" }}>in</span>

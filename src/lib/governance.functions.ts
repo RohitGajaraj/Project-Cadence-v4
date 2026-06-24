@@ -13,6 +13,11 @@ import {
   type AgentTrackRecord,
   type DecidedApprovalRow,
 } from "@/lib/agent-track-record";
+import {
+  summarizeRejections,
+  type RejectionPattern,
+  type RejectionRow,
+} from "@/lib/rejection-learning";
 
 /** Returns the current pause state for a workspace + recent in-flight missions + stale approvals. */
 export const getGovernanceOverview = createServerFn({ method: "POST" })
@@ -289,18 +294,22 @@ export const listGovernApprovals = createServerFn({ method: "POST" })
     const agentSlugs = [
       ...new Set(approvals.map((a) => a.agent_slug).filter((s): s is string => Boolean(s))),
     ];
+    // One decided-history fetch feeds BOTH the per-agent track record AND the
+    // visible rejection-learning (rejected rows are decided rows). RLS-scoped; both
+    // degrade to empty if the read errors (e.g. a missing column pre-migration).
     let trackByAgent: Record<string, AgentTrackRecord> = {};
+    let rejectionsByKey: Record<string, RejectionPattern> = {};
     if (agentSlugs.length) {
       const { data: hist } = await db
         .from("agent_approvals")
-        .select("agent_slug,status,decided_at")
+        .select("agent_slug,tool_name,status,decision_reason,decided_at")
         .eq("user_id", userId)
         .in("agent_slug", agentSlugs)
         .not("decided_at", "is", null)
         .limit(1000);
-      trackByAgent = trackRecordsToObject(
-        summarizeAgentRecords((hist ?? []) as DecidedApprovalRow[]),
-      );
+      const histRows = hist ?? [];
+      trackByAgent = trackRecordsToObject(summarizeAgentRecords(histRows as DecidedApprovalRow[]));
+      rejectionsByKey = summarizeRejections(histRows as RejectionRow[]);
     }
 
     return {
@@ -310,6 +319,7 @@ export const listGovernApprovals = createServerFn({ method: "POST" })
         risk: riskOf.get(a.tool_name) ?? "medium",
       })),
       trackByAgent,
+      rejectionsByKey,
       medianResponseMs,
     };
   });

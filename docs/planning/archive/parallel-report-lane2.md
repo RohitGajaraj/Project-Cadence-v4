@@ -4,9 +4,34 @@
 
 ---
 
-## RESUME CURSOR (read first) — after 12 cycles
+## RESUME CURSOR (read first) — after 13 cycles
 
-**State:** 12 cycles done this run (… TRUST-VERIFY `◐` #26, then **DEF-04 `◐` #27** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+**State:** 13 cycles done this run (… DEF-04 `◐` #27, then **CORE-UX-TRUST `◐` #10** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+
+**Founder steers now STANDING (in memory + docs):**
+1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs founder input or is chokepoint-pinned (`ai/*`). (memory `build-dont-overpark`)
+2. **Whole-register coverage + class-of-work order** (AGENTS.md §3): untouched `⬜` FIRST → partial `◐` SECOND (top-down) → pure design THIRD. Halt ONLY on a genuine founder-creative/strategic call or a secret I don't hold. A UI I can't visually verify is NOT a halt.
+3. **Compact AFTER each completed cycle, NEVER mid-cycle** — via ScheduleWakeup, then continue.
+4. **NO BLOCKCHAIN anywhere now** (memory `no-blockchain-trust-integrity`): integrity = a plain SHA-256 fingerprint for EVERY user, NOT enterprise/blockchain; signing/persistence deferred OPTIONAL.
+
+**⚠️ AUTONOMOUS FRONT IS RUNNING LOW — watch for the genuine-stop point.** Untouched `⬜` is EXHAUSTED (ORCH #15 Linear-key, POS #20 / LANDING #21 founder-copy, REPO-DECLUTTER #28 taken by lane 1, DELEGATE-DESK #25 + AGENT-FLEET #30 lane 1). Class-2 `◐` partials are also thinning: **CORE-UX-TRUST #10 DONE this cycle** (only chokepoint auto-clear remains). Remaining buildable `◐`: **CORE-UX-FELT #11** (cold-gateway hardening in `WedgeTeardown` ONLY — its de-jargon-govern.tsx half collides with lane-1 IA-DEPTH on govern.tsx; VERIFY govern.tsx isn't lane-1-claimed first), **INTEROP #16** (read done; outward WRITE/A2A founder-gated — likely no clean slice). BRAIN-UX #8 + DBR #22 = chokepoint/AI-lane (skip). **If the next cycle finds NO clean autonomous slice in any ⬜ or ◐ (all gated/chokepoint/collide), SURFACE THAT TO THE FOUNDER rather than build hollow work** (founder-approved stop condition). Use `lane.sh next` + reap + `lane.sh list` each cycle.
+
+---
+
+## 2026-06-24 — Cycle 13: CORE-UX-TRUST ◐ — visible rejection-learning at the point of decision (v11 #10)
+
+**Pick:** untouched `⬜` exhausted (all gated/parked/lane-1) → shifted to class-2 `◐`, lowest Rank. CORE-UX-TRUST #10's buildable remainder = visible rejection-learning (auto-clear gates = chokepoint `ai/loop.server.ts` + founder-gated). Lane 1 on REPO-DECLUTTER (incl. the dashboard in its globs).
+
+**Built:** make the user's rejections visible + registered at the point of decision.
+- Pure `src/lib/rejection-learning.ts` — `summarizeRejections` tallies the caller's REJECTED decided rows per (agent, tool) (count + latest reason, NUL-keyed); `rejectionCountFor` / `rejectionPatternCount`. 6 tests.
+- `governance.functions.ts` — `listGovernApprovals` derives `rejectionsByKey` from the SAME RLS-scoped decided-history fetch that feeds the track record (no extra query).
+- `ApprovalsPanel.tsx` — a quiet "declined N× before" chip on a pending gate the caller has rejected before.
+
+**Gate:** tsc 0 · `bun test` 1452/1452 (6 new). **Review:** ts + security — security CLEAN (tenant-isolation; the decline reason is computed but never rendered, only the count). TS folded 1 HIGH (inner `rows` shadowed the outer pending-approval `rows` → `histRows`).
+
+**Status `◐ [~75%]`, `done` on the board:** track record (cycle 9) + rejection-learning shipped; the only remainder (auto-clear/suppress gates) is chokepoint + founder-gated → no autonomous slice left.
+
+## 2026-06-24 — Cycle 12: DEF-04 ◐ — design readiness from a spec (the deterministic half) (v11 #27)
 
 **Founder steers now STANDING (in memory + docs):**
 1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs the founder's specific input or is chokepoint-pinned (`ai/*`). (memory `build-dont-overpark`)
