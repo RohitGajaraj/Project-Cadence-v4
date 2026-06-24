@@ -44,6 +44,7 @@ import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated.learn'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated.knowledge'
 import { Route as AuthenticatedImpactRouteImport } from './routes/_authenticated.impact'
+import { Route as AuthenticatedDelegateRouteImport } from './routes/_authenticated.delegate'
 import { Route as AuthenticatedStakeholderRouteImport } from './routes/_authenticated.stakeholder'
 import { Route as AuthenticatedEvalHealthRouteImport } from './routes/_authenticated.eval-health'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated.integrations'
@@ -276,6 +277,11 @@ const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
 const AuthenticatedImpactRoute = AuthenticatedImpactRouteImport.update({
   id: '/impact',
   path: '/impact',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDelegateRoute = AuthenticatedDelegateRouteImport.update({
+  id: '/delegate',
+  path: '/delegate',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedStakeholderRoute = AuthenticatedStakeholderRouteImport.update({
@@ -620,6 +626,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/impact': typeof AuthenticatedImpactRoute
+  '/delegate': typeof AuthenticatedDelegateRoute
   '/stakeholder': typeof AuthenticatedStakeholderRoute
   '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/learn': typeof AuthenticatedLearnRoute
@@ -711,6 +718,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/impact': typeof AuthenticatedImpactRoute
+  '/delegate': typeof AuthenticatedDelegateRoute
   '/stakeholder': typeof AuthenticatedStakeholderRoute
   '/eval-health': typeof AuthenticatedEvalHealthRoute
   '/learn': typeof AuthenticatedLearnRoute
@@ -805,6 +813,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/impact': typeof AuthenticatedImpactRoute
+  '/_authenticated/delegate': typeof AuthenticatedDelegateRoute
   '/_authenticated/stakeholder': typeof AuthenticatedStakeholderRoute
   '/_authenticated/eval-health': typeof AuthenticatedEvalHealthRoute
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
@@ -901,6 +910,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/knowledge'
     | '/impact'
+    | '/delegate'
     | '/stakeholder'
     | '/eval-health'
     | '/learn'
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/knowledge'
     | '/impact'
+    | '/delegate'
     | '/stakeholder'
     | '/eval-health'
     | '/learn'
@@ -1085,6 +1096,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/knowledge'
     | '/_authenticated/impact'
+    | '/_authenticated/delegate'
     | '/_authenticated/stakeholder'
     | '/_authenticated/eval-health'
     | '/_authenticated/learn'
@@ -1436,6 +1448,13 @@ declare module '@tanstack/react-router' {
       path: '/impact'
       fullPath: '/impact'
       preLoaderRoute: typeof AuthenticatedImpactRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/delegate': {
+      id: '/_authenticated/delegate'
+      path: '/delegate'
+      fullPath: '/delegate'
+      preLoaderRoute: typeof AuthenticatedDelegateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/stakeholder': {
@@ -1917,6 +1936,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedImpactRoute: typeof AuthenticatedImpactRoute
+  AuthenticatedDelegateRoute: typeof AuthenticatedDelegateRoute
   AuthenticatedStakeholderRoute: typeof AuthenticatedStakeholderRoute
   AuthenticatedEvalHealthRoute: typeof AuthenticatedEvalHealthRoute
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
@@ -1966,6 +1986,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedImpactRoute: AuthenticatedImpactRoute,
+  AuthenticatedDelegateRoute: AuthenticatedDelegateRoute,
   AuthenticatedStakeholderRoute: AuthenticatedStakeholderRoute,
   AuthenticatedEvalHealthRoute: AuthenticatedEvalHealthRoute,
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
