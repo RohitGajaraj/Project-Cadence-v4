@@ -249,6 +249,18 @@ App is published; founder asked to test #2 + #3 live. **EVENT-REACTOR-LIVE: ✅ 
 
 Picked a strong, self-contained capability in the Interop lane (skipped the IA/UX-heavy #9-#14 as shared-surface/design-cycle work, LOOP-PROVE as verification proven live this session). Added a read-only `search_decisions` MCP tool exposing the decision brain (decisions + standing/superseded outcome, reusing the Trust Ledger supersession rule) to external agents — workspace-scoped + audited like the existing read tools. Catalog + dispatch + helper + 4 tests; updated the catalog-integrity tests (5→6 tools). **Gate:** tsc 0 / 1260 tests green. ◐ released — remaining: roadmap/spec read tools + founder-gated WRITE/A2A. Files: `mcp.functions.ts`, `mcp-protocol.ts`, `api/mcp.ts`, `mcp-decisions.test.ts`, `mcp-protocol.test.ts`, `q1-mcp.md`, dashboard, plan.
 
+### ▶ RESUME CURSOR — overnight run state (2026-06-24 ~06:00, after 9 cycles)
+
+**FOUNDER STEERS THIS SESSION (apply going forward — also in memory `build-dont-overpark`):**
+1. **Build the ranked board TOP-DOWN; stop over-parking.** Make the design/IA calls myself using the design-context docs. PARK ONLY what needs the founder's specific input (positioning/pricing WORDING, secrets, recurring-AI-spend activation, outward security-scope/audit) or is hard-blocked by the chokepoint pin (ai/* files). Design polish alone is NOT a reason to park.
+2. **Compact AFTER each completed cycle (committed+pushed+docs-looped+released), NEVER mid-cycle, then continue without halt.** (Was: every 3 cycles.)
+
+**Cycle 9 (this turn): CORE-UX-FELT (#11) ◐ —** the chief-of-staff brief now LEADS WITH STAKES not counts (pure `copilot-brief.ts`); **founder ask: the Today home no longer lists every gate approval — collapsed to one calm `PendingApprovalsBar` → Govern→Approvals**, where the per-agent track record (CORE-UX-TRUST) now lives; orphaned Today track query removed. tsc 0/1346; 1 HIGH (missing user_id scope on the brief gate query) fixed. **Remaining (◐): cold-gateway first-run hardening (`WedgeTeardown`) + de-jargon `LoopStations`/`govern`.**
+
+**NEXT PICK (top-down, autonomous):** finish CORE-UX-FELT's remainder (cold-gateway + de-jargon) OR continue down the rank — **#12 IA-NAV-V11** (collapse nav to 5 + recessed Engine Room door; fully specified — BUILD it myself), **#13 SETTINGS-SEGREGATE** (5 groups named — execute), **#14 CONNECTORS-V11** (one connectors home). These are now BUILD targets, not parks. Then #20 POS-V11 (positioning WORDING = founder voice → park), #21 LANDING-PAGE-V11 (buildable from v11 canon). Lane 1 has been closing fast (PLAYBOOK/PM-IMPACT/STAKEHOLDER/EVALS done) — always `lane.sh reap` + check claims before picking.
+
+---
+
 ### ▶ RESUME CURSOR — overnight run state (2026-06-24 ~05:00, after 8 cycles)
 
 **Compaction-checkpoint update (cycles 6-8, this context):**
