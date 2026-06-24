@@ -4,9 +4,9 @@
 
 ---
 
-## RESUME CURSOR (read first) — after 13 cycles
+## RESUME CURSOR (read first) — after 14 cycles
 
-**State:** 13 cycles done this run (… DEF-04 `◐` #27, then **CORE-UX-TRUST `◐` #10** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+**State:** 14 cycles done this run (… CORE-UX-TRUST `◐` #10, then **CORE-UX-FELT `◐` #11** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
 
 **Founder steers now STANDING (in memory + docs):**
 1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs founder input or is chokepoint-pinned (`ai/*`). (memory `build-dont-overpark`)
@@ -14,7 +14,28 @@
 3. **Compact AFTER each completed cycle, NEVER mid-cycle** — via ScheduleWakeup, then continue.
 4. **NO BLOCKCHAIN anywhere now** (memory `no-blockchain-trust-integrity`): integrity = a plain SHA-256 fingerprint for EVERY user, NOT enterprise/blockchain; signing/persistence deferred OPTIONAL.
 
-**⚠️ AUTONOMOUS FRONT IS RUNNING LOW — watch for the genuine-stop point.** Untouched `⬜` is EXHAUSTED (ORCH #15 Linear-key, POS #20 / LANDING #21 founder-copy, REPO-DECLUTTER #28 taken by lane 1, DELEGATE-DESK #25 + AGENT-FLEET #30 lane 1). Class-2 `◐` partials are also thinning: **CORE-UX-TRUST #10 DONE this cycle** (only chokepoint auto-clear remains). Remaining buildable `◐`: **CORE-UX-FELT #11** (cold-gateway hardening in `WedgeTeardown` ONLY — its de-jargon-govern.tsx half collides with lane-1 IA-DEPTH on govern.tsx; VERIFY govern.tsx isn't lane-1-claimed first), **INTEROP #16** (read done; outward WRITE/A2A founder-gated — likely no clean slice). BRAIN-UX #8 + DBR #22 = chokepoint/AI-lane (skip). **If the next cycle finds NO clean autonomous slice in any ⬜ or ◐ (all gated/chokepoint/collide), SURFACE THAT TO THE FOUNDER rather than build hollow work** (founder-approved stop condition). Use `lane.sh next` + reap + `lane.sh list` each cycle.
+**🛑 GENUINE-STOP IS LIKELY REACHED — the next cycle should probably STOP + surface to the founder.** After 14 cycles, the autonomous front is EXHAUSTED. Honest map of everything remaining (verify with `lane.sh next` + `lane.sh list` + the dashboard each time, in case lane 1 added rows, but expect no clean slice):
+- **Chokepoint-pinned (`ai/*`, off-limits):** BRAIN-UX #8 (AI open-analyst ceiling), DBR #22 (supersession engine), CORE-UX-TRUST's auto-clear-gates (loop approval-mode).
+- **Founder-gated (a secret or his voice):** ORCH-DELEGATE #15 (Linear API key + BLD-04), INTEROP #16 (outward WRITE/A2A scoped-token = security-scope/audit), POS-V11 #20 + LANDING-PAGE-V11 #21 (founder-voice copy), KI-39-type cron/AI-spend activation.
+- **Lane-1 / other-lane domain:** REPO-DECLUTTER #28 (lane 1's active doc-reorg thread — they did the feature-backlog archive), IA-DEPTH-V11 #23 + `govern.tsx` de-jargon, DESIGN-V11 #24 (Tier-2 founder-prompted design).
+- **Marginal / not a clean slice:** CORE-UX-FELT's de-jargon `LoopStations` (marginal wording).
+- **Founder-prompted Tier-4 (last):** DEMO-SEED-RICH, SHIP-V11, HUMAN-SWEEP.
+
+**So next cycle: reap + `lane.sh next` + `lane.sh list`; if (as expected) nothing offers a clean, substantive, autonomously-buildable slice, DO NOT build hollow/marginal work — STOP and give the founder the concise status + per-item reason (above) + a recommendation (e.g., publish + live-test the 14-cycle run; or unblock one gated item by providing a key / a positioning decision / lifting a chokepoint pin for an attended session). This is the founder-approved stop.**
+
+---
+
+## 2026-06-24 — Cycle 14: CORE-UX-FELT ◐ — harden the wedge's first-run failure path (v11 #11)
+
+**Pick:** untouched ⬜ exhausted (ORCH Linear-key, POS/LANDING founder-copy, REPO-DECLUTTER + DELEGATE-DESK + AGENT-FLEET = lane 1). Class-2 ◐: CORE-UX-FELT #11's last substantive remainder = harden the wedge's hard-failure path (the cold-gateway RUN path was already graceful via a null verdict; the gap was the error path's raw toast).
+
+**Built:** the Critic-teardown wedge (the cold-start first impression) no longer dead-ends on a hard failure.
+- Pure `src/lib/wedge-cold.ts` — `classifyWedgeFailure(message)` → cold (gateway unconfigured/capped) / transient (network/timeout/5xx/429) / other (keeps the real message, framed calmly); `isGatewayColdError`. 8 tests.
+- `WedgeTeardown.tsx` — `onError` now sets a classified `failure` state → a calm inline `role=alert` banner (rose only for `other`) with honest guidance + the form preserved for retry, instead of a raw `toast.error`.
+
+**Gate:** tsc 0 · `bun test` 1459/1459 (8 new). **Review:** ts + security — security CLEAN (no ReDoS, no NEW info-leak vs the prior toast, no XSS). TS folded 1 MEDIUM (a 429 rate-limit was misclassed cold → moved to transient + softened the note).
+
+**Status ◐ [~85%], done on the board:** all 3 substantive CORE-UX-FELT fixes shipped (brief-stakes + Today-declutter cycle 9; cold-gateway now); the only remainder (de-jargon LoopStations marginal + govern lane-1) is not a clean autonomous slice.
 
 ---
 

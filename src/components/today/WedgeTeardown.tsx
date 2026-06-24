@@ -26,6 +26,7 @@ import {
 import { toast } from "@/lib/notify";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { runWedgeTeardown, type CriticReview } from "@/lib/discovery.functions";
+import { classifyWedgeFailure, type WedgeFailure } from "@/lib/wedge-cold";
 import { getTeardownShareState, setTeardownShared } from "@/lib/opportunities-share.functions";
 import { VerdictChip, type VerdictTone } from "@/components/cadence/Primitives";
 
@@ -64,6 +65,9 @@ export function WedgeTeardown() {
   const [problem, setProblem] = useState("");
   const [targetUser, setTargetUser] = useState("");
   const [result, setResult] = useState<Result | null>(null);
+  // A hard run failure (gateway throwing, network, DB), classified into a calm
+  // first-run message instead of a raw toast — the form stays intact for retry.
+  const [failure, setFailure] = useState<WedgeFailure | null>(null);
 
   const run = useMutation({
     mutationFn: () =>
@@ -75,6 +79,7 @@ export function WedgeTeardown() {
           project_id: activeProductId ?? undefined,
         },
       }),
+    onMutate: () => setFailure(null),
     onSuccess: (r) => {
       setResult(r as Result);
       // Keep the opportunity views consistent, but NOT cold-start (see header).
@@ -82,7 +87,7 @@ export function WedgeTeardown() {
       if ((r as Result).review) toast.success("Your teardown is ready.");
       else toast.success("Idea saved. The Critic will run when the gateway is reachable.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => setFailure(classifyWedgeFailure(e.message)),
   });
 
   function reset() {
@@ -90,6 +95,7 @@ export function WedgeTeardown() {
     setIdea("");
     setProblem("");
     setTargetUser("");
+    setFailure(null);
   }
 
   if (result) {
@@ -191,6 +197,23 @@ export function WedgeTeardown() {
             Takes about a minute
           </span>
         </div>
+
+        {failure && (
+          <div
+            role="alert"
+            style={{
+              padding: "10px 12px",
+              borderRadius: 8,
+              background: "var(--surface-1)",
+              border: `1px solid ${failure.kind === "other" ? "var(--rose)" : "var(--hairline)"}`,
+              fontSize: 12.5,
+              lineHeight: 1.5,
+              color: "var(--ink-muted)",
+            }}
+          >
+            {failure.note}
+          </div>
+        )}
       </div>
     </div>
   );

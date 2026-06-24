@@ -283,6 +283,18 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — CORE-UX-FELT ◐: harden the wedge's first-run failure path)
+
+**WHY:** v11 #11, the last substantive `◐` slice on the autonomous front. The Critic-teardown wedge is the cold-start FIRST IMPRESSION (name an idea, get a teardown, no setup). Its happy path and its gateway-cold path (the Critic returns a null verdict, handled gracefully) were solid — but a HARD failure (the gateway throwing instead of degrading, a network blip, a DB error) fell through to a raw `toast.error(e.message)` on the single most important first screen. Per KI-06 (cold/local environments have no AI key) this path is realistic. _(Untouched ⬜ is exhausted: ORCH = Linear key, POS/LANDING = founder copy, REPO-DECLUTTER = lane 1's active doc domain.)_
+
+**Shipped (lane 2):**
+- **The classifier** — new pure `src/lib/wedge-cold.ts`: `classifyWedgeFailure(message)` sorts a run failure into `cold` (gateway unconfigured/capped — reassuring "your idea is safe, try again once connected"), `transient` (network/timeout/5xx/429 — "give it a moment and try again"), or `other` (keeps the real message, framed calmly so a genuine bug stays legible). `isGatewayColdError`. 8 tests.
+- **The calm first-run** — `WedgeTeardown` now classifies the error and shows a calm inline `role="alert"` banner (rose only for `other`), with the form preserved for an immediate retry, instead of a raw technical toast. `onMutate` clears stale failures.
+
+**Verification (ran):** tsc 0, `bun test` 1459/1459 (8 new). **Adversarial review (ts + security):** security CLEAN (no ReDoS — all patterns linear; no NEW info-leak — the raw message was already shown via `toast.error`; no XSS — React escapes the text child). TS folded one MEDIUM: a 429 rate-limit was in COLD but is actually transient (the gateway is connected, it just needs a cooldown) — moved to `transient` + softened the transient note to fit both.
+
+**Status ◐ [~85%] (done on the board):** all three substantive CORE-UX-FELT fixes are now shipped (brief-leads-with-stakes + Today declutter, cycle 9; cold-gateway hardening, now). The only remainder — de-jargon `LoopStations` (marginal wording) + `govern` (lane-1 IA-DEPTH territory) — is not a clean autonomous slice, so the item leaves the board.
+
 ### 2026-06-24 (lane 2 — CORE-UX-TRUST ◐: visible rejection-learning at the point of decision)
 
 **WHY:** v11 #10, continuing the partial. Untouched ⬜ is exhausted on the autonomous front, so per the class-of-work order this is the lowest-rank buildable `◐`. When you reject an agent's proposed action, that correction is signal — but the queue forgot it. This makes your rejections visible and registered. _(The other remainder — auto-suppressing a repeatedly-declined gate — is a loop approval-mode change in the pinned `ai/loop.server.ts` chokepoint + a founder-gated agent-behavior call, so it stays gated.)_
