@@ -1,32 +1,20 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home,
-  Brain,
-  MessageCircle,
   Compass,
   Settings,
-  Telescope,
-  Inbox,
-  Activity,
   LogOut,
   ShieldAlert,
   ChevronDown,
-  Plug,
   PauseCircle,
-  Gauge,
   Sun,
   Moon,
   Search,
-  Hammer,
-  ScrollText,
   Plus,
   Trash2,
   MoreHorizontal,
   Pencil,
   FolderInput,
   LogOut as LeaveIcon,
-  Calendar as CalIcon,
-  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,7 +34,6 @@ import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspac
 import { updateProject, moveProduct } from "@/lib/projects.functions";
 import { moveDestinationWorkspaces } from "@/lib/workspace-move";
 import { amIAdmin } from "@/lib/pricing.functions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,80 +45,22 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  PRIMARY_NAV,
+  ENGINE_ROOM_DOOR,
+  ENGINE_ROOM_LINKS,
+  navItemActive,
+  engineRoomActive,
+  type NavItemDef,
+} from "@/lib/nav-model";
 
-type NavItem = { to: string; label: string; icon: LucideIcon; search?: Record<string, string> };
-type NavGroup = { id: string; label: string; items: NavItem[] };
-
-// Workspace — your daily rail: Today · Ask (the v5 felt product). "Ask" is the
-// chat surface (route stays /chat) that queries the Brain; renamed from "Brain"
-// when Knowledge became "Brain" (founder ruling 2026-06-16 — the substrate owns
-// the word "brain"; the query surface is "Ask"). Approvals is NOT here: it lives
-// in the Trust row (footer) with its live pending-count badge. Missions lives in
-// its own group; Calendar reaches via the quick-access dock.
-const workspace: NavItem[] = [
-  { to: "/", label: "Today", icon: Home },
-  { to: "/chat", label: "Ask", icon: MessageCircle },
-];
-
-// Floating quick-access dock — Calendar only (Approvals lives in the Trust
-// row, not the dock). Deep-links into /knowledge?tab=calendar so it stays
-// consistent with Calendar's home as a Knowledge tab.
-const quickAccess: {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  search?: Record<string, string>;
-}[] = [{ to: "/knowledge", label: "Calendar", icon: CalIcon, search: { tab: "calendar" } }];
-
-// Nav groups — cut to the v5 felt product: Product · Missions · Brain.
-// Build/Learn/Agents/Govern mothballed (F-V5-MOTHBALL); the engine room stays
-// reachable via the Trust row in the footer. Collapsible; auto-open active.
-const groups: NavGroup[] = [
-  {
-    id: "product",
-    label: "Product",
-    items: [
-      { to: "/product", label: "Product", icon: Telescope },
-      // F-STUDIO engine; surface renamed Studio → Build with the screen-9
-      // Ember port (founder ruling 2026-06-12 late — user-facing name + URL
-      // only, internal studio.* identifiers stay).
-      { to: "/build", label: "Build", icon: Hammer },
-    ],
-  },
-  {
-    id: "missions",
-    label: "Missions",
-    items: [{ to: "/missions", label: "Missions", icon: Activity }],
-  },
-  // Knowledge → Brain (founder ruling 2026-06-16): the product's brain, the one
-  // substrate of everything it knows. The compounding agent-recall moat (the
-  // old top-level /memory surface) is now the Brain "Memory" tab; "Ask" (/chat)
-  // queries it. The old human-learnings tab is now "Learnings".
-  {
-    id: "knowledge",
-    label: "Brain",
-    items: [{ to: "/knowledge", label: "Brain", icon: Brain }],
-  },
-];
-
-// Trust row — pinned governance shortcuts in the sidebar footer. With the
-// Govern nav group mothballed (F-V5-MOTHBALL), this is the only visible path
-// into the engine room — keep it visible. Approvals lives HERE (single-sourced
-// in the Trust row, with its live pending-count badge), not in the daily rail —
-// founder ruling 2026-06-16: governance belongs in the Trust cluster, and the
-// badge surfaces the pending count without taking a rail slot.
-const trustLinks: {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  search?: Record<string, string>;
-}[] = [
-  { to: "/govern", label: "Approvals", icon: Inbox, search: { tab: "approvals" } },
-  { to: "/govern", label: "Spend", icon: Gauge, search: { tab: "budgets" } },
-  { to: "/govern", label: "Engine Room", icon: ShieldAlert },
-  { to: "/trust-ledger", label: "Trust Ledger", icon: ScrollText },
-  { to: "/sync", label: "Connectors", icon: Plug },
-];
+// IA-NAV-V11 (#12): the nav model — one flat list of outcome-named destinations
+// (PRIMARY_NAV) + one recessed Engine Room door that reveals the governance
+// surfaces on demand (ENGINE_ROOM_DOOR / ENGINE_ROOM_LINKS) — now lives in the
+// pure, unit-tested @/lib/nav-model module. This collapses the four old nav
+// metaphors (Workspace rail · "Loop" NavGroup · 5-icon Trust row · floating
+// QuickAccessDock) into the calm front + one door (engine-room doctrine).
+type NavItem = NavItemDef;
 
 function NavRow({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
@@ -170,47 +99,6 @@ function NavRow({ item, active, badge }: { item: NavItem; active: boolean; badge
         </span>
       ) : null}
     </Link>
-  );
-}
-
-function QuickAccessDock({ path, searchTab }: { path: string; searchTab: string | null }) {
-  // Floating dock pinned to bottom-right of the viewport. Sits above content
-  // (z-50) but below modal overlays, so it never hides page controls and
-  // never gets hidden by them. Tooltips name each shortcut on hover.
-  return (
-    <TooltipProvider delayDuration={150}>
-      <div
-        role="navigation"
-        aria-label="Daily shortcuts"
-        className="fixed bottom-5 right-5 z-50 hidden md:flex items-center gap-1 rounded-full border hairline bg-card/90 backdrop-blur-md px-1.5 py-1 shadow-lg"
-      >
-        {quickAccess.map((q) => {
-          const Icon = q.icon;
-          const active = path === q.to && (!q.search?.tab || searchTab === q.search.tab);
-          return (
-            <Tooltip key={q.label}>
-              <TooltipTrigger asChild>
-                <Link
-                  to={q.to}
-                  search={q.search as never}
-                  aria-label={q.label}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                    active
-                      ? "bg-foreground/10 text-foreground"
-                      : "text-ink-muted hover:bg-secondary/60 hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="left" sideOffset={6}>
-                {q.label}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-    </TooltipProvider>
   );
 }
 
@@ -509,18 +397,9 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     window.location.href = "/login";
   }
 
-  // Active = path match AND (if item declares search.tab, that tab matches AND
-  // an item without search.tab on the same path is NOT active when a tab is set).
-  const isItemActive = (n: NavItem) => {
-    if (path !== n.to) return false;
-    if (n.search?.tab) return searchTab === n.search.tab;
-    // Bare item: only active when no tab-deep-linked sibling claims this path.
-    const tabbedSiblings = [...workspace, ...groups.flatMap((g) => g.items)].filter(
-      (i) => i.to === n.to && i.search?.tab,
-    );
-    if (tabbedSiblings.length === 0) return true;
-    return !tabbedSiblings.some((s) => s.search?.tab === searchTab);
-  };
+  // Active-state is the pure nav-model rule: exact path match, tab-scoped when
+  // the item declares a tab. PRIMARY_NAV destinations are all bare paths.
+  const isItemActive = (n: NavItem) => navItemActive(n, path, searchTab);
 
   return (
     <div className="min-h-screen flex bg-background text-foreground relative">
@@ -648,28 +527,13 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         {/* Scrollable middle: nav + products */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
           <nav className="flex flex-col">
-            {/* Workspace rail — always-on daily surfaces (Today · Ask).
-                Approvals + its pending-calls badge live in the Trust row below. */}
+            {/* IA-NAV-V11: one flat, calm list of outcome-named destinations — no
+                "Workspace"/"Loop" labels, no NavGroup indirection. The engine room
+                lives behind the single door in the footer below. */}
             <div className="flex flex-col gap-0.5 pt-1.5">
-              {workspace.map((n) => (
-                <NavRow key={`${n.to}:${n.search?.tab ?? ""}`} item={n} active={isItemActive(n)} />
+              {PRIMARY_NAV.map((n) => (
+                <NavRow key={n.to} item={n} active={isItemActive(n)} />
               ))}
-            </div>
-
-            {/* Loop — flat rows per shell.jsx (no accordion) */}
-            <div className="mt-4">
-              <div className="px-3 pb-1.5 mono-label">Loop</div>
-              <div className="flex flex-col gap-0.5">
-                {groups
-                  .flatMap((g) => g.items)
-                  .map((n) => (
-                    <NavRow
-                      key={`${n.to}:${n.search?.tab ?? ""}`}
-                      item={n}
-                      active={isItemActive(n)}
-                    />
-                  ))}
-              </div>
             </div>
           </nav>
 
@@ -841,48 +705,68 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               {queuedCount} queued →
             </Link>
           ) : null}
-          <div className="mono-label px-1">Trust</div>
-          <TooltipProvider delayDuration={150}>
-            <div role="navigation" aria-label="Trust" className="flex gap-1">
-              {trustLinks.map((t) => {
+          {/* IA-NAV-V11: the engine room behind ONE recessed door. The old 5-icon
+              Trust row collapses into a single quiet door carrying the live
+              approvals badge; clicking reveals the governance surfaces on demand
+              (engine-room doctrine: deep engine, surfaced only when asked). Every
+              surface the old row exposed is preserved in ENGINE_ROOM_LINKS, so
+              nothing is orphaned (Trust Ledger + Connectors aren't in ⌘K). */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={callCount > 0 ? `Engine Room · ${callCount} pending` : "Engine Room"}
+                className={`relative flex w-full items-center gap-2.5 rounded-md border hairline px-3 py-1.5 text-[12.5px] transition ${
+                  engineRoomActive(path)
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-ink-subtle hover:text-foreground hover:bg-secondary/60"
+                }`}
+              >
+                <ENGINE_ROOM_DOOR.icon className="h-[14px] w-[14px] shrink-0" strokeWidth={1.75} />
+                <span className="flex-1 text-left">{ENGINE_ROOM_DOOR.label}</span>
+                {callCount > 0 && (
+                  <span
+                    className="dot-gate inline-flex items-center justify-center rounded-full px-[3px]"
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 8.5,
+                      fontWeight: 700,
+                      background: "var(--coral)",
+                      color: "oklch(0.99 0.005 60)",
+                      minWidth: 14,
+                      height: 14,
+                    }}
+                  >
+                    {callCount}
+                  </span>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="w-52">
+              <DropdownMenuLabel className="mono-label">Engine Room</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {ENGINE_ROOM_LINKS.map((t) => {
                 const Icon = t.icon;
                 const showBadge = t.label === "Approvals" && callCount > 0;
                 return (
-                  <Tooltip key={t.label}>
-                    <TooltipTrigger asChild>
-                      <Link
-                        to={t.to}
-                        search={t.search as never}
-                        aria-label={showBadge ? `Approvals · ${callCount} pending` : t.label}
-                        className="relative flex h-[30px] flex-1 items-center justify-center rounded-md border hairline text-ink-subtle hover:text-foreground transition"
-                      >
-                        <Icon className="h-[13px] w-[13px]" strokeWidth={1.75} />
-                        {showBadge && (
-                          <span
-                            className="dot-gate absolute -top-[5px] -right-1 inline-flex items-center justify-center rounded-full px-[3px]"
-                            style={{
-                              fontFamily: "var(--font-mono)",
-                              fontSize: 8.5,
-                              fontWeight: 700,
-                              background: "var(--coral)",
-                              color: "oklch(0.99 0.005 60)",
-                              minWidth: 14,
-                              height: 14,
-                            }}
-                          >
-                            {callCount}
-                          </span>
-                        )}
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={6}>
-                      {t.label}
-                    </TooltipContent>
-                  </Tooltip>
+                  <Link key={t.label} to={t.to} search={t.search as never}>
+                    <DropdownMenuItem className="cursor-pointer gap-2">
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="flex-1">{t.label}</span>
+                      {showBadge && (
+                        <span
+                          className="mono-label tabular-nums"
+                          style={{ color: "var(--coral)", fontSize: 10, fontWeight: 700 }}
+                        >
+                          {callCount}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  </Link>
                 );
               })}
-            </div>
-          </TooltipProvider>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex items-center gap-2 px-0.5">
             <BudgetBar />
             <span className="flex-1" />
@@ -932,7 +816,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
             Block screens are unaffected — they stretch and scroll the page. */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
       </main>
-      <QuickAccessDock path={path} searchTab={searchTab} />
     </div>
   );
 }
