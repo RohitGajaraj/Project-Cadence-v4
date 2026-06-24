@@ -8,7 +8,6 @@ import {
   searchPRDs,
   getPRD,
   getRoadmap,
-  appendDecision,
   exportSkillpack,
   logMCPCall,
 } from "@/lib/mcp.functions";
@@ -32,11 +31,11 @@ const JSON_HEADERS = {
  * Q1-MCP · Model Context Protocol (MCP) server — Phase 2.
  *
  * External agents (Claude with MCP, other AI frameworks) call Cadence to:
- * - Read signals (search)
- * - Read opportunities (search)
- * - Read PRDs (fetch)
- * - Append decisions (write, approval-gated)
+ * - Read signals / opportunities / decisions (search)
+ * - Read a PRD (fetch) and the roadmap
+ * - Export a versioned decision-lessons skill pack
  *
+ * The server is READ-ONLY; the decision-WRITE half is founder-gated (Phase 4b).
  * All calls are authenticated via bearer token, rate-limited, and audited.
  *
  * Spec: https://modelcontextprotocol.io/specification
@@ -215,28 +214,6 @@ async function dispatchTool(
       case "get_roadmap": {
         const limit = typeof params.limit === "number" ? params.limit : undefined;
         const data = await getRoadmap(supabase, workspace_id, limit);
-        return { success: true, data };
-      }
-
-      case "append_decision": {
-        const opportunity_id = params.opportunity_id as string;
-        const decision_text = params.decision as string;
-        const metadata = (params.metadata as Record<string, unknown>) || {};
-
-        if (!opportunity_id || !decision_text) {
-          return {
-            success: false,
-            error: "Missing required parameters: opportunity_id, decision",
-          };
-        }
-
-        const data = await appendDecision(
-          supabase,
-          workspace_id,
-          opportunity_id,
-          decision_text,
-          metadata,
-        );
         return { success: true, data };
       }
 

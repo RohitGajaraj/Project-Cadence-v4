@@ -26,6 +26,30 @@
 > ---
 
 > [!IMPORTANT]
+> ## ✅ 2026-06-24 (NOW) - LIVE-VERIFICATION CLOSURE PASS (Lane 1, founder-directed): the published app is healthy and the partial board is now honest.
+>
+> **Founder directive:** "the app is live + published, migrations are done - test the live app and close the partial/pending items; we will come to the founder-gated items later." Done as follows.
+>
+> **Live app = HEALTHY.** Logged into `cadence-flow-beta.lovable.app` (footer stamp "Last build Jun-24 12:23 PM" = HEAD `bc1b0151`, so the live deploy IS the code in this worktree - zero drift). Today + Trust Ledger render richly. The moat is WARM, not the cold state the v11 teardown found: `artifact_lineage` has 26 rows incl. 2 live `supersedes` edges, the `decision_brain_supersession` flag is ON, and Today's "What changed" card surfaces "Memory has re-scored 2 decisions from real outcomes." Only benign 3rd-party console errors (ipapi + stripe DNS-blocked, a pre-login refresh-token 400).
+>
+> **Verification method:** a 25-agent adversarial workflow re-checked all 15 non-gated `◐` rows - a closure auditor (code + live-DB evidence via the Lovable MCP, since Supabase MCP is unauthorized this session) then a skeptic told to REFUTE the closure. The skeptics refuted 13 of 15 closure attempts, catching real gaps the auditors had glossed. That is why only 2 closed - the board was OVERSTATING completeness, and this pass made it honest.
+>
+> **Closed 2 to ✅:** `TRUST-VERIFY` (#26 -> the SHA-256 "Integrity check" for all users; live-confirmed on /trust-ledger: a 64-hex fingerprint, 34 records, Copy-fingerprint + Verify buttons) and `SEC-SIGNAL-INGEST-INJECTION` (#33 -> the injection screen is wired before the live ingest-webhook insert; verified by code + live schema).
+>
+> **3 LIVE DEFECTS the skeptics found (1 fixed this commit, 2 queued as autonomous fixes):**
+> 1. FIXED - `INTEROP-V11`: the MCP `append_decision` write tool was advertised in tools/list + callable but inserted columns / a `decision_queue` table that do not exist in the live schema, so it could never succeed on a public endpoint. Un-advertised it across protocol/route/functions/tests (the decision-WRITE half is founder-gated Phase 4b) and fixed the stale Settings tool list (the cosmetic 5-of-8 gap). tsc 0 / 50 MCP tests pass.
+> 2. QUEUED - `DBR (H1)`: `buildSupersessionEdge` (src/lib/ai/supersession.ts) omits `workspace_id`; the live column is NOT NULL DEFAULT current_user_default_workspace(), so every engine-written supersession edge is forced into the inserting user's DEFAULT workspace, and workspace-scoped reads (getLoopClosure, the /knowledge graph) silently miss them. Also: the write engine has produced 0 live edges (the 2 existing `supersedes` edges are strategist-seeded), and `getLoopClosure` (LOOP-PROVE) has no UI consumer.
+> 3. QUEUED - `M1`: the support-triage signal insert sets neither `project_id` nor `product_id`, so a triage signal is excluded from the product-scoped Discover view; and `runSupportTriage` has zero callers (no route/cron seam).
+>
+> **Autonomous remainders to BUILD next (per the build-don't-overpark ruling - NOT founder-gated):** `EVENT-REACTOR-LIVE` (#1: write + apply one migration widening the `event_subscriptions.event_type` CHECK + matching fanout triggers), `CORE-UX-FELT` (de-jargon LoopStations.tsx), `IA-DEPTH-V11` (the 4 IA moves, now unblocked since STITCH-LOOP landed: merge missions into build, demote products into the workspace switcher, promote the strategic Brief into nav, de-jargon "Models" to "AI"), `AMBIENT-SENSE` (wire the deterministic tagger's tags/sentiment into a consumer + add an opt-in toggle - today the tagger writes into a void cluster-tick never reads), `AMBIENT-TRIGGER` (honest copy for self-proposed missions - delegate-desk mislabels them "Handed off, waiting to start" when resume-runs never auto-starts them), `BRAIN-UX-V11` (the AI open-analyst ceiling), `DEF-04` (AI-drafted mockup half), `REPO-DECLUTTER-V11` (archive other SUPERSEDED-bannered docs + fix the 85 broken inbound refs).
+>
+> **Founder-gated remainders (the "later" pile - each needs a key / OAuth / provider / flag-flip / safety-posture call / taste decision):** `CORE-UX-TRUST` (auto-clear reversible tool gates in the pinned `loop.server.ts` - an agent-autonomy safety call), `SEC-INGEST-INJECTION` (correct + wired, but dormant until the M1 inbound channel lands), `M1` UI placement + inbound channel + AI draft, `DBR` entity-aliasing flip + fuzzy-codename AI + deep-graph enrichment, `INTEROP-V11` outward-write half (Q2 scoped tokens + OAuth client reg), `DEF-04` live sandbox provider, plus the already-gated `EMBED-CHOKEPOINT`, `FIRECRAWL-FLOOR`, `SANDBOX`, `BLD-04`, `SEN-01`, `F-CONN`, `M-C-EXPIRY`, and the Stripe go-live config.
+>
+> **Tally after this pass: 161/213 = 75.6% strict, 172.00/213 = 80.8% weighted** (the prior dashboard by-status/by-category tables read a stale 145 ✅ / 201-total and were refreshed off the canonical awk to sum to 213). Per-row verdicts: the dashboard At-a-glance 2026-06-24 entry.
+>
+> ---
+
+> [!IMPORTANT]
 > ## 👋 PICK UP HERE TOMORROW — session closed 2026-06-22 21:35 (Lane 1)
 >
 > **All work is committed + pushed to `main`; working tree clean.** The dashboard now tells the truth: **180 rows, 145 ✅ (80.6% strict / 83.4% weighted), by-priority Done = ✅ count = 145.**

@@ -7,11 +7,16 @@
 // detection. Everything here is pure (no network, no DB, no clock), so the wire
 // protocol is fully unit-testable offline.
 //
-// Back-compat is a hard constraint: the four legacy flat methods
-// (`search_signals` / `search_opportunities` / `get_prd` / `append_decision`)
-// and the legacy `tools` / `resources` discovery are classified as `legacy` and
-// dispatched through the route's unchanged code path, so existing curl/HTTP
-// callers are byte-identical. The new standard methods are added alongside.
+// Back-compat is a hard constraint: the legacy flat READ methods
+// (`search_signals` / `search_opportunities` / `get_prd`) and the legacy
+// `tools` / `resources` discovery are classified as `legacy` and dispatched
+// through the route's unchanged code path, so existing curl/HTTP callers are
+// byte-identical. The new standard methods are added alongside.
+//
+// The server is READ-ONLY. The earlier `append_decision` write tool was removed
+// (2026-06-24): it inserted columns/`decision_queue` rows that do not exist in
+// the live schema, so it could never succeed, and the write half belongs to the
+// founder-gated Phase 4b below. We advertise only what we actually serve.
 //
 // Phase 4b (OAuth client registration + full write CRUD with per-lane scope)
 // stays founder-gated; this slice closes only the transport-handshake gap that
@@ -116,19 +121,6 @@ export const MCP_TOOLS: McpTool[] = [
       properties: {
         limit: { type: "number", default: 200 },
       },
-    },
-  },
-  {
-    name: "append_decision",
-    description: "Append a decision to an opportunity (approval-gated)",
-    inputSchema: {
-      type: "object",
-      properties: {
-        opportunity_id: { type: "string" },
-        decision: { type: "string" },
-        metadata: { type: "object" },
-      },
-      required: ["opportunity_id", "decision"],
     },
   },
   {
@@ -285,7 +277,7 @@ export function buildInitializeResult(protocolVersion: string) {
     },
     serverInfo: { name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION },
     instructions:
-      "Cadence exposes read access to product signals, opportunities, and PRDs, an approval-gated decision append, and a versioned decision-lessons skill pack. Call tools/list to enumerate, then tools/call to invoke.",
+      "Cadence exposes read access to product signals, opportunities, decisions, PRDs, and the roadmap, plus a versioned decision-lessons skill pack. Call tools/list to enumerate, then tools/call to invoke.",
   };
 }
 

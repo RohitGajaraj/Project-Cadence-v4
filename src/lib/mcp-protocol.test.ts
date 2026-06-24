@@ -186,7 +186,6 @@ describe("result builders", () => {
       "search_prds",
       "get_prd",
       "get_roadmap",
-      "append_decision",
       "export_skillpack",
     ]);
   });
@@ -221,8 +220,8 @@ describe("result builders", () => {
 });
 
 describe("MCP_TOOLS catalog integrity", () => {
-  test("exactly eight tools, each well-formed", () => {
-    expect(MCP_TOOLS).toHaveLength(8);
+  test("exactly seven (read-only) tools, each well-formed", () => {
+    expect(MCP_TOOLS).toHaveLength(7);
     for (const t of MCP_TOOLS) {
       expect(typeof t.name).toBe("string");
       expect(t.name.length).toBeGreaterThan(0);
@@ -232,10 +231,9 @@ describe("MCP_TOOLS catalog integrity", () => {
     }
   });
 
-  test("write + fetch tools declare their required params", () => {
+  test("fetch tools declare their required params", () => {
     const byName = Object.fromEntries(MCP_TOOLS.map((t) => [t.name, t]));
     expect(byName.get_prd.inputSchema.required).toEqual(["prd_id"]);
-    expect(byName.append_decision.inputSchema.required).toEqual(["opportunity_id", "decision"]);
   });
 
   test("tool names are unique", () => {

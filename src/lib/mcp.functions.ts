@@ -7,8 +7,10 @@ import { supersededChildIds, type LineageEdgeLite } from "./trust-ledger.functio
 /**
  * Q1-MCP · Read-only MCP (Model Context Protocol) server functions.
  *
- * External agents call Cadence via MCP to read signals/opportunities/PRDs
- * and append decisions, governed by workspace scope, rate limits, and audit.
+ * External agents call Cadence via MCP to read signals/opportunities/decisions/
+ * PRDs/roadmap and export a decision-lessons skill pack, governed by workspace
+ * scope, rate limits, and audit. The decision-WRITE half is founder-gated
+ * (Phase 4b) and is intentionally not exposed here.
  */
 
 export interface MCPTokenInfo {
@@ -149,7 +151,7 @@ export async function logMCPCall(input: LogAPICallInput, supabaseClient: any) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// MCP Tool Implementations (read-only + append decision)
+// MCP Tool Implementations (read-only)
 // ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -417,52 +419,6 @@ export async function getRoadmap(
 
   if (error) throw new Error(error.message);
   return groupByRoadmapBucket((data ?? []) as RoadmapItemLite[]);
-}
-
-/**
- * Append a decision to an opportunity.
- * Creates a decision_queue entry for approval before persisting.
- * Called by the MCP server route handler.
- */
-export async function appendDecision(
-  supabaseClient: any,
-  workspace_id: string,
-  opportunity_id: string,
-  decision_text: string,
-  metadata: Record<string, unknown> = {},
-) {
-  const { data: decision, error } = await supabaseClient
-    .from("decisions")
-    .insert({
-      workspace_id,
-      opportunity_id,
-      decision: decision_text,
-      verdict: "pending",
-      metadata,
-    })
-    .select("id, opportunity_id, verdict, created_at")
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  // Queue for approval (no auto-apply from external source)
-  const { error: queueError } = await supabaseClient.from("decision_queue").insert({
-    workspace_id,
-    decision_id: decision.id,
-    status: "pending_review",
-    external_source: "mcp",
-  });
-
-  if (queueError) {
-    console.warn("Failed to queue decision for approval:", queueError);
-  }
-
-  return {
-    decision_id: decision.id,
-    opportunity_id: decision.opportunity_id,
-    status: "pending_review",
-    created_at: decision.created_at,
-  };
 }
 
 /**

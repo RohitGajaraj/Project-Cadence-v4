@@ -32,8 +32,10 @@ import {
 const MCP_METHODS = [
   { name: "search_signals", desc: "Search discovery signals by keyword" },
   { name: "search_opportunities", desc: "Search opportunities by title/problem or ICE" },
+  { name: "search_decisions", desc: "Search decisions, each tagged still-stands or superseded" },
+  { name: "search_prds", desc: "Find specs by keyword or status" },
   { name: "get_prd", desc: "Fetch a PRD with its requirements" },
-  { name: "append_decision", desc: "Append a decision to an opportunity (approval-gated)" },
+  { name: "get_roadmap", desc: "Fetch the roadmap: now / next / later by ICE" },
   {
     name: "export_skillpack",
     desc: "Export the workspace's distilled lessons as a versioned skill-pack",
