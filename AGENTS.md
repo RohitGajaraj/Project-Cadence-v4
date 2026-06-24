@@ -238,6 +238,23 @@ The board is the single live truth: the next agent reads it to know exactly what
 
 This exists to fix the drift the 2026-06-21 strategy reconciliation found: the loop built Tier-3 ops hygiene (data-retention, health, provider-fallback) while the Tier-1 moat work (the supersession engine, the loop-closers) had no rows to claim. Canonical order: SSOT §0.
 
+### Whole-register coverage + the class-of-work order (founder ruling, 2026-06-24)
+
+**Do not stop when the v11 / v7 core front is exhausted.** The whole Master register is in scope, not just the v11 build front. A large number of items pending OUTSIDE v11 are yours to build; keep going down the register continuously until every autonomously-buildable item is done.
+
+**When choosing what to advance, go in this CLASS order (within each class, Rank still decides — lowest `#` first):**
+
+1. **Untouched / not-yet-developed (`⬜`) items FIRST.** Completely undeveloped rows are built before anything partial. Sweep the register top-to-bottom for `⬜` Tier rows and build them.
+2. **Partial (`◐`) items SECOND — closed from the TOP (`#1`) down the roadmap to the end.** Once the untouched rows are done, walk the `◐` rows in Rank order and finish their remaining buildable slices.
+3. **Pure design-level items THIRD.** Rows that are genuinely only a design/craft pass take last priority among buildable work.
+
+**The autonomy / halt boundary (build everything; halt ONLY on a true blocker).** Build, decide, and deliver the right solution autonomously — "touch every single bit and piece." A row is HALTED / PARKED **only** when it genuinely cannot proceed without one of:
+
+- **Founder creative or strategic input you cannot proceed without** — e.g. positioning / landing copy WORDING, or a serious product-level or product-test design decision that is the founder's call. (Build the surrounding structure; leave only the specific sentence / decision that needs the founder.)
+- **A secret / API key / OAuth credential / Linear-type connection** you do not hold.
+
+Nothing else halts. In particular: **a UI you cannot visually verify is NOT a halt condition** — build it, gate on `tsc` + tests, and live-verify on publish. A dependent slot can be tuned slightly later if a downstream change needs it; that is not a reason to skip it now. This rule is standing and strictly followed by every lane / tool / session.
+
 > **🔒 MONETIZATION / CREDIT / BILLING / ADMIN BLOCK — CLOSED, do NOT re-pick (founder ruling 2026-06-22, FINAL, applies to ALL sessions/lanes).** The 3rd verification pass of Lovable's monetization work is done; it is the LAST. The whole block is **build-complete + gate-green** and now sits in terminal states (`✅` for the built rows: `M-C-PRICE`/`WM-M3`/`WM-M6`/`WM-M13`/`WM-M15`/`WM-M18`/`M-C-BILLING-TESTS` + the prior credit/admin ✅ rows; **Gated 👤** for `WM-M9` chokepoint, `WM-M17`/`WM-M19` founder pricing numbers, `M-C-EXPIRY` flip-timing). The ONLY remaining work is the founder's go-live **config** (live Stripe keys + price IDs, the `credits_enabled()` / `AI_COST_ROUTING` flips, final pricing numbers — SSOT §4); that is NOT agent-buildable. **No lane re-picks, re-verifies, or re-maps any monetization/credit/billing item — ever.** They are no longer `◐`+Tier-1/3, so `lane.sh next` will not surface them (that combo is exactly why they were re-picked every run). The legacy `Lovable` priority class stays dead; do not reintroduce it. If an instruction points you at a monetization item: STOP — it is closed; the only open monetization work is the founder's, in SSOT §4. Full closure: the 🔒 banners in [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) (At a glance) + [`docs/planning/SOURCE-OF-TRUTH.md`](./docs/planning/SOURCE-OF-TRUTH.md) §0.
 
 ### AI-specific
