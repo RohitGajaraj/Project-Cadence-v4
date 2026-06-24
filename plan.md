@@ -283,6 +283,18 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — DEF-04 ◐: design readiness from a spec — the deterministic half)
+
+**WHY:** v11 #27, the lowest-rank UNTOUCHED item with a clean autonomous slice. DEF-04's headline (a generated mockup + a live sandbox preview) needs the AI chokepoint / the gated SANDBOX provider — neither is mine to wire. But the part a spec answers on its own — _is it ready to design?_ — is deterministic, so I built that: a design-readiness check that turns a PRD into a design brief. _(Class order: untouched ⬜ first; ORCH-DELEGATE is Linear-key-gated, REPO-DECLUTTER's named target is a contested-as-live doc, POS/LANDING are founder-voice copy.)_
+
+**Shipped (lane 2):**
+- **The check** — new pure `src/lib/design-readiness.ts`: `analyzeDesignReadiness(body)` scans the spec text for the eight things a designer needs it to name — screen states (empty/loading/error/success), edge cases & limits, accessibility, responsive behaviour, copy/microcopy, permissions/roles, data shape, and user flow — and returns a score, a level (early/developing/ready), and the per-dimension checks. `readinessGaps` returns exactly what is missing. `normalize` strips markdown so it reads the prose. Deterministic, no AI/key/DB. 6 tests.
+- **The panel** — new thin `src/components/product/DesignReadinessPanel.tsx` on the PRD page (after the task-graph panel): a calm "Design readiness · N/8 · <level>" bar + the gaps to close before design, each with a one-line hint; silent on an empty spec. Reads the already-loaded PRD body client-side (no new server call).
+
+**Verification (ran):** tsc 0, `bun test` 1437/1437 (6 new). **Adversarial review (ecc:typescript-reviewer + ecc:security-reviewer):** both CLEAN — the `normalize` regexes are ReDoS-safe (lazy fixed-delimiter + simple char-classes, verified), no XSS (the user body is only scanned, never rendered — only static labels/hints + computed numbers are shown), pct/level math sound, React keys/guards correct. Fixed one inaccurate test comment.
+
+**Status ◐:** the deterministic design-readiness check (the spec linter + the design brief) is shipped for every PRD; the **gated remainder** is the generative half — an AI-drafted mockup (needs an AI CallSurface in the pinned chokepoint) and a live sandbox preview (the SANDBOX provider, founder-gated) — named on the panel ("a generated mockup and live preview come from Build, a later add-on").
+
 ### 2026-06-24 (lane 2 — TRUST-VERIFY ◐: a normal "Integrity check" for the Trust Ledger, all users, NOT blockchain)
 
 **WHY:** v11 #26, the lowest-rank UNTOUCHED item buildable without founder input (ORCH-DELEGATE needs a Linear key, POS/LANDING are founder-voice copy, DELEGATE-DESK is a product-IA call). Gives every user a way to confirm their decision-and-outcome record has not been altered. _Founder steer mid-build: NO blockchain anywhere now; this is NOT enterprise-only; keep it a normal, simple feature. Reframed accordingly (memory: no-blockchain-trust-integrity)._

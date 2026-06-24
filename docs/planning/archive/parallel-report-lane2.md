@@ -4,19 +4,31 @@
 
 ---
 
-## RESUME CURSOR (read first) — after 11 cycles
+## RESUME CURSOR (read first) — after 12 cycles
 
-**State:** 11 cycles done this run (… STITCH-LOOP `✅` #9, then **TRUST-VERIFY `◐` #26** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+**State:** 12 cycles done this run (… TRUST-VERIFY `◐` #26, then **DEF-04 `◐` #27** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
 
 **Founder steers now STANDING (in memory + docs):**
 1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs the founder's specific input or is chokepoint-pinned (`ai/*`). (memory `build-dont-overpark`)
 2. **Whole-register coverage + class-of-work order** (AGENTS.md §3): don't stop at the v11 front; class order = untouched `⬜` FIRST → partial `◐` SECOND (top-down) → pure design THIRD. Halt ONLY on a genuine founder-creative/strategic call or a secret I don't hold. A UI I can't visually verify is NOT a halt.
 3. **Compact AFTER each completed cycle, NEVER mid-cycle** — via ScheduleWakeup a fresh turn, then continue.
-4. **NO BLOCKCHAIN anywhere now** (founder ruling 2026-06-24, memory `no-blockchain-trust-integrity` + session-decisions): TRUST-VERIFY = a plain SHA-256 fingerprint "Integrity check" for EVERY user, NOT enterprise, NOT blockchain; signing/persistence are deferred OPTIONAL add-ons. Don't reintroduce blockchain/enterprise framing.
+4. **NO BLOCKCHAIN anywhere now** (memory `no-blockchain-trust-integrity` + session-decisions): integrity-type features = a plain SHA-256 fingerprint for EVERY user, NOT enterprise, NOT blockchain; signing/persistence deferred OPTIONAL. Don't reintroduce blockchain/enterprise framing.
 
-**NEXT PICKS (top-down, class order):** untouched `⬜` getting thin. **#15 ORCH-DELEGATE** = founder-gated (needs a Linear API key; external-agent half = BLD-04). **#25 DELEGATE-DESK** = a new first-class surface whose relationship to Missions is a product-IA call (lean PARK / founder input). **#20 POS-V11 + #21 LANDING-PAGE-V11** = PARK (founder-voice copy). Remaining untouched `⬜` Tier-3: **#27 DEF-04** (designer scaffolds — check it doesn't need a design-API key), **#28 REPO-DECLUTTER-V11** (pure repo hygiene — safe autonomous), **#30 AGENT-FLEET-VIEW** (big future surface). `◐` buildable candidates: **CORE-UX-FELT** cold-gateway hardening in WedgeTeardown (NOTE: its de-jargon-govern.tsx half now COLLIDES with lane-1 IA-DEPTH-V11 on govern.tsx — do the WedgeTeardown half only). Use `bash scripts/lane.sh next` + reap each cycle; lane 1 runs concurrently (was on IA-DEPTH-V11 = engine-room-bands + govern.tsx).
+**NEXT PICKS (top-down, class order):** untouched `⬜` is nearly EXHAUSTED on the autonomous front. Remaining untouched ⬜ all blocked/parked: **#15 ORCH-DELEGATE** (Linear key + BLD-04), **#20 POS-V11 / #21 LANDING-PAGE-V11** (founder-voice copy), **#28 REPO-DECLUTTER-V11** (its named target `feature-backlog.md` is still referenced as LIVE in CLAUDE.md/dashboard — archiving it is a contested doc-architecture call; only archive UNAMBIGUOUSLY-dead docs, or ask the founder). Lane 1 took **#25 DELEGATE-DESK ✅** + **#30 AGENT-FLEET-VIEW** (in dev). **So the next cycle likely shifts to class 2 — buildable `◐` partials, top-down:** **CORE-UX-TRUST #10** (visible rejection-learning is buildable; auto-clear gates is founder-gated), **CORE-UX-FELT #11** (cold-gateway hardening in WedgeTeardown ONLY — its de-jargon-govern.tsx half COLLIDES with lane-1 IA-DEPTH on govern.tsx), **INTEROP #16** (read surface done; outward WRITE/A2A is founder-gated). BRAIN-UX #8 + DBR #22 remainders are chokepoint/AI-lane. Use `bash scripts/lane.sh next` + reap each cycle; check lane-1 claims (`lane.sh list`) before picking.
 
 ---
+
+## 2026-06-24 — Cycle 12: DEF-04 ◐ — design readiness from a spec (the deterministic half) (v11 #27)
+
+**Pick:** lowest-rank UNTOUCHED `⬜` with a clean autonomous slice. DEF-04's headline (generated mockup + sandbox preview) needs the AI chokepoint / gated SANDBOX — built the deterministic half instead. Skipped: ORCH #15 (Linear key), POS/LANDING (founder copy), REPO-DECLUTTER #28 (contested-live target doc). Lane 1 had AGENT-FLEET-VIEW #30.
+
+**Built:** a design-readiness check that turns a PRD spec into a design brief.
+- Pure `src/lib/design-readiness.ts` — `analyzeDesignReadiness(body)` scans the spec for the 8 things design needs named (states, edge cases, a11y, responsive, copy, permissions, data, flow) → score + level + per-dimension checks; `readinessGaps`; `normalize` strips markdown. Deterministic, no AI/key/DB. 6 tests.
+- `src/components/product/DesignReadinessPanel.tsx` — a calm "Design readiness · N/8 · level" bar + the gaps to close, on the PRD page (client-side on the loaded body; silent when empty).
+
+**Gate:** tsc 0 · `bun test` 1437/1437 (6 new). **Review:** ts + security reviewers — both CLEAN (regexes ReDoS-safe, no XSS since the body is only scanned not rendered, math/keys/guards correct). Fixed an inaccurate test comment.
+
+**Status `◐`:** the spec linter / design brief is shipped for every PRD; the gated remainder is the generative half (AI mockup = a pinned-chokepoint CallSurface; live preview = the SANDBOX provider) — named on the panel.
 
 ## 2026-06-24 — Cycle 11: TRUST-VERIFY ◐ — a normal "Integrity check" for the Trust Ledger (all users, NOT blockchain)
 

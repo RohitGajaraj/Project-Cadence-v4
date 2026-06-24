@@ -36,6 +36,7 @@ import { CitationsCard, type Citation } from "@/components/product/CitationsCard
 import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
 import { listTasks } from "@/lib/tasks.functions";
 import { TaskGraphPanel } from "@/components/product/TaskGraphPanel";
+import { DesignReadinessPanel } from "@/components/product/DesignReadinessPanel";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { dispatchStudioSession } from "@/lib/studio.functions";
 import { createDecision } from "@/lib/decisions.functions";
@@ -412,6 +413,9 @@ function PrdEditor() {
 
         {/* H1-TASKS consumption — build readiness (ready/blocked/progress + DAG integrity). */}
         <TaskGraphPanel prdId={id} />
+
+        {/* DEF-04 — design readiness from the spec (states/a11y/responsive/... + gaps). */}
+        <DesignReadinessPanel body={body} />
 
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border hairline bg-card px-3 py-2.5 text-xs">
