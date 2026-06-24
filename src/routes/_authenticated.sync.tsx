@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Boxes,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -24,6 +25,7 @@ import { WorkspaceBindingsSection } from "@/components/connections/WorkspaceBind
 import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functions";
 import { pullMapping, pushMapping } from "@/lib/sync.functions";
 import { getIngestToken, rotateIngestToken, revokeIngestToken } from "@/lib/ingest.functions";
+import { buildConnectorCatalog } from "@/lib/connectors/catalog";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   component: SyncInboxPage,
@@ -96,8 +98,11 @@ function SyncInboxPage() {
           <h1 className="font-display text-3xl tracking-tight">Connectors</h1>
         </div>
         <p className="text-sm text-muted-foreground mb-8">
-          Resolve conflicts between Cadence docs and your connected tools.
+          Your connectors home: browse every source, manage what's connected, and resolve sync
+          conflicts.
         </p>
+
+        <ConnectorCatalogSection />
 
         <WorkspaceBindingsSection />
 
@@ -262,6 +267,67 @@ function SyncInboxPage() {
         <WebhookIngestCard />
       </div>
     </AppShell>
+  );
+}
+
+// CONNECTORS-V11 (#14): the one de-duped, categorized catalog of every source
+// Cadence can connect — the "available sources" home. Reads the pure catalog
+// model so the list is consistent everywhere; connecting routes to the canonical
+// Accounts surface (OAuth wiring is founder-gated — F-CONN / SEN-01).
+function ConnectorCatalogSection() {
+  const catalog = buildConnectorCatalog();
+  const total = catalog.reduce((n, g) => n + g.entries.length, 0);
+  return (
+    <section className="mb-10">
+      <div className="flex items-center gap-2 mb-3">
+        <Boxes className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-display text-sm tracking-tight uppercase text-muted-foreground">
+          Available sources ({total})
+        </h2>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Every source Cadence can connect, in one place. Connect any of them from{" "}
+        <a href="/settings?section=connections" className="text-primary underline">
+          Settings → Accounts
+        </a>
+        ; the loop also accepts input from the webhook below on day one.
+      </p>
+      <div className="space-y-6">
+        {catalog.map((group) => (
+          <div key={group.id}>
+            <div className="flex items-baseline gap-2 mb-2">
+              <h3 className="text-xs uppercase tracking-[0.14em] text-foreground/80">
+                {group.label}
+              </h3>
+              <span className="text-xs text-muted-foreground">{group.blurb}</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {group.entries.map((e) => (
+                <div key={e.id} className="rounded-xl border hairline bg-background/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{e.label}</span>
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground rounded-full border hairline px-2 py-0.5 shrink-0">
+                      {e.flowLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{e.description}</p>
+                  <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    {e.resourceLabel && <span>Binds a {e.resourceLabel.toLowerCase()}</span>}
+                    <a
+                      href="/settings?section=connections"
+                      className="ml-auto text-primary hover:underline inline-flex items-center gap-0.5"
+                    >
+                      Connect
+                      <ChevronRight className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
