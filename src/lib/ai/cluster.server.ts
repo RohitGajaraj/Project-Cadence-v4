@@ -25,7 +25,9 @@ export async function clusterSignalsCore(
 ): Promise<{ themes: number; message: string }> {
   let sigQuery = supabase
     .from("signals")
-    .select("id,content,source")
+    // AMBIENT-SENSE: also read the deterministic tagger's output (tags + sentiment) so clustering
+    // is informed by it. Before, the tagger wrote tags/sentiment that no consumer ever read.
+    .select("id,content,source,tags,sentiment")
     .eq("user_id", userId)
     .is("theme_id", null);
   if (projectId) sigQuery = sigQuery.eq("project_id", projectId);
@@ -40,9 +42,19 @@ export async function clusterSignalsCore(
   if (error) throw new Error(error.message);
   if (!sigs?.length) return { themes: 0, message: "No unclustered signals." };
 
-  const indexed = sigs.map((s, i) => `[${i}] (${s.source}) ${s.content.slice(0, 400)}`).join("\n");
+  const indexed = sigs
+    .map((s, i) => {
+      // Surface the deterministic tagger's facets (AMBIENT-SENSE) alongside the raw text so the
+      // model groups related pain by tag and weighs severity by sentiment. Unsensed signals just
+      // omit the facet, so this is byte-identical for untagged input.
+      const tags = Array.isArray(s.tags) && s.tags.length ? ` tags:${(s.tags as string[]).join(",")}` : "";
+      const sentiment = s.sentiment ? ` sentiment:${s.sentiment}` : "";
+      return `[${i}] (${s.source}${tags}${sentiment}) ${s.content.slice(0, 400)}`;
+    })
+    .join("\n");
 
   const system = `You are a senior product researcher. Cluster raw user signals into 3-7 distinct themes.
+Each signal may carry tags: (ontology facets) and sentiment: — use them to group related pain and gauge severity.
 For each theme provide: title (max 60 chars), summary (max 200 chars), severity (1-5), confidence (0-1), and the indexes of member signals.
 Return STRICT JSON only, no prose, no markdown fences.`;
 
