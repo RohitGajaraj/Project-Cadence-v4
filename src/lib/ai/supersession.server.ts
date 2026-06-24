@@ -58,6 +58,10 @@ export async function inferSupersession(
   supabase: SupabaseClient,
   args: {
     userId: string;
+    // The workspace the recorded outcome lives in. Threaded so every engine-written edge is
+    // tenant-correct; without it the artifact_lineage default forced edges into the inserting
+    // user's DEFAULT workspace, hiding them from the workspace-scoped read surfaces.
+    workspaceId?: string | null;
     prdId: string | null;
     opportunityId: string | null;
     text: string;
@@ -108,6 +112,7 @@ export async function inferSupersession(
     for (const s of selected) {
       const edge = buildSupersessionEdge({
         userId: args.userId,
+        workspaceId: args.workspaceId ?? null,
         parent: s.parent,
         child: s.child,
         relation: s.relation,

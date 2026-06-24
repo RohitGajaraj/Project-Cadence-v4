@@ -281,6 +281,7 @@ export const recordOutcome = createServerFn({ method: "POST" })
     try {
       await inferSupersession(db, {
         userId,
+        workspaceId: (prd.workspace_id as string | null) ?? null,
         prdId: prd.id,
         opportunityId: (prd.opportunity_id as string | null) ?? null,
         text: [prd.title as string | null, data.summary].filter(Boolean).join(". "),

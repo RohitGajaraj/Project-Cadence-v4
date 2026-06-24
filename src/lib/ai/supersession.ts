@@ -79,6 +79,11 @@ export function resolveEndpoints(
 /** The fully-resolved, ready-to-write edge fields (shape mirrors artifact_lineage). */
 export type SupersessionEdge = {
   user_id: string;
+  // Workspace-scope the edge so the bi-temporal moat is tenant-correct (the read surfaces -
+  // getLoopClosure, the /knowledge graph - filter by workspace_id). Present ONLY when the caller
+  // resolved it; OMITTED (never null) otherwise, so the artifact_lineage NOT-NULL DEFAULT
+  // current_user_default_workspace() still fills it as a fallback (an explicit null would 23502).
+  workspace_id?: string;
   parent_kind: ArtifactRef["kind"];
   parent_id: string;
   child_kind: ArtifactRef["kind"];
@@ -108,6 +113,7 @@ export type SupersessionEdge = {
 /** PURE. Map a resolved endpoint pair + relation + provenance to the row to upsert. */
 export function buildSupersessionEdge(args: {
   userId: string;
+  workspaceId?: string | null;
   parent: ArtifactRef;
   child: ArtifactRef;
   relation: SupersessionRelation;
@@ -121,6 +127,9 @@ export function buildSupersessionEdge(args: {
 }): SupersessionEdge {
   return {
     user_id: args.userId,
+    // Include workspace_id ONLY when resolved (conditional spread, like the confidence fields
+    // below): omitting it lets the DB default fill it, while an explicit null would 23502.
+    ...(args.workspaceId ? { workspace_id: args.workspaceId } : {}),
     parent_kind: args.parent.kind,
     parent_id: args.parent.id,
     child_kind: args.child.kind,

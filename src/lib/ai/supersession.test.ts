@@ -126,6 +126,31 @@ describe("buildSupersessionEdge (the row to upsert)", () => {
     });
     expect(edge.rationale).toBeNull();
   });
+
+  test("workspace-scopes the edge only when a workspaceId is given", () => {
+    const withWs = buildSupersessionEdge({
+      userId: "u1",
+      workspaceId: "ws1",
+      parent: { kind: "prd", id: "new" },
+      child: { kind: "prd", id: "old" },
+      relation: "contradicts",
+      verdict: "missed",
+      score: 0.6,
+    });
+    expect(withWs.workspace_id).toBe("ws1");
+
+    const withoutWs = buildSupersessionEdge({
+      userId: "u1",
+      parent: { kind: "prd", id: "new" },
+      child: { kind: "prd", id: "old" },
+      relation: "contradicts",
+      verdict: "missed",
+      score: 0.6,
+    });
+    // OMITTED, not null: an explicit null would violate the NOT NULL workspace_id column, so the
+    // DB default (current_user_default_workspace()) must remain the fallback.
+    expect("workspace_id" in withoutWs).toBe(false);
+  });
 });
 
 describe("selectSupersessions (classify + resolve + cap)", () => {
