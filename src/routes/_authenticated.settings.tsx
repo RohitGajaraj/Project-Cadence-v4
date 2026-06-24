@@ -15,7 +15,7 @@ import { toast } from "@/lib/notify";
 import { Compass, SlidersHorizontal, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { MonoLabel, StepDot, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
+import { MonoLabel, StepDot, SubTabs, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listAgents, setAgentToolCap } from "@/lib/agents.functions";
@@ -64,57 +64,25 @@ import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { RedeemCodeCard } from "@/components/settings/RedeemCodeCard";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { TeamCard } from "@/components/settings/TeamCard";
+import {
+  PRIMARY_GROUPS,
+  RECESSED_GROUPS,
+  normalizeSection,
+  groupForSection,
+  findGroup,
+  primarySection,
+  sectionLabel,
+  type SectionId,
+  type GroupId,
+} from "@/lib/settings-sections";
 
-type SectionId =
-  | "connections"
-  | "ai"
-  | "staff"
-  | "workspace"
-  | "billing"
-  | "credits"
-  | "interop"
-  | "profile"
-  | "health"
-  | "data"
-  | "notifications";
-
-// Tab order from the reference (Connectors · Models · Staff · … · Profile).
-// "Accounts" is the account-level OAuth surface (which provider logins you have
-// connected); it is deliberately NOT called "Connectors"/"Connections" so it no
-// longer near-collides with the /sync "Connectors" surface, which owns the
-// distinct workspace-level resource bindings + sync conflicts (Phase-2 IA
-// de-collision, 2026-06-16; CLAUDE.md calls this "Connected accounts"). The id
-// stays "connections" so existing deep links (?section=connections) keep
-// working; likewise "ai" stays the id behind the Models label, and Workspace is
-// production-only.
-const TABS: { id: SectionId; label: string }[] = [
-  { id: "connections", label: "Accounts" },
-  { id: "ai", label: "Models" },
-  { id: "staff", label: "Staff" },
-  { id: "workspace", label: "Workspace" },
-  { id: "billing", label: "Plan" },
-  { id: "credits", label: "Credits" },
-  { id: "interop", label: "Integrations" },
-  { id: "profile", label: "Profile" },
-  { id: "notifications", label: "Notifications" },
-  { id: "health", label: "Health" },
-  { id: "data", label: "Data" },
-];
-
-// Legacy deep links still arrive with the old section values. Map them so
-// /settings?section=brief and /settings?section=calendar keep landing on the
-// right content (calendar accounts live inside AccountConnectionsSection).
-const LEGACY_SECTION_MAP: Record<string, SectionId> = {
-  brief: "workspace",
-  calendar: "connections",
-};
-
-function normalizeSection(raw: string | undefined): SectionId {
-  if (!raw) return "connections";
-  const mapped = LEGACY_SECTION_MAP[raw];
-  if (mapped) return mapped;
-  return TABS.some((s) => s.id === raw) ? (raw as SectionId) : "connections";
-}
+// The section ids, grouping, legacy deep-link map, and normalizeSection now live
+// in the pure, unit-tested @/lib/settings-sections module (SETTINGS-SEGREGATE,
+// v11 #13): the 11 flat tabs are presented as 5 calm groups + a recessed
+// Advanced group, while every ?section= id is preserved unchanged so existing
+// deep links keep landing. "ai" stays the id behind the Models label; Workspace
+// is production-only; "connections" is the account-level OAuth surface
+// (deliberately not "Connectors", to not collide with the /sync surface).
 
 // ?connector= drill param (screen 6) — only registry keys for user-facing
 // providers open the detail; anything else falls back to the normal list.
@@ -165,6 +133,13 @@ function SettingsPage() {
 
   const setTab = (id: string) => navigate({ search: { section: id } });
 
+  // Tier-1 grouping (SETTINGS-SEGREGATE): which group owns the active section,
+  // its member sections (for the tier-2 sub-row), and a group-click handler that
+  // lands on the group's primary section. The ?section= id stays the routing key.
+  const activeGroup = groupForSection(active);
+  const groupMembers = findGroup(activeGroup)?.sections ?? [];
+  const setGroup = (gid: string) => navigate({ search: { section: primarySection(gid as GroupId) } });
+
   const workspaceName = activeWorkspace?.name;
   const sub = workspaceName
     ? `${workspaceName}${activeProduct?.name ? ` · ${activeProduct.name}` : ""}. Connectors, models, and staff config.`
@@ -178,7 +153,64 @@ function SettingsPage() {
         style={{ padding: "30px 44px 56px", maxWidth: 980, margin: "0 auto" }}
       >
         <SurfaceHeader kicker="Workspace" icon={SlidersHorizontal} title="Settings" sub={sub} />
-        <TabRow tabs={TABS} active={active} onSet={setTab} />
+
+        {/* Tier 1: 5 calm groups + one recessed Advanced door (SETTINGS-SEGREGATE
+            #13). The group tabs carry a one-line description; Advanced sits off to
+            the right, quiet, since it is diagnostics rather than daily settings. */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <TabRow
+              tabs={PRIMARY_GROUPS.map((g) => ({ id: g.id, label: g.label }))}
+              active={activeGroup}
+              onSet={setGroup}
+              desc={Object.fromEntries(PRIMARY_GROUPS.map((g) => [g.id, g.desc]))}
+            />
+          </div>
+          {RECESSED_GROUPS.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGroup(g.id)}
+              className="mono-label"
+              title={g.desc}
+              style={{
+                padding: "6px 12px",
+                marginTop: 4,
+                borderRadius: 99,
+                fontSize: 9.5,
+                whiteSpace: "nowrap",
+                color: activeGroup === g.id ? "var(--canvas)" : "var(--ink-faint)",
+                background: activeGroup === g.id ? "var(--primary-ink)" : "transparent",
+                border: `1px solid ${activeGroup === g.id ? "transparent" : "var(--hairline)"}`,
+                transition: "background var(--dur-fast), color var(--dur-fast)",
+              }}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tier 2: the active group's member sections — only shown when the group
+            holds more than one section (single-section groups need no sub-row). */}
+        {groupMembers.length > 1 ? (
+          <div style={{ marginTop: 4, marginBottom: 6 }}>
+            <SubTabs
+              tabs={groupMembers.map((s) => s.label)}
+              active={sectionLabel(active)}
+              onSet={(label) => {
+                const match = groupMembers.find((s) => s.label === label);
+                if (match) setTab(match.id);
+              }}
+            />
+          </div>
+        ) : null}
 
         {active === "connections" && (
           <ConnectionsTab
