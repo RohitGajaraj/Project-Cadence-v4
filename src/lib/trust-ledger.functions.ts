@@ -22,6 +22,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { sealReceipts, verifyReceipts, SEAL_ALGO, type VerifyResult } from "@/lib/trust-verify";
 
 export type TrustReceiptKind = "decision" | "action";
 /** v1 outcome states. "proven" is reserved for when recorded-outcome links land (LOOP-PROVE). */
@@ -102,7 +103,9 @@ export function isSupersessionRelation(raw: string | null | undefined): boolean 
  * supersession that was itself bitemporally retired (`valid_to` set) is a
  * reversal — it no longer counts. Returns childId -> the superseding parentId.
  */
-export function supersededChildIds(edges: LineageEdgeLite[] | null | undefined): Map<string, string> {
+export function supersededChildIds(
+  edges: LineageEdgeLite[] | null | undefined,
+): Map<string, string> {
   const out = new Map<string, string>();
   for (const e of Array.isArray(edges) ? edges : []) {
     if (!e || !isSupersessionRelation(e.relation)) continue;
@@ -130,7 +133,10 @@ export function evidenceCounts(edges: LineageEdgeLite[] | null | undefined): Map
 }
 
 /** PURE. Humanize a decided autonomous action into a "what changed" line. */
-export function summarizeAction(toolName: string | null, args: Record<string, unknown> | null): string {
+export function summarizeAction(
+  toolName: string | null,
+  args: Record<string, unknown> | null,
+): string {
   const tool = (toolName ?? "").trim();
   const a = args ?? {};
   const pick = (...keys: string[]): string | null => {
@@ -143,7 +149,8 @@ export function summarizeAction(toolName: string | null, args: Record<string, un
   const subjectRaw = pick("title", "name", "summary", "query", "message", "goal");
   // args is attacker-influencable jsonb — render-escaped by JSX, but cap length so a
   // bloated/misleading value can't dominate the card (review hardening).
-  const subject = subjectRaw && subjectRaw.length > 140 ? `${subjectRaw.slice(0, 140)}…` : subjectRaw;
+  const subject =
+    subjectRaw && subjectRaw.length > 140 ? `${subjectRaw.slice(0, 140)}…` : subjectRaw;
   const pretty = tool
     ? tool.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "Autonomous action";
@@ -160,14 +167,16 @@ export function assembleReceipts(input: {
 }): TrustReceipt[] {
   const { decisions, approvals, superseded, evidence, sourceLabels } = input;
 
-  const supersededFor = (...ids: (string | null)[]): { o: TrustReceiptOutcome; by: string | null } => {
+  const supersededFor = (
+    ...ids: (string | null)[]
+  ): { o: TrustReceiptOutcome; by: string | null } => {
     for (const id of ids) {
       if (id && superseded.has(id)) return { o: "superseded", by: superseded.get(id) || null };
     }
     return { o: "standing", by: null };
   };
   const evidenceFor = (...ids: (string | null)[]): number =>
-    ids.reduce((n, id) => n + (id ? evidence.get(id) ?? 0 : 0), 0);
+    ids.reduce((n, id) => n + (id ? (evidence.get(id) ?? 0) : 0), 0);
 
   const receipts: TrustReceipt[] = [];
 
@@ -186,7 +195,7 @@ export function assembleReceipts(input: {
       source: {
         kind: d.source_kind,
         id: sourceId,
-        label: sourceId ? sourceLabels.get(sourceId) ?? null : null,
+        label: sourceId ? (sourceLabels.get(sourceId) ?? null) : null,
       },
       toolName: null,
       evidenceCount: evidenceFor(d.id, sourceId),
@@ -209,7 +218,7 @@ export function assembleReceipts(input: {
       source: {
         kind: ap.mission_id ? "mission" : null,
         id: ap.mission_id,
-        label: ap.mission_id ? sourceLabels.get(ap.mission_id) ?? null : null,
+        label: ap.mission_id ? (sourceLabels.get(ap.mission_id) ?? null) : null,
       },
       toolName: ap.tool_name,
       evidenceCount: evidenceFor(ap.id, ap.mission_id),
@@ -240,16 +249,124 @@ function isMissingColumn(err: { message?: string } | null, col: string): boolean
   return m.includes("does not exist") && m.includes(col);
 }
 
+async function resolveWorkspaceId(
+  supabase: SupabaseClient,
+  given: string | null | undefined,
+): Promise<string | null> {
+  if (given) return given;
+  const { data: ws } = await supabase.rpc("current_user_default_workspace");
+  return (ws as string | null) ?? null;
+}
+
+/**
+ * Load + assemble the full receipt list for a workspace (no q/outcome filter), the
+ * shared substrate for both the ledger view and the tamper-evident seal. RLS-scoped
+ * by the caller's supabase client; tolerant of a pre-bitemporal `artifact_lineage`.
+ */
+async function loadReceipts(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  opts: { limit: number; kind: "all" | "decision" | "action" },
+): Promise<TrustReceipt[]> {
+  const { limit, kind } = opts;
+  const wantDecisions = kind === "all" || kind === "decision";
+  const wantActions = kind === "all" || kind === "action";
+
+  const [decisionsRes, approvalsRes] = await Promise.all([
+    wantDecisions
+      ? supabase
+          .from("decisions")
+          .select(
+            "id,title,rationale,status,source_kind,meeting_id,mission_id,prd_id,decided_by_agent_slug,created_at",
+          )
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      : Promise.resolve({ data: [] as DecisionLite[], error: null }),
+    wantActions
+      ? supabase
+          .from("agent_approvals")
+          .select(
+            "id,agent_slug,tool_name,args,rationale,decision_reason,status,decided_at,decided_by,created_at,mission_id",
+          )
+          .eq("workspace_id", workspaceId)
+          .neq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      : Promise.resolve({ data: [] as ApprovalLite[], error: null }),
+  ]);
+  if (decisionsRes.error) throw new Error(decisionsRes.error.message);
+  if (approvalsRes.error) throw new Error(approvalsRes.error.message);
+
+  const decisions = (decisionsRes.data ?? []) as DecisionLite[];
+  const approvals = (approvalsRes.data ?? []) as ApprovalLite[];
+
+  // Bitemporal lineage for supersession + evidence. Select `valid_to` but fall
+  // back to the base columns if the bitemporal migration isn't live yet, so the
+  // surface degrades to "standing for all" instead of erroring to empty.
+  let edges: LineageEdgeLite[] = [];
+  {
+    const cols = "parent_kind,parent_id,child_kind,child_id,relation,valid_to";
+    const base = "parent_kind,parent_id,child_kind,child_id,relation";
+    const run = (sel: string) =>
+      supabase.from("artifact_lineage").select(sel).eq("workspace_id", workspaceId).limit(2000);
+    let res = await run(cols);
+    if (res.error && isMissingColumn(res.error, "valid_to")) res = await run(base);
+    if (res.error) throw new Error(res.error.message);
+    edges = (res.data ?? []) as unknown as LineageEdgeLite[];
+  }
+
+  // Hydrate source labels (missions / prds / meetings) in one batch per kind.
+  const missionIds = new Set<string>();
+  const prdIds = new Set<string>();
+  const meetingIds = new Set<string>();
+  for (const d of decisions) {
+    if (d.mission_id) missionIds.add(d.mission_id);
+    if (d.prd_id) prdIds.add(d.prd_id);
+    if (d.meeting_id) meetingIds.add(d.meeting_id);
+  }
+  for (const ap of approvals) if (ap.mission_id) missionIds.add(ap.mission_id);
+
+  const [missions, prds, meetings] = await Promise.all([
+    missionIds.size
+      ? supabase
+          .from("missions")
+          .select("id,title")
+          .in("id", [...missionIds])
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    prdIds.size
+      ? supabase
+          .from("prds")
+          .select("id,title")
+          .in("id", [...prdIds])
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    meetingIds.size
+      ? supabase
+          .from("meetings")
+          .select("id,title")
+          .in("id", [...meetingIds])
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+  ]);
+  const sourceLabels = new Map<string, string>();
+  for (const r of [...(missions.data ?? []), ...(prds.data ?? []), ...(meetings.data ?? [])]) {
+    if (r?.id && r?.title) sourceLabels.set(r.id as string, r.title as string);
+  }
+
+  return assembleReceipts({
+    decisions,
+    approvals,
+    superseded: supersededChildIds(edges),
+    evidence: evidenceCounts(edges),
+    sourceLabels,
+  });
+}
+
 export const listTrustReceipts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => ListSchema.parse(i ?? {}))
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as SupabaseClient;
-    let workspaceId = data?.workspaceId ?? null;
-    if (!workspaceId) {
-      const { data: ws } = await supabase.rpc("current_user_default_workspace");
-      workspaceId = (ws as string | null) ?? null;
-    }
+    const workspaceId = await resolveWorkspaceId(supabase, data?.workspaceId);
     if (!workspaceId) {
       return { receipts: [] as TrustReceipt[], counts: { all: 0, standing: 0, superseded: 0 } };
     }
@@ -257,87 +374,7 @@ export const listTrustReceipts = createServerFn({ method: "GET" })
     const limit = data?.limit ?? 100;
     const kind = data?.kind ?? "all";
 
-    const wantDecisions = kind === "all" || kind === "decision";
-    const wantActions = kind === "all" || kind === "action";
-
-    const [decisionsRes, approvalsRes] = await Promise.all([
-      wantDecisions
-        ? supabase
-            .from("decisions")
-            .select(
-              "id,title,rationale,status,source_kind,meeting_id,mission_id,prd_id,decided_by_agent_slug,created_at",
-            )
-            .eq("workspace_id", workspaceId)
-            .order("created_at", { ascending: false })
-            .limit(limit)
-        : Promise.resolve({ data: [] as DecisionLite[], error: null }),
-      wantActions
-        ? supabase
-            .from("agent_approvals")
-            .select(
-              "id,agent_slug,tool_name,args,rationale,decision_reason,status,decided_at,decided_by,created_at,mission_id",
-            )
-            .eq("workspace_id", workspaceId)
-            .neq("status", "pending")
-            .order("created_at", { ascending: false })
-            .limit(limit)
-        : Promise.resolve({ data: [] as ApprovalLite[], error: null }),
-    ]);
-    if (decisionsRes.error) throw new Error(decisionsRes.error.message);
-    if (approvalsRes.error) throw new Error(approvalsRes.error.message);
-
-    const decisions = (decisionsRes.data ?? []) as DecisionLite[];
-    const approvals = (approvalsRes.data ?? []) as ApprovalLite[];
-
-    // Bitemporal lineage for supersession + evidence. Select `valid_to` but fall
-    // back to the base columns if the bitemporal migration isn't live yet, so the
-    // surface degrades to "standing for all" instead of erroring to empty.
-    let edges: LineageEdgeLite[] = [];
-    {
-      const cols = "parent_kind,parent_id,child_kind,child_id,relation,valid_to";
-      const base = "parent_kind,parent_id,child_kind,child_id,relation";
-      const run = (sel: string) =>
-        supabase.from("artifact_lineage").select(sel).eq("workspace_id", workspaceId).limit(2000);
-      let res = await run(cols);
-      if (res.error && isMissingColumn(res.error, "valid_to")) res = await run(base);
-      if (res.error) throw new Error(res.error.message);
-      edges = (res.data ?? []) as unknown as LineageEdgeLite[];
-    }
-
-    // Hydrate source labels (missions / prds / meetings) in one batch per kind.
-    const missionIds = new Set<string>();
-    const prdIds = new Set<string>();
-    const meetingIds = new Set<string>();
-    for (const d of decisions) {
-      if (d.mission_id) missionIds.add(d.mission_id);
-      if (d.prd_id) prdIds.add(d.prd_id);
-      if (d.meeting_id) meetingIds.add(d.meeting_id);
-    }
-    for (const ap of approvals) if (ap.mission_id) missionIds.add(ap.mission_id);
-
-    const [missions, prds, meetings] = await Promise.all([
-      missionIds.size
-        ? supabase.from("missions").select("id,title").in("id", [...missionIds])
-        : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-      prdIds.size
-        ? supabase.from("prds").select("id,title").in("id", [...prdIds])
-        : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-      meetingIds.size
-        ? supabase.from("meetings").select("id,title").in("id", [...meetingIds])
-        : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-    ]);
-    const sourceLabels = new Map<string, string>();
-    for (const r of [...(missions.data ?? []), ...(prds.data ?? []), ...(meetings.data ?? [])]) {
-      if (r?.id && r?.title) sourceLabels.set(r.id as string, r.title as string);
-    }
-
-    let receipts = assembleReceipts({
-      decisions,
-      approvals,
-      superseded: supersededChildIds(edges),
-      evidence: evidenceCounts(edges),
-      sourceLabels,
-    });
+    let receipts = await loadReceipts(supabase, workspaceId, { limit, kind });
 
     // Search filter first — it bounds the "scope" the outcome tabs summarize.
     const q = data?.q?.trim().toLowerCase();
@@ -365,4 +402,106 @@ export const listTrustReceipts = createServerFn({ method: "GET" })
     if (receipts.length > limit) receipts = receipts.slice(0, limit);
 
     return { receipts, counts, workspace_id: workspaceId };
+  });
+
+// ---- TRUST-VERIFY (#26): an integrity check (SHA-256 fingerprint) over the ledger ----
+
+/** Cap the seal scope; covers the full ledger for typical workspaces. */
+const SEAL_LIMIT = 1000;
+
+export type LedgerSeal = {
+  available: boolean;
+  algo: string;
+  head: string;
+  count: number;
+  /** ISO time the seal was computed (the anchor moment to record). */
+  sealedAt: string;
+  workspace_id: string | null;
+};
+
+/**
+ * Compute the integrity fingerprint (a SHA-256 hash, NOT a blockchain) over the
+ * workspace's whole decision-and-outcome record. The returned head is the fingerprint
+ * a user SAVES; re-checking later (verifyLedgerSeal) confirms the record is unchanged.
+ * No key material — pure recomputation; available to every user. RLS is the boundary:
+ * loadReceipts runs on the caller's RLS-scoped client, so the fingerprint only ever
+ * covers records the caller may already read (a non-member of workspaceId gets the
+ * empty/genesis fingerprint). An optional Ed25519 signature is a possible later add-on.
+ */
+export const getLedgerSeal = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({ workspaceId: z.string().uuid().optional() })
+      .partial()
+      .parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<LedgerSeal> => {
+    const supabase = context.supabase as SupabaseClient;
+    const workspaceId = await resolveWorkspaceId(supabase, data?.workspaceId);
+    const sealedAt = new Date().toISOString();
+    if (!workspaceId) {
+      return {
+        available: false,
+        algo: SEAL_ALGO,
+        head: "",
+        count: 0,
+        sealedAt,
+        workspace_id: null,
+      };
+    }
+    const receipts = await loadReceipts(supabase, workspaceId, { limit: SEAL_LIMIT, kind: "all" });
+    const seal = await sealReceipts(receipts);
+    return {
+      available: true,
+      algo: seal.algo,
+      head: seal.head,
+      count: seal.count,
+      sealedAt,
+      workspace_id: workspaceId,
+    };
+  });
+
+export type LedgerVerification = VerifyResult & { available: boolean; sealedAt: string };
+
+/**
+ * Check the workspace's CURRENT record against a fingerprint the user saved earlier. A
+ * match confirms the ledger is unchanged since then; a mismatch reports that it changed
+ * (the count divergence is named when the saved count is given). Head-only by design —
+ * pinpointing which record changed needs the full saved seal, which arrives with the
+ * deferred write-time persistence. RLS-scoped exactly like getLedgerSeal.
+ */
+export const verifyLedgerSeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        // exactly a SHA-256 hex fingerprint (the format getLedgerSeal emits); rejects
+        // anything structurally invalid before the handler + the in-memory compare.
+        head: z.string().regex(/^[0-9a-f]{64}$/, "must be a SHA-256 hex fingerprint"),
+        count: z.number().int().min(0).max(SEAL_LIMIT).optional(),
+        workspaceId: z.string().uuid().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<LedgerVerification> => {
+    const supabase = context.supabase as SupabaseClient;
+    const sealedAt = new Date().toISOString();
+    const workspaceId = await resolveWorkspaceId(supabase, data.workspaceId);
+    if (!workspaceId) {
+      return {
+        available: false,
+        ok: false,
+        recomputedHead: "",
+        expectedHead: data.head,
+        count: 0,
+        expectedCount: data.count ?? 0,
+        brokenAt: null,
+        reason: "no workspace",
+        sealedAt,
+      };
+    }
+    const receipts = await loadReceipts(supabase, workspaceId, { limit: SEAL_LIMIT, kind: "all" });
+    const v = await verifyReceipts(receipts, { head: data.head, count: data.count });
+    return { available: true, ...v, sealedAt };
   });

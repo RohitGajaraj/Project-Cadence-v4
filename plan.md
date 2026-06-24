@@ -283,6 +283,19 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — TRUST-VERIFY ◐: a normal "Integrity check" for the Trust Ledger, all users, NOT blockchain)
+
+**WHY:** v11 #26, the lowest-rank UNTOUCHED item buildable without founder input (ORCH-DELEGATE needs a Linear key, POS/LANDING are founder-voice copy, DELEGATE-DESK is a product-IA call). Gives every user a way to confirm their decision-and-outcome record has not been altered. _Founder steer mid-build: NO blockchain anywhere now; this is NOT enterprise-only; keep it a normal, simple feature. Reframed accordingly (memory: no-blockchain-trust-integrity)._
+
+**Shipped (lane 2):**
+- **The integrity primitive** — new pure `src/lib/trust-verify.ts`: a plain SHA-256 hash chain over the ledger records (a CHECKSUM, not a blockchain — no chain/tokens/keys/external service). `canonicalizeReceipt` (only integrity-relevant fields; derived `evidenceCount`/`source.label` excluded so the fingerprint does not flap), `sealReceipts` (chain head = the fingerprint, total read-order-independent order), `verifyReceipts` (detects + can pinpoint alter/insert/remove/reorder), `shortHead`. Web Crypto (`crypto.subtle`), works in bun + Workers. 13 tests.
+- **Server fns** — refactored `trust-ledger.functions.ts` to a shared `loadReceipts` loader (listTrustReceipts behavior preserved, review-confirmed) + `getLedgerSeal` (the current fingerprint) + `verifyLedgerSeal` (check the live record against a saved fingerprint; head validated as exactly 64 hex). RLS-scoped: the fingerprint only ever covers records the caller may already read.
+- **The surface** — a calm `SealPanel` on `/trust-ledger`: "Integrity check · <fingerprint> · N records · as of <time>", a Copy-fingerprint affordance, and a "paste a saved fingerprint → Unchanged / Changed" verify. Hidden when the ledger is empty (an empty ledger hashes to a fixed constant, so it would be a meaningless match).
+
+**Verification (ran):** tsc 0, `bun test` 1411/1411 (13 new). **Adversarial review (4-lens Workflow — crypto-soundness, tamper-completeness, security/RLS, TS+behavior-preservation):** chain cryptographically SOUND, tamper-detection COMPLETE, behavior preservation + circular-import CLEAN. Folded: the empty-ledger genesis-hash guard (count===0), a total-order tie-break, the 64-hex head validator, head-only-live-path documentation. The "co-tenant workspaceId" + "no rate limit" notes are won't-fix-with-rationale (identical to the existing listTrustReceipts surface; RLS is the gate; a non-member gets only the hidden genesis fingerprint).
+
+**Status ◐:** the autonomous slice (the fingerprint + verify + surface, all users) is shipped; the OPTIONAL deferred add-ons are an Ed25519 signature (non-repudiation) + persisting the fingerprint at write time (which also lights up per-record pinpointing) — both need a provisioned key / write-path migration, and per the founder ruling stay optional, never blockchain, never enterprise-gated.
+
 ### 2026-06-24 (lane 2 — STITCH-LOOP ✅: one felt loop across the surfaces)
 
 **WHY:** v11 #9 (Cockpit, Tier 1) + the founder's "stitching + wiring". The engine is already one continuous loop (Sense → Decide → Define → Build → Ship → Learn + receipts), but the surfaces the operator walks between read as separate screens — the "feels fragmented" perception. This makes the one-system continuity felt at the UX layer. _Founder steer this session: build the ranked board top-down, decide IA myself; STITCH-LOOP was the lowest-Rank fully-open buildable item (BRAIN-UX #8 is chokepoint-gated → parked)._

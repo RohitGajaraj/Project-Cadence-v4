@@ -2,13 +2,33 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ScrollText, Gavel, Zap, User, Bot, History, Link2, Search, Share2, Copy, Check } from "lucide-react";
+import {
+  ScrollText,
+  Gavel,
+  Zap,
+  User,
+  Bot,
+  History,
+  Link2,
+  Search,
+  Share2,
+  Copy,
+  Check,
+  ShieldCheck,
+  AlertTriangle,
+} from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
 import { SurfaceHeader, TabRow, EmptyState, MonoLabel } from "@/components/cadence/Primitives";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { listTrustReceipts, type TrustReceipt } from "@/lib/trust-ledger.functions";
+import {
+  listTrustReceipts,
+  getLedgerSeal,
+  verifyLedgerSeal,
+  type TrustReceipt,
+} from "@/lib/trust-ledger.functions";
 import { setDecisionShared } from "@/lib/decisions-share.functions";
+import { shortHead } from "@/lib/trust-verify";
 
 export const Route = createFileRoute("/_authenticated/trust-ledger")({
   component: TrustLedgerPage,
@@ -42,7 +62,13 @@ const STATUS_COLOR: Record<string, string> = {
   pending: "var(--ink-subtle)",
 };
 
-function OutcomePill({ outcome, supersededBy }: { outcome: TrustReceipt["outcome"]; supersededBy: string | null }) {
+function OutcomePill({
+  outcome,
+  supersededBy,
+}: {
+  outcome: TrustReceipt["outcome"];
+  supersededBy: string | null;
+}) {
   const superseded = outcome === "superseded";
   return (
     <span
@@ -58,7 +84,9 @@ function OutcomePill({ outcome, supersededBy }: { outcome: TrustReceipt["outcome
         padding: "2px 8px",
         borderRadius: 999,
         color: superseded ? "var(--ink-subtle)" : "var(--emerald)",
-        background: superseded ? "var(--soft-stone)" : "color-mix(in srgb, var(--emerald) 12%, transparent)",
+        background: superseded
+          ? "var(--soft-stone)"
+          : "color-mix(in srgb, var(--emerald) 12%, transparent)",
         border: `1px solid ${superseded ? "var(--hairline)" : "color-mix(in srgb, var(--emerald) 30%, transparent)"}`,
       }}
     >
@@ -81,7 +109,11 @@ function ShareControl({ decisionId }: { decisionId: string }) {
 
   const slug = m.data?.share_slug ?? null;
   const link =
-    slug && typeof window !== "undefined" ? `${window.location.origin}/d/${slug}` : slug ? `/d/${slug}` : null;
+    slug && typeof window !== "undefined"
+      ? `${window.location.origin}/d/${slug}`
+      : slug
+        ? `/d/${slug}`
+        : null;
 
   const chip: React.CSSProperties = {
     display: "inline-flex",
@@ -120,7 +152,10 @@ function ShareControl({ decisionId }: { decisionId: string }) {
   }
   if (m.data && m.data.available === false) {
     return (
-      <span style={{ ...chip, cursor: "default", color: "var(--ink-faint)" }} title="Sharing lands on the next deploy">
+      <span
+        style={{ ...chip, cursor: "default", color: "var(--ink-faint)" }}
+        title="Sharing lands on the next deploy"
+      >
         Sharing not available yet
       </span>
     );
@@ -141,7 +176,9 @@ function ShareControl({ decisionId }: { decisionId: string }) {
 function ReceiptCard({ r }: { r: TrustReceipt }) {
   const KindIcon = r.kind === "decision" ? Gavel : Zap;
   const statusColor = STATUS_COLOR[r.status] ?? "var(--ink-subtle)";
-  const decidedBy = r.humanDecided ? { Icon: User, label: "approved by you" } : { Icon: Bot, label: r.actor ? `${r.actor}` : "agent" };
+  const decidedBy = r.humanDecided
+    ? { Icon: User, label: "approved by you" }
+    : { Icon: Bot, label: r.actor ? `${r.actor}` : "agent" };
   return (
     <article
       className="bento"
@@ -174,11 +211,20 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
             <OutcomePill outcome={r.outcome} supersededBy={r.supersededBy} />
           </div>
           {r.rationale ? (
-            <p style={{ fontSize: 12.5, color: "var(--ink-muted, #4a443c)", lineHeight: 1.5, marginTop: 5 }}>
+            <p
+              style={{
+                fontSize: 12.5,
+                color: "var(--ink-muted, #4a443c)",
+                lineHeight: 1.5,
+                marginTop: 5,
+              }}
+            >
               {r.rationale}
             </p>
           ) : (
-            <p style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 5, fontStyle: "italic" }}>
+            <p
+              style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 5, fontStyle: "italic" }}
+            >
               No rationale recorded.
             </p>
           )}
@@ -196,7 +242,13 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
             </MonoLabel>
             <span
               className="tabular-nums"
-              style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: statusColor, textTransform: "uppercase", letterSpacing: "0.04em" }}
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                color: statusColor,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
             >
               {r.status}
             </span>
@@ -217,7 +269,14 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
             ) : null}
             {/* TRUST-SHARE: only decisions are publicly shareable (reuse /d/$slug). */}
             {r.kind === "decision" ? <ShareControl decisionId={r.id} /> : null}
-            <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-faint)" }}>
+            <span
+              style={{
+                marginLeft: "auto",
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                color: "var(--ink-faint)",
+              }}
+            >
               {relTime(r.occurredAt)}
             </span>
           </div>
@@ -226,6 +285,150 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
     </article>
   );
 }
+
+/**
+ * TRUST-VERIFY (#26): the integrity check. Shows a SHA-256 FINGERPRINT (a plain
+ * checksum, NOT a blockchain) of the whole decision-and-outcome record — what a user
+ * SAVES now and re-checks later to confirm the ledger has not changed. "Verify" checks
+ * the current record against a fingerprint saved earlier. Available to every user.
+ * Calm chrome: one quiet bar, the check revealed on demand. (An optional signed mode
+ * and saving the fingerprint at write time are possible later add-ons.)
+ */
+function SealPanel() {
+  const fSeal = useServerFn(getLedgerSeal);
+  const fVerify = useServerFn(verifyLedgerSeal);
+  const sealQ = useQuery({ queryKey: ["ledger-seal"], queryFn: () => fSeal({ data: {} }) });
+  const verify = useMutation({
+    mutationFn: (head: string) => fVerify({ data: { head: head.trim() } }),
+  });
+  const [open, setOpen] = useState(false);
+  const [paste, setPaste] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const seal = sealQ.data;
+  // Hide when there is nothing to fingerprint: an empty ledger hashes to a fixed
+  // genesis constant (identical across workspaces), so showing it would offer a
+  // meaningless "match" — guard on count === 0.
+  if (!seal || seal.available === false || !seal.head || seal.count === 0) return null;
+
+  const v = verify.data;
+
+  return (
+    <section
+      className="bento"
+      style={{ padding: "12px 16px", marginBottom: 18, background: "var(--surface-1, #fff)" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <ShieldCheck size={15} strokeWidth={1.9} color="var(--emerald)" />
+        <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink)" }}>Integrity check</span>
+        <span
+          className="tabular-nums"
+          title={seal.head}
+          style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-subtle)" }}
+        >
+          {shortHead(seal.head)}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-faint)" }}>
+          {seal.count} record{seal.count === 1 ? "" : "s"} · as of {relTime(seal.sealedAt)}
+        </span>
+        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(seal.head);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              } catch {
+                /* clipboard blocked — the full head is in the title attribute */
+              }
+            }}
+            style={chipStyle}
+            title="Copy the full fingerprint to save it"
+          >
+            {copied ? <Check size={11} strokeWidth={2} /> : <Copy size={11} strokeWidth={1.8} />}
+            {copied ? "Copied" : "Copy fingerprint"}
+          </button>
+          <button type="button" onClick={() => setOpen((o) => !o)} style={chipStyle}>
+            {open ? "Close" : "Verify"}
+          </button>
+        </span>
+      </div>
+
+      {open ? (
+        <div
+          style={{ marginTop: 11, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
+        >
+          <input
+            value={paste}
+            onChange={(e) => setPaste(e.target.value)}
+            placeholder="Paste a fingerprint you saved earlier"
+            spellCheck={false}
+            style={{
+              flex: 1,
+              minWidth: 220,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11.5,
+              padding: "7px 10px",
+              border: "1px solid var(--hairline)",
+              borderRadius: 8,
+              background: "transparent",
+              color: "var(--ink)",
+              outline: "none",
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => paste.trim() && verify.mutate(paste)}
+            disabled={verify.isPending || paste.trim().length < 8}
+            style={{
+              ...chipStyle,
+              opacity: verify.isPending || paste.trim().length < 8 ? 0.55 : 1,
+            }}
+          >
+            {verify.isPending ? "Checking…" : "Check"}
+          </button>
+          {v ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: v.ok ? "var(--emerald)" : "var(--rose)",
+              }}
+            >
+              {v.ok ? (
+                <Check size={13} strokeWidth={2.2} />
+              ) : (
+                <AlertTriangle size={13} strokeWidth={2} />
+              )}
+              {v.ok
+                ? "Unchanged — your ledger matches this fingerprint."
+                : `Changed — ${v.reason ?? "the ledger no longer matches this fingerprint"}.`}
+            </span>
+          ) : verify.isError ? (
+            <span style={{ fontSize: 12, color: "var(--rose)" }}>Could not verify. Try again.</span>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+const chipStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 5,
+  fontFamily: "var(--font-mono)",
+  fontSize: 10,
+  color: "var(--ink-subtle)",
+  background: "transparent",
+  border: "1px solid var(--hairline)",
+  borderRadius: 99,
+  padding: "3px 9px",
+  cursor: "pointer",
+};
 
 function TrustLedgerPage() {
   const { activeWorkspace } = useWorkspace();
@@ -255,7 +458,10 @@ function TrustLedgerPage() {
   return (
     <AppShell>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Trust Ledger"]} />
-      <div data-screen-label="Trust Ledger" style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}>
+      <div
+        data-screen-label="Trust Ledger"
+        style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}
+      >
         <SurfaceHeader
           kicker="Loop · Trust"
           icon={ScrollText}
@@ -263,10 +469,28 @@ function TrustLedgerPage() {
           sub="Every decision and autonomous action, as a receipt: what changed, why, the evidence, who approved it and when, and whether it still stands or was superseded."
         />
 
+        <SealPanel />
+
         <TabRow tabs={kindTabs} active={kind} onSet={(id) => setKind(id as Kind)} />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
-          <div style={{ display: "inline-flex", gap: 2, padding: 2, background: "var(--soft-stone)", borderRadius: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 18,
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              gap: 2,
+              padding: 2,
+              background: "var(--soft-stone)",
+              borderRadius: 8,
+            }}
+          >
             {(["all", "standing", "superseded"] as Outcome[]).map((o) => (
               <button
                 key={o}
@@ -306,13 +530,22 @@ function TrustLedgerPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search what, why, or who"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 12.5, width: "100%", color: "var(--ink)" }}
+              style={{
+                border: "none",
+                outline: "none",
+                background: "transparent",
+                fontSize: 12.5,
+                width: "100%",
+                color: "var(--ink)",
+              }}
             />
           </label>
         </div>
 
         {query.isPending ? (
-          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>Loading receipts…</div>
+          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>
+            Loading receipts…
+          </div>
         ) : query.isError ? (
           <div style={{ fontSize: 13, color: "var(--rose)", padding: "32px 0" }}>
             Could not load the Trust Ledger. {(query.error as Error)?.message}

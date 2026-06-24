@@ -4,18 +4,34 @@
 
 ---
 
-## RESUME CURSOR (read first) — after 10 cycles
+## RESUME CURSOR (read first) — after 11 cycles
 
-**State:** 10 cycles done this run (BRAIN-UX `◐` #8, INTEROP `◐` #16, CORE-UX-TRUST `◐` #10, CORE-UX-FELT `◐` #11, then **STITCH-LOOP `✅` #9** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
+**State:** 11 cycles done this run (… STITCH-LOOP `✅` #9, then **TRUST-VERIFY `◐` #26** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
 
-**Two NEW founder steers now STANDING (documented + in memory `build-dont-overpark`):**
-1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs the founder's specific input (positioning/pricing WORDING, secrets/keys, recurring-AI-spend/cron activation, outward security-scope/audit) or is chokepoint-pinned (`ai/*`). Design polish alone is not a reason to park.
-2. **Whole-register coverage + class-of-work order** (founder ruling 2026-06-24, NOW in [`AGENTS.md`](../../../AGENTS.md) §3): don't stop at the v11 front — the whole register is in scope. Class order = untouched `⬜` FIRST → partial `◐` SECOND (top-down) → pure design THIRD. Halt ONLY on a genuine founder-creative/strategic call or a secret I don't hold. A UI I can't visually verify is NOT a halt (gate tsc + tests, live-verify on publish).
-3. **Compact AFTER each completed cycle (committed + pushed + docs-looped + released), NEVER mid-cycle** — via ScheduleWakeup a fresh turn, then continue without halt.
+**Founder steers now STANDING (in memory + docs):**
+1. **Build the ranked board top-down; decide IA/design yourself** — park ONLY what needs the founder's specific input or is chokepoint-pinned (`ai/*`). (memory `build-dont-overpark`)
+2. **Whole-register coverage + class-of-work order** (AGENTS.md §3): don't stop at the v11 front; class order = untouched `⬜` FIRST → partial `◐` SECOND (top-down) → pure design THIRD. Halt ONLY on a genuine founder-creative/strategic call or a secret I don't hold. A UI I can't visually verify is NOT a halt.
+3. **Compact AFTER each completed cycle, NEVER mid-cycle** — via ScheduleWakeup a fresh turn, then continue.
+4. **NO BLOCKCHAIN anywhere now** (founder ruling 2026-06-24, memory `no-blockchain-trust-integrity` + session-decisions): TRUST-VERIFY = a plain SHA-256 fingerprint "Integrity check" for EVERY user, NOT enterprise, NOT blockchain; signing/persistence are deferred OPTIONAL add-ons. Don't reintroduce blockchain/enterprise framing.
 
-**NEXT PICKS (top-down, class order):** the remaining `◐` front items each have only founder-gated/chokepoint remainders (BRAIN-UX = AI ceiling; INTEROP = outward WRITE/A2A; CORE-UX-TRUST = auto-clear gates; CORE-UX-FELT = cold-gateway/de-jargon — buildable, a candidate). Untouched `⬜` front: **#14 CONNECTORS-V11** (one connectors home), **#15 ORCH-DELEGATE** (check founder-gate on external coding-agent scope), **#21 LANDING-PAGE-V11** (PARK — landing copy is founder voice). #12 IA-NAV-V11 + #13 SETTINGS-SEGREGATE are lane-1/done. Below the front, sweep untouched `⬜` Tier-1/Tier-3 register rows by Rank. **PARK #20 POS-V11** (positioning wording). Use `bash scripts/lane.sh next` + reap each cycle; lane 1 runs concurrently.
+**NEXT PICKS (top-down, class order):** untouched `⬜` getting thin. **#15 ORCH-DELEGATE** = founder-gated (needs a Linear API key; external-agent half = BLD-04). **#25 DELEGATE-DESK** = a new first-class surface whose relationship to Missions is a product-IA call (lean PARK / founder input). **#20 POS-V11 + #21 LANDING-PAGE-V11** = PARK (founder-voice copy). Remaining untouched `⬜` Tier-3: **#27 DEF-04** (designer scaffolds — check it doesn't need a design-API key), **#28 REPO-DECLUTTER-V11** (pure repo hygiene — safe autonomous), **#30 AGENT-FLEET-VIEW** (big future surface). `◐` buildable candidates: **CORE-UX-FELT** cold-gateway hardening in WedgeTeardown (NOTE: its de-jargon-govern.tsx half now COLLIDES with lane-1 IA-DEPTH-V11 on govern.tsx — do the WedgeTeardown half only). Use `bash scripts/lane.sh next` + reap each cycle; lane 1 runs concurrently (was on IA-DEPTH-V11 = engine-room-bands + govern.tsx).
 
 ---
+
+## 2026-06-24 — Cycle 11: TRUST-VERIFY ◐ — a normal "Integrity check" for the Trust Ledger (all users, NOT blockchain)
+
+**Pick:** lowest-rank UNTOUCHED `⬜` item buildable without founder input. Skipped: ORCH-DELEGATE #15 (Linear API key + BLD-04 gated), POS #20 / LANDING #21 (founder-voice copy), DELEGATE-DESK #25 (new-surface-vs-Missions product-IA call). DBR(H1) #22 is `◐` (deferred under class order). CONNECTORS-V11 #14 shipped by lane 1.
+
+**Built:** a plain integrity check over the Trust Ledger — a SHA-256 FINGERPRINT (a checksum, NOT a blockchain), available to every user.
+- Pure `src/lib/trust-verify.ts` — canonicalize (integrity-relevant fields only) + hash chain (`sealReceipts` head = fingerprint, total order) + `verifyReceipts` (detect/pinpoint tamper) + `shortHead`; Web Crypto; 13 tests.
+- `trust-ledger.functions.ts` — shared `loadReceipts` (listTrustReceipts preserved) + `getLedgerSeal` + `verifyLedgerSeal` (head = exactly 64 hex; RLS-scoped).
+- `_authenticated.trust-ledger.tsx` — calm `SealPanel` ("Integrity check · fingerprint · N records", Copy fingerprint, paste-to-verify Unchanged/Changed; hidden on an empty ledger).
+
+**Founder steer mid-build (now standing rule #4 above):** NO blockchain; not enterprise-only; keep it normal. **Reframed** all copy/comments away from "tamper-evident/blockchain/regulated-buyer/enterprise" → "Integrity check, all users"; signing + persistence stay deferred OPTIONAL. Kept (not reverted) since the built checksum is harmless + useful.
+
+**Gate:** tsc 0 · `bun test` 1411/1411 (13 new). **Review:** 4-lens adversarial Workflow (crypto-soundness, tamper-completeness, security/RLS, TS+behavior) — chain SOUND, detection COMPLETE, behavior+import CLEAN. Folded: empty-ledger `count===0` guard, total-order tie-break, 64-hex head validator, head-only-path docs. Won't-fix (rationale): co-tenant workspaceId + no-rate-limit = identical to the existing listTrustReceipts surface, RLS is the gate.
+
+**Status `◐`:** autonomous slice (fingerprint + verify + surface, all users) shipped; deferred OPTIONAL = Ed25519 signature + write-time persistence (lights up per-record pinpointing). Per founder ruling these stay optional, never blockchain/enterprise.
 
 ## 2026-06-24 — Cycle 10: STITCH-LOOP ✅ — one felt loop across the surfaces (v11 #9)
 

@@ -26,6 +26,11 @@
 
 ## Decision log
 
+### 2026-06-24 · No blockchain now; Trust-Ledger integrity is a normal, all-users feature (not enterprise)
+**Decision:** TRUST-VERIFY (#26) ships as a plain **SHA-256 fingerprint** of the Trust Ledger — an **"Integrity check"** available to **every user**, explicitly **NOT a blockchain** (no chain, tokens, keys, or external service) and **NOT enterprise-gated**. The "tamper-evident / verifiable provenance / regulated-buyer" framing is retired. Cryptographic **signing** (Ed25519 non-repudiation) and **persisting** the fingerprint at write time are **deferred, optional** later add-ons — never a gate.
+**Why:** Founder ruling (during the build): no blockchain association in the product now; the normal ledger should stay normal and simple; and integrity should be available to basic users, not framed enterprise-only. The built feature is a harmless, useful checksum (save a fingerprint, later confirm nothing changed), so it was kept and reframed rather than reverted. (Founder also flagged it was slated for later; it was picked as the lowest-rank untouched item buildable without his input.)
+**Impact:** Memory `no-blockchain-trust-integrity`; dashboard row #26 reframed (◐, all-users, not blockchain/enterprise); future strategy/dashboard rows must not reintroduce blockchain or enterprise-only framing for this.
+
 ### 2026-06-23 · v11 Guiding Star: the outsider strategic teardown + the consumer-grade agentic build plan
 
 **Context.** The founder asked for a brutally honest outsider teardown of Cadence (market + product), grounded in what is actually wired vs claimed, using the full toolset, ending in ONE standing strategy document + a detailed agentic build plan, with everything documented at depth so both founder and agents can re-reference what was discussed and why.
