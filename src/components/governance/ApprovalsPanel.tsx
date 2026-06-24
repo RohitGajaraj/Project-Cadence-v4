@@ -14,6 +14,7 @@ import { Check, Clock, ExternalLink, Shield, X } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { decideApproval } from "@/lib/agent_loop.functions";
 import { listGovernApprovals, extendApprovalTtl } from "@/lib/governance.functions";
+import { formatTrackRecord, type AgentTrackRecord } from "@/lib/agent-track-record";
 import { MonoLabel, RiskTag, StepDot } from "@/components/cadence/Primitives";
 
 type GovernApproval = Awaited<ReturnType<typeof listGovernApprovals>>["approvals"][number];
@@ -194,6 +195,7 @@ export function ApprovalsPanel() {
             <ApprovalCard
               key={a.id}
               a={a}
+              track={q.data?.trackByAgent?.[a.agent_slug ?? ""] ?? null}
               busy={decide.isPending && decide.variables?.approvalId === a.id}
               extending={extend.isPending && extend.variables === a.id}
               onApprove={() =>
@@ -215,6 +217,7 @@ export function ApprovalsPanel() {
    production agent_approvals rows. */
 function ApprovalCard({
   a,
+  track,
   busy,
   extending,
   onApprove,
@@ -222,12 +225,14 @@ function ApprovalCard({
   onExtend,
 }: {
   a: GovernApproval;
+  track: AgentTrackRecord | null;
   busy: boolean;
   extending: boolean;
   onApprove: () => void;
   onReject: () => void;
   onExtend: () => void;
 }) {
+  const trackLabel = formatTrackRecord(track);
   const resolvedLine = a.status === "pending" ? undefined : RESOLVED_LINE[a.status];
   const resolved = a.status !== "pending";
   const expiry = a.status === "pending" ? relExpiry(a.expires_at) : null;
@@ -259,6 +264,15 @@ function ApprovalCard({
           <span className="mono-label" style={{ color: "var(--ink)" }}>
             {a.agent_slug ?? "agent"}
           </span>
+          {trackLabel && (
+            <span
+              className="mono-label"
+              style={{ color: "var(--ink-faint)", fontSize: 9.5 }}
+              title="This agent's decided-approval record across your past gates"
+            >
+              {trackLabel}
+            </span>
+          )}
           <span style={{ fontSize: 12, color: "var(--ink-faint)" }}>wants</span>
           <span className="mono-label" style={{ color: "var(--agent)" }}>
             {a.tool_name}

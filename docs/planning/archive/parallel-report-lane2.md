@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-24 — Cycle 9: CORE-UX-FELT ◐ — brief leads with stakes + the Today home declutter
+
+**Founder steer this cycle:** stop over-parking #11-#21 — build the ranked board top-down and make the design/IA calls myself; park ONLY what needs the founder's specific input (saved to memory: `build-dont-overpark`). So I released TRUST-VERIFY (#26, no code written) and took **#11 CORE-UX-FELT** top-down. Mid-cycle the founder ALSO gave a specific UX ask: the Today home over-populates with the full approvals list — collapse it to one subtle bar that opens the detail. Folded that in (it IS CORE-UX-FELT) as the priority.
+
+**Shipped (◐):**
+- **Brief leads with STAKES not counts** — `ensureTodayBrief` folds pending gates into reversibility/blast-radius (pure `src/lib/copilot-brief.ts`, `summarizeGateStakes`/`describeStakes`, 7 tests) + a reframed prompt. The brief CALLS callModel but the change is the prompt/data, NOT the pinned runtime — so it's autonomously buildable.
+- **FOUNDER ASK — Today declutter** — gate approvals collapsed into one calm `PendingApprovalsBar` (count + quiet high-stakes hint) → Govern → Approvals. Real PM decisions (spec/opp reviews) still lead as cards.
+- **Track record relocated** — the CORE-UX-TRUST per-agent "approved 44/47" moved to `ApprovalsPanel` (its new point of decision); orphaned Today track query removed.
+
+**Adversarial review (ts + security):** security clean. TS found 1 HIGH (brief gate query missing `.eq("user_id")` — could feed another user's gates into the brief) → **fixed + verified**.
+
+**Gate:** tsc 0 · **1346 full suite** · no migration · no chokepoint. Docs: dashboard #11 + top-summary, `plan.md` §4.
+
+**Remaining (◐, autonomous, next):** cold-gateway first-run hardening (`WedgeTeardown`) + de-jargon `LoopStations`/`govern`.
+
+**State:** committed + FF-pushed; claim released as ◐. (Founder ruling this session: compact AFTER each completed cycle, then continue — done here.)
+
+---
+
 ## 2026-06-24 — Cycle 8: INTEROP-V11 ◐ — MCP read surface repaired + completed
 
 **Picked:** `INTEROP-V11` (#16, ◐). Lane 1 was on PLAYBOOK-REGISTRY (#17, claimed 4 min before) + the chokepoint pin held `ai/*` — no MCP overlap. Claimed #16 atomically + pushed the `🔨 In Dev` dashboard claim before code.

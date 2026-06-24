@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
+import { summarizeGateStakes, describeStakes } from "@/lib/copilot-brief";
 
 const MODEL = "google/gemini-2.5-flash";
 
@@ -33,7 +34,7 @@ export async function ensureTodayBrief(
     { data: tasks },
     { data: meetings },
     { data: profile },
-    { count: approvalsCount },
+    { data: pendingGates },
     { data: reviewPrds },
     { data: agentRuns },
     { data: learnings },
@@ -51,8 +52,10 @@ export async function ensureTodayBrief(
     supabase.from("profiles").select("display_name").maybeSingle(),
     supabase
       .from("agent_approvals")
-      .select("id", { count: "exact", head: true })
-      .in("escalation_state", ["pending", "expired"]),
+      .select("tool_name,agent_slug")
+      .eq("user_id", userId)
+      .in("escalation_state", ["pending", "expired"])
+      .limit(20),
     supabase.from("prds").select("id,title").eq("status", "review").limit(5),
     supabase
       .from("agent_runs")
@@ -69,14 +72,15 @@ export async function ensureTodayBrief(
       .limit(6),
   ]);
 
+  const gateStakes = summarizeGateStakes(pendingGates ?? []);
   const prompt = `Write a calm daily brief for ${profile?.display_name ?? "the user"}. Avoid emojis. Address the user by first name.
 Structure, in order:
-1. Lead with the operator's calls today: the pending approvals count and the specs awaiting review (by title — at most 3). Imperative voice ("Approve...", "Review...").
+1. Lead with the STAKES of the operator's calls today, not a raw count — name the most consequential pending call and whether it can be undone (use PENDING CALLS verbatim for what is at risk), then the specs awaiting review (by title — at most 3). Imperative voice ("Approve...", "Review..."). If the queue is clear, say so plainly and move on. Never invent urgency.
 2. One line on what agents completed overnight.
 3. What the loop LEARNED recently (the insight memo): if RECENT LEARNINGS is non-empty, add one or two lines naming the priority or spec that moved and why. Cite the outcome verdict and the ICE shift (prior_ice to new_ice), for example "the off-hours bet proved out, so its priority rose." If RECENT LEARNINGS is empty, skip this step entirely; never invent a learning.
 4. One concrete focus for the day, based on the meetings and deep-work tasks.
 
-PENDING APPROVALS: ${approvalsCount ?? 0}
+PENDING CALLS (lead with these stakes, not a count): ${describeStakes(gateStakes)}
 SPECS AWAITING REVIEW: ${JSON.stringify(reviewPrds ?? [])}
 OVERNIGHT AGENT RUNS: ${JSON.stringify(agentRuns ?? [])}
 RECENT LEARNINGS (closed-loop outcomes, what the product LEARNED; each has a verdict, a summary, and the ICE shift from prior_ice to new_ice): ${JSON.stringify(learnings ?? [])}

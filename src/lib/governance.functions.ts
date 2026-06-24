@@ -7,6 +7,12 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { executeApproval, type Json } from "@/lib/ai/loop.server";
+import {
+  summarizeAgentRecords,
+  trackRecordsToObject,
+  type AgentTrackRecord,
+  type DecidedApprovalRow,
+} from "@/lib/agent-track-record";
 
 /** Returns the current pause state for a workspace + recent in-flight missions + stale approvals. */
 export const getGovernanceOverview = createServerFn({ method: "POST" })
@@ -276,12 +282,34 @@ export const listGovernApprovals = createServerFn({ method: "POST" })
       .sort((x, y) => x - y);
     const medianResponseMs = waits.length ? waits[Math.floor(waits.length / 2)] : null;
 
+    // CORE-UX-TRUST: the per-agent track record, now surfaced HERE (the point of
+    // decision moved off Today into Govern → Approvals). All-time decided rows for
+    // the agents in this queue (RLS-scoped to the caller); honest, no fabricated
+    // rollback metric. Reuses the same pure tally as the Today brief used.
+    const agentSlugs = [
+      ...new Set(approvals.map((a) => a.agent_slug).filter((s): s is string => Boolean(s))),
+    ];
+    let trackByAgent: Record<string, AgentTrackRecord> = {};
+    if (agentSlugs.length) {
+      const { data: hist } = await db
+        .from("agent_approvals")
+        .select("agent_slug,status,decided_at")
+        .eq("user_id", userId)
+        .in("agent_slug", agentSlugs)
+        .not("decided_at", "is", null)
+        .limit(1000);
+      trackByAgent = trackRecordsToObject(
+        summarizeAgentRecords((hist ?? []) as DecidedApprovalRow[]),
+      );
+    }
+
     return {
       approvals: approvals.map((a) => ({
         ...a,
         mission_title: a.mission_id ? (titleOf.get(a.mission_id) ?? null) : null,
         risk: riskOf.get(a.tool_name) ?? "medium",
       })),
+      trackByAgent,
       medianResponseMs,
     };
   });

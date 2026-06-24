@@ -283,6 +283,21 @@ Sequencing rule unchanged: architecture first, so later stages are _additions, n
 
 ## 4. Active build log (update as we ship)
 
+### 2026-06-24 (lane 2 — CORE-UX-FELT ◐: brief leads with stakes + the Today home declutter)
+
+**WHY:** v11 core-user fix (#11) + a direct founder ask. Two felt fixes: a chief-of-staff brief that opens with what is AT STAKE (not a task count), and a Today home that does not over-populate with a full gate-approval list (it read as a babysitting queue). _Founder steer this session: build the ranked board top-down and make the design/IA calls myself; park ONLY what needs the founder's specific input. Memory: build-dont-overpark._
+
+**Shipped (lane 2):**
+- **Brief leads with stakes** — `ensureTodayBrief` now fetches the pending gates' tools and folds them (via the static `tool-consequences` catalogue) into a deterministic stakes line that the brief prompt leads with: "an irreversible production deploy is waiting" beats "3 approvals pending". New pure `src/lib/copilot-brief.ts` (`summarizeGateStakes` ranks irreversible > partial > reversible, tie-broken by blast radius; `describeStakes`; 7 tests).
+- **FOUNDER ASK — Today home declutter** — the gate-approval list is collapsed into ONE calm `PendingApprovalsBar` (count + a quiet "N need a closer look" hint, reusing the same stakes math) that opens the full decide-able detail in Govern → Approvals. The substantive PM decisions (review a spec, keep/kill an opportunity) still lead as cards. Clean front, deep detail on demand (engine-room doctrine).
+- **Relocated the per-agent track record** (CORE-UX-TRUST) to `ApprovalsPanel` — its point of decision moved off Today, so the "approved 44/47" standing follows it; the now-orphaned Today track query was removed (no wasted DB call per home load).
+
+**Adversarial review (ts + security):** security clean (tenant isolation holds; prompt-injection of `tool_name` is the same low-risk class as the brief's existing data interpolation, display-only output). TS found 1 HIGH — the brief's gate query was missing `.eq("user_id", userId)` (every other call site has it; could feed another user's gates into the brief) — **fixed**.
+
+**Gate:** tsc 0 · **1346 tests** · no migration · no chokepoint (the brief CALLS callModel but the change is to the prompt/data it assembles, not the runtime).
+
+**Remaining (◐):** cold-gateway first-run hardening (`WedgeTeardown`) + de-jargon the `LoopStations`/`govern` surfaces.
+
 ### 2026-06-24 (lane 2 — INTEROP-V11 ◐: MCP read surface repaired + completed)
 
 **WHY:** v11 #16 wants external agents + platforms to read Cadence. While adding the named "roadmap/spec read tools," a live-schema audit via the Lovable MCP found the existing read surface was broken by schema drift — so the strong move was to repair it AND complete it, not bolt new tools onto broken ones.

@@ -37,6 +37,7 @@ import { describeCompounding, summarizeCompounding } from "@/lib/moat-vis";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/gauntlet.functions";
 import { DecisionCard } from "@/components/today/DecisionCard";
+import { PendingApprovalsBar } from "@/components/today/PendingApprovalsBar";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { MemoryExpiryBanner } from "@/components/plg/MemoryExpiryBanner";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
@@ -583,32 +584,10 @@ function Dashboard() {
             </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {visibleApprovals.map((a) => (
-                <DecisionCard
-                  key={a.id}
-                  item={{
-                    kind: "gate",
-                    id: a.id,
-                    agentSlug: a.agent_slug,
-                    toolName: a.tool_name,
-                    rationale: a.rationale,
-                    traceId: a.trace_id,
-                    model: a.model,
-                    estCostUsd: a.est_cost_usd,
-                    expiresAt: a.expires_at,
-                    escalationState: a.escalation_state,
-                    track: ny?.trackByAgent?.[a.agent_slug] ?? null,
-                  }}
-                  onApprove={(id) =>
-                    decideApproval.mutate({ approvalId: id, decision: "approved" })
-                  }
-                  onReject={(id, reason) =>
-                    decideApproval.mutate({ approvalId: id, decision: "rejected", reason })
-                  }
-                  onDefer={deferCall}
-                  isDeciding={decideApproval.isPending}
-                />
-              ))}
+              {/* Substantive decision calls (review a spec, keep/kill an opportunity)
+                  lead — those are the PM's real calls. The agent tool-approval gates
+                  are collapsed into one calm bar below (founder ask 2026-06-24): the
+                  home should not read as a babysitting queue. */}
               {visiblePrd.map((p) => (
                 <DecisionCard
                   key={p.id}
@@ -637,6 +616,14 @@ function Dashboard() {
                   isDeciding={decideApproval.isPending}
                 />
               ))}
+              {/* The collapsed approvals summary — one calm bar, opens the full
+                  decide-able detail in Govern → Approvals. */}
+              <PendingApprovalsBar
+                gates={visibleApprovals.map((a) => ({
+                  tool_name: a.tool_name,
+                  agent_slug: a.agent_slug,
+                }))}
+              />
             </div>
           )}
         </section>

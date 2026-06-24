@@ -11,12 +11,6 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isSideEffectingTool } from "@/lib/tool-consequences";
-import {
-  summarizeAgentRecords,
-  trackRecordsToObject,
-  type AgentTrackRecord,
-  type DecidedApprovalRow,
-} from "@/lib/agent-track-record";
 import type { CriticReview } from "@/lib/discovery.functions";
 import { entitlementsFor, normalizePlanTier, type PlanTier } from "@/lib/entitlements";
 import { assessMemoryExpiry, type MemoryExpiryState } from "@/lib/plg-memory-expiry";
@@ -62,10 +56,6 @@ export type NeedsYou = {
    *  Null until at least one gate has been decided. Backs the Today
    *  throughput panel ("Gate response · your median"). */
   gateMedianMinutes: number | null;
-  /** CORE-UX-TRUST: per-agent decided-approval record for the agents in the
-   *  current gates, keyed by agent_slug. Powers the inline "approved 44/47"
-   *  standing on the DecisionCard — trust at the point of decision. */
-  trackByAgent: Record<string, AgentTrackRecord>;
 };
 
 export const getNeedsYou = createServerFn({ method: "GET" })
@@ -169,35 +159,12 @@ export const getNeedsYou = createServerFn({ method: "GET" })
         a.trace_id && costByTrace.has(a.trace_id) ? (costByTrace.get(a.trace_id) ?? null) : null,
     }));
 
-    // CORE-UX-TRUST: the per-agent TRACK RECORD at the point of decision. For the
-    // agents in the current gates, tally their all-time DECIDED approvals (RLS
-    // scopes to the caller). Honest by construction — only the approval record we
-    // actually store; no fabricated rollback metric (see agent-track-record.ts).
-    const gateSlugs = [...new Set(approvalRows.map((a) => a.agent_slug).filter(Boolean))];
-    let trackByAgent: Record<string, AgentTrackRecord> = {};
-    if (gateSlugs.length > 0) {
-      // All-time decided rows for these agents. The 1000 cap is a safety ceiling,
-      // not a window — a single user reaching 1000 decided gates for one agent is
-      // far beyond any real workspace, so no honest record is truncated in practice.
-      const { data: hist } = await supabase
-        .from("agent_approvals")
-        .select("agent_slug,status,decided_at")
-        .eq("user_id", userId)
-        .in("agent_slug", gateSlugs)
-        .not("decided_at", "is", null)
-        .limit(1000);
-      trackByAgent = trackRecordsToObject(
-        summarizeAgentRecords((hist ?? []) as DecidedApprovalRow[]),
-      );
-    }
-
     return {
       approvals: enrichedApprovals,
       prdCalls: (prds.data ?? []) as NeedsYou["prdCalls"],
       oppCalls: (opps.data ?? []) as NeedsYou["oppCalls"],
       spendTodayUsd,
       gateMedianMinutes,
-      trackByAgent,
     };
   });
 
