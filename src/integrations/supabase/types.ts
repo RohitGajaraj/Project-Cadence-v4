@@ -2521,6 +2521,7 @@ export type Database = {
       event_queue: {
         Row: {
           approval_mode: string
+          attempt_count: number
           created_at: string
           decided_at: string | null
           dispatched_at: string | null
@@ -2528,6 +2529,7 @@ export type Database = {
           event_type: string
           id: string
           mission_id: string | null
+          next_attempt_at: string | null
           payload: Json
           run_id: string | null
           source_id: string
@@ -2540,6 +2542,7 @@ export type Database = {
         }
         Insert: {
           approval_mode: string
+          attempt_count?: number
           created_at?: string
           decided_at?: string | null
           dispatched_at?: string | null
@@ -2547,6 +2550,7 @@ export type Database = {
           event_type: string
           id?: string
           mission_id?: string | null
+          next_attempt_at?: string | null
           payload?: Json
           run_id?: string | null
           source_id: string
@@ -2559,6 +2563,7 @@ export type Database = {
         }
         Update: {
           approval_mode?: string
+          attempt_count?: number
           created_at?: string
           decided_at?: string | null
           dispatched_at?: string | null
@@ -2566,6 +2571,7 @@ export type Database = {
           event_type?: string
           id?: string
           mission_id?: string | null
+          next_attempt_at?: string | null
           payload?: Json
           run_id?: string | null
           source_id?: string
@@ -3486,6 +3492,60 @@ export type Database = {
           },
           {
             foreignKeyName: "opportunities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_runs: {
+        Row: {
+          created_at: string
+          decision_id: string | null
+          id: string
+          playbook_id: string
+          playbook_version: number
+          resolved_at: string | null
+          station: string
+          user_id: string
+          verdict: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          decision_id?: string | null
+          id?: string
+          playbook_id: string
+          playbook_version?: number
+          resolved_at?: string | null
+          station: string
+          user_id?: string
+          verdict?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          decision_id?: string | null
+          id?: string
+          playbook_id?: string
+          playbook_version?: number
+          resolved_at?: string | null
+          station?: string
+          user_id?: string
+          verdict?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_runs_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_runs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
