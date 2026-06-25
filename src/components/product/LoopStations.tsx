@@ -59,6 +59,7 @@ export function LoopStations({ workspaceId }: { workspaceId: string | null }) {
             <Link
               key={st.station}
               to={STATION_TO[st.station]}
+              className="station-row"
               style={{
                 display: "flex",
                 alignItems: "center",

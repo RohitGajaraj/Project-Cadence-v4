@@ -1193,6 +1193,27 @@
     transform: none;
   }
 
+  /* receipt-card: ember-tinted hover glow when the decision is still standing.
+     JS hover is avoided — the data-superseded attr drives the selector so
+     the effect only fires on live receipts, not archived ones. */
+  .receipt-card {
+    transition: box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .receipt-card:not([data-superseded="true"]):hover {
+    box-shadow: 0 2px 10px -2px color-mix(in oklab, var(--ember) 14%, transparent);
+  }
+
+  /* station-row: a quiet background tint on hover so the list feels interactive
+     without the full card-lift (these are navigation rows, not pressable cards). */
+  .station-row {
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .station-row:hover {
+      background: var(--soft-stone);
+    }
+  }
+
   /* Hand-sketched line draw-in — opt-in flourish for SketchLine (animate).
      A single graphite stroke penning itself reads as the data being drawn in
      real time; kept to one fast pass (260ms) so a surface opened all day never

@@ -55,7 +55,7 @@ const STATUS_COLOR: Record<string, string> = {
   approved: "var(--emerald)",
   executed: "var(--emerald)",
   auto_approved: "var(--emerald)",
-  rejected: "var(--coral)",
+  rejected: "var(--rose)",
   failed: "var(--rose)",
   cancelled: "var(--ink-faint)",
   expired: "var(--ink-faint)",
@@ -181,15 +181,13 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
     : { Icon: Bot, label: r.actor ? `${r.actor}` : "agent" };
   return (
     <article
-      className="bento"
+      className="bento receipt-card"
+      data-superseded={r.outcome === "superseded" ? "true" : undefined}
       style={{
         padding: "16px 18px",
         opacity: r.outcome === "superseded" ? 0.72 : 1,
         borderLeft: `2px solid ${r.outcome === "superseded" ? "var(--hairline)" : "var(--ember)"}`,
-        transition: "box-shadow var(--dur-fast) var(--ease-out)",
       }}
-      onMouseEnter={(e) => { if (r.outcome !== "superseded") (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px color-mix(in oklab, var(--ember) 10%, transparent)"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <span

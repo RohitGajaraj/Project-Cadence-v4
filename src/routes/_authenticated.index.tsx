@@ -952,7 +952,7 @@ function Dashboard() {
             </span>
           </div>
           {briefRow?.summary ? (
-            <div className="prose prose-sm max-w-none text-[13.5px] leading-[1.55] text-ink-muted [&_li]:my-0.5 [&_ul]:my-2 [&_p]:my-2 [&_li::marker]:text-coral">
+            <div className="prose prose-sm max-w-none text-[13.5px] leading-[1.55] text-ink-muted [&_li]:my-0.5 [&_ul]:my-2 [&_p]:my-2">
               <ReactMarkdown>{normalizeBrief(briefRow.summary)}</ReactMarkdown>
             </div>
           ) : (
@@ -1244,8 +1244,8 @@ function TasksPanel({
                 className="mono-label"
                 style={{
                   fontSize: 9,
-                  color: "var(--coral)",
-                  border: "1px solid color-mix(in oklab, var(--coral) 50%, transparent)",
+                  color: "var(--ember)",
+                  border: "1px solid color-mix(in oklab, var(--ember) 50%, transparent)",
                   borderRadius: 99,
                   padding: "1px 7px",
                 }}
