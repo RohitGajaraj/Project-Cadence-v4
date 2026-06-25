@@ -197,7 +197,7 @@ export const startGithubAppConnect = createServerFn({ method: "POST" })
     }
     const state = await makeConnectState(context.userId);
     return {
-      installUrl: `https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(state)}`,
+      installUrl: `https://github.com/apps/${encodeURIComponent(slug)}/installations/new?state=${encodeURIComponent(state)}`,
     };
   });
 
