@@ -4,6 +4,25 @@
 
 ---
 
+### ▶ BOARD DRY — long-polling (2026-06-25, new session start)
+
+`bash scripts/lane.sh next` → exit 2: "BOARD DRY: no eligible Tier-1/Tier-3 ⬜/◐ item unclaimed + not done"
+
+**Board state verified:** The v11 Tier-1 front (#1-21) is complete — all items are ✅ on origin/main except LANDING-PAGE-V11 (explicitly parked ⬜), M1/LRN-01 (👤 Gated), HUMAN-SWEEP (⏭️ deferred), and EMBED-CHOKEPOINT (◐, pinned chokepoint claim, gated). All Tier-3 items (EVALS-PRIMITIVE, AGENT-FLEET-VIEW, DEF-04, REPO-DECLUTTER-V11, DELEGATE-DESK, TRUST-VERIFY) are either ✅ on origin/main or confirmed in the local DONE registry. No Tier-1/3 ⬜/◐ item is unclaimed and not done.
+
+**Gates confirmed clean:** tsc clean (0 errors), 1541/1541 tests pass, rebased on origin/main.
+
+**What unlocks next work (founder-gated):**
+- GitHub OAuth App registration → unblocks SEN-01 / F-CONN (live connectors) + Q2 (outward A2A)
+- Stripe live keys → enables credits engine go-live
+- SANDBOX provider pick → unblocks DEF-04 AI-mockup generative half
+- pg_cron migration `20260625000000` → apply via Lovable dashboard (ambient cron schedules)
+- EMBED-CHOKEPOINT (rank 21) → attended session needed for AI-core edits
+
+**Long-polling:** re-checking in ~25 min in case a sibling lane or founder action opens a new row.
+
+---
+
 ## RESUME CURSOR (read first) — after 14 cycles
 
 **State:** 14 cycles done this run (… CORE-UX-TRUST `◐` #10, then **CORE-UX-FELT `◐` #11** this cycle). On `parallel/lane-2`, even with `origin/main`, claim released.
