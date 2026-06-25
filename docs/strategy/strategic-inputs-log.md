@@ -14,8 +14,6 @@
 
 ---
 
-## 2026-06-20 - The second-brain arc: a decision knowledge graph (engine) + a command canvas (front)
-
 ## 2026-06-25 — Analytics & failure-detection vendor analysis (the AFD doctrine reasoning)
 
 **Trigger.** Founder: "add analytics and failure-log detection to our application; what's the infra?" Then, after the first analysis: "document this first in the GitHub repo… go in detail, interlinked… so when we pick this analytics + failure detection, we know exactly what's already done and we need to pick up." Then approved **V3 (comprehensive doctrine) + V1 (phased build sequence)**.
@@ -40,7 +38,7 @@
 
 **Decision (V3 doctrine + V1 phased build sequence).** Committed as the **AFD initiative**, group **G12**, 14 cold-buildable task IDs `AFD-01`..`AFD-14`. Full build bible: [`../planning/analytics-and-failure-detection-plan.md`](../planning/analytics-and-failure-detection-plan.md). Vendor ADR: [`../decisions/analytics-vendor-selection.md`](../decisions/analytics-vendor-selection.md). Façade contract: [`../features/observability-facade.md`](../features/observability-facade.md). Alerting runbook: [`../operations/alerting-runbook.md`](../operations/alerting-runbook.md). Procurement: [`../operations/procurement-inventory.md`](../operations/procurement-inventory.md). Phased build sequence (V1) in plan §12: doc freeze (now) → plumbing → capture → surfaces → ops/compliance → verification. Build is parked behind the §10 "before you build" checklist (founder unblocks: inbox, status-page domain, on-call number, exit-posture acceptance).
 
-## 2026-06-20 (continued)
+## 2026-06-20 - The second-brain arc: a decision knowledge graph (engine) + a command canvas (front)
 
 **Trigger.** A founder session: two cues, named together as one "second-brain product" arc. (1) "Memory is my moat and the decision layer is my moat, and for that the underlying *engine* is that brain, like how Obsidian, a company brain, or a second brain works. We need that level of capability. Only then things proceed." (2) "The interface should be command-line-like (not a literal terminal), everything is a command-line interface, and the right side is a preview." The founder asked for both framed AND documented, wired into the existing roadmap (where we stand, what to build/modify/reposition, the connectivity and interoperability), judged through every stakeholder lens, with parallel execution. In follow-ups he set the Decision Brain as the **topmost priority** (everything else to a later stage), asked for an **Obsidian-style visual graph that "speaks everything,"** and asked that the product **deliver value at every step, even when the user does not expect it**. Research (PKM + agent-memory/GraphRAG, command+preview UX, PM-competitor/category motion) was run to ground every call.
 
