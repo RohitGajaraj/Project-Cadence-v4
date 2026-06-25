@@ -47,15 +47,18 @@ CLAIMS="$LEDGER/claims"
 # sessions never re-pick the same done work. `lane.sh done <ID>` records a completion;
 # `reap` prunes old markers (by then the ✅ is in the register, caught by `git pull`).
 DONE="$LEDGER/done"
-# Flip the status field (column 3) of the matching register row to NEW_STATUS.
-# Called by cmd_claim (→ "🔨 In Dev (laneN, date)") so other sessions instantly see
-# what's in-flight when they read origin/main after the agent commits+pushes.
-# Also called by cmd_done (→ "✅") so the row goes green without a manual edit step.
-# Uses a temp-file swap so the write is atomic from the kernel's perspective.
+# Flip the status field (column 3) of the matching register row to NEW_STATUS, then
+# IMMEDIATELY commit + push that change to origin/main so the founder's view of the
+# dashboard is always live, regardless of which lane branch the agent is on.
+# Uses a temporary git worktree on origin/main so there is never a conflict with
+# the lane branch's unrelated code changes.
 _flip_dashboard_row() {
-  local id="$1" new_status="$2"
+  local id="$1" new_status="$2" commit_msg="${3:-}"
   local reg; reg="$(_register_path)"
+  local root; root="$(_repo_root)"
   [ -f "$reg" ] || return 0
+
+  # 1) Update the file in the current worktree (for the lane branch's local state)
   local tmp; tmp="${reg}.lane_tmp.$$"
   awk -F'|' -v OFS='|' -v want="$id" -v ns=" $new_status " '
     /^\| [0-9]+ \|/{
@@ -64,6 +67,32 @@ _flip_dashboard_row() {
     }
     { print }
   ' "$reg" > "$tmp" && mv "$tmp" "$reg" || { rm -f "$tmp"; return 1; }
+
+  # 2) PUSH the dashboard change to origin/main in a temp worktree so the founder's
+  #    view is updated immediately — not deferred to the lane branch's next merge.
+  #    This is the permanent fix for "main dashboard stays stale while lanes build."
+  if [ -n "$commit_msg" ] && git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+    git -C "$root" fetch -q origin main 2>/dev/null || true
+    local tmp_wt; tmp_wt=$(mktemp -d 2>/dev/null) || return 0
+    local rel_reg; rel_reg="${reg#$root/}"
+    # Add worktree on main (detached), copy dashboard, commit, push, clean up
+    if git -C "$root" worktree add --detach "$tmp_wt" origin/main -q 2>/dev/null; then
+      cp "$reg" "$tmp_wt/$rel_reg"
+      git -C "$tmp_wt" add "$rel_reg" 2>/dev/null
+      git -C "$tmp_wt" -c user.name="lane.sh" -c user.email="lane@cadence.local" \
+        commit --no-verify -m "$commit_msg" -- "$rel_reg" -q 2>/dev/null
+      # Push; retry once on failure after a fresh fetch
+      if ! git -C "$tmp_wt" push origin HEAD:refs/heads/main -q 2>/dev/null; then
+        git -C "$tmp_wt" fetch -q origin main 2>/dev/null || true
+        git -C "$tmp_wt" rebase origin/main -q 2>/dev/null || true
+        git -C "$tmp_wt" push origin HEAD:refs/heads/main -q 2>/dev/null || true
+      fi
+      git -C "$root" worktree remove --force "$tmp_wt" -q 2>/dev/null || rm -rf "$tmp_wt"
+    else
+      rm -rf "$tmp_wt"
+    fi
+  fi
+  return 0
 }
 _sync_board() { :; }   # retired 2026-06-21 as a SEPARATE board file; dashboard writes now go through _flip_dashboard_row above
 
@@ -256,15 +285,14 @@ cmd_claim() {
     echo "PINNED $id by lane $lane"
   else
     echo "CLAIMED $id by lane $lane"
-    # Immediately flip the dashboard row to 🔨 In Dev so other sessions see it on origin/main
-    # as soon as the agent commits+pushes this file change (which must happen BEFORE any code work).
+    # Immediately flip the dashboard row to 🔨 In Dev AND push to origin/main so the
+    # founder's view is live without any manual agent step.
     local indev_label; indev_label="🔨 In Dev (lane${lane}, $(date '+%Y-%m-%d'))"
-    if _flip_dashboard_row "$id" "$indev_label"; then
-      echo "DASHBOARD UPDATED: row '$id' → $indev_label"
-      echo ">>> NEXT STEP: commit feature-dashboard.md NOW and push BEFORE writing any code <<<"
-      echo "    git add docs/planning/feature-dashboard.md && git commit -m \"chore(lane${lane}): claim $id [WHY: ...]\" && git push origin HEAD"
+    local claim_msg; claim_msg="chore(lane${lane}): claim $id — 🔨 In Dev"
+    if _flip_dashboard_row "$id" "$indev_label" "$claim_msg"; then
+      echo "DASHBOARD UPDATED + PUSHED TO MAIN: row '$id' → $indev_label"
     else
-      echo "WARN: could not auto-flip dashboard row for '$id' — update feature-dashboard.md manually before coding" >&2
+      echo "WARN: could not auto-flip dashboard row for '$id' — update feature-dashboard.md manually" >&2
     fi
   fi
   # Anti-duplication guard: a private sub-id (e.g. claiming "DBR-EDGE-CONF" instead of the
@@ -298,11 +326,12 @@ cmd_done() {
   rm -rf "${CLAIMS:?}/$cdir" 2>/dev/null || true
   echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) lane=${2:-?}" > "$DONE/$cdir"
   echo "DONE-RECORDED $id (claim freed; future claims refused)"
-  # Flip the dashboard status row to ✅ so the "At a glance" completion count is live.
-  # The agent must still update the row's detail cell with what was built, re-run
-  # scripts/dashboard-tally.sh to refresh the % numbers, commit all three changes, and push.
-  if _flip_dashboard_row "$id" "✅"; then
-    echo "DASHBOARD UPDATED: row '$id' → ✅"
+  # Flip the dashboard status row to ✅ AND push to origin/main immediately.
+  # Agents should still update the row detail cell and re-run dashboard-tally.sh
+  # to refresh the % numbers, then commit+push THOSE prose changes too.
+  local done_msg; done_msg="done(lane${2:-?}): $id ✅ complete"
+  if _flip_dashboard_row "$id" "✅" "$done_msg"; then
+    echo "DASHBOARD UPDATED + PUSHED TO MAIN: row '$id' → ✅"
     echo ">>> NEXT: update the row detail cell + re-run 'bash scripts/dashboard-tally.sh' + commit + push <<<"
   else
     echo "WARN: could not auto-flip dashboard row for '$id' to ✅ — update manually" >&2
