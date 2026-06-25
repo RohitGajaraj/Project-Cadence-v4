@@ -87,7 +87,7 @@ function SetupRequired({
   );
 }
 
-/** One stored connection rendered inline: StepDot + account label + quiet actions. */
+/** One stored connection rendered inline: prominent connected badge + quiet actions. */
 function ConnectionStatus({
   connection: c,
   configured,
@@ -107,11 +107,27 @@ function ConnectionStatus({
   onDisconnect?: (c: AccountConnection) => void;
   onRemove?: (c: AccountConnection) => void;
 }) {
+  const isConnected = c.status === "connected";
+  const label = c.account_label ?? c.account_email ?? "Connected";
+
   return (
     <>
       <span
         title={statusTitle(c)}
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          minWidth: 0,
+          ...(isConnected
+            ? {
+                background: "color-mix(in srgb, var(--emerald) 12%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--emerald) 28%, transparent)",
+                borderRadius: 20,
+                padding: "3px 9px 3px 6px",
+              }
+            : {}),
+        }}
       >
         <StepDot status={stepStatusFor(c.status)} />
         <span
@@ -121,12 +137,27 @@ function ConnectionStatus({
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             fontSize: 12,
-            color: "var(--ink-subtle)",
+            fontWeight: isConnected ? 500 : 400,
+            color: isConnected ? "var(--emerald)" : "var(--ink-subtle)",
           }}
         >
-          {c.account_label ?? c.account_email ?? "Connected"}
+          {label}
         </span>
       </span>
+      {isConnected ? (
+        <a
+          href="/sync"
+          style={{
+            fontSize: 11,
+            color: "var(--action-blue)",
+            textDecoration: "none",
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          manage repos →
+        </a>
+      ) : null}
       {c.status === "disconnected" ? (
         <ConnectButton
           onConnect={onConnect}
