@@ -127,3 +127,12 @@ Founder lifted the Q2 scopes/audit gate ("pick up the founder-gated items"). Bui
 - A2A card advertises the governed `discovery.ingest_signal` skill honestly.
 - Gate: tsc 0; 77 MCP tests pass (new mcp.functions.test.ts + 14 protocol tests). `bun run build` not used as gate (known node20/ESM lovable-tagger failure in lane worktrees).
 - Remaining (founder): apply migration on publish, mint a write-scoped token, flip `admin_set_interop_write_enabled(true)`.
+
+### 2026-06-25 (cont.) — INTEROP-V11 Q2 VALIDATED + closed properly (founder pushback)
+
+Founder challenged: don't mark ✅ just because asked — validate it works. Did:
+- Applied migration `20260625140000` to the LIVE prod DB via Lovable MCP; verified objects (scopes col, gate fns, issue_mcp_token single 6-arg overload).
+- Functionally round-tripped on real Postgres: gate read false→true→false; token mint persists scopes=['write:signal']; the exact ingestSignal signals insert lands with content-fallback. Cleaned up (DB dormant, 0 tokens).
+- Full suite green: bun test 1490/0, tsc 0; 3-lens adversarial security review clean (authz/tenant/injection) + 2 fail-mode fixes folded.
+- CAUGHT A REAL GAP checking the published hub: main had the ✅ flag but NOT the Q2 code (it lived only on parallel/lane-1) → published hub couldn't have the feature. Landed the actual code + migration on origin/main (overlay of the 8 feature files onto main, tsc+72 MCP tests green, pushed). Main now consistent: code + migration + ✅.
+- Remaining = founder PUBLISH only (live worker still on pre-Q2 build 4f4dc478). After publish: mint a write:signal token + admin_set_interop_write_enabled(true) to activate; dormant + read-only until then.
