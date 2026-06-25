@@ -67,7 +67,10 @@ export function LoopStations({ workspaceId }: { workspaceId: string | null }) {
                 textDecoration: "none",
                 color: "inherit",
                 borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+                transition: "background var(--dur-fast) var(--ease-out)",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--soft-stone)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
             >
               <StepDot status={dotFor(st.status)} />
               <span

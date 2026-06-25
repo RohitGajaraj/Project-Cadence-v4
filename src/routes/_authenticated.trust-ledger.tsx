@@ -186,7 +186,10 @@ function ReceiptCard({ r }: { r: TrustReceipt }) {
         padding: "16px 18px",
         opacity: r.outcome === "superseded" ? 0.72 : 1,
         borderLeft: `2px solid ${r.outcome === "superseded" ? "var(--hairline)" : "var(--ember)"}`,
+        transition: "box-shadow var(--dur-fast) var(--ease-out)",
       }}
+      onMouseEnter={(e) => { if (r.outcome !== "superseded") (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px color-mix(in oklab, var(--ember) 10%, transparent)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <span
@@ -463,7 +466,7 @@ function TrustLedgerPage() {
         style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}
       >
         <SurfaceHeader
-          kicker="Loop · Trust"
+          kicker="Govern · Trust"
           icon={ScrollText}
           title="Trust Ledger"
           sub="Every decision and autonomous action, as a receipt: what changed, why, the evidence, who approved it and when, and whether it still stands or was superseded."

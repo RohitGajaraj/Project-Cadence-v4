@@ -63,7 +63,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "prompts", label: "Prompts" },
   { id: "evals", label: "Quality checks" },
   { id: "analytics", label: "Analytics" },
-  { id: "gauntlet", label: "Loop health" },
+  { id: "gauntlet", label: "Quality" },
   { id: "traces", label: "Activity" },
   { id: "drift", label: "Trends" },
   { id: "incidents", label: "Incidents" },

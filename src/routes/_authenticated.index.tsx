@@ -652,7 +652,7 @@ function Dashboard() {
                   className="mono-label"
                   style={{ color: "var(--action-blue)" }}
                 >
-                  The gauntlet →
+                  Full metrics →
                 </Link>
               </div>
               <div
