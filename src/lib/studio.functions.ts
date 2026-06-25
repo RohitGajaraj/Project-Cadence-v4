@@ -32,6 +32,7 @@ import { humanizeText } from "@/lib/ai/humanize";
 import { revertChangesetToRevision } from "@/lib/ai/studio-revert.server";
 import { runRollbackRelease, ghHeaders } from "@/lib/studio-rollbacks";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
+import { execGateFromChecks, type ExecGate } from "@/lib/exec/provider";
 
 export type StudioChangesetSummary = {
   id: string;
@@ -118,6 +119,13 @@ export type StudioCi = {
     html_url: string;
     summary: string | null;
   }>;
+  /**
+   * SANDBOX: the merge gate derived THROUGH the `ExecProvider` seam — which
+   * backend ran the checks + the plain-language merge readiness, so the Build
+   * surface reads the same verdict the `studio.pr.merge` gate enforces, and a
+   * future paid backend updates provenance with no surface change.
+   */
+  gate: ExecGate;
 } | null;
 
 const WORK_ORDER_HEADER =
@@ -634,13 +642,19 @@ export const getStudioSession = createServerFn({ method: "GET" })
           }>;
         } | null;
         if (r?.pr_number === prNumber && typeof r.overall === "string") {
+          const checks = r.checks ?? [];
           ci = {
             overall: r.overall as Exclude<StudioCi, null>["overall"],
             pr_number: prNumber,
             pr_url: r.pr_url ?? (csRow as { pr_url?: string | null }).pr_url ?? null,
             head_sha: r.head_sha ?? null,
             updated_at: r.updated_at ?? null,
-            checks: r.checks ?? [],
+            checks,
+            // Derive the merge gate through the ExecProvider seam (the $0 GitHub
+            // Actions floor today). `overallFromChecks(checks)` here equals the
+            // stored r.overall (same snapshot), so the gate cannot drift from the
+            // verdict shown above it.
+            gate: execGateFromChecks(checks),
           };
           break;
         }

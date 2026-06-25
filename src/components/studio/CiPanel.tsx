@@ -208,6 +208,29 @@ export function CiPanel({
             Refresh · re-reads CI
           </button>
         </div>
+        {/* SANDBOX: the merge gate, in plain language, at the point of decision —
+            the SAME verdict the merge gate enforces, attributed to where the
+            checks ran (the $0 GitHub Actions floor today). Shown ONLY once checks
+            exist: with no checks the verdict is 'neutral' ("nothing to gate on"),
+            which would contradict — and pre-empt — the "checks haven't started
+            yet" line below, so the empty state defers to that single line. */}
+        {ci?.gate && ci.checks.length > 0 ? (
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                lineHeight: 1.4,
+                color: ci.overall === "failure" ? "var(--coral)" : "var(--ink-muted)",
+              }}
+            >
+              {ci.gate.reason}
+            </p>
+            <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
+              ran on · {ci.gate.providerLabel}
+            </span>
+          </div>
+        ) : null}
         <div style={{ marginTop: 12 }}>
           {!ci || ci.checks.length === 0 ? (
             <div style={{ fontSize: 12.5, color: "var(--ink-faint)", fontStyle: "italic" }}>

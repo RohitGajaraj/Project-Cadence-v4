@@ -43,6 +43,12 @@ export interface ExecVerdict {
 
 export interface ExecProvider {
   readonly id: ExecProviderId;
+  /**
+   * Human-facing name for this backend — engine-room doctrine: name the place a
+   * build's checks ran, never leak the raw mechanism id to the surface. A future
+   * paid backend brings its own label, so provenance is owned with the provider.
+   */
+  readonly label: string;
   /** Whether this backend is wired AND permitted to run right now. */
   readonly available: boolean;
   /** Derive a merge / preview verdict from this backend's check results. */
@@ -56,6 +62,7 @@ export interface ExecProvider {
  */
 export const githubActionsProvider: ExecProvider = {
   id: "github-actions",
+  label: "GitHub Actions",
   available: true,
   verdictFromChecks(checks: CiCheckLite[]): ExecVerdict {
     const overall = overallFromChecks(checks);
@@ -93,4 +100,37 @@ export function resolveExecProvider(preferred?: string | null): ExecProvider {
     ? WIRED_PROVIDERS.find((p) => p.id === preferred && p.available)
     : undefined;
   return match ?? githubActionsProvider;
+}
+
+/**
+ * The point-of-decision merge gate, derived THROUGH the seam. Surfaces which
+ * backend ran a build's checks (its human label), whether the build is clear to
+ * merge, and the plain-language reason — the same verdict the `studio.pr.merge`
+ * gate enforces, so the merge surface and the gate can never disagree.
+ *
+ * This is what makes the seam load-bearing: a consumer reads its merge readiness
+ * from `resolveExecProvider()`, so when a paid backend is wired the provenance +
+ * reason update with no call-site change. Pure (no I/O), so it derives the verdict
+ * wherever the checks are already in hand (server snapshot or client).
+ */
+export interface ExecGate {
+  /** The backend that ran these checks (the resolved provider's id). */
+  provider: ExecProviderId;
+  /** Its human-facing name, for the surface (never the raw id). */
+  providerLabel: string;
+  /** True when the checks clear this build to merge. */
+  mayProceed: boolean;
+  /** Plain-language merge readiness, for the point of decision. */
+  reason: string;
+}
+
+export function execGateFromChecks(checks: CiCheckLite[], preferred?: string | null): ExecGate {
+  const provider = resolveExecProvider(preferred);
+  const verdict = provider.verdictFromChecks(checks);
+  return {
+    provider: provider.id,
+    providerLabel: provider.label,
+    mayProceed: verdict.mayProceed,
+    reason: verdict.reason,
+  };
 }
