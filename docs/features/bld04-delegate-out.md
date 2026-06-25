@@ -52,5 +52,5 @@ The `delegate_meta` jsonb column on `agent_runs` + the poll/fold cycle:
 
 - [x] `bunx tsc --noEmit` clean (0 errors); `bun test` green (1585 tests, 0 fail). `src/lib/delegate/poll.test.ts` covers dormancy (no-network-when-disabled), terminal statuses (done/failed/cancelled), in-progress (queued/running/pending), and fail-safe transport (ECONNREFUSED/non-2xx/malformed JSON/unknown status).
 - [x] On the wiring increment + founder config: `delegate.openhands` tool is in `HIGH_RISK_FORCE_REVIEW` (human approval before any delegation leaves), classified irreversible/external in `tool-consequences.ts`. The tool is a safe no-op while `DELEGATE_OUTBOUND_ENABLED` is unset.
-- [ ] **Migration pending**: apply `supabase/migrations/20260626000000_bld04_delegate_job_persistence.sql` to add `delegate_meta jsonb` column + index.
+- [x] **Migration applied**: `supabase/migrations/20260626000000_bld04_delegate_job_persistence.sql` — `delegate_meta jsonb` column + sparse index on `agent_runs`.
 - [ ] **Live test** (requires founder config): set `DELEGATE_OUTBOUND_ENABLED=1`, `OPENHANDS_ENDPOINT`, `OPENHANDS_API_KEY`; confirm a delegated task reaches OpenHands behind a human-approval gate; confirm `external_job_id` is recorded in `agent_runs.delegate_meta`; confirm `pollDelegateRun` folds a terminal result back to `mission_steps`.
