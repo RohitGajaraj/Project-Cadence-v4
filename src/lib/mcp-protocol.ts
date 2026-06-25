@@ -134,6 +134,32 @@ export const MCP_TOOLS: McpTool[] = [
       },
     },
   },
+  {
+    name: "get_governing_decision",
+    description:
+      "Given a topic, return the CURRENT governing decisions — decisions that have not been superseded or contradicted. Stale decisions are flagged and their replacement is named, so an agent always cites the live belief, not an overturned one.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        topic: { type: "string" },
+        limit: { type: "number", default: 10 },
+      },
+      required: ["topic"],
+    },
+  },
+  {
+    name: "get_contradiction_history",
+    description:
+      "Given a topic, return the contradiction and supersession history of related decisions. Shows what was believed, what outcome invalidated it, and when — so an agent can ask 'has a bet like this ever been contradicted?' before committing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        topic: { type: "string" },
+        limit: { type: "number", default: 10 },
+      },
+      required: ["topic"],
+    },
+  },
 ];
 
 export const MCP_READ_TOOL_NAMES: readonly string[] = MCP_TOOLS.map((t) => t.name);

@@ -494,30 +494,26 @@ export const cancelMission = createServerFn({ method: "POST" })
 export const promoteMission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { missionId: string }) => z.object({ missionId: z.string().uuid() }).parse(d))
-  .handler(
-    async ({ context, data }): Promise<{ ok: boolean; missionId: string }> => {
-      const { supabase } = context;
+  .handler(async ({ context, data }): Promise<{ ok: boolean; missionId: string }> => {
+    const { supabase } = context;
 
-      const { data: mission, error: fetchErr } = await supabase
-        .from("missions")
-        .select("id,status")
-        .eq("id", data.missionId)
-        .maybeSingle();
-      if (fetchErr) throw new Error(fetchErr.message);
-      if (!mission) throw new Error("Mission not found");
-      if (mission.status !== "proposed") {
-        throw new Error(
-          `Only proposed missions can be launched (current status: ${mission.status})`,
-        );
-      }
+    const { data: mission, error: fetchErr } = await supabase
+      .from("missions")
+      .select("id,status")
+      .eq("id", data.missionId)
+      .maybeSingle();
+    if (fetchErr) throw new Error(fetchErr.message);
+    if (!mission) throw new Error("Mission not found");
+    if (mission.status !== "proposed") {
+      throw new Error(`Only proposed missions can be launched (current status: ${mission.status})`);
+    }
 
-      const { error: updateErr } = await supabase
-        .from("missions")
-        .update({ status: "queued" })
-        .eq("id", data.missionId)
-        .eq("status", "proposed"); // guard against a race
-      if (updateErr) throw new Error(updateErr.message);
+    const { error: updateErr } = await supabase
+      .from("missions")
+      .update({ status: "queued" })
+      .eq("id", data.missionId)
+      .eq("status", "proposed"); // guard against a race
+    if (updateErr) throw new Error(updateErr.message);
 
-      return { ok: true, missionId: data.missionId };
-    },
-  );
+    return { ok: true, missionId: data.missionId };
+  });

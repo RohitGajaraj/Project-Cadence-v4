@@ -22,7 +22,12 @@ export type LearnedSummary = {
   hitRate: number | null;
 };
 
-export type TimelineBucket = { month: string; decisions: number; superseded: number; learnings: number };
+export type TimelineBucket = {
+  month: string;
+  decisions: number;
+  superseded: number;
+  learnings: number;
+};
 
 export type BrainInsight = { tone: "positive" | "watch" | "neutral"; text: string };
 
@@ -92,7 +97,9 @@ const NEGATIVE = new Set(["missed", "invalidated", "refuted", "loss"]);
 const NEUTRAL = new Set(["mixed", "inconclusive", "partial"]);
 
 /** PURE. Tally learnings by verdict and derive the decisive hit rate. */
-export function summarizeLearnings(rows: { verdict: string | null }[] | null | undefined): LearnedSummary {
+export function summarizeLearnings(
+  rows: { verdict: string | null }[] | null | undefined,
+): LearnedSummary {
   let validated = 0,
     missed = 0,
     mixed = 0,
@@ -138,7 +145,8 @@ export function buildTimeline(
 ): TimelineBucket[] {
   const map = new Map<string, TimelineBucket>();
   const bucket = (m: string) =>
-    map.get(m) ?? (map.set(m, { month: m, decisions: 0, superseded: 0, learnings: 0 }), map.get(m)!);
+    map.get(m) ??
+    (map.set(m, { month: m, decisions: 0, superseded: 0, learnings: 0 }), map.get(m)!);
   for (const d of Array.isArray(decisions) ? decisions : []) {
     const m = monthKey(d.created_at);
     if (!m) continue;
@@ -151,7 +159,9 @@ export function buildTimeline(
     if (!m) continue;
     bucket(m).learnings++;
   }
-  return [...map.values()].sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0)).slice(-limit);
+  return [...map.values()]
+    .sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0))
+    .slice(-limit);
 }
 
 /** PURE. Plain-language, honest, rule-based observations (the "analyst" floor). Voice: signal-first, honest when sparse. */
@@ -178,7 +188,10 @@ export function derivePatterns(beliefs: BrainBeliefs, learned: LearnedSummary): 
     });
   }
   if (learned.mixed > 0) {
-    out.push({ tone: "neutral", text: `${learned.mixed} outcome${learned.mixed === 1 ? "" : "s"} came back mixed — partial signal, not a clean win or loss.` });
+    out.push({
+      tone: "neutral",
+      text: `${learned.mixed} outcome${learned.mixed === 1 ? "" : "s"} came back mixed — partial signal, not a clean win or loss.`,
+    });
   }
 
   if (totalDecisions > 0) {
@@ -188,7 +201,10 @@ export function derivePatterns(beliefs: BrainBeliefs, learned: LearnedSummary): 
         text: `${beliefs.superseded} of ${totalDecisions} decisions have been revised since — the belief set is evolving, not frozen.`,
       });
     } else {
-      out.push({ tone: "positive", text: `All ${totalDecisions} recorded decisions still stand — none has been superseded.` });
+      out.push({
+        tone: "positive",
+        text: `All ${totalDecisions} recorded decisions still stand — none has been superseded.`,
+      });
     }
   }
 
@@ -221,7 +237,9 @@ export function supersedingIdFor(
  * settled revision. (The shared `supersededChildIds` lumps both together because
  * the Trust Ledger asks the different question "is this still the active belief".)
  */
-export function supersedesParentMap(edges: LineageEdgeLite[] | null | undefined): Map<string, string> {
+export function supersedesParentMap(
+  edges: LineageEdgeLite[] | null | undefined,
+): Map<string, string> {
   const out = new Map<string, string>();
   for (const e of Array.isArray(edges) ? edges : []) {
     if (!e || (e.relation ?? "").trim().toLowerCase() !== "supersedes") continue;
@@ -246,7 +264,9 @@ export function resolvedChildIds(edges: LineageEdgeLite[] | null | undefined): S
 export type ContradictionPair = { aId: string; bId: string };
 
 /** PURE. Active (`valid_to` null) `contradicts` edges, deduped to unordered id pairs. */
-export function activeContradictions(edges: LineageEdgeLite[] | null | undefined): ContradictionPair[] {
+export function activeContradictions(
+  edges: LineageEdgeLite[] | null | undefined,
+): ContradictionPair[] {
   const out: ContradictionPair[] = [];
   const seen = new Set<string>();
   for (const e of Array.isArray(edges) ? edges : []) {
@@ -360,7 +380,7 @@ export const getBrainInsights = createServerFn({ method: "GET" })
 
     let standing = 0,
       supersededCount = 0;
-    for (const d of decisions) (isDecisionSuperseded(d, superseded) ? supersededCount++ : standing++);
+    for (const d of decisions) isDecisionSuperseded(d, superseded) ? supersededCount++ : standing++;
     const beliefs: BrainBeliefs = { standing, superseded: supersededCount };
     const learned = summarizeLearnings(learnings);
 
@@ -374,7 +394,7 @@ export const getBrainInsights = createServerFn({ method: "GET" })
         superseded: isDecisionSuperseded(d, superseded),
         createdAt: d.created_at,
         rationale: (d.rationale ?? "").trim() || null,
-        revisedBy: supersedingId ? titleById.get(supersedingId) ?? null : null,
+        revisedBy: supersedingId ? (titleById.get(supersedingId) ?? null) : null,
       };
     });
 
@@ -495,10 +515,11 @@ Volunteer 2-4 signals. Each must be genuinely useful to the PM owning this data.
     let signals: BrainSignal[] = [];
     try {
       const raw = res.output?.trim() ?? "[]";
-      const parsed = JSON.parse(raw.startsWith("[") ? raw : raw.replace(/^[^[]*/, "").replace(/[^\]]*$/, "")) as unknown[];
+      const parsed = JSON.parse(
+        raw.startsWith("[") ? raw : raw.replace(/^[^[]*/, "").replace(/[^\]]*$/, ""),
+      ) as unknown[];
       signals = (parsed as BrainSignal[]).filter(
-        (s) =>
-          s && typeof s.kind === "string" && typeof s.text === "string" && s.text.length > 0,
+        (s) => s && typeof s.kind === "string" && typeof s.text === "string" && s.text.length > 0,
       );
     } catch {
       // non-parseable output → return empty rather than crashing
