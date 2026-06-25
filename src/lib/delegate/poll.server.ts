@@ -51,16 +51,13 @@ export async function pollDelegateJob(externalJobId: string): Promise<DelegatePo
   const endpoint = (process.env.OPENHANDS_ENDPOINT as string).replace(/\/$/, "");
   const apiKey = process.env.OPENHANDS_API_KEY;
   try {
-    const res = await fetch(
-      `${endpoint}/api/v1/tasks/${encodeURIComponent(externalJobId)}`,
-      {
-        headers: {
-          accept: "application/json",
-          ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
-        },
-        signal: AbortSignal.timeout(POLL_TIMEOUT_MS),
+    const res = await fetch(`${endpoint}/api/v1/tasks/${encodeURIComponent(externalJobId)}`, {
+      headers: {
+        accept: "application/json",
+        ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
       },
-    );
+      signal: AbortSignal.timeout(POLL_TIMEOUT_MS),
+    });
     if (!res.ok) return { status: "unknown", error: `http ${res.status}` };
     const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
     if (!json) return { status: "unknown", error: "empty response" };

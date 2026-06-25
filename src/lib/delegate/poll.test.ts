@@ -138,8 +138,7 @@ describe("pollDelegateJob — fail-safe transport (enabled)", () => {
   });
 
   test("returns 'unknown' on malformed JSON, never throws", async () => {
-    globalThis.fetch = (async () =>
-      new Response("not-json", { status: 200 })) as typeof fetch;
+    globalThis.fetch = (async () => new Response("not-json", { status: 200 })) as typeof fetch;
     const r = await pollDelegateJob("j1");
     expect(r.status).toBe("unknown");
   });
