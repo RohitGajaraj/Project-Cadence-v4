@@ -94,13 +94,14 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 
 1. **Consolidate, don't restate.** A feature page links to its `plan.md` §4 entry and architecture bullet, and it doesn't duplicate them. If you find yourself rewriting an architectural contract here, move it to `architecture/*.md` and link.
 2. **Stay demo-ready.** The Demo script section must be runnable end-to-end on the seeded demo workspace (`demo@redcadence.app`). If a step breaks, fix the page in the same commit you fix the feature.
-3. **One source of "How to use / verify".** The detailed walkthrough lives here. `docs/feature-backlog.md` rows link to this page rather than duplicating the checklist.
+3. **One source of "How to use / verify".** The detailed walkthrough lives here. `docs/planning/feature-dashboard.md` rows link to this page rather than duplicating the checklist.
 4. **Update the index above** whenever you add a page. A page that isn't in the index is invisible.
 
 ## Related
 
 - [`../README.md`](../README.md), parent docs index
-- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md), live status board + ledger
+- [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md), live status board and per-feature register
+- [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md), archived ledger (superseded 2026-06-24)
 - [`agent-ecosystem-plan.md`](./archive/agent-ecosystem-plan.md), F-AGENT-1→4 bundle strategy
 - [`agent-experience.md`](./agent-experience.md), the agent roster model, faces, identity, and the relay (the "19 vs 6" resolution, built on the F-AGENT-1→4 substrate)
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md), agent orchestration contract

@@ -39,7 +39,7 @@ When you end a session, the next tool must be able to continue without asking yo
 | Live status board (`docs/planning/feature-dashboard.md` top) | "Now building," "Next up," "Blocked," recent log | Start and end of every session               |
 | Git commits                                       | What changed, why it changed (one-line WHY)      | Every logical chunk of work                  |
 | `docs/strategy/session-decisions.md`              | Major strategic decisions from sessions          | When a strategic decision is made            |
-| `docs/planning/feature-backlog.md`                | Feature state (◑/☑)                              | When feature is started or completed         |
+| `docs/planning/feature-dashboard.md`              | Feature state (✅/◐/⬜)                           | When feature is started or completed         |
 | Architecture docs (`architecture/`)               | How the system works                             | When architecture changes                    |
 | `DESIGN.md`                                       | Design tokens, component contracts               | When UI patterns change                      |
 
