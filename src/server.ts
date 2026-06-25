@@ -95,6 +95,29 @@ export default {
       });
     }
 
+    if (url.pathname === "/api/healthz" && request.method === "GET") {
+      return new Response(
+        JSON.stringify(
+          {
+            ok: true,
+            providers: {
+              embeddings: process.env.COHERE_API_KEY
+                ? "cohere/embed-v4.0"
+                : "lovable-gateway/openai/text-embedding-3-small",
+              completions: process.env.FIREWORKS_API_KEY
+                ? "fireworks/llama-4-maverick"
+                : "lovable-gateway",
+              cohere_key_present: !!process.env.COHERE_API_KEY,
+              fireworks_key_present: !!process.env.FIREWORKS_API_KEY,
+            },
+          },
+          null,
+          2,
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     if (url.pathname === "/.well-known/oauth-protected-resource") {
       if (request.method === "OPTIONS") {
         return new Response(null, {
