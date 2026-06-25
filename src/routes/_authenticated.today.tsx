@@ -323,7 +323,7 @@ function Dashboard() {
         {/* WM-S2: Guided tour checklist — ambient, non-blocking. Only shown
             for workspaces that have ONBOARDING_SEED_ENABLED seeded data.
             Stored in localStorage; dismisses when all 5 steps done or closed. */}
-        <GettingStartedChecklist workspaceId={activeWorkspaceId ?? null} />
+        <GettingStartedChecklist workspaceId={activeWorkspace?.id ?? null} />
 
         {/* HERO — plum-umber band, ghost butterfly, calls-cleared ring.
             Taller than the reference's 26px band per founder input (2026-06-12):

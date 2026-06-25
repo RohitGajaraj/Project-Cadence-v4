@@ -101,3 +101,20 @@ export const adminSuspendUser = createServerFn({ method: "POST" })
     if (error) return { error: error.message };
     return { ok: true };
   });
+// ─── WM-S5: Demo workspace reset ──────────────────────────────────────────
+
+export type DemoResetResult =
+  | { ok: true; workspace_id: string; owner_email: string; deleted: Record<string, number>; note: string }
+  | { error: string };
+
+export const adminResetDemoWorkspace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { workspaceId: string }) => d)
+  .handler(async ({ context, data }): Promise<DemoResetResult> => {
+    const { data: result, error } = await context.supabase.rpc(
+      "admin_reset_demo_workspace",
+      { _workspace_id: data.workspaceId },
+    );
+    if (error) return { error: error.message };
+    return result as DemoResetResult;
+  });

@@ -19,6 +19,7 @@ import {
   adminRestoreWorkspace,
   type AdminWorkspaceRow,
 } from "@/lib/admin-workspaces.functions";
+import { adminResetDemoWorkspace } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   component: AdminWorkspaces,
@@ -121,6 +122,21 @@ function WorkspaceDrawer({ workspaceId, onClose }: { workspaceId: string | null;
     onSuccess: () => { toast.success("Workspace restored."); invalidate(); },
   });
 
+  const fDemoReset = useServerFn(adminResetDemoWorkspace);
+  const demoReset = useMutation({
+    mutationFn: () => fDemoReset({ data: { workspaceId: workspaceId! } }),
+    onSuccess: (r) => {
+      if ("error" in r) {
+        toast.error(r.error);
+      } else {
+        const del = r.deleted as Record<string, number>;
+        const total = Object.values(del).reduce((a, b) => a + b, 0);
+        toast.success(`Demo reset complete — ${total} rows cleared. Reseed via Supabase SQL editor.`);
+        invalidate();
+      }
+    },
+  });
+
   return (
     <Sheet open={!!workspaceId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" style={{ width: "min(560px, 100vw)", overflow: "auto" }}>
@@ -174,6 +190,33 @@ function WorkspaceDrawer({ workspaceId, onClose }: { workspaceId: string | null;
                 }}>Soft-delete · 30-day restore</button>
               )}
             </section>
+            {/* WM-S5: Demo reset — only shown for @redcadence.app demo accounts */}
+            {(d.members ?? []).some((m) => m.email?.endsWith("@redcadence.app")) && (
+              <section>
+                <div className="mono-label" style={{ marginBottom: 6 }}>Demo reset</div>
+                <p style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 8 }}>
+                  Hard-wipes all user-generated content (signals, decisions, opportunities, etc.)
+                  from this demo workspace. Seed data can be restored by re-running the
+                  TEST-SEED + DEMO-SEED-RICH migrations via Supabase SQL editor.
+                </p>
+                <button
+                  className="btn btn-sm"
+                  disabled={demoReset.isPending}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Reset demo workspace?",
+                      body: "All content rows will be deleted. Workspace and membership are preserved. Reseed manually afterward.",
+                      confirmLabel: "Reset demo data",
+                      destructive: true,
+                    });
+                    if (ok) demoReset.mutate();
+                  }}
+                >
+                  {demoReset.isPending ? "Resetting..." : "Reset demo data"}
+                </button>
+              </section>
+            )}
+
             <section>
               <div className="mono-label" style={{ marginBottom: 6 }}>Recent audit</div>
               <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12 }}>
