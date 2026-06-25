@@ -2,6 +2,20 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-25 (21:00) — LANDING-PAGE-V11: public landing page shipped
+
+**178/213 done (83.6% strict / 85.7% weighted). v11 Tier-1 front all 21 items ✅.**
+
+Built `src/routes/index.tsx` — a standalone public route at `/` (NOT inside `_authenticated` layout). Authenticated users get a client-side redirect to `/missions` in `beforeLoad`; unauthenticated visitors see the full 5-section page (hero, three pillars, trust ledger mockup with verdict badges, what it is not, who it is for + footer). All Ember Editorial tokens; mobile-safe overflow wrapper on the ledger table.
+
+Code-review workflow caught 3 issues; all fixed before commit: (1) title had em dash → changed to colon `"Cadence: Decision and outcome OS for product teams"`, (2) `--moss-success`/`--madder` CSS vars not defined in styles.css → replaced with `--emerald`/`--rose` (both defined), (3) ledger table not mobile-safe → added `overflowX: "auto"` wrapper + `minWidth: 480` on inner grid.
+
+**Gates:** tsc 0 · 1541 tests pass · code-review clean. **Commits:** `d99e0e7811` (landing page) + `d2502429a6` (dashboard close). Code on origin/main.
+
+**Board status after close:** Tier 1 = 0 (all 21 ✅). Next picks are Tier 3 (DEF-04 ◐ gated-remainder, REPO-DECLUTTER-V11 ✅) and Tier 4. `bash scripts/lane.sh next` returns exit 2 (board dry) — long-polling.
+
+---
+
 ## 2026-06-22 (17:51) — FINAL closure of the former-Lovable monetization/credit/billing block (founder-directed)
 
 The founder flagged this was the **3rd** re-map of Lovable's monetization work ("is it not documented properly, or not logically closed?") and ruled: close it logically + permanently, mark done where done, leave a note, never re-pick.
