@@ -102,11 +102,11 @@ import { Route as ApiPublicHooksClusterTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
 import { Route as ApiPublicHooksAgentTickRouteImport } from './routes/api/public/hooks/agent-tick'
 import { Route as ApiPublicHooksAdminExpiryTickRouteImport } from './routes/api/public/hooks/admin-expiry-tick'
-import { Route as ApiPublicConnectGithubCallbackRouteImport } from './routes/api/public/connect/github/callback'
-import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
-import { Route as ApiPublicA2aMessageSendRouteImport } from './routes/api/public/a2a.message.send'
-import { Route as ApiPublicA2aMessageStreamRouteImport } from './routes/api/public/a2a.message.stream'
 import { Route as ApiPublicA2aTasksRouteImport } from './routes/api/public/a2a.tasks'
+import { Route as ApiPublicConnectGithubCallbackRouteImport } from './routes/api/public/connect/github/callback'
+import { Route as ApiPublicA2aMessageStreamRouteImport } from './routes/api/public/a2a.message.stream'
+import { Route as ApiPublicA2aMessageSendRouteImport } from './routes/api/public/a2a.message.send'
+import { Route as ApiPublicA2aAgentsCadenceCardRouteImport } from './routes/api/public/a2a.agents.cadence.card'
 
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
@@ -600,16 +600,21 @@ const ApiPublicHooksAdminExpiryTickRoute =
     path: '/api/public/hooks/admin-expiry-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicA2aTasksRoute = ApiPublicA2aTasksRouteImport.update({
+  id: '/api/public/a2a/tasks',
+  path: '/api/public/a2a/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicConnectGithubCallbackRoute =
   ApiPublicConnectGithubCallbackRouteImport.update({
     id: '/api/public/connect/github/callback',
     path: '/api/public/connect/github/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicA2aAgentsCadenceCardRoute =
-  ApiPublicA2aAgentsCadenceCardRouteImport.update({
-    id: '/api/public/a2a/agents/cadence/card',
-    path: '/api/public/a2a/agents/cadence/card',
+const ApiPublicA2aMessageStreamRoute =
+  ApiPublicA2aMessageStreamRouteImport.update({
+    id: '/api/public/a2a/message/stream',
+    path: '/api/public/a2a/message/stream',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicA2aMessageSendRoute = ApiPublicA2aMessageSendRouteImport.update({
@@ -617,16 +622,12 @@ const ApiPublicA2aMessageSendRoute = ApiPublicA2aMessageSendRouteImport.update({
   path: '/api/public/a2a/message/send',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicA2aMessageStreamRoute = ApiPublicA2aMessageStreamRouteImport.update({
-  id: '/api/public/a2a/message/stream',
-  path: '/api/public/a2a/message/stream',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicA2aTasksRoute = ApiPublicA2aTasksRouteImport.update({
-  id: '/api/public/a2a/tasks',
-  path: '/api/public/a2a/tasks',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ApiPublicA2aAgentsCadenceCardRoute =
+  ApiPublicA2aAgentsCadenceCardRouteImport.update({
+    id: '/api/public/a2a/agents/cadence/card',
+    path: '/api/public/a2a/agents/cadence/card',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -704,6 +705,7 @@ export interface FileRoutesByFullPath {
   '/missions/': typeof AuthenticatedMissionsIndexRoute
   '/prds/': typeof AuthenticatedPrdsIndexRoute
   '/studio/': typeof AuthenticatedStudioIndexRoute
+  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
@@ -721,11 +723,10 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
-  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
-  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
   '/api/public/a2a/message/stream': typeof ApiPublicA2aMessageStreamRoute
-  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -801,6 +802,7 @@ export interface FileRoutesByTo {
   '/missions': typeof AuthenticatedMissionsIndexRoute
   '/prds': typeof AuthenticatedPrdsIndexRoute
   '/studio': typeof AuthenticatedStudioIndexRoute
+  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
@@ -818,11 +820,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
-  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
-  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
   '/api/public/a2a/message/stream': typeof ApiPublicA2aMessageStreamRoute
-  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -902,6 +903,7 @@ export interface FileRoutesById {
   '/_authenticated/missions/': typeof AuthenticatedMissionsIndexRoute
   '/_authenticated/prds/': typeof AuthenticatedPrdsIndexRoute
   '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
+  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
   '/api/public/hooks/admin-expiry-tick': typeof ApiPublicHooksAdminExpiryTickRoute
   '/api/public/hooks/agent-tick': typeof ApiPublicHooksAgentTickRoute
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
@@ -919,11 +921,10 @@ export interface FileRoutesById {
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
-  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
-  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
   '/api/public/a2a/message/stream': typeof ApiPublicA2aMessageStreamRoute
-  '/api/public/a2a/tasks': typeof ApiPublicA2aTasksRoute
+  '/api/public/connect/github/callback': typeof ApiPublicConnectGithubCallbackRoute
+  '/api/public/a2a/agents/cadence/card': typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1003,6 +1004,7 @@ export interface FileRouteTypes {
     | '/missions/'
     | '/prds/'
     | '/studio/'
+    | '/api/public/a2a/tasks'
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
@@ -1020,11 +1022,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
-    | '/api/public/connect/github/callback'
-    | '/api/public/a2a/agents/cadence/card'
     | '/api/public/a2a/message/send'
     | '/api/public/a2a/message/stream'
-    | '/api/public/a2a/tasks'
+    | '/api/public/connect/github/callback'
+    | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1100,6 +1101,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/prds'
     | '/studio'
+    | '/api/public/a2a/tasks'
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
@@ -1117,6 +1119,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
+    | '/api/public/a2a/message/send'
+    | '/api/public/a2a/message/stream'
     | '/api/public/connect/github/callback'
     | '/api/public/a2a/agents/cadence/card'
   id:
@@ -1197,6 +1201,7 @@ export interface FileRouteTypes {
     | '/_authenticated/missions/'
     | '/_authenticated/prds/'
     | '/_authenticated/studio/'
+    | '/api/public/a2a/tasks'
     | '/api/public/hooks/admin-expiry-tick'
     | '/api/public/hooks/agent-tick'
     | '/api/public/hooks/approvals-tick'
@@ -1214,11 +1219,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
-    | '/api/public/connect/github/callback'
-    | '/api/public/a2a/agents/cadence/card'
     | '/api/public/a2a/message/send'
     | '/api/public/a2a/message/stream'
-    | '/api/public/a2a/tasks'
+    | '/api/public/connect/github/callback'
+    | '/api/public/a2a/agents/cadence/card'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1241,6 +1245,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestSignalsRoute: typeof ApiPublicIngestSignalsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiPublicA2aTasksRoute: typeof ApiPublicA2aTasksRoute
   ApiPublicHooksAdminExpiryTickRoute: typeof ApiPublicHooksAdminExpiryTickRoute
   ApiPublicHooksAgentTickRoute: typeof ApiPublicHooksAgentTickRoute
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
@@ -1258,11 +1263,10 @@ export interface RootRouteChildren {
   ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
   ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
-  ApiPublicConnectGithubCallbackRoute: typeof ApiPublicConnectGithubCallbackRoute
-  ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
   ApiPublicA2aMessageSendRoute: typeof ApiPublicA2aMessageSendRoute
   ApiPublicA2aMessageStreamRoute: typeof ApiPublicA2aMessageStreamRoute
-  ApiPublicA2aTasksRoute: typeof ApiPublicA2aTasksRoute
+  ApiPublicConnectGithubCallbackRoute: typeof ApiPublicConnectGithubCallbackRoute
+  ApiPublicA2aAgentsCadenceCardRoute: typeof ApiPublicA2aAgentsCadenceCardRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1918,25 +1922,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAdminExpiryTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/a2a/tasks': {
+      id: '/api/public/a2a/tasks'
+      path: '/api/public/a2a/tasks'
+      fullPath: '/api/public/a2a/tasks'
+      preLoaderRoute: typeof ApiPublicA2aTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/connect/github/callback': {
       id: '/api/public/connect/github/callback'
       path: '/api/public/connect/github/callback'
       fullPath: '/api/public/connect/github/callback'
       preLoaderRoute: typeof ApiPublicConnectGithubCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/a2a/agents/cadence/card': {
-      id: '/api/public/a2a/agents/cadence/card'
-      path: '/api/public/a2a/agents/cadence/card'
-      fullPath: '/api/public/a2a/agents/cadence/card'
-      preLoaderRoute: typeof ApiPublicA2aAgentsCadenceCardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/a2a/message/send': {
-      id: '/api/public/a2a/message/send'
-      path: '/api/public/a2a/message/send'
-      fullPath: '/api/public/a2a/message/send'
-      preLoaderRoute: typeof ApiPublicA2aMessageSendRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/a2a/message/stream': {
@@ -1946,11 +1943,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicA2aMessageStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/a2a/tasks': {
-      id: '/api/public/a2a/tasks'
-      path: '/api/public/a2a/tasks'
-      fullPath: '/api/public/a2a/tasks'
-      preLoaderRoute: typeof ApiPublicA2aTasksRouteImport
+    '/api/public/a2a/message/send': {
+      id: '/api/public/a2a/message/send'
+      path: '/api/public/a2a/message/send'
+      fullPath: '/api/public/a2a/message/send'
+      preLoaderRoute: typeof ApiPublicA2aMessageSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/a2a/agents/cadence/card': {
+      id: '/api/public/a2a/agents/cadence/card'
+      path: '/api/public/a2a/agents/cadence/card'
+      fullPath: '/api/public/a2a/agents/cadence/card'
+      preLoaderRoute: typeof ApiPublicA2aAgentsCadenceCardRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -2138,6 +2142,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestSignalsRoute: ApiPublicIngestSignalsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiPublicA2aTasksRoute: ApiPublicA2aTasksRoute,
   ApiPublicHooksAdminExpiryTickRoute: ApiPublicHooksAdminExpiryTickRoute,
   ApiPublicHooksAgentTickRoute: ApiPublicHooksAgentTickRoute,
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
@@ -2155,11 +2160,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
   ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
-  ApiPublicConnectGithubCallbackRoute: ApiPublicConnectGithubCallbackRoute,
-  ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
   ApiPublicA2aMessageSendRoute: ApiPublicA2aMessageSendRoute,
   ApiPublicA2aMessageStreamRoute: ApiPublicA2aMessageStreamRoute,
-  ApiPublicA2aTasksRoute: ApiPublicA2aTasksRoute,
+  ApiPublicConnectGithubCallbackRoute: ApiPublicConnectGithubCallbackRoute,
+  ApiPublicA2aAgentsCadenceCardRoute: ApiPublicA2aAgentsCadenceCardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

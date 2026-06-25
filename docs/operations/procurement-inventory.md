@@ -50,18 +50,21 @@ Cadence is **model-agnostic with BYO-key**, hosted on **Lovable-managed Cloudfla
 - **Cost:** a typical call (~2K in + 500 out) ≈ $0.0006; ~20K calls/mo ≈ **~$12/mo**. Blended with embeddings, **~$10–30/mo** for the whole pre-revenue fleet, or **~$0** under BYO. _Confidence: high._
 - _Source: developers.openai.com/api/docs/pricing._
 
-### 3. Embeddings — BUY (via the AI chokepoint) · **already routed (EMBED-CHOKEPOINT ✅)**
-- **What & why:** vectors for the Decision Brain / RAG. The routing chokepoint is done (all 8 callers pinned); only the provider spend remains, and it's negligible.
-- **Recommendation:** **OpenAI `text-embedding-3-small`** ($0.02 / 1M tokens; $0.01 via Batch) as the default; stamp model-id + dimension on every vector so a swap is a background re-embed.
-- **Cost:** embedding ~3,000 records/tenant ≈ $0.03/tenant; **~$9 to embed all ~300 tenants once**, then **< $5/mo** delta. _Confidence: high._
-- **Alternative:** **Voyage AI `voyage-4`** ($0.06/1M, but **200M tokens/mo free** shared org-wide → effectively $0 at demo scale; note `voyage-3.5` lost its free tier). **OSS floor:** self-host BGE/Nomic/GTE. Embedding dimensions are sticky (a swap = full re-embed), so keep the model swappable.
-- _Sources: openai pricing, docs.voyageai.com/docs/pricing._
+### 3. Embeddings — BUY (via the AI chokepoint) · **EMBED-CHOKEPOINT ✅ — provider decision updated 2026-06-26**
+- **What & why:** vectors for the Decision Brain / RAG. The routing chokepoint is done (all 8 callers pinned); only the provider choice and API key remain.
+- **Recommendation: Cohere `embed-v4`** ($0.12/1M tokens; OpenAI-compatible API; 1536 dims native — zero schema migration from current `vector(1536)`; 128K token limit handles full PRDs; EU inference region available for GDPR compliance). Full analysis + data privacy posture: [`../strategy/build-buy-integrate.md`](../strategy/build-buy-integrate.md) — "AI inference provider analysis" section.
+- **Cost:** ~$0.12 for 1M tokens (~10,000 average PRDs); **< $5/mo** at demo scale. _Confidence: high._
+- **Why not Voyage AI (free 200M tokens):** voyage-3 has FIXED 1024 dims — switching from current `vector(1536)` REQUIRES a schema migration. Then switching BACK to Cohere = a second migration. The 200M free tokens saves cents at demo scale while costing 2+ hours of migration work. Also: acquired by MongoDB Feb 2025 (roadmap risk), US-only servers (GDPR risk), non-OpenAI-compatible SDK. Disqualified. Full details in BBI doc.
+- **Fallback:** OpenAI `text-embedding-3-small` ($0.02/1M, same 1536 dims, already wired in `resolveEmbedRoute`). **OSS floor:** BGE-M3 (MIT) self-hosted.
+- **Founder action needed:** Cohere API key → add to `.env` as `COHERE_API_KEY`; update `EMB_MODEL` in `embed.server.ts`. 30 minutes of implementation.
+- _Sources: cohere.com/pricing, BBI doc (2026-06-26 research)._
 
-### 4. Rerank — INTEGRATE (precision booster, multi-hop retrieval only)
+### 4. Rerank — INTEGRATE (precision booster, multi-hop retrieval only) · **updated 2026-06-26**
 - **What & why:** a cross-encoder rerank on the semantic-match step, gated to multi-hop / precedent retrieval. Stateless, zero switching cost.
-- **Recommendation:** **ZeroEntropy `zerank-2`** hosted API ($0.025 / 1M tokens) by default; **self-host `zerank-1-small` (Apache-2.0, 1.7B) for the $0 autonomy floor**. Do NOT self-host `zerank-2` (its weights are non-commercial — API only).
-- **Cost:** **~$0–2/mo** (a 20-candidate rerank ≈ $0.00025/call; 5,000/mo ≈ $1.25); a free tier covers evaluation. _Confidence: high._
-- _Source: zeroentropy.dev/pricing, huggingface.co/zeroentropy/zerank-1-small._
+- **Recommendation: Cohere Rerank 4** (~$0.001-0.002/search; same billing account as embed-v4; best for business/finance documents, +400 ELO over Rerank v3.5 on that category). **OSS floor:** `zerank-1-small` (Apache-2.0, 1.7B) self-hosted.
+- **⚠️ ZeroEntropy zerank-2 WARNING:** zerank-2 model weights are released under a **non-commercial license (CC-BY-NC)**. Commercial use of the API requires verifying terms with ZeroEntropy directly before production use. Do NOT use zerank-2 in production without this confirmation. Use Cohere Rerank 4 as the safe production pick.
+- **Cost:** **~$0–2/mo** (20-candidate rerank ≈ $0.001-0.002/call; 5,000/mo ≈ $5-10); free tier covers evaluation. _Confidence: medium (Cohere Rerank 4 PAYG pricing not fully confirmed from primary source; re-verify)._
+- _Sources: cohere.com/pricing, BBI doc (2026-06-26 research)._
 
 ### 5. Payments / billing — Stripe · revenue-gated
 - **What & why:** subscriptions + metered credit billing (the monetization engine is built, dormant behind `credits_enabled()`; go-live runbook: [`credit-engine-go-live.md`](./credit-engine-go-live.md)).
