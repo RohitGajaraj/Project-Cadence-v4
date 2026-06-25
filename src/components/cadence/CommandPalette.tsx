@@ -60,7 +60,7 @@ export function CommandPalette() {
               <Search className="h-3.5 w-3.5 text-muted-foreground" />
               <Command.Input
                 autoFocus
-                placeholder="Search Cadence — navigate, ask AI, run agents…"
+                placeholder="Search Cadence: navigate, ask AI, run agents..."
                 className="flex-1 bg-transparent py-3.5 text-sm outline-none placeholder:text-muted-foreground"
               />
               <kbd className="text-[10px] text-muted-foreground border hairline rounded px-1.5 py-0.5">

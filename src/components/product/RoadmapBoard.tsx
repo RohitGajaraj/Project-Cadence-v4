@@ -306,7 +306,7 @@ export function RoadmapBoard() {
                           className="mono-label tabular-nums"
                           style={{ color: "var(--ink-subtle)" }}
                         >
-                          {it.ice_score != null ? it.ice_score.toFixed(1) : "—"}
+                          {it.ice_score != null ? it.ice_score.toFixed(1) : "-"}
                         </span>
                         {/* Keyboard / click move (drag is the mouse path); closes the
                           drag-only a11y gap. */}

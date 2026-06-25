@@ -59,7 +59,7 @@ function AdminWorkspaces() {
             {rows.map((w) => (
               <tr key={w.id} style={{ borderTop: "1px solid var(--hairline)" }}>
                 <td style={td()}>{w.name}</td>
-                <td style={td()}>{w.owner_email ?? "—"}</td>
+                <td style={td()}>{w.owner_email ?? "-"}</td>
                 <td style={td()}>{w.plan_tier}</td>
                 <td style={td()}>{w.member_count}</td>
                 <td style={td()}>{w.deleted_at ? "yes" : "no"}</td>

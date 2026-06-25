@@ -677,7 +677,7 @@ export function TraceDetail({ id }: { id: string }) {
                       ? clip(r.span.error_message)
                       : r.span.output_preview
                         ? clip(r.span.output_preview)
-                        : "—"}
+                        : "-"}
                     {hits.length > 0 && (
                       <span
                         style={{
@@ -709,7 +709,7 @@ export function TraceDetail({ id }: { id: string }) {
                       color: traceAgentSlug ? "var(--agent)" : "var(--ink-faint)",
                     }}
                   >
-                    {traceAgentSlug ?? "—"}
+                    {traceAgentSlug ?? "-"}
                   </span>
                   <span
                     className="mono-label"
@@ -727,14 +727,14 @@ export function TraceDetail({ id }: { id: string }) {
                       ? clip(r.tool.error)
                       : (r.tool.result ?? r.tool.args) != null
                         ? clip(JSON.stringify(r.tool.result ?? r.tool.args))
-                        : "—"}
+                        : "-"}
                   </span>
                   <span className="mono-label tabular-nums">{fmtMs(r.tool.latency_ms)}</span>
                   <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
-                    —
+                    -
                   </span>
                   <span className="mono-label" style={{ color: "var(--ink-faint)" }}>
-                    —
+                    -
                   </span>
                 </>
               )}

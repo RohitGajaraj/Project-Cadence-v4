@@ -347,7 +347,7 @@ export function EvalSuiteDetail({ id }: { id: string }) {
                     className="mono-label tabular-nums"
                     style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   >
-                    {versions[r.id] ?? r.model ?? "—"}
+                    {versions[r.id] ?? r.model ?? "-"}
                   </span>
                   <span
                     className="font-display tabular-nums"
@@ -359,7 +359,7 @@ export function EvalSuiteDetail({ id }: { id: string }) {
                           : "var(--ink)",
                     }}
                   >
-                    {rScore ?? "—"}
+                    {rScore ?? "-"}
                   </span>
                   <span className="mono-label tabular-nums">
                     <span style={{ color: "var(--emerald)" }}>{r.pass_count} ✓</span> ·{" "}
@@ -397,8 +397,8 @@ export function EvalSuiteDetail({ id }: { id: string }) {
             [
               ["Target prompt", `${suite.surface}/${suite.prompt_key}`],
               ["Judge", suite.judge_model],
-              ["Model", suite.model ?? "—"],
-              ["Gate threshold", `≥ ${suite.pass_threshold} — below this, a case fails the run`],
+              ["Model", suite.model ?? "-"],
+              ["Gate threshold", `≥ ${suite.pass_threshold}: below this, a case fails the run`],
               ["Cadence", suite.schedule_cron ?? "manual"],
             ] as [string, string][]
           ).map(([l, v]) => (
@@ -630,7 +630,7 @@ function CaseList({
               className="input"
               rows={3}
               value={form.input}
-              placeholder="Input — the user message to test"
+              placeholder="Input: the user message to test"
               onChange={(e) => setForm({ ...form, input: e.target.value })}
               style={{ resize: "none" }}
             />
@@ -645,7 +645,7 @@ function CaseList({
             <input
               className="input"
               value={form.rubric}
-              placeholder="Rubric (optional) — e.g. ≤ 5 lines, no emojis, mentions OKRs"
+              placeholder="Rubric (optional), e.g. ≤ 5 lines, no emojis, mentions OKRs"
               onChange={(e) => setForm({ ...form, rubric: e.target.value })}
             />
           </div>

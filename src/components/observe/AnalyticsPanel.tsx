@@ -228,7 +228,7 @@ export function AnalyticsPanel() {
                 <div>
                   <MonoLabel style={{ marginBottom: 6 }}>Cost per outcome</MonoLabel>
                   <div className="font-display tabular-nums" style={{ fontSize: 22 }}>
-                    {ue.costPerOutcomeUsd != null ? fmtUsd(ue.costPerOutcomeUsd) : "—"}
+                    {ue.costPerOutcomeUsd != null ? fmtUsd(ue.costPerOutcomeUsd) : "-"}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--ink-faint)" }}>spend ÷ outcomes</div>
                 </div>
@@ -720,7 +720,7 @@ function EventDetail({ data }: { data: EventDetailData }) {
                   {l}
                 </div>
                 <div className="font-display tabular-nums" style={{ fontSize: 16, marginTop: 2 }}>
-                  {v == null ? "—" : `${(v * 100).toFixed(0)}%`}
+                  {v == null ? "-" : `${(v * 100).toFixed(0)}%`}
                 </div>
               </div>
             ))}

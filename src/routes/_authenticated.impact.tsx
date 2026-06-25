@@ -67,7 +67,7 @@ function ImpactPage() {
   }
 
   const hitRate =
-    ledger && ledger.outcomes.hitRate !== null ? `${Math.round(ledger.outcomes.hitRate * 100)}%` : "—";
+    ledger && ledger.outcomes.hitRate !== null ? `${Math.round(ledger.outcomes.hitRate * 100)}%` : "-";
   const iceSign = ledger && ledger.iceShiftTotal >= 0 ? "+" : "";
 
   return (
@@ -111,7 +111,7 @@ function ImpactPage() {
               />
               <Stat
                 label="Priority impact"
-                value={ledger.measuredOutcomes > 0 ? `${iceSign}${ledger.iceShiftTotal}` : "—"}
+                value={ledger.measuredOutcomes > 0 ? `${iceSign}${ledger.iceShiftTotal}` : "-"}
                 sub={`net ICE · ${ledger.measuredOutcomes} measured`}
               />
               <Stat label="Beliefs revised" value={String(ledger.beliefsRevised)} sub="changed your mind on evidence" />

@@ -19,7 +19,7 @@ import { TrustDial } from "@/components/cockpit/TrustDial";
 import { AgentInspector } from "@/components/cockpit/AgentInspector";
 
 function relative(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const ms = Date.now() - new Date(iso).getTime();
   const abs = Math.abs(ms);
   const s = Math.round(abs / 1000);
@@ -427,7 +427,7 @@ function AttentionQueue({
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
               >
                 <span className="mono-label" style={{ fontSize: 9, color: "var(--agent)" }}>
-                  {a.agent_slug ?? "—"} · {a.tool_name}
+                  {a.agent_slug ?? "-"} · {a.tool_name}
                 </span>
                 <span className="mono-label" style={{ fontSize: 9 }}>
                   {relative(a.created_at)}

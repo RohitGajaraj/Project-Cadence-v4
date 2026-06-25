@@ -229,7 +229,7 @@ function SyncInboxPage() {
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  {m.last_pulled_at ? `pulled ${new Date(m.last_pulled_at).toLocaleString()}` : "—"}
+                  {m.last_pulled_at ? `pulled ${new Date(m.last_pulled_at).toLocaleString()}` : "-"}
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
                   <button

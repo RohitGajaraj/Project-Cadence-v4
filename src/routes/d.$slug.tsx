@@ -167,7 +167,7 @@ function PublicDecisionPage() {
           className="mono-label"
           title={
             decision.outcome === "superseded"
-              ? "A later decision superseded this one — shown for honest provenance."
+              ? "A later decision superseded this one, shown for honest provenance."
               : "This decision still stands; nothing has superseded it."
           }
           style={{

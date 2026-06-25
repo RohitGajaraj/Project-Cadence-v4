@@ -179,14 +179,14 @@ function Dashboard() {
     onSuccess: (_res, vars) => {
       invalidate("needs-you");
       setClearedSession((c) => c + 1);
-      toast.success(vars.decision === "approved" ? "Approved — agent unblocked" : "Rejected");
+      toast.success(vars.decision === "approved" ? "Approved. Agent unblocked." : "Rejected");
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const startMission = useMutation({
     // The orchestrator loop is awaited server-side — this can run 30s+.
     mutationFn: (data: { goal: string }) => mStartMission({ data }),
-    onSuccess: () => toast.success("Mission dispatched — track it in Missions"),
+    onSuccess: () => toast.success("Mission dispatched. Track it in Missions."),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -456,7 +456,7 @@ function Dashboard() {
             </div>
             <div
               style={{ textAlign: "center", flexShrink: 0 }}
-              title="Approve or reject the calls in the queue below — this ring fills as you clear them."
+              title="Approve or reject the calls in the queue below. This ring fills as you clear them."
             >
               {(() => {
                 const R = 30,
@@ -667,13 +667,13 @@ function Dashboard() {
                 <div style={{ display: "flex", gap: 30, flexWrap: "wrap" }}>
                   <Vital
                     label="Decisions accepted"
-                    value={acceptPct != null ? `${acceptPct}%` : "—"}
+                    value={acceptPct != null ? `${acceptPct}%` : "-"}
                     trend={acceptTrend}
                     hasData={acceptPct != null}
                   />
                   <Vital
                     label="Autonomy"
-                    value={autonomyPct != null ? `${autonomyPct}%` : "—"}
+                    value={autonomyPct != null ? `${autonomyPct}%` : "-"}
                     trend={autonomyTrend}
                     hasData={autonomyPct != null}
                   />
@@ -1082,7 +1082,7 @@ function LastBuildStamp() {
     );
   }, []);
   return (
-    <span title="Continuously built — this stamp updates with every build">
+    <span title="Continuously built. This stamp updates with every build.">
       {stamp ? `Last build · ${stamp}` : ""}
     </span>
   );

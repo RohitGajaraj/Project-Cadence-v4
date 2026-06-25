@@ -262,16 +262,16 @@ export function AgentSpendDetail({ id }: { id: string }) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {r.missionTitle ?? "—"}
+                  {r.missionTitle ?? "-"}
                 </span>
                 <span className="mono-label tabular-nums">
-                  {r.tokens_used ? fmtNum(r.tokens_used) : "—"}
+                  {r.tokens_used ? fmtNum(r.tokens_used) : "-"}
                 </span>
                 <span className="mono-label tabular-nums">
-                  {r.duration_ms != null ? fmtMs(r.duration_ms) : "—"}
+                  {r.duration_ms != null ? fmtMs(r.duration_ms) : "-"}
                 </span>
                 <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
-                  {r.spend_used_usd ? fmtUsd(r.spend_used_usd) : "—"}
+                  {r.spend_used_usd ? fmtUsd(r.spend_used_usd) : "-"}
                 </span>
                 <span
                   className="mono-label"

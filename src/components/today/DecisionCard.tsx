@@ -241,7 +241,7 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
               autoFocus
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Why are you rejecting? (optional — the agent learns from it)"
+              placeholder="Why are you rejecting? (optional, the agent learns from it)"
               rows={2}
               className="scrollbar-thin"
               style={{
@@ -302,7 +302,7 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
                 background: "transparent",
               }}
               onClick={() => onDefer(item.id)}
-              title="Not now — clears the call from today's queue"
+              title="Not now. Clears the call from today's queue."
             >
               Not now
             </button>
@@ -363,7 +363,7 @@ export function DecisionCard({ item, onApprove, onReject, onDefer, isDeciding }:
             background: "transparent",
           }}
           onClick={() => onDefer(item.id)}
-          title="Not now — clears the call from today's queue"
+          title="Not now. Clears the call from today's queue."
         >
           Not now
         </button>

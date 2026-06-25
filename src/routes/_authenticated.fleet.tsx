@@ -92,7 +92,7 @@ function FleetPage() {
           kicker="Cockpit · Fleet"
           icon={Radar}
           title="Fleet"
-          sub="Air-traffic control for your agents. Who's working, how loaded each one is, who's idle, and who's hitting exceptions — supervise by exception, intervene at the gates."
+          sub="Air-traffic control for your agents. Who's working, how loaded each one is, who's idle, and who's hitting exceptions. Supervise by exception, intervene at the gates."
         />
 
         {query.isPending ? (

@@ -67,9 +67,9 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
         );
         qc.invalidateQueries({ queryKey: invalidateKey });
       } else if (r.issueState === "open") {
-        toast("Not shipped yet — the linked GitHub issue is still open.");
+        toast("Not shipped yet. The linked GitHub issue is still open.");
       } else {
-        toast("Ship status unknown — could not read the linked GitHub issue.");
+        toast("Ship status unknown. Could not read the linked GitHub issue.");
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -125,7 +125,7 @@ export function OutcomeCard({ prd, invalidateKey }: Props) {
       setVerdict(r.verdict);
       if (r.summary) setSummary(r.summary);
       setPredicted(r.predicted || null);
-      toast.success("Historian drafted a verdict — review, then record");
+      toast.success("Historian drafted a verdict. Review, then record.");
     },
     onError: (e: Error) => toast.error(e.message),
   });

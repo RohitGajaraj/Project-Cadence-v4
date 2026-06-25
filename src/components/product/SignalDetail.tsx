@@ -110,7 +110,7 @@ export function SignalDetail({ id }: { id: string }) {
     mutationFn: (brief: string) => mGen({ data: { brief } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["prds"] });
-      toast.success(`Spec drafted for “${title}”. Critic reviewed it — see Specs.`);
+      toast.success(`Spec drafted for “${title}”. Critic reviewed it. See Specs.`);
     },
     onError: (e: Error) => toast.error(e.message),
   });

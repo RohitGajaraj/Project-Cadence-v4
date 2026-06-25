@@ -31,7 +31,7 @@ const AUDIENCE_LABEL: Record<Audience, string> = {
 };
 const AUDIENCE_SUB: Record<Audience, string> = {
   personal: "For individuals and small product teams.",
-  teams: "Shared memory, roles, and SSO — for the whole product org.",
+  teams: "Shared memory, roles, and SSO, for the whole product org.",
 };
 
 export const TIER_ICON: Record<

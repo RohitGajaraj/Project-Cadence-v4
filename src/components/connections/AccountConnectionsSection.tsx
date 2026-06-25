@@ -206,7 +206,7 @@ export function AccountConnectionsSection({
     if (!connected && !error) return;
     if (connected === "github") toast.success("GitHub connected");
     else if (error === "github_connect") {
-      toast.error("GitHub connect failed — try again or check the app installation.");
+      toast.error("GitHub connect failed. Try again or check the app installation.");
     }
     params.delete("connected");
     params.delete("error");
@@ -258,7 +258,7 @@ export function AccountConnectionsSection({
   const mDisconnect = useMutation({
     mutationFn: (id: string) => fDisconnect({ data: { id } }),
     onSuccess: () => {
-      toast.success("Disconnected — workspace bindings stay until you remove them");
+      toast.success("Disconnected. Workspace bindings stay until you remove them.");
       qc.invalidateQueries({ queryKey: ["connections"] });
       qc.invalidateQueries({ queryKey: ["workspace-bindings"] });
     },
@@ -699,7 +699,7 @@ export function ConnectorDetail({
                     connected
                   </span>
                   <span className="mono-label tabular-nums">
-                    {c.last_sync_at ? shortDate(c.last_sync_at) : "—"}
+                    {c.last_sync_at ? shortDate(c.last_sync_at) : "-"}
                   </span>
                 </div>
               ))
@@ -730,7 +730,7 @@ export function ConnectorDetail({
                     {c.status}
                   </span>
                   <span className="mono-label tabular-nums">
-                    {c.last_verified_at ? shortDate(c.last_verified_at) : "—"}
+                    {c.last_verified_at ? shortDate(c.last_verified_at) : "-"}
                   </span>
                 </div>
               ))}

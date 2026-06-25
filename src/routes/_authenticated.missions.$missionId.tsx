@@ -81,7 +81,7 @@ function graphStatus(s?: string): string {
 }
 
 function fmtDuration(ms: number): string {
-  if (ms < 0 || !Number.isFinite(ms)) return "—";
+  if (ms < 0 || !Number.isFinite(ms)) return "-";
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
   const m = Math.floor(ms / 60_000);
@@ -577,10 +577,10 @@ function MissionCompounding({ data }: { data: MissionDetail }) {
 
   const copySnapshot = () => {
     const lines = [
-      `# ${data.mission.title} — compounding snapshot`,
+      `# ${data.mission.title}: compounding snapshot`,
       "",
       n === 0
-        ? "This mission started fresh — no prior memory recalled yet."
+        ? "This mission started fresh. No prior memory recalled yet."
         : `Drew on ${n} prior ${n === 1 ? "memory" : "memories"}:`,
       ...memories.map(
         (mem) =>
@@ -705,7 +705,7 @@ function MissionDetailPage() {
   const advance = useMutation({
     mutationFn: () => fAdvance({ data: { missionId } }),
     onSuccess: () => {
-      toast.success("Chief of Staff advanced — dispatching newly-ready steps.");
+      toast.success("Chief of Staff advanced. Dispatching newly-ready steps.");
       qc.invalidateQueries({ queryKey: ["mission", missionId] });
       qc.invalidateQueries({ queryKey: ["mission-steps", missionId] });
     },
@@ -1376,7 +1376,7 @@ function MissionDetailPage() {
               {failedStep ? (
                 <p style={{ fontSize: 12.5, color: "var(--ink-muted)", margin: "6px 0 10px" }}>
                   {agentDisplayName(failedStep.agent_slug)} could not finish "{failedStep.sub_goal}"
-                  {failedStep.error ? ` — ${failedStep.error}` : ""}.
+                  {failedStep.error ? `: ${failedStep.error}` : ""}.
                 </p>
               ) : (
                 <p style={{ fontSize: 12.5, color: "var(--ink-muted)", margin: "6px 0 10px" }}>

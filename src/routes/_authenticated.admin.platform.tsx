@@ -189,9 +189,9 @@ function AuditPanel() {
           {rows.map((r) => (
             <tr key={r.id} style={{ borderTop: "1px solid var(--hairline)" }}>
               <td style={td()}>{r.created_at.slice(0, 16).replace("T", " ")}</td>
-              <td style={td()}>{r.actor_email ?? r.actor_user_id?.slice(0, 8) ?? "—"}</td>
+              <td style={td()}>{r.actor_email ?? r.actor_user_id?.slice(0, 8) ?? "-"}</td>
               <td style={td()}><code>{r.action}</code></td>
-              <td style={td()}>{r.target_kind} · {r.target_id?.slice(0, 8) ?? "—"}</td>
+              <td style={td()}>{r.target_kind} · {r.target_id?.slice(0, 8) ?? "-"}</td>
               <td style={td()}><code style={{ fontSize: 10 }}>{r.payload}</code></td>
             </tr>
           ))}

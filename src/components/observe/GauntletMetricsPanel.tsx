@@ -32,7 +32,7 @@ import { MonoLabel } from "@/components/cadence/Primitives";
 import { AutonomyCard } from "@/components/today/AutonomyCard";
 
 function pct(n: number | null): string {
-  if (n == null) return "—";
+  if (n == null) return "-";
   return `${Math.round(n * 100)}%`;
 }
 
@@ -91,7 +91,7 @@ function MetricCard({
       </MonoLabel>
       <div
         className="font-display tabular-nums"
-        style={{ fontSize: 26, color: value === "—" ? "var(--ink-faint)" : "var(--ink)" }}
+        style={{ fontSize: 26, color: value === "-" ? "var(--ink-faint)" : "var(--ink)" }}
       >
         {loading ? "…" : value}
       </div>
@@ -413,33 +413,33 @@ export function GauntletMetricsPanel() {
   const b = ritualQ.data;
 
   // Metric A copy.
-  const acceptValue = a == null || a.rate == null ? "—" : pct(a.rate);
+  const acceptValue = a == null || a.rate == null ? "-" : pct(a.rate);
   const acceptSub =
     a == null
       ? ""
       : a.decided === 0
-        ? "not enough data yet — no calls decided in 14d"
+        ? "not enough data yet. No calls decided in 14d."
         : `${a.approved} approved · ${a.rejected} rejected · last 14d`;
 
   // Metric C copy.
-  const autonomyValue = c == null || c.ratio == null ? "—" : pct(c.ratio);
+  const autonomyValue = c == null || c.ratio == null ? "-" : pct(c.ratio);
   const autonomySub =
     c == null
       ? ""
       : c.unattended + c.gated === 0
-        ? "not enough data yet — no side-effecting actions in 14d"
+        ? "not enough data yet. No side-effecting actions in 14d."
         : `${c.unattended} ran unattended · ${c.gated} came to you · last 14d`;
 
   // Metric B copy — retention shown as days-active (7d) + streak.
   const ritualReady = b?.tableReady ?? false;
-  const ritualValue = b == null || !ritualReady ? "—" : `${b.daysActive7}/7`;
+  const ritualValue = b == null || !ritualReady ? "-" : `${b.daysActive7}/7`;
   const ritualSub =
     b == null
       ? ""
       : !ritualReady
-        ? "not enough data yet — ritual tracking lights up on next sync"
+        ? "not enough data yet. Ritual tracking lights up on next sync."
         : b.daysActive7 === 0
-          ? "not enough data yet — open Today to start the streak"
+          ? "not enough data yet. Open Today to start the streak."
           : `streak ${b.currentStreak}d · ${b.daysActive30} of last 30 days${
               b.realData == null ? "" : b.realData ? " · real inputs" : " · demo seed"
             }`;
@@ -462,7 +462,7 @@ export function GauntletMetricsPanel() {
           value={acceptValue}
           trend={a?.trend}
           trendHidden={a == null || a.priorRate == null || a.rate == null}
-          meaning="Of the calls you actually decided, the share you approved — how often the agents' proposals match your judgment."
+          meaning="Of the calls you actually decided, the share you approved: how often the agents' proposals match your judgment."
           substat={acceptSub}
           loading={acceptQ.isLoading}
         />
@@ -480,7 +480,7 @@ export function GauntletMetricsPanel() {
           icon={Flame}
           label="Ritual retention"
           value={ritualValue}
-          meaning="Days in the last week you opened Today to clear the queue — the daily ritual that keeps the loop honest and you in the loop."
+          meaning="Days in the last week you opened Today to clear the queue, the daily ritual that keeps the loop honest and you in the loop."
           substat={ritualSub}
           loading={ritualQ.isLoading}
         />

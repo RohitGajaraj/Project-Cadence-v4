@@ -4,9 +4,9 @@
 // real timestamps; never invent.
 
 export function relTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
+  if (Number.isNaN(t)) return "-";
   const ms = Date.now() - t;
   if (ms < 60_000) return "now";
   const m = Math.floor(ms / 60_000);

@@ -115,7 +115,7 @@ export function OpportunitiesPanel() {
       <EmptyState
         icon={Lightbulb}
         title="No opportunities yet"
-        body="Promote a clustered theme from Signals — it lands here scored by ICE, with the Critic's read attached."
+        body="Promote a clustered theme from Signals. It lands here scored by ICE, with the Critic's read attached."
         cta="Go to Signals · capture and cluster"
         onCta={() => navigate({ to: "/product", search: { tab: "signals" } })}
       />

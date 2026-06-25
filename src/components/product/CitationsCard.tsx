@@ -55,7 +55,7 @@ export function CitationsCard({ citations }: Props) {
               <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
               <span className="min-w-0">
                 <span className="block text-xs font-medium truncate">
-                  {c.title ?? `${c.source_kind} · ${c.source_id?.slice(0, 8) ?? "—"}`}
+                  {c.title ?? `${c.source_kind} · ${c.source_id?.slice(0, 8) ?? "-"}`}
                 </span>
                 {c.snippet && (
                   <span className="block text-[11px] text-muted-foreground line-clamp-2">

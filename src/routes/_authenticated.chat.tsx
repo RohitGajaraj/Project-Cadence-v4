@@ -277,9 +277,9 @@ function ChatPage() {
         signal: ctrl.signal,
       });
       if (res.status === 401)
-        throw new ChatUiError("Your session needs a refresh — reload the page and try again.");
+        throw new ChatUiError("Your session needs a refresh. Reload the page and try again.");
       if (res.status === 429)
-        throw new ChatUiError("Rate limit reached — give it a few seconds and try again.");
+        throw new ChatUiError("Rate limit reached. Give it a few seconds and try again.");
       if (res.status === 402)
         throw new ChatUiError("AI credits exhausted. Add credits in Settings → Usage.");
       if (!res.ok || !res.body) {
@@ -640,7 +640,7 @@ function ChatPage() {
                   >
                     {[
                       "What is the weather in Munich?",
-                      "What am I building next — how does the roadmap look?",
+                      "What am I building next? How does the roadmap look?",
                       "Compare our opportunity queue against what competitors shipped this month",
                       "Draft a stakeholder update from this week's decisions",
                     ].map((s) => (
@@ -1341,7 +1341,7 @@ function BrainMessageActions({
       }),
     onSuccess: (r) =>
       toast.success(
-        r.indexed ? "Saved to the brain" : "Saved — will index when embeddings are available",
+        r.indexed ? "Saved to the brain" : "Saved. Will index when embeddings are available.",
       ),
     onError: () => toast.error("Couldn't save that just now."),
   });

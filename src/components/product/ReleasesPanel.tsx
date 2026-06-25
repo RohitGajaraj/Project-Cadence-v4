@@ -140,7 +140,7 @@ export function ReleasesPanel() {
             {r.input}
           </span>
           <span className="mono-label tabular-nums">
-            {r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"} ·{" "}
+            {r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : "-"} ·{" "}
             {Number(r.tokens_used ?? 0).toLocaleString()} tok · {fmtUsd(r.spend_used_usd)}
           </span>
           <span className="mono-label">{relTime(r.created_at)}</span>

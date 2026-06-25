@@ -176,7 +176,7 @@ export function PromptsPanel() {
               {p.name}
             </button>
             <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
-              {p.active_version ? `v${p.active_version.version}` : "—"}
+              {p.active_version ? `v${p.active_version.version}` : "-"}
             </span>
             <span style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
               {p.description ?? `${p.surface} · ${p.key}`}

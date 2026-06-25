@@ -145,7 +145,7 @@ export function DriftPanel() {
         return {
           surface,
           watch: open.length > 0,
-          delta: worst ? fmtDelta(Number(worst.delta_pct)) : "—",
+          delta: worst ? fmtDelta(Number(worst.delta_pct)) : "-",
           note: worst
             ? `${METRIC_LABELS[worst.metric] ?? worst.metric} ${fmtMetric(worst.metric, Number(worst.baseline_value))} → ${fmtMetric(worst.metric, Number(worst.current_value))}${open.length > 1 ? ` · +${open.length - 1} more` : ""}`
             : "within baseline band",

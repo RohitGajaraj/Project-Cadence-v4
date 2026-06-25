@@ -46,7 +46,7 @@ const SSE_HEADERS = {
   "Access-Control-Allow-Origin": "*",
 };
 
-const GENERIC_FAILURE = "I hit a snag answering that — try again or switch models.";
+const GENERIC_FAILURE = "I hit a snag answering that. Try again or switch models.";
 const WEB_UNAVAILABLE_NOTE =
   "Web access unavailable right now; answer from general knowledge and say you could not verify live data.";
 
@@ -66,7 +66,7 @@ function byoOnlyProvider(model: string): { id: string; label: string } | null {
 }
 
 function byoKeyMissingMessage(providerLabel: string): string {
-  return `I can't reach ${providerLabel} yet — add your ${providerLabel} API key in Settings → AI & models, or switch back to a built-in model.`;
+  return `I can't reach ${providerLabel} yet. Add your ${providerLabel} API key in Settings, under AI & models, or switch back to a built-in model.`;
 }
 
 function xmlEscape(s: string): string {
@@ -890,7 +890,7 @@ ${grounding}`,
                     const sourcesLine = researchSources
                       .map(
                         (s) =>
-                          `[${s.n}] ${s.title}${s.url ? ` — ${s.url}` : s.href ? ` — ${s.href}` : ""}`,
+                          `[${s.n}] ${s.title}${s.url ? `: ${s.url}` : s.href ? `: ${s.href}` : ""}`,
                       )
                       .join("\n");
                     void indexFinding(supabase, userId, {

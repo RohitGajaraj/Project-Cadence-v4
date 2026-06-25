@@ -405,8 +405,8 @@ function SealPanel() {
                 <AlertTriangle size={13} strokeWidth={2} />
               )}
               {v.ok
-                ? "Unchanged — your ledger matches this fingerprint."
-                : `Changed — ${v.reason ?? "the ledger no longer matches this fingerprint"}.`}
+                ? "Unchanged. Your ledger matches this fingerprint."
+                : `Changed: ${v.reason ?? "the ledger no longer matches this fingerprint"}.`}
             </span>
           ) : verify.isError ? (
             <span style={{ fontSize: 12, color: "var(--rose)" }}>Could not verify. Try again.</span>
@@ -560,7 +560,7 @@ function TrustLedgerPage() {
           <EmptyState
             icon={ScrollText}
             title="No receipts yet"
-            body="Decisions and approved autonomous actions appear here as receipts the moment they happen — with their evidence and whether they still stand."
+            body="Decisions and approved autonomous actions appear here as receipts the moment they happen, with their evidence and whether they still stand."
             cta="Open Approvals"
             onCta={() => {
               navigate({ to: "/govern", search: { tab: "approvals" } });

@@ -27,7 +27,7 @@ export function RedeemCodeCard() {
       if (r.kind === "plan_upgrade" || (r.plan_tier && !r.credits)) {
         toast.success(`Plan unlocked${r.plan_tier ? `: ${r.plan_tier}` : ""}.`);
       } else if (r.credits && r.credits > 0) {
-        toast.success(`Redeemed — ${r.credits.toLocaleString()} credits added.`);
+        toast.success(`Redeemed. ${r.credits.toLocaleString()} credits added.`);
       } else {
         toast.success("Code redeemed.");
       }

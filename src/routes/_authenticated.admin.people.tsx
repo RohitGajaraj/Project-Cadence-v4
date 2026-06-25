@@ -116,7 +116,7 @@ function UsersPanel() {
             {rows.map((r) => (
               <tr key={r.user_id} style={{ borderTop: "1px solid var(--hairline, rgba(0,0,0,0.08))" }}>
                 <td style={td()}>{r.email}</td>
-                <td style={td()}>{r.display_name ?? "—"}</td>
+                <td style={td()}>{r.display_name ?? "-"}</td>
                 <td style={td()}>{r.plan_tier}</td>
                 <td style={td()}>{r.balance_credits.toLocaleString()}</td>
                 <td style={td()}>{r.suspended ? "yes" : "no"}</td>
@@ -248,7 +248,7 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             <section>
               <div className="mono-label" style={{ marginBottom: 6 }}>Identity</div>
               <div style={{ fontSize: 12.5, display: "grid", gap: 4 }}>
-                <div>Name · {d.profile?.display_name ?? "—"}</div>
+                <div>Name · {d.profile?.display_name ?? "-"}</div>
                 <div>Joined · {d.user?.created_at?.slice(0, 10)}</div>
                 <div>Last sign-in · {d.user?.last_sign_in_at?.slice(0, 10) ?? "never"}</div>
                 <div>Suspended · {d.profile?.suspended ? "yes" : "no"}</div>
@@ -259,9 +259,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
               <div className="mono-label" style={{ marginBottom: 6 }}>Plan & override</div>
               {d.subscription ? (
                 <div style={{ fontSize: 12.5, display: "grid", gap: 4 }}>
-                  <div>Base plan · {d.subscription.plan_tier ?? "—"}</div>
-                  <div>Override tier · {d.subscription.plan_override_tier ?? "—"}</div>
-                  <div>Override expires · {d.subscription.plan_override_expires_at?.slice(0, 10) ?? "—"}</div>
+                  <div>Base plan · {d.subscription.plan_tier ?? "-"}</div>
+                  <div>Override tier · {d.subscription.plan_override_tier ?? "-"}</div>
+                  <div>Override expires · {d.subscription.plan_override_expires_at?.slice(0, 10) ?? "-"}</div>
                 </div>
               ) : (
                 <p style={{ fontSize: 12, color: "var(--ink-subtle)" }}>No subscription row.</p>

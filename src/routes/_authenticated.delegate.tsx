@@ -128,7 +128,7 @@ function DelegatePage() {
           kicker="Cockpit · Delegate"
           icon={Send}
           title="Delegate"
-          sub="Hand work to your agents and walk away. What's running, what needs you, and what's already done — each with its full trail one click away."
+          sub="Hand work to your agents and walk away. What's running, what needs you, and what's already done, each with its full trail one click away."
         />
 
         {query.isPending ? (

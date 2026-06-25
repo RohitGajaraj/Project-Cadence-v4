@@ -147,7 +147,7 @@ function ResetPasswordPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
-                  placeholder="new password — at least 6 characters"
+                  placeholder="new password, at least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{ width: "100%", paddingRight: 34 }}

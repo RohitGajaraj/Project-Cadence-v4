@@ -654,7 +654,7 @@ function CreditsTabInner() {
           Balance
         </div>
         <div className="font-display" style={{ fontSize: 28, marginTop: 4 }}>
-          {data ? (data.balanceCredits + data.topupCredits).toLocaleString() : "—"}
+          {data ? (data.balanceCredits + data.topupCredits).toLocaleString() : "-"}
           <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", marginLeft: 8 }}>
             credits
           </span>

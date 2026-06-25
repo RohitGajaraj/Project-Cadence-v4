@@ -21,7 +21,7 @@ function fmtNum(n: number): string {
   return n.toLocaleString("en-US");
 }
 function fmtDur(ms: number | null): string {
-  if (ms === null) return "—";
+  if (ms === null) return "-";
   const s = Math.round(ms / 1000);
   return s < 90 ? `${s}s` : `${(s / 60).toFixed(1)}m`;
 }

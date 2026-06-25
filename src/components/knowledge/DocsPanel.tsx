@@ -315,7 +315,7 @@ export function DocsPanel() {
                 onClick={async () => {
                   const ok = await confirm({
                     title: "Delete this doc?",
-                    body: "Removed for everyone — agents stop citing it.",
+                    body: "Removed for everyone. Agents stop citing it.",
                     destructive: true,
                     confirmLabel: "Delete",
                   });
@@ -385,7 +385,7 @@ export function DocsPanel() {
           <EmptyState
             icon={FileText}
             title="No docs yet"
-            body="Workspace pages live here. Import from Google Docs or Notion, or start blank — everything you write joins the brain."
+            body="Workspace pages live here. Import from Google Docs or Notion, or start blank. Everything you write joins the brain."
             cta="New page · opens the editor"
             onCta={() => mCreate.mutate()}
           />
@@ -489,7 +489,7 @@ export function DocsPanel() {
                           fontFamily: "var(--font-display)",
                         }}
                       >
-                        {excerptOf(previewDoc) || "Nothing written yet — open the editor to start."}
+                        {excerptOf(previewDoc) || "Nothing written yet. Open the editor to start."}
                       </p>
                     )}
                     <span

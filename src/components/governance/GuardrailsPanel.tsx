@@ -218,7 +218,7 @@ export function GuardrailsPanel() {
         <EmptyState
           icon={Shield}
           title="No guardrails yet"
-          body="Seed the built-in set — PII redaction, secret blocking, prompt-injection flags — or write your own rule."
+          body="Seed the built-in set (PII redaction, secret blocking, prompt-injection flags) or write your own rule."
           cta="Seed built-ins · PII, secrets, injection"
           onCta={() => seed.mutate()}
         />

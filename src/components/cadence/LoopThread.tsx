@@ -65,7 +65,7 @@ export function LoopThread() {
               )}
               <Link
                 to={s.to}
-                title={`${s.label} — hands off ${s.produces}`}
+                title={`${s.label}: hands off ${s.produces}`}
                 className={`whitespace-nowrap no-underline transition-colors ${cls}`}
                 aria-current={i === idx ? "page" : undefined}
               >

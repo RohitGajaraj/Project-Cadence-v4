@@ -244,7 +244,7 @@ export function InsightsPanel() {
           </MonoLabel>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
             <Stat
-              value={d.learned.hitRate === null ? "—" : `${d.learned.hitRate}%`}
+              value={d.learned.hitRate === null ? "-" : `${d.learned.hitRate}%`}
               label="hit rate"
               color="var(--ember)"
             />
@@ -254,7 +254,7 @@ export function InsightsPanel() {
           </div>
           <p style={{ fontSize: 11.5, color: "var(--ink-faint)", marginTop: 12, lineHeight: 1.5 }}>
             {d.learned.total === 0
-              ? "No outcomes recorded yet — the hit rate appears once results come back."
+              ? "No outcomes recorded yet. The hit rate appears once results come back."
               : `Across ${d.learned.total} recorded outcome${d.learned.total === 1 ? "" : "s"}.`}
           </p>
         </div>
@@ -403,7 +403,7 @@ export function InsightsPanel() {
                     textTransform: "uppercase",
                   }}
                 >
-                  {l.verdict || "—"}
+                  {l.verdict || "-"}
                 </span>
                 <span
                   style={{

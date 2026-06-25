@@ -154,7 +154,7 @@ export function SignalsPanel() {
       mGen({ data: { brief: v.brief } }),
     onSuccess: (_r, v) => {
       qc.invalidateQueries({ queryKey: ["prds"] });
-      toast.success(`Spec drafted for “${v.theme}”. Critic reviewed it — see Specs.`);
+      toast.success(`Spec drafted for “${v.theme}”. Critic reviewed it. See Specs.`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -258,7 +258,7 @@ export function SignalsPanel() {
           ref={captureRef}
           className="input"
           value={capture}
-          placeholder="Capture a signal — paste a quote, a ticket, a hallway comment…"
+          placeholder="Capture a signal: a quote, a ticket, a hallway comment..."
           onChange={(e) => setCapture(e.target.value)}
         />
         <select
@@ -382,7 +382,7 @@ export function SignalsPanel() {
         <EmptyState
           icon={Radar}
           title="No signals yet"
-          body="Capture a quote, a ticket, a hallway comment — Scout clusters them into themes you can act on."
+          body="Capture a quote, a ticket, or a hallway comment. Scout clusters them into themes you can act on."
           cta="Capture · Scout clusters it"
           onCta={() => captureRef.current?.focus()}
         />

@@ -36,7 +36,7 @@ function EvalHealthPage() {
 
   const h = query.data?.health;
   const summary = query.data?.summary ?? "";
-  const pct = (n: number | null) => (n === null ? "—" : `${Math.round(n * 100)}%`);
+  const pct = (n: number | null) => (n === null ? "-" : `${Math.round(n * 100)}%`);
 
   return (
     <AppShell>
@@ -79,7 +79,7 @@ function EvalHealthPage() {
               <Stat label="Pass rate" value={pct(h.passRate)} sub="cases passing" />
               <Stat label="Completed runs" value={String(h.completedRuns)} sub={`${h.totalRuns} total`} />
               <Stat label="Error rate" value={pct(h.errorRate)} sub="runs that errored" />
-              <Stat label="Trend" value={h.trend === "unknown" ? "—" : h.trend} sub="recent vs prior" />
+              <Stat label="Trend" value={h.trend === "unknown" ? "-" : h.trend} sub="recent vs prior" />
             </div>
 
             {h.flakySuites.length > 0 ? (

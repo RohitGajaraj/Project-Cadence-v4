@@ -214,7 +214,7 @@ function SourceChip({ s }: { s: ChatSource }) {
       <a
         data-source-n={s.n}
         href={safeHref}
-        title={s.sub ? `${s.sub} — ${s.title}` : s.title}
+        title={s.sub ? `${s.sub}: ${s.title}` : s.title}
         className={chipClass}
       >
         {inner}

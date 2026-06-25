@@ -272,7 +272,7 @@ export function EvalsPanel() {
         <EmptyState
           icon={FlaskConical}
           title="No eval suites yet"
-          body="An eval suite is a regression test on a prompt — golden cases, an LLM judge, and a pass gate. Quality drops get caught before they ship."
+          body="An eval suite is a regression test on a prompt: golden cases, an LLM judge, and a pass gate. Quality drops get caught before they ship."
           cta="New suite · targets a prompt"
           onCta={() => {
             setPrefill(null); // empty-state CTA is a manual open: keep it unseeded

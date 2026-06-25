@@ -95,7 +95,7 @@ function MissionRow({ m, onPromote }: { m: MissionListRow; onPromote: (id: strin
         </div>
         <div style={{ textAlign: "right", flexShrink: 0, width: 90 }}>
           <div className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
-            {m.cost_usd == null ? "—" : `$${m.cost_usd.toFixed(2)}`}
+            {m.cost_usd == null ? "-" : `$${m.cost_usd.toFixed(2)}`}
           </div>
           <div className="mono-label" style={{ fontSize: 9 }}>
             {startedLabel(m.created_at)}
@@ -168,7 +168,7 @@ function MissionComposer() {
       <textarea
         value={goal}
         onChange={(e) => setGoal(e.target.value)}
-        placeholder="Mission goal — e.g. 'Investigate top 3 churn signals this week, draft a PRD for the highest-impact fix, and queue the engineering plan.'"
+        placeholder="Mission goal, e.g. 'Investigate top 3 churn signals this week, draft a PRD for the highest-impact fix, and queue the engineering plan.'"
         rows={3}
         maxLength={4000}
         className="input"
@@ -210,7 +210,7 @@ export function MissionsPanel() {
   const promote = useMutation({
     mutationFn: (missionId: string) => fPromote({ data: { missionId } }),
     onSuccess: () => {
-      toast.success("Mission queued — the agent will pick it up shortly.");
+      toast.success("Mission queued. The agent will pick it up shortly.");
       qc.invalidateQueries({ queryKey: ["missions"] });
     },
     onError: (e: Error) => toast.error(e.message),

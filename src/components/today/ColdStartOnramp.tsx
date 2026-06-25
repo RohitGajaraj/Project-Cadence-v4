@@ -29,7 +29,7 @@ const steps = [
   {
     icon: Plug,
     title: "Connect a source",
-    body: "Link a tool you already live in so signals flow in on their own. One click per source — no keys to paste.",
+    body: "Link a tool you already live in so signals flow in on their own. One click per source, no keys to paste.",
     to: "/settings" as const,
     cta: "Connect",
   },

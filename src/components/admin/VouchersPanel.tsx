@@ -46,10 +46,10 @@ export function VouchersPanel() {
               <tr key={v.id} style={{ borderTop: "1px solid var(--hairline)" }}>
                 <td style={td()}><code>{v.code}</code></td>
                 <td style={td()}>{v.kind}</td>
-                <td style={td()}>{v.plan_tier ?? "—"}</td>
-                <td style={td()}>{v.credits ?? "—"}</td>
+                <td style={td()}>{v.plan_tier ?? "-"}</td>
+                <td style={td()}>{v.credits ?? "-"}</td>
                 <td style={td()}>{v.redemptions_count} / {v.max_redemptions ?? "∞"}</td>
-                <td style={td()}>{v.expires_at?.slice(0, 10) ?? "—"}</td>
+                <td style={td()}>{v.expires_at?.slice(0, 10) ?? "-"}</td>
                 <td style={td()}>{v.active ? "yes" : "no"}</td>
                 <td style={td()}>
                   <button className="btn btn-sm" onClick={() => setOpenId(v.id)}>Redemptions</button>

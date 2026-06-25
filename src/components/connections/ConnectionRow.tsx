@@ -26,7 +26,7 @@ function stepStatusFor(status: AccountConnection["status"]): string {
 
 function statusTitle(c: AccountConnection): string | undefined {
   if (c.status === "error") return c.status_detail ?? "Connection error";
-  if (c.status === "disconnected") return "Disconnected — reconnect to use this account";
+  if (c.status === "disconnected") return "Disconnected. Reconnect to use this account.";
   if (c.last_verified_at) return `Verified ${new Date(c.last_verified_at).toLocaleDateString()}`;
   return undefined;
 }

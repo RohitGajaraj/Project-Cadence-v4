@@ -424,8 +424,8 @@ export function BudgetsPanel() {
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <span className="mono-label tabular-nums">
-              daily {g?.daily_token_cap != null ? Number(g.daily_token_cap) : "—"} · monthly{" "}
-              {g?.monthly_token_cap != null ? Number(g.monthly_token_cap) : "—"} · alert at{" "}
+              daily {g?.daily_token_cap != null ? Number(g.daily_token_cap) : "-"} · monthly{" "}
+              {g?.monthly_token_cap != null ? Number(g.monthly_token_cap) : "-"} · alert at{" "}
               {g?.alert_at_pct ?? 80}%
             </span>
             <button
