@@ -257,4 +257,17 @@ The founder lifted the Q2 scopes/audit gate. This is the outward GOVERNED WRITE 
 
 > **Deploy ordering (hardened):** the route selects `mcp_tokens.scopes` and calls `interop_write_enabled()`. To survive the Lovable/Workers split-deploy (the worker can land before the migration), `validateToken` **degrades gracefully**: if the `scopes` column is absent (PostgREST `42703`) it re-selects without it and treats the token as read-only (`scopes = []`), so the READ tools keep working and writes stay impossible until the migration applies. `resolveWriteEnabled` likewise fails closed. So an out-of-order deploy is safe (read-only), and once the migration applies the gate is still OFF until the founder flips it. _(Adversarial review 2026-06-25 flagged the un-hardened version as a HIGH availability risk — all MCP traffic would 401 — now fixed.)_
 
-**To activate (founder):** apply the migration on publish → mint a token with `scopes: ["write:signal"]` for the trusted peer → run `select admin_set_interop_write_enabled(true);` as an admin. To pause: `select admin_set_interop_write_enabled(false);`.
+**To activate (founder):** the migration is **already applied to the live DB** (2026-06-25), so just mint a token with `scopes: ["write:signal"]` for the trusted peer → run `select admin_set_interop_write_enabled(true);` as an admin, after this code is published. To pause: `select admin_set_interop_write_enabled(false);`.
+
+### Live validation (2026-06-25)
+
+Validated against the live production DB (not just mock unit tests), then cleaned up to a dormant, zero-token state:
+
+- **Migration applied + verified live:** `mcp_tokens.scopes` is `text[]` default `{}`; `interop_write_enabled()` returns `false` (dormant); `admin_set_interop_write_enabled` exists; `issue_mcp_token` has exactly **one** overload (the 6-arg with `_scopes`) — the old 5-arg was cleanly dropped, no ambiguity.
+- **Gate read round-trip:** set the `app_settings` flag true → `interop_write_enabled()` returns true in a separate txn (it is `STABLE`, so a same-statement read sees the pre-statement snapshot — which is exactly how the worker reads it, via a separate RPC) → flag removed → returns false again.
+- **Token mint:** `issue_mcp_token(..., array['write:signal'])` persists `scopes = ["write:signal"]`.
+- **Write insert:** the exact `signals` insert shape `ingestSignal` uses (`user_id, workspace_id, title, content, source='mcp', tags`) inserts cleanly, with the `content := content || title` NOT-NULL fallback working.
+- **Cleanup:** the test signal + test token were deleted; `mcp_tokens` is back to 0 rows and the gate is dormant.
+- **Regression:** full suite green — `bun test` 1490 pass / 0 fail; tsc 0.
+
+The only step that needs the founder's publish is an end-to-end HTTP call to the **deployed** `/api/mcp` with the new code (the new route isn't deployed yet). Every component is live-verified, and the insert reuses the same path the production ingest webhook already runs.
