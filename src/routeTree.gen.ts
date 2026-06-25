@@ -27,6 +27,7 @@ import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTrustLedgerRouteImport } from './routes/_authenticated.trust-ledger'
 import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated.traces'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated.sync'
 import { Route as AuthenticatedSwarmRouteImport } from './routes/_authenticated.swarm'
@@ -192,6 +193,11 @@ const AuthenticatedTrustLedgerRoute =
 const AuthenticatedTracesRoute = AuthenticatedTracesRouteImport.update({
   id: '/traces',
   path: '/traces',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
@@ -652,6 +658,7 @@ export interface FileRoutesByFullPath {
   '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
@@ -745,6 +752,7 @@ export interface FileRoutesByTo {
   '/swarm': typeof AuthenticatedSwarmRoute
   '/sync': typeof AuthenticatedSyncRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/traces': typeof AuthenticatedTracesRouteWithChildren
   '/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
@@ -842,6 +850,7 @@ export interface FileRoutesById {
   '/_authenticated/swarm': typeof AuthenticatedSwarmRoute
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/traces': typeof AuthenticatedTracesRouteWithChildren
   '/_authenticated/trust-ledger': typeof AuthenticatedTrustLedgerRoute
   '/api/chat': typeof ApiChatRoute
@@ -939,6 +948,7 @@ export interface FileRouteTypes {
     | '/swarm'
     | '/sync'
     | '/tasks'
+    | '/today'
     | '/traces'
     | '/trust-ledger'
     | '/api/chat'
@@ -1032,6 +1042,7 @@ export interface FileRouteTypes {
     | '/swarm'
     | '/sync'
     | '/tasks'
+    | '/today'
     | '/traces'
     | '/trust-ledger'
     | '/api/chat'
@@ -1128,6 +1139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/swarm'
     | '/_authenticated/sync'
     | '/_authenticated/tasks'
+    | '/_authenticated/today'
     | '/_authenticated/traces'
     | '/_authenticated/trust-ledger'
     | '/api/chat'
@@ -1343,6 +1355,13 @@ declare module '@tanstack/react-router' {
       path: '/traces'
       fullPath: '/traces'
       preLoaderRoute: typeof AuthenticatedTracesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tasks': {
@@ -1976,6 +1995,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSwarmRoute: typeof AuthenticatedSwarmRoute
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
   AuthenticatedTrustLedgerRoute: typeof AuthenticatedTrustLedgerRoute
   AuthenticatedBuildMissionIdRoute: typeof AuthenticatedBuildMissionIdRoute
@@ -2026,6 +2046,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSwarmRoute: AuthenticatedSwarmRoute,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
   AuthenticatedTrustLedgerRoute: AuthenticatedTrustLedgerRoute,
   AuthenticatedBuildMissionIdRoute: AuthenticatedBuildMissionIdRoute,
@@ -2083,3 +2104,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

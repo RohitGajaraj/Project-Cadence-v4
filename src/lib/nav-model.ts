@@ -41,7 +41,7 @@ export type NavItemDef = {
  * labels, no NavGroup indirection). These are the calm front of the product.
  */
 export const PRIMARY_NAV: readonly NavItemDef[] = [
-  { to: "/", label: "Today", icon: Home },
+  { to: "/today", label: "Today", icon: Home },
   { to: "/chat", label: "Ask", icon: MessageCircle },
   { to: "/product", label: "Product", icon: Telescope },
   { to: "/build", label: "Build", icon: Hammer },

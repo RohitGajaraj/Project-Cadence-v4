@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
     // Authenticated users go straight to the live dashboard.
     // Use window.location.replace so the router does not need to know the
     // "/missions" path at this point (routeTree regenerates after file creation).
-    if (data.user) window.location.replace("/missions");
+    if (data.user) window.location.replace("/today");
   },
   component: LandingPage,
   head: () => ({
