@@ -467,6 +467,7 @@ export type Database = {
           agent_name: string
           agent_slug: string
           created_at: string
+          delegate_meta: Json | null
           duration_ms: number | null
           halted_at: string | null
           halted_reason: string | null
@@ -490,6 +491,7 @@ export type Database = {
           agent_name: string
           agent_slug: string
           created_at?: string
+          delegate_meta?: Json | null
           duration_ms?: number | null
           halted_at?: string | null
           halted_reason?: string | null
@@ -513,6 +515,7 @@ export type Database = {
           agent_name?: string
           agent_slug?: string
           created_at?: string
+          delegate_meta?: Json | null
           duration_ms?: number | null
           halted_at?: string | null
           halted_reason?: string | null
