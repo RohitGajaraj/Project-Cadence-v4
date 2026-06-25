@@ -89,6 +89,7 @@ import { Route as AuthenticatedAdminObservabilityRouteImport } from './routes/_a
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
 import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
+import { Route as ApiPublicHooksStewardTickRouteImport } from './routes/api/public/hooks/steward-tick'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
@@ -526,6 +527,11 @@ const ApiPublicHooksSenseTickRoute = ApiPublicHooksSenseTickRouteImport.update({
   path: '/api/public/hooks/sense-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksStewardTickRoute = ApiPublicHooksStewardTickRouteImport.update({
+  id: '/api/public/hooks/steward-tick',
+  path: '/api/public/hooks/steward-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRetentionTickRoute =
   ApiPublicHooksRetentionTickRouteImport.update({
     id: '/api/public/hooks/retention-tick',
@@ -729,6 +735,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
@@ -827,6 +834,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
@@ -929,6 +937,7 @@ export interface FileRoutesById {
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
+  '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/a2a/message/send': typeof ApiPublicA2aMessageSendRoute
@@ -1031,6 +1040,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/a2a/message/send'
@@ -1129,6 +1139,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/a2a/message/send'
@@ -1230,6 +1241,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
+    | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
     | '/api/public/a2a/message/send'
@@ -1844,6 +1856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/steward-tick': {
+      id: '/api/public/hooks/steward-tick'
+      path: '/api/public/hooks/steward-tick'
+      fullPath: '/api/public/hooks/steward-tick'
+      preLoaderRoute: typeof ApiPublicHooksStewardTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/retention-tick': {
       id: '/api/public/hooks/retention-tick'
       path: '/api/public/hooks/retention-tick'
@@ -2180,6 +2199,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicHooksRetentionTickRoute: ApiPublicHooksRetentionTickRoute,
   ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
+  ApiPublicHooksStewardTickRoute: ApiPublicHooksStewardTickRoute,
   ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicA2aMessageSendRoute: ApiPublicA2aMessageSendRoute,
