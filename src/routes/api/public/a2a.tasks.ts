@@ -37,7 +37,8 @@ export const Route = createFileRoute("/api/public/a2a/tasks")({
         if (taskId) {
           return new Response(
             JSON.stringify({
-              error: "Task not found. Tasks in this implementation are synchronous and not persisted. Use /api/public/a2a/message/send.",
+              error:
+                "Task not found. Tasks in this implementation are synchronous and not persisted. Use /api/public/a2a/message/send.",
               available_skills: Object.keys(SKILL_TO_TOOL),
             }),
             { status: 404, headers: JSON_HEADERS },

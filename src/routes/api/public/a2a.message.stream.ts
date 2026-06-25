@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { parseBearerToken, validateToken, checkRateLimit, resolveWriteEnabled } from "@/lib/mcp-auth.server";
+import {
+  parseBearerToken,
+  validateToken,
+  checkRateLimit,
+  resolveWriteEnabled,
+} from "@/lib/mcp-auth.server";
 import {
   SKILL_TO_TOOL,
   isWriteSkill,
@@ -38,7 +43,10 @@ import {
  * stream is: created → full result in one delta → completed.
  */
 
-const JSON_HEADERS = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } as const;
+const JSON_HEADERS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+} as const;
 
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream",
@@ -77,7 +85,12 @@ async function dispatchSkill(
         return { success: true, data };
       }
       case "ingest_signal": {
-        const data = await ingestSignal(supabase, workspace_id, user_id, params as IngestSignalArgs);
+        const data = await ingestSignal(
+          supabase,
+          workspace_id,
+          user_id,
+          params as IngestSignalArgs,
+        );
         return { success: true, data };
       }
       default:
@@ -114,14 +127,13 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
             id: taskId,
             status: { state: "failed", timestamp: new Date().toISOString(), message },
           };
-          const body =
-            sseEvent("task_failed", errTask) + sseEvent("close", { reason: message });
+          const body = sseEvent("task_failed", errTask) + sseEvent("close", { reason: message });
           return new Response(body, { status: 200, headers: SSE_HEADERS });
         };
 
         try {
           // 1. Parse
-          const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+          const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const params = (body.params as Record<string, unknown>) ?? {};
           const message = params.message as A2AMessage | undefined;
           const skillId = params.skill_id as string | undefined;
@@ -145,7 +157,8 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
           if (!parsed) return sseErrorResponse(-32003, "Missing or malformed Authorization header");
 
           const tokenResult = await validateToken(supabase, parsed.slug, parsed.secretHash);
-          if (!tokenResult.valid) return sseErrorResponse(-32003, tokenResult.error ?? "Invalid token");
+          if (!tokenResult.valid)
+            return sseErrorResponse(-32003, tokenResult.error ?? "Invalid token");
 
           const token_id = tokenResult.token_id!;
           const workspace_id = tokenResult.workspace_id!;
@@ -153,9 +166,16 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
           const scopes = tokenResult.scopes ?? [];
 
           // 3. Rate limit
-          const { allowed } = await checkRateLimit(supabase, token_id, tokenResult.rate_limit_per_min!);
+          const { allowed } = await checkRateLimit(
+            supabase,
+            token_id,
+            tokenResult.rate_limit_per_min!,
+          );
           if (!allowed) {
-            await logMCPCall({ token_id, workspace_id, tool_name: skillId, result: "rate_limit" }, supabase);
+            await logMCPCall(
+              { token_id, workspace_id, tool_name: skillId, result: "rate_limit" },
+              supabase,
+            );
             return sseErrorResponse(-32002, "Rate limit exceeded");
           }
 
@@ -165,7 +185,13 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
             const authz = canCallWriteTool(SKILL_TO_TOOL[skillId], scopes, writeEnabled);
             if (!authz.allowed) {
               await logMCPCall(
-                { token_id, workspace_id, tool_name: skillId, result: "permission_denied", error_message: authz.reason },
+                {
+                  token_id,
+                  workspace_id,
+                  tool_name: skillId,
+                  result: "permission_denied",
+                  error_message: authz.reason,
+                },
                 supabase,
               );
               return sseErrorResponse(-32003, authz.reason ?? "Permission denied");
@@ -194,17 +220,34 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
 
               if (!result.success) {
                 await logMCPCall(
-                  { token_id, workspace_id, tool_name: skillId, result: "error", error_message: result.error, metadata: { elapsed_ms: elapsed, source: "a2a_stream" } },
+                  {
+                    token_id,
+                    workspace_id,
+                    tool_name: skillId,
+                    result: "error",
+                    error_message: result.error,
+                    metadata: { elapsed_ms: elapsed, source: "a2a_stream" },
+                  },
                   supabase,
                 );
                 const failed: A2ATask = {
                   id: taskId,
-                  status: { state: "failed", timestamp: new Date().toISOString(), message: result.error },
+                  status: {
+                    state: "failed",
+                    timestamp: new Date().toISOString(),
+                    message: result.error,
+                  },
                 };
                 await write(sseEvent("task_failed", failed));
               } else {
                 await logMCPCall(
-                  { token_id, workspace_id, tool_name: skillId, result: "success", metadata: { elapsed_ms: elapsed, source: "a2a_stream" } },
+                  {
+                    token_id,
+                    workspace_id,
+                    tool_name: skillId,
+                    result: "success",
+                    metadata: { elapsed_ms: elapsed, source: "a2a_stream" },
+                  },
                   supabase,
                 );
                 // delta
@@ -225,7 +268,9 @@ export const Route = createFileRoute("/api/public/a2a/message/stream")({
               }
             } catch (err) {
               const msg = err instanceof Error ? err.message : "Internal error";
-              await write(sseEvent("task_failed", { id: taskId, status: { state: "failed", message: msg } }));
+              await write(
+                sseEvent("task_failed", { id: taskId, status: { state: "failed", message: msg } }),
+              );
             } finally {
               await writer.close().catch(() => undefined);
             }

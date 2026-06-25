@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { parseBearerToken, validateToken, checkRateLimit, resolveWriteEnabled } from "@/lib/mcp-auth.server";
+import {
+  parseBearerToken,
+  validateToken,
+  checkRateLimit,
+  resolveWriteEnabled,
+} from "@/lib/mcp-auth.server";
 import {
   SKILL_TO_TOOL,
   isWriteSkill,
@@ -113,7 +118,7 @@ export const Route = createFileRoute("/api/public/a2a/message/send")({
 
         try {
           // 1. Parse request
-          const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+          const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           reqId = (body.id as string | number | null) ?? null;
           const params = (body.params as Record<string, unknown>) ?? {};
           const message = params.message as A2AMessage | undefined;
@@ -165,10 +170,10 @@ export const Route = createFileRoute("/api/public/a2a/message/send")({
               { token_id, workspace_id, tool_name: skillId, result: "rate_limit" },
               supabase,
             );
-            return new Response(
-              JSON.stringify(a2aError(reqId, -32002, "Rate limit exceeded")),
-              { status: 429, headers: JSON_HEADERS },
-            );
+            return new Response(JSON.stringify(a2aError(reqId, -32002, "Rate limit exceeded")), {
+              status: 429,
+              headers: JSON_HEADERS,
+            });
           }
 
           // 4. Write authorization
@@ -235,7 +240,13 @@ export const Route = createFileRoute("/api/public/a2a/message/send")({
           const error = err instanceof Error ? err.message : "Unknown error";
           if (token_id && workspace_id) {
             await logMCPCall(
-              { token_id, workspace_id, tool_name: "a2a.message.send", result: "error", error_message: error },
+              {
+                token_id,
+                workspace_id,
+                tool_name: "a2a.message.send",
+                result: "error",
+                error_message: error,
+              },
               supabase,
             ).catch(() => undefined);
           }
