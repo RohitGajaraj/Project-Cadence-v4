@@ -15,6 +15,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { createMission } from "@/lib/ai/handoff.server";
 import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
+import { isLinearConfigured } from "@/lib/linear.functions";
+import {
+  validateDispatch,
+  findDanglingDeps,
+  topologicalOrder,
+  toLinearPriority,
+  type DispatchableTask,
+  type DispatchResult,
+} from "@/lib/orchestrator";
 
 export const ensureOrchestrator = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -170,4 +179,166 @@ export const listMissionSteps = createServerFn({ method: "POST" })
       .order("idx");
     if (error) throw new Error(error.message);
     return { steps: rows ?? [] };
+  });
+
+// ─── Linear dispatch (ORCH-DELEGATE) ────────────────────────────────────────
+
+const LINEAR_GATEWAY = "https://connector-gateway.lovable.dev/linear/graphql";
+
+async function linearGql<T>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T> {
+  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+  const LINEAR_API_KEY = process.env.LINEAR_API_KEY;
+  if (!LOVABLE_API_KEY || !LINEAR_API_KEY)
+    throw new Error("Linear isn't connected. Link it from Settings → Integrations.");
+  const res = await fetch(LINEAR_GATEWAY, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "X-Connection-Api-Key": LINEAR_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const body = await res.text();
+  if (!res.ok)
+    throw new Error(`Linear API failed [${res.status}]: ${body.slice(0, 200)}`);
+  const parsed = JSON.parse(body) as { data?: T; errors?: unknown[] };
+  if (parsed.errors?.length)
+    throw new Error(`Linear error: ${JSON.stringify(parsed.errors).slice(0, 200)}`);
+  return parsed.data as T;
+}
+
+/**
+ * Dispatch a PRD's task graph to Linear as issues, governed.
+ *
+ * Requires the task graph to exist (run generateTaskGraph first).
+ * Idempotent: tasks already in sync_mappings are skipped — re-dispatch is safe.
+ * The external coding-agent half (BLD-04) is founder-gated and separate.
+ */
+export const dispatchPRDToLinear = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        prdId: z.string().uuid(),
+        teamId: z.string().min(1),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<DispatchResult> => {
+    const { supabase, userId } = context;
+
+    if (!isLinearConfigured())
+      throw new Error("Linear isn't connected. Link it from Settings → Integrations.");
+
+    // Load PRD
+    const { data: prd, error: pErr } = await supabase
+      .from("prds")
+      .select("id,title,workspace_id")
+      .eq("id", data.prdId)
+      .eq("user_id", userId)
+      .single();
+    if (pErr || !prd) throw new Error("Spec not found");
+
+    // Load generated task graph (seq-bearing tasks only)
+    const { data: rawTasks, error: tErr } = await supabase
+      .from("tasks")
+      .select("id,seq,title,priority,depends_on")
+      .eq("prd_id", data.prdId)
+      .eq("user_id", userId)
+      .not("seq", "is", null)
+      .order("seq");
+    if (tErr) throw new Error(tErr.message);
+
+    const tasks = (rawTasks ?? []) as DispatchableTask[];
+    const validation = validateDispatch(tasks);
+    if (!validation.ok) throw new Error(validation.reason);
+
+    // Idempotency: skip tasks already dispatched to Linear
+    const { data: existing } = await supabase
+      .from("sync_mappings")
+      .select("local_id")
+      .eq("user_id", userId)
+      .eq("provider", "linear")
+      .eq("local_kind", "task")
+      .in(
+        "local_id",
+        tasks.map((t) => t.id),
+      );
+    const alreadyDispatched = new Set<string>(
+      (existing ?? []).map((e) => e.local_id as string),
+    );
+
+    // Exclude tasks with dangling depends_on references — they cannot be safely ordered
+    const dangling = findDanglingDeps(tasks);
+    const danglingIds = new Set(dangling.map((t) => t.id));
+    const safeTasks = tasks.filter((t) => !danglingIds.has(t.id));
+
+    const toDispatch = topologicalOrder(safeTasks).filter(
+      (t) => !alreadyDispatched.has(t.id),
+    );
+
+    const dispatched: DispatchResult["dispatched"] = [];
+    const skipped: string[] = [...dangling.map((t) => t.id)];
+
+    for (const t of toDispatch) {
+      try {
+        const r = await linearGql<{
+          issueCreate: { success: boolean; issue: { id: string; url: string } };
+        }>(
+          `mutation($input: IssueCreateInput!) {
+            issueCreate(input: $input) { success issue { id url } }
+          }`,
+          {
+            input: {
+              teamId: data.teamId,
+              title: t.title,
+              priority: toLinearPriority(t.priority),
+            },
+          },
+        );
+
+        if (r.issueCreate.success) {
+          const { error: insertErr } = await supabase.from("sync_mappings").insert({
+            user_id: userId,
+            provider: "linear",
+            local_kind: "task",
+            local_id: t.id,
+            external_id: r.issueCreate.issue.id,
+            external_url: r.issueCreate.issue.url,
+            last_pushed_at: new Date().toISOString(),
+            version_local: 1,
+          } as never);
+          if (insertErr) {
+            // Issue was created in Linear but idempotency record failed.
+            // Push to skipped so the caller retries (may create a duplicate issue in Linear,
+            // but that is preferable to silently losing the tracking record).
+            console.error("[dispatchPRDToLinear] sync_mappings insert failed:", insertErr.message);
+            skipped.push(t.id);
+          } else {
+            dispatched.push({
+              taskId: t.id,
+              issueId: r.issueCreate.issue.id,
+              url: r.issueCreate.issue.url,
+              title: t.title,
+            });
+          }
+        } else {
+          skipped.push(t.id);
+        }
+      } catch {
+        // One issue failing must not abort the rest; caller sees skipped list
+        skipped.push(t.id);
+      }
+    }
+
+    return {
+      dispatched,
+      skipped,
+      alreadyDispatched: [...alreadyDispatched],
+      totalTasks: tasks.length,
+    };
   });
