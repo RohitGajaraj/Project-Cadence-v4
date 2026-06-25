@@ -140,3 +140,7 @@ Founder challenged: don't mark ✅ just because asked — validate it works. Did
 ### 2026-06-25 (cont.) — board dry → long-polling
 
 `bash scripts/lane.sh next` = exit 2 (BOARD DRY). State: every Tier-1/Tier-3 ⬜/◐ autonomous item is done or claimed — SEC-INGEST-INJECTION ✅, INTEROP-V11 ✅ (this session, live-validated + on main), DBR (H1) held by lane 2 (DBR-4 MCP/A2A, on the mcp.* files), M1 👤 Gated (founder), CHOKEPOINT pinned. Remaining work is founder-gated (needs a key / OAuth / provider / chokepoint edit / taste call) or dormant-low-value (M1's project_id triage slice fires on no live caller). Both this session's features (INTEROP-V11 Q2 + lane-2 DBR-3i) + the land-on-main standing rule are on `origin/main`; lane↔main at 0 delta; nothing dangling. Long-polling ~25 min for a new row / released claim / founder push. Founder next action: publish `main` (deploys INTEROP-V11 Q2 + DBR-3i; the Q2 migration is already applied + dormant) + the gated activations.
+
+### 2026-06-25 (new session) — board dry confirmed, long-polling
+
+New session started. `bash scripts/lane.sh next` = exit 2 (BOARD DRY). Re-verified: all Tier-1/Tier-3 open items are Gated/Deferred/Parked. No new rows in the dashboard since last session. State: lane-1 branch is 0 commits ahead/behind origin/main after rebase. Remaining founder-gated actions: SANDBOX provider pick, BLD-04 OPENHANDS_ENDPOINT + key, FIRECRAWL-FLOOR SearXNG deploy, Stripe live keys, DBR_ENTITY_ALIASING wrangler secret (already activated per dashboard), EMBED-CHOKEPOINT attended session. Long-polling ~25 min.
