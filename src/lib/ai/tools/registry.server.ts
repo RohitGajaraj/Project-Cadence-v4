@@ -2489,7 +2489,7 @@ const delegateOpenhands = def({
   }),
   preview: (a) =>
     `Delegate to OpenHands: "${a.task.slice(0, 60)}" on ${a.repo_url}#${a.base_branch}`,
-  run: async (a, { runId, missionId }) => {
+  run: async (a, { supabase, runId, missionId }) => {
     if (!missionId)
       throw new Error("delegate.openhands requires a mission_id (start the run with a mission)");
     const verdict = await submitDelegation(
@@ -2502,6 +2502,19 @@ const delegateOpenhands = def({
       },
       "openhands",
     );
+    // Persist the external job id so the poll/fold cycle can locate this run.
+    if (verdict.accepted && verdict.externalJobId && runId) {
+      await supabase
+        .from("agent_runs")
+        .update({
+          delegate_meta: {
+            provider: verdict.provider,
+            external_job_id: verdict.externalJobId,
+            submitted_at: new Date().toISOString(),
+          },
+        })
+        .eq("id", runId);
+    }
     return {
       provider: verdict.provider,
       accepted: verdict.accepted,

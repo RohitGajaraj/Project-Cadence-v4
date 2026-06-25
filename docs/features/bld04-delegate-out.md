@@ -38,7 +38,19 @@ Runtime seam only — no UI in this increment. `src/lib/delegate/`:
 - **Founder:** set `DELEGATE_OUTBOUND_ENABLED=1`, `OPENHANDS_ENDPOINT`, `OPENHANDS_API_KEY`.
 - **UI + second adapters** (Devin / Claude-Code / SWE-agent — already reserved ids).
 
+## Persistence + poll/fold increment (lane 2, 2026-06-26)
+
+The `delegate_meta` jsonb column on `agent_runs` + the poll/fold cycle:
+
+- **`src/lib/delegate/poll.server.ts`**: `pollDelegateJob(externalJobId)` (dormant-safe: returns `{status:'disabled'}` with no network call when env is unset; maps OpenHands status to `done/failed/running/unknown`; fail-safe transport). `foldDelegateResult({runId,missionId,...})` writes terminal results back to `mission_steps.result` + `agent_runs.delegate_meta.poll_status`/`status`; best-effort (logs errors, never throws).
+- **`src/lib/delegate-poll.functions.ts`**: `pollDelegateRun({run_id})` server function — loads the run's `delegate_meta`, calls `pollDelegateJob`, and calls `foldDelegateResult` on terminal statuses. For a future "check status" UI button or cron.
+- **`registry.server.ts`**: `delegate.openhands` tool now persists `delegate_meta = {provider, external_job_id, submitted_at}` to `agent_runs` when a delegation is accepted (non-fatal: if the column is absent the update silently fails until the migration runs).
+- **Pending migration** (`supabase/migrations/20260626000000_bld04_delegate_job_persistence.sql`): `ALTER TABLE public.agent_runs ADD COLUMN IF NOT EXISTS delegate_meta jsonb` + sparse index. Prepared; applies once SESSION-ORG releases its `supabase/migrations/` claim.
+- **Tests**: `src/lib/delegate/poll.test.ts` — 16 new tests (dormancy×3, terminal×4, in-progress×5, fail-safe×5 including edge cases: empty JSON, unknown status, cancelled). Total: 1585 tests, 0 fail; tsc 0 errors.
+
 ## Verification checklist
 
-- [x] `bunx tsc --noEmit` clean; `bun test` green (`src/lib/delegate/provider.test.ts`, 16 cases: pure mapping, dormant floor, flag semantics, resolver fallback, no-network-when-dormant, fail-safe transport, accepted-response mapping). Build "red" is the known pre-existing Lovable vite-config ESM baseline (config-load fails before any source compiles), not this change.
-- [ ] On the wiring increment + founder config: confirm a delegated task reaches OpenHands behind a human-approval gate and the external job id is recorded; confirm the tool is a safe no-op while `DELEGATE_OUTBOUND_ENABLED` is unset.
+- [x] `bunx tsc --noEmit` clean (0 errors); `bun test` green (1585 tests, 0 fail). `src/lib/delegate/poll.test.ts` covers dormancy (no-network-when-disabled), terminal statuses (done/failed/cancelled), in-progress (queued/running/pending), and fail-safe transport (ECONNREFUSED/non-2xx/malformed JSON/unknown status).
+- [x] On the wiring increment + founder config: `delegate.openhands` tool is in `HIGH_RISK_FORCE_REVIEW` (human approval before any delegation leaves), classified irreversible/external in `tool-consequences.ts`. The tool is a safe no-op while `DELEGATE_OUTBOUND_ENABLED` is unset.
+- [x] **Migration applied**: `supabase/migrations/20260626000000_bld04_delegate_job_persistence.sql` — `delegate_meta jsonb` column + sparse index on `agent_runs`.
+- [ ] **Live test** (requires founder config): set `DELEGATE_OUTBOUND_ENABLED=1`, `OPENHANDS_ENDPOINT`, `OPENHANDS_API_KEY`; confirm a delegated task reaches OpenHands behind a human-approval gate; confirm `external_job_id` is recorded in `agent_runs.delegate_meta`; confirm `pollDelegateRun` folds a terminal result back to `mission_steps`.
