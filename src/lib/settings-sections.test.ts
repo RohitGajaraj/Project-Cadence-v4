@@ -102,7 +102,7 @@ describe("settings-sections — derivations", () => {
   });
 
   it("sectionLabel maps ids to human labels and de-jargons Models/Staff", () => {
-    expect(sectionLabel("ai")).toBe("Models & keys");
+    expect(sectionLabel("ai")).toBe("AI & keys");
     expect(sectionLabel("workspace")).toBe("Brief & voice");
     expect(sectionLabel("connections")).toBe("Accounts");
     // unknown id falls back to itself

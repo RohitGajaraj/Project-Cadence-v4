@@ -20,7 +20,6 @@ import {
   MessageCircle,
   Telescope,
   Hammer,
-  Activity,
   Brain,
   Inbox,
   Gauge,
@@ -46,7 +45,6 @@ export const PRIMARY_NAV: readonly NavItemDef[] = [
   { to: "/chat", label: "Ask", icon: MessageCircle },
   { to: "/product", label: "Product", icon: Telescope },
   { to: "/build", label: "Build", icon: Hammer },
-  { to: "/missions", label: "Missions", icon: Activity },
   { to: "/knowledge", label: "Brain", icon: Brain },
 ];
 

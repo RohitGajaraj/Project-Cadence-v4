@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Compass,
   Settings,
   LogOut,
   ShieldAlert,
@@ -11,9 +10,7 @@ import {
   Search,
   Plus,
   Trash2,
-  MoreHorizontal,
   Pencil,
-  FolderInput,
   LogOut as LeaveIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -31,8 +28,6 @@ import { getNeedsYou } from "@/lib/today.functions";
 import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
-import { updateProject, moveProduct } from "@/lib/projects.functions";
-import { moveDestinationWorkspaces } from "@/lib/workspace-move";
 import { amIAdmin } from "@/lib/pricing.functions";
 import {
   DropdownMenu,
@@ -40,9 +35,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -144,8 +136,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const renameWsFn = useServerFn(renameWorkspace);
   const deleteWsFn = useServerFn(deleteWorkspace);
   const leaveWsFn = useServerFn(leaveWorkspace);
-  const updateProjectFn = useServerFn(updateProject);
-  const moveProductFn = useServerFn(moveProduct);
 
   // Admin role check — drives the "Admin console" item in the workspace
   // dropdown so admins have a visible path in the published app (no slash
@@ -204,12 +194,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     .toUpperCase();
 
   const activeProduct = products.find((p) => p.id === activeProductId) ?? null;
-  // Move-product destinations (WM-F6c): the user's OTHER workspaces in the SAME
-  // account (products in the list all belong to the active workspace). The
-  // move_product RPC is the authoritative same-account guard; this filter just
-  // avoids offering a cross-account destination it would reject. Fails open when
-  // an account id is unknown, so it can never wrongly hide a valid destination.
-  const otherWorkspaces = moveDestinationWorkspaces(workspaces, activeWorkspaceId);
 
   async function createWorkspace() {
     const name = await prompt({
@@ -333,64 +317,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     setActiveProductId(data.id);
   }
 
-  async function renameProduct(id: string, currentName: string) {
-    const next = await prompt({
-      title: "Rename product",
-      label: "New name",
-      defaultValue: currentName,
-      confirmLabel: "Save",
-    });
-    if (!next || next === currentName) return;
-    try {
-      await updateProjectFn({ data: { id, name: next } });
-      toast.success("Product renamed.");
-      await refreshProducts();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't rename.");
-    }
-  }
-
-  async function deleteProduct(id: string, name: string) {
-    const ok = await confirm({
-      title: `Delete "${name}"?`,
-      body: "Removes the product and everything inside it. Can't be undone.",
-      destructive: true,
-      confirmLabel: "Delete product",
-      typedConfirm: name,
-    });
-    if (!ok) return;
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Product deleted.");
-    if (activeProductId === id) setActiveProductId(null);
-    await refreshProducts();
-  }
-
-  // WM-F6: move a product to another workspace in the same account. Reversible
-  // (no destructive styling / typed-confirm), so a clear confirm is enough. The
-  // move_product RPC enforces owner/admin-in-both + same-account and reassigns
-  // every child row atomically; an unmet guard surfaces as the toast error.
-  async function moveProductTo(id: string, name: string, dest: { id: string; name: string }) {
-    const ok = await confirm({
-      title: `Move "${name}" to "${dest.name}"?`,
-      body: "The product and everything in it (signals, specs, tasks, docs, decisions) moves with it. Workspace memory stays put. You can move it back later.",
-      confirmLabel: "Move product",
-    });
-    if (!ok) return;
-    try {
-      await moveProductFn({ data: { productId: id, destWorkspaceId: dest.id } });
-      toast.success(`Moved "${name}" to "${dest.name}".`);
-      // The product left this workspace's list; drop it as active and refresh.
-      if (activeProductId === id) setActiveProductId(null);
-      await refreshProducts();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't move the product.");
-    }
-  }
-
   async function signOut() {
     await supabase.auth.signOut();
     toast.success("Signed out.");
@@ -458,6 +384,28 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
                 <Plus className="h-3.5 w-3.5" />
                 <span>New workspace</span>
+              </DropdownMenuItem>
+              {/* Products — context switcher inside the workspace switcher (IA-DEPTH-V11) */}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="mono-label">Product</DropdownMenuLabel>
+              {products.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => setActiveProductId(activeProductId === p.id ? null : p.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span className="truncate">{p.name}</span>
+                  {p.id === activeProductId && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              {products.length === 0 && (
+                <div className="px-2 py-1.5 text-xs text-ink-faint italic">No products yet</div>
+              )}
+              <DropdownMenuItem onClick={createProduct} className="cursor-pointer gap-2">
+                <Plus className="h-3.5 w-3.5" />
+                <span>New product</span>
               </DropdownMenuItem>
               {activeWorkspace && (
                 <>
@@ -537,115 +485,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
             </div>
           </nav>
 
-          <div className="mt-6 px-3 flex items-center justify-between mono-label">
-            <span className="flex items-center gap-1.5">
-              <Compass className="h-3 w-3" strokeWidth={1.75} />
-              Products
-            </span>
-            <button
-              type="button"
-              onClick={createProduct}
-              title="Add product"
-              className="text-ink-faint hover:text-foreground transition"
-            >
-              <Plus className="h-3 w-3" strokeWidth={2} />
-            </button>
-          </div>
-          <div className="mt-2 flex flex-col gap-0.5 pr-1">
-            {products.map((p) => {
-              const isActive = p.id === activeProductId;
-              return (
-                <div
-                  key={p.id}
-                  className={`group flex items-center rounded-md transition relative ${
-                    isActive ? "bg-secondary/50" : "hover:bg-secondary/30"
-                  }`}
-                >
-                  {isActive && (
-                    <span
-                      aria-hidden
-                      className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-[2px] rounded-full bg-foreground"
-                    />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setActiveProductId(isActive ? null : p.id)}
-                    className={`flex-1 text-left px-3 py-1.5 text-[13px] truncate ${
-                      isActive
-                        ? "text-foreground font-medium"
-                        : "text-ink-muted group-hover:text-foreground"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={(e) => e.stopPropagation()}
-                        title="More actions"
-                        className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 px-2 py-1 text-ink-faint hover:text-foreground transition"
-                      >
-                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                      <DropdownMenuItem
-                        onClick={() => setActiveProductId(p.id)}
-                        className="cursor-pointer gap-2"
-                      >
-                        <Compass className="h-3.5 w-3.5" />
-                        <span>Set active</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => renameProduct(p.id, p.name)}
-                        className="cursor-pointer gap-2"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span>Rename</span>
-                      </DropdownMenuItem>
-                      {otherWorkspaces.length > 0 && (
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger className="cursor-pointer gap-2">
-                            <FolderInput className="h-3.5 w-3.5" />
-                            <span>Move to workspace</span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="max-h-64 overflow-auto">
-                            {otherWorkspaces.map((ws) => (
-                              <DropdownMenuItem
-                                key={ws.id}
-                                onClick={() => moveProductTo(p.id, p.name, ws)}
-                                className="cursor-pointer"
-                              >
-                                <span className="truncate">{ws.name}</span>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => deleteProduct(p.id, p.name)}
-                        className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              );
-            })}
-            {products.length === 0 && (
-              <button
-                type="button"
-                onClick={createProduct}
-                className="w-full text-left rounded-md px-3 py-1.5 text-xs text-ink-faint italic hover:text-foreground hover:bg-secondary/30 transition"
-              >
-                No products yet. Add one.
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}

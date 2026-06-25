@@ -18,7 +18,7 @@ describe("nav-model — the calm front (primary destinations)", () => {
   it("is one flat list of outcome-named destinations", () => {
     expect(PRIMARY_NAV.length).toBeGreaterThanOrEqual(5);
     const labels = PRIMARY_NAV.map((n) => n.label);
-    expect(labels).toEqual(["Today", "Ask", "Product", "Build", "Missions", "Brain"]);
+    expect(labels).toEqual(["Today", "Ask", "Product", "Build", "Brain"]);
   });
 
   it("every destination has a route, a label, and an icon", () => {

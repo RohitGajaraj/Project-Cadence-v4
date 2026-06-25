@@ -76,7 +76,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
     id: "ai",
     label: "AI & keys",
     desc: "Which models run your agents, and your own provider keys.",
-    sections: [{ id: "ai", label: "Models & keys" }],
+    sections: [{ id: "ai", label: "AI & keys" }],
   },
   {
     id: "billing",
