@@ -180,6 +180,210 @@ The ENTIRE external surface, with my recommended player + cost. **Total recurrin
 - **Secrets / OAuth:** register the OAuth client(s) for the 2nd ingest source + analytics/support channels (F-CONN / SEN-01 / SEN-05); confirm/provide the embedding key (or reuse the OpenAI key), the Groq key (when F-AUDIO ships), the Resend key (when email goes external).
 - **Taste / policy:** the WM-M9 BYOK-retirement ruling (enterprise-only); the tier-identity glyph (design pass); the A2A outward-exposure posture (BLD-04 / Q2).
 
+---
+
+## AI inference provider analysis: embeddings + completions (2026-06-25)
+
+> **Why this section exists.** The founder asked: are there better/cheaper alternatives to OpenAI for embeddings? What is "completions" and does it matter for us? Should we use AWS Bedrock credits? When does self-hosting make sense? What happens when no user brings a BYO key? This section is the web-grounded, constraint-aware answer — a permanent reference so the decision never has to be re-researched from scratch.
+
+---
+
+### What each term means for Cadence
+
+**Embeddings** convert text into a dense numerical vector (1536 numbers in our case). Every time Cadence stores a memory, indexes a signal, or does a semantic search — that is an embedding call. The result is stored in `vector(1536)` Supabase columns and queried via pgvector. Embeddings do NOT generate text; they are a fast, cheap, deterministic index operation. Our current provider: OpenAI `text-embedding-3-small` at $0.02/1M tokens.
+
+**Completions** are when an AI model reads input text and generates output text. In Cadence, every completion is one "thinking step." This powers:
+- **The agent planning loop** (`loop.server.ts`): when a user triggers an agent, it reasons step-by-step — up to 6 steps, each step reading context + tool results and deciding the next action. Each step is one completion call. This is the primary cost driver.
+- **Chat / Ask** (`api/chat.ts`): every streaming AI response the user sees.
+- **The Critic** (`critic.server.ts`): challenging a decision against outcome-labeled precedents.
+- **Reflections, draft support replies, decision narration**: any text the product generates.
+
+Embeddings are cheap (sub-cent per session). Completions on GPT-4o can cost $0.066 per full 6-step planning loop. At scale, the completion cost dwarfs the embedding cost by 10-100x — **completions are the primary cost lever, not embeddings.**
+
+---
+
+### The hard constraint: vector(1536) column dimensions
+
+Our Supabase schema defines vector columns as `vector(1536)`. Every embedding must output exactly 1536 dimensions or the stored vectors become incompatible with new vectors (cosine similarity breaks across dimension mismatches).
+
+**Consequence for provider selection:** any embedding provider that does NOT output 1536 dims requires:
+1. A Supabase migration to alter all `vector(1536)` columns
+2. A full re-embed backfill of all existing vectors (expensive, offline-gated)
+3. Updating `EMB_DIMS = 1536` in `embed.server.ts`
+
+This makes provider switching for embeddings a non-trivial migration, not a config change.
+
+**Providers that work with 1536 dims without migration:**
+- OpenAI `text-embedding-3-small` (1536 native) — current provider, $0.02/1M
+- OpenAI `text-embedding-3-large` (3072 native, Matryoshka truncatable to 1536) — $0.13/1M
+- Google `gemini-embedding-001` (`output_dimensionality=1536` parameter, Matryoshka supported) — $0.15/1M
+- Cohere `embed-v4` (1536 native) — $0.12/1M
+
+**Providers that require a dimension migration:**
+- Fireworks `nomic-embed-text-v1.5` — 768 dims (migration to `vector(768)`)
+- Jina `jina-embeddings-v3` — 1024 dims (migration to `vector(1024)`)
+- Voyage `voyage-3` / `voyage-3-lite` — 1024/512 dims (migration)
+- Nomic direct — 768 dims (migration)
+
+---
+
+### Embedding provider comparison (2026, 1536-dim compatible only)
+
+| Provider | Model | Cost/1M tokens | MTEB score | Dims | Notes |
+|---|---|---|---|---|---|
+| **OpenAI** (current) | text-embedding-3-small | **$0.02** | 62–63 | 1536 native | Proven, no migration, deep BYOK integration already wired |
+| **OpenAI** | text-embedding-3-large | $0.13 | 64.6 | 3072/Matryoshka | Premium, 6.5x cost increase for ~3% quality gain |
+| **Google** | gemini-embedding-001 | $0.15 | **68.3** | 768 default / 3072 max (set 1536 via param) | Highest MTEB of any API model; $0.15/1M is 7.5x more than current; quality difference matters for decision-memory retrieval precision |
+| **Cohere** | embed-v4 | $0.12 | Best-in-class | 1536 native | First multimodal embed; pairs with Cohere reranker; $6/1M tokens on completions makes it expensive all-in |
+
+**Verdict on embeddings:** Keep OpenAI `text-embedding-3-small` through the demo phase and first user cohort. At current usage, embed costs are $0.005/session — switching saves sub-penny per user. The only worthwhile swap is Google `gemini-embedding-001` at scale IF retrieval quality becomes a product differentiator (the 68.3 MTEB score vs 62–63 is a meaningful precision lift for the decision-memory moat), AND only because it supports 1536 dims via `output_dimensionality` — no column migration needed.
+
+---
+
+### Completion provider comparison (2026)
+
+These are the models that power the agent loop, chat, Critic, and all text generation.
+
+| Provider | Model | Input $/1M | Output $/1M | Quality tier | Notes |
+|---|---|---|---|---|---|
+| **OpenAI** (current via Lovable gateway) | GPT-4o | ~$5.00 | ~$15.00 | Best-in-class | Current default via gateway; most expensive option |
+| **OpenAI** | GPT-4o-mini | $0.15 | $0.60 | Good | 94% cheaper than GPT-4o; same tier as Llama 4 Maverick |
+| **Fireworks AI** | Llama 4 Maverick | **$0.15** | **$0.60** | Good | Same quality tier as GPT-4o-mini; Apache 2.0 open model; best latency in class (sub-100ms TTFT); JSON structured output + streaming — exactly what the planning loop needs |
+| **Fireworks AI** | Llama 4 Scout | $0.18 | $0.85 | Good | Slightly pricier than Maverick; lighter than Maverick on reasoning |
+| **Together AI** | Llama 4 Maverick | $0.27 | $0.85 | Good | Same open model as Fireworks; Fireworks wins on price and latency |
+| **Groq** | Llama 3.3 70B | $0.59 | $0.79 | Good | Ultra-fast LPU inference; lowest latency of any provider for streaming; no native embeddings |
+| **Google** | Gemini 2.5 Flash-Lite | **$0.10** | **$0.40** | Good | Cheapest credible model from a major provider; 1M context; part of a Google all-in-one play |
+| **Anthropic** | Claude Sonnet 4.6 | $3.00 | $15.00 | Best-in-class | Best reasoning; use selectively for high-stakes Critic / decision steps; no native embeddings |
+| **AWS Bedrock** | Any model | ~2–3x direct price | ~2–3x direct price | — | Bedrock prices every model higher than going direct; only viable with free credits |
+| **Azure OpenAI** | GPT-4o | Same as OpenAI | Same as OpenAI | Best-in-class | No price saving; adds compliance / data residency layer for enterprise |
+
+**The cost reality per full 6-step planning loop** (2,000 input + 600 output tokens × 6 steps):
+
+| Route | Cost per loop |
+|---|---|
+| GPT-4o via Lovable gateway (current) | ~$0.066 |
+| Fireworks Llama 4 Maverick | ~$0.004 |
+| Google Gemini 2.5 Flash-Lite | ~$0.003 |
+| GPT-4o-mini | ~$0.004 |
+
+Fireworks or Gemini Flash saves ~94% per loop run. At 100 loop executions/day: current = ~$6.60/day vs Fireworks = ~$0.40/day.
+
+---
+
+### All-in-one platforms (embeddings + completions under one billing account)
+
+| Platform | Embed support? | Completion support? | Embed cost/1M | Completion cost/1M (in/out) | Notes |
+|---|---|---|---|---|---|
+| **Fireworks AI** | Yes (768 dims — needs migration) | Yes | $0.01 | $0.15 / $0.60 | Best speed-to-price; one API key; open models Apache 2.0; dimension migration needed |
+| **Together AI** | Yes (768 dims — needs migration) | Yes | $0.008 | $0.27 / $0.85 | Cheapest raw price; same quality as Fireworks; Fireworks edges it on latency |
+| **Google Gemini API** | Yes (1536 dims via param — no migration) | Yes | $0.15 | $0.10 / $0.40 | One vendor, highest embed quality, cheapest completions; embed cost is 7.5x OpenAI |
+| **Cohere** | Yes (1536 dims native) | Yes | $0.12 | $2.50 / $10.00 | Built for RAG (embed + reranker + Command R+); expensive on completions |
+| **Groq** | No | Yes | N/A | $0.05–$0.79 | Completions only; ultrafast LPU; pair with a separate embed provider |
+
+---
+
+### AWS Bedrock + startup credits: is it worth it?
+
+AWS Activate for startups offers up to $5,000 in AWS credits (including Bedrock). The appeal is real — free inference for the demo period.
+
+**Problems:**
+1. Bedrock's native embedding model (Titan Embed Text v2) outputs 1024 dims — requires a dimension migration to `vector(1024)`.
+2. Bedrock prices all models HIGHER than going to providers direct (e.g., Claude Sonnet 4 via Bedrock costs more than via Anthropic API direct). Credits are worth less in real inference than it appears.
+3. The credits deplete and the billing relationship shifts to full Bedrock rates. Migrating away requires re-testing all model routing code.
+4. IAM permission complexity, region availability issues, and latency overhead for a Cloudflare Workers deploy.
+
+**Verdict:** For a $5–10 demo budget, the Lovable gateway already covers everything at near-zero marginal cost. AWS Bedrock credits add operational complexity with no meaningful quality or cost advantage at demo scale. Reassess only if AWS partnership terms become strategically important (e.g., AWS Marketplace listing, enterprise procurement through AWS).
+
+---
+
+### Self-hosting open models: when yes, when no
+
+| Scenario | Verdict |
+|---|---|
+| Demo / pre-revenue | Never self-host. GPU costs + reliability > API costs at this scale. |
+| First 1,000 users | Never self-host. API cost at <1M tokens/day is $5–20/day max with Fireworks. |
+| 100K+ users, >100M tokens/month | Evaluate: open model on owned A100 GPU becomes cost-competitive. |
+| Dedicated ML engineer on the team | Prerequisite before self-hosting is operationally viable. |
+
+**Best open models for when self-hosting is eventually viable:**
+- **Embeddings:** `Qwen3-Embedding-8B` (Apache 2.0, MTEB 70.6 — beats ALL API models including Google) requires ~16GB VRAM. `BGE-M3` (MIT, MTEB ~63, 512MB, runs on CPU) is the operational floor.
+- **Completions:** `Llama 4 Maverick` (Apache 2.0) runs on a single A100; matches GPT-4o-mini quality.
+
+The BYOK architecture Cadence has already built makes self-hosting a configuration change, not a product change. When the time comes, the chokepoint (`resolveEmbedRoute`, `runtime.server.ts`) gets a new provider type — the product features don't change.
+
+---
+
+### Where BYOK lives: the architecture explained
+
+This is a critical distinction: **the AI provider does NOT give you memory recall, decision indexing, reflections, or any other Cadence feature. The provider is a dumb API that takes text and returns vectors or completions. All features are Cadence-built.**
+
+Here is the exact layering:
+
+```
+USER PROVIDES A KEY (optional)
+         ↓
+[Cadence BYO Vault]  ← encrypts + stores the key (AES-256-GCM)
+src/lib/byokeys-vault.server.ts
+         ↓
+[Embedding chokepoint]          [Completion chokepoint]
+src/lib/rag/embed.server.ts     src/lib/ai/runtime.server.ts
+  resolveEmbedRoute():            callModel() / callModelStream():
+  1. explicit BYO override         1. BYO key (user's OpenAI/Anthropic)
+  2. user's OpenAI BYO key         2. Lovable gateway (default)
+  3. Lovable gateway (default)     3. [Fireworks — to be added]
+         ↓                                  ↓
+   [Provider API]                     [Provider API]
+   (OpenAI / Google /               (OpenAI / Fireworks /
+    Fireworks / etc.)                 Anthropic / etc.)
+         ↓                                  ↓
+[Cadence features — ALL built by us]
+- Memory recall (memory.server.ts)
+- Outcome memory (rememberOutcome)
+- Decision indexing (outcome-memory.ts)
+- RAG retrieval (retriever.server.ts)
+- Reflections (reflection.server.ts)
+- Support triage clustering (support-triage.functions.ts)
+- The Critic (critic.server.ts)
+- The planning loop (loop.server.ts)
+```
+
+**What the provider supplies:** raw model inference only. Text in → vector out (embeddings) or text in → text out (completions).
+
+**What Cadence supplies:** everything else. The memory schema, the decision ontology, the supersession engine, the BYOK vault, the cost tracking, the guardrails, the agent loop, the Critic, the governance layer. None of that changes when you swap providers.
+
+**Switching a provider** = change one URL + one API key in the chokepoint. All features continue working.
+
+**When no user brings a BYO key:** the chokepoint falls back to the Lovable gateway (current default) or a designated default provider (Fireworks AI, once wired). The product always runs — the fallback is structural.
+
+---
+
+### The phased provider recommendation
+
+**Phase 1: Demo (now, $5–10 budget)**
+→ Change nothing. Lovable gateway handles both embeddings and completions. Cost is near-zero at demo scale. No migration risk. Ship the product.
+
+**Phase 2: First paying users (near term)**
+→ Add Fireworks AI as the default completion provider (no-key path) in `runtime.server.ts`. Keep Lovable gateway for embeddings (no dimension migration). One endpoint change, 94% completion cost reduction. OpenAI BYO key users are unaffected.
+→ Provider chain for completions: BYO key → Fireworks default → Lovable gateway fallback.
+
+**Phase 3: Scale (100K+ users)**
+→ Upgrade embeddings to Google `gemini-embedding-001` with `output_dimensionality=1536` (no column migration, highest retrieval quality — MTEB 68.3 vs current 62–63). The retrieval quality lifts the decision-memory moat directly.
+→ Evaluate Gemini 2.5 Flash-Lite as the no-key completion default ($0.10/$0.40 input/output, 1M context).
+→ One vendor (Google) covers both under one API + billing account.
+
+**Phase 4: Self-host (>100M tokens/month, dedicated ML engineer)**
+→ `Qwen3-Embedding-8B` for embeddings (MTEB 70.6, Apache 2.0, beats all API models).
+→ `Llama 4 Maverick` for completions (Apache 2.0, GPT-4o-mini quality).
+→ BYOK architecture: self-hosted endpoint = just another provider type in `resolveEmbedRoute`.
+
+---
+
+### Why NOT a single all-in-one provider right now
+
+Fireworks AI (embed + completions) is technically the cleanest all-in-one, but switching embeddings from OpenAI requires migrating all `vector(1536)` columns to `vector(768)` — a non-trivial DB migration + re-embed backfill. For the demo phase and first users, the migration complexity is not justified by the ~$0.01/session embedding cost saving. The completion switch (Fireworks for the planning loop) delivers 94% cost savings with zero migration risk and is the right immediate move. Embedding migration is Phase 3, not Phase 1.
+
+---
+
 ## Sourcing discipline + founder Q&A folded into doctrine (2026-06-20)
 
 **Sourcing discipline (new standing rule).** For any BUY/INTEGRATE, never stop at the incumbent or the obvious name: also source the **newest-generation** entrants AND the **cheaper / more-efficient** alternative, and name the top 3 with trade-offs. This layer commoditizes fast (prices race down, new players appear monthly), so a BUY/INTEGRATE verdict is **re-evaluated periodically, not set once** - the cheapest-credible + self-hostable option wins, and the seam keeps every pick one swap away.
