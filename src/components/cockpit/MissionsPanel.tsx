@@ -10,7 +10,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { MonoLabel, StatusBadge, StepDot } from "@/components/cadence/Primitives";
-import { listMissions, type MissionListRow } from "@/lib/missions.functions";
+import { listMissions, promoteMission, type MissionListRow } from "@/lib/missions.functions";
 import { startOrchestratedMission } from "@/lib/orchestrator.functions";
 
 /** Production step statuses → the reference's StepDot vocabulary. */
@@ -38,56 +38,95 @@ function startedLabel(iso: string): string {
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${time}`;
 }
 
-function MissionRow({ m }: { m: MissionListRow }) {
+function MissionRow({
+  m,
+  onPromote,
+}: {
+  m: MissionListRow;
+  onPromote: (id: string) => void;
+}) {
   const navigate = useNavigate();
   const done = m.steps.filter((s) => stepDotStatus(s.status) === "completed").length;
+  const isProposed = m.status === "proposed";
   return (
-    <button
-      onClick={() => navigate({ to: "/missions/$missionId", params: { missionId: m.id } })}
+    <div
       className="bento"
       style={{
         display: "flex",
         alignItems: "center",
         gap: 16,
         width: "100%",
-        textAlign: "left",
         padding: "13px 16px",
         transition: "border-color var(--dur-fast)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--hairline-strong)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--hairline-strong)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--hairline)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--hairline)";
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span className="font-display" style={{ fontSize: 15.5 }}>
-            {m.title}
-          </span>
-          <StatusBadge status={badgeStatus(m.status)} />
-        </div>
-        <div style={{ fontSize: 12.5, color: "var(--ink-subtle)", marginTop: 3 }}>{m.goal}</div>
-      </div>
-      <div
-        style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}
-        aria-label={`${done} of ${m.steps.length} steps complete`}
+      {/* Clickable mission body — excludes the promote button */}
+      <button
+        onClick={() => navigate({ to: "/missions/$missionId", params: { missionId: m.id } })}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+          textAlign: "left",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+        }}
       >
-        {m.steps.map((s, i) => (
-          <StepDot key={i} status={stepDotStatus(s.status)} />
-        ))}
-      </div>
-      <div style={{ textAlign: "right", flexShrink: 0, width: 90 }}>
-        <div className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
-          {m.cost_usd == null ? "—" : `$${m.cost_usd.toFixed(2)}`}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className="font-display" style={{ fontSize: 15.5 }}>
+              {m.title}
+            </span>
+            <StatusBadge status={badgeStatus(m.status)} />
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-subtle)", marginTop: 3 }}>{m.goal}</div>
         </div>
-        <div className="mono-label" style={{ fontSize: 9 }}>
-          {startedLabel(m.created_at)}
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}
+          aria-label={`${done} of ${m.steps.length} steps complete`}
+        >
+          {m.steps.map((s, i) => (
+            <StepDot key={i} status={stepDotStatus(s.status)} />
+          ))}
         </div>
-      </div>
-      <ChevronRight size={14} style={{ color: "var(--ink-faint)", flexShrink: 0 }} />
-    </button>
+        <div style={{ textAlign: "right", flexShrink: 0, width: 90 }}>
+          <div className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
+            {m.cost_usd == null ? "—" : `$${m.cost_usd.toFixed(2)}`}
+          </div>
+          <div className="mono-label" style={{ fontSize: 9 }}>
+            {startedLabel(m.created_at)}
+          </div>
+        </div>
+        <ChevronRight size={14} style={{ color: "var(--ink-faint)", flexShrink: 0 }} />
+      </button>
+
+      {/* HITL gate: proposed missions show a calm "Review & launch" button. Once
+          clicked, promoteMission flips status → queued so the resume-runs cron
+          picks it up on its next tick. */}
+      {isProposed && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onPromote(m.id);
+          }}
+          className="btn btn-sm"
+          style={{ flexShrink: 0, fontSize: 11.5, padding: "4px 10px" }}
+          title="Promote this mission from proposed to queued so it runs next"
+        >
+          Review &amp; launch
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -169,8 +208,19 @@ function MissionComposer() {
 
 export function MissionsPanel() {
   const fMissions = useServerFn(listMissions);
+  const fPromote = useServerFn(promoteMission);
+  const qc = useQueryClient();
   const missions = useQuery({ queryKey: ["missions"], queryFn: () => fMissions() });
   const rows = missions.data?.missions ?? [];
+
+  const promote = useMutation({
+    mutationFn: (missionId: string) => fPromote({ data: { missionId } }),
+    onSuccess: () => {
+      toast.success("Mission queued — the agent will pick it up shortly.");
+      qc.invalidateQueries({ queryKey: ["missions"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div>
@@ -202,7 +252,7 @@ export function MissionsPanel() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {rows.map((m) => (
-            <MissionRow key={m.id} m={m} />
+            <MissionRow key={m.id} m={m} onPromote={(id) => promote.mutate(id)} />
           ))}
         </div>
       )}
