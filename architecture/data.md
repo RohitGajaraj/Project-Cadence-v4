@@ -70,3 +70,13 @@ Source of truth is `supabase/migrations/`. Author via the migration tool; **neve
 ## Known limits
 
 Clustering degrades past ~1000 signals/run (incremental clustering deferred); `model_pricing` hand-maintained; `ai_events` retention currently unbounded (90-day tier + cold export planned).
+
+## Planned observability tables (AFD, founder-gated)
+
+The [AFD initiative](../docs/planning/analytics-and-failure-detection-plan.md) adds three Postgres surfaces (BUILD side of the BBI split — the moat-adjacent receipts layer stays on-DB):
+
+- `job_runs(id, job_name, started_at, finished_at, status, error, workspace_id?)` — every cron hook wrap (AFD-07).
+- `agent_runs.failure_kind` (typed enum) — taxonomy of AI-runtime failures (AFD-06).
+- Materialized views: `mv_decision_velocity`, `mv_supersession_rate`, `mv_agent_cost_per_decision`, `mv_signals_to_outcomes` — the moat analytics (AFD-09..12), refreshed nightly via `pg_cron`.
+
+All vendor data (PostHog, Sentry, Better Stack) stays off-Postgres; only join keys (`workspace_id`, `agent_run_id`, `decision_id`) cross the boundary. See [`../docs/features/observability-facade.md`](../docs/features/observability-facade.md).

@@ -1,214 +1,72 @@
-## Two phases in this plan
 
-**Phase A is documentation only** (close the loop on what is already shipped for pricing + credits + subscription, so Claude Code / Antigravity / Gemini do not re-do it). **Phase B is the admin console build.** Phase A ships first so nothing else duplicates effort.
+# V3 + V1-as-§12 — doc-only commit plan, fully interlinked
 
----
-
-## Phase A · Document what is already shipped (zero code)
-
-Per the repo's Documentation Operating System rule, status lives only in `docs/planning/SOURCE-OF-TRUTH.md` and is mirrored in the feature dashboard; every shipped feature gets a feature doc with a verify checklist.
-
-### A1. Update the SSOT
-`docs/planning/SOURCE-OF-TRUTH.md`:
-- Section 0 (cursor): close out the pricing + subscription + credits work, set cursor to "Admin console phase 2".
-- Section 3 (queue): mark the pricing items done; queue the new Admin items.
-- Section 6 (progress log): one terse dated line per shipped slice — Personal/Teams tabs, Cluster monthly+yearly, Constellation monthly-only, current-plan highlight, single popular badge, Star nudge copy, tiered credit bundles with "Best value", Stripe-ID column lockdown, admin pricing CRUD, credits-engine ON/OFF, admin add/remove.
-
-### A2. Flip the feature dashboard rows
-`docs/planning/feature-dashboard.md`:
-- Pricing catalog (plans + top-ups) → ✅ Done, owner Lovable, link to feature doc.
-- Subscription mgmt (Stripe Checkout, portal, cancel/resume) → ✅ Done.
-- Credits engine + monthly grant + reset + ledger → ✅ Done.
-- Admin console v1 (overview + pricing tabs + admin roster) → ✅ Done.
-- Add new rows for Admin v2 items (see Phase B), Tier 1 (Lovable-owned), ranked under monetization.
-
-### A3. Refresh / create feature docs
-- `docs/features/pricing.md` — confirm it reflects: 5-tier catalog (Star · Cluster · Constellation · Galaxy · Cosmos), Personal vs Teams & Enterprise toggle, Cluster billing rules (monthly + yearly), Constellation monthly-only, single most-popular highlight, current-plan visual treatment, Star "Free, upgrade anytime" nudge copy. Verify checklist included.
-- `docs/features/credits.md` — confirm it captures: monthly grant per tier, top-up tiered bundles (Starter packs vs At scale, 250 → 250,000), "Best value" badge logic, ledger model, admin grant/adjust (placeholder until Phase B ships it), engine ON/OFF flag.
-- `docs/features/billing.md` — Stripe Checkout + customer portal + webhook, env (sandbox vs live), Stripe-ID column lockdown migration, cancel/resume semantics.
-- `docs/features/admin-console.md` — rewrite to cover v1 scope (Overview + Pricing + Admin roster) and list v2 sections coming (Phase B).
-
-### A4. Build log + decision log
-- `plan.md` §4 — one line per shipped slice with WHY.
-- `docs/strategy/session-decisions.md` — log the pricing-architecture rulings (5-tier scheme, billing rules per tier, single popular highlight, tiered credit bundles strategy).
-
-### A5. Conventions consulted, not changed
-No new convention files. The work followed `engine-room-doctrine.md`, `ui-voice.md`, `destructive-actions.md`, `inline-management.md`, `humanized-output.md`, `data-minimalism.md` — call those out in `pricing.md` and `admin-console.md` so future agents know which rules govern these surfaces.
-
-Phase A delivers nothing visible in the app; it stops duplicate work. It is done in one commit batch.
+Approved direction noted: **commit V3 (the comprehensive doc-only plan) with V1's phased build sequence folded in as §12**. Doc-only — no packages installed, no code touched. Below is exactly what gets written and where, plus answers to your two questions at the end.
 
 ---
 
-## Phase B · Admin console v2 (the real plan)
+## Files I will create (5)
 
-### What I heard, written back so you can correct me
+1. **`docs/planning/analytics-and-failure-detection-plan.md`** — the build bible (the V3 + V1-§12 doc itself). Header date · `BBI:` stamp · initiative ID **AFD** · board group **G12**.
+   Sections: 0 Why · 1 Scope · 2 Non-goals · 3 BBI table · 4 Vendor analysis (PostHog vs Mixpanel vs Amplitude; Sentry vs alternatives; Better Stack vs PagerDuty+StatusPage+Logtail; EU rationale) · 5 Architecture (ASCII + `src/lib/observability/` façade rule) · 6 Per-ID specs **AFD-01..AFD-14** (context · files · migration · steps · acceptance · verify) · 7 Cost & procurement · 8 Risks & founder gates · 9 Acceptance · 10 Out of scope · 11 Links · **§12 Build sequence when picked up (V1's 4 phases verbatim: Phase 1 failure detection → Phase 2 product analytics → Phase 3 in-house insights → Phase 4 DB failure surfacing)**.
 
-1. Do not bloat to 5 tabs. Cluster sensibly into 3 tabs with deep drawers — same functionality, less navigation.
-2. Think like an admin of a B2B agentic platform, not a generic SaaS:
-   - **Invitations** (single, bulk CSV, auto-approve domains, manual review queue).
-   - **Promos & vouchers** (signup codes → auto-enroll user into a plan/credit grant; campaigns; expiry; usage caps).
-   - **Trials & test runs** (extend trial, give a user X days of Constellation, schedule expiry).
-   - **User lifecycle** (search, suspend, impersonate-as-readonly for support, password reset link, force re-verify).
-   - **Workspace lifecycle** (transfer ownership, change plan, grant credits at workspace level, member roles, soft delete).
-   - **Credit ops** (grant/adjust/reset at user OR workspace level with audit reason).
-   - **Plan overrides** (promote a user to Cluster without Stripe charge for evaluation; auto-revert at a date).
-   - **Feature flags + kill switches** (turn an agent off platform-wide, throttle a surface).
-   - **Announcement banner** (push a banner to all signed-in users).
-   - **System health peek** (live agent run count, credits engine state, recent incidents — link out to Govern).
-   - **Audit log** (every admin action — who, what, on whom, when, reason).
-3. Backend is built, not just UI.
-4. Documentation closed every time.
+2. **`docs/features/analytics-and-failure-detection.md`** — the feature doc (mandatory per AGENTS.md §5). One-line what-it-is · category/owner · use cases · how-to-run/verify checklist · cross-links to the bible.
 
-If any of that is wrong, say so before I build.
+3. **`docs/features/observability-facade.md`** — a tiny supporting feature doc for the `src/lib/observability/` façade rule (so when build picks up, every SDK lives behind one swap-in-one-file boundary).
 
-### IA — three tabs, not five
+4. **`docs/decisions/analytics-vendor-selection.md`** — a short decision record capturing the PostHog / Sentry / Better Stack picks with the rejected alternatives, so the WHY survives forever (matches the `docs/decisions/` pattern).
 
-The new admin layout (alongside the existing Overview and Pricing, which stay):
+5. **`docs/operations/alerting-runbook.md`** — the Sev 1–4 routing policy as a runbook (channels, escalation, who-gets-paged), referenced by the bible and `app-health.md`.
 
-```text
-Admin
-├─ Overview          (existing: credits-engine ON/OFF, quick stats, link to System health)
-├─ Pricing           (existing: catalog, top-up bundles, popular flag)
-├─ People            (NEW: users, invitations, vouchers — one tab, three sub-panels)
-├─ Workspaces        (NEW: workspaces, members, workspace-level credit grants)
-└─ Platform          (NEW: feature flags, kill switches, banner, audit log)
-```
+## Files I will UPDATE (interlinking — no orphans)
 
-Five labels total in the tab strip. Two of them are existing. Three new. Each new tab is a single page with a clear sub-section split, so functionality is not lost.
+| File | Change |
+|---|---|
+| `docs/planning/SOURCE-OF-TRUTH.md` | New §3 queue entry: **G12 Analytics & Failure Detection** → bible. §0 cursor untouched (not in flight). §7 doc map gets the 5 new files. |
+| `docs/planning/feature-dashboard.md` | New board group **G12** with 14 rows (AFD-01..14), Priority `Tier 3` (per your "non-essential / ops hygiene" tier), all `⬜`. Run `scripts/rerank-dashboard.py` so Rank renumbers. Update v11 header block + at-a-glance %. |
+| `docs/strategy/strategic-inputs-log.md` | Append the full §4 vendor analysis verbatim (PostHog/Mixpanel/Amplitude, Sentry/alts, Better Stack/PD-stack, EU rationale) — preserves the reasoning for YC/investor use. |
+| `docs/strategy/session-decisions.md` | Dated entry: "Analytics & Failure Detection scoped (V3 + V1-§12); doc-only; G12 queued; AFD prefix; BBI verdicts logged." |
+| `docs/operations/procurement-inventory.md` | 3 new vendor rows: PostHog Cloud EU · Sentry EU · Better Stack (what / why / cost+source / vendor options / recommendation / when-to-buy). |
+| `architecture/runtime.md` | One-paragraph note: AI chokepoint will emit Sentry breadcrumbs at AFD build time; façade-only. |
+| `architecture/integrations.md` | One-paragraph note: 3 new integrations live behind `src/lib/observability/` façade; vendor swap = one file. |
+| `architecture/data.md` | Note the two future tables `job_runs` and `db_incidents` (90-day retention). |
+| `docs/features/app-health.md` | Cross-link: AFD extends (does not replace) `IncidentsPanel`. |
+| `docs/features/README.md` | New row for the feature doc. |
+| `plan.md` §4 | One dated line: "AFD initiative documented; G12 queued; build deferred per founder velocity ruling." |
+| `docs/planning/considerations.md` | Mark the observability/failure-detection gaps as **spec'd in AFD**. |
+| `AGENTS.md` | One pointer line under §3 (after §3.0d) referencing the bible — so any tool/session sees AFD from the canonical manual. |
+| `CLAUDE.md` | One pointer line in the read-order block (§1.6 area) referencing the bible. |
+| `docs/README.md` | New row in the repo map for the bible + decisions/runbook files. |
 
-#### Tab 3 · People (one tab, three panels)
+## Linking discipline applied
+- Every new file: header date line `> _Created: <today> · Last updated: <today>_`.
+- "Related" footer block on each new file → bible · SSOT · dashboard · feature doc · architecture · decisions · runbook.
+- No status duplication (status lives only in SSOT + dashboard).
+- Run `bun run docs:check` after writes; fix any orphan/broken-link finding in the same commit.
 
-**Users panel (default):**
-- Search by email/name, paginated 25/page.
-- Row: email · name · plan · credit balance · workspaces · last active · status.
-- Row click → drawer:
-  - **Identity:** email, name, signup date, source (organic / invite / voucher), last sign-in.
-  - **Plan & billing:** current tier, interval, renewal/expiry. Actions: **Override plan** (pick tier + expiry; flagged `admin_override`; auto-reverts), **Restore to paid**.
-  - **Credits:** balance (included + top-up), monthly grant, last reset. Actions: **Grant credits** (amount + reason), **Adjust** (debit, reason), **Reset cycle now**.
-  - **Workspaces:** list with role. Link to Workspaces tab filtered to that one.
-  - **Access:** roles checkboxes (admin), suspend toggle.
-  - **Activity:** last 20 ledger entries, last 20 sign-ins, last 5 admin actions targeting this user.
-
-**Invitations panel:**
-- **Send single invite:** email + role (member/admin) + workspace (optional) + welcome message + auto-grant credits (optional).
-- **Bulk invite:** CSV upload (email, role, workspace, credits) → preview table → send all.
-- **Pending invites table:** sortable, with **Resend**, **Revoke**, **Bulk approve**, **Bulk revoke**.
-- **Auto-approve domain rules:** add `@yourco.com` rules so anyone signing up with that domain skips review (with optional auto-assign workspace + tier).
-- **Approval queue:** when auto-approve is off, new signups wait here for one-click approve/reject (bulk too).
-
-**Vouchers & promos panel:**
-- **Voucher list:** code · type (signup unlock / credit grant / plan upgrade) · benefit · usage (X of Y) · valid window · status.
-- **Create voucher:**
-  - Code (auto-generate or custom).
-  - Type: *Signup voucher* (anyone redeeming this on signup is auto-logged-in, auto-placed on tier T, gets N credits), *Existing-user voucher* (redeems for credits/plan), *Workspace voucher* (whole workspace gets benefit).
-  - Benefit: tier (Star/Cluster/Constellation/Galaxy/Cosmos), credit grant, plan duration (e.g. 30 days of Cluster).
-  - Limits: max uses total, max uses per user, expiry date, restrict to email domain.
-  - Auto-flags: `auto_login_after_signup` (yes/no), `bypass_email_verification` (yes/no, default no).
-- **Redemption log:** who redeemed, when, from what surface.
-- **Campaign view:** group vouchers by tag (e.g. `yc-w26`, `producthunt-launch`) for tracking conversion.
-
-#### Tab 4 · Workspaces
-
-- Search by name / owner.
-- Row → drawer:
-  - Members list with role; add / remove / change role / bulk invite to workspace.
-  - Workspace credit balance + **Grant credits at workspace scope** (separate from per-user grants).
-  - Plan + override.
-  - **Transfer ownership** (typed-name confirmation).
-  - **Soft delete** (typed-name match per `destructive-actions.md`).
-  - Connected sources count + link to that workspace's Sync surface.
-
-#### Tab 5 · Platform
-
-- **Feature flags & kill switches:** rows for each registered flag/surface (e.g. `agents.scout.enabled`, `chat.streaming.enabled`, `web_access.enabled`); toggle ON/OFF/throttle %; reason + audit.
-- **System banner:** title + body + severity (info / warning / critical) + audience (all signed-in / tier filter) + window. Live preview.
-- **Audit log:** every admin action (grant, adjust, override, suspend, voucher created, invite revoked, flag toggled, banner pushed). Filter by actor, action, target, date. CSV export.
-- **System health peek:** small cards — credits engine ON/OFF, active agent runs, last 5 incidents (from `cost_incidents`), eval suite last-run pass rate. Deep links to Govern.
-
-### Backend — what gets built
-
-Per `Engine-Room` doctrine and `BBI` gate: every admin mutation is a SECURITY DEFINER RPC verified by `has_role(auth.uid(),'admin')`, audited inside the RPC so the trail cannot be bypassed.
-
-**Migration 1 — schema:**
-- `admin_audit_log(id, actor_user_id, action text, target_user_id, target_workspace_id, metadata jsonb, reason text, created_at)`.
-- `profiles.suspended boolean default false`, `profiles.suspended_reason text`.
-- `vouchers(id, code unique, type, benefit jsonb, max_uses, uses_count, max_uses_per_user, valid_from, valid_until, email_domain, auto_login, bypass_verification, campaign_tag, created_by, created_at, status)`.
-- `voucher_redemptions(id, voucher_id, user_id, redeemed_at, surface)`.
-- `invitations(id, email, role, workspace_id, credits_grant, status [pending/approved/revoked/redeemed], expires_at, sent_by, sent_at)` + bulk-import staging.
-- `auto_approve_domains(id, domain, default_role, default_workspace_id, default_tier, created_by)`.
-- `signup_approvals(id, user_id, status [pending/approved/rejected], decided_by, decided_at, reason)`.
-- `feature_flags(key text pk, enabled bool, throttle_pct int, payload jsonb, updated_by, updated_at)`.
-- `system_banner(id, title, body, severity, audience jsonb, starts_at, ends_at, status, created_by)`.
-- Plan-override fields on `subscriptions`: `admin_override boolean`, `override_until timestamptz`, `override_reason text`.
-- All with GRANTs + RLS scoped to admins via `has_role`.
-- All audit-writing RPCs append to `admin_audit_log` atomically.
-
-**Migration 2 — RPCs / triggers:**
-- `admin_grant_credits(_user_id, _amount, _reason)`, `admin_adjust_credits`, `admin_reset_cycle`.
-- `admin_grant_workspace_credits(_ws_id, _amount, _reason)`.
-- `admin_override_plan(_user_id, _tier, _until, _reason)` + nightly job to auto-revert expired overrides.
-- `admin_suspend_user(_user_id, _suspended, _reason)`.
-- `admin_send_invitation(_email, _role, _ws_id, _credits, _message)` + `admin_bulk_send_invitations(_rows jsonb)`.
-- `admin_approve_signup(_user_id)` / `admin_reject_signup(_user_id, _reason)` / `admin_bulk_approve(_ids[])`.
-- `admin_upsert_auto_approve_domain`, `admin_delete_auto_approve_domain`.
-- `admin_create_voucher`, `admin_revoke_voucher`, `redeem_voucher(_code)` (callable by any signed-in user, applies benefit + writes redemption row + handles plan override / credit grant; signup version handles auto-login by short-circuiting the post-signup gate).
-- `admin_set_feature_flag(_key, _enabled, _throttle, _payload, _reason)`.
-- `admin_publish_banner(_title, _body, _severity, _audience, _starts, _ends)`.
-- `admin_transfer_workspace`, `admin_soft_delete_workspace`, `admin_set_member_role`.
-
-**New server-fn modules:**
-- `src/lib/admin.functions.ts` (users, audit, suspend, plan-override, credit grant/adjust).
-- `src/lib/admin-invitations.functions.ts` (single/bulk invites, approval queue, auto-approve domains).
-- `src/lib/admin-vouchers.functions.ts` (CRUD, redemption, campaign view).
-- `src/lib/admin-workspaces.functions.ts` (workspace ops).
-- `src/lib/admin-platform.functions.ts` (flags, banner, audit log read).
-- `src/lib/redeem-voucher.functions.ts` (public-ish, called on signup and from settings).
-
-**Engine integration:**
-- Auth gate: respect `profiles.suspended` → bounce to "account paused" screen.
-- Signup flow: accept optional `?voucher=` param → call `redeem_voucher` post-create → if `auto_login` true, skip email verification dance and land in app.
-- Plan-override nightly cron in `/api/public/hooks/plan-override-tick.ts`.
-- Feature flags read through a thin `useFlag(key)` hook backed by a 5-min cache.
-- Banner rendered by root layout based on `system_banner` query.
-
-### Frontend wiring
-
-- `src/routes/_authenticated.admin.people.tsx` (3 panels via sub-tab strip inside the tab).
-- `src/routes/_authenticated.admin.workspaces.tsx`.
-- `src/routes/_authenticated.admin.platform.tsx`.
-- Update `_authenticated.admin.tsx` TabRow to 5 entries.
-- Drawers: shadcn `Sheet` with sectioned content; numbers carry `mono-label` headers; all destructive actions go through `useConfirm()` with typed-name match where irreversible.
-- Copy follows the voice anchor: consequence-first ("Grant 500 credits · adds to balance", "Suspend account · blocks sign-in immediately"), no em/en dashes, no AI-tell words.
-- Engine-Room compliance: top of each tab states the outcome ("Run people"), not the mechanism. Raw audit log lives under Platform tab (deepest door).
-
-### Tests
-
-- Unit: voucher benefit application, plan-override expiry calc, feature-flag throttle math.
-- Integration: RPCs reject non-admins; audit log row written for every mutation; bulk invite handles 1000 rows; voucher max-uses race-safe; signup with voucher auto-logs in.
-
-### Doc closure (Phase B)
-
-- Update SSOT §0 / §6 as each slice ships.
-- Feature dashboard rows for each of: Users mgmt, Invitations, Vouchers, Workspaces mgmt, Plan overrides, Feature flags, System banner, Audit log. Each with a verify link.
-- Feature docs (one per item) in `docs/features/`.
-- One line per slice in `plan.md` §4.
-- Decision log entry for the "3 tabs, not 5" IA choice and the voucher signup-auto-login design.
-
-### Build order (one slice per commit, verifiable each time)
-
-1. Phase A docs (no code).
-2. Migration 1 + Migration 2 + audit log RPCs.
-3. `admin.functions.ts` + Users panel of People tab + suspend + credit grant + plan override.
-4. Workspaces tab + workspace credit grant + transfer/soft-delete.
-5. Invitations panel (single + bulk + queue + auto-approve domains).
-6. Vouchers panel + `redeem_voucher` + signup flow integration + auto-login path.
-7. Platform tab: feature flags + banner + audit log viewer + system health peek.
-8. Auth-gate suspension respect + plan-override nightly cron.
-
-### What I will NOT touch
-
-- Existing Overview tab logic, Pricing tab, the user-facing `/settings` billing surface, the pricing-engine backend, the agent loop, or anything outside the admin console scope.
+## What I will NOT do (this commit)
+Install packages · write migrations · touch `src/server.ts` / `runtime.server.ts` / cron hooks · sign up for vendor accounts · set Sev-1 phone routing · build any UI.
 
 ---
 
-**Confirm before I begin:** (a) Phase A first, in one commit batch, then Phase B; (b) 3 new tabs (People · Workspaces · Platform) plus existing Overview + Pricing; (c) vouchers can both grant signup access and auto-log-in into a chosen tier with optional credit grant; (d) per-user and per-workspace credit grants are both supported, both audit-logged; (e) impersonation is read-only (no write-as-user) for support — say if you want full impersonation instead.
+## Answers to your two questions (folded into §8 Risks & founder gates of the bible)
+
+### Q1 — Status page domain (`status.cadence.app`), can we rename later?
+**Yes, fully renamable.** The status page is just a DNS CNAME from your chosen subdomain to Better Stack's status-page host. Renaming later = (a) point a new CNAME (`status.<newbrand>.app`) at the same Better Stack page, (b) flip the page's "primary domain" setting in Better Stack, (c) keep the old CNAME for ~30 days as a 301 so old links don't break. Zero code changes, zero data migration, ~10 minutes of work. So `status.cadence.app` for now is a safe placeholder — I'll mark it **"Provisional domain, rename-safe"** in §8 of the bible and in the alerting runbook. Same story for PostHog/Sentry project names: they're labels, not identifiers — both vendors let you rename a project in-dashboard without breaking ingestion (the SDK uses an API key, not the project name).
+
+### Q2 — If you sign up for everything, can I still leave Lovable later with full control?
+**Yes, by design — that's exactly what the §3.0c BBI doctrine + the `src/lib/observability/` façade guarantee.** Concretely, the exit posture I'll bake into the bible is:
+
+- **All accounts are created in your name / on your email,** not mine. I'd use a shared/forwarding inbox (e.g. `ops@cadence.app`) you own; every signup uses that. You hold the root password + 2FA recovery codes from day one. I never own a vendor account — I only operate one you own.
+- **All API keys live as Lovable Cloud secrets today, but are vendor-issued and portable.** `POSTHOG_API_KEY`, `SENTRY_DSN`, `BETTER_STACK_TOKEN` are strings the vendor issues to your account. To leave Lovable: export the secrets list, paste them into your new host's env (Vercel / Cloudflare / Fly / self-host), redeploy. The code reads `process.env.*` and doesn't know or care that Lovable was the host.
+- **All vendor SDKs live behind ONE file (`src/lib/observability/`)** — the façade rule. If you ever want to swap PostHog → Mixpanel, or Sentry → Rollbar, it's a one-file change with stable internal call sites. Same pattern protects you from vendor lock-in on the observability stack, not just from Lovable lock-in.
+- **The moat data (the `ai_events`, `agent_runs`, `decisions`, `job_runs`, `db_incidents` tables) lives in YOUR Supabase** — never shipped to a third party. Lovable Cloud's Supabase is exportable (Lovable docs: Cloud → Database tab → CSV export per table; full `pg_dump` is on the support-request path). On exit, the schema + migration files are already in this repo (`supabase/migrations/`), so a new Supabase project + restore = same DB, anywhere.
+- **Vendor data export (if you also leave PostHog/Sentry/Better Stack later):** all three offer full data export — PostHog has a `/api/event/` paginated export + S3 batch export; Sentry has issues + events JSON export; Better Stack has incident/log API export. I'll document the export endpoint for each in §11 of the bible so you're never trapped.
+- **Cost guardrail:** I'll cap each vendor at its free tier and set a billing alert before any spend. If a vendor would push us off free, I stop and ask you first (this is the standing "spend approval" rung in §3.0c).
+
+So the exit story is: **inbox you own → secrets you can export → façade behind which vendors swap → DB that's already yours.** I'll write this verbatim into §8 of the bible as the "Founder exit posture" subsection so it survives sessions.
+
+---
+
+## Ready to write
+On approval I'll create the 5 new files + apply the 14 doc updates in one parallel batch, run `scripts/rerank-dashboard.py`, run `bun run docs:check`, fix any finding it flags, and stop. No code, no installs, no signups.

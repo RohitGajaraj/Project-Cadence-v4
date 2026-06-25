@@ -89,6 +89,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | F-V5-INGEST-WEBHOOK | Public continuous-ingest webhook door | ✅ Shipped 2026-06-11 (rate limiting 2026-06-16) | Public `/api/public/ingest` endpoint | [`ingest-webhook.md`](./ingest-webhook.md) |
 | Q1-MCP | Read-only Model Context Protocol (MCP) server | ◐ Phases 1-3 shipped 2026-06-17 (Phase 4 future) | MCP server · Settings (token UI) | [`q1-mcp.md`](./q1-mcp.md) |
 | AUTH | Authentication flows (sign in / up / recover / session) | ✅ Shipped | `/login`, `/signup` | [`auth-flows.md`](./auth-flows.md) |
+| AFD | Analytics & Failure Detection (PostHog EU + Sentry EU + Better Stack + in-house views) | 📋 Plan 2026-06-25 (build pending; board G12, founder-gated) | `/admin/ai-costs` · `/admin/incidents` · `/admin/observability` · `status.cadence.app` | [`analytics-and-failure-detection.md`](./analytics-and-failure-detection.md) · façade [`observability-facade.md`](./observability-facade.md) |
 
 ## Rules
 

@@ -85,6 +85,9 @@ Three principles govern every decision in this repo:
 > When you build a feature, create its canonical page in [`docs/features/`](./docs/features/) (named for the feature, linked from `docs/features/README.md`) in the SAME change. Even half a page, it MUST capture: the **feature ID** + a one-line what-it-is, the **category/tag + owner**, the **use cases / scenarios**, and a **how-to-run / how-to-verify manual**. The dashboard row points to it. Past features lacking a doc are backfilled over time; going forward this is mandatory. Full per-ship list: [`docs/conventions/doc-closure-checklist.md`](./docs/conventions/doc-update-cadence.md).
 >
 > If you remember one rule, remember this: **status lives only in the SSOT; everything else is typed detail it points to. One purpose per doc, extend before you create, archive before you orphan, no dates in names, a date header on every doc, a feature doc with every feature.**
+>
+> ### If you touch observability (analytics, errors, uptime, on-call, status page)
+> The single front-door is **[`docs/planning/analytics-and-failure-detection-plan.md`](./docs/planning/analytics-and-failure-detection-plan.md)** (AFD initiative, group G12, 14 task IDs `AFD-01`..`AFD-14`, founder-gated). Read it before adding vendor SDK imports or new telemetry. The vendor selection is decided (PostHog EU + Sentry EU + Better Stack), the dormant-by-design pattern + façade contract are spec'd, and the exit-posture is committed. **Do not import a vendor SDK outside `src/lib/observability/`** when AFD lands — the façade rule (see [`docs/features/observability-facade.md`](./docs/features/observability-facade.md)) is non-negotiable so leaving Lovable stays a 1-day redeploy.
 
 ---
 

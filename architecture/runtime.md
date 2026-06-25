@@ -56,3 +56,12 @@ Lovable/AI gateway (default, no user key) and BYO adapters (Anthropic, DeepSeek,
 - Both `callModel()` and `callModelStream()` enforce the governance halt check identically. Streaming halts emit a `status='blocked'` event before the SSE stream is ever opened.
 
 Change anything here and update this file + [`plan.md`](../plan.md) (see [`AGENTS.md`](../AGENTS.md), section 5).
+
+## Observability hooks (AFD, planned · founder-gated)
+
+When the [AFD initiative](../docs/planning/analytics-and-failure-detection-plan.md) ships, the chokepoint gains two side-effects per call (both behind the `src/lib/observability/` façade, both no-op without env / when `observabilityEnabled()=false`):
+
+- `track('agent_run_finished', { surface, model, latency_ms, cost_usd, status })` → PostHog (AFD-04).
+- `agent_runs.failure_kind` is written from a typed taxonomy on every error path (AFD-06).
+
+The cron hooks gain a `withJobRun(name, fn)` wrapper (AFD-07) that records to a new `job_runs` table and fires a Better Stack heartbeat on success (AFD-08). Façade contract: [`../docs/features/observability-facade.md`](../docs/features/observability-facade.md). Vendor SDKs are NEVER imported outside `src/lib/observability/`.
