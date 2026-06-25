@@ -1,10 +1,34 @@
 # Analytics & Failure Detection (AFD) — the build bible
 
-> **Status:** DOCUMENTATION ONLY (no build yet). Founder approval 2026-06-25 to commit V3 (comprehensive doctrine) + V1 (phased build sequence) as the standing plan.
+> **Status:** **PHASE 1 SHIPPED 2026-06-25 (lovable autonomous build).** Code-side of the plan is live; vendor side stays founder-gated. See "Phase 1 ship log" immediately below.
 > **Initiative ID:** `AFD` · **Dashboard group:** `G12` · **Task IDs:** `AFD-01` … `AFD-14`.
 > **Created:** 2026-06-25 · **Owner:** any session that picks an `AFD-*` row from [`feature-dashboard.md`](./feature-dashboard.md).
 >
 > This is the **single front-door** for everything analytics + failure-detection in Cadence. When the founder unblocks the build, the picker reads this file end-to-end, **does not re-derive the vendor choice**, and starts at `AFD-01`. Every other doc that touches observability points HERE (see §13 "Cross-doc map").
+
+## Phase 1 ship log (2026-06-25, lovable, autonomous)
+
+| AFD ID | What landed | Where | Posture |
+| --- | --- | --- | --- |
+| AFD-01 | Façade scaffold | `src/lib/observability/{index,analytics,errors,uptime,jobs,config}.ts` | ✅ live, no-op until keys + gate |
+| AFD-02 | Master gate + admin RPC + audit | migration `20260626100000_afd_observability` (`observability_enabled()` + `admin_set_observability_enabled`) | ✅ live |
+| AFD-03 | Env contract | `.env.example` updated; runbook `docs/runbooks/observability.md` | ✅ live |
+| AFD-04 | PostHog EU analytics call | `src/lib/observability/analytics.ts` (envelope via fetch, EU host default) | 🟡 keyless |
+| AFD-05 | Sentry EU error capture | `src/lib/observability/errors.ts` (envelope API, Workers-safe) | 🟡 keyless |
+| AFD-06 | `agent_runs.failure_kind` taxonomy | migration adds column + index; `src/lib/ai/runtime.server.ts` tags on every error path | ✅ live |
+| AFD-07 | `withJobRun()` + `job_runs` ledger | migration adds table + RLS; wrapper in `src/lib/observability/jobs.ts`; wired into `sense-tick` cron | ✅ live |
+| AFD-08 | Better Stack heartbeats | `src/lib/observability/uptime.ts` (called from `withJobRun` on start / ok / fail) | 🟡 keyless |
+| AFD-09..11 | The 3 moat MVs | `mv_decision_velocity`, `mv_supersession_rate`, `mv_agent_cost_per_decision` + `refresh_observability_mvs()` | ✅ live (refresh schedule = founder pg_cron step) |
+| AFD-12 | Admin Observability surface | `src/routes/_authenticated.admin.observability.tsx` + `src/lib/observability.functions.ts`; nav tab added to `_authenticated.admin.tsx` | ✅ live |
+| AFD-13 | Status page | DNS + Better Stack page creation are founder steps in §10 | 🟡 keyless |
+| AFD-14 | Sev policy + alerting | Better Stack alerting rules are founder steps in §10 | 🟡 keyless |
+
+**Activation order for the founder** (when ready to flip on):
+1. Open vendor accounts (PostHog EU, Sentry EU, Better Stack) under a founder-owned inbox.
+2. Paste secrets into the Worker env (see `.env.example` block "Observability").
+3. Visit `/admin/observability` → "Enable". Audit row appears in `admin_audit_log`.
+4. Schedule the MV refresh: `select cron.schedule('refresh-observability-mvs','15 * * * *', $$ select public.refresh_observability_mvs(); $$);`
+5. Verify by POSTing `/api/public/hooks/sense-tick`; the run lands in the ledger + heartbeat fires.
 
 ---
 

@@ -1387,8 +1387,45 @@ export async function callModel(
   }
 
   if (status === "error") {
+    // AFD-06: tag the parent agent_runs row with a failure taxonomy + capture to Sentry façade.
+    try {
+      const kind = classifyFailureKind(errMsg);
+      if (opts.runId) {
+        await supabase
+          .from("agent_runs")
+          .update({ failure_kind: kind })
+          .eq("id", opts.runId);
+      }
+      const { captureError } = await import("@/lib/observability");
+      void captureError(new Error(errMsg ?? "AI call failed"), {
+        user_id: userId,
+        surface: opts.surface,
+        failure_kind: kind,
+        extras: { surface_ref: opts.surface_ref ?? null, model: modelUsed, provider, runId: opts.runId ?? null },
+      });
+    } catch (_e) {
+      // Observability must never block user flows.
+    }
     throw new Error(errMsg ?? "AI call failed");
   }
+
+/**
+ * AFD-06: heuristic mapping of AI-call error strings to the agent_runs.failure_kind taxonomy.
+ * Keep cheap & string-based — the goal is rough categorisation for dashboards, not certainty.
+ */
+function classifyFailureKind(errMsg: string | null | undefined): string {
+  const m = (errMsg ?? "").toLowerCase();
+  if (!m) return "unknown";
+  if (m.includes("timeout") || m.includes("timed out")) return "timeout";
+  if (m.includes("aborted") || m.includes("cancelled") || m.includes("canceled")) return "user_aborted";
+  if (m.includes("budget") || m.includes("cap") || m.includes("credits exhausted") || m.includes("402"))
+    return "budget_kill";
+  if (m.includes("guardrail") || m.includes("blocked")) return "guardrail_block";
+  if (m.includes("injection") || m.includes("prompt injection")) return "injection_block";
+  if (m.includes("rls") || m.includes("permission denied") || m.includes("forbidden")) return "rls_denied";
+  if (m.includes("tool") || m.includes("function call")) return "tool_error";
+  return "model_error";
+}
 
   let parsedJson: unknown = undefined;
   if (opts.responseFormat === "json_object" && outputText) {

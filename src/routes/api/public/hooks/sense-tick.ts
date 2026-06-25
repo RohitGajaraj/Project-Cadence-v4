@@ -3,6 +3,7 @@ import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEMO_FEED, autoTag, inferSentiment, tagSignalUpdate } from "@/lib/sensing/normalize";
 import { ingestGithubSignals } from "@/lib/connectors/providers/github-ingest.server";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * AMBIENT-SENSE (v11 #3) sense-tick: the continuous-sensing half of the ambient loop. For
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
 
+        return withJobRun("ambient.sense-tick", async () => {
         const { data: workspaces, error } = await supabaseAdmin
           .from("workspaces")
           .select("id, owner_id, last_auto_sense_at")
@@ -86,6 +88,7 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
         }
 
         return json({ ok: true, processed: workspaces?.length ?? 0, results });
+        });
       },
     },
   },
