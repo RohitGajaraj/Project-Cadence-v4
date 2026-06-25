@@ -484,6 +484,8 @@ function TrustLedgerPage() {
           }}
         >
           <div
+            role="group"
+            aria-label="Filter by outcome"
             style={{
               display: "inline-flex",
               gap: 2,
@@ -495,7 +497,9 @@ function TrustLedgerPage() {
             {(["all", "standing", "superseded"] as Outcome[]).map((o) => (
               <button
                 key={o}
+                type="button"
                 onClick={() => setOutcome(o)}
+                aria-pressed={outcome === o}
                 className="tabular-nums"
                 style={{
                   fontSize: 11.5,
@@ -526,11 +530,12 @@ function TrustLedgerPage() {
               borderRadius: 8,
             }}
           >
-            <Search size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+            <Search size={14} strokeWidth={1.8} color="var(--ink-faint)" aria-hidden />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search what, why, or who"
+              aria-label="Search receipts"
               style={{
                 border: "none",
                 outline: "none",
