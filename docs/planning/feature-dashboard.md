@@ -81,7 +81,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | 🚧 | **Blocked** - cannot proceed until a dependency clears (founder action / KI); reason in Comments | **0%** |
 | ⬜ | **Open** - not started, ready to pick up | **0%** |
 
-### Category legend (11 categories; mapped from the source groups)
+### Category legend (12 categories; mapped from the source groups)
 | Category | What it covers | Source group |
 | --- | --- | --- |
 | Foundational | Core autonomous loop, memory engine, platform/auth/runtime infra | G0 + G9 |
@@ -95,6 +95,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Cockpit | IA, observability, the operator's view of the machine | G7 |
 | Governance | Trust, safety, evals, drift, critic, incidents, humanization | G8 |
 | BYO | Provider-agnostic repos + managed Cadence Cloud runtime | G11 |
+| Observability | Analytics + failure detection + uptime/on-call/status (AFD initiative, 2026-06-25, doc-only, founder-gated) | G12 |
 
 ---
 
@@ -443,6 +444,7 @@ Statuses here are reconciled from [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (
 - [`archive/feature-backlog.md`](archive/feature-backlog.md) - granular ledger + per-feature acceptance criteria
 - [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) - WM (G10) per-ID build specs incl. the credit engine (WM-M10..WM-M16, §4.2.1)
 - [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) - BYO (G11) per-phase build specs
+- [`analytics-and-failure-detection-plan.md`](./analytics-and-failure-detection-plan.md) - AFD (G12) build bible · 14 task IDs `AFD-01..AFD-14` · status: doc-only (founder-gated, no code, no vendor signup)
 - [`v10-master-blueprint.md`](../strategy/v10-master-blueprint.md) §15-16 + [`v10_implementation-plan.md`](./v10_implementation-plan.md) - the priority rationale + execution mechanics
 - [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
 - [`../../AGENTS.md`](../../AGENTS.md) §1 (pre-action) + §5 (doc-update protocol) - where the standing rule is enforced
