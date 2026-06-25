@@ -31,6 +31,14 @@ export type ObservabilityStatus = {
 export const getObservabilityStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ObservabilityStatus | { error: string }> => {
+    // Admin gate: user_roles RLS restricts rows to auth.uid(), so a hit means this user is admin.
+    const { data: adminRole } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!adminRole) return { error: "Forbidden" };
+
     // The DB function is the source of truth for the gate.
     const { data: gate } = await context.supabase.rpc("observability_enabled");
 
