@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * retention-tick hook (DATA-RETENTION).
@@ -28,19 +29,21 @@ export const Route = createFileRoute("/api/public/hooks/retention-tick")({
             status,
             headers: { "Content-Type": "application/json" },
           });
-        try {
-          const { data, error } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
-            "purge_old_telemetry",
-            { _older_than_days: RETENTION_DAYS },
-          );
-          if (error) {
-            // pre-migration (function absent) or a dormant DB - tolerate, don't 500.
-            return json({ ok: true, skipped: "pending-migration", note: error.message });
+        return withJobRun("cron.retention-tick", async () => {
+          try {
+            const { data, error } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
+              "purge_old_telemetry",
+              { _older_than_days: RETENTION_DAYS },
+            );
+            if (error) {
+              // pre-migration (function absent) or a dormant DB - tolerate, don't 500.
+              return json({ ok: true, skipped: "pending-migration", note: error.message });
+            }
+            return json({ ok: true, result: data });
+          } catch (e) {
+            return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
           }
-          return json({ ok: true, result: data });
-        } catch (e) {
-          return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
-        }
+        });
       },
     },
   },

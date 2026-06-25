@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { evaluateTriggers, isAutoMissionTitle, type ThemeState, type OutcomeState } from "@/lib/sensing/trigger";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * AMBIENT-TRIGGER (v11 #4) trigger-tick: the self-driving policy layer. For every workspace
@@ -30,40 +31,42 @@ export const Route = createFileRoute("/api/public/hooks/trigger-tick")({
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
 
-        const { data: workspaces, error } = await supabaseAdmin
-          .from("workspaces")
-          .select("id, owner_id, last_auto_trigger_at")
-          .eq("auto_trigger_enabled", true)
-          .order("last_auto_trigger_at", { ascending: true, nullsFirst: true })
-          .limit(MAX_WORKSPACES);
+        return withJobRun("cron.trigger-tick", async () => {
+          const { data: workspaces, error } = await supabaseAdmin
+            .from("workspaces")
+            .select("id, owner_id, last_auto_trigger_at")
+            .eq("auto_trigger_enabled", true)
+            .order("last_auto_trigger_at", { ascending: true, nullsFirst: true })
+            .limit(MAX_WORKSPACES);
 
-        if (error) {
-          const code = (error as { code?: string }).code;
-          if (code === "42703" || code === "PGRST204") {
-            return json({ ok: true, processed: 0, note: "auto_trigger not migrated yet" });
-          }
-          return json({ ok: false, error: error.message }, 500);
-        }
-
-        const results: Array<{ workspace_id: string; proposed?: number; error?: string }> = [];
-        for (const ws of workspaces ?? []) {
-          try {
-            if (!ws.owner_id) {
-              results.push({ workspace_id: ws.id, error: "no owner" });
-              continue;
+          if (error) {
+            const code = (error as { code?: string }).code;
+            if (code === "42703" || code === "PGRST204") {
+              return json({ ok: true, processed: 0, note: "auto_trigger not migrated yet" });
             }
-            const proposed = await runTriggers(ws.owner_id, ws.id);
-            await supabaseAdmin
-              .from("workspaces")
-              .update({ last_auto_trigger_at: new Date().toISOString() })
-              .eq("id", ws.id);
-            results.push({ workspace_id: ws.id, proposed });
-          } catch (e) {
-            results.push({ workspace_id: ws.id, error: e instanceof Error ? e.message : String(e) });
+            return json({ ok: false, error: error.message }, 500);
           }
-        }
 
-        return json({ ok: true, processed: workspaces?.length ?? 0, results });
+          const results: Array<{ workspace_id: string; proposed?: number; error?: string }> = [];
+          for (const ws of workspaces ?? []) {
+            try {
+              if (!ws.owner_id) {
+                results.push({ workspace_id: ws.id, error: "no owner" });
+                continue;
+              }
+              const proposed = await runTriggers(ws.owner_id, ws.id);
+              await supabaseAdmin
+                .from("workspaces")
+                .update({ last_auto_trigger_at: new Date().toISOString() })
+                .eq("id", ws.id);
+              results.push({ workspace_id: ws.id, proposed });
+            } catch (e) {
+              results.push({ workspace_id: ws.id, error: e instanceof Error ? e.message : String(e) });
+            }
+          }
+
+          return json({ ok: true, processed: workspaces?.length ?? 0, results });
+        });
       },
     },
   },

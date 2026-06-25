@@ -4,6 +4,7 @@ import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { grantMonthlyAllowance, resetCreditCycle } from "@/lib/credits.functions";
 import type { PlanTier } from "@/lib/entitlements";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * credit-tick hook (WM-M11).
@@ -39,37 +40,39 @@ export const Route = createFileRoute("/api/public/hooks/credit-tick")({
             status,
             headers: { "Content-Type": "application/json" },
           });
-        try {
-          const { data: enabled } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
-            "credits_enabled",
-          );
-          if (enabled !== true) {
-            return json({ ok: true, skipped: "dormant", granted: 0, reset: 0 });
-          }
-          const cutoff = new Date(Date.now() - CYCLE_MS).toISOString();
-          const { data, error } = await (supabaseAdmin as unknown as SupabaseClient)
-            .from("account_credits")
-            .select("account_id, monthly_grant_credits, cycle_anchor, accounts(plan_tier)")
-            .limit(1000);
-          if (error || !data) {
-            return json({ ok: true, granted: 0, reset: 0, note: "no credit pool yet" });
-          }
-          let granted = 0;
-          let reset = 0;
-          for (const row of data as CreditTickRow[]) {
-            const monthly = Number(row.monthly_grant_credits ?? 0);
-            if (monthly <= 0) {
-              await grantMonthlyAllowance(row.account_id, planTierOf(row));
-              granted++;
-            } else if (!row.cycle_anchor || row.cycle_anchor < cutoff) {
-              await resetCreditCycle(row.account_id);
-              reset++;
+        return withJobRun("cron.credit-tick", async () => {
+          try {
+            const { data: enabled } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
+              "credits_enabled",
+            );
+            if (enabled !== true) {
+              return json({ ok: true, skipped: "dormant", granted: 0, reset: 0 });
             }
+            const cutoff = new Date(Date.now() - CYCLE_MS).toISOString();
+            const { data, error } = await (supabaseAdmin as unknown as SupabaseClient)
+              .from("account_credits")
+              .select("account_id, monthly_grant_credits, cycle_anchor, accounts(plan_tier)")
+              .limit(1000);
+            if (error || !data) {
+              return json({ ok: true, granted: 0, reset: 0, note: "no credit pool yet" });
+            }
+            let granted = 0;
+            let reset = 0;
+            for (const row of data as CreditTickRow[]) {
+              const monthly = Number(row.monthly_grant_credits ?? 0);
+              if (monthly <= 0) {
+                await grantMonthlyAllowance(row.account_id, planTierOf(row));
+                granted++;
+              } else if (!row.cycle_anchor || row.cycle_anchor < cutoff) {
+                await resetCreditCycle(row.account_id);
+                reset++;
+              }
+            }
+            return json({ ok: true, granted, reset });
+          } catch (e) {
+            return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
           }
-          return json({ ok: true, granted, reset });
-        } catch (e) {
-          return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
-        }
+        });
       },
     },
   },

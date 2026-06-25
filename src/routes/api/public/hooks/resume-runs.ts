@@ -4,6 +4,7 @@ import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resumeAgentLoop } from "@/lib/ai/loop.server";
 import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
+import { withJobRun } from "@/lib/observability";
 
 // agent_approvals.run_id is new in the f_studio_engine migration — not in the
 // generated types until they regenerate post-apply (F-V5 untyped-cast pattern).
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
+        return withJobRun("cron.resume-runs", async () => {
         try {
           const cutoff = new Date(Date.now() - STALE_MS).toISOString();
           const { data: queued } = await supabaseAdmin
@@ -122,6 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
+        });
       },
     },
   },

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * Outcome tick (F-V5-LOOP-CLOSE Phase D) — hourly pg_cron sweep that finds
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/api/public/hooks/outcome-tick")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
+        return withJobRun("cron.outcome-tick", async () => {
         try {
           const admin = supabaseAdmin as unknown as SupabaseClient;
           const { data: prds } = await admin
@@ -93,6 +95,7 @@ export const Route = createFileRoute("/api/public/hooks/outcome-tick")({
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
+        });
       },
     },
   },

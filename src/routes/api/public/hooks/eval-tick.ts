@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { withJobRun } from "@/lib/observability";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const JUDGE_MODEL = "google/gemini-2.5-flash-lite";
@@ -120,6 +121,7 @@ export const Route = createFileRoute("/api/public/hooks/eval-tick")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
+        return withJobRun("cron.eval-tick", async () => {
         // Find recent ok events that lack an eval row
         const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
         const { data: events, error } = await supabaseAdmin
@@ -218,6 +220,7 @@ export const Route = createFileRoute("/api/public/hooks/eval-tick")({
           }
         }
         return Response.json({ judged: results.length, pending: pending.length, results });
+        });
       },
     },
   },

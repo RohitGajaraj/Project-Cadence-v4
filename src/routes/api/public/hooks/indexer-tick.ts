@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { indexUserCorpus } from "@/lib/rag/indexer.server";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * RAG indexer tick — chunks + embeds recently changed workspace content
@@ -14,25 +15,27 @@ export const Route = createFileRoute("/api/public/hooks/indexer-tick")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
-        const started = Date.now();
-        const { data: users } = await supabaseAdmin.from("profiles").select("id").limit(200);
-        let indexed = 0,
-          skipped = 0,
-          processed = 0;
-        for (const u of (users ?? []) as { id: string }[]) {
-          try {
-            const r = await indexUserCorpus(supabaseAdmin, u.id, 50);
-            indexed += r.indexed;
-            skipped += r.skipped;
-            processed++;
-          } catch (e) {
-            console.error("indexer-tick user failed", u.id, e);
+        return withJobRun("cron.indexer-tick", async () => {
+          const started = Date.now();
+          const { data: users } = await supabaseAdmin.from("profiles").select("id").limit(200);
+          let indexed = 0,
+            skipped = 0,
+            processed = 0;
+          for (const u of (users ?? []) as { id: string }[]) {
+            try {
+              const r = await indexUserCorpus(supabaseAdmin, u.id, 50);
+              indexed += r.indexed;
+              skipped += r.skipped;
+              processed++;
+            } catch (e) {
+              console.error("indexer-tick user failed", u.id, e);
+            }
           }
-        }
-        return new Response(
-          JSON.stringify({ ok: true, processed, indexed, skipped, ms: Date.now() - started }),
-          { headers: { "Content-Type": "application/json" } },
-        );
+          return new Response(
+            JSON.stringify({ ok: true, processed, indexed, skipped, ms: Date.now() - started }),
+            { headers: { "Content-Type": "application/json" } },
+          );
+        });
       },
     },
   },

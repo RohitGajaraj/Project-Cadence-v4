@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { withJobRun } from "@/lib/observability";
 
 /**
  * memory-tick — F-AGENT-2.
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/api/public/hooks/memory-tick")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
+        return withJobRun("cron.memory-tick", async () => {
         try {
           const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
 
@@ -75,6 +77,7 @@ export const Route = createFileRoute("/api/public/hooks/memory-tick")({
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
+        });
       },
     },
   },

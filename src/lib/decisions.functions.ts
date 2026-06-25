@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { track } from "@/lib/observability";
 
 export type DecisionSource = "meeting" | "mission" | "prd" | "manual";
 
@@ -119,6 +120,7 @@ export const createDecision = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    void track("decision_made", context.userId, { prd_id: data.prd_id ?? undefined });
     return { decision: row };
   });
 

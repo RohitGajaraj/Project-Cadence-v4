@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dispatchEvent, nextReactorAttempt, type EventRow } from "@/lib/reactor.functions";
+import { withJobRun } from "@/lib/observability";
 
 // attempt_count / next_attempt_at are new (KI-27) and absent from the generated
 // Database types until they regenerate post-apply — untyped-cast precedent
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
       POST: async ({ request }) => {
         const unauth = await requireHookCaller(request);
         if (unauth) return unauth;
+        return withJobRun("cron.event-reactor-tick", async () => {
         try {
           // KI-27: reap events stuck 'processing' past the TTL (a worker evicted
           // between the claim and the terminal flip would otherwise hang forever).
@@ -107,6 +109,7 @@ export const Route = createFileRoute("/api/public/hooks/event-reactor-tick")({
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
+        });
       },
     },
   },

@@ -28,6 +28,7 @@ import { getNeedsYou } from "@/lib/today.functions";
 import { getLiveRunCounts } from "@/lib/agents.functions";
 import { useConfirm, usePrompt } from "@/hooks/use-confirm";
 import { renameWorkspace, deleteWorkspace, leaveWorkspace } from "@/lib/workspaces.functions";
+import { triggerWorkspaceSeed } from "@/lib/onboarding/onboarding.functions";
 import { amIAdmin } from "@/lib/pricing.functions";
 import {
   DropdownMenu,
@@ -224,6 +225,10 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
       .from("workspace_members")
       .insert({ workspace_id: data.id, user_id: uid, role: "owner" });
     toast.success(`Created "${data.name}".`);
+    // WM-S1: fire-and-forget seed. No-op unless ONBOARDING_SEED_ENABLED=1.
+    triggerWorkspaceSeed({ data: { workspaceId: data.id, userId: uid } }).catch(() => {
+      // Seed failure is non-fatal.
+    });
     await refreshWorkspaces();
     setActiveWorkspaceId(data.id);
   }
