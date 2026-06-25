@@ -4564,6 +4564,7 @@ export type Database = {
           content: string
           created_at: string
           embedding: string | null
+          external_id: string | null
           id: string
           product_id: string | null
           project_id: string | null
@@ -4580,6 +4581,7 @@ export type Database = {
           content: string
           created_at?: string
           embedding?: string | null
+          external_id?: string | null
           id?: string
           product_id?: string | null
           project_id?: string | null
@@ -4596,6 +4598,7 @@ export type Database = {
           content?: string
           created_at?: string
           embedding?: string | null
+          external_id?: string | null
           id?: string
           product_id?: string | null
           project_id?: string | null
