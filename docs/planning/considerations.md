@@ -67,7 +67,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 
 | Gap                                                     | Why it matters                                     | Priority |
 | ------------------------------------------------------- | -------------------------------------------------- | -------- |
-| App-level monitoring + alerting (not just AI telemetry) | Uptime, errors, latency of the platform itself     | P0       |
+| App-level monitoring + alerting (not just AI telemetry) | Uptime, errors, latency of the platform itself     | P0 — **SPEC'd 2026-06-25:** full doctrine + 14 task IDs in [`./analytics-and-failure-detection-plan.md`](./analytics-and-failure-detection-plan.md) (AFD initiative, group G12, founder-gated). Seed monitor [`../features/app-health.md`](../features/app-health.md) live; rest awaits founder unblock. |
 | SLOs/SLAs + error budgets; status page                  | Enterprise buyers ask; trust signal                | P1 — ◐ RELIABILITY-SLO (lane 1, 2026-06-21): pure SLO/error-budget engine over `ai_events` (availability · p50/p95 latency · budget burn; `blocked` halts excluded) + read-only `getReliabilitySlo`. Remaining: the Engine Room glance (wire-up) + the outward-facing status page/SLA (founder-gated). |
 | Long-running job durability / queue + backpressure      | Parallel missions exceed Workers limits without it | P0       |
 | Graceful degradation when a provider/model is down      | Product must not hard-fail                         | P0 — ◐ PROVIDER-FALLBACK cycle 56 (ordered fallback chain + flag-gated cross-model degrade; on-switch is the founder's) |
@@ -118,7 +118,7 @@ Less central than the PM, but the build/ship stages must respect how an eng lead
 | Gap                                                  | Why it matters                     | Priority |
 | ---------------------------------------------------- | ---------------------------------- | -------- |
 | Onboarding + activation + sample/templates           | Time-to-value; aha moment          | P0       |
-| Product usage analytics (separate from AI telemetry) | Activation/retention/funnels       | P1       |
+| Product usage analytics (separate from AI telemetry) | Activation/retention/funnels       | P1 — **SPEC'd 2026-06-25** as part of AFD (PostHog EU). See [`./analytics-and-failure-detection-plan.md`](./analytics-and-failure-detection-plan.md) §1 + §2.3. |
 | Marketing site, pricing page, waitlist, SEO          | Distribution                       | P1       |
 | In-app support, help center, changelog, docs         | Adoption + retention               | P1       |
 | Mobile/PWA for approvals triage                      | Approvals can't block on a desktop | P2       |
