@@ -47,7 +47,25 @@ CLAIMS="$LEDGER/claims"
 # sessions never re-pick the same done work. `lane.sh done <ID>` records a completion;
 # `reap` prunes old markers (by then the ✅ is in the register, caught by `git pull`).
 DONE="$LEDGER/done"
-_sync_board() { :; }   # retired 2026-06-21: status lives in feature-dashboard.md, not a separate file
+# Flip the status field (column 3) of the matching register row to NEW_STATUS.
+# Called by cmd_claim (→ "🔨 In Dev (laneN, date)") so other sessions instantly see
+# what's in-flight when they read origin/main after the agent commits+pushes.
+# Also called by cmd_done (→ "✅") so the row goes green without a manual edit step.
+# Uses a temp-file swap so the write is atomic from the kernel's perspective.
+_flip_dashboard_row() {
+  local id="$1" new_status="$2"
+  local reg; reg="$(_register_path)"
+  [ -f "$reg" ] || return 0
+  local tmp; tmp="${reg}.lane_tmp.$$"
+  awk -F'|' -v OFS='|' -v want="$id" -v ns=" $new_status " '
+    /^\| [0-9]+ \|/{
+      v=$4; gsub(/^[ \t]+|[ \t]+$/,"",v);
+      if (v==want) { $3=ns }
+    }
+    { print }
+  ' "$reg" > "$tmp" && mv "$tmp" "$reg" || { rm -f "$tmp"; return 1; }
+}
+_sync_board() { :; }   # retired 2026-06-21 as a SEPARATE board file; dashboard writes now go through _flip_dashboard_row above
 
 _now() { date +%s; }
 _die() { echo "lane.sh: $*" >&2; exit 2; }
@@ -234,7 +252,21 @@ cmd_claim() {
     echo "epoch=$ts"
     echo "beat=$ts"
   } > "$dir/meta"
-  [ "${PINNED:-false}" = "true" ] && echo "PINNED $id by lane $lane" || echo "CLAIMED $id by lane $lane"
+  if [ "${PINNED:-false}" = "true" ]; then
+    echo "PINNED $id by lane $lane"
+  else
+    echo "CLAIMED $id by lane $lane"
+    # Immediately flip the dashboard row to 🔨 In Dev so other sessions see it on origin/main
+    # as soon as the agent commits+pushes this file change (which must happen BEFORE any code work).
+    local indev_label; indev_label="🔨 In Dev (lane${lane}, $(date '+%Y-%m-%d'))"
+    if _flip_dashboard_row "$id" "$indev_label"; then
+      echo "DASHBOARD UPDATED: row '$id' → $indev_label"
+      echo ">>> NEXT STEP: commit feature-dashboard.md NOW and push BEFORE writing any code <<<"
+      echo "    git add docs/planning/feature-dashboard.md && git commit -m \"chore(lane${lane}): claim $id [WHY: ...]\" && git push origin HEAD"
+    else
+      echo "WARN: could not auto-flip dashboard row for '$id' — update feature-dashboard.md manually before coding" >&2
+    fi
+  fi
   # Anti-duplication guard: a private sub-id (e.g. claiming "DBR-EDGE-CONF" instead of the
   # register row "DBR (H1)") leaves the whole item still eligible in every other lane's
   # `lane.sh next`, so a second lane re-picks it and wastes effort. Claim the REGISTER id.
@@ -266,6 +298,15 @@ cmd_done() {
   rm -rf "${CLAIMS:?}/$cdir" 2>/dev/null || true
   echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) lane=${2:-?}" > "$DONE/$cdir"
   echo "DONE-RECORDED $id (claim freed; future claims refused)"
+  # Flip the dashboard status row to ✅ so the "At a glance" completion count is live.
+  # The agent must still update the row's detail cell with what was built, re-run
+  # scripts/dashboard-tally.sh to refresh the % numbers, commit all three changes, and push.
+  if _flip_dashboard_row "$id" "✅"; then
+    echo "DASHBOARD UPDATED: row '$id' → ✅"
+    echo ">>> NEXT: update the row detail cell + re-run 'bash scripts/dashboard-tally.sh' + commit + push <<<"
+  else
+    echo "WARN: could not auto-flip dashboard row for '$id' to ✅ — update manually" >&2
+  fi
 }
 
 # `next [count]`: DETERMINISTICALLY print the next eligible item IDs (lowest Rank first) -
