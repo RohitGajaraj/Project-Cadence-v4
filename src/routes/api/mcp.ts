@@ -9,13 +9,16 @@ import {
   getPRD,
   getRoadmap,
   exportSkillpack,
+  ingestSignal,
   logMCPCall,
 } from "@/lib/mcp.functions";
 import {
   buildInitializeResult,
   buildToolCallResult,
   buildToolsListResult,
+  canCallWriteTool,
   classifyMcpRequest,
+  isWriteTool,
   jsonRpcError,
   jsonRpcResult,
   JSONRPC_INVALID_REQUEST,
@@ -58,15 +61,19 @@ interface MCPResponse {
 interface TokenRow {
   id: string;
   workspace_id: string;
+  user_id: string;
   rate_limit_per_min: number;
   revoked_at: string | null;
+  scopes: string[] | null;
 }
 
 interface TokenValidationResult {
   valid: boolean;
   token_id?: string;
   workspace_id?: string;
+  user_id?: string;
   rate_limit_per_min?: number;
+  scopes?: string[];
   error?: string;
 }
 
@@ -82,7 +89,7 @@ async function validateToken(
   try {
     const { data: token, error } = await supabase
       .from("mcp_tokens")
-      .select("id, workspace_id, rate_limit_per_min, revoked_at")
+      .select("id, workspace_id, user_id, rate_limit_per_min, revoked_at, scopes")
       .eq("slug", slug)
       .eq("secret_hash", secretHash)
       .is("revoked_at", null)
@@ -101,7 +108,9 @@ async function validateToken(
       valid: true,
       token_id: tokenRow.id,
       workspace_id: tokenRow.workspace_id,
+      user_id: tokenRow.user_id,
       rate_limit_per_min: tokenRow.rate_limit_per_min,
+      scopes: Array.isArray(tokenRow.scopes) ? tokenRow.scopes : [],
     };
   } catch (err) {
     return {
@@ -239,6 +248,46 @@ async function dispatchTool(
   }
 }
 
+/**
+ * Resolve the global outward-write gate (`interop_write_enabled()`). Fails CLOSED:
+ * any error returns false, so a DB hiccup can never accidentally open writes.
+ */
+async function resolveWriteEnabled(supabase: any): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("interop_write_enabled");
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Dispatch a GOVERNED WRITE tool. The caller MUST have already passed
+ * canCallWriteTool (scope + gate); this only executes. `user_id` is the token's
+ * owner — the signal is stamped with it, never with caller-supplied input.
+ */
+async function dispatchWriteTool(
+  supabase: any,
+  toolName: string,
+  workspace_id: string,
+  user_id: string,
+  params: Record<string, unknown>,
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  try {
+    switch (toolName) {
+      case "ingest_signal": {
+        const data = await ingestSignal(supabase, workspace_id, user_id, params);
+        return { success: true, data };
+      }
+      default:
+        return { success: false, error: `Unknown write tool: ${toolName}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
 export const Route = createFileRoute("/api/mcp")({
   server: {
     handlers: {
@@ -355,6 +404,19 @@ export const Route = createFileRoute("/api/mcp")({
             );
           }
 
+          // INTEROP-V11 Q2: the token's capability scopes + owner, and a LAZY
+          // resolver for the global write gate (one DB call, only when a write
+          // tool or tools/list actually needs it, memoized per request).
+          const scopes = validation.scopes ?? [];
+          const tokenUserId = validation.user_id ?? "";
+          let writeEnabledCache: boolean | undefined;
+          const getWriteEnabled = async (): Promise<boolean> => {
+            if (writeEnabledCache === undefined) {
+              writeEnabledCache = await resolveWriteEnabled(supabase);
+            }
+            return writeEnabledCache;
+          };
+
           // 4. Check rate limit
           const rateLimitResult = await checkRateLimit(
             supabase,
@@ -402,7 +464,7 @@ export const Route = createFileRoute("/api/mcp")({
               dispatch.kind === "initialize"
                 ? buildInitializeResult(dispatch.protocolVersion)
                 : dispatch.kind === "tools/list"
-                  ? buildToolsListResult()
+                  ? buildToolsListResult(scopes, await getWriteEnabled())
                   : dispatch.kind === "resources/list"
                     ? { resources: [] }
                     : dispatch.kind === "prompts/list"
@@ -454,6 +516,60 @@ export const Route = createFileRoute("/api/mcp")({
           //     reported in the result (isError) so a calling model sees them,
           //     not as a JSON-RPC protocol error.
           if (dispatch.kind === "tools/call") {
+            // INTEROP-V11 Q2: a GOVERNED WRITE tool needs BOTH the global gate ON
+            // and the token's required scope. Re-checked here at call time (not
+            // just hidden from tools/list) so a token that guesses the name is
+            // still refused. Every denial is audited as permission_denied.
+            if (isWriteTool(dispatch.toolName)) {
+              const authz = canCallWriteTool(dispatch.toolName, scopes, await getWriteEnabled());
+              if (!authz.allowed) {
+                await logMCPCall(
+                  {
+                    token_id,
+                    workspace_id,
+                    tool_name: dispatch.toolName,
+                    result: "permission_denied",
+                    error_message: authz.reason,
+                    metadata: { elapsed_ms: Date.now() - startTime, write: true },
+                  },
+                  supabase,
+                );
+                const denied = buildToolCallResult(authz.reason ?? "Permission denied", true);
+                return new Response(JSON.stringify(jsonRpcResult(mcpReq.id, denied)), {
+                  status: 200,
+                  headers: JSON_HEADERS,
+                });
+              }
+              const writeResult = await dispatchWriteTool(
+                supabase,
+                dispatch.toolName,
+                workspace_id,
+                tokenUserId,
+                dispatch.args,
+              );
+              await logMCPCall(
+                {
+                  token_id,
+                  workspace_id,
+                  tool_name: dispatch.toolName,
+                  result: writeResult.success ? "success" : "error",
+                  error_message: writeResult.error,
+                  metadata: { elapsed_ms: Date.now() - startTime, write: true },
+                },
+                supabase,
+              );
+              const writeEnvelope = buildToolCallResult(
+                writeResult.success
+                  ? writeResult.data
+                  : (writeResult.error ?? "Tool execution failed"),
+                !writeResult.success,
+              );
+              return new Response(JSON.stringify(jsonRpcResult(mcpReq.id, writeEnvelope)), {
+                status: 200,
+                headers: JSON_HEADERS,
+              });
+            }
+
             const callResult = await dispatchTool(
               supabase,
               dispatch.toolName,

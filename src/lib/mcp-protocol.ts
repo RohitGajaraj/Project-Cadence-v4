@@ -136,7 +136,96 @@ export const MCP_TOOLS: McpTool[] = [
   },
 ];
 
-export const MCP_TOOL_NAMES: readonly string[] = MCP_TOOLS.map((t) => t.name);
+export const MCP_READ_TOOL_NAMES: readonly string[] = MCP_TOOLS.map((t) => t.name);
+
+// ───────────────────────────────────────────────────────────────────────────
+// INTEROP-V11 · Q2 — the GOVERNED WRITE tools.
+//
+// Write tools are NOT in the default catalog. Each declares the capability scope
+// a token must carry (mcp_tokens.scopes), and every write additionally requires
+// the global `interop_write_enabled()` gate (default off). `tools/list` only
+// surfaces a write tool when BOTH locks are open for the calling token, so a
+// read-only token never even discovers it. The route re-checks both locks at
+// `tools/call` time (defence in depth) and audits every attempt. The one write
+// tool reuses the live `signals` insert path + the ingest injection screen, so
+// it cannot repeat the append_decision schema-drift bug.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** The capability scope each write tool requires. The single source of truth. */
+export const WRITE_SCOPE_BY_TOOL: Readonly<Record<string, string>> = {
+  ingest_signal: "write:signal",
+};
+
+export const MCP_WRITE_TOOLS: McpTool[] = [
+  {
+    name: "ingest_signal",
+    description:
+      "Contribute a discovery signal into this workspace (governed write). Requires the write:signal scope and the workspace's outward-write gate. The text is injection-screened before storage; a structural prompt-injection is rejected, a borderline one is stored flagged for review.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        content: { type: "string" },
+        source: { type: "string" },
+      },
+      required: ["title"],
+    },
+  },
+];
+
+export const MCP_WRITE_TOOL_NAMES: readonly string[] = MCP_WRITE_TOOLS.map((t) => t.name);
+
+// Classification recognizes BOTH read and write tool names as known tools (so a
+// write tool is never a spurious "method not found"); the route enforces the
+// scope + gate authorization at dispatch time.
+export const MCP_TOOL_NAMES: readonly string[] = [...MCP_READ_TOOL_NAMES, ...MCP_WRITE_TOOL_NAMES];
+
+/** Is `name` one of the governed write tools? Pure. */
+export function isWriteTool(name: string): boolean {
+  return MCP_WRITE_TOOL_NAMES.includes(name);
+}
+
+/**
+ * PURE. The tool catalog a token may SEE, given its scopes and the global write
+ * gate. Read tools are always included; a write tool appears only when the gate
+ * is on AND the token holds the tool's required scope. Defaults (no scopes, gate
+ * off) yield the read-only catalog, so every existing caller is unchanged.
+ */
+export function toolsForScopes(
+  scopes: readonly string[] = [],
+  writeEnabled = false,
+): McpTool[] {
+  if (!writeEnabled) return [...MCP_TOOLS];
+  const writable = MCP_WRITE_TOOLS.filter((t) =>
+    scopes.includes(WRITE_SCOPE_BY_TOOL[t.name]),
+  );
+  return [...MCP_TOOLS, ...writable];
+}
+
+export type WriteAuthz = { allowed: boolean; reason?: string };
+
+/**
+ * PURE. May this token call `toolName`? Non-write tools are always allowed here
+ * (read authorization is the workspace scope on the token itself). A write tool
+ * needs BOTH the global gate ON and the token's required scope present; the
+ * order (gate first) means a probe without the scope still learns only that
+ * writes are disabled, not which scope it lacks, until the gate is opened.
+ */
+export function canCallWriteTool(
+  toolName: string,
+  scopes: readonly string[] = [],
+  writeEnabled = false,
+): WriteAuthz {
+  if (!isWriteTool(toolName)) return { allowed: true };
+  if (!writeEnabled) {
+    return { allowed: false, reason: "Outward write is disabled for this Cadence server" };
+  }
+  const required = WRITE_SCOPE_BY_TOOL[toolName];
+  if (!scopes.includes(required)) {
+    return { allowed: false, reason: `Token is missing the required scope: ${required}` };
+  }
+  return { allowed: true };
+}
 
 // The legacy discovery aliases that pre-date the standard methods.
 const LEGACY_DISCOVERY_METHODS = new Set(["tools", "resources"]);
@@ -281,9 +370,17 @@ export function buildInitializeResult(protocolVersion: string) {
   };
 }
 
-/** The `tools/list` result. */
-export function buildToolsListResult(): { tools: McpTool[] } {
-  return { tools: MCP_TOOLS };
+/**
+ * The `tools/list` result. Scope-aware: pass the calling token's scopes + the
+ * global write-gate state to additionally surface any write tool the token is
+ * authorized for. With no arguments it returns the read-only catalog, so the
+ * legacy discovery aliases and any existing caller are byte-identical.
+ */
+export function buildToolsListResult(
+  scopes: readonly string[] = [],
+  writeEnabled = false,
+): { tools: McpTool[] } {
+  return { tools: toolsForScopes(scopes, writeEnabled) };
 }
 
 /**
