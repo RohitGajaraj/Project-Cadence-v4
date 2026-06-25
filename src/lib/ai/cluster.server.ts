@@ -47,7 +47,8 @@ export async function clusterSignalsCore(
       // Surface the deterministic tagger's facets (AMBIENT-SENSE) alongside the raw text so the
       // model groups related pain by tag and weighs severity by sentiment. Unsensed signals just
       // omit the facet, so this is byte-identical for untagged input.
-      const tags = Array.isArray(s.tags) && s.tags.length ? ` tags:${(s.tags as string[]).join(",")}` : "";
+      const tags =
+        Array.isArray(s.tags) && s.tags.length ? ` tags:${(s.tags as string[]).join(",")}` : "";
       const sentiment = s.sentiment ? ` sentiment:${s.sentiment}` : "";
       return `[${i}] (${s.source}${tags}${sentiment}) ${s.content.slice(0, 400)}`;
     })
