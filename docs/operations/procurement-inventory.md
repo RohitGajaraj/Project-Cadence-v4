@@ -93,6 +93,27 @@ Cadence is **model-agnostic with BYO-key**, hosted on **Lovable-managed Cloudfla
 - **Cost:** `.com` **~$10.46/yr**; `.ai` **~$80/yr but a registry-mandated 2-year minimum** → **~$160 upfront**. Namecheap runs ~$15/yr more long-term (esp. `.ai`). _Confidence: high._
 - _Source: cloudflare.com/products/registrar, cfdomainpricing.com._
 
+### 10. Product analytics + session replay + feature flags — PostHog EU · INTEGRATE (AFD initiative, founder-gated)
+- **What & why:** the commodity product-usage layer (page views, funnels, retention, replay, A/B, flags). One SDK covers four capabilities. Spec'd by the **AFD initiative** ([`../planning/analytics-and-failure-detection-plan.md`](../planning/analytics-and-failure-detection-plan.md), task **AFD-01..04**). Vendor ADR: [`../decisions/analytics-vendor-selection.md`](../decisions/analytics-vendor-selection.md). EU-resident.
+- **Recommendation: PostHog EU Cloud (free tier)** — 1M events/mo + 5k recordings + unlimited team members. MIT core (self-host escape if pricing turns); Cloudflare Worker SDK; reverse-proxy to survive ad-blockers.
+- **Cost:** **$0** at our scale (demo + early users). First paid trigger ~$0.00031/event past free. _Confidence: high · re-verify before paying._
+- **When to buy:** when the founder unblocks AFD §10 (inbox + on-call + status-page domain confirmation).
+- _Source: posthog.com/pricing (2026-06-25)._
+
+### 11. Error capture + Worker performance — Sentry EU · INTEGRATE (AFD initiative, founder-gated)
+- **What & why:** the commodity error-capture + performance layer (server / route / Worker errors, source-maps, release tracking, transaction tracing). Best Cloudflare Worker SDK. Spec'd by **AFD-05..06**. EU-resident.
+- **Recommendation: Sentry EU Cloud (Developer free)** — 5k errors/mo + 10k performance units + 50 replays + 1 user. Team plan $26/mo when we cross.
+- **Cost:** **$0** at our scale. _Confidence: high._
+- **When to buy:** at AFD activation.
+- _Source: sentry.io/pricing (2026-06-25)._
+
+### 12. Uptime + on-call + status page — Better Stack · INTEGRATE (AFD initiative, founder-gated)
+- **What & why:** one vendor that covers uptime probes (HTTP / heartbeat), on-call rotation (phone / SMS / Slack), and a public status page. Replaces the PagerDuty + Statuspage + UptimeRobot tri-vendor stack. Spec'd by **AFD-08 + AFD-13**. EU-resident. Status-page domain `status.cadence.app` for now, renameable later via DNS.
+- **Recommendation: Better Stack Free** — 10 monitors + 3-min checks + 1 status page + unlimited team. Team plan $25/mo for upgrades.
+- **Cost:** **$0** at our scale. _Confidence: high._
+- **When to buy:** at AFD activation. Sev-1 phone-call escalation is included on free.
+- _Source: betterstack.com/pricing (2026-06-25)._
+
 ---
 
 ## Total cost picture
