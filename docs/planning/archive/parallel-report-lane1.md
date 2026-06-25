@@ -2,6 +2,20 @@
 
 > Lane 1 (`parallel/lane-1`, worktree `cadence-lane-1`). Preferred: Cockpit, then Governance; roams the whole board. Driver: continuous `/loop` in this terminal. Full rules: `docs/operations/autonomous-build-loop.md` §15-16.
 
+## 2026-06-25 (22:00) — M1/LRN-01 increment 2: Support signals UI shipped
+
+**181/213 done (85.0% strict / 86.6% weighted).**
+
+Built the Engine Room > Quality & insight > "Support signals" panel — closes the support→Discover feedback loop. Outcome-named per Engine-Room doctrine ("Support signals", "Recurring themes", not "triage"/"clusters").
+
+**What shipped:** `src/components/governance/SupportSignalsPanel.tsx` (~325 lines) — paste area for support tickets, import + triage buttons, `ClusterCard` sub-component with theme/ticket-count/subjects preview and per-cluster "Reply template" toggle. Wired to existing `src/lib/support-triage.functions.ts` (list, bulkImport, runTriage, draftReply). Added "support" tab to `src/lib/engine-room-bands.ts` (quality-insight band, 13→14 tabs); updated tab test in lockstep (14 tabs, `bandForTab("support")`). Registered in `src/routes/_authenticated.govern.tsx` (TABS array + GOVERN_DESC + render switch — validateSearch auto-handles via `TABS.some()`).
+
+**Code-review findings fixed:** (1) `r.body` → `r.reply` (DraftVerdict uses `.reply`, not `.body`); (2) dead `fmt` function removed; (3) no `dangerouslySetInnerHTML` — XSS-safe by design (all text via JSX).
+
+**Gates:** tsc 0 · 9/9 band tests pass · code-review clean. **Commit:** `e4108cf698`. Code on origin/main.
+
+---
+
 ## 2026-06-25 (21:00) — LANDING-PAGE-V11: public landing page shipped
 
 **178/213 done (83.6% strict / 85.7% weighted). v11 Tier-1 front all 21 items ✅.**
