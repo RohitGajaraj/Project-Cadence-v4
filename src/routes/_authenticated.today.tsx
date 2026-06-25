@@ -39,6 +39,7 @@ import { recordRitualSession, getAcceptanceRate, getAutonomyRatio } from "@/lib/
 import { DecisionCard } from "@/components/today/DecisionCard";
 import { PendingApprovalsBar } from "@/components/today/PendingApprovalsBar";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
+import { GettingStartedChecklist } from "@/components/onboarding/GettingStartedChecklist";
 import { MemoryExpiryBanner } from "@/components/plg/MemoryExpiryBanner";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
 import { CostPerOutcomeChip } from "@/components/today/CostPerOutcomeChip";
@@ -319,6 +320,11 @@ function Dashboard() {
       />
 
       <div style={{ padding: "30px 44px 56px", maxWidth: 1120, margin: "0 auto" }}>
+        {/* WM-S2: Guided tour checklist — ambient, non-blocking. Only shown
+            for workspaces that have ONBOARDING_SEED_ENABLED seeded data.
+            Stored in localStorage; dismisses when all 5 steps done or closed. */}
+        <GettingStartedChecklist workspaceId={activeWorkspaceId ?? null} />
+
         {/* HERO — plum-umber band, ghost butterfly, calls-cleared ring.
             Taller than the reference's 26px band per founder input (2026-06-12):
             more vertical prominence, plus a small calm kaleidoscope of
