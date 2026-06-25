@@ -22,8 +22,8 @@ The answer is not "build everything" or "buy everything." It is a **split**: bui
 
 | Layer | Verdict | Why | What we do |
 | --- | --- | --- | --- |
-| **Embeddings** | **BUY** | Commodity racing to zero (~$0.02/M, fungible OpenAI-format calls). Sits under the moat, never in it. | Route through `runtime.server.ts` via a new `embedding` CallSurface (never call the provider directly). Default OpenAI `text-embedding-3-small`; swap Voyage `voyage-3.5`; OSS fallback BGE-M3 / Qwen3-Embedding for the autonomy floor. Stamp model-id + dimension on every vector so re-embed is a background migration, not a rewrite. |
-| **Rerank** | **INTEGRATE** | A cheap precision booster on the semantic-match step, stateless (zero switching cost). | A `rerank` CallSurface, ZeroEntropy `zerank-2` via API by default; self-host the **Apache-2.0** `zerank-1-small` for the floor (NOT the CC-BY-NC `zerank-2` weights). Gated to multi-hop / precedent retrieval only. |
+| **Embeddings** | **BUY** | Commodity racing to zero (~$0.02/M, fungible OpenAI-format calls). Sits under the moat, never in it. | Route through `runtime.server.ts` via a new `embedding` CallSurface (never call the provider directly). Default **Cohere `embed-v4`** (1536 dims native, 128K token limit, OpenAI-compatible API); OSS fallback BGE-M3 / Qwen3-Embedding for the autonomy floor. Stamp model-id + dimension on every vector so re-embed is a background migration, not a rewrite. |
+| **Rerank** | **INTEGRATE** | A cheap precision booster on the semantic-match step, stateless (zero switching cost). | A `rerank` CallSurface, **Cohere Rerank 4** via API by default (best on business/finance docs; pairs with embed-v4, same billing). Self-host **Apache-2.0 `zerank-1-small`** for the autonomy floor. **CRITICAL: `zerank-2` is non-commercial licensed — do NOT use in production without commercial license from ZeroEntropy.** Gated to multi-hop / precedent retrieval only. |
 | **Vector store** | **BUILD / in-house** | pgvector is free on every Supabase tier, RLS-native, provider-neutral, one tenancy + residency + backup boundary. | Stay on pgvector (+ pgvectorscale/DiskANN for headroom). Do NOT adopt Pinecone/Weaviate for v1-v4; a PM-decision corpus is thousands of rows per tenant, not billions. |
 | **Graph storage** | **BUILD-in-Postgres** | "Storage is not the moat" but it is residency-critical and autonomy-critical; an external graph DB fractures RLS, account-pooling, residency, export-anytime, and one backup boundary. | Typed bi-temporal node/edge tables + `valid_at`/`invalid_at` + recursive CTEs in Postgres. DBR-1 v1 read-surface already ships at `/knowledge?tab=graph`. Crossover (only if forced): Apache AGE / SQL-PGQ (graph IN Postgres) BEFORE any external Neo4j. |
 | **Memory-extraction / orchestration pipeline** | **INTEGRATE** (native default) | The generic substrate is borrowable, not buyable as the moat; every credible engine is OSS + BYOK + high-switching-cost, so it belongs behind a swappable seam with a native default, never a hard BUY. | BUILD the native extract -> embed -> reconcile in Postgres, borrowing the patterns the canon already names (Graphiti's per-edge invalidation prompt; Cognee's ontology-resolver + Temporal-Cognify; Mem0's auto-extraction). Mem0/Zep/Cognee = opt-in BYOK adapters, **deferred** until a workspace actually wants one. |
@@ -147,8 +147,8 @@ The ENTIRE external surface, with my recommended player + cost. **Total recurrin
 
 | Capability | Verdict | Recommended player | Cost | Self-host floor |
 | --- | --- | --- | --- | --- |
-| Embeddings | BUY (via `embedding` CallSurface) | OpenAI text-embedding-3-small (swap Voyage voyage-3.5-lite) | ~$0.02/1M tok, metered | BGE-M3 (MIT) |
-| Rerank (deferred) | INTEGRATE (via `rerank` CallSurface, multi-hop only) | ZeroEntropy zerank-2 | ~$0.025/1M tok, cents/mo | zerank-1-small (Apache-2.0); native = skip rerank |
+| Embeddings | BUY (via `embedding` CallSurface) | **Cohere embed-v4** (1536 dims native, 128K token limit, OpenAI-compatible) | **$0.12/1M tok**, metered | BGE-M3 (MIT) |
+| Rerank (deferred) | INTEGRATE (via `rerank` CallSurface, multi-hop only) | **Cohere Rerank 4** (best on business/finance; ~$0.001-0.002/search) | cents/mo at demo scale | zerank-1-small (**Apache-2.0** floor only; zerank-2 is **non-commercial** — not for production) |
 | Web research (wired) | INTEGRATE (KEEP) | Firecrawl (search+scrape+crawl in one) | $16-83/mo | SearXNG (BUILD now - see audit) |
 | Transcription (F-AUDIO, greenfield) | INTEGRATE (via `transcription` CallSurface) | Groq Whisper-Turbo (same model as floor) | ~$0.04/hr audio | whisper.cpp (same model, zero drift) |
 | Sandbox / preview | INTEGRATE (own seam) | Cloudflare Sandbox SDK (no new vendor) | $0.00002/vCPU-s | edge-native |
@@ -263,23 +263,26 @@ This makes provider switching for embeddings a non-trivial migration, not a conf
 
 | Provider | Model | Cost/1M | MTEB retrieval | Input token limit | Dims | Fit for Cadence |
 |---|---|---|---|---|---|---|
-| **Voyage AI** | voyage-3 | $0.06 (200M free) | Strong (~65+) | **32,000** | 1,024 | **Best fit** — purpose-built for RAG, long docs, free for demo |
-| **Cohere** | embed-v4 | $0.12 | ~65–66 | **128,000** | 1,536 | Strong — handles the longest docs; higher cost; no completion deal |
+| ~~**Voyage AI**~~ | ~~voyage-3~~ | ~~$0.06 (200M free)~~ | ~~Strong (~65+)~~ | ~~32,000~~ | ~~1,024~~ | **DISQUALIFIED** — no 1536 dims support (fixed 1024 only); MongoDB acquisition = roadmap risk; US-only servers = GDPR risk; non-OpenAI-compatible SDK. See research trail section. |
+| **Cohere** | embed-v4 | $0.12 | 65.2 (MTEB) | **128,000** | **1,536** | **RECOMMENDED** — 1536 dims native (zero migration!), 128K token limit, OpenAI-compatible API, EU servers, independent company |
 | **OpenAI** (current) | text-emb-3-small | $0.02 | 62.26 | 8,191 | 1,536 | Acceptable; current default; hits ceiling on long PRDs |
 | **Nomic / Fireworks** | nomic-embed-v1.5 | **$0.008** | ~62.28 | 8,192 | 768 | Cheapest, same quality as current, good for cost-priority deployments |
 | **OpenAI** | text-emb-3-large | $0.13 | Better than small | 8,191 | 3,072 | Same token limit as small; costs 6.5x more; no context advantage |
 | ~~**Google**~~ | ~~gemini-emb-001~~ | ~~$0.15~~ | ~~67.71~~ | ~~**2,048 (silently truncates)**~~ | ~~3,072~~ | **Disqualified** — truncates all long PRDs without warning |
 
-**Verdict on embeddings (corrected):** Migrate to **Voyage AI voyage-3** at 1,024 dims. Rationale:
-1. 32,000 token limit handles complete PRDs and decision narratives without chunking
-2. Better MTEB retrieval than current OpenAI-small (stronger Critic recall)
-3. 200M free tokens per account — entire demo and early users cost $0
-4. 1,024 dims is smaller than current 1,536 (faster pgvector ANN queries, less storage)
-5. Migration: ~2.5 hours at demo scale, zero production data at risk now — cheapest moment to do it
+**Verdict on embeddings (FINAL — corrected twice, 2026-06-26):** Switch to **Cohere embed-v4** at 1,536 dims. Rationale:
+1. **ZERO schema migration** — 1536 is its native output; the `vector(1536)` pgvector columns stay unchanged
+2. **128,000 token limit** — handles the longest PRDs, full decision histories, entire knowledge bases in one embedding call; 15x more context than current OpenAI-small
+3. **Better MTEB quality** — 65.2 vs 62.26 for OpenAI-small (3-point gain, translates to stronger Critic recall)
+4. **OpenAI-compatible API** — drop-in change in `embed.server.ts`: swap `base_url` to Cohere's compatibility endpoint, update model string to `embed-v4`, update API key. 30 minutes of code change.
+5. **EU data residency** available (eu-west-1) — no GDPR risk for European customers
+6. **Independent company** (not acquired as of research date) — not at MongoDB's roadmap mercy
+7. **Cohere Rerank 4** pairs naturally — same billing account, best-in-class for business/finance documents specifically (+400 ELO on that category vs Rerank v3.5)
+8. **Re-embed cost**: at demo scale with essentially zero rows, re-embedding existing data is near-instant. Cost at $0.12/1M: the first 10M tokens (enough for thousands of PRDs) = $1.20.
 
-**If Voyage is not available / fallback:** Nomic embed-text-v1.5 via Fireworks ($0.008/1M, 768 dims, 8K limit) is the cost-optimized fallback. Same MTEB quality as current. Requires migration to `vector(768)`.
+**Why Voyage AI is no longer recommended (research round 3, 2026-06-26):** voyage-3 has FIXED 1024 dims — there is no Voyage model that outputs 1536 dims. Switching to Voyage would require migrating `vector(1536)` → `vector(1024)`. Additionally: acquired by MongoDB in Feb 2025 ($220M) — roadmap is now MongoDB's; US-only API servers with no native EU endpoint (GDPR risk); Voyage's own SDK is not OpenAI-compatible (the Batch API is, but not the standard embedding API). The 200M free tokens are attractive but do not outweigh these constraints.
 
-**For future scale when long-context becomes critical:** Cohere embed-v4 at 128,000 tokens handles entire product documentation corpora in a single embedding call. No chunking, no averaging. Worth reassessing when workspace knowledge bases grow large.
+**If Cohere is unavailable / fallback:** Nomic embed-text-v1.5 via Fireworks ($0.008/1M, 768 dims, 8K limit) is the cost-optimized fallback. Requires migration to `vector(768)`.
 
 ---
 
@@ -403,19 +406,20 @@ src/lib/rag/embed.server.ts     src/lib/ai/runtime.server.ts
 ### The phased provider recommendation (corrected 2026-06-25)
 
 **Phase 1: Demo → first users (NOW)**
-→ **Embeddings: migrate to Voyage AI voyage-3** (1,024 dims, 32K token limit). 200M free tokens. ~2.5 hours migration work. Zero production data at risk today — the cheapest this migration will ever be. Better long-document retrieval for the Critic immediately.
+→ **Embeddings: switch to Cohere embed-v4** (1536 dims native — zero schema migration). Update `embed.server.ts`: swap base_url to Cohere compatibility endpoint, update model string, add Cohere API key. ~30 minutes. Immediate quality improvement (65.2 MTEB vs 62.26) and 128K token limit for full PRDs.
 → **Completions: add Fireworks AI** (`Llama 4 Maverick`, $0.15/$0.60) as the default no-key completion provider in `runtime.server.ts`. 94% cheaper than GPT-4o. Lovable gateway stays as fallback.
-→ Provider chain for embeddings: BYO OpenAI key → Voyage (new default) → Lovable gateway fallback.
+→ Provider chain for embeddings: BYO OpenAI key → Cohere embed-v4 (new default) → Lovable gateway fallback.
 → Provider chain for completions: BYO key → Fireworks default → Lovable gateway fallback.
 
 **Phase 2: Growing user base**
-→ Embeddings stay on Voyage voyage-3 (still within free tier or minimal cost at $0.06/1M past 200M).
-→ Completions: evaluate routing high-stakes Critic steps selectively to Claude Sonnet (better reasoning for the decision-challenge logic) while keeping Fireworks for the faster planning loop steps.
-→ Add Voyage BYO key to the BYOK vault so enterprise users can bring their own Voyage key.
+→ Embeddings stay on Cohere embed-v4.
+→ Add Cohere Rerank 4 (same billing account) for the Critic's retrieval step — highest impact quality improvement for business/finance documents.
+→ Completions: route high-stakes Critic steps selectively to Claude Sonnet 4 (better reasoning for decision-challenge logic) while keeping Fireworks for the faster planning loop steps.
+→ Add Cohere BYO key to the BYOK vault so enterprise users can bring their own Cohere key.
 
 **Phase 3: Scale (100K+ users, large knowledge bases)**
-→ Evaluate Cohere embed-v4 for workspaces with very large knowledge bases (128K token limit embeds entire product documentation in one call; no chunking artifacts in the recall layer).
-→ If Google raises the Gemini embedding token limit above 8K, reassess — the MTEB quality (67.71) is genuinely the best available and worth the switch if the truncation problem is resolved.
+→ Cohere embed-v4 already handles entire product corpora at 128K tokens — no provider switch needed.
+→ Add `Qwen3-Embedding-8B` (Apache 2.0, MTEB 70.6, beats ALL API models) as self-host option for enterprise-tier workspaces.
 
 **Phase 4: Self-host (>100M tokens/month, dedicated ML engineer)**
 → `Qwen3-Embedding-8B` for embeddings (MTEB 70.6, Apache 2.0, beats ALL API models including Google, requires 16GB VRAM).
@@ -433,7 +437,7 @@ No provider is cleanly all-in-one for Cadence's constraints:
 - **Cohere** (embed + completions): embed is best for long docs (128K limit), completions (Command R+) are expensive ($2.50/$10); not cost-effective for the planning loop.
 - **Voyage** (embed only): no completions. Best embedding fit, paired with Fireworks for completions.
 
-**The practical two-provider setup:** Voyage AI (embeddings) + Fireworks AI (completions). Two API keys, two billing lines, but the best fit for both tasks at the lowest combined cost. The chokepoint architecture already supports multiple providers; adding a second is a config change.
+**The practical two-provider setup (REVISED 2026-06-26):** Cohere (embeddings + reranking) + Fireworks AI (completions). Two vendors, one Cohere billing account covering both embed and rerank, one Fireworks account for completions. Best fit for all three tasks at the lowest combined cost with zero dimension migration. The chokepoint architecture already supports multiple providers; adding a second is a config change.
 
 ---
 
@@ -447,3 +451,192 @@ No provider is cleanly all-in-one for Cadence's constraints:
 - **Stripe vs Paddle:** Stripe is a payment *processor* - you own the merchant relationship and remit your own tax; cheapest (2.9% + $0.30), most control, no lock-in. Paddle is a *Merchant of Record* (MoR) - the legal seller that handles global VAT/sales-tax remittance for you; simpler for worldwide SaaS but higher effective fees (~5%+) and it holds more of the customer/billing relationship. **Recommendation: Stripe now** (control + cheapest + the dormant seam already exists in the repo). Paddle/LemonSqueezy is the **escape hatch** only if global tax compliance becomes a real operational burden - and because it sits behind our own billing seam, switching later is a seam swap, not a rebuild.
 - **Cloud Code vs Lovable = ONE repo, it reflects in both.** Cloud Code and Lovable edit the SAME codebase (the git repo is the source of truth; pushes to `main` propagate to Lovable's hosted build). Integrating here and pushing **reflects at Lovable** after sync, and vice versa. Do the integration at the **code level in the repo** (the `WM-M3` dormant `billing.functions.ts` + webhook seam already exists), not by clicking Lovable's "add payment" connector.
 - **Keys + the lock-in concern (the important part).** Per the env-var split, payment secrets are **LOCAL-FIRST**: the Stripe secret key + webhook signing secret are **wrangler secrets / env vars YOU control**, NOT pasted into a Lovable-held connector vault. That way Lovable hosts the *runtime* but never *holds your payment keys* - migrating off Lovable later is just re-hosting the repo + re-pointing the same keys, never a hostage situation. (If Lovable's "integrate Stripe" flow would store the key in its vault, prefer the secrets path; confirm via the Lovable MCP if unsure.)
+
+---
+
+## Research trail: how the embedding recommendation evolved (2026-06-25 → 2026-06-26)
+
+> This section documents the full research process so the decision trail is transparent and future pivots are informed, not re-derived.
+
+### Round 1 — initial analysis (WRONG)
+
+First pass recommended **Google gemini-embedding-001** based on its MTEB score (67.71, highest of any API model). This was incorrect. The MTEB benchmark is measured on short passages. The 2,048-token input limit was not checked, and it was not disclosed in marketing materials.
+
+**What was missed:** For Cadence's workload (full PRDs at 4,000–15,000 words, decision narratives, large context windows), Google Gemini truncates silently at ~1,500 words of input. The embedding vector represents only the first third of the document. The Critic then retrieves "relevant" precedents based on a fragment. The MTEB score is meaningless in this context.
+
+### Round 2 — correction (PARTIAL)
+
+Google Gemini disqualified. New recommendation: **Voyage AI voyage-3** at 1,024 dims (32K token limit, 200M free tokens). Rationale: better long-document fit, free for demo phase.
+
+**What was missed:** voyage-3 outputs 1,024 dims ONLY. Switching from the current `vector(1536)` columns requires a full dimension migration (ALTER TABLE, re-embed all rows). Additionally, the Voyage AI company stability question was not researched: they were acquired by MongoDB for $220M in February 2025.
+
+### Round 3 — deep research (FINAL, 2026-06-26)
+
+Background research agent verified all providers. Key findings:
+
+**Voyage AI restrictions — full picture (disqualifying):**
+- **No 1536 dims support**: voyage-3 = fixed 1024 dims. voyage-3-large, voyage-3.5, voyage-4 series = Matryoshka at 256/512/1024/2048 dims. NO Voyage model supports 1536 dims. The only legacy model with 1536 is `voyage-code-2` (code-specific, fixed, no Matryoshka). This means switching to ANY Voyage model requires a dimension migration.
+- **MongoDB acquisition (Feb 2025, $220M)**: Voyage AI is now a MongoDB business unit. Roadmap is controlled by MongoDB. Models are being served from `ai.mongodb.com/v1/` alongside the legacy `api.voyageai.com` domain. Risk: MongoDB could deprioritize embedding APIs that don't serve Atlas customers.
+- **US-only API servers**: No native EU API endpoint. European users asked about EU deployment in the community forum; Voyage did not announce EU infrastructure. For GDPR compliance, the only option is VPC deployment via AWS/Azure Marketplace (runs inside your cloud account in the region you choose) — which works but adds infrastructure complexity.
+- **Non-OpenAI-compatible SDK**: The standard Voyage API uses the `voyageai.Client` Python SDK, not the OpenAI format. Only the Batch API is explicitly OpenAI-compatible. This means switching to Voyage is not a drop-in change.
+
+**ZeroEntropy zerank-2 — non-commercial license (CRITICAL FIX):**
+The existing BBI doc listed zerank-2 as a `$0.025/1M` commercial API. This is wrong. zerank-2 is released under a **non-commercial license** on HuggingFace. Using it in a commercial product (Cadence is commercial) requires a separate license agreement with ZeroEntropy. Contact ZeroEntropy before any production use. The **safe floor** is `zerank-1-small` which is Apache-2.0. The **correct commercial pick** for the managed API is **Cohere Rerank 4** (same vendor as embeddings, best on business/finance documents at +400 ELO over Rerank v3.5 on that category, ~$0.001-0.002/search).
+
+**Cohere embed-v4 — confirmed:**
+- 128,000 token limit: confirmed from official changelog.
+- 1536 dims: confirmed as the maximum and native output (not a truncation from a larger dim). `output_dimension=1536` returns full-resolution embeddings.
+- MTEB: 65.2 overall (vs OpenAI-small 62.26). Retrieval subtask: ~56.10 nDCG@10 (single source; verify against live MTEB leaderboard before finalizing).
+- OpenAI-compatible API: YES. Cohere maintains `https://api.cohere.ai/compatibility/v1`. Set `base_url` to this URL, use OpenAI SDK, swap API key. embed-v4.0 is explicitly available through this endpoint.
+- EU data residency: confirmed. Inference regions include `eu-west-1`. "Cohere North" on-premises enterprise option also available.
+- Company: independent, enterprise-partnered (SAP, AWS, Azure), not acquired. Stable profile.
+
+**Final verdict: Cohere embed-v4 + Fireworks Llama 4 Maverick + Cohere Rerank 4.**
+
+---
+
+## Founder Q&A answered (2026-06-26)
+
+### Q: Are there other Voyage AI restrictions we have not considered?
+
+Yes — four serious ones beyond the token limit:
+1. **Dimension lock-in**: No Voyage model supports 1536 dims. Every Voyage model requires a schema migration from current `vector(1536)`.
+2. **MongoDB acquisition**: Voyage roadmap is now MongoDB's. Risk of deprioritization if it doesn't serve Atlas Search customers.
+3. **US-only servers**: No native EU endpoint. GDPR compliance requires VPC deployment workaround.
+4. **Non-OpenAI-compatible SDK**: Standard embedding API requires Voyage's own client. Switching cost is higher than for OpenAI-drop-in providers.
+
+Combined verdict: Voyage is disqualified for Cadence's use case. The 200M free tokens are attractive but do not outweigh these four constraints.
+
+### Q: What are alternative embedding providers?
+
+Ranked for Cadence's specific constraints (long-document RAG, 1536 dims preferred, managed API):
+
+| Rank | Provider | Model | Dims | Token limit | Why |
+|---|---|---|---|---|---|
+| 1 (pick this) | **Cohere** | embed-v4 | 1536 | 128K | Zero migration, best long-doc fit, OpenAI-compatible, EU servers |
+| 2 (fallback) | **OpenAI** | text-emb-3-small | 1536 | 8,191 | Current provider; acceptable; hits ceiling on large PRDs |
+| 3 (cost tier) | **Fireworks** | nomic-embed-v1.5 | 768 | 8,192 | Cheapest ($0.008/1M), same quality as current, but requires migration to vector(768) |
+| Disqualified | **Voyage AI** | voyage-3 | 1024 | 32K | MongoDB-owned, US-only, no 1536 dims, non-OAI SDK |
+| Disqualified | **Google Gemini** | gemini-emb-001 | 3072 | **2,048** | Silently truncates all full PRDs |
+
+### Q: Is the embedding migration one-time or recurring?
+
+**With Cohere embed-v4: this is a one-time change, and it may be the last.** There are two operations when switching embedding providers:
+1. **Schema migration** (ALTER vector column dims): only needed if the new model outputs different dims than current. Cohere embed-v4 outputs 1536 natively — same as current. **Zero schema migration.**
+2. **Data re-embed** (re-run all existing rows through the new model): always required when changing models (the vectors from model A are not comparable to vectors from model B). This is a background job, non-destructive, runs in parallel with live traffic. At demo scale with near-zero rows: near-instant.
+
+Future migrations: only if you switch providers again. With Cohere as a stable, well-funded, independent company with a 128K token limit (there's nowhere to upgrade to), the probability of needing to switch again is low. This is the last migration for the foreseeable future.
+
+### Q: Should we do the migration now or later?
+
+**Now, with Cohere.** The reasons:
+
+- **Zero schema migration risk**: Cohere embed-v4 stays at 1536 dims. The "migration" is a 30-minute code change in `embed.server.ts` (swap base_url, model string, API key). No SQL ALTER TABLE.
+- **Data re-embed cost at demo scale**: near-instant. The cost at $0.12/1M is approximately $1.20 for the first 10M tokens — enough for thousands of PRDs.
+- **Quality improvement is immediate**: the Critic gets better recall from the first query after the switch. The 3-point MTEB improvement and the 128K token limit both show up immediately in retrieval quality.
+- **Never gets easier**: as users add data, a re-embed job takes longer. Do it at zero rows.
+
+### Q: Should we exit Lovable at the same time?
+
+**No. Keep these two decisions separate.** The Lovable exit is a 1.5–2.5 week engineering project (detailed below). The Cohere provider switch is a 30-minute code change. Bundling them creates unnecessary risk — if either goes wrong, it's unclear which caused the problem. Do the Cohere switch now; plan the Lovable exit for after first revenue.
+
+---
+
+## Lovable exit: full analysis (2026-06-26)
+
+> This section covers what Lovable actually manages for Cadence, what exiting involves, the realistic effort, and the right timing.
+
+### What Lovable manages right now
+
+Lovable is not just a code editor. For Cadence, it currently manages:
+
+| What | What Lovable does | Self-manage equivalent |
+|---|---|---|
+| **Application hosting** | Deploys to Cloudflare Workers on every push to the connected branch | GitHub Actions + `wrangler deploy` (manual CI/CD) |
+| **SSL/TLS + CDN** | Provided automatically through Cloudflare global network | Cloudflare remains (Lovable uses Cloudflare Workers; moving off Lovable keeps Cloudflare Workers) |
+| **Custom domain** | DNS routing through Lovable's subdomain or your own domain | Point domain's DNS A/CNAME records to Cloudflare directly |
+| **Supabase database** | Lovable Cloud Supabase instance — **owned and managed by Lovable, not by you** | Export schema + data → create new Supabase project under your own account |
+| **Authentication** | Auth flows via `@lovable.dev/cloud-auth-js` bound to the Lovable Supabase instance | Swap to native `@supabase/supabase-js` auth against your own Supabase project |
+| **OAuth provider registration** | OAuth clients (GitHub, Google, etc.) are registered against Lovable Supabase's redirect URIs | Re-register OAuth apps with new redirect URIs pointing at your Supabase |
+| **CI/CD pipeline** | Auto-builds on GitHub push, runs checks, deploys | GitHub Actions with Wrangler action (write once, maintain yourself) |
+| **Secrets management** | Stores env vars / secrets in Lovable's vault | Wrangler secrets (`wrangler secret put KEY value`) + GitHub Actions secrets |
+| **Lovable AI editor** | The AI agent that generates code changes | Claude Code (already in use), Lovable can still be used optionally post-migration |
+
+**Critical finding**: When using Lovable Cloud, the Supabase database is owned by Lovable — not visible in your personal Supabase dashboard. Lovable's own documentation confirms: "If your project is already connected to Lovable Cloud, there is currently no way to disconnect it and switch to an external Supabase project." There is no automated ejection tool.
+
+**How to verify which type you have**: Log into supabase.com. If the Cadence project appears under your account, it's self-provisioned (you own it — the exit is simpler). If it does NOT appear, it's Lovable Cloud.
+
+### Tech stack portability assessment
+
+| Layer | Portable? | Notes |
+|---|---|---|
+| Application code (TanStack Start + Vite + Cloudflare Workers) | **Yes, fully** | The entire codebase is in git under your control. GitHub sync means you already own it. |
+| `wrangler.toml` + Cloudflare Workers config | **Yes** | Already present and configured. `wrangler deploy` works from the repo today. |
+| Supabase schema (DDL) | **Yes, extractable** | Export via `mcp__supabase__execute_sql` or `pg_dump`. All migrations are in `supabase/migrations/`. |
+| Supabase data | **Yes, but manual** | Row-level CSV export or `COPY` commands. At demo scale (small data volume) this is straightforward. |
+| RLS policies | **Yes, they're in migrations** | Already written in `supabase/migrations/`. Re-apply to new Supabase project. |
+| `@lovable.dev/cloud-auth-js` | **No, needs swap** | Must be replaced with `@supabase/supabase-js` native auth. This is the most code-invasive change. |
+| OAuth app registrations | **No, needs re-provisioning** | New OAuth apps must be created (GitHub, Google) with new redirect URIs pointing at the new Supabase project's auth endpoint. |
+| AI gateway proxy (Lovable gateway) | **Partially** | Already routed around for BYO keys. Adding Fireworks + Cohere direct routing removes the Lovable gateway dependency entirely for AI calls. |
+| Secrets / env vars | **Yes, yours already** | Local `.env` + wrangler secrets are already under your control per the env-var split. |
+
+### Exit effort by component
+
+| Component | Effort | Complexity | Notes |
+|---|---|---|---|
+| Create new Supabase project (self-managed) | 1–2 hours | Low | Click-to-create; copy over env vars |
+| Export schema SQL and re-apply | 2–4 hours | Medium | `supabase db dump` or manual DDL assembly from migrations; apply to new project |
+| Export data from Lovable Cloud Supabase | 2–6 hours | Medium–High | No automated tool; CSV export or scripted `COPY TO`. Depends on data volume. auth.users table needs special handling. |
+| Replace `@lovable.dev/cloud-auth-js` with Supabase native auth | **2–5 days** | **High** | Must trace all usage of Lovable auth (session provider, token verification in server functions, auth guards). Each reference needs a native Supabase equivalent. This is the largest unknown. |
+| Re-provision OAuth apps (GitHub, Google) | 2–4 hours | Low | Create new OAuth apps in each provider's developer console; update redirect URIs; update env vars. |
+| GitHub Actions CI/CD + Wrangler deploy | 1–2 days | Low–Medium | Write the workflow once; add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as GitHub secrets; test preview + production deployments. |
+| DNS cutover (custom domain) | 1–2 hours | Low | Update A/CNAME records; 5–15 min propagation. |
+| End-to-end testing after migration | 1–2 days | Medium | Full auth flows (login, OAuth, session persistence), all API routes, agent loop, RLS assertions. |
+
+**Total realistic estimate: 1.5 to 2.5 weeks of focused engineering** (assuming one experienced engineer). The range depends primarily on how deeply `@lovable.dev/cloud-auth-js` is embedded in server-side auth verification.
+
+### What you gain from exiting Lovable
+
+| Benefit | Impact |
+|---|---|
+| Full database ownership | See, backup, and query your own data directly. No Lovable intermediary for schema changes. |
+| Direct Supabase access | Studio UI, direct DB connection strings, pgbouncer, direct service role key usage. |
+| CI/CD control | Deploy on any push policy you want (branches, PR previews, staging envs). |
+| No Lovable credit dependency | Build sessions on Lovable consume credits. Post-exit: unlimited code changes via Claude Code. |
+| Self-managed secrets | Already mostly true (env-var split ensures this), but fully true post-exit. |
+| Freedom to change any layer | New auth providers, different edge runtime, different CDN — no Lovable constraints. |
+
+### What you lose
+
+| Cost | Impact |
+|---|---|
+| Lovable AI editor | Must use Claude Code exclusively (already the primary tool). |
+| Auto-deploy on push | Must maintain GitHub Actions yourself (one-time setup, ~1 day). |
+| Managed infrastructure | Database backup, monitoring, scaling = your responsibility. Supabase's own tooling handles most of this. |
+| Lovable's project-level features | Knowledge base, project analytics, Lovable-specific connectors — unused by Cadence, not a real loss. |
+
+### The right timing: when to exit Lovable
+
+**Do NOT exit during the demo/MVP phase.** The Lovable platform provides:
+- Zero-effort hosting with global delivery (you don't have to think about it)
+- Auto-deploy that keeps the app running while you focus on features
+- A working Supabase setup you can query via MCP
+
+These are valuable at the current stage. The cost (Lovable credits) is low relative to the opportunity cost of 1.5–2.5 weeks of migration engineering.
+
+**Exit when ALL of the following are true:**
+1. **First paying customer** — you have revenue, the product is validated, migration disruption is worth the control gain.
+2. **Technical co-founder or second engineer** — migration is complex enough to need a dedicated person; doing it solo while also building features is too expensive.
+3. **Lovable costs are material** — at high build volume, credit spend becomes noticeable. That's the right trigger.
+4. **Data volume is still manageable** — the longer you wait past first revenue, the larger the Supabase data export gets. Earlier is easier on the data side, but the engineering trade-off above dominates.
+
+**The single action to do NOW** (before exiting): verify whether your Supabase is Lovable Cloud or self-provisioned by logging into supabase.com. If it's already self-provisioned, much of the exit work evaporates (schema/data export is trivial, no Lovable-specific Supabase lock-in).
+
+### The right way to position the exit
+
+The Lovable exit is not a crisis or an emergency. It is a **planned infrastructure graduation**:
+- Phase 1 (now → first revenue): Use Lovable; keep all secrets local-first; avoid Lovable connector vault for any credentials; do all real work via Claude Code + git.
+- Phase 2 (post first revenue): Plan the exit. Two-week sprint. One dedicated engineer. Database migration first, auth swap second, CI/CD third.
+- Phase 3 (post-exit): Fully self-managed on Cloudflare Workers + your own Supabase. No vendor owns your data or your deploy pipeline.
+
+The codebase is already structured for this. `wrangler.toml` is already present. The env-var split already ensures secrets are not in Lovable's vault. The migration is hard because of the auth layer, not because the codebase is entangled with Lovable.

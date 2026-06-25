@@ -202,7 +202,11 @@ export async function rememberOutcome(
     // with one. (embedOne can also return a sparse/undefined value — coerce it.)
     let emb: number[] | null = null;
     try {
-      const v = await embedOne(args.content, { supabase, userId: args.userId, surfaceRef: "outcome-memory" });
+      const v = await embedOne(args.content, {
+        supabase,
+        userId: args.userId,
+        surfaceRef: "outcome-memory",
+      });
       emb = Array.isArray(v) && v.length > 0 ? v : null;
     } catch {
       emb = null;
