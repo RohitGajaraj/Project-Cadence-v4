@@ -38,13 +38,7 @@ function startedLabel(iso: string): string {
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${time}`;
 }
 
-function MissionRow({
-  m,
-  onPromote,
-}: {
-  m: MissionListRow;
-  onPromote: (id: string) => void;
-}) {
+function MissionRow({ m, onPromote }: { m: MissionListRow; onPromote: (id: string) => void }) {
   const navigate = useNavigate();
   const done = m.steps.filter((s) => stepDotStatus(s.status) === "completed").length;
   const isProposed = m.status === "proposed";

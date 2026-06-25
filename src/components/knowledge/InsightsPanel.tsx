@@ -171,19 +171,14 @@ export function InsightsPanel() {
               const Icon = SIGNAL_ICON[s.kind] ?? TrendingUp;
               const color = SIGNAL_COLOR[s.kind] ?? "var(--ink-subtle)";
               return (
-                <div
-                  key={i}
-                  style={{ display: "flex", alignItems: "flex-start", gap: 10 }}
-                >
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <Icon
                     size={14}
                     strokeWidth={1.9}
                     color={color}
                     style={{ flexShrink: 0, marginTop: 2 }}
                   />
-                  <span
-                    style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}
-                  >
+                  <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>
                     {s.text}
                   </span>
                 </div>
