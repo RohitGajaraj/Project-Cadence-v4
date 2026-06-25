@@ -178,7 +178,9 @@ describe("result builders", () => {
 
   test("buildToolsListResult returns the canonical catalog", () => {
     const r = buildToolsListResult();
-    expect(r.tools).toBe(MCP_TOOLS);
+    // Scope-aware now (INTEROP Q2): the default catalog is computed, not the shared
+    // constant reference, so assert by value. Contents are still the read catalog.
+    expect(r.tools).toEqual(MCP_TOOLS);
     expect(r.tools.map((t) => t.name)).toEqual([
       "search_signals",
       "search_opportunities",
@@ -238,5 +240,94 @@ describe("MCP_TOOLS catalog integrity", () => {
 
   test("tool names are unique", () => {
     expect(new Set(MCP_TOOL_NAMES).size).toBe(MCP_TOOL_NAMES.length);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// INTEROP-V11 · Q2 — the governed WRITE layer (scopes + dormant gate). Pure logic.
+// ───────────────────────────────────────────────────────────────────────────
+import {
+  MCP_READ_TOOL_NAMES,
+  MCP_WRITE_TOOL_NAMES,
+  WRITE_SCOPE_BY_TOOL,
+  canCallWriteTool,
+  isWriteTool,
+  toolsForScopes,
+} from "./mcp-protocol";
+
+describe("INTEROP Q2 — write-tool catalog", () => {
+  test("ingest_signal is a write tool, not a read tool", () => {
+    expect(isWriteTool("ingest_signal")).toBe(true);
+    expect(MCP_WRITE_TOOL_NAMES).toContain("ingest_signal");
+    expect(MCP_READ_TOOL_NAMES).not.toContain("ingest_signal");
+  });
+  test("every read tool is NOT a write tool", () => {
+    for (const name of MCP_READ_TOOL_NAMES) expect(isWriteTool(name)).toBe(false);
+  });
+  test("classification recognizes ingest_signal as a known tool (not method-not-found)", () => {
+    const d = classifyMcpRequest({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "ingest_signal", arguments: { title: "x" } },
+    });
+    expect(d.kind).toBe("tools/call");
+  });
+  test("every write tool declares a required scope", () => {
+    for (const name of MCP_WRITE_TOOL_NAMES) {
+      expect(typeof WRITE_SCOPE_BY_TOOL[name]).toBe("string");
+      expect(WRITE_SCOPE_BY_TOOL[name].length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("INTEROP Q2 — toolsForScopes (tools/list visibility)", () => {
+  test("default (no scopes, gate off) yields the read-only catalog", () => {
+    const tools = toolsForScopes();
+    expect(tools.map((t) => t.name).sort()).toEqual([...MCP_READ_TOOL_NAMES].sort());
+    expect(tools.some((t) => t.name === "ingest_signal")).toBe(false);
+  });
+  test("a write scope is INVISIBLE while the gate is off", () => {
+    const tools = toolsForScopes(["write:signal"], false);
+    expect(tools.some((t) => t.name === "ingest_signal")).toBe(false);
+  });
+  test("the gate on but NO scope still hides the write tool", () => {
+    const tools = toolsForScopes([], true);
+    expect(tools.some((t) => t.name === "ingest_signal")).toBe(false);
+  });
+  test("gate on AND the scope present surfaces the write tool alongside the reads", () => {
+    const tools = toolsForScopes(["write:signal"], true);
+    expect(tools.some((t) => t.name === "ingest_signal")).toBe(true);
+    // reads are still all present
+    for (const name of MCP_READ_TOOL_NAMES) expect(tools.some((t) => t.name === name)).toBe(true);
+  });
+  test("buildToolsListResult is scope-aware and back-compat by default", () => {
+    expect(buildToolsListResult().tools.some((t) => t.name === "ingest_signal")).toBe(false);
+    expect(
+      buildToolsListResult(["write:signal"], true).tools.some((t) => t.name === "ingest_signal"),
+    ).toBe(true);
+  });
+});
+
+describe("INTEROP Q2 — canCallWriteTool (call-time enforcement, defence in depth)", () => {
+  test("a non-write tool is always allowed here (read authz is the token's workspace)", () => {
+    expect(canCallWriteTool("search_signals", [], false).allowed).toBe(true);
+  });
+  test("write denied when the gate is off, even WITH the scope", () => {
+    const a = canCallWriteTool("ingest_signal", ["write:signal"], false);
+    expect(a.allowed).toBe(false);
+    expect(a.reason).toMatch(/disabled/i);
+  });
+  test("write denied when the gate is on but the scope is missing", () => {
+    const a = canCallWriteTool("ingest_signal", [], true);
+    expect(a.allowed).toBe(false);
+    expect(a.reason).toMatch(/scope/i);
+  });
+  test("gate-off is reported before scope-missing (a probe without scope only learns writes are off)", () => {
+    const a = canCallWriteTool("ingest_signal", [], false);
+    expect(a.reason).toMatch(/disabled/i);
+  });
+  test("write allowed only when BOTH the gate is on and the scope is present", () => {
+    expect(canCallWriteTool("ingest_signal", ["write:signal"], true).allowed).toBe(true);
   });
 });

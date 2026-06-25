@@ -2,11 +2,11 @@
 
 > _Created: 2026-06-17 · Last updated: 2026-06-21_
 
-**Status:** ✅ Shipped (Phases 1-4a: backend + token UI + native MCP transport handshake; Phase 4b / Q2 future-deferred)  
+**Status:** ✅ Shipped (Phases 1-4a: backend + token UI + native MCP transport handshake). **Q2 governed-write surface shipped DORMANT 2026-06-25 (lane 1)** — see "Q2 · governed inbound write" below. Remaining Q2 (OAuth auto-discovery, SSE streaming) future-deferred.  
 **Lanes:** F (INTEROP / the neutral brain); verified live 2026-06-21 (lane 3)  
 **P-tier:** Tier 1 (Build Sequence #11 — the neutral-brain moat)  
-**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17, Phase 4a transport 2026-06-21 (lane 1; token-issuance bug fixed 1f0ace8450)  
-**What's next:** Phase 4b (Q2, founder-gated future) — OAuth client registration + auto-discovery, SSE/streamable-HTTP session streaming, and full write CRUD with per-lane scope.
+**Build commits:** `2c5f6b547c` (Phase 1 foundation), `44a92d06a2` (Phase 2 dispatch), Phase 3 UI 2026-06-17, Phase 4a transport 2026-06-21 (lane 1; token-issuance bug fixed 1f0ace8450), Q2 governed write 2026-06-25 (lane 1)  
+**What's next:** the rest of Phase 4b (founder-gated future) — OAuth client registration + auto-discovery, and SSE/streamable-HTTP session streaming. The scoped WRITE half is now built (dormant); flipping it on is a founder call (`admin_set_interop_write_enabled(true)`).
 
 ---
 
@@ -14,7 +14,7 @@
 
 **Cadence as a neutral brain:** external agents (Claude with MCP, Cursor, ChatGPT, other AI frameworks) can read signals, opportunities, PRDs and append decisions via HTTP, governed by workspace scope, rate limits, and audit logging.
 
-The MCP server exposes seven read-only + one write tool (8 in the `tools/list` catalog):
+The MCP server exposes **seven read tools** (always in the `tools/list` catalog) plus **one governed write tool** that appears only for an authorized token (see Q2 below):
 
 - **`search_signals`** — keyword search over title/content with pagination (limit/offset)
 - **`search_opportunities`** — ICE-filtered search by title/problem
@@ -22,9 +22,11 @@ The MCP server exposes seven read-only + one write tool (8 in the `tools/list` c
 - **`search_prds`** — spec discovery by keyword (title/body) and/or status — the find half of `get_prd` (INTEROP-V11, 2026-06-24)
 - **`get_prd`** — fetch a specific PRD spec by ID
 - **`get_roadmap`** — opportunities arranged into now/next/later buckets, highest ICE first (INTEROP-V11, 2026-06-24)
-- **`append_decision`** — write a decision to an opportunity (queues for human approval)
 - **`export_skillpack`** — a versioned, content-hashed bundle of decision lessons
+- **`ingest_signal`** _(governed WRITE; INTEROP-V11 Q2, 2026-06-25)_ — contribute a discovery signal; visible/callable ONLY with the `write:signal` scope AND the global write gate on (dormant by default). See Q2 below.
 - **`tools` / `resources`** — legacy MCP discovery endpoints (list available tools)
+
+> The earlier `append_decision` write tool was **removed** 2026-06-24 (it targeted a `decision_queue` table + columns absent from the live schema, so it could never succeed). The Q2 write surface below replaces it with a single tool that reuses a verified-live insert path.
 
 All calls require a bearer token (workspace-scoped), enforce per-token rate limits (default 60 calls/minute), and log to the audit trail (`api_calls` table).
 
@@ -232,3 +234,40 @@ Once the app is deployed (Lovable sync + publish), the `/api/mcp` route is live.
 ## INTEROP-V11 floor — read-only decision-brain access (2026-06-24, lane 2)
 
 Added a read-only `search_decisions` MCP tool: external agents (Claude/ChatGPT/Cursor) can now query the workspace decision brain — decisions (safe projection: title, rationale, status, decided-by, created_at) each tagged with the honest **standing/superseded** outcome (reuses the Trust Ledger `supersededChildIds` bitemporal rule, so the MCP read and the in-app ledger never disagree). Workspace-scoped + audited like the existing read tools; catalog entry in `mcp-protocol.ts`, dispatch case in `api/mcp.ts`, helper in `mcp.functions.ts` (`searchDecisions` + the pure `applyDecisionOutcomes`); 4 unit tests + the catalog-integrity tests updated (now 6 tools). **Remaining (INTEROP-V11 ◐):** roadmap/spec read tools + the outward WRITE/A2A scoped-token surface (founder-gated on scopes/audit).
+
+## Q2 · governed inbound WRITE — `ingest_signal` (2026-06-25, lane 1)
+
+The founder lifted the Q2 scopes/audit gate. This is the outward GOVERNED WRITE surface: an external/peer agent can contribute a discovery signal into a workspace through MCP (`tools/call ingest_signal`) and the A2A card's `discovery.ingest_signal` skill. It ships **DORMANT** and **fully reversible**.
+
+**Two independent locks — both must be open for any write:**
+
+1. **Per-token scope** (`mcp_tokens.scopes text[]`, default `{}`): the token must carry the tool's required scope (`write:signal`). Every token already issued — and every new token unless minted with a scope — is `{}` = read-only. `issue_mcp_token` gained an optional `_scopes` arg; `issueMCPToken` constrains it to an allow-list (`write:signal` only).
+2. **Global dormant gate** `interop_write_enabled()` (default **false**, reads `app_settings`, flipped only by `admin_set_interop_write_enabled(boolean)` which is `has_role(admin)`-gated — mirrors `credits_enabled()`). Even a correctly write-scoped token **cannot write** until a founder flips the gate on. Flip it back off to disable instantly.
+
+**Why it can't repeat the `append_decision` drift bug:** the single write tool reuses the SAME `signals` insert shape the live F-V5-INGEST-WEBHOOK door uses (verified against the prod schema 2026-06-25), and the SAME injection screen (`screenIngestText`): a structural prompt-injection is **rejected, never stored**; a borderline lexical override is stored **flagged** (`needs-review`). The row is stamped with the **token's** `workspace_id` + `user_id` — never caller-supplied input — so the tenant boundary can't be spoofed (zod strips any extra args).
+
+**Defence in depth:**
+- `tools/list` is **scope-filtered** (`toolsForScopes`): a read-only token never even discovers `ingest_signal`.
+- `tools/call` **re-checks** authorization (`canCallWriteTool`: gate first, then scope) so a token that guesses the name is still refused.
+- The legacy flat-method transport **cannot write** (the read dispatcher has no write case → "Unknown method"), so writes exist only via standard `tools/call`.
+- The gate resolver **fails closed** (any error → writes disabled).
+- Every attempt is audited to `api_calls` with `result` ∈ `success | error | permission_denied`.
+
+**Files:** migration `20260625140000_interop_write_scopes_gate.sql` (scopes column + `interop_write_enabled()` + `admin_set_interop_write_enabled` + `issue_mcp_token` overload); pure write layer in `mcp-protocol.ts` (`MCP_WRITE_TOOLS`, `WRITE_SCOPE_BY_TOOL`, `toolsForScopes`, `canCallWriteTool`, `isWriteTool`); `ingestSignal` in `mcp.functions.ts`; route enforcement + `dispatchWriteTool` + `resolveWriteEnabled` in `api/mcp.ts`; the A2A `discovery.ingest_signal` skill in `a2a.agents.cadence.card.ts`. Tests: `mcp-protocol.test.ts` (scope filtering + call-time enforcement, +14) and new `mcp.functions.test.ts` (screening, tenant-stamp resistance, insert shape, error propagation).
+
+> **Deploy ordering (hardened):** the route selects `mcp_tokens.scopes` and calls `interop_write_enabled()`. To survive the Lovable/Workers split-deploy (the worker can land before the migration), `validateToken` **degrades gracefully**: if the `scopes` column is absent (PostgREST `42703`) it re-selects without it and treats the token as read-only (`scopes = []`), so the READ tools keep working and writes stay impossible until the migration applies. `resolveWriteEnabled` likewise fails closed. So an out-of-order deploy is safe (read-only), and once the migration applies the gate is still OFF until the founder flips it. _(Adversarial review 2026-06-25 flagged the un-hardened version as a HIGH availability risk — all MCP traffic would 401 — now fixed.)_
+
+**To activate (founder):** the migration is **already applied to the live DB** (2026-06-25), so just mint a token with `scopes: ["write:signal"]` for the trusted peer → run `select admin_set_interop_write_enabled(true);` as an admin, after this code is published. To pause: `select admin_set_interop_write_enabled(false);`.
+
+### Live validation (2026-06-25)
+
+Validated against the live production DB (not just mock unit tests), then cleaned up to a dormant, zero-token state:
+
+- **Migration applied + verified live:** `mcp_tokens.scopes` is `text[]` default `{}`; `interop_write_enabled()` returns `false` (dormant); `admin_set_interop_write_enabled` exists; `issue_mcp_token` has exactly **one** overload (the 6-arg with `_scopes`) — the old 5-arg was cleanly dropped, no ambiguity.
+- **Gate read round-trip:** set the `app_settings` flag true → `interop_write_enabled()` returns true in a separate txn (it is `STABLE`, so a same-statement read sees the pre-statement snapshot — which is exactly how the worker reads it, via a separate RPC) → flag removed → returns false again.
+- **Token mint:** `issue_mcp_token(..., array['write:signal'])` persists `scopes = ["write:signal"]`.
+- **Write insert:** the exact `signals` insert shape `ingestSignal` uses (`user_id, workspace_id, title, content, source='mcp', tags`) inserts cleanly, with the `content := content || title` NOT-NULL fallback working.
+- **Cleanup:** the test signal + test token were deleted; `mcp_tokens` is back to 0 rows and the gate is dormant.
+- **Regression:** full suite green — `bun test` 1490 pass / 0 fail; tsc 0.
+
+The only step that needs the founder's publish is an end-to-end HTTP call to the **deployed** `/api/mcp` with the new code (the new route isn't deployed yet). Every component is live-verified, and the insert reuses the same path the production ingest webhook already runs.
