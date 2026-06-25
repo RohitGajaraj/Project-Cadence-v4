@@ -202,14 +202,44 @@ Embeddings are cheap (sub-cent per session). Completions on GPT-4o can cost $0.0
 
 ---
 
-### The hard constraint: vector(1536) column dimensions
+### The dimension question: why 1536 and should we change it?
 
-Our Supabase schema defines vector columns as `vector(1536)`. Every embedding must output exactly 1536 dimensions or the stored vectors become incompatible with new vectors (cosine similarity breaks across dimension mismatches).
+The current `vector(1536)` column definition was **not a principled decision**. OpenAI text-embedding-3-small outputs 1536 dimensions by default, and the schema was written to match. There is nothing special about 1536. It is an artifact of the default provider choice.
 
-**Consequence for provider selection:** any embedding provider that does NOT output 1536 dims requires:
-1. A Supabase migration to alter all `vector(1536)` columns
-2. A full re-embed backfill of all existing vectors (expensive, offline-gated)
-3. Updating `EMB_DIMS = 1536` in `embed.server.ts`
+**The real constraint is not dimensions — it is token input limits.** This is the factor that matters most for Cadence's specific use case. If a model truncates a 5,000-word PRD at the 2,048-token mark, you are embedding only the first third of the document. The embedding vector misrepresents the whole document. The Critic then retrieves "relevant" precedents based on a fragment. The MTEB benchmark score (measured on short passages) does not capture this failure mode.
+
+**Input token limits by provider (web-grounded, 2026):**
+
+| Model | Token limit | Behaviour at limit |
+|---|---|---|
+| Cohere embed-v4 | 128,000 | Designed for full docs |
+| Voyage voyage-3 | 32,000 | Designed for long-context RAG |
+| OpenAI text-embedding-3-small (current) | 8,191 | Truncates long PRDs |
+| OpenAI text-embedding-3-large | 8,191 | Same ceiling as small |
+| Nomic embed-text-v1.5 | 8,192 | Same as OpenAI |
+| **Google gemini-embedding-001** | **2,048** | **Silent truncation — no error raised** |
+
+**Critical implication:** A Cadence PRD document at 4,000 words is approximately 5,300 tokens. At OpenAI's 8,191-token limit, most PRDs fit but large ones get cut. At Google Gemini's 2,048-token limit, virtually every full PRD gets silently truncated to roughly its introduction and first section. The MTEB score of 67.71 that made Gemini look attractive is measured on benchmark passages — not on full product documents. For Cadence's actual workload, Gemini's token limit makes it a poor fit despite its headline retrieval score.
+
+**Changing dimensions requires a migration, but NOW is the cheapest time.** At demo scale with essentially zero production data, the migration consists of:
+- A SQL file altering vector column sizes (30–45 min)
+- Updating `EMB_DIMS` and the model string in `embed.server.ts` (10 min)
+- A re-embed backfill (near-instant at zero production rows)
+- Total: ~2.5 hours, zero data at risk
+
+At production scale with millions of rows, the same migration requires careful offline scheduling and can take hours. **The time to change dimensions is now.**
+
+**Dimension options and their tradeoffs:**
+
+| Dims | Provider | Quality | Token limit | Cost/1M | Migration from 1536 |
+|---|---|---|---|---|---|
+| 768 | Nomic / Fireworks | Same as current | 8,192 | $0.008 | Required; no quality gain |
+| 1,024 | Voyage voyage-3 | Better than current | 32,000 | $0.06 (200M free) | Required; quality + context gain |
+| 1,536 | Cohere embed-v4 | Better than current | 128,000 | $0.12 | No column migration needed |
+| 3,072 | OpenAI text-emb-3-large | Better than current | 8,191 | $0.13 | Required; no context gain |
+| 3,072 (set to 1536) | Google gemini-emb-001 | Highest MTEB | **2,048 truncates** | $0.15 | No column migration; but bad for long docs |
+
+**The Matryoshka optimization available today:** OpenAI text-embedding-3-small supports Matryoshka truncation. Setting `dimensions=768` in API calls produces 97% quality at half the storage with no model change. This would require a column migration (vector(1536) → vector(768)) and re-embed of existing rows, but no provider or API key change. Free storage and query speed improvement. Not done yet.
 
 This makes provider switching for embeddings a non-trivial migration, not a config change.
 
@@ -227,16 +257,29 @@ This makes provider switching for embeddings a non-trivial migration, not a conf
 
 ---
 
-### Embedding provider comparison (2026, 1536-dim compatible only)
+### Embedding provider comparison (2026, full analysis — corrected)
 
-| Provider | Model | Cost/1M tokens | MTEB score | Dims | Notes |
-|---|---|---|---|---|---|
-| **OpenAI** (current) | text-embedding-3-small | **$0.02** | 62–63 | 1536 native | Proven, no migration, deep BYOK integration already wired |
-| **OpenAI** | text-embedding-3-large | $0.13 | 64.6 | 3072/Matryoshka | Premium, 6.5x cost increase for ~3% quality gain |
-| **Google** | gemini-embedding-001 | $0.15 | **68.3** | 768 default / 3072 max (set 1536 via param) | Highest MTEB of any API model; $0.15/1M is 7.5x more than current; quality difference matters for decision-memory retrieval precision |
-| **Cohere** | embed-v4 | $0.12 | Best-in-class | 1536 native | First multimodal embed; pairs with Cohere reranker; $6/1M tokens on completions makes it expensive all-in |
+> **Correction from earlier analysis:** Google gemini-embedding-001 was previously recommended based on its MTEB score (67.71, highest of any API model). This was wrong for Cadence's use case. Its input token limit is **2,048 tokens**, and it truncates silently. A full PRD or decision narrative at 4,000–10,000 words exceeds this limit and gets silently cut to its first ~1,500 words. The MTEB score is measured on short benchmark passages; it does not reflect long-document retrieval quality. Google Gemini is disqualified for this use case at this limit.
 
-**Verdict on embeddings:** Keep OpenAI `text-embedding-3-small` through the demo phase and first user cohort. At current usage, embed costs are $0.005/session — switching saves sub-penny per user. The only worthwhile swap is Google `gemini-embedding-001` at scale IF retrieval quality becomes a product differentiator (the 68.3 MTEB score vs 62–63 is a meaningful precision lift for the decision-memory moat), AND only because it supports 1536 dims via `output_dimensionality` — no column migration needed.
+| Provider | Model | Cost/1M | MTEB retrieval | Input token limit | Dims | Fit for Cadence |
+|---|---|---|---|---|---|---|
+| **Voyage AI** | voyage-3 | $0.06 (200M free) | Strong (~65+) | **32,000** | 1,024 | **Best fit** — purpose-built for RAG, long docs, free for demo |
+| **Cohere** | embed-v4 | $0.12 | ~65–66 | **128,000** | 1,536 | Strong — handles the longest docs; higher cost; no completion deal |
+| **OpenAI** (current) | text-emb-3-small | $0.02 | 62.26 | 8,191 | 1,536 | Acceptable; current default; hits ceiling on long PRDs |
+| **Nomic / Fireworks** | nomic-embed-v1.5 | **$0.008** | ~62.28 | 8,192 | 768 | Cheapest, same quality as current, good for cost-priority deployments |
+| **OpenAI** | text-emb-3-large | $0.13 | Better than small | 8,191 | 3,072 | Same token limit as small; costs 6.5x more; no context advantage |
+| ~~**Google**~~ | ~~gemini-emb-001~~ | ~~$0.15~~ | ~~67.71~~ | ~~**2,048 (silently truncates)**~~ | ~~3,072~~ | **Disqualified** — truncates all long PRDs without warning |
+
+**Verdict on embeddings (corrected):** Migrate to **Voyage AI voyage-3** at 1,024 dims. Rationale:
+1. 32,000 token limit handles complete PRDs and decision narratives without chunking
+2. Better MTEB retrieval than current OpenAI-small (stronger Critic recall)
+3. 200M free tokens per account — entire demo and early users cost $0
+4. 1,024 dims is smaller than current 1,536 (faster pgvector ANN queries, less storage)
+5. Migration: ~2.5 hours at demo scale, zero production data at risk now — cheapest moment to do it
+
+**If Voyage is not available / fallback:** Nomic embed-text-v1.5 via Fireworks ($0.008/1M, 768 dims, 8K limit) is the cost-optimized fallback. Same MTEB quality as current. Requires migration to `vector(768)`.
+
+**For future scale when long-context becomes critical:** Cohere embed-v4 at 128,000 tokens handles entire product documentation corpora in a single embedding call. No chunking, no averaging. Worth reassessing when workspace knowledge bases grow large.
 
 ---
 
@@ -357,30 +400,40 @@ src/lib/rag/embed.server.ts     src/lib/ai/runtime.server.ts
 
 ---
 
-### The phased provider recommendation
+### The phased provider recommendation (corrected 2026-06-25)
 
-**Phase 1: Demo (now, $5–10 budget)**
-→ Change nothing. Lovable gateway handles both embeddings and completions. Cost is near-zero at demo scale. No migration risk. Ship the product.
-
-**Phase 2: First paying users (near term)**
-→ Add Fireworks AI as the default completion provider (no-key path) in `runtime.server.ts`. Keep Lovable gateway for embeddings (no dimension migration). One endpoint change, 94% completion cost reduction. OpenAI BYO key users are unaffected.
+**Phase 1: Demo → first users (NOW)**
+→ **Embeddings: migrate to Voyage AI voyage-3** (1,024 dims, 32K token limit). 200M free tokens. ~2.5 hours migration work. Zero production data at risk today — the cheapest this migration will ever be. Better long-document retrieval for the Critic immediately.
+→ **Completions: add Fireworks AI** (`Llama 4 Maverick`, $0.15/$0.60) as the default no-key completion provider in `runtime.server.ts`. 94% cheaper than GPT-4o. Lovable gateway stays as fallback.
+→ Provider chain for embeddings: BYO OpenAI key → Voyage (new default) → Lovable gateway fallback.
 → Provider chain for completions: BYO key → Fireworks default → Lovable gateway fallback.
 
-**Phase 3: Scale (100K+ users)**
-→ Upgrade embeddings to Google `gemini-embedding-001` with `output_dimensionality=1536` (no column migration, highest retrieval quality — MTEB 68.3 vs current 62–63). The retrieval quality lifts the decision-memory moat directly.
-→ Evaluate Gemini 2.5 Flash-Lite as the no-key completion default ($0.10/$0.40 input/output, 1M context).
-→ One vendor (Google) covers both under one API + billing account.
+**Phase 2: Growing user base**
+→ Embeddings stay on Voyage voyage-3 (still within free tier or minimal cost at $0.06/1M past 200M).
+→ Completions: evaluate routing high-stakes Critic steps selectively to Claude Sonnet (better reasoning for the decision-challenge logic) while keeping Fireworks for the faster planning loop steps.
+→ Add Voyage BYO key to the BYOK vault so enterprise users can bring their own Voyage key.
+
+**Phase 3: Scale (100K+ users, large knowledge bases)**
+→ Evaluate Cohere embed-v4 for workspaces with very large knowledge bases (128K token limit embeds entire product documentation in one call; no chunking artifacts in the recall layer).
+→ If Google raises the Gemini embedding token limit above 8K, reassess — the MTEB quality (67.71) is genuinely the best available and worth the switch if the truncation problem is resolved.
 
 **Phase 4: Self-host (>100M tokens/month, dedicated ML engineer)**
-→ `Qwen3-Embedding-8B` for embeddings (MTEB 70.6, Apache 2.0, beats all API models).
-→ `Llama 4 Maverick` for completions (Apache 2.0, GPT-4o-mini quality).
-→ BYOK architecture: self-hosted endpoint = just another provider type in `resolveEmbedRoute`.
+→ `Qwen3-Embedding-8B` for embeddings (MTEB 70.6, Apache 2.0, beats ALL API models including Google, requires 16GB VRAM).
+→ `BGE-M3` (MIT) as the CPU/edge fallback for embedding (dense + sparse in one model, runs on CPU).
+→ `Llama 4 Maverick` for completions (Apache 2.0, GPT-4o-mini quality, single A100).
+→ BYOK architecture makes this a config change, not a product change.
 
 ---
 
-### Why NOT a single all-in-one provider right now
+### Why not a single all-in-one provider
 
-Fireworks AI (embed + completions) is technically the cleanest all-in-one, but switching embeddings from OpenAI requires migrating all `vector(1536)` columns to `vector(768)` — a non-trivial DB migration + re-embed backfill. For the demo phase and first users, the migration complexity is not justified by the ~$0.01/session embedding cost saving. The completion switch (Fireworks for the planning loop) delivers 94% cost savings with zero migration risk and is the right immediate move. Embedding migration is Phase 3, not Phase 1.
+No provider is cleanly all-in-one for Cadence's constraints:
+- **Fireworks** (embed + completions): embed model is 768 dims, 8K token limit — better cost but same context problem as current OpenAI; completions are the best choice.
+- **Google** (embed + completions): embed silently truncates at 2,048 tokens — disqualified for embeddings; completions (Flash-Lite) are genuinely good.
+- **Cohere** (embed + completions): embed is best for long docs (128K limit), completions (Command R+) are expensive ($2.50/$10); not cost-effective for the planning loop.
+- **Voyage** (embed only): no completions. Best embedding fit, paired with Fireworks for completions.
+
+**The practical two-provider setup:** Voyage AI (embeddings) + Fireworks AI (completions). Two API keys, two billing lines, but the best fit for both tasks at the lowest combined cost. The chokepoint architecture already supports multiple providers; adding a second is a config change.
 
 ---
 
