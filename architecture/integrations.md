@@ -60,3 +60,13 @@ Capability scopes per token/peer; per-tool rate limits; **prompt-injection guard
 - Model providers are connectors too: model-agnostic by contract.
 
 Integration/protocol change → update this file + [`plan.md`](../plan.md).
+
+## Outbound observability (AFD, planned · founder-gated)
+
+Three outbound integrations land with the [AFD initiative](../docs/planning/analytics-and-failure-detection-plan.md), all behind the `src/lib/observability/` façade:
+
+- **PostHog EU** — `track`/`identify`/`pageView` (product usage + replay + flags). AFD-04.
+- **Sentry EU** — `captureError`/`captureMessage`/`setUser`/`setTag` + Worker performance (errors + perf). AFD-05.
+- **Better Stack** — `heartbeat(jobName)` + external uptime probes against `/api/public/health` + on-call escalation + status page at `status.cadence.app` (renameable). AFD-08 + AFD-13.
+
+The façade rule (no vendor SDK imports outside `src/lib/observability/`) means swapping any vendor is a 1-file edit and leaving Lovable stays a ~1-day redeploy. Doctrine: [`../docs/strategy/build-buy-integrate.md`](../docs/strategy/build-buy-integrate.md). Vendor ADR: [`../docs/decisions/analytics-vendor-selection.md`](../docs/decisions/analytics-vendor-selection.md).
