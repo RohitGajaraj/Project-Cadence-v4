@@ -1477,3 +1477,19 @@ _This log is maintained as part of the closed documentation loop. Every session 
 6. **Use the full installed library** — skills, subagents, plugins, and MCP tools (e.g. Lovable MCP for live Supabase since the DB key is Lovable-held) — to move faster and with higher correctness, per the mandatory pre-task scan (AGENTS.md §2).
 
 **Why it matters.** Two sessions on the same item burns energy, effort, and tokens and produces merge churn. The atomic ledger claim + the pushed `🔨 In Dev` status are the two locks that make "the same item is never worked twice" mechanically true. The lean-docs / strong-build split keeps velocity high without trading away build quality.
+
+---
+
+## 2026-06-25 — SANDBOX (#23): defer the paid microVM; demo on $0 in-app preview behind the seam; Lovable is NOT a sandbox provider
+
+**Context.** SANDBOX's core (decide whether a build is clear to merge) already runs free on the GitHub Actions floor, and 2026-06-25 the `ExecProvider` seam was made load-bearing (the Build CI panel reads its merge verdict + provenance through `resolveExecProvider()`). The open question is the paid microVM (Cloudflare Sandbox SDK / E2B / Vercel) that would add a live preview-before-merge and a substrate for running untrusted agent-generated code. Founder asked: what does closing it cost, is there a free alternative, and **can Lovable host the sandbox for us (since Lovable runs on Cloudflare)?**
+
+**Findings (verified, not guessed).**
+1. **Cost of the real microVM:** ~$5/mo (Cloudflare Workers Paid baseline) + metered usage — Containers/Sandboxes CPU is $0.00002/vCPU-sec on *active* usage only (Nov 2025 repricing), so a multi-minute build is a fraction of a cent. Order of magnitude ~$5–10/mo, not hundreds. E2B / Vercel are usage-based alternatives.
+2. **Lovable is not a sandbox/compute provider (queried the Lovable MCP live):** its connector catalog is 17 MCP integrations (Jira, Figma, Notion, PostHog, Sentry, Linear, …) with **zero** code-execution/container option. Lovable abstracts Cloudflare away — we do not get raw Container/Sandbox access. So "ask Lovable for Cloudflare Sandboxes" is not possible.
+3. **"Lovable hosting it" is automatic and already true** — `cadence-flow-beta` *is* our Lovable-hosted app, so any in-app feature is Lovable-hosted at $0 regardless of who writes the code. The only thing that costs money is a real microVM on *our own* Cloudflare account.
+4. **A demo-grade preview needs no spend and no new infra:** the repo already renders a **sandboxed iframe** (`p.$slug.tsx`: `sandbox="allow-scripts allow-forms allow-modals" srcDoc=…`). That same pattern gives a convincing "preview your build before merge" at $0, hosted free on Lovable.
+
+**Decision.** Do **not** spend on the microVM now. Ship a $0 demo-grade preview using the existing sandboxed-iframe pattern, wired behind the load-bearing `ExecProvider` seam, so a real Cloudflare Sandbox SDK adapter swaps in later with zero call-site rework. Flip the ~$5/mo paid backend on only when (a) we want the live preview-before-merge moment for a launch, or (b) a real user connects a repo with no CI. Move to our own infra post-PMF; until then, free managed infra is sufficient for the demo.
+
+**Why it matters.** The sandbox is **table-stakes execution infra, not the moat** (the moat is the decision/memory/trust layer). Spending should follow demand. The swappable seam makes deferral free — no rework cost later — which is exactly the kind of pragmatic infra call that lets us showcase the full PRD→Build→preview→Ship loop for the demo without burning runway. Business/lock-in lens: a sandbox is a conversion/demo lever, never a retention lock-in, so we fund it on the demo's schedule, not ahead of it.
