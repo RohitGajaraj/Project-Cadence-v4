@@ -98,6 +98,10 @@ Velocity: **Ship features fast. Per cycle, gate on correctness only (tsc + build
 
 Full detail: [`AGENTS.md`](./AGENTS.md), section 4. These apply equally to Claude Code, Antigravity, Gemini, and Lovable.
 
+## Observability (analytics + failure detection)
+
+If your work touches telemetry, error capture, uptime, on-call, or the public status page: the single front-door is **[`docs/planning/analytics-and-failure-detection-plan.md`](./docs/planning/analytics-and-failure-detection-plan.md)** (AFD initiative, group G12, founder-gated). Vendor selection is decided (PostHog EU + Sentry EU + Better Stack); the façade contract is in [`docs/features/observability-facade.md`](./docs/features/observability-facade.md). Do not import vendor SDKs outside `src/lib/observability/` once AFD lands.
+
 ## The closed documentation loop (always on)
 
 Every time you build a feature, make a decision, or learn something non-obvious, **update the relevant docs in the same unit of work** — and append to the active build log in [`plan.md`](./plan.md) (section 4). A change is not done until its documentation is true. Full mandate + the update matrix: [`AGENTS.md`](./AGENTS.md), section 5.
