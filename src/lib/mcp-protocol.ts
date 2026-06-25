@@ -191,14 +191,9 @@ export function isWriteTool(name: string): boolean {
  * is on AND the token holds the tool's required scope. Defaults (no scopes, gate
  * off) yield the read-only catalog, so every existing caller is unchanged.
  */
-export function toolsForScopes(
-  scopes: readonly string[] = [],
-  writeEnabled = false,
-): McpTool[] {
+export function toolsForScopes(scopes: readonly string[] = [], writeEnabled = false): McpTool[] {
   if (!writeEnabled) return [...MCP_TOOLS];
-  const writable = MCP_WRITE_TOOLS.filter((t) =>
-    scopes.includes(WRITE_SCOPE_BY_TOOL[t.name]),
-  );
+  const writable = MCP_WRITE_TOOLS.filter((t) => scopes.includes(WRITE_SCOPE_BY_TOOL[t.name]));
   return [...MCP_TOOLS, ...writable];
 }
 

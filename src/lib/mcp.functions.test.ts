@@ -119,8 +119,8 @@ describe("ingestSignal — validation + error propagation", () => {
 
   it("propagates a DB insert error", async () => {
     const client = makeClient({ message: "boom" });
-    await expect(
-      ingestSignal(client, "ws-1", "user-1", { title: "valid title" }),
-    ).rejects.toThrow("boom");
+    await expect(ingestSignal(client, "ws-1", "user-1", { title: "valid title" })).rejects.toThrow(
+      "boom",
+    );
   });
 });
