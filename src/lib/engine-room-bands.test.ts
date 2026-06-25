@@ -11,12 +11,13 @@ import {
 } from "./engine-room-bands";
 
 /**
- * IA-DEPTH-V11 (v11 #23, slice) — the 13 Engine Room tabs must group into 3 bands
+ * IA-DEPTH-V11 (v11 #23, slice) — the Engine Room tabs must group into 3 bands
  * WITHOUT dropping or duplicating any tab, and the ?tab= routing contract (every
  * tab id) must be preserved. These lock both.
+ * M1/LRN-01 increment 2 added "support" (quality-insight band): 13 -> 14 tabs.
  */
 
-// The 13 tab ids the /govern route ships with — the routing contract.
+// The 14 tab ids the /govern route ships with — the routing contract.
 const ROUTE_TABS: EngineRoomTab[] = [
   "controls",
   "attention",
@@ -31,10 +32,11 @@ const ROUTE_TABS: EngineRoomTab[] = [
   "traces",
   "drift",
   "incidents",
+  "support",
 ];
 
 describe("engine-room-bands — the routing contract is preserved", () => {
-  it("covers exactly the 13 route tab ids (none added or dropped)", () => {
+  it("covers exactly the 14 route tab ids (none added or dropped)", () => {
     expect([...ALL_ENGINE_ROOM_TABS].sort()).toEqual([...ROUTE_TABS].sort());
   });
 
@@ -81,6 +83,7 @@ describe("engine-room-bands — derivations", () => {
     expect(bandForTab("incidents")).toBe("trust-safety");
     expect(bandForTab("traces")).toBe("quality-insight");
     expect(bandForTab("evals")).toBe("quality-insight");
+    expect(bandForTab("support")).toBe("quality-insight");
   });
 
   it("primaryTabForBand returns the first member and round-trips with bandForTab", () => {

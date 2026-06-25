@@ -26,7 +26,8 @@ export type EngineRoomTab =
   | "gauntlet"
   | "traces"
   | "drift"
-  | "incidents";
+  | "incidents"
+  | "support";
 
 export type BandId = "needs-you" | "trust-safety" | "quality-insight";
 
@@ -54,8 +55,8 @@ export const ENGINE_ROOM_BANDS: readonly EngineRoomBand[] = [
   {
     id: "quality-insight",
     label: "Quality & insight",
-    blurb: "Prompts, eval quality, and the observability of every run.",
-    tabs: ["prompts", "evals", "analytics", "gauntlet", "traces", "drift"],
+    blurb: "Prompts, eval quality, observability of every run, and recurring support themes.",
+    tabs: ["prompts", "evals", "analytics", "gauntlet", "traces", "drift", "support"],
   },
 ];
 

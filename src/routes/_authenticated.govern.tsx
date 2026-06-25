@@ -40,6 +40,7 @@ import { PromptsPanel } from "@/components/governance/PromptsPanel";
 import { EvalSuiteDetail } from "@/components/governance/EvalSuiteDetail";
 import { AgentSpendDetail } from "@/components/observe/AgentSpendDetail";
 import { DriftSurfaceDetail } from "@/components/observe/DriftSurfaceDetail";
+import { SupportSignalsPanel } from "@/components/governance/SupportSignalsPanel";
 
 // Engine Room surface (route id 'govern', user-facing title "Engine Room"). Absorbs /governance +
 // /observe + thin redirects (/guardrails, /budgets, /traces, /drift) and /evals + /prompts.
@@ -67,6 +68,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "traces", label: "Activity" },
   { id: "drift", label: "Trends" },
   { id: "incidents", label: "Incidents" },
+  { id: "support", label: "Support signals" },
 ];
 
 // GOVERN_DESC from the reference, verbatim — keyed by the lowercase tab ids.
@@ -86,6 +88,8 @@ const GOVERN_DESC: Record<Tab, string> = {
   drift: "Quality shifts against baseline. Flags when answers start changing.",
   incidents:
     "What went wrong: failed tool executions, errored auto-pipelines, and guardrail blocks, newest first, linked to traces.",
+  support:
+    "Recurring support themes turned into Discover signals. Paste tickets, extract signals, see what customers keep running into.",
 };
 
 export const Route = createFileRoute("/_authenticated/govern")({
@@ -223,6 +227,7 @@ function GovernPage() {
         {tab === "traces" && <TracesPanel />}
         {tab === "drift" && (surface ? <DriftSurfaceDetail id={surface} /> : <DriftPanel />)}
         {tab === "incidents" && <IncidentsPanel />}
+        {tab === "support" && <SupportSignalsPanel />}
       </div>
     </AppShell>
   );
