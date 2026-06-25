@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildSkillpack, clampSkillpackLimit, type SkillpackLessonInput } from "./skillpack";
 import { supersededChildIds, type LineageEdgeLite } from "./trust-ledger.functions";
+import { screenIngestText, INGEST_REVIEW_TAG } from "./ingest-guardrails";
 
 /**
  * Q1-MCP · Read-only MCP (Model Context Protocol) server functions.
@@ -56,6 +57,11 @@ export const issueMCPToken = createServerFn({ method: "POST" })
         workspace_id: z.string().uuid(),
         slug: z.string().min(1).max(100),
         rate_limit_per_min: z.number().int().min(1).max(1000).optional(),
+        // INTEROP-V11 Q2: capability scopes. Constrained to the known write
+        // scopes (allow-list) so a token can never be minted with an arbitrary
+        // scope string; default [] = read-only. A write scope is INERT until the
+        // global interop_write_enabled() gate is flipped on.
+        scopes: z.array(z.enum(["write:signal"])).optional(),
       })
       .parse(i ?? {}),
   )
@@ -78,6 +84,7 @@ export const issueMCPToken = createServerFn({ method: "POST" })
       _slug: data.slug,
       _secret_hash: secretHash,
       _rate_limit_per_min: data.rate_limit_per_min || 60,
+      _scopes: data.scopes ?? [],
     });
 
     if (error) throw new Error(error.message);
@@ -491,4 +498,72 @@ export async function exportSkillpack(supabaseClient: any, workspace_id: string,
     generatedAt: new Date().toISOString(),
     limit: cap,
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// INTEROP-V11 · Q2 — the GOVERNED WRITE tool (ingest_signal).
+//
+// An external / peer agent contributes a discovery signal into a workspace. The
+// route enforces the scope + dormant-gate authorization BEFORE calling this; here
+// we (1) re-screen the attacker-controlled text for prompt injection exactly as
+// the public ingest-webhook door does, and (2) insert with the SAME column shape
+// createSignal/ingest-signals use (schema verified against prod), stamping the
+// token's user_id + workspace_id so the tenant boundary can never be spoofed by
+// the caller. Pure-ish: all I/O is the single screened insert.
+// ─────────────────────────────────────────────────────────────────────
+
+export type IngestSignalArgs = { title?: unknown; content?: unknown; source?: unknown };
+
+export type IngestSignalResult =
+  | { status: "stored" | "flagged"; created: 1; quarantined: 0 }
+  | { status: "quarantined"; created: 0; quarantined: 1 };
+
+// Matches the F-V5-INGEST-WEBHOOK caps so the two doors agree.
+const ingestSignalSchema = z.object({
+  title: z.string().min(1).max(500),
+  content: z.string().max(5000).optional(),
+  source: z.string().max(40).optional(),
+});
+
+/**
+ * Validate + injection-screen + insert ONE governed signal. `workspace_id` and
+ * `user_id` come from the validated token (never from the caller). Throws on a
+ * validation error (the route reports it as a tool execution error); a structural
+ * injection is quarantined (never stored) rather than thrown.
+ */
+export async function ingestSignal(
+  supabaseClient: any,
+  workspace_id: string,
+  user_id: string,
+  args: IngestSignalArgs,
+): Promise<IngestSignalResult> {
+  const parsed = ingestSignalSchema.safeParse(args);
+  if (!parsed.success) {
+    throw new Error("expected { title: string, content?: string, source?: string }");
+  }
+  const { title, content, source } = parsed.data;
+
+  // Screen ALL attacker-controlled free text that reaches downstream agent
+  // context (title + content + source — the reactor copies `source` into the
+  // event payload). Reuses the structural-gate classifier, so an item merely
+  // QUOTING an injection is stored, while a fence-breakout / forged-system-turn
+  // is rejected and never persisted.
+  const decision = screenIngestText(`${title} ${content ?? ""} ${source ?? ""}`);
+  if (decision === "quarantine") {
+    return { status: "quarantined", created: 0, quarantined: 1 };
+  }
+
+  const { error } = await supabaseClient.from("signals").insert({
+    user_id,
+    workspace_id,
+    title,
+    content: content?.trim() || title, // signals.content is NOT NULL — fall back to title
+    source: source?.trim() || "mcp",
+    tags: decision === "flag" ? [INGEST_REVIEW_TAG] : [],
+  });
+  if (error) throw new Error(error.message);
+
+  return decision === "flag"
+    ? { status: "flagged", created: 1, quarantined: 0 }
+    : { status: "stored", created: 1, quarantined: 0 };
 }

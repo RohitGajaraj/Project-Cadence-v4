@@ -77,11 +77,24 @@ export const Route = createFileRoute("/api/public/a2a/agents/cadence/card")({
                 "Export the workspace's distilled, citable lessons as a versioned, content-hashed skill-pack for a peer agent to reuse.",
               tags: ["knowledge", "memory", "interop"],
             },
+            {
+              id: "discovery.ingest_signal",
+              name: "Contribute a discovery signal",
+              description:
+                "Submit a product signal into a workspace through the governed MCP write surface (tools/call ingest_signal). Requires a token carrying the write:signal scope AND the workspace's outward-write gate enabled; the text is injection-screened before storage. Off by default — every write is scope-checked and audited.",
+              input_modes: ["application/json"],
+              output_modes: ["application/json"],
+              tags: ["discovery", "write", "scoped", "approval-gated"],
+            },
           ],
           policies: {
             destructive_actions_require_approval: true,
             pii_egress_filtered: true,
             rate_limit_per_minute: 60,
+            // Inbound writes are scope-gated (mcp_tokens.scopes) AND globally
+            // dormant until an admin flips interop_write_enabled(); every attempt
+            // is audited. No write is possible by default.
+            writes_require_scope_and_gate: true,
           },
         };
         return new Response(JSON.stringify(card, null, 2), {
