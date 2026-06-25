@@ -37,7 +37,12 @@ async function searchDecisionsByTopic(
 
   const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
   if (error || !data) return [];
-  return data as Array<{ id: string; title: string; rationale: string | null; status: string | null }>;
+  return data as Array<{
+    id: string;
+    title: string;
+    rationale: string | null;
+    status: string | null;
+  }>;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -74,7 +79,9 @@ export async function getGoverningDecision(
   const rows = await searchDecisionsByTopic(supabase, workspace_id, topic, limit);
   if (!rows.length) return { topic, decisions: [] };
 
-  const nodes = rows.filter((r) => UUID_RE.test(r.id)).map((r) => ({ id: r.id, kind: "decision" as const }));
+  const nodes = rows
+    .filter((r) => UUID_RE.test(r.id))
+    .map((r) => ({ id: r.id, kind: "decision" as const }));
 
   let governing: Awaited<ReturnType<typeof resolveGoverningForNodes>> = [];
   try {
@@ -95,9 +102,10 @@ export async function getGoverningDecision(
       title: r.title,
       status: r.status,
       is_current: false,
-      superseded_by: g.superseded && g.governingId !== r.id
-        ? { id: g.governingId, title: g.governingTitle ?? g.governingId }
-        : null,
+      superseded_by:
+        g.superseded && g.governingId !== r.id
+          ? { id: g.governingId, title: g.governingTitle ?? g.governingId }
+          : null,
       contradicted: g.contradicted,
     };
   });
