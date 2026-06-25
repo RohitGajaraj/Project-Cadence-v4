@@ -38,24 +38,81 @@ export type Sentiment = "positive" | "neutral" | "negative";
  *  the clustering key. Keep keywords lowercase; matching lowercases the input. */
 export const TAG_RULES: ReadonlyArray<{ tag: string; keywords: readonly string[] }> = [
   { tag: "performance", keywords: ["slow", "latency", "lag", "timeout", "timed out", "loading"] },
-  { tag: "tone", keywords: ["tone", "rude", "robotic", "cold", "formal", "corporate", "impersonal"] },
-  { tag: "escalation", keywords: ["escalate", "escalation", "urgent", "on-call", "on call", "sev"] },
-  { tag: "bug", keywords: ["bug", "error", "broken", "crash", "fails", "failing", "cannot", "can't"] },
-  { tag: "billing", keywords: ["billing", "invoice", "charge", "price", "pricing", "refund", "payment"] },
-  { tag: "onboarding", keywords: ["onboarding", "setup", "get started", "first run", "signup", "sign up"] },
-  { tag: "routing", keywords: ["routing", "route", "queue", "assign", "off-hours", "off hours", "after hours"] },
-  { tag: "reliability", keywords: ["down", "outage", "downtime", "unavailable", "5xx", "degraded"] },
-  { tag: "feature-request", keywords: ["feature request", "would be nice", "wish", "please add", "can you add"] },
-  { tag: "churn-risk", keywords: ["cancel", "cancelling", "churn", "switch", "competitor", "leaving"] },
+  {
+    tag: "tone",
+    keywords: ["tone", "rude", "robotic", "cold", "formal", "corporate", "impersonal"],
+  },
+  {
+    tag: "escalation",
+    keywords: ["escalate", "escalation", "urgent", "on-call", "on call", "sev"],
+  },
+  {
+    tag: "bug",
+    keywords: ["bug", "error", "broken", "crash", "fails", "failing", "cannot", "can't"],
+  },
+  {
+    tag: "billing",
+    keywords: ["billing", "invoice", "charge", "price", "pricing", "refund", "payment"],
+  },
+  {
+    tag: "onboarding",
+    keywords: ["onboarding", "setup", "get started", "first run", "signup", "sign up"],
+  },
+  {
+    tag: "routing",
+    keywords: ["routing", "route", "queue", "assign", "off-hours", "off hours", "after hours"],
+  },
+  {
+    tag: "reliability",
+    keywords: ["down", "outage", "downtime", "unavailable", "5xx", "degraded"],
+  },
+  {
+    tag: "feature-request",
+    keywords: ["feature request", "would be nice", "wish", "please add", "can you add"],
+  },
+  {
+    tag: "churn-risk",
+    keywords: ["cancel", "cancelling", "churn", "switch", "competitor", "leaving"],
+  },
 ];
 
 const NEGATIVE_WORDS = [
-  "slow", "rude", "broken", "bug", "error", "crash", "angry", "frustrat", "cancel", "refund",
-  "outage", "down", "fails", "failing", "cold", "robotic", "unacceptable", "worst", "hate", "terrible",
+  "slow",
+  "rude",
+  "broken",
+  "bug",
+  "error",
+  "crash",
+  "angry",
+  "frustrat",
+  "cancel",
+  "refund",
+  "outage",
+  "down",
+  "fails",
+  "failing",
+  "cold",
+  "robotic",
+  "unacceptable",
+  "worst",
+  "hate",
+  "terrible",
 ];
 const POSITIVE_WORDS = [
-  "love", "great", "excellent", "fast", "helpful", "thank", "thanks", "awesome", "perfect", "smooth",
-  "recovered", "happy", "delighted", "works well",
+  "love",
+  "great",
+  "excellent",
+  "fast",
+  "helpful",
+  "thank",
+  "thanks",
+  "awesome",
+  "perfect",
+  "smooth",
+  "recovered",
+  "happy",
+  "delighted",
+  "works well",
 ];
 
 /** Whole-word-ish containment: matches a keyword bounded by non-word chars so "can" does not
@@ -124,7 +181,9 @@ export function normalizeSignal(raw: RawSignal): NormalizedSignal | null {
   const derived = autoTag(`${raw.title || ""} ${content}`, source);
   const existing = (raw.tags || []).filter((t) => typeof t === "string" && t.trim().length > 0);
   const tags = Array.from(new Set([...existing, ...derived])).sort();
-  const sentiment = isSentiment(raw.sentiment) ? raw.sentiment : inferSentiment(`${raw.title || ""} ${content}`);
+  const sentiment = isSentiment(raw.sentiment)
+    ? raw.sentiment
+    : inferSentiment(`${raw.title || ""} ${content}`);
   return {
     source,
     title: raw.title?.trim() || null,
@@ -146,12 +205,48 @@ function isSentiment(v: unknown): v is Sentiment {
 export type DemoFeedItem = { key: string; source: string; title: string; content: string };
 
 export const DEMO_FEED: ReadonlyArray<DemoFeedItem> = [
-  { key: "sense-demo-1", source: "intercom", title: "Slow first response at night", content: "Customers report 4 to 12 hour first response on billing tickets during EU off-hours. The single off-hours queue backs up." },
-  { key: "sense-demo-2", source: "csat", title: "Replies feel robotic", content: "SMB founders flag our replies as corporate and cold. A few said it reads like a form letter." },
-  { key: "sense-demo-3", source: "slack", title: "Escalation note is empty", content: "On-call gets paged with no ticket history attached, so they redo the triage the agent already did." },
-  { key: "sense-demo-4", source: "sales", title: "Enterprise wants a named owner", content: "Two enterprise prospects asked for a named support owner rather than a shared queue before they sign." },
-  { key: "sense-demo-5", source: "churn", title: "Threatening to switch over downtime", content: "A mid-market account mentioned a competitor after the last outage. Reliability is the stated reason." },
-  { key: "sense-demo-6", source: "support", title: "Macro answers miss nuance", content: "Canned macros work for billing but enterprise customers say the answers are templated and wrong on edge cases." },
+  {
+    key: "sense-demo-1",
+    source: "intercom",
+    title: "Slow first response at night",
+    content:
+      "Customers report 4 to 12 hour first response on billing tickets during EU off-hours. The single off-hours queue backs up.",
+  },
+  {
+    key: "sense-demo-2",
+    source: "csat",
+    title: "Replies feel robotic",
+    content:
+      "SMB founders flag our replies as corporate and cold. A few said it reads like a form letter.",
+  },
+  {
+    key: "sense-demo-3",
+    source: "slack",
+    title: "Escalation note is empty",
+    content:
+      "On-call gets paged with no ticket history attached, so they redo the triage the agent already did.",
+  },
+  {
+    key: "sense-demo-4",
+    source: "sales",
+    title: "Enterprise wants a named owner",
+    content:
+      "Two enterprise prospects asked for a named support owner rather than a shared queue before they sign.",
+  },
+  {
+    key: "sense-demo-5",
+    source: "churn",
+    title: "Threatening to switch over downtime",
+    content:
+      "A mid-market account mentioned a competitor after the last outage. Reliability is the stated reason.",
+  },
+  {
+    key: "sense-demo-6",
+    source: "support",
+    title: "Macro answers miss nuance",
+    content:
+      "Canned macros work for billing but enterprise customers say the answers are templated and wrong on edge cases.",
+  },
 ];
 
 /** Pure decision for one tagging pass over a signal: the tags + sentiment to write, and
@@ -172,7 +267,8 @@ export function tagSignalUpdate(row: {
   const sentiment: Sentiment = isSentiment(row.sentiment)
     ? row.sentiment
     : inferSentiment(`${row.title || ""} ${content}`);
-  const tagsChanged = merged.length !== existing.length || merged.some((t, i) => t !== existing.slice().sort()[i]);
+  const tagsChanged =
+    merged.length !== existing.length || merged.some((t, i) => t !== existing.slice().sort()[i]);
   const sentimentChanged = !isSentiment(row.sentiment);
   return { tags: merged, sentiment, changed: tagsChanged || sentimentChanged };
 }
