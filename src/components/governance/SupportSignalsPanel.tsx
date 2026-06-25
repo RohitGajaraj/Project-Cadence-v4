@@ -164,9 +164,7 @@ export function SupportSignalsPanel() {
         setTriageResult("No recurring themes found yet. Add more tickets and try again.");
       } else {
         const parts: string[] = [];
-        parts.push(
-          `${r.clusters} recurring ${r.clusters === 1 ? "theme" : "themes"} found.`,
-        );
+        parts.push(`${r.clusters} recurring ${r.clusters === 1 ? "theme" : "themes"} found.`);
         parts.push(
           `${r.signalsEmitted} ${r.signalsEmitted === 1 ? "signal" : "signals"} sent to Discover.`,
         );
@@ -242,11 +240,7 @@ export function SupportSignalsPanel() {
           >
             {importing ? "Adding..." : "Add tickets"}
           </button>
-          <button
-            className="btn btn-ghost btn-sm"
-            disabled={running}
-            onClick={handleTriage}
-          >
+          <button className="btn btn-ghost btn-sm" disabled={running} onClick={handleTriage}>
             {running ? "Extracting..." : "Extract signals"}
           </button>
           {importResult && (
@@ -311,7 +305,14 @@ export function SupportSignalsPanel() {
                       Loading...
                     </span>
                   ) : (
-                    <p style={{ fontSize: 13, color: "var(--ink)", whiteSpace: "pre-wrap", margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--ink)",
+                        whiteSpace: "pre-wrap",
+                        margin: 0,
+                      }}
+                    >
                       {draftText}
                     </p>
                   )}

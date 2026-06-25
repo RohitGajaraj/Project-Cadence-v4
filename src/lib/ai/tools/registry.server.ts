@@ -242,7 +242,7 @@ const remember = def({
   run: async (a, { supabase, userId, agentSlug, agentId, workspaceId }) => {
     let emb: number[] | null = null;
     try {
-      emb = await embedOne(a.content);
+      emb = await embedOne(a.content, { supabase, userId, surfaceRef: "memory.remember" });
     } catch {
       /* ignore embed failure */
     }
