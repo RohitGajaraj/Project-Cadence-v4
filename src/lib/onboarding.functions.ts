@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { getTrackSeed, type OnboardingTrack } from "@/lib/onboarding/track-seeds";
+import { callModel } from "@/lib/ai/runtime.server";
 
 /**
  * Resolve the caller's default workspace, creating one (with an owner membership)
@@ -277,4 +278,171 @@ export const setAgentEnabled = createServerFn({ method: "POST" })
     }
 
     return { success: true };
+  });
+
+// ─── WM-S3: Onboarding Concierge ────────────────────────────────────────────
+
+export const conciergeContextSchema = z.object({
+  productName: z.string().min(1).max(120),
+  whatItDoes: z.string().min(10).max(600),
+  targetUsers: z.string().min(3).max(300),
+  yourRole: z.string().min(2).max(120),
+  keyChallenge: z.string().min(5).max(400),
+  keyMetric: z.string().min(2).max(200),
+});
+
+export type ConciergeContext = z.infer<typeof conciergeContextSchema>;
+
+type ConciergeSignal = { title: string; content: string; source: string };
+type ConciergeOpportunity = {
+  title: string;
+  problem: string;
+  target_user: string;
+  impact: number;
+  confidence: number;
+  ease: number;
+};
+type ConciergeAIOutput = {
+  projectName: string;
+  signals: ConciergeSignal[];
+  opportunities: ConciergeOpportunity[];
+};
+
+/**
+ * WM-S3: Onboarding Concierge agent.
+ *
+ * Takes real product context from the user and generates a personalized
+ * workspace seed -- signals, opportunities, and a starter project -- that
+ * reflects their actual situation. Runs instead of the static track seeds
+ * when the user opts into the Concierge path.
+ */
+export const seedWorkspaceFromContext = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => conciergeContextSchema.parse(i))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+
+    // Guard: already seeded
+    const { data: existing } = await supabase
+      .from("signals")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    if (existing && existing.length > 0) {
+      throw new Error("Workspace already seeded. Reset in Settings to re-seed.");
+    }
+
+    const system = `You are the Cadence Onboarding Concierge. Generate a personalized product workspace seed from the user's real context.
+
+Return JSON matching this exact schema (no markdown fences, no prose outside JSON):
+{
+  "projectName": "short descriptive name for their product focus (< 60 chars)",
+  "signals": [
+    { "title": "< 80 chars", "content": "150-250 word realistic signal body -- a user interview excerpt, analytics finding, competitor move, or market data point credible for their context", "source": "user_feedback|analytics|competitive_research|market_research|internal_decision|business_metrics" }
+  ],
+  "opportunities": [
+    { "title": "< 80 chars", "problem": "< 200 chars -- why it matters", "target_user": "< 60 chars", "impact": 1-10, "confidence": 1-10, "ease": 1-10 }
+  ]
+}
+
+Rules:
+- Generate exactly 5 signals and 4 opportunities.
+- Signals must feel real and grounded in their stated context -- no generic placeholders.
+- Opportunity 1 should be the highest-leverage thing they mentioned.
+- ICE scores must be calibrated to their situation, not maxed out.
+- No em-dashes, en-dashes, or AI-cliche phrases.
+- Return only the JSON object.`;
+
+    const userMsg = `Product: ${data.productName}
+What it does: ${data.whatItDoes}
+Target users: ${data.targetUsers}
+My role: ${data.yourRole}
+Key challenge right now: ${data.keyChallenge}
+Key metric I care about: ${data.keyMetric}`;
+
+    const result = await callModel(supabase, userId, {
+      surface: "agent",
+      surface_ref: `concierge:onboarding:${userId}`,
+      model: "google/gemini-2.5-flash",
+      fallbackModel: "anthropic/claude-haiku-4-5-20251001",
+      responseFormat: "json_object",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMsg },
+      ],
+    });
+
+    const parsed = result.json as ConciergeAIOutput | null;
+    if (!parsed || !parsed.signals || !parsed.opportunities) {
+      throw new Error("Concierge returned an unexpected format. Please retry.");
+    }
+
+    const workspaceId = await ensureDefaultWorkspace(supabase, userId);
+
+    // Get or create project
+    const { data: projects } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    let projectId: string;
+    if (!projects || projects.length === 0) {
+      const { data: newProject, error: createErr } = await supabase
+        .from("projects")
+        .insert([{ user_id: userId, workspace_id: workspaceId, name: parsed.projectName }])
+        .select("id")
+        .single();
+      if (createErr) throw createErr;
+      if (!newProject) throw new Error("Project creation returned no data");
+      projectId = newProject.id;
+    } else {
+      projectId = projects[0].id;
+    }
+
+    // Insert signals
+    const signalRows = parsed.signals.slice(0, 6).map((s) => ({
+      user_id: userId,
+      workspace_id: workspaceId,
+      project_id: projectId,
+      source: s.source,
+      title: s.title,
+      content: s.content,
+    }));
+    const { error: sigErr } = await supabase.from("signals").insert(signalRows);
+    if (sigErr) throw sigErr;
+
+    // Insert opportunities
+    const oppRows = parsed.opportunities.slice(0, 5).map((o) => ({
+      user_id: userId,
+      workspace_id: workspaceId,
+      project_id: projectId,
+      title: o.title,
+      problem: o.problem,
+      target_user: o.target_user ?? null,
+      impact: Math.min(10, Math.max(1, o.impact)),
+      confidence: Math.min(10, Math.max(1, o.confidence)),
+      ease: Math.min(10, Math.max(1, o.ease)),
+      status: "backlog",
+    }));
+    const { error: oppErr } = await supabase.from("opportunities").insert(oppRows);
+    if (oppErr) throw oppErr;
+
+    // Mark onboarded
+    const { error: profErr, data: profData } = await supabase
+      .from("profiles")
+      .update({ onboarded: true })
+      .eq("id", userId)
+      .select("id");
+    if (profErr) throw profErr;
+    if (!profData || profData.length === 0) {
+      throw new Error("Failed to mark profile as onboarded (RLS denied or profile not found)");
+    }
+
+    return {
+      success: true,
+      projectId,
+      projectName: parsed.projectName,
+      signalsCount: signalRows.length,
+      opportunitiesCount: oppRows.length,
+    };
   });

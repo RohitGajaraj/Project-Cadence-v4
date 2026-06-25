@@ -20,11 +20,12 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Sparkles } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import { seedWorkspaceForTrack, type OnboardingTrack } from "@/lib/onboarding.functions";
 import { getTrackSeed, trackDescriptions } from "@/lib/onboarding/track-seeds";
+import { ConciergeContextStep } from "@/components/onboarding/ConciergeContextStep";
 
 interface TrackSelectorProps {
   onTrackSelected: () => void; // Called after seeding succeeds; parent advances to step 2
@@ -46,7 +47,14 @@ function trackPreview(track: OnboardingTrack) {
 export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
   const fSeed = useServerFn(seedWorkspaceForTrack);
   const [selectedTrack, setSelectedTrack] = useState<OnboardingTrack | null>(null);
+  const [showConcierge, setShowConcierge] = useState(false);
   const qc = useQueryClient();
+
+  if (showConcierge) {
+    return (
+      <ConciergeContextStep onDone={onTrackSelected} onBack={() => setShowConcierge(false)} />
+    );
+  }
 
   const mSeed = useMutation({
     mutationFn: (track: OnboardingTrack) => fSeed({ data: { track } }),
@@ -122,6 +130,41 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
 
         {/* Persona cards — each previews the workspace it delivers */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          {/* Concierge option — personalized from real context */}
+          <button
+            className="lift"
+            disabled={isLoading}
+            onClick={() => setShowConcierge(true)}
+            style={{
+              animation: "fadeUp var(--dur-base) var(--ease-out) both",
+              animationDelay: "50ms",
+              textAlign: "left",
+              padding: "16px 18px",
+              borderRadius: 12,
+              border: "1px solid color-mix(in oklab, var(--ember) 35%, transparent)",
+              background: "color-mix(in oklab, var(--ember) 3%, var(--canvas))",
+              cursor: isLoading ? "not-allowed" : "pointer",
+              opacity: isLoading ? 0.5 : 1,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <Sparkles size={14} style={{ color: "var(--ember)", flexShrink: 0 }} />
+              <span className="font-display" style={{ fontSize: 17, fontWeight: 460 }}>
+                Build from my context
+              </span>
+              <span
+                className="mono-label"
+                style={{ fontSize: 8.5, color: "var(--ember)", marginLeft: "auto" }}
+              >
+                recommended
+              </span>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-subtle)", lineHeight: 1.5, paddingLeft: 22 }}>
+              Tell Cadence about your real product and it builds your workspace from your situation --
+              signals from your market, opportunities sized to what you're facing.
+            </div>
+          </button>
+
           {TRACKS.map((track, i) => {
             const p = trackPreview(track);
             const isSelected = selectedTrack === track;
