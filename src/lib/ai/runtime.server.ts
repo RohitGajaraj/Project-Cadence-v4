@@ -1387,6 +1387,25 @@ export async function callModel(
   }
 
   if (status === "error") {
+    // AFD-06: tag the parent agent_runs row with a failure taxonomy + capture to Sentry façade.
+    try {
+      const kind = classifyFailureKind(errMsg);
+      if (opts.runId) {
+        await supabase
+          .from("agent_runs")
+          .update({ failure_kind: kind })
+          .eq("id", opts.runId);
+      }
+      const { captureError } = await import("@/lib/observability");
+      void captureError(new Error(errMsg ?? "AI call failed"), {
+        user_id: userId,
+        surface: opts.surface,
+        failure_kind: kind,
+        extras: { surface_ref: opts.surface_ref ?? null, model: modelUsed, provider, runId: opts.runId ?? null },
+      });
+    } catch (_e) {
+      // Observability must never block user flows.
+    }
     throw new Error(errMsg ?? "AI call failed");
   }
 
