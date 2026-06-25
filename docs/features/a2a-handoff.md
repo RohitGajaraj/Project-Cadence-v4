@@ -125,5 +125,5 @@ each tool it calls re-passes through its own arc.
 - Orchestration contract: `architecture/orchestration.md`
 - Governance & approval gates: `architecture/security.md`
 - AI runtime chokepoint: `architecture/runtime.md`
-- Feature ticket (Bundle 4 / E1 to E5): `docs/feature-backlog.md`
+- Feature ticket (Bundle 4 / E1 to E5): `docs/planning/archive/feature-backlog.md` (archived)
 - Parent index: `docs/README.md`

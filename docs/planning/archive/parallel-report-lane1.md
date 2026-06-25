@@ -117,3 +117,22 @@ Continuing "go deeper now". DBR-3a put governing-decision in the Critic; **DBR-3
 
 ## Cycle (2026-06-24, autonomous loop) — AMBIENT-TRIGGER ◐
 - **AMBIENT-TRIGGER (v11 #4, Tier 1 Sense)** — self-driving policy layer. Pure `src/lib/sensing/trigger.ts` (`evaluateTriggers`, 10 tests) + `trigger-tick` cron: self-originates `proposed` missions (zero spend, resume-runs ignores them = reversibility gate) + Trust-Ledger `decisions` receipts when clusters/outcomes cross a threshold. Migration `20260624050000_ambient_trigger.sql` (auto_trigger flag, applied live; demo input verified 6 clusters/8 missed). tsc 0, 1238 tests, lint clean. Route+types hand-registered. ◐ + `lane.sh done`; remainder founder-gated (cron, execution/promotion, competitor source).
+
+## 2026-06-25 — INTEROP-V11 Q2 governed inbound WRITE (founder-lifted gate)
+
+Founder lifted the Q2 scopes/audit gate ("pick up the founder-gated items"). Built the outward GOVERNED WRITE surface, dormant + reversible:
+- Migration `20260625140000`: `mcp_tokens.scopes text[]`, `interop_write_enabled()` (default false) + `admin_set_interop_write_enabled` (admin-gated), `issue_mcp_token` +`_scopes`.
+- `ingest_signal` write tool reusing the LIVE signals insert + the `screenIngestText` injection screen (verified prod schema, so no append_decision-style drift).
+- Two locks: per-token `write:signal` scope AND the global dormant gate; `tools/list` scope-filtered; `tools/call` re-checks (defence in depth); legacy flat path can't write; gate fails closed; every attempt audited.
+- A2A card advertises the governed `discovery.ingest_signal` skill honestly.
+- Gate: tsc 0; 77 MCP tests pass (new mcp.functions.test.ts + 14 protocol tests). `bun run build` not used as gate (known node20/ESM lovable-tagger failure in lane worktrees).
+- Remaining (founder): apply migration on publish, mint a write-scoped token, flip `admin_set_interop_write_enabled(true)`.
+
+### 2026-06-25 (cont.) — INTEROP-V11 Q2 VALIDATED + closed properly (founder pushback)
+
+Founder challenged: don't mark ✅ just because asked — validate it works. Did:
+- Applied migration `20260625140000` to the LIVE prod DB via Lovable MCP; verified objects (scopes col, gate fns, issue_mcp_token single 6-arg overload).
+- Functionally round-tripped on real Postgres: gate read false→true→false; token mint persists scopes=['write:signal']; the exact ingestSignal signals insert lands with content-fallback. Cleaned up (DB dormant, 0 tokens).
+- Full suite green: bun test 1490/0, tsc 0; 3-lens adversarial security review clean (authz/tenant/injection) + 2 fail-mode fixes folded.
+- CAUGHT A REAL GAP checking the published hub: main had the ✅ flag but NOT the Q2 code (it lived only on parallel/lane-1) → published hub couldn't have the feature. Landed the actual code + migration on origin/main (overlay of the 8 feature files onto main, tsc+72 MCP tests green, pushed). Main now consistent: code + migration + ✅.
+- Remaining = founder PUBLISH only (live worker still on pre-Q2 build 4f4dc478). After publish: mint a write:signal token + admin_set_interop_write_enabled(true) to activate; dormant + read-only until then.
