@@ -21,8 +21,13 @@ import { loadBYOKey } from "@/lib/byokeys-vault.server";
 
 const GATEWAY_EMB_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
 const OPENAI_EMB_URL = "https://api.openai.com/v1/embeddings";
-export const EMB_MODEL = "openai/text-embedding-3-small";
-export const EMB_DIMS = 1536;
+// Cohere embed-v4 via OpenAI-compatible endpoint. 1536 dims = native max output (no schema change).
+// 128K token limit handles full PRDs without truncation. Activated by COHERE_API_KEY env var.
+const COHERE_EMB_URL = "https://api.cohere.ai/compatibility/v1/embeddings";
+const COHERE_EMB_MODEL_RAW = "embed-v4.0"; // the model name Cohere's API expects
+const COHERE_EMB_MODEL_LOG = "cohere/embed-v4.0"; // namespaced form for ai_events logging
+export const EMB_MODEL = "openai/text-embedding-3-small"; // kept for back-compat; gateway uses this
+export const EMB_DIMS = 1536; // unchanged — Cohere embed-v4 native max is also 1536; zero migration
 const BATCH = 64;
 const MAX_INPUT_CHARS = 32_000;
 
@@ -42,12 +47,14 @@ export type EmbedContext = {
 
 type EmbedRoute = {
   via: "gateway" | "byo";
-  provider: "lovable" | "openai";
+  provider: "lovable" | "openai" | "cohere";
   url: string;
   key: string;
-  /** The model id as the chosen endpoint expects it (gateway keeps the `openai/` prefix; the raw
-   *  OpenAI API does not). */
+  /** The model id as the chosen endpoint expects it (gateway keeps the `openai/` prefix; direct
+   *  OpenAI API strips it; Cohere compatibility API uses the raw model name). */
   model: string;
+  /** The namespaced model string written to ai_events (e.g. "cohere/embed-v4.0"). */
+  logModel: string;
 };
 
 /** chars/4 token heuristic, matching the completion estimator's spirit. Pure + total. */
@@ -60,9 +67,14 @@ export function estimateEmbedTokens(inputs: string[]): number {
 const OPENAI_MODEL = EMB_MODEL.replace(/^openai\//, "");
 
 /**
- * Resolve which endpoint + key an embedding call uses: an explicit override first, then an
- * auto-loaded OpenAI BYO key (only when user context is present), else the Lovable gateway
- * (today's default). Pure given its inputs except the optional BYO lookup + the env read.
+ * Resolve which endpoint + key an embedding call uses. Priority order:
+ *   1. Explicit byoOverride (test/admin override — always OpenAI endpoint)
+ *   2. User's OpenAI BYO key from the vault (user-supplied, user's billing)
+ *   3. COHERE_API_KEY env var → Cohere embed-v4 via OpenAI-compatible endpoint (platform default)
+ *   4. Lovable gateway (absolute fallback; used until COHERE_API_KEY is set)
+ *
+ * Steps 1-2 respect user-supplied keys first; step 3 is the platform's preferred provider;
+ * step 4 ensures the app never hard-fails even when no platform key is configured.
  */
 export async function resolveEmbedRoute(opts: EmbedContext): Promise<EmbedRoute> {
   if (opts.byoOverride?.apiKey) {
@@ -72,6 +84,7 @@ export async function resolveEmbedRoute(opts: EmbedContext): Promise<EmbedRoute>
       url: OPENAI_EMB_URL,
       key: opts.byoOverride.apiKey,
       model: OPENAI_MODEL,
+      logModel: EMB_MODEL,
     };
   }
   if (opts.supabase && opts.userId) {
@@ -83,12 +96,26 @@ export async function resolveEmbedRoute(opts: EmbedContext): Promise<EmbedRoute>
         url: OPENAI_EMB_URL,
         key: byo.api_key,
         model: OPENAI_MODEL,
+        logModel: EMB_MODEL,
       };
     }
   }
+  // Platform's preferred embedding provider. Active once COHERE_API_KEY is set in the environment.
+  // Uses Cohere's OpenAI-compatible endpoint — same request/response shape, no fetch-logic changes.
+  const cohereKey = process.env.COHERE_API_KEY;
+  if (cohereKey) {
+    return {
+      via: "byo",
+      provider: "cohere",
+      url: COHERE_EMB_URL,
+      key: cohereKey,
+      model: COHERE_EMB_MODEL_RAW,
+      logModel: COHERE_EMB_MODEL_LOG,
+    };
+  }
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY missing");
-  return { via: "gateway", provider: "lovable", url: GATEWAY_EMB_URL, key, model: EMB_MODEL };
+  return { via: "gateway", provider: "lovable", url: GATEWAY_EMB_URL, key, model: EMB_MODEL, logModel: EMB_MODEL };
 }
 
 async function logEmbedEvent(
@@ -107,11 +134,11 @@ async function logEmbedEvent(
       surface_ref: opts.surfaceRef ?? null,
       provider: route.provider,
       via: route.via,
-      model: EMB_MODEL,
+      model: route.logModel, // reflects the actual model used (Cohere or OpenAI), not a hardcoded constant
       prompt_tokens: inTok,
       completion_tokens: 0,
       total_tokens: inTok,
-      est_cost_usd: estimateCostUsd(EMB_MODEL, inTok, 0),
+      est_cost_usd: estimateCostUsd(route.logModel, inTok, 0),
       latency_ms: latencyMs,
       status: "ok",
     });
