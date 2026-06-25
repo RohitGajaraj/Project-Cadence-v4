@@ -189,7 +189,7 @@ export const listConnections = createServerFn({ method: "GET" })
 export const startGithubAppConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const slug = process.env.GITHUB_APP_SLUG;
+    const slug = (process.env.GITHUB_APP_SLUG ?? "").trim();
     if (!slug || !process.env.GITHUB_APP_ID) {
       throw new Error(
         "GitHub setup pending — an admin must register the GitHub App and set GITHUB_APP_ID and GITHUB_APP_SLUG before members can connect.",

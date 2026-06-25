@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEMO_FEED, autoTag, inferSentiment, tagSignalUpdate } from "@/lib/sensing/normalize";
+import { ingestGithubSignals } from "@/lib/connectors/providers/github-ingest.server";
 
 /**
  * AMBIENT-SENSE (v11 #3) sense-tick: the continuous-sensing half of the ambient loop. For
@@ -51,6 +52,8 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
           workspace_id: string;
           tagged?: number;
           seeded?: number;
+          github_inserted?: number;
+          github_source?: string;
           error?: string;
         }> = [];
 
@@ -62,11 +65,18 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
             }
             const tagged = await tagUntaggedSignals(ws.owner_id, ws.id);
             const seeded = await topUpDemoFeed(ws.owner_id, ws.id);
+            const gh = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
             await supabaseAdmin
               .from("workspaces")
               .update({ last_auto_sense_at: new Date().toISOString() })
               .eq("id", ws.id);
-            results.push({ workspace_id: ws.id, tagged, seeded });
+            results.push({
+              workspace_id: ws.id,
+              tagged,
+              seeded,
+              github_inserted: gh?.inserted ?? 0,
+              github_source: gh?.source ?? "none",
+            });
           } catch (e) {
             results.push({
               workspace_id: ws.id,
