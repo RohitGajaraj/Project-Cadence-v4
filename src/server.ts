@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { buildAgentCard, buildOAuthProtectedResourceMetadata, AGENT_CARD_CORS_HEADERS } from "./lib/a2a-card";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -68,6 +69,52 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Intercept standard A2A well-known URLs before TanStack routing.
+    // These paths contain a leading dot which is not expressible in
+    // TanStack Router's file-based routing conventions.
+    const url = new URL(request.url);
+
+    if (url.pathname === "/.well-known/agent.json") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        });
+      }
+      return new Response(JSON.stringify(buildAgentCard(url.origin), null, 2), {
+        status: 200,
+        headers: AGENT_CARD_CORS_HEADERS,
+      });
+    }
+
+    if (url.pathname === "/.well-known/oauth-protected-resource") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        });
+      }
+      return new Response(
+        JSON.stringify(buildOAuthProtectedResourceMetadata(url.origin), null, 2),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=3600",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
