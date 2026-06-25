@@ -12,6 +12,7 @@ import {
   ingestSignal,
   logMCPCall,
 } from "@/lib/mcp.functions";
+import { getGoverningDecision, getContradictionHistory } from "@/lib/ai/mcp-brain.server";
 import {
   buildInitializeResult,
   buildToolCallResult,
@@ -181,6 +182,7 @@ async function dispatchTool(
   method: string,
   workspace_id: string,
   params: Record<string, unknown>,
+  user_id = "",
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
   try {
     switch (method) {
@@ -249,6 +251,22 @@ async function dispatchTool(
         // Optional `limit`; exportSkillpack clamps it into [1, 500].
         const limit = typeof params.limit === "number" ? params.limit : undefined;
         const data = await exportSkillpack(supabase, workspace_id, limit);
+        return { success: true, data };
+      }
+
+      case "get_governing_decision": {
+        const topic = params.topic as string;
+        if (!topic) return { success: false, error: "Missing required parameter: topic" };
+        const limit = Math.min((params.limit as number) || 10, 50);
+        const data = await getGoverningDecision(supabase, workspace_id, user_id, topic, limit);
+        return { success: true, data };
+      }
+
+      case "get_contradiction_history": {
+        const topic = params.topic as string;
+        if (!topic) return { success: false, error: "Missing required parameter: topic" };
+        const limit = Math.min((params.limit as number) || 10, 50);
+        const data = await getContradictionHistory(supabase, workspace_id, user_id, topic, limit);
         return { success: true, data };
       }
 
@@ -602,6 +620,7 @@ export const Route = createFileRoute("/api/mcp")({
               dispatch.toolName,
               workspace_id,
               dispatch.args,
+              tokenUserId,
             );
             await logMCPCall(
               {
@@ -630,6 +649,7 @@ export const Route = createFileRoute("/api/mcp")({
             mcpReq.method,
             workspace_id,
             mcpReq.params || {},
+            tokenUserId,
           );
 
           // 6. Log the call (success or failure)
