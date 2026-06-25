@@ -1,11 +1,11 @@
-// AGENT-EXP: the six-station loop spine. The standing map the user navigates,
-// Sense -> Decide -> Define -> Build -> Ship -> Learn. Each station shows one
-// outcome line and, when work is live, one state line + a status dot. This is
-// phases, not personnel: the named agents appear in motion in the relay, not here.
+// Six-phase work spine (Sense → Decide → Define → Build → Ship → Learn). Each
+// phase shows one outcome line and, when work is live, one state line + a status
+// dot. Phases are product stages, not personnel — agents appear in motion in the
+// mission relay, not here.
 //
-// Engine-Room: agent_runs + agent_messages + agent_approvals rolled up per station
-//   -> the per-agent runs/handoffs live in the relay (mission detail) + Engine Room
-//   -> surfaced as a calm six-station spine, one outcome + one live state per phase.
+// Engine-Room: agent_runs + agent_messages + agent_approvals rolled up per phase
+//   -> per-agent runs/handoffs live in the relay (mission detail) + Engine Room
+//   -> surfaced as a calm six-phase spine, one outcome + one live state per phase.
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -43,7 +43,7 @@ export function LoopStations({ workspaceId }: { workspaceId: string | null }) {
 
   return (
     <section style={{ marginBottom: 26 }}>
-      <MonoLabel>The loop</MonoLabel>
+      <MonoLabel>Active work</MonoLabel>
       <div
         style={{
           marginTop: 10,
