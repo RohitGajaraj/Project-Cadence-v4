@@ -441,6 +441,95 @@ No provider is cleanly all-in-one for Cadence's constraints:
 
 ---
 
+### Data privacy, compliance, server locations, and operational risks (2026-06-26)
+
+> **Why this matters for Cadence.** Embedding calls send the actual content of user workspace data — PRDs, decision narratives, signals, support conversations — to the provider's servers. This is real customer data, not metadata. Every provider Cadence uses for AI inference is a **data subprocessor** under GDPR Article 28. This section documents the compliance posture of every provider in the stack so the privacy/legal review is not re-derived from scratch.
+
+#### What data leaves Cadence's servers on each inference call
+
+| Call type | Data sent to provider | Privacy sensitivity |
+|---|---|---|
+| Embedding a PRD / signal / decision | Full document text, up to the token limit | High — contains customer's product strategy |
+| Embedding a memory / outcome | Outcome narrative (e.g. "we shipped X, it missed ICE by Y") | High — strategic business context |
+| Completion (agent loop / Critic) | System prompt + user context + tool results | High — decision content + workspace history |
+| Rerank | Query text + candidate document excerpts | High — same as above |
+
+This data classification means the provider's data residency, retention, and GDPR posture directly affect Cadence's own privacy obligations to its customers.
+
+#### Per-provider compliance matrix
+
+| Provider | Server locations | GDPR EU option | SOC 2 | HIPAA | Data training opt-out | DPA available | Self-host option | Acquisition/continuity risk |
+|---|---|---|---|---|---|---|---|---|
+| **Cohere embed-v4** (recommended) | `us-east-1`, **`eu-west-1`**, APAC | **Yes** — EU inference region routes data within EU | Type II | Yes | Standard API: yes (API inputs not used for training per DPA) | Yes | "Cohere North" on-prem enterprise (requires enterprise contract); API-only for standard tiers | Low — independent company, enterprise-partnered (SAP, AWS, Azure) |
+| **Cohere Rerank 4** (recommended) | Same as embed-v4 | Same | Same | Same | Same | Same | Same | Same |
+| **Fireworks AI** (completions) | US-based | **Unknown** — not confirmed in research; no EU server documentation found | **Unknown** | **Unknown** | **Unknown** | **Unknown** | Llama 4 Maverick is Apache 2.0 — full self-host option | Low — established company; open model means no provider lock-in |
+| **OpenAI** (current default / fallback) | US | Enterprise: EU Data Residency API available; Standard API: US processing | Type II | Yes | Zero Data Retention (ZDR) available via API headers | Yes | Not available | Very low — industry standard |
+| **Voyage AI** (disqualified) | **US-only** (api.voyageai.com + ai.mongodb.com) | **No native EU endpoint** — VPC deployment via AWS/Azure Marketplace is the only option (runs containerized model in your cloud account/region; not self-hosted weights) | Unknown | Unknown | Zero-day retention opt-out available (SCCs-based transfer for GDPR) | Unknown | voyage-4-nano only (HuggingFace); all other models API-only | **High** — acquired by MongoDB Feb 2025 ($220M); roadmap now MongoDB's |
+| **ZeroEntropy zerank-2** (API) | Unknown | Unknown | Unknown | Unknown | Unknown | **Non-commercial license on weights** — API commercial use may require separate agreement | Apache-2.0 `zerank-1-small` is safe; **zerank-2 weights are CC-BY-NC** | Unknown/startup |
+| **BGE-M3 / Qwen3-Embedding** (OSS floor) | **Self-hosted** (in your Cloudflare Worker or sidecar) | Full data control — data never leaves your infrastructure | N/A — you own it | N/A | N/A — no data sent to any provider | N/A | MIT / Apache-2.0 | None — you own the weights |
+
+#### GDPR specifics for current + recommended providers
+
+**Cohere (embed + rerank):**
+- EU inference region (`eu-west-1`) means data can stay within EU — satisfies GDPR data transfer requirements without SCCs
+- Standard Contractual Clauses (SCCs) also available for US-based inference where EU routing is not selected
+- SOC 2 Type II + HIPAA certified (strong subprocessor profile for enterprise customers)
+- "Cohere North" program provides on-premises deployment (enterprise contract; runs in customer's VPC; full data sovereignty)
+- For standard API use, Cohere's DPA confirms API inputs are not used to train their models
+
+**Fireworks AI (completions) — verification required:**
+- No EU infrastructure confirmed in available documentation
+- Before enabling Fireworks as a production default for EU customers: verify DPA existence and US-to-EU data transfer mechanism (SCCs typically available for US API providers)
+- Mitigation: Llama 4 Maverick is Apache 2.0 — self-hostable on Cloudflare Workers via GGUF/WASM or a sidecar. If GDPR becomes a blocker for Fireworks, self-hosting the completion model is the escape hatch.
+
+**OpenAI (current default):**
+- Standard API processes data in US; EU Data Residency API is enterprise-tier only
+- Zero Data Retention (ZDR) headers can prevent storage of any inputs (relevant for Critic conversations containing sensitive decision context)
+- Well-established DPA + SCCs
+
+#### License risks (non-obvious)
+
+| Asset | License | Commercial use? | Risk |
+|---|---|---|---|
+| zerank-2 API usage | CC-BY-NC on weights | **Unclear** — API use may differ from weight use; contact ZeroEntropy | Do not use in production without confirming commercial terms |
+| zerank-1-small (self-host) | Apache-2.0 | Yes | Safe for commercial use |
+| zerank-2 weights (self-host) | CC-BY-NC | **No** — non-commercial only | Never self-host in production |
+| Llama 4 Maverick | Apache-2.0 | Yes | Safe for commercial use |
+| BGE-M3 | MIT | Yes | Safe |
+| Qwen3-Embedding-8B | Apache-2.0 | Yes | Safe |
+| voyage-4-nano | Apache-2.0 | Yes | Only open-weight Voyage model |
+| All other Voyage models | Proprietary | API use only | No self-hosting possible |
+
+#### Acquisition and service-continuity risks
+
+| Provider | Risk | Mitigation |
+|---|---|---|
+| **Voyage AI** (MongoDB-owned) | MongoDB controls the roadmap; could pivot away from standalone embedding API to favor Atlas Search | Already disqualified. Don't build dependency on it. |
+| **ZeroEntropy** | Small company, unknown funding, compliance posture unverified | Use Cohere Rerank 4 for production; zerank-1-small for self-host floor only |
+| **Cohere** | Independent, enterprise-contracted, not acquired as of 2026-06-26 | Low risk; monitor |
+| **Fireworks AI** | Established, open models mean worst-case is just switching the API endpoint | Low risk; Apache 2.0 Llama 4 = no lock-in |
+| **OpenAI** | Industry standard; any degradation is widely visible immediately | Very low risk |
+
+#### What Cadence must do before launching to EU customers
+
+1. **Verify subprocessor list**: add Cohere, Fireworks AI, and OpenAI (or whichever providers are live) to Cadence's privacy policy subprocessor list
+2. **Cohere**: route EU workspace embeddings to `eu-west-1` endpoint (set `api-region: eu` header or use the EU base URL) — this is a single config param
+3. **Fireworks AI**: obtain a DPA and confirm SCCs before enabling for EU workspaces, OR self-host Llama 4 Maverick as the EU completion default
+4. **Enable ZDR headers on OpenAI** (if still in the fallback chain): add `OpenAI-ZeroRetention: true` header in `runtime.server.ts` for any calls involving sensitive content
+5. **Document in Cadence's own DPA**: "We use Cohere (EU) for embedding and reranking, and Fireworks AI (US) or self-hosted Llama 4 for completions"
+
+#### Rate limits and operational resilience
+
+| Provider | Rate limit (free/standard) | Upgrade path | Outage mitigation |
+|---|---|---|---|
+| Cohere embed-v4 | Trial: 40 calls/min; Pay-as-you-go: 1,000 calls/min | Contact support for higher limits | Fallback: OpenAI text-emb-3-small (already wired in resolveEmbedRoute) |
+| Cohere Rerank 4 | Pay-as-you-go: varies | Contact support | Fallback: native = skip reranking (graceful degradation) |
+| Fireworks AI | No published per-account limit at standard tier | Enterprise SLA available | Fallback: Lovable gateway (already wired) |
+| OpenAI | Tier-based (starts at 500 RPM / 30K TPM) | Credit spend increases tier | Fallback: Fireworks or Lovable gateway |
+| Voyage AI | Tier 1: 2,000 RPM / 8M TPM | Tier 2 at $100 cumulative spend | N/A — disqualified |
+
+---
+
 ## Sourcing discipline + founder Q&A folded into doctrine (2026-06-20)
 
 **Sourcing discipline (new standing rule).** For any BUY/INTEGRATE, never stop at the incumbent or the obvious name: also source the **newest-generation** entrants AND the **cheaper / more-efficient** alternative, and name the top 3 with trade-offs. This layer commoditizes fast (prices race down, new players appear monthly), so a BUY/INTEGRATE verdict is **re-evaluated periodically, not set once** - the cheapest-credible + self-hostable option wins, and the seam keeps every pick one swap away.
