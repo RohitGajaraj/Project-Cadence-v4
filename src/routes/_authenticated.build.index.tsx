@@ -7,9 +7,20 @@
 // polling, PRD picker mechanics, ModelSwitcher, ⌘Enter dispatch.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type RefObject } from "react";
-import { ChevronDown, ExternalLink, FileText, GitPullRequest, Hammer, Send } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ExternalLink,
+  FileText,
+  GitPullRequest,
+  Hammer,
+  MoreVertical,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "@/lib/notify";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
@@ -21,12 +32,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { listProjects } from "@/lib/projects.functions";
 import { listPrds } from "@/lib/discovery.functions";
 import {
   dispatchStudioSession,
   listStudioSessions,
+  setStudioSessionArchived,
+  deleteStudioSession,
   type StudioSessionListItem,
 } from "@/lib/studio.functions";
 import { DEFAULT_MODEL } from "@/lib/ai/models";
@@ -189,14 +212,26 @@ function Composer({ textareaRef }: { textareaRef: RefObject<HTMLTextAreaElement 
 /* Session row — the screen-4 MissionRow anatomy (bento lift): StepDot +
    weighted title + StatusChip; the "waiting on you" pill is needs-human →
    ember (never amber); changeset/PR/PRD chips on the quiet second line. */
-function SessionRow({ s }: { s: StudioSessionListItem }) {
+function SessionRow({
+  s,
+  onArchive,
+  onDelete,
+}: {
+  s: StudioSessionListItem;
+  onArchive: (archived: boolean) => void;
+  onDelete: () => void;
+}) {
   const status = s.run_status ?? s.status;
+  const stop = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   return (
     <Link
       to="/build/$missionId"
       params={{ missionId: s.mission_id }}
       className="bento lift"
-      style={{ display: "block", padding: "13px 18px" }}
+      style={{ display: "block", padding: "13px 18px", opacity: s.archived ? 0.62 : 1 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <StatusIcon s={status} />
@@ -213,6 +248,21 @@ function SessionRow({ s }: { s: StudioSessionListItem }) {
         >
           {s.title}
         </span>
+        {s.archived && (
+          <span
+            className="mono-label"
+            style={{
+              fontSize: 8.5,
+              color: "var(--ink-faint)",
+              border: "1px solid var(--hairline)",
+              borderRadius: 99,
+              padding: "1px 7px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Archived
+          </span>
+        )}
         <StatusChip status={status} />
         {s.pending_approvals > 0 && (
           <span
@@ -232,6 +282,46 @@ function SessionRow({ s }: { s: StudioSessionListItem }) {
         <span className="mono-label tabular-nums" style={{ color: "var(--ink)" }}>
           {fmtCost(s.cost_usd)}
         </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Session actions"
+              className="btn btn-ghost btn-sm"
+              style={{ padding: "2px 5px", flexShrink: 0 }}
+              onClick={stop}
+            >
+              <MoreVertical size={14} strokeWidth={1.75} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(!s.archived);
+              }}
+            >
+              {s.archived ? (
+                <>
+                  <ArchiveRestore size={13} /> Unarchive
+                </>
+              ) : (
+                <>
+                  <Archive size={13} /> Archive
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              style={{ color: "var(--rose)" }}
+            >
+              <Trash2 size={13} /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div
         style={{
@@ -299,14 +389,39 @@ function SessionRow({ s }: { s: StudioSessionListItem }) {
 function BuildPage() {
   const fProjects = useServerFn(listProjects);
   const fList = useServerFn(listStudioSessions);
+  const fArchive = useServerFn(setStudioSessionArchived);
+  const fDelete = useServerFn(deleteStudioSession);
+  const qc = useQueryClient();
   const { activeWorkspace } = useWorkspace();
+  const [showArchived, setShowArchived] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<StudioSessionListItem | null>(null);
+
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fProjects() });
   const sessions = useQuery({
-    queryKey: ["studio-sessions"],
-    queryFn: () => fList(),
+    queryKey: ["studio-sessions", showArchived],
+    queryFn: () => fList({ data: { includeArchived: showArchived } }),
     refetchInterval: 5000,
   });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["studio-sessions"] });
+  const archive = useMutation({
+    mutationFn: (v: { missionId: string; archived: boolean }) => fArchive({ data: v }),
+    onSuccess: (_d, v) => {
+      toast.success(v.archived ? "Session archived" : "Session restored");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (missionId: string) => fDelete({ data: { missionId } }),
+    onSuccess: () => {
+      toast.success("Session deleted · what was decided stays in your Brain");
+      setDeleteTarget(null);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const rows = sessions.data?.sessions ?? [];
   const isEmpty = !sessions.isLoading && !sessions.isError && rows.length === 0;
@@ -355,29 +470,97 @@ function BuildPage() {
             </button>
           </div>
         ) : isEmpty ? (
-          <EmptyState
-            icon={Hammer}
-            title="Nothing building yet"
-            body="Agents dispatch build sessions from approved specs automatically — or describe the work above in plain language."
-            cta="Describe the work · Build takes it from there"
-            onCta={() => {
-              textareaRef.current?.focus();
-              textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-          />
+          <div>
+            {/* Keep archived sessions reachable even when nothing active remains. */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+              <button
+                type="button"
+                className="mono-label"
+                onClick={() => setShowArchived((v) => !v)}
+                style={{
+                  color: "var(--ink-faint)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 9.5,
+                }}
+              >
+                {showArchived ? "Hide archived" : "Show archived"}
+              </button>
+            </div>
+            <EmptyState
+              icon={Hammer}
+              title="Nothing building yet"
+              body="Agents dispatch build sessions from approved specs automatically, or describe the work above in plain language."
+              cta="Describe the work · Build takes it from there"
+              onCta={() => {
+                textareaRef.current?.focus();
+                textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+            />
+          </div>
         ) : (
           <div>
-            <div style={{ marginBottom: 10 }}>
+            <div
+              style={{
+                marginBottom: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <MonoLabel>Sessions</MonoLabel>
+              <button
+                type="button"
+                className="mono-label"
+                onClick={() => setShowArchived((v) => !v)}
+                style={{
+                  color: "var(--ink-faint)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 9.5,
+                }}
+              >
+                {showArchived ? "Hide archived" : "Show archived"}
+              </button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {rows.map((s) => (
-                <SessionRow key={s.mission_id} s={s} />
+                <SessionRow
+                  key={s.mission_id}
+                  s={s}
+                  onArchive={(archived) => archive.mutate({ missionId: s.mission_id, archived })}
+                  onDelete={() => setDeleteTarget(s)}
+                />
               ))}
             </div>
           </div>
         )}
       </div>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this build session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the build's working log and any staged files for{" "}
+              <strong>{deleteTarget?.title}</strong>. What was decided and learned stays in your
+              Brain. Deleting a build never erases your memory. To just tidy the list, Archive
+              instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && del.mutate(deleteTarget.mission_id)}
+              disabled={del.isPending}
+              style={{ background: "var(--rose)" }}
+            >
+              {del.isPending ? "Deleting…" : "Delete session"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }

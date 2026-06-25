@@ -70,6 +70,8 @@ export type StudioSessionListItem = {
   changeset: StudioChangesetSummary | null;
   pending_approvals: number;
   cost_usd: number;
+  /** SESSION-ORG: soft-archived (hidden from the default Build list). */
+  archived: boolean;
 };
 
 export type StudioRunDetail = {
@@ -325,9 +327,16 @@ async function traceByRun(
  */
 export const listStudioSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ sessions: StudioSessionListItem[] }> => {
+  .inputValidator((i: unknown) =>
+    z
+      .object({ includeArchived: z.boolean().optional() })
+      .optional()
+      .parse(i ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ sessions: StudioSessionListItem[] }> => {
     const { supabase, userId } = context;
     const db = supabase as unknown as SupabaseClient;
+    const includeArchived = data?.includeArchived ?? false;
 
     const { data: runs, error } = await db
       .from("agent_runs")
@@ -347,7 +356,7 @@ export const listStudioSessions = createServerFn({ method: "GET" })
       await Promise.all([
         db
           .from("missions")
-          .select("id,title,goal,status,created_at,updated_at")
+          .select("id,title,goal,status,created_at,updated_at,archived_at")
           .in("id", missionIds),
         db
           .from("studio_changesets")
@@ -454,8 +463,11 @@ export const listStudioSessions = createServerFn({ method: "GET" })
         status: string;
         created_at: string;
         updated_at: string;
+        archived_at: string | null;
       }>
     )
+      // SESSION-ORG: hide archived sessions unless explicitly requested.
+      .filter((m) => includeArchived || !m.archived_at)
       .map((m) => {
         const prdId = prdByMission.get(m.id) ?? null;
         return {
@@ -470,11 +482,57 @@ export const listStudioSessions = createServerFn({ method: "GET" })
           changeset: changesetByMission.get(m.id) ?? null,
           pending_approvals: pendingByMission.get(m.id) ?? 0,
           cost_usd: Number((costByMission.get(m.id) ?? 0).toFixed(4)),
+          archived: !!m.archived_at,
         };
       })
       .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
 
     return { sessions };
+  });
+
+/**
+ * SESSION-ORG: soft-archive / un-archive a Build session — reversible, keeps
+ * everything. The safe default for tidying the list. Owner-only (the "Owners can
+ * write their missions" RLS policy scopes the UPDATE to the caller's own rows).
+ */
+export const setStudioSessionArchived = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ missionId: z.string().uuid(), archived: z.boolean() }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { error } = await db
+      .from("missions")
+      .update({ archived_at: data.archived ? new Date().toISOString() : null })
+      .eq("id", data.missionId);
+    if (error) throw new Error(error.message);
+    return { ok: true, archived: data.archived };
+  });
+
+/**
+ * SESSION-ORG: hard-delete a Build session. Removes the build's WORKING artifacts
+ * — deleting the mission CASCADEs its steps, changesets (→ staged files), and
+ * messages, and we delete its runs (→ checkpoints / idempotency keys) explicitly
+ * since `agent_runs` has no mission FK. But the typed DECISION memory is
+ * `ON DELETE SET NULL`, so what was decided/learned SURVIVES in the Brain (it just
+ * detaches from this build). Deleting a build never erases the moat; forgetting
+ * memory is a separate, deliberate act. Owner-only via the same RLS policy.
+ */
+export const deleteStudioSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ missionId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    // Mission first: its delete throws on failure (so nothing is half-removed) and
+    // CASCADEs the working artifacts (steps / changesets / messages) while SET-NULLing
+    // decisions, so the memory survives. Then best-effort clean up the now-orphaned
+    // runs (agent_runs has no mission FK). If THAT step fails, the leftover runs are
+    // invisible (the mission is gone, so the session no longer lists), never a ghost.
+    const { error } = await db.from("missions").delete().eq("id", data.missionId);
+    if (error) throw new Error(error.message);
+    await db.from("agent_runs").delete().eq("mission_id", data.missionId);
+    return { ok: true };
   });
 
 /** Full session detail for /studio/$missionId — timeline, changeset, gates, CI, cost. */
