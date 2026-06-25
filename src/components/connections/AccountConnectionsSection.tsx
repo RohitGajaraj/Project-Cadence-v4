@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/notify";
@@ -114,9 +114,14 @@ function useConnectorActions(qc: QueryClient) {
   const mGithub = useMutation({
     mutationFn: () => fStartGithub(),
     onSuccess: ({ installUrl }) => {
-      // Full redirect (not a popup): GitHub redirects back to the public
-      // callback route, which lands on /settings?connected=github.
-      window.location.assign(installUrl);
+      // Open GitHub in a new tab so the user keeps their place in the app.
+      // The callback writes to the DB; the parent tab detects it via polling.
+      window.open(installUrl, "_blank", "noopener");
+      const deadline = Date.now() + 5 * 60 * 1000;
+      const iv = setInterval(() => {
+        qc.invalidateQueries({ queryKey: ["connections"] });
+        if (Date.now() > deadline) clearInterval(iv);
+      }, 3_000);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -220,6 +225,24 @@ export function AccountConnectionsSection({
     queryKey: ["calendar-connections"],
     queryFn: () => fCalList(),
   });
+
+  // Detect a newly-appeared GitHub connection (for the new-tab polling flow).
+  // hadGithubRef starts null so we skip the toast on first data load.
+  const hadGithubRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (list.isLoading || !list.data) return;
+    const hasGithub = list.data.connections.some(
+      (c) => c.provider === "github" && c.status === "connected",
+    );
+    if (hadGithubRef.current === null) {
+      hadGithubRef.current = hasGithub;
+      return;
+    }
+    if (hasGithub && !hadGithubRef.current) {
+      toast.success("GitHub connected");
+    }
+    hadGithubRef.current = hasGithub;
+  }, [list.data, list.isLoading]);
 
   // Connect + verify flows shared with ConnectorDetail (one implementation).
   const { mGithub, mGateway, mCalConnect, mVerify, busy: actionsBusy } = useConnectorActions(qc);
