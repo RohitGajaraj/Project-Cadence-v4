@@ -469,6 +469,7 @@ export type Database = {
           created_at: string
           delegate_meta: Json | null
           duration_ms: number | null
+          failure_kind: string | null
           halted_at: string | null
           halted_reason: string | null
           id: string
@@ -493,6 +494,7 @@ export type Database = {
           created_at?: string
           delegate_meta?: Json | null
           duration_ms?: number | null
+          failure_kind?: string | null
           halted_at?: string | null
           halted_reason?: string | null
           id?: string
@@ -517,6 +519,7 @@ export type Database = {
           created_at?: string
           delegate_meta?: Json | null
           duration_ms?: number | null
+          failure_kind?: string | null
           halted_at?: string | null
           halted_reason?: string | null
           id?: string
@@ -2952,6 +2955,53 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: []
+      }
+      job_runs: {
+        Row: {
+          duration_ms: number | null
+          error_kind: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: number
+          job_name: string
+          payload_size: number | null
+          started_at: string
+          status: string
+          workspace_id: string | null
+        }
+        Insert: {
+          duration_ms?: number | null
+          error_kind?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: never
+          job_name: string
+          payload_size?: number | null
+          started_at?: string
+          status: string
+          workspace_id?: string | null
+        }
+        Update: {
+          duration_ms?: number | null
+          error_kind?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: never
+          job_name?: string
+          payload_size?: number | null
+          started_at?: string
+          status?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kill_switches: {
         Row: {
@@ -5865,7 +5915,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mv_agent_cost_per_decision: {
+        Row: {
+          agent_slug: string | null
+          cost_per_decision_usd: number | null
+          cost_usd_30d: number | null
+          decisions_30d: number | null
+          tokens_30d: number | null
+          workspace_id: string | null
+        }
+        Relationships: []
+      }
+      mv_decision_velocity: {
+        Row: {
+          decisions_made: number | null
+          decisions_shipped: number | null
+          decisions_superseded: number | null
+          week: string | null
+          workspace_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_supersession_rate: {
+        Row: {
+          agent_slug: string | null
+          decisions_superseded: number | null
+          decisions_total: number | null
+          supersession_rate_pct: number | null
+          workspace_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _ensure_account_credits: {
@@ -6204,6 +6300,10 @@ export type Database = {
         Returns: boolean
       }
       admin_set_interop_write_enabled: {
+        Args: { _enabled: boolean }
+        Returns: boolean
+      }
+      admin_set_observability_enabled: {
         Args: { _enabled: boolean }
         Returns: boolean
       }
@@ -6615,6 +6715,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      observability_enabled: { Args: never; Returns: boolean }
       publish_announcement: {
         Args: { _announcement_id: string; _workspace_id: string }
         Returns: undefined
@@ -6644,6 +6745,7 @@ export type Database = {
         Returns: undefined
       }
       redeem_voucher: { Args: { _code: string }; Returns: Json }
+      refresh_observability_mvs: { Args: never; Returns: undefined }
       reset_subscription_cycle: { Args: { _account_id: string }; Returns: Json }
       revoke_mcp_token: { Args: { _token_id: string }; Returns: undefined }
       right_to_erasure_enabled: { Args: never; Returns: boolean }
