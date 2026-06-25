@@ -1,9 +1,4 @@
-// BRAIN-UX-V11 (floor) — the human-lens "Insights" tab on the Brain. Renders
-// rule-based, plain-language lenses on the decision/memory graph (beliefs,
-// what-we've-learned + hit rate, a month timeline) so a PM derives value without
-// reading a node graph. Data: getBrainInsights (composes decisions + lineage +
-// learnings; no AI/chokepoint). The agent-volunteered intelligence ceiling is a
-// follow-on. Ember chrome; honest empty/sparse states (no-filler law).
+// BRAIN-UX-V11 — human-lens Insights tab (floor) + AI analyst ceiling.
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -14,14 +9,34 @@ import {
   GraduationCap,
   Lightbulb,
   HelpCircle,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Link2,
 } from "lucide-react";
 import { MonoLabel } from "@/components/cadence/Primitives";
 import {
   getBrainInsights,
+  getBrainAnalysis,
   type BrainInsight,
   type TimelineBucket,
+  type BrainSignal,
 } from "@/lib/brain-insights.functions";
 import { LoopClosureBadge } from "@/components/knowledge/LoopClosureBadge";
+
+const SIGNAL_ICON: Record<BrainSignal["kind"], typeof TrendingUp> = {
+  prediction: TrendingUp,
+  action: ArrowRight,
+  risk: Zap,
+  connection: Link2,
+};
+
+const SIGNAL_COLOR: Record<BrainSignal["kind"], string> = {
+  prediction: "var(--ember)",
+  action: "var(--emerald)",
+  risk: "var(--coral)",
+  connection: "var(--ink-subtle)",
+};
 
 const TONE: Record<BrainInsight["tone"], { color: string; Icon: typeof TrendingUp }> = {
   positive: { color: "var(--emerald)", Icon: TrendingUp },
@@ -113,7 +128,15 @@ function Timeline({ buckets }: { buckets: TimelineBucket[] }) {
 
 export function InsightsPanel() {
   const fInsights = useServerFn(getBrainInsights);
+  const fAnalysis = useServerFn(getBrainAnalysis);
   const q = useQuery({ queryKey: ["brain-insights"], queryFn: () => fInsights() });
+  // AI analyst loads lazily: staleTime 30 min so it fires at most once per session.
+  const qa = useQuery({
+    queryKey: ["brain-analysis"],
+    queryFn: () => fAnalysis(),
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
 
   if (q.isPending) {
     return (
@@ -136,6 +159,40 @@ export function InsightsPanel() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* LOOP-PROVE - is the decision/outcome/supersession loop closing on this workspace's data? */}
       <LoopClosureBadge />
+
+      {/* AI analyst ceiling — agent-volunteered intelligence (predictions, actions, risks, connections). */}
+      {qa.data && !qa.data.sparse && qa.data.signals.length > 0 ? (
+        <div className="bento" style={{ padding: 16, borderLeft: "2px solid var(--ember)" }}>
+          <MonoLabel icon={Sparkles} style={{ marginBottom: 12 }}>
+            What the data suggests
+          </MonoLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {qa.data.signals.map((s, i) => {
+              const Icon = SIGNAL_ICON[s.kind] ?? TrendingUp;
+              const color = SIGNAL_COLOR[s.kind] ?? "var(--ink-subtle)";
+              return (
+                <div
+                  key={i}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 10 }}
+                >
+                  <Icon
+                    size={14}
+                    strokeWidth={1.9}
+                    color={color}
+                    style={{ flexShrink: 0, marginTop: 2 }}
+                  />
+                  <span
+                    style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}
+                  >
+                    {s.text}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {/* Headline observations — what the data supports, in plain language. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {d.insights.map((ins, i) => {
