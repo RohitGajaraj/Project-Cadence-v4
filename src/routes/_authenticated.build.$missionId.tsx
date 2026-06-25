@@ -31,16 +31,18 @@ import {
 import { SessionTimeline } from "@/components/studio/SessionTimeline";
 import { ChangesPanel } from "@/components/studio/ChangesPanel";
 import { CiPanel } from "@/components/studio/CiPanel";
+import { PreviewPanel } from "@/components/studio/PreviewPanel";
 import type { Inspection } from "@/lib/ai/studio-inspection";
 import { CostPanel } from "@/components/studio/CostPanel";
 import { StatusChip } from "@/components/studio/studio-ui";
 import { fmtCost } from "@/components/studio/studio-format";
 
-type Tab = "changes" | "pr" | "cost";
-const TABS: Tab[] = ["changes", "pr", "cost"];
+type Tab = "changes" | "pr" | "preview" | "cost";
+const TABS: Tab[] = ["changes", "pr", "preview", "cost"];
 const TAB_DISPLAY: [Tab, string][] = [
   ["changes", "Changes"],
   ["pr", "PR · Checks"],
+  ["preview", "Preview"],
   ["cost", "Cost"],
 ];
 
@@ -519,6 +521,7 @@ function BuildSessionPage() {
                   onRefreshed={invalidate}
                 />
               )}
+              {tab === "preview" && <PreviewPanel missionId={missionId} changeset={changeset} />}
               {tab === "cost" && <CostPanel runs={runs} total={totalCost} />}
             </div>
           </div>

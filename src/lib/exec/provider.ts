@@ -51,6 +51,14 @@ export interface ExecProvider {
   readonly label: string;
   /** Whether this backend is wired AND permitted to run right now. */
   readonly available: boolean;
+  /**
+   * Whether this backend can serve a LIVE preview of a full build. A microVM
+   * backend (Cloudflare Sandbox SDK) can; the GitHub Actions check floor cannot
+   * — it only runs checks. The Build "Preview" pane reads this to choose between
+   * the $0 self-contained sandboxed iframe (today) and a live preview (when a
+   * sandbox backend is wired).
+   */
+  readonly previewsBuilds: boolean;
   /** Derive a merge / preview verdict from this backend's check results. */
   verdictFromChecks(checks: CiCheckLite[]): ExecVerdict;
 }
@@ -64,6 +72,8 @@ export const githubActionsProvider: ExecProvider = {
   id: "github-actions",
   label: "GitHub Actions",
   available: true,
+  // The check floor runs CI; it does not serve a live build preview.
+  previewsBuilds: false,
   verdictFromChecks(checks: CiCheckLite[]): ExecVerdict {
     const overall = overallFromChecks(checks);
     const { allowed, reason } = mergeReadinessFromCi(overall);
@@ -133,4 +143,23 @@ export function execGateFromChecks(checks: CiCheckLite[], preferred?: string | n
     mayProceed: verdict.mayProceed,
     reason: verdict.reason,
   };
+}
+
+/**
+ * Whether a wired backend can serve a LIVE full-build preview right now, plus its
+ * label. Today no live-preview backend is wired — the $0 GitHub Actions floor runs
+ * checks, it does not preview — so `live` is false and the Build "Preview" pane
+ * uses the self-contained sandboxed-iframe path (previewing standalone HTML the
+ * changeset produced). When the Cloudflare Sandbox SDK adapter lands
+ * (`previewsBuilds: true`, founder spend), this flips to live with its label and
+ * the pane upgrades with no call-site change.
+ */
+export interface BuildPreviewCapability {
+  live: boolean;
+  providerLabel: string | null;
+}
+
+export function resolveBuildPreview(): BuildPreviewCapability {
+  const live = WIRED_PROVIDERS.find((p) => p.available && p.previewsBuilds);
+  return { live: Boolean(live), providerLabel: live?.label ?? null };
 }

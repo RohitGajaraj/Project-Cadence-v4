@@ -3,6 +3,7 @@ import {
   githubActionsProvider,
   resolveExecProvider,
   execGateFromChecks,
+  resolveBuildPreview,
   RESERVED_PROVIDER_IDS,
   type CiCheckLite,
 } from "./provider";
@@ -108,5 +109,17 @@ describe("execGateFromChecks (the point-of-decision merge gate, through the seam
       expect(gate.provider).toBe("github-actions");
       expect(gate.providerLabel).toBe("GitHub Actions");
     }
+  });
+});
+
+describe("resolveBuildPreview (live full-build preview capability)", () => {
+  it("the floor runs checks, not a live build preview", () => {
+    expect(githubActionsProvider.previewsBuilds).toBe(false);
+  });
+
+  it("reports no live preview backend wired today (the $0 self-contained path is used)", () => {
+    const cap = resolveBuildPreview();
+    expect(cap.live).toBe(false);
+    expect(cap.providerLabel).toBeNull();
   });
 });

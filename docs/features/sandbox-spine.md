@@ -36,6 +36,15 @@ The "preview surface" increment is shipped: the seam now drives the **Build CI p
 - `CiPanel.tsx` surfaces `gate.reason` (the plain-language merge readiness — "CI is red. Read the failing check…", coral only on an actual failure) plus `ran on · {gate.providerLabel}` provenance. It renders only once checks exist, so the empty `neutral` state defers to the single "checks haven't started yet" line (caught + fixed in the 2026-06-25 adversarial review).
 - This makes the seam **load-bearing**: a real call site reads merge readiness from `resolveExecProvider()`, so wiring a paid backend later updates the surface with no call-site change.
 
+### The $0 Preview pane (2026-06-25, lane 3)
+
+A second seam consumer: a **Preview** tab on the Build session that previews the build's output for free, before the paid microVM exists.
+
+- `ExecProvider` gains `previewsBuilds: boolean` (floor `github-actions` = `false` — the check floor runs CI, it does not preview) + `resolveBuildPreview()` → `{ live, providerLabel }`. Today `live` is `false`; when the Cloudflare adapter lands with `previewsBuilds: true`, the pane upgrades to a live preview with no edit in `PreviewPanel`.
+- `getStudioPreview` (`studio.functions.ts`) returns the best standalone HTML the latest changeset produced — prefers `index.html`, else the path closest to root — read RLS-scoped (a changeset the caller can't see yields `null`, no leak). It selects paths first and reads the heavy `new_content` for only the chosen file (bounded memory).
+- `PreviewPanel.tsx` renders that HTML in a **sandboxed iframe** (`sandbox="allow-scripts allow-forms allow-modals"`, no `allow-same-origin` → null origin, can't reach the app's cookies/APIs — the exact isolation the public prototype share uses). Honest empty states otherwise; outcome-named copy (no mechanism nouns — fixed in the 2026-06-25 adversarial review, which also caught and fixed a stale-query key + an unbounded read).
+- **Known limitation (honest, demo-grade):** it renders a single self-contained HTML file. A multi-file site whose HTML references sibling CSS/JS will preview unstyled (the iframe is null-origin; relative assets don't resolve). Inlining sibling assets (as `p.$slug`'s `buildSrcDoc` does) — or a true multi-file/live preview — is the microVM's job, deferred below. The copy frames this as a "standalone page" preview so it never over-promises.
+
 ## Deferred (founder- / chokepoint-gated)
 
 - **The Cloudflare Sandbox SDK adapter** — a real `ExecProvider` that runs untrusted code / build previews in a microVM. Needs the founder's compute-spend confirmation (sourcing-map call #4) before its `available` flag can flip on. (The SDK shape is best fixed *with* that account/binding, so a dormant stub is deliberately not shipped here.)

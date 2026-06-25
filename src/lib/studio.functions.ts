@@ -128,6 +128,19 @@ export type StudioCi = {
   gate: ExecGate;
 } | null;
 
+/**
+ * SANDBOX: the $0 self-contained preview of a Build's output. The best standalone
+ * HTML file the changeset produced, rendered in a sandboxed iframe on the Preview
+ * tab. `null` when the changeset has no standalone-renderable file — the common
+ * case for multi-file repo PRs, whose LIVE preview needs the sandbox backend
+ * (the founder-gated Cloudflare adapter), surfaced as the pane's empty state.
+ */
+export type StudioPreview = {
+  path: string;
+  /** The file's generated contents, rendered as the iframe `srcDoc`. */
+  html: string;
+} | null;
+
 const WORK_ORDER_HEADER =
   "Studio work order — plan against the connected repo, stage a multi-file changeset, ship a PR, watch CI, and request the merge on green.";
 
@@ -1615,4 +1628,59 @@ export const refreshStudioCi = createServerFn({ method: "POST" })
       latency_ms: 0,
     });
     return { ci: result };
+  });
+
+// SANDBOX: previewable file types + a payload cap for the $0 self-contained preview.
+const PREVIEWABLE_HTML = /\.html?$/i;
+const MAX_PREVIEW_BYTES = 512_000;
+
+/**
+ * SANDBOX: the $0 build preview. Returns the best standalone HTML file the latest
+ * changeset produced, for the Preview tab's sandboxed iframe — or `null` when the
+ * change has no standalone-renderable file (a live preview of a full repo build
+ * needs the founder-gated sandbox backend). Reads through the RLS-scoped client,
+ * so a changeset the caller cannot see simply yields `null` (no leak).
+ */
+export const getStudioPreview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ missionId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }): Promise<StudioPreview> => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: csRow } = await db
+      .from("studio_changesets")
+      .select("id")
+      .eq("mission_id", data.missionId)
+      .neq("status", "abandoned")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const changesetId = (csRow as { id?: string } | null)?.id;
+    if (!changesetId) return null;
+    // Find candidate previewable files by PATH first (no content), so the heavy
+    // `new_content` column is read for ONLY the single file we render — not every
+    // staged file (which could bloat the worker on a large changeset).
+    const { data: rows } = await db
+      .from("studio_changes")
+      .select("path,op")
+      .eq("changeset_id", changesetId)
+      .neq("op", "delete")
+      .order("path");
+    const candidates = ((rows ?? []) as Array<{ path: string; op: string }>).filter((r) =>
+      PREVIEWABLE_HTML.test(r.path),
+    );
+    if (candidates.length === 0) return null;
+    // Prefer an entry file (index.html); else the path closest to the repo root.
+    const pick =
+      candidates.find((r) => /(^|\/)index\.html?$/i.test(r.path)) ??
+      [...candidates].sort((a, b) => a.path.length - b.path.length)[0];
+    const { data: fileRow } = await db
+      .from("studio_changes")
+      .select("new_content")
+      .eq("changeset_id", changesetId)
+      .eq("path", pick.path)
+      .limit(1)
+      .maybeSingle();
+    const html = (fileRow as { new_content?: string | null } | null)?.new_content ?? "";
+    if (html.length === 0) return null;
+    return { path: pick.path, html: html.slice(0, MAX_PREVIEW_BYTES) };
   });
