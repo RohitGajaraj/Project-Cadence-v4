@@ -18,7 +18,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
@@ -140,19 +139,14 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
@@ -760,7 +754,6 @@ export interface FileRoutesByTo {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
-  '/': typeof IndexRoute
   '/admin/people': typeof AuthenticatedAdminPeopleRoute
   '/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/admin/pricing': typeof AuthenticatedAdminPricingRoute
@@ -858,7 +851,6 @@ export interface FileRoutesById {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/people': typeof AuthenticatedAdminPeopleRoute
   '/_authenticated/admin/platform': typeof AuthenticatedAdminPlatformRoute
   '/_authenticated/admin/pricing': typeof AuthenticatedAdminPricingRoute
@@ -995,6 +987,7 @@ export interface FileRouteTypes {
     | '/api/public/a2a/agents/cadence/card'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/forgot-password'
     | '/login'
     | '/pricing'
@@ -1048,7 +1041,6 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
-    | '/'
     | '/admin/people'
     | '/admin/platform'
     | '/admin/pricing'
@@ -1145,7 +1137,6 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
-    | '/_authenticated/'
     | '/_authenticated/admin/people'
     | '/_authenticated/admin/platform'
     | '/_authenticated/admin/pricing'
@@ -1290,13 +1281,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
     }
     '/t/$slug': {
       id: '/t/$slug'
@@ -1994,7 +1978,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTracesRoute: typeof AuthenticatedTracesRouteWithChildren
   AuthenticatedTrustLedgerRoute: typeof AuthenticatedTrustLedgerRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedBuildMissionIdRoute: typeof AuthenticatedBuildMissionIdRoute
   AuthenticatedMissionsMissionIdRoute: typeof AuthenticatedMissionsMissionIdRoute
   AuthenticatedStudioMissionIdRoute: typeof AuthenticatedStudioMissionIdRoute
@@ -2045,7 +2028,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTracesRoute: AuthenticatedTracesRouteWithChildren,
   AuthenticatedTrustLedgerRoute: AuthenticatedTrustLedgerRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedBuildMissionIdRoute: AuthenticatedBuildMissionIdRoute,
   AuthenticatedMissionsMissionIdRoute: AuthenticatedMissionsMissionIdRoute,
   AuthenticatedStudioMissionIdRoute: AuthenticatedStudioMissionIdRoute,
