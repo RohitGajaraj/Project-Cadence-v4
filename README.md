@@ -1,6 +1,6 @@
 # Cadence ⚡
 
-> _Created: 2026-06-03 · Last updated: 2026-06-19_
+> _Created: 2026-06-03 · Last updated: 2026-06-25_
 
 > **Cadence is the decision and outcome operating system for product teams.** Most "AI for product" tools are an AI feature bolted onto an app (it drafts, suggests, waits) or a chatbot (it hands you a paragraph and the work is still yours). Cadence is the other thing: an AI operating system that **owns the loop**, and an action system where the work is actually done. It runs your whole product lifecycle (sense, decide, define, build, ship, learn) as one governed, continuously-learning loop; you set intent and own the calls that matter, agents do the rest. It **builds nothing you can buy** (it orchestrates Cursor / Lovable / Devin under its governance rather than competing with them) and **owns the one thing no frontier model or single-suite incumbent can backfill or neutrally own**: a cross-tool, auditable, compounding record of what your team decided and whether it was right. That decision-and-outcome layer, over three pillars (own the loop, sense continuously, keep the receipts), is the moat.
 >
@@ -86,15 +86,13 @@ Positioning rule: **"Cadence orchestrates the models; it does not compete with t
 
 ## Who Cadence is for
 
-We serve B2B Enterprise product organizations, establishing a collaborative environment for cross-functional stakeholders while onboarding individual PMs as grassroots evangelists:
+**Front door: the individual PM or founding PM.** Drowning in the low-judgment half of the job (writing PRDs, triaging alerts, chasing status, running meetings), and wanting the loop to take it off their plate. Entry via the **Critic teardown**: self-serve, the 10-minute wow — point Cadence at a feature you believe in, get an evidence-backed red-team with receipts. This is the viral wedge.
 
-- **P1, Enterprise Director / VP of Product (The Portfolio Governor):** Cares about security compliance, role scopes, budget caps, and swarm telemetry.
-- **P2, Lead / Senior PM (The Daily Cockpit Operator):** Cares about eliminating boilerplate process (writing PRDs, triaging alerts, planning sprints) to focus on judgment.
-- **P3, Engineering Lead / Tech Architect (The Code Gatekeeper):** Reviews Builder-generated code and verifies sandboxed PRs and CI status.
-- **P4, UX/UI Designer (The Visual Validator):** Validates generated layouts, mockups, and UI changes in the interactive preview sandbox.
-- **P5, GTM Lead / Product Marketer:** Monitors releases, refines auto-drafted changelogs, and schedules distribution announcements.
-- **P6, Customer Support Lead:** Triage feedback, loops bug signals back into the discovery system.
-- **P7, Grassroots Evangelist (Solo PM / Indie Hacker):** Individual adopters who seed Cadence in their respective orgs.
+**Expansion: the product team.** The decision system of record for the whole team: governance, audit, shared compounding memory. Conversion from individual to team motion when the PM's manager or VP wants visibility and accountability over what the team decides and whether it paid off. This is the >$150/team/month ticket.
+
+**Buyer: the VP or Head of Product** for the team motion. Wants the decision record, the governance layer, and the accountability story for leadership.
+
+**Later (post-PMF):** the broader product org and adjacent stakeholders (sales, GTM, leadership consume the decision-and-outcome record in their language); regulated/compliance buyers (provenance is a purchase requirement). Full v11 persona and expansion rationale: [`docs/strategy/v11-guiding-star.md`](./docs/strategy/v11-guiding-star.md) §5.
 
 ---
 
@@ -119,16 +117,16 @@ The user-facing app is **seven surfaces** (Home · Chat · Missions · Product �
 
 ## Pluggable Multi-Model Substrate
 
-To maintain high reasoning quality while optimizing cost, Cadence’s **AI Chokepoint** (`runtime.server.ts`) acts as a router that selects the best model for each task:
+Cadence is **model-agnostic by design.** Every AI call routes through one chokepoint (`src/lib/ai/runtime.server.ts`) that selects the best model for each task -- frontier models for reasoning and spec, fast models for classification, long-context models for ingest -- and routes around any provider outage or cost spike without touching the product interface:
 
-| Model Category                  | Primary Models                        | In Cadence                                                                  |
-| ------------------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
-| **High-Context Audio/Ingest**   | Gemini 1.5 Pro                        | Ingesting 1M+ token audio logs (WhisperFlow) and support dumps without loss |
-| **High-Reasoning & Spec Draft** | Claude 3.5 Sonnet / GPT-4o            | Spec drafting, roadmap dependency generation, and strategic briefs          |
-| **Surgical Code Generation**    | DeepSeek-Coder-V2 / Claude 3.5 Sonnet | Executing branch code changes and self-correcting compile errors            |
-| **Fast Intent Classification**  | Gemini 1.5 Flash / GPT-4o-mini        | Chat intent routing and real-time dashboard updates                         |
+| Task category | Example providers | In Cadence |
+| --- | --- | --- |
+| **High-context ingest** | Gemini 2.0 Flash, Claude Sonnet | 1M+ token audio/transcript/support dumps (WhisperFlow) without loss |
+| **High-reasoning + spec draft** | Claude Sonnet 4.6, GPT-4o | Spec drafting, Critic reasoning, roadmap planning, strategic briefs |
+| **Fast intent + classification** | Gemini 2.0 Flash, GPT-4o mini | Chat intent routing, real-time dashboard updates |
+| **Surgical code generation** | Claude Sonnet 4.6, DeepSeek | Build-station agent code edits, CI self-correction |
 
-- **BYO Key Protocol:** Securely encrypts client keys in Supabase (`pgsodium`), allowing enterprises to use their custom endpoints and VPC configurations. _(Positioning update 2026-06-19: BYOK is removed from self-serve and is an enterprise-only negotiated option; managed AI credits are the only self-serve path. Model-agnostic routing across providers with our keys is preserved. See [`docs/strategy/moat.md`](./docs/strategy/moat.md) §7 and [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) §2.6.)_
+- **BYO Key (enterprise-only):** Enterprise accounts can bind their own provider API keys, encrypted at rest via AES-256-GCM in a service-role-only vault. Self-serve uses managed AI credits only. Model-agnostic routing across providers on our keys is the default. _(BYOK update 2026-06-19: enterprise-negotiated, not self-serve. See [`docs/strategy/moat.md`](./docs/strategy/moat.md) §7 and [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) §2.6.)_
 
 ---
 
@@ -177,7 +175,7 @@ Where each layer lives in detail: [`architecture/`](./architecture/). Stack rati
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Evaluating Cadence                                                        | **README.md** (here)                                                                                                                                                                                                                                |
 | **What to build next + how it should look and behave (CURRENT, pick first)** | **[`docs/strategy/v10-master-blueprint.md`](./docs/strategy/v10-master-blueprint.md)** (the master blueprint: every feature with pain + how it functions, IA, screen-by-screen, the analytical engine, priority + disjoint lanes) · execution order: [`docs/planning/v10_implementation-plan.md`](./docs/planning/v10_implementation-plan.md) · live status: [`docs/planning/feature-dashboard.md`](./docs/planning/feature-dashboard.md) · which-doc-to-pick role map: [`docs/strategy/README.md`](./docs/strategy/README.md) · **current build initiative:** [`docs/planning/workspace-tenancy-and-monetization-plan.md`](./docs/planning/workspace-tenancy-and-monetization-plan.md) (workspace / accounts / tenancy + monetization, the cross-tool build bible; live board group G10 in feature-dashboard) |
-| Understanding positioning (CURRENT source of truth)                       | **[`docs/strategy/v7-agentic-product-os.md`](./docs/strategy/v7-agentic-product-os.md)** (positioning + market) · **[`v8-calm-front-deep-engine.md`](./docs/strategy/v8-calm-front-deep-engine.md)** (structure + hybrid Build spine) · **[`v9-decision-wedge-and-build-next.md`](./docs/strategy/v9-decision-wedge-and-build-next.md)** (decision lens: Critic-teardown wedge, competitor posture, own-the-autonomous-engine, build-next) · engine/expansion: [`v4-feature-map.md`](./docs/strategy/archive/v4-feature-map.md) · wedge UX: [`v5-chief-of-staff.md`](./docs/strategy/archive/v5-chief-of-staff.md) · personas: [`v3-positioning-cadence.md`](./docs/strategy/archive/v3-positioning-cadence.md) · index+archive: [`docs/strategy/README.md`](./docs/strategy/README.md) |
+| Understanding positioning (CURRENT source of truth)                       | **[`docs/strategy/v11-guiding-star.md`](./docs/strategy/v11-guiding-star.md)** (the standing canon: decision-and-outcome-layer moat, three pillars, ambient self-initiating North Star, core-user lens, market, villain/defense; supersedes v7-v10 for direction) · detailed reference: [`v7`](./docs/strategy/v7-agentic-product-os.md) (positioning + market detail), [`v8`](./docs/strategy/v8-calm-front-deep-engine.md) (structure/IA), [`v9`](./docs/strategy/v9-decision-wedge-and-build-next.md) (decision-lens/wedge) · engine/expansion: [`v4-feature-map.md`](./docs/strategy/archive/v4-feature-map.md) · index+role-map: [`docs/strategy/README.md`](./docs/strategy/README.md) |
 | Strategy reasoning + fundraising source narrative (YC / investor)         | [`docs/strategy/strategic-inputs-log.md`](./docs/strategy/strategic-inputs-log.md): the raw brainstorm reasoning + evidence behind the canon (operator/PM/investor/marketer lenses), the source narrative for accelerator/investor applications · decisions: [`docs/strategy/session-decisions.md`](./docs/strategy/session-decisions.md) · **moat / competition / defensibility (YC + interview prep):** [`docs/strategy/moat.md`](./docs/strategy/moat.md) |
 | Founding constitution (AI co-founder posture, north star, mandates)       | [`Ai_Cofounder.md`](./Ai_Cofounder.md): its Repo Concordance maps its 13 mandated docs onto this repo's canon                                                                                                                                      |
 | Market & competitor evidence                                              | [`docs/references/competitive-landscape.md`](./docs/references/competitive-landscape.md)                                                                                                                                      |

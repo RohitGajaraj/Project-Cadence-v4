@@ -1,12 +1,12 @@
 # Cadence: Moat, Competition & Defensibility (the founder + YC reference)
 
-> _Created: 2026-06-19 · Last updated: 2026-06-19_
+> _Created: 2026-06-19 · Last updated: 2026-06-25_
 
 > **⭐ Superseded for direction by [v11: The Guiding Star](./v11-guiding-star.md) (2026-06-23).** v11 reconciles the headline thesis (the moat is the **decision-and-outcome layer**: own the loop, sense continuously, keep the receipts; memory is one component, not the headline), and carries the current villain/defense pressure-test, the market/pricing section, and the agentic build plan (now in the [feature dashboard](../planning/feature-dashboard.md) as the ranked v11 build front). This doc remains the detailed moat-stack + competition map + YC objection-Q&A reference.
 >
 > **What this is.** The standing reference on what our moat is, who our competition is, why we win, and how the moat ripples into pricing, features, and the platform. Written for three uses: (1) the founder's Y Combinator application + interview prep, (2) the founder's day-to-day "what is our moat / who do we compete with" reference, (3) the canon every tool reads before any positioning, pricing, or feature-priority call.
 >
-> **Status:** LIVING canon. Current positioning (2026-06-19): **the moat is the decision layer; memory is one layer of it** (evolved from the earlier "memory is the moat").
+> **Status:** LIVING canon. Current positioning (v11, 2026-06-23): **the moat is the decision-and-outcome layer** (own the loop, sense continuously, keep the receipts); **memory is one component**, not the headline. Three pillars verified real in code + live DB.
 >
 > **Standing rule (do not let this go stale):** this doc is updated on **every** strategic reposition, in the same session, and is never orphaned. A reposition also triggers the **Repositioning Ripple Review** in Section 11 (pricing, features, gating, IA, build-next, tests, canon). Wired into [`README.md`](../../README.md), [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md), [`GEMINI.md`](../../GEMINI.md), and the cascade rule in [`README.md`](./README.md) (this folder). Reasoning history lives in [`strategic-inputs-log.md`](./strategic-inputs-log.md); decisions in [`session-decisions.md`](./session-decisions.md).
 >

@@ -18,7 +18,7 @@ import { renderBriefBlock, type WorkspaceBrief } from "@/lib/briefs.functions";
 import { loadAgentArc, resolveApprovalMode, type Arc, type ToolMode } from "./trust.server";
 import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from "./handoff.server";
 import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
-import { isHighRiskTool } from "@/lib/tool-consequences";
+import { isHighRiskTool, toolRisk } from "@/lib/tool-consequences";
 import { capToolsByRisk } from "@/lib/agent-tool-cap";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
@@ -682,6 +682,11 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
     // tool — is floored to `confirm` without the list drifting. Only ever raises auto->confirm.
     else if ((HIGH_RISK_MIN_CONFIRM.has(call.name) || isHighRiskTool(call.name)) && mode === "auto")
       mode = "confirm";
+    // Auto-clear: low blast-radius tools (reversible + internal) run inline even when
+    // configured as 'confirm' — kills the babysitting tax on trivially undoable writes.
+    // Fires AFTER the HIGH_RISK floors above, so dangerous tools are never lowered.
+    // Never touches 'review' mode (review is sticky and founder-grade).
+    else if (mode === "confirm" && toolRisk(call.name) === "low") mode = "auto";
     const isWrite = def.category === "write" || def.category === "planning";
 
     if (!isControlFlow && isWrite && (mode === "confirm" || mode === "review")) {

@@ -1,22 +1,14 @@
 /**
- * BRAIN-UX-V11 (floor) — make the Brain human-useful: rule-based human LENSES on
- * the decision/memory graph, not a node graph. This is the legibility FLOOR:
- *   - Beliefs:   current beliefs (standing decisions) vs revised (superseded)
- *   - Learned:   recorded outcomes by verdict + the hit rate + the ICE shift
- *   - Timeline:  how decisions + outcomes accrued, month by month
- *   - Insights:  plain-language, honest, rule-based observations the data supports
- *
- * It composes EXISTING data only (`decisions`, bitemporal `artifact_lineage`,
- * `learnings`) — NO migration, NO AI/chokepoint. The open "agent volunteering
- * intelligence" CEILING (predictions, next-best-action) needs the AI chokepoint
- * and is a deliberate follow-on. The lens math is PURE + unit-tested; the server
- * fn is a thin DB-to-helper adapter.
+ * BRAIN-UX-V11 — human LENSES on the decision/memory graph (floor) + AI analyst ceiling.
+ * Floor: pure rule-based lenses (beliefs, learned, timeline, why, unresolved). No AI.
+ * Ceiling (getBrainAnalysis): agent-volunteered intelligence via callModel("copilot").
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { LineageEdgeLite } from "@/lib/trust-ledger.functions";
+import { callModel } from "@/lib/ai/runtime.server";
 
 export type BrainBeliefs = { standing: number; superseded: number };
 
@@ -415,4 +407,102 @@ export const getBrainInsights = createServerFn({ method: "GET" })
       recentBeliefs,
       unresolved,
     };
+  });
+
+// ─── AI Analyst ceiling (BRAIN-UX-V11) ──────────────────────────────────────
+// Agent-volunteered intelligence: predictions, next-best-action, risk flags.
+// Uses "copilot" surface (no new CallSurface → no chokepoint required).
+// Designed to be called lazily (on demand, not on every render) — React Query
+// staleTime handles cache; the AI call fires at most once per ~30 min per workspace.
+
+export type BrainSignal = {
+  kind: "prediction" | "action" | "risk" | "connection";
+  text: string;
+};
+
+export type BrainAnalysis = {
+  signals: BrainSignal[];
+  sparse: boolean; // true when the workspace has too little data for meaningful analysis
+};
+
+const MODEL = "claude-haiku-4-5-20251001" as const;
+
+const ANALYST_SYSTEM = `You are the Cadence intelligence analyst. You volunteer useful intelligence from a PM's decision and outcome graph.
+Rules:
+- Signal-first: lead with the insight, not the reasoning.
+- Short: each signal is one sentence, max 18 words.
+- Honest: if data is sparse say so. Never fabricate patterns.
+- No em dashes, no en dashes, no AI cliches ("delve", "leverage", "unlock", "game-changer").
+- Output ONLY a JSON array of objects with shape: [{kind, text}]
+  kind = "prediction" | "action" | "risk" | "connection"
+  Maximum 4 signals total.`;
+
+export const getBrainAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<BrainAnalysis> => {
+    const { supabase, userId } = context;
+
+    // Get workspace scope
+    const { data: member } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+    const workspaceId = member?.workspace_id ?? null;
+    if (!workspaceId) return { signals: [], sparse: true };
+
+    const [decisionsRes, learningsRes] = await Promise.all([
+      supabase
+        .from("decisions")
+        .select("title,status,rationale,created_at")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: false })
+        .limit(30),
+      supabase
+        .from("learnings")
+        .select("verdict,summary,created_at")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    const decisions = decisionsRes.data ?? [];
+    const learnings = learningsRes.data ?? [];
+
+    // Sparse guard: need at least 3 decisions OR 3 outcomes to say anything meaningful
+    if (decisions.length < 3 && learnings.length < 3) {
+      return { signals: [], sparse: true };
+    }
+
+    const prompt = `WORKSPACE DECISIONS (most recent first, max 30):
+${JSON.stringify(decisions.map((d) => ({ title: d.title, status: d.status, rationale: d.rationale, when: d.created_at?.slice(0, 10) })))}
+
+WORKSPACE OUTCOMES (most recent first, max 20):
+${JSON.stringify(learnings.map((l) => ({ verdict: l.verdict, summary: l.summary, when: l.created_at?.slice(0, 10) })))}
+
+Volunteer 2-4 signals. Each must be genuinely useful to the PM owning this data. Prefer predictions and the single highest-value action. Surface a connection or risk only if the data clearly supports it. Output ONLY the JSON array.`;
+
+    const res = await callModel(supabase as never, userId, {
+      surface: "copilot",
+      model: MODEL,
+      messages: [
+        { role: "system", content: ANALYST_SYSTEM },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    let signals: BrainSignal[] = [];
+    try {
+      const raw = res.output?.trim() ?? "[]";
+      const parsed = JSON.parse(raw.startsWith("[") ? raw : raw.replace(/^[^[]*/, "").replace(/[^\]]*$/, "")) as unknown[];
+      signals = (parsed as BrainSignal[]).filter(
+        (s) =>
+          s && typeof s.kind === "string" && typeof s.text === "string" && s.text.length > 0,
+      );
+    } catch {
+      // non-parseable output → return empty rather than crashing
+    }
+
+    return { signals, sparse: signals.length === 0 };
   });

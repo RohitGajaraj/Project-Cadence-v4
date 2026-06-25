@@ -1,8 +1,8 @@
 # F-AGENT-3: Event reactor + auto-pipelines
 
-> _Created: 2026-06-06 · Last updated: 2026-06-24_
+> _Created: 2026-06-06 · Last updated: 2026-06-25_
 
-> **Status:** ✅ Shipped 2026-06-06 · **Route:** `/governance` (Auto-pipelines · Reactor activity) · **Owner agents:** any agent named as a target in a subscription
+> **Status:** ✅ Shipped 2026-06-06; fully closed 2026-06-25 (EVENT-REACTOR-LIVE) · **Route:** `/governance` (Auto-pipelines · Reactor activity) · **Owner agents:** any agent named as a target in a subscription
 
 > [!IMPORTANT]
 > **Live-state verification (2026-06-24, lane 2 · register item `EVENT-REACTOR-LIVE`).** The v11 row asked to "turn on the dormant reactor." A code + live-DB audit (via the Lovable MCP against the production project) shows the reactor **is already wired and scheduled end-to-end** — it is cold for lack of input volume, not because the pipeline is unbuilt:
@@ -38,12 +38,15 @@ F-AGENT-1 gave Cadence a planner; F-AGENT-2 gave it memory. Without a reactor th
 ## How it works
 
 - **Tables:**
-  - `event_subscriptions`: per-workspace rules: `event_type ∈ {signal.created, opportunity.scored, prd.approved} → target_agent_slug` with `approval_mode auto|confirm`, jsonb `filter`, RLS workspace-member read + owner write, `is_default` flag to distinguish seeded vs operator rules.
-  - `event_queue`: one row per firing, idempotent `UNIQUE (subscription_id, source_id)` so re-firing the underlying triggers is a no-op; statuses `pending → dispatched | skipped | failed`; carries `mission_id` / `run_id` / `error`.
+  - `event_subscriptions`: per-workspace rules: `event_type ∈ {signal.created, opportunity.scored, prd.approved, signal.clustered, outcome.recorded, decision.made} → target_agent_slug` with `approval_mode auto|confirm`, jsonb `filter`, RLS workspace-member read + owner write, `is_default` flag to distinguish seeded vs operator rules.
+  - `event_queue`: one row per firing, idempotent `UNIQUE (subscription_id, source_id)` so re-firing the underlying triggers is a no-op; statuses `pending → processing → dispatched | skipped | failed`; carries `attempt_count` + `next_attempt_at` (KI-27 bounded retry), `mission_id` / `run_id` / `error`.
 - **Triggers** (all SECURITY DEFINER, fan-out matching subs into the queue):
-  - `signals`: AFTER INSERT.
-  - `opportunities`: only on insert or ICE-input change AND `NEW.ice_score >= COALESCE(filter->>'min_score', 8.0)`.
-  - `prds`: only on transition into `status='approved'`.
+  - `signals`: AFTER INSERT → `signal.created`.
+  - `opportunities`: only on insert or ICE-input change AND `NEW.ice_score >= COALESCE(filter->>'min_score', 8.0)` → `opportunity.scored`.
+  - `prds`: only on transition into `status='approved'` → `prd.approved`.
+  - `themes`: AFTER INSERT → `signal.clustered` (migration `20260624130000`).
+  - `learnings`: AFTER INSERT → `outcome.recorded` (migration `20260624130000`).
+  - `decisions`: AFTER INSERT → `decision.made` (migration `20260624130000`).
 - **Defaults:** `seed_default_event_subscriptions(uuid)` seeds three rules per workspace owner: `signal.created → discovery (auto)`, `opportunity.scored → strategist (confirm, min_score 8.0)`, `prd.approved → orchestrator (confirm)`; wired into `handle_new_user` for new signups and backfilled for existing workspace owners.
 - **Dispatch:** `dispatchEvent()` in `src/lib/reactor.functions.ts` creates a mission via `createMission` + runs `runAgentLoop` with a templated, event-type-specific goal.
 - **Cron:** `/api/public/hooks/event-reactor-tick` (pg_cron `event-reactor-tick`, 1-min) drains pending `auto`-mode rows in batches of 10.
@@ -69,7 +72,8 @@ F-AGENT-1 gave Cadence a planner; F-AGENT-2 gave it memory. Without a reactor th
 
 - The dispatch helper runs `runAgentLoop` synchronously inside the cron handler. Fine for `auto` orchestrator rows (backpressure already enqueues over-cap missions); high-frequency event types should wrap with `withIdempotency` or move behind a true queue.
 - Opportunity trigger only checks `>=` against `filter->>'min_score'` (default 8.0). No other comparators yet.
-- No event types beyond the three listed. Adding `theme.created`, `mission.completed`, etc. is a follow-on.
+- `drift.detected` is intentionally not wired: `public.drift_snapshots` is a per-surface/per-day METRICS rollup with no `workspace_id` column, so it cannot fan out into `event_queue` (NOT NULL `workspace_id` required). Needs a designed, workspace-scoped drift-event source first.
+- Adding `mission.completed`, `prd.shipped`, etc. is a follow-on when those lifecycle events become first-class.
 
 ## Related
 

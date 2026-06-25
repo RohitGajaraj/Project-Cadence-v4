@@ -309,6 +309,30 @@ export function goalForEvent(evt: EventRow): string {
         `A PRD was just approved. Plan a multi-agent execution: break it into specialist steps, dispatch the first wave, and return the plan. ${UNTRUSTED_WARNING}\n` +
         untrustedSignalBlock({ title, github_issue_url: (p.github_issue_url as string) ?? "" })
       );
+    // Ambient-loop event types (EVENT-REACTOR-LIVE, migration 20260624130000).
+    case "signal.clustered":
+      return (
+        `A new theme emerged from signals (severity: ${num(p.severity)}, frequency: ${num(p.frequency)}). ` +
+        `Review the cluster against existing themes and opportunities — merge if overlapping, promote to an opportunity if novel and high-signal, and surface any strategic implication. ${UNTRUSTED_WARNING}\n` +
+        untrustedSignalBlock({ title, summary: (p.summary as string) ?? "" })
+      );
+    case "outcome.recorded":
+      return (
+        `An outcome was just recorded for a decision (verdict: ${String(p.verdict ?? "?")}, ` +
+        `prior ICE ${num(p.prior_ice)} → new ICE ${num(p.new_ice)}). ` +
+        `Analyze what was learned, check if the governing decision should be superseded, and surface any contradictions or validation evidence in the decision brain. ${UNTRUSTED_WARNING}\n` +
+        untrustedSignalBlock({
+          summary: (p.summary as string) ?? "",
+          metric_label: (p.metric_label as string) ?? "",
+          metric_value: String(p.metric_value ?? ""),
+        })
+      );
+    case "decision.made":
+      return (
+        `A new decision was recorded (status: ${String(p.status ?? "?")}, source: ${String(p.source_kind ?? "?")}).` +
+        ` Cross-reference it against existing decisions for contradictions or supersession, update any PRDs or opportunities it governs, and flag anything that should be re-evaluated. ${UNTRUSTED_WARNING}\n` +
+        untrustedSignalBlock({ title, rationale: (p.rationale as string) ?? "" })
+      );
     default:
       return `Handle ${evt.event_type}. ${UNTRUSTED_WARNING}\n` + untrustedSignalBlock({ title });
   }
