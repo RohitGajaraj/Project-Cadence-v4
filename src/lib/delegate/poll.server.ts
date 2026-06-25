@@ -118,42 +118,46 @@ export async function foldDelegateResult({
     );
     return;
   }
-  const stepStatus = pollResult.status === "done" ? "done" : "failed";
-  const now = new Date().toISOString();
-  const resultPayload: Record<string, unknown> = {
-    provider,
-    external_job_id: externalJobId,
-  };
-  if (pollResult.result) resultPayload.delegate_result = pollResult.result;
-  if (pollResult.error) resultPayload.delegate_error = pollResult.error;
+  try {
+    const stepStatus = pollResult.status === "done" ? "done" : "failed";
+    const now = new Date().toISOString();
+    const resultPayload: Record<string, unknown> = {
+      provider,
+      external_job_id: externalJobId,
+    };
+    if (pollResult.result) resultPayload.delegate_result = pollResult.result;
+    if (pollResult.error) resultPayload.delegate_error = pollResult.error;
 
-  const { error: stepErr } = await supabase
-    .from("mission_steps")
-    .update({
-      status: stepStatus,
-      result: resultPayload,
-      completed_at: now,
-      updated_at: now,
-    })
-    .eq("mission_id", missionId)
-    .eq("run_id", runId);
-  if (stepErr) {
-    console.error("[delegate-fold] mission_steps update failed:", stepErr.message);
-  }
+    const { error: stepErr } = await supabase
+      .from("mission_steps")
+      .update({
+        status: stepStatus,
+        result: resultPayload,
+        completed_at: now,
+        updated_at: now,
+      })
+      .eq("mission_id", missionId)
+      .eq("run_id", runId);
+    if (stepErr) {
+      console.error("[delegate-fold] mission_steps update failed:", stepErr.message);
+    }
 
-  const { error: runErr } = await supabase
-    .from("agent_runs")
-    .update({
-      status: stepStatus,
-      delegate_meta: {
-        provider,
-        external_job_id: externalJobId,
-        poll_status: pollResult.status,
-        last_polled_at: now,
-      },
-    })
-    .eq("id", runId);
-  if (runErr) {
-    console.error("[delegate-fold] agent_runs update failed:", runErr.message);
+    const { error: runErr } = await supabase
+      .from("agent_runs")
+      .update({
+        status: stepStatus,
+        delegate_meta: {
+          provider,
+          external_job_id: externalJobId,
+          poll_status: pollResult.status,
+          last_polled_at: now,
+        },
+      })
+      .eq("id", runId);
+    if (runErr) {
+      console.error("[delegate-fold] agent_runs update failed:", runErr.message);
+    }
+  } catch (err) {
+    console.error("[delegate-fold] unexpected error; degrading silently:", err);
   }
 }
