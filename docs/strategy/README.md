@@ -1,6 +1,6 @@
 # docs/strategy: Strategic Positioning History
 
-> _Created: 2026-06-03 · Last updated: 2026-06-19_
+> _Created: 2026-06-03 · Last updated: 2026-06-25_
 
 > The versioned record of Cadence's product positioning, market analysis, and strategic direction. Each version captures the thinking at a point in time so future decisions can be made with full context on how the position evolved and why.
 
@@ -25,7 +25,7 @@
 | **What to build vs source elsewhere, per capability cluster** (the cluster-level BBI call + the named provider behind each obviated item) | [**sourcing-map.md**](./sourcing-map.md) | the cluster sourcing map (11 clusters, ~56 build / ~17 source-elsewhere, the Decision-Brain verdict, the 10 founder calls, the agent doctrine); feeds the dashboard "How to pick" + SSOT §4 |
 | **Forward product bets not yet in the build queue (the Decision Brain, the Command Canvas)** | [**horizon-bets.md**](./horizon-bets.md) ⭐ | forward-bets register; links the self-contained drill-downs [`../features/decision-brain.md`](../features/decision-brain.md) + [`../features/command-canvas.md`](../features/command-canvas.md) |
 | **The BYO repo model + all-in-one platform** (provider-agnostic repos, autonomous Build to Ship, managed runtime) | [**byo-build-and-cadence-cloud.md**](./byo-build-and-cadence-cloud.md) (spec) + [**byo-build-implementation-plan.md**](../planning/byo-build-implementation-plan.md) (all-phase plan; board group G11) | the repo/platform reframe |
-| Positioning / market / pricing / GTM / investor | [v7](./v7-agentic-product-os.md) | positioning canon |
+| Positioning / market / pricing / GTM / investor (detail) | [v7](./v7-agentic-product-os.md) | positioning detail (direction = [v11](./v11-guiding-star.md)) |
 | Surfaces / IA / structure / the hybrid Build spine | [v8](./v8-calm-front-deep-engine.md) | structure canon |
 | The launch wedge / competitor posture | [v9](./v9-decision-wedge-and-build-next.md) | decision lens |
 | The raw reasoning + the fundraising/YC narrative | [strategic-inputs-log.md](./strategic-inputs-log.md) | source reasoning |
