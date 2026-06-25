@@ -86,14 +86,33 @@ async function validateToken(
   slug: string,
   secretHash: string,
 ): Promise<TokenValidationResult> {
-  try {
-    const { data: token, error } = await supabase
+  // INTEROP-V11 Q2: `scopes` is the only column added by migration 20260625140000.
+  // The select MUST degrade gracefully — in the Lovable/Workers split-deploy model
+  // the worker can land before the migration applies, and an unconditional select
+  // of a missing column would error and 401 ALL MCP traffic (every READ tool, not
+  // just writes). So if `scopes` is absent we re-select without it and default the
+  // token to read-only (scopes = []); reads keep working, writes stay impossible.
+  const selectToken = (cols: string) =>
+    supabase
       .from("mcp_tokens")
-      .select("id, workspace_id, user_id, rate_limit_per_min, revoked_at, scopes")
+      .select(cols)
       .eq("slug", slug)
       .eq("secret_hash", secretHash)
       .is("revoked_at", null)
       .maybeSingle();
+  try {
+    let { data: token, error } = await selectToken(
+      "id, workspace_id, user_id, rate_limit_per_min, revoked_at, scopes",
+    );
+
+    if (
+      error &&
+      (error.code === "42703" || /scopes/i.test(error.message ?? "")) // undefined_column
+    ) {
+      ({ data: token, error } = await selectToken(
+        "id, workspace_id, user_id, rate_limit_per_min, revoked_at",
+      ));
+    }
 
     if (error) {
       return { valid: false, error: "Token lookup failed" };
@@ -425,13 +444,21 @@ export const Route = createFileRoute("/api/mcp")({
           );
 
           if (!rateLimitResult.allowed) {
-            // Log the rate-limit rejection
+            // Log the rate-limit rejection. For a standard tools/call, audit the
+            // REAL tool name (e.g. ingest_signal) + a write flag, not the literal
+            // "tools/call" method, so a throttled write flood is attributable.
+            const throttledTool =
+              dispatch.kind === "tools/call" ? dispatch.toolName : mcpReq.method;
             await logMCPCall(
               {
                 token_id,
                 workspace_id,
-                tool_name: mcpReq.method,
+                tool_name: throttledTool,
                 result: "rate_limit",
+                metadata:
+                  dispatch.kind === "tools/call" && isWriteTool(dispatch.toolName)
+                    ? { write: true }
+                    : undefined,
               },
               supabase,
             );
