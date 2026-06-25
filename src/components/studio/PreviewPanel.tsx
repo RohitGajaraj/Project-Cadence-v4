@@ -37,9 +37,12 @@ function EmptyState({ message }: { message: string }) {
 export function PreviewPanel({
   missionId,
   changeset,
+  isLive = false,
 }: {
   missionId: string;
   changeset: StudioChangesetSummary | null;
+  /** While the session is live, poll so the preview fills in as the build runs. */
+  isLive?: boolean;
 }) {
   const fPreview = useServerFn(getStudioPreview);
   const preview = useQuery({
@@ -48,6 +51,10 @@ export function PreviewPanel({
     queryKey: ["studio-preview", missionId, changeset?.id ?? null],
     queryFn: () => fPreview({ data: { missionId } }),
     enabled: Boolean(changeset),
+    // While the session is live, poll every 4s so the preview updates in real
+    // time as the agent stages/edits the page — the "watch it build" moment.
+    // Stops when the session goes idle (no needless polling on a finished build).
+    refetchInterval: isLive ? 4000 : false,
   });
 
   // Today no live-preview backend is wired (the $0 check floor does not preview),
@@ -56,7 +63,9 @@ export function PreviewPanel({
   const live = resolveBuildPreview();
 
   if (!changeset) {
-    return <EmptyState message="No changes to preview yet. The session drafts changes as it works." />;
+    return (
+      <EmptyState message="No changes to preview yet. The session drafts changes as it works." />
+    );
   }
 
   if (preview.isPending) {
@@ -108,7 +117,9 @@ export function PreviewPanel({
             {data.path}
           </span>
         </div>
-        <p style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--ink-faint)", lineHeight: 1.4 }}>
+        <p
+          style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--ink-faint)", lineHeight: 1.4 }}
+        >
           A live preview of this page, rendered safely.
         </p>
       </div>

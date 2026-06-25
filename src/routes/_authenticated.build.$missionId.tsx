@@ -521,7 +521,9 @@ function BuildSessionPage() {
                   onRefreshed={invalidate}
                 />
               )}
-              {tab === "preview" && <PreviewPanel missionId={missionId} changeset={changeset} />}
+              {tab === "preview" && (
+                <PreviewPanel missionId={missionId} changeset={changeset} isLive={isLive} />
+              )}
               {tab === "cost" && <CostPanel runs={runs} total={totalCost} />}
             </div>
           </div>
