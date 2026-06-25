@@ -355,6 +355,7 @@ This SSOT is the one place for "where are we / what is next / what needs you" (s
 | Status of every feature (matrix + who-is-on-what claims) | [`feature-dashboard.md`](./feature-dashboard.md) |
 | Per-feature acceptance criteria / scope (F-IDs) | [`archive/feature-backlog.md`](archive/feature-backlog.md) |
 | Current-initiative build specs (per-ID, cold-buildable) | [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) (G10) · [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) (G11) · [`ambient-precedent-plan.md`](./ambient-precedent-plan.md) (DBR row 148, increment 1) · [`supersession-engine-plan.md`](./supersession-engine-plan.md) (DBR-1.5, the supersession write-path) |
+| Analytics + failure-detection (AFD, G12, founder-gated) | [`analytics-and-failure-detection-plan.md`](./analytics-and-failure-detection-plan.md) (the build bible) · feature spec [`../features/analytics-and-failure-detection.md`](../features/analytics-and-failure-detection.md) · façade [`../features/observability-facade.md`](../features/observability-facade.md) · vendor ADR [`../decisions/analytics-vendor-selection.md`](../decisions/analytics-vendor-selection.md) · runbook [`../operations/alerting-runbook.md`](../operations/alerting-runbook.md) |
 | Open bugs / blockers | [`known-issues.md`](./known-issues.md) |
 | Cross-cutting non-functional gaps | [`considerations.md`](./considerations.md) |
 | Dated build history (what shipped + why) | [`../../plan.md`](../../plan.md) section 4 |
