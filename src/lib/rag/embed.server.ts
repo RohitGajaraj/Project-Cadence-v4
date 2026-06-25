@@ -115,7 +115,14 @@ export async function resolveEmbedRoute(opts: EmbedContext): Promise<EmbedRoute>
   }
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY missing");
-  return { via: "gateway", provider: "lovable", url: GATEWAY_EMB_URL, key, model: EMB_MODEL, logModel: EMB_MODEL };
+  return {
+    via: "gateway",
+    provider: "lovable",
+    url: GATEWAY_EMB_URL,
+    key,
+    model: EMB_MODEL,
+    logModel: EMB_MODEL,
+  };
 }
 
 async function logEmbedEvent(
