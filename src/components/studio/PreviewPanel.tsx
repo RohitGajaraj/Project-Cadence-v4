@@ -112,19 +112,47 @@ export function PreviewPanel({
               fontSize: 11.5,
               color: "var(--ink-muted)",
               minWidth: 0,
+              flex: 1,
             }}
           >
             {data.path}
           </span>
+          {/* While the session is live, signal that the page is being built in
+              real time — the breathing glow below echoes the same "AI at work". */}
+          {isLive ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--ember)",
+                background: "color-mix(in oklab, var(--ember) 10%, transparent)",
+                padding: "2px 8px",
+                borderRadius: 999,
+                flex: "none",
+              }}
+            >
+              <span
+                className="pulse-dot"
+                style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ember)" }}
+              />
+              Building live
+            </span>
+          ) : null}
         </div>
         <p
           style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--ink-faint)", lineHeight: 1.4 }}
         >
-          A live preview of this page, rendered safely.
+          {isLive
+            ? "Updating live as the build works on the page."
+            : "A live preview of this page, rendered safely."}
         </p>
       </div>
       <iframe
         title={`Preview of ${data.path}`}
+        className={isLive ? "ai-glow" : undefined}
         sandbox="allow-scripts allow-forms allow-modals"
         srcDoc={data.html}
         style={{
