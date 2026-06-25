@@ -3065,6 +3065,7 @@ export type Database = {
           metadata: Json | null
           rate_limit_per_min: number | null
           revoked_at: string | null
+          scopes: string[]
           secret_hash: string
           slug: string
           user_id: string
@@ -3077,6 +3078,7 @@ export type Database = {
           metadata?: Json | null
           rate_limit_per_min?: number | null
           revoked_at?: string | null
+          scopes?: string[]
           secret_hash: string
           slug: string
           user_id: string
@@ -3089,6 +3091,7 @@ export type Database = {
           metadata?: Json | null
           rate_limit_per_min?: number | null
           revoked_at?: string | null
+          scopes?: string[]
           secret_hash?: string
           slug?: string
           user_id?: string
@@ -6191,6 +6194,10 @@ export type Database = {
         Args: { _enabled: boolean }
         Returns: boolean
       }
+      admin_set_interop_write_enabled: {
+        Args: { _enabled: boolean }
+        Returns: boolean
+      }
       admin_set_user_suspended: {
         Args: { _reason: string; _suspend: boolean; _uid: string }
         Returns: undefined
@@ -6444,6 +6451,7 @@ export type Database = {
         Args: { required_roles: string[]; ws: string }
         Returns: boolean
       }
+      interop_write_enabled: { Args: never; Returns: boolean }
       is_account_member: { Args: { account: string }; Returns: boolean }
       is_account_owner: { Args: { account: string }; Returns: boolean }
       is_workspace_member: { Args: { ws: string }; Returns: boolean }
@@ -6451,6 +6459,7 @@ export type Database = {
       issue_mcp_token: {
         Args: {
           _rate_limit_per_min?: number
+          _scopes?: string[]
           _secret_hash: string
           _slug: string
           _user_id: string
@@ -6463,6 +6472,7 @@ export type Database = {
           metadata: Json | null
           rate_limit_per_min: number | null
           revoked_at: string | null
+          scopes: string[]
           secret_hash: string
           slug: string
           user_id: string
