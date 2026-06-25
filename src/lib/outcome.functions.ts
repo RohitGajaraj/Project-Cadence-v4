@@ -6,6 +6,7 @@ import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import { buildOutcomeMemory, outcomeImportance } from "@/lib/ai/outcome-memory";
 import { rememberOutcome } from "@/lib/ai/memory.server";
 import { inferSupersession } from "@/lib/ai/supersession.server";
+import { inferDirectEdge } from "@/lib/ai/edge-extractor.server";
 import { callModel } from "@/lib/ai/runtime.server";
 
 // Outcome surface: read-only roll-ups over existing tables.
@@ -293,6 +294,21 @@ export const recordOutcome = createServerFn({ method: "POST" })
       });
     } catch (e) {
       console.error("inferSupersession failed (non-fatal):", e);
+    }
+
+    // DBR-3i — direct validates/contradicts edge: encode the human verdict as a
+    // typed graph edge (prd → validates/contradicts → opportunity) so the loop
+    // closure is visible in the graph itself, not only in the supersession walk.
+    // mixed verdicts write no edge (no clean directional signal). Fail-safe.
+    try {
+      await inferDirectEdge(db, {
+        userId,
+        prdId: prd.id,
+        opportunityId: (prd.opportunity_id as string | null) ?? null,
+        verdict: data.verdict,
+      });
+    } catch (e) {
+      console.error("inferDirectEdge failed (non-fatal):", e);
     }
 
     return { learning, opportunity, memory_id: memory?.id ?? null };
