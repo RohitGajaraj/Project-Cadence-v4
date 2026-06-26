@@ -440,6 +440,7 @@ If you hit the same friction twice, add a row here before the third time. The co
 - The only gap that was occurring: the **working-tree files** in `Project-Cadence-v4/` did not auto-update when a lane pushed, because git does not rewrite a live working directory. This is now permanently fixed.
 - **Fix (2026-06-26):** `Project-Cadence-v4/.git/hooks/post-push` auto-syncs `Project-Cadence-v4` to `origin/main` after every push from any worktree. One hook in the shared `.git/hooks/` covers all lanes — now and any future worktrees added.
 - **Every agent / session must push to `origin/main` after every commit** (already the standard). The post-push hook then keeps the founder's view live automatically.
+- **CRITICAL — always use the explicit refspec:** `git push origin parallel/lane-N:main` (where N is your lane number). **Never** run bare `git push origin` — without the `:main` destination git defaults to pushing to `origin/parallel/lane-N` (the lane's own remote branch), which is NOT visible in `Project-Cadence-v4`. This is exactly what caused the gap: lane-1 pushed `origin/parallel/lane-1` instead of `origin/main` and the work sat invisible for the whole session.
 - Never tell the founder to run `git pull`. If the hook fails for any reason (dirty tree, conflict), the hook prints a one-line warning so the session notices.
 
 ### Stale redirect rot (absolute `file://` links to other repos)
