@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { resumeAgentLoop } from "@/lib/ai/loop.server";
+import { resumeAgentLoop, runAgentLoop } from "@/lib/ai/loop.server";
 import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
 import { withJobRun } from "@/lib/observability";
 
@@ -19,6 +19,9 @@ const admin = supabaseAdmin as unknown as SupabaseClient;
  *     column never matches, so these were invisible to the sweeper)
  *   - status='waiting_approval' whose gates are all decided AND executed
  *     (F-STUDIO: the loop pauses on shipping gates; this re-enters it)
+ *   - status='running' with 0 mission_steps and 0 active agent_runs
+ *     (KI-17: chat.ts fires runAgentLoop fire-and-forget; Worker may
+ *     terminate before orchestrator planning completes — re-plan here)
  * Called by pg_cron every minute. Idempotent: resumeAgentLoop is safe to
  * call multiple times — checkpoint + tool idempotency keys dedup, and it
  * skips waiting_approval runs that still have undecided gates.
@@ -29,6 +32,9 @@ const BATCH = 5;
 // first, so no mission starves). Env-tunable for high scale; sane default 50.
 // Each advance is a cheap no-op when the mission has no ready work.
 const MISSION_BATCH = Math.max(1, Number(process.env.MISSION_ADVANCE_BATCH) || 50);
+// Cap on unplanned mission re-planning per tick. Each call triggers an
+// orchestrator AI loop (expensive); 2 is intentionally conservative.
+const REPLAN_BATCH = 2;
 
 export const Route = createFileRoute("/api/public/hooks/resume-runs")({
   server: {
@@ -115,7 +121,50 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
               }
             }
 
-            return new Response(JSON.stringify({ ok: true, resumed, failed, advanced }), {
+            // KI-17: recover missions that have no mission_steps and no active
+            // orchestrator run. This happens when chat.ts fires runAgentLoop
+            // as fire-and-forget and the Cloudflare Worker terminates before
+            // the orchestrator completes its planning call.
+            const { data: unplannedCandidates } = await admin
+              .from("missions")
+              .select("id,user_id,workspace_id,goal,status")
+              .in("status", ["running", "in_progress"])
+              .lt("created_at", cutoff)
+              .order("created_at", { ascending: true })
+              .limit(REPLAN_BATCH * 4);
+            const toReplan: MissionLite[] = [];
+            for (const m of (unplannedCandidates ?? []) as MissionLite[]) {
+              if (toReplan.length >= REPLAN_BATCH) break;
+              const { count: stepCount } = await admin
+                .from("mission_steps")
+                .select("id", { count: "exact", head: true })
+                .eq("mission_id", m.id);
+              if ((stepCount ?? 0) > 0) continue;
+              const { count: activeRuns } = await admin
+                .from("agent_runs")
+                .select("id", { count: "exact", head: true })
+                .eq("mission_id", m.id)
+                .in("status", ["queued", "running", "waiting_approval"]);
+              if ((activeRuns ?? 0) > 0) continue;
+              toReplan.push(m);
+            }
+            const planned: { id: string; run_id?: string; error?: string }[] = [];
+            for (const m of toReplan) {
+              try {
+                const res = await runAgentLoop(admin, m.user_id, {
+                  agentSlug: "orchestrator",
+                  goal: m.goal,
+                  missionId: m.id,
+                  workspaceId: m.workspace_id,
+                });
+                planned.push({ id: m.id, run_id: (res as { run_id?: string })?.run_id });
+              } catch (e) {
+                planned.push({ id: m.id, error: e instanceof Error ? e.message : String(e) });
+                failed.push({ id: m.id, error: e instanceof Error ? e.message : String(e) });
+              }
+            }
+
+            return new Response(JSON.stringify({ ok: true, resumed, failed, advanced, planned }), {
               headers: { "Content-Type": "application/json" },
             });
           } catch (e) {
