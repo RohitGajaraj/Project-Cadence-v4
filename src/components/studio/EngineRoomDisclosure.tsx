@@ -86,11 +86,7 @@ export function EngineRoomDisclosure({
   const isShipped = changeset?.status === "merged";
 
   if (!showBadge && !isShipped) {
-    return (
-      <div className="py-6 text-center text-sm text-muted-foreground">
-        No PR created yet.
-      </div>
-    );
+    return <div className="py-6 text-center text-sm text-muted-foreground">No PR created yet.</div>;
   }
 
   return (

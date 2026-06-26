@@ -75,7 +75,11 @@ export class GitLabRepoProvider implements RepoProvider {
     return items.map((e) => ({ path: e.path, type: e.type, sha: e.id }));
   }
 
-  async readFile(ref: RepoRef = this.defaultRef!, path: string, branch?: string): Promise<FileContent> {
+  async readFile(
+    ref: RepoRef = this.defaultRef!,
+    path: string,
+    branch?: string,
+  ): Promise<FileContent> {
     const pid = encodeProject(ref);
     const refParam = branch ? `?ref=${encodeURIComponent(branch)}` : "";
     type GlFile = { content: string; encoding: string };
@@ -176,13 +180,10 @@ export class GitLabRepoProvider implements RepoProvider {
   ): Promise<CommitResult> {
     const pid = encodeProject(ref);
     type GlMerge = { sha: string };
-    const result = await this.glJson<GlMerge>(
-      `/projects/${pid}/merge_requests/${crNumber}/merge`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ squash: method === "squash" }),
-      },
-    );
+    const result = await this.glJson<GlMerge>(`/projects/${pid}/merge_requests/${crNumber}/merge`, {
+      method: "PUT",
+      body: JSON.stringify({ squash: method === "squash" }),
+    });
     return { sha: result.sha };
   }
 

@@ -117,9 +117,8 @@ function SyncInboxPage() {
               </h2>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Bind a different repo to{" "}
-              <strong>{activeProduct?.name ?? "this product"}</strong> — overrides the workspace
-              default for this product only.
+              Bind a different repo to <strong>{activeProduct?.name ?? "this product"}</strong> —
+              overrides the workspace default for this product only.
             </p>
             <ProductBindingsSection />
           </section>

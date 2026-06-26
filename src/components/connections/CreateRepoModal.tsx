@@ -77,8 +77,7 @@ export function CreateRepoModal({
       onOpenChange(false);
       onSuccess?.(res.repo.owner, res.repo.repo);
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Repo creation failed"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Repo creation failed"),
   });
 
   return (
@@ -114,8 +113,7 @@ export function CreateRepoModal({
 
           <div>
             <Label htmlFor="repo-org" className="text-xs font-medium">
-              Organization{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Organization <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Input
               id="repo-org"
@@ -131,8 +129,7 @@ export function CreateRepoModal({
 
           <div>
             <Label htmlFor="repo-desc" className="text-xs font-medium">
-              Description{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Description <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Input
               id="repo-desc"
