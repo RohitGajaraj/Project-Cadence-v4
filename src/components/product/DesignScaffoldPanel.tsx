@@ -7,13 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { generateDesignScaffold } from "@/lib/design-scaffold.functions";
 
-export function DesignScaffoldPanel({
-  prdId,
-  specBody,
-}: {
-  prdId: string;
-  specBody: string;
-}) {
+export function DesignScaffoldPanel({ prdId, specBody }: { prdId: string; specBody: string }) {
   const [scaffold, setScaffold] = useState<{ html: string; generatedAt: string } | null>(null);
   const fGenerate = useServerFn(generateDesignScaffold);
 
@@ -77,7 +71,8 @@ export function DesignScaffoldPanel({
             style={{ height: 540 }}
           />
           <p className="mt-2 text-xs text-slate-400 text-right">
-            Generated {new Date(scaffold.generatedAt).toLocaleTimeString()} · AI-drafted — review before use
+            Generated {new Date(scaffold.generatedAt).toLocaleTimeString()} · AI-drafted — review
+            before use
           </p>
         </div>
       )}

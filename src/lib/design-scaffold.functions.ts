@@ -109,7 +109,11 @@ export const generateDesignScaffold = createServerFn({ method: "POST" })
 
     // Strip any accidental markdown code fences the model may add despite instructions
     let html = (res.output ?? "").trim();
-    html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+    html = html
+      .replace(/^```html\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
 
     // Remove any external CDN script/link tags the model may emit; inject our
     // own controlled inline stylesheet so no external resources are loaded.
