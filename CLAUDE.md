@@ -76,7 +76,11 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 **Every git interaction — commit, push, pull, merge — requires a clear one-line WHY.** See [`docs/operations/git-discipline.md`](./docs/operations/commits.md) for the canonical cross-tool standard. Hooks enforce this.
 
 - Use a commit skill — `gstack-ship`, `commit-commands:commit`, or similar if available. Always include the WHY in the message, not just the WHAT.
-- Push with explicit refspec: `git push origin parallel/lane-N:main` — **always include `:main`**. Bare `git push origin` pushes to the lane's own remote branch, making the commit invisible in `Project-Cadence-v4`. (Root cause of the 2026-06-26 lane-1 gap.)
+- Push with explicit refspec AND sync PCV4 immediately after — **both steps are mandatory, every push, no exceptions:**
+  ```bash
+  git push origin parallel/lane-N:main && bash scripts/sync-pcv4.sh
+  ```
+  Bare `git push origin` pushes to the lane branch only (invisible to PCV4). `post-push` is not a real git hook so no automation fires — the sync MUST be explicit. Root cause of repeated stale-dashboard incidents (2026-06-26).
 - Pull with intent: `git pull — syncing latest; checking active-task.md for conflicts`
 
 ## Conventions & gotchas (so you work faster)
