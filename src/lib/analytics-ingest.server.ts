@@ -39,11 +39,15 @@ export async function ingestPostHogAnalytics(
   days = 30,
 ): Promise<IngestResult> {
   const personalKey = (process.env.POSTHOG_PERSONAL_API_KEY ?? "").trim();
-  const projectId   = (process.env.POSTHOG_PROJECT_ID   ?? "").trim();
-  const host        = (process.env.POSTHOG_HOST          ?? "https://eu.i.posthog.com").trim();
+  const projectId = (process.env.POSTHOG_PROJECT_ID ?? "").trim();
+  const host = (process.env.POSTHOG_HOST ?? "https://eu.i.posthog.com").trim();
 
   if (!personalKey || !projectId) {
-    return { ok: true, skipped: true, reason: "POSTHOG_PERSONAL_API_KEY or POSTHOG_PROJECT_ID not set" };
+    return {
+      ok: true,
+      skipped: true,
+      reason: "POSTHOG_PERSONAL_API_KEY or POSTHOG_PROJECT_ID not set",
+    };
   }
 
   // HogQL query: daily event counts for tracked Cadence events over last N days.
@@ -91,13 +95,13 @@ export async function ingestPostHogAnalytics(
   const anyDb = supabaseAdmin as any;
 
   const rows = data.results.map(([event, day, distinctUsers, eventCount]) => ({
-    workspace_id:   workspaceId,
-    feature_event:  event,
-    cohort_date:    day,
+    workspace_id: workspaceId,
+    feature_event: event,
+    cohort_date: day,
     distinct_users: distinctUsers,
-    event_count:    eventCount,
-    source:         "posthog",
-    updated_at:     new Date().toISOString(),
+    event_count: eventCount,
+    source: "posthog",
+    updated_at: new Date().toISOString(),
   }));
 
   const { error: upsertErr } = await anyDb
@@ -132,22 +136,22 @@ async function insertSpikeSignals(
 
   const spikes = Array.from(byEvent.entries()).filter(([, { recent, prior }]) => {
     if (prior === 0) return recent >= 10; // first-time non-trivial usage
-    return recent / prior >= 2;           // 2× or more growth
+    return recent / prior >= 2; // 2× or more growth
   });
 
   if (spikes.length === 0) return 0;
 
   const signalRows = spikes.map(([event, { recent, prior }]) => ({
-    user_id:      ownerId,
+    user_id: ownerId,
     workspace_id: workspaceId,
-    source:       "posthog_analytics",
-    title:        `Usage spike: ${event}`,
+    source: "posthog_analytics",
+    title: `Usage spike: ${event}`,
     content:
       prior === 0
         ? `New activity on "${event}": ${recent} distinct users in the last 7 days.`
         : `"${event}" grew ${Math.round((recent / prior - 1) * 100)}% WoW: ${recent} vs ${prior} distinct users.`,
-    tags:         ["analytics", "posthog", "spike"],
-    sentiment:    "positive",
+    tags: ["analytics", "posthog", "spike"],
+    sentiment: "positive",
   }));
 
   const { error } = await supabaseAdmin.from("signals").insert(signalRows);

@@ -35,67 +35,67 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
         if (unauth) return unauth;
 
         return withJobRun("ambient.sense-tick", async () => {
-        const { data: workspaces, error } = await supabaseAdmin
-          .from("workspaces")
-          .select("id, owner_id, last_auto_sense_at")
-          .eq("auto_sense_enabled", true)
-          .order("last_auto_sense_at", { ascending: true, nullsFirst: true })
-          .limit(MAX_WORKSPACES);
+          const { data: workspaces, error } = await supabaseAdmin
+            .from("workspaces")
+            .select("id, owner_id, last_auto_sense_at")
+            .eq("auto_sense_enabled", true)
+            .order("last_auto_sense_at", { ascending: true, nullsFirst: true })
+            .limit(MAX_WORKSPACES);
 
-        if (error) {
-          // Pre-migration tolerance: auto_sense_enabled may not exist yet.
-          const code = (error as { code?: string }).code;
-          if (code === "42703" || code === "PGRST204") {
-            return json({ ok: true, processed: 0, note: "auto_sense not migrated yet" });
-          }
-          return json({ ok: false, error: error.message }, 500);
-        }
-
-        const results: Array<{
-          workspace_id:    string;
-          tagged?:         number;
-          seeded?:         number;
-          github_inserted?: number;
-          github_source?:  string;
-          posthog_rows?:   number;
-          posthog_signals?: number;
-          posthog_skipped?: boolean;
-          error?:          string;
-        }> = [];
-
-        for (const ws of workspaces ?? []) {
-          try {
-            if (!ws.owner_id) {
-              results.push({ workspace_id: ws.id, error: "no owner" });
-              continue;
+          if (error) {
+            // Pre-migration tolerance: auto_sense_enabled may not exist yet.
+            const code = (error as { code?: string }).code;
+            if (code === "42703" || code === "PGRST204") {
+              return json({ ok: true, processed: 0, note: "auto_sense not migrated yet" });
             }
-            const tagged = await tagUntaggedSignals(ws.owner_id, ws.id);
-            const seeded = await topUpDemoFeed(ws.owner_id, ws.id);
-            const gh       = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
-            const posthog  = await ingestPostHogAnalytics(ws.id, ws.owner_id).catch(() => null);
-            await supabaseAdmin
-              .from("workspaces")
-              .update({ last_auto_sense_at: new Date().toISOString() })
-              .eq("id", ws.id);
-            results.push({
-              workspace_id:      ws.id,
-              tagged,
-              seeded,
-              github_inserted:   gh?.inserted ?? 0,
-              github_source:     gh?.source ?? "none",
-              posthog_rows:      posthog?.rowsUpserted ?? 0,
-              posthog_signals:   posthog?.signalsInserted ?? 0,
-              posthog_skipped:   posthog?.skipped ?? false,
-            });
-          } catch (e) {
-            results.push({
-              workspace_id: ws.id,
-              error: e instanceof Error ? e.message : String(e),
-            });
+            return json({ ok: false, error: error.message }, 500);
           }
-        }
 
-        return json({ ok: true, processed: workspaces?.length ?? 0, results });
+          const results: Array<{
+            workspace_id: string;
+            tagged?: number;
+            seeded?: number;
+            github_inserted?: number;
+            github_source?: string;
+            posthog_rows?: number;
+            posthog_signals?: number;
+            posthog_skipped?: boolean;
+            error?: string;
+          }> = [];
+
+          for (const ws of workspaces ?? []) {
+            try {
+              if (!ws.owner_id) {
+                results.push({ workspace_id: ws.id, error: "no owner" });
+                continue;
+              }
+              const tagged = await tagUntaggedSignals(ws.owner_id, ws.id);
+              const seeded = await topUpDemoFeed(ws.owner_id, ws.id);
+              const gh = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
+              const posthog = await ingestPostHogAnalytics(ws.id, ws.owner_id).catch(() => null);
+              await supabaseAdmin
+                .from("workspaces")
+                .update({ last_auto_sense_at: new Date().toISOString() })
+                .eq("id", ws.id);
+              results.push({
+                workspace_id: ws.id,
+                tagged,
+                seeded,
+                github_inserted: gh?.inserted ?? 0,
+                github_source: gh?.source ?? "none",
+                posthog_rows: posthog?.rowsUpserted ?? 0,
+                posthog_signals: posthog?.signalsInserted ?? 0,
+                posthog_skipped: posthog?.skipped ?? false,
+              });
+            } catch (e) {
+              results.push({
+                workspace_id: ws.id,
+                error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+
+          return json({ ok: true, processed: workspaces?.length ?? 0, results });
         });
       },
     },
@@ -119,7 +119,8 @@ async function tagUntaggedSignals(ownerId: string, workspaceId: string): Promise
   for (const row of data) {
     if (updated >= MAX_TAG_UPDATES) break;
     const tags = Array.isArray(row.tags) ? (row.tags as string[]) : [];
-    const hasSentiment = row.sentiment === "positive" || row.sentiment === "neutral" || row.sentiment === "negative";
+    const hasSentiment =
+      row.sentiment === "positive" || row.sentiment === "neutral" || row.sentiment === "negative";
     if (tags.length > 0 && hasSentiment) continue; // already sensed
     const u = tagSignalUpdate({
       title: row.title,
