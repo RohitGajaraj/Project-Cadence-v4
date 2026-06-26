@@ -50,75 +50,6 @@ function nextTierFor(tier: PlanTier): PlanTier | null {
   }
 }
 
-function CurrentPlanStrip({ currentTier }: { currentTier: PlanTier }) {
-  const p = planPresentation(currentTier);
-  const Icon = TIER_ICON[currentTier];
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "14px 18px",
-        borderRadius: 10,
-        border: "1px solid var(--hairline, rgba(0,0,0,0.08))",
-        background: "color-mix(in oklab, var(--ember, #c2602e) 5%, var(--canvas, #fbf7ef))",
-        boxShadow: "0 0 0 1px color-mix(in oklab, var(--ember, #c2602e) 25%, transparent)",
-      }}
-    >
-      <span
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 10,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background:
-            "linear-gradient(145deg, color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), color-mix(in oklab, var(--ember, #c2602e) 6%, transparent))",
-          border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 22%, transparent)",
-          color: "var(--ember, #c2602e)",
-        }}
-      >
-        <Icon size={18} strokeWidth={1.6} />
-      </span>
-      <div style={{ flex: 1 }}>
-        <div
-          className="mono-label"
-          style={{ fontSize: 8.5, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em" }}
-        >
-          CURRENT PLAN
-        </div>
-        <div className="font-display" style={{ fontSize: 15 }}>
-          {p.name}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <a
-          href="/settings/billing?action=manage"
-          style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
-        >
-          Manage
-        </a>
-        {currentTier !== "free" && currentTier !== "enterprise" && (
-          <>
-            <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
-            <a
-              href="/settings/billing?action=cancel"
-              style={{
-                fontSize: 11,
-                color: "var(--ink-subtle, #6b6457)",
-                textDecoration: "underline",
-              }}
-            >
-              Cancel
-            </a>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export function PlanTable({
   currentTier,
@@ -507,20 +438,6 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
       >
         {isCurrent ? "You are on Free" : "Start on Free"}
       </button>
-      {isCurrent && (
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 12 }}>
-          <a
-            href="/settings/billing?action=manage"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-subtle, #6b6457)",
-              textDecoration: "underline",
-            }}
-          >
-            Manage
-          </a>
-        </div>
-      )}
       <div
         style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", marginBottom: 14 }}
       />
@@ -805,31 +722,6 @@ function PaidTierCard({
         </p>
       )}
 
-      {isCurrent && (
-        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-          <a
-            href="/settings/billing?action=manage"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-subtle, #6b6457)",
-              textDecoration: "underline",
-            }}
-          >
-            Manage subscription
-          </a>
-          <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
-          <a
-            href="/settings/billing?action=cancel"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-subtle, #6b6457)",
-              textDecoration: "underline",
-            }}
-          >
-            Cancel plan
-          </a>
-        </div>
-      )}
 
       {/* Feature list below CTA */}
       <div

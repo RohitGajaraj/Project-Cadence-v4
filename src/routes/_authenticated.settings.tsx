@@ -370,105 +370,135 @@ function BillingTab({ checkout }: { checkout?: string }) {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PaymentTestModeBanner />
-      <div className="bento" style={{ padding: "var(--card-pad, 18px)" }}>
-        <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
-          Current plan
+      {/* ── Current plan card ────────────────────────────────────────── */}
+      <div className="bento" style={{ padding: "var(--card-pad, 18px)", display: "grid", gap: 0 }}>
+        {/* Top row: plan identity + status pill */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", marginBottom: 4 }}>
+              Current plan
+            </div>
+            <div className="font-display" style={{ fontSize: 22, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "var(--ember, #c2602e)", display: "inline-flex" }}>
+                <TierGlyph size={20} strokeWidth={1.5} />
+              </span>
+              {current.name}
+            </div>
+          </div>
+          {/* Status pill — only when subscription data is loaded */}
+          {hasSub && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                padding: "3px 10px",
+                borderRadius: 99,
+                marginTop: 4,
+                flexShrink: 0,
+                background: sub?.cancelAtPeriodEnd
+                  ? "color-mix(in oklab, #b45309 12%, transparent)"
+                  : sub?.status === "past_due"
+                    ? "color-mix(in oklab, #dc2626 12%, transparent)"
+                    : "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                color: sub?.cancelAtPeriodEnd
+                  ? "#92400e"
+                  : sub?.status === "past_due"
+                    ? "#991b1b"
+                    : "var(--moss-success, #4f8a59)",
+              }}
+            >
+              {sub?.cancelAtPeriodEnd
+                ? "Cancels at period end"
+                : sub?.status === "past_due"
+                  ? "Payment issue"
+                  : "Active"}
+            </span>
+          )}
         </div>
-        <div
-          className="font-display"
-          style={{ fontSize: 20, marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}
-        >
-          <span style={{ color: "var(--ember, #c2602e)", display: "inline-flex" }}>
-            <TierGlyph size={20} strokeWidth={1.5} />
-          </span>
-          {current.name}
-        </div>
-        <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "6px 0 0" }}>
+
+        {/* Tagline */}
+        <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "8px 0 0", lineHeight: 1.45 }}>
           {current.tagline}
         </p>
-        {state && !state.isOwner && (
-          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", marginTop: 10 }}>
-            Only the workspace owner can change the plan.
+
+        {/* Renewal date — only when available */}
+        {hasSub && renewsLabel && (
+          <p style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)", margin: "5px 0 0" }}>
+            {sub?.cancelAtPeriodEnd ? "Access until" : "Renews on"}{" "}
+            <strong style={{ color: "var(--ink, #1d1a14)", fontWeight: 500 }}>{renewsLabel}</strong>
           </p>
         )}
-        {state && state.isOwner && hasSub && (
+
+        {/* Non-owner notice */}
+        {state && !state.isOwner && (
+          <p style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", margin: "12px 0 0" }}>
+            Only the workspace owner can change or cancel the plan.
+          </p>
+        )}
+
+        {/* ── Action row — always visible for workspace owner ── */}
+        {(!state || state.isOwner) && (
           <div
             style={{
-              marginTop: 14,
+              marginTop: 16,
               paddingTop: 14,
               borderTop: "1px solid var(--hairline, rgba(0,0,0,0.08))",
-              display: "grid",
-              gap: 10,
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              alignItems: "center",
             }}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 18, fontSize: 12 }}>
-              <div>
-                <div
-                  className="mono-label"
-                  style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
-                >
-                  Status
-                </div>
-                <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>
-                  {sub?.cancelAtPeriodEnd
-                    ? "Cancels at period end"
-                    : sub?.status === "past_due"
-                      ? "Payment issue, retrying"
-                      : "Active"}
-                </div>
-              </div>
-              {renewsLabel && (
-                <div>
-                  <div
-                    className="mono-label"
-                    style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}
-                  >
-                    {sub?.cancelAtPeriodEnd ? "Access until" : "Renews on"}
-                  </div>
-                  <div style={{ marginTop: 2, color: "var(--ink, #1d1a14)" }}>{renewsLabel}</div>
-                </div>
-              )}
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              {/* Manage billing → Stripe Customer Portal (payment method, invoices) */}
+            {/* Manage billing → Stripe portal for payment/invoice management */}
+            {hasSub && (
               <button
                 className="btn btn-primary btn-sm"
                 disabled={openPortal.isPending || !envSafe}
                 onClick={() => openPortal.mutate()}
+                title={!envSafe ? "Payments not configured in this environment" : undefined}
               >
-                {openPortal.isPending ? "Opening" : "Manage billing"}
+                {openPortal.isPending ? "Opening…" : "Manage billing"}
               </button>
+            )}
 
-              {sub?.cancelAtPeriodEnd ? (
+            {/* Cancel / Resume — only when subscription exists */}
+            {hasSub && (
+              sub?.cancelAtPeriodEnd ? (
                 <button
                   className="btn btn-ghost btn-sm"
-                  disabled={resumeSub.isPending}
+                  disabled={resumeSub.isPending || !envSafe}
                   onClick={() => resumeSub.mutate()}
                 >
-                  {resumeSub.isPending ? "Resuming" : "Resume plan"}
+                  {resumeSub.isPending ? "Resuming…" : "Resume plan"}
                 </button>
               ) : (
                 <button
                   className="btn btn-ghost btn-sm"
-                  disabled={cancelSub.isPending}
+                  disabled={cancelSub.isPending || !envSafe}
                   onClick={onCancelClick}
+                  title={!envSafe ? "Payments not configured in this environment" : undefined}
                 >
-                  {cancelSub.isPending ? "Canceling" : "Cancel plan"}
+                  {cancelSub.isPending ? "Canceling…" : "Cancel plan"}
                 </button>
-              )}
+              )
+            )}
 
+            {/* Top-up always available (navigates in-app, no Stripe needed) */}
+            {currentTier !== "free" && (
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => navigate({ search: { section: "credits" } })}
               >
                 Buy a credit top-up
               </button>
-            </div>
-            <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-              Manage billing opens Stripe to update your payment method or download invoices. To
-              switch tiers, pick a plan below — upgrades and downgrades take effect immediately or
-              at cycle end respectively.
-            </p>
+            )}
+
+            {/* Free tier: nudge toward upgrading */}
+            {currentTier === "free" && (
+              <span style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)" }}>
+                Pick a plan below to upgrade.
+              </span>
+            )}
           </div>
         )}
       </div>
