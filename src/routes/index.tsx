@@ -6,6 +6,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import { supabase } from "@/integrations/supabase/client";
+import { MachineViewToggle } from "@/components/cadence/MachineViewToggle";
+import { MachineViewContainer } from "@/components/machine/MachineViewContainer";
 
 const TITLE = "Cadence: Decision and outcome OS for product teams";
 const DESC =
@@ -92,10 +94,51 @@ const LEDGER_ROWS = [
   },
 ];
 
+// --- Machine-mode content ------------------------------------------------
+// Rendered when the [HUMAN] [MACHINE] toggle is in MACHINE mode.
+// Same information as the landing page, structured as plain markdown for agent
+// consumption. Keep in sync with the visual sections below.
+
+const LANDING_MACHINE_CONTENT = `## What Cadence is
+
+The decision and outcome operating system for product teams. Not a copilot. Not a ticket tracker. An AI operating system that owns the full product lifecycle loop: sense what is happening, decide what is worth building, run the work autonomously, keep the receipts.
+
+## Core capabilities
+
+### Own the loop — end-to-end execution
+From sensing a live signal to shipping an outcome, Cadence runs the full product lifecycle as one governed loop. You set intent and approve the calls that matter. Agents do the rest.
+
+### Keep the receipts — a record that compounds
+Every decision logged: what changed, why, on what evidence, who approved, and whether the call was later proven right. The Trust Ledger is what serious teams pay for.
+
+### Sense continuously — self-initiating from live signals
+Cadence does not wait for you to open a tab and press go. It monitors signals, surfaces what warrants attention, and initiates its own next steps. You review, not kickstart.
+
+## What Cadence is not
+
+- NOT a Jira plugin. Ticket trackers log what you decided to build. Cadence tracks why, what it replaced, and whether the outcome validated the call.
+- NOT another AI copilot. Copilots draft and wait. Cadence acts, remembers what happened, and gets sharper with every outcome it logs.
+- NOT a dashboard. Dashboards show what already happened. Cadence initiates the next step, then surfaces it for your judgment.
+
+## For AI agents
+
+All Cadence pages support ?view=machine for structured markdown output.
+A2A agent card: /.well-known/agent.json
+MCP server: coming soon
+llms.txt: /llms.txt
+
+## Get started
+
+Sign in: /login
+Start free: /signup
+Pricing: /pricing
+`;
+
 // --- Component -----------------------------------------------------------
 
 function LandingPage() {
   return (
+    <MachineViewContainer machineContent={LANDING_MACHINE_CONTENT} title="Cadence">
     <div
       style={{
         minHeight: "100vh",
@@ -137,6 +180,7 @@ function LandingPage() {
           <a href="/login" style={{ fontSize: 13, color: "inherit", textDecoration: "none" }}>
             Sign in
           </a>
+          <MachineViewToggle />
           <a href="/signup" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
             Start free
           </a>
@@ -648,5 +692,6 @@ function LandingPage() {
         </div>
       </footer>
     </div>
+    </MachineViewContainer>
   );
 }

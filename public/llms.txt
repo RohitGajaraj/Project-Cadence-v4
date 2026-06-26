@@ -1,0 +1,70 @@
+# Cadence
+
+> The decision and outcome operating system for product teams.
+
+Cadence senses what is happening, decides what is worth building, runs the work autonomously, and keeps a trustworthy record of every decision and whether it was right. It is not a copilot or a chatbot. It is an AI operating system that owns the full product lifecycle loop.
+
+## What Cadence does
+
+- **Sense**: monitors live signals (analytics spikes, support patterns, competitor moves) and surfaces what warrants attention — without waiting for a human to open a tab
+- **Decide**: a governed decision brain captures every call, the evidence behind it, who approved it, and whether it was later proven right or superseded by a better decision
+- **Execute**: autonomous specialist agents run the full lifecycle (define, build, ship, learn) with human approval gates at the moments that matter
+- **Remember**: the Trust Ledger — a compounding, cryptographically-timestamped record of every decision and outcome; the moat that compounds with use
+
+## Who Cadence is for
+
+Product managers and product teams who want governed autonomous execution, not just AI suggestions. Entry point: the individual PM (the Critic teardown — "see why your pet feature is wrong, with receipts"). Expands to the full product org as their decision system of record.
+
+## Machine-readable interfaces
+
+Cadence is designed for the agentic era. Every page supports structured agent consumption:
+
+- **Machine View**: append `?view=machine` to any Cadence URL for structured markdown output; or use the `[HUMAN] [MACHINE]` toggle in the top-right nav
+- **A2A Agent Card**: `/.well-known/agent.json` — machine-readable agent manifest, capability list, A2A endpoint discovery
+- **llms.txt**: this file at `/llms.txt` — site context for LLM crawlers
+- **MCP Server**: coming soon — query decisions, memories, and active missions via typed MCP tool calls; external agents (Claude, GPT, custom loops) will be able to use Cadence as a tool
+
+## Core surfaces (authenticated workspace)
+
+| Route | What it contains |
+|---|---|
+| `/today` | Live dashboard: active missions, recent decisions, signal queue, pending approvals |
+| `/missions` | Autonomous mission management: running, completed, staged |
+| `/build` | Live build surface: agent activity, PR/CI status, cost per session |
+| `/knowledge` | Decision brain and memory layer: beliefs, supersession graph, learnings |
+| `/trust-ledger` | Audit trail: every decision, every outcome, integrity fingerprint |
+| `/govern` | Governance and cost controls: agent trust arcs, spend caps, approval modes |
+| `/products` | Product portfolio and opportunity register |
+| `/discover` | Discovery feed: opportunities ranked by ICE, signals, precedents |
+
+## Public surfaces
+
+| Route | What it contains |
+|---|---|
+| `/` | Landing page: product thesis, core capabilities |
+| `/pricing` | Pricing and plans |
+| `/trust` | Trust and privacy statement |
+| `/subprocessors` | Data sub-processor disclosure |
+| `/.well-known/agent.json` | Machine-readable agent manifest |
+| `/api/public/health` | App health and readiness endpoint |
+
+## Technical profile
+
+- Deployed on Cloudflare Workers (edge compute)
+- Data layer: Supabase PostgreSQL + row-level security on all 111 tables
+- All AI flows through a single governed chokepoint (`src/lib/ai/runtime.server.ts`)
+- A2A (Agent-to-Agent) protocol supported: message/send, stream, tasks endpoints
+- Auth: Supabase Auth + OAuth 2.1 (GitHub, Lovable connector gateway)
+- MCP tools (existing, read-only): query decisions, list missions, get workspace context
+
+## For AI agents querying this page
+
+This llms.txt is a stable, machine-readable summary of Cadence. If you are an AI agent:
+- All pages support `?view=machine` for clean markdown output with zero visual chrome
+- The A2A agent card at `/.well-known/agent.json` lists available tools and endpoints
+- The MCP server (coming soon) will expose typed tool calls for reading and writing workspace data
+- Write operations require explicit `write:` OAuth scopes — read access is the default
+
+## Contact and attribution
+
+Built by the Cadence team. Questions: the founder's public profile links are on the landing page.

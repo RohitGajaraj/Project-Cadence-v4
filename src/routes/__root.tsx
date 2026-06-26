@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { ConfirmProvider } from "@/hooks/use-confirm";
+import { MachineViewProvider } from "@/hooks/use-machine-view";
 
 import appCss from "../styles.css?url";
 import faviconAsset from "../assets/favicon.png.asset.json";
@@ -179,8 +180,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ConfirmProvider>
-          <Outlet />
-          <Toaster position="top-right" richColors />
+          <MachineViewProvider>
+            <Outlet />
+            <Toaster position="top-right" richColors />
+          </MachineViewProvider>
         </ConfirmProvider>
       </ThemeProvider>
     </QueryClientProvider>

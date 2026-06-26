@@ -120,7 +120,11 @@ function SyncInboxPage() {
               Bind a different repo to <strong>{activeProduct?.name ?? "this product"}</strong> —
               overrides the workspace default for this product only.
             </p>
-            <ProductBindingsSection />
+            <ProductBindingsSection
+              projectId={activeProductId!}
+              workspaceId={activeWorkspaceId!}
+              projectName={activeProduct?.name}
+            />
           </section>
         )}
 

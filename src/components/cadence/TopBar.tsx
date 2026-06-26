@@ -13,6 +13,7 @@ import { AmbientChip } from "./AmbientChip";
 import { AttentionBell } from "./AttentionBell";
 import { CookingBanner, ConstructionPill } from "./CookingBanner";
 import { LoopThread } from "./LoopThread";
+import { MachineViewToggle } from "./MachineViewToggle";
 
 export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactNode }) {
   const [today, setToday] = useState("");
@@ -73,6 +74,7 @@ export function TopBar({ crumbs, actions }: { crumbs: string[]; actions?: ReactN
         <ConstructionPill />
         <span style={{ flex: 1 }} />
         {actions}
+        <MachineViewToggle />
         <AttentionBell />
         <span
           className="mono-label"
