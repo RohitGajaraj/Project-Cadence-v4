@@ -56,26 +56,29 @@ export async function autoAdjustIce(
   const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const anyDb = supabaseAdmin as any;
   type AnalyticsRow = { cohort_date: string; distinct_users: number; event_count: number };
-  const { data: rows, error: rowsErr } = await anyDb
+  const { data: rows, error: rowsErr } = (await anyDb
     .from("product_analytics")
     .select("cohort_date, distinct_users, event_count")
     .eq("workspace_id", workspaceId)
     .eq("feature_event", featureEvent)
     .gte("cohort_date", since)
-    .order("cohort_date", { ascending: false }) as { data: AnalyticsRow[] | null; error: { message: string } | null };
+    .order("cohort_date", { ascending: false })) as {
+    data: AnalyticsRow[] | null;
+    error: { message: string } | null;
+  };
 
   if (rowsErr) return { ok: false, reason: rowsErr.message };
   if (!rows?.length) return { ok: true, skipped: true, reason: "no analytics data yet" };
 
-  const totalUsers  = rows.reduce((s, r) => s + (r.distinct_users ?? 0), 0);
-  const totalEvents = rows.reduce((s, r) => s + (r.event_count    ?? 0), 0);
-  const dataDays    = rows.length; // distinct date rows = days of data
+  const totalUsers = rows.reduce((s, r) => s + (r.distinct_users ?? 0), 0);
+  const totalEvents = rows.reduce((s, r) => s + (r.event_count ?? 0), 0);
+  const dataDays = rows.length; // distinct date rows = days of data
 
   // 3. Compute new scores.
-  const newImpact     = Math.min(10, Math.max(1, Math.floor(Math.log10(totalUsers + 1) * 3.5)));
+  const newImpact = Math.min(10, Math.max(1, Math.floor(Math.log10(totalUsers + 1) * 3.5)));
   const newConfidence = Math.min(10, Math.max(1, Math.round(Math.min(dataDays / 14, 1) * 10)));
 
-  const oldImpact:     number = (opp as { impact: number }).impact;
+  const oldImpact: number = (opp as { impact: number }).impact;
   const oldConfidence: number = (opp as { confidence: number }).confidence;
 
   const deltaI = Math.abs(newImpact - oldImpact);
@@ -93,7 +96,7 @@ export async function autoAdjustIce(
   const { error: updateErr } = await supabase
     .from("opportunities")
     .update({
-      impact:     newImpact,
+      impact: newImpact,
       confidence: newConfidence,
       updated_at: new Date().toISOString(),
     })
@@ -103,26 +106,26 @@ export async function autoAdjustIce(
   // 5. Record provenance.
   await anyDb.from("ice_adjustments").insert({
     opportunity_id: opportunityId,
-    workspace_id:   workspaceId,
-    feature_event:  featureEvent,
-    old_impact:     oldImpact,
-    new_impact:     newImpact,
+    workspace_id: workspaceId,
+    feature_event: featureEvent,
+    old_impact: oldImpact,
+    new_impact: newImpact,
     old_confidence: oldConfidence,
     new_confidence: newConfidence,
-    sample_users:   totalUsers,
-    sample_events:  totalEvents,
+    sample_users: totalUsers,
+    sample_events: totalEvents,
     reason,
   });
 
   return {
-    ok:            true,
-    adjusted:      true,
+    ok: true,
+    adjusted: true,
     oldImpact,
     newImpact,
     oldConfidence,
     newConfidence,
-    sampleUsers:   totalUsers,
-    sampleEvents:  totalEvents,
+    sampleUsers: totalUsers,
+    sampleEvents: totalEvents,
     reason,
   };
 }

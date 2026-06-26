@@ -17,28 +17,28 @@ import { autoAdjustIce } from "@/lib/ice-adjust.server";
 // ── getProductAnalytics ──────────────────────────────────────────────────────
 
 type CohortRow = {
-  cohort_date:    string;
+  cohort_date: string;
   distinct_users: number;
-  event_count:    number;
+  event_count: number;
 };
 
 type IceAdjRow = {
-  adjusted_at:    string;
-  feature_event:  string;
-  old_impact:     number;
-  new_impact:     number;
+  adjusted_at: string;
+  feature_event: string;
+  old_impact: number;
+  new_impact: number;
   old_confidence: number;
   new_confidence: number;
-  reason:         string;
-  sample_users:   number;
+  reason: string;
+  sample_users: number;
 };
 
 export type ProductAnalyticsData = {
-  opportunityId:  string;
-  featureEvent:   string | null;
-  cohort:         CohortRow[];
+  opportunityId: string;
+  featureEvent: string | null;
+  cohort: CohortRow[];
   iceAdjustments: IceAdjRow[];
-  ingestGated:    boolean;
+  ingestGated: boolean;
 };
 
 export const getProductAnalytics = createServerFn({ method: "POST" })
@@ -57,7 +57,13 @@ export const getProductAnalytics = createServerFn({ method: "POST" })
     const workspaceId: string | undefined = opp?.workspace_id;
 
     if (!featureEvent || !workspaceId) {
-      return { opportunityId: data.opportunityId, featureEvent, cohort: [], iceAdjustments: [], ingestGated: !featureEvent };
+      return {
+        opportunityId: data.opportunityId,
+        featureEvent,
+        cohort: [],
+        iceAdjustments: [],
+        ingestGated: !featureEvent,
+      };
     }
 
     // product_analytics + ice_adjustments are not in generated types (new migration).
@@ -71,10 +77,15 @@ export const getProductAnalytics = createServerFn({ method: "POST" })
         .eq("workspace_id", workspaceId)
         .eq("feature_event", featureEvent)
         .gte("cohort_date", since)
-        .order("cohort_date", { ascending: true }) as Promise<{ data: CohortRow[] | null; error: unknown }>,
+        .order("cohort_date", { ascending: true }) as Promise<{
+        data: CohortRow[] | null;
+        error: unknown;
+      }>,
       anyDb
         .from("ice_adjustments")
-        .select("adjusted_at, feature_event, old_impact, new_impact, old_confidence, new_confidence, reason, sample_users")
+        .select(
+          "adjusted_at, feature_event, old_impact, new_impact, old_confidence, new_confidence, reason, sample_users",
+        )
         .eq("opportunity_id", data.opportunityId)
         .order("adjusted_at", { ascending: false })
         .limit(10) as Promise<{ data: IceAdjRow[] | null; error: unknown }>,
@@ -83,10 +94,10 @@ export const getProductAnalytics = createServerFn({ method: "POST" })
     const ingestGated = !process.env.POSTHOG_PERSONAL_API_KEY || !process.env.POSTHOG_PROJECT_ID;
 
     return {
-      opportunityId:  data.opportunityId,
+      opportunityId: data.opportunityId,
       featureEvent,
-      cohort:         cohortRes.data ?? [],
-      iceAdjustments: adjRes.data   ?? [],
+      cohort: cohortRes.data ?? [],
+      iceAdjustments: adjRes.data ?? [],
       ingestGated,
     };
   });
@@ -96,10 +107,12 @@ export const getProductAnalytics = createServerFn({ method: "POST" })
 export const linkOpportunityEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      opportunityId: z.string().uuid(),
-      featureEvent:  z.string().min(1).max(200).nullable(),
-    }).parse(d),
+    z
+      .object({
+        opportunityId: z.string().uuid(),
+        featureEvent: z.string().min(1).max(200).nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;

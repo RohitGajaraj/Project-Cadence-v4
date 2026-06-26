@@ -55,8 +55,8 @@ export function ProductAnalyticsPanel({
   const [editingEvent, setEditingEvent] = useState(false);
   const [eventDraft, setEventDraft] = useState("");
 
-  const fGet    = useServerFn(getProductAnalytics);
-  const fLink   = useServerFn(linkOpportunityEvent);
+  const fGet = useServerFn(getProductAnalytics);
+  const fLink = useServerFn(linkOpportunityEvent);
   const fAdjust = useServerFn(autoAdjustIceForOpportunity);
   const fIngest = useServerFn(runAnalyticsIngest);
 
@@ -66,8 +66,7 @@ export function ProductAnalyticsPanel({
   });
 
   const mLink = useMutation({
-    mutationFn: (featureEvent: string | null) =>
-      fLink({ data: { opportunityId, featureEvent } }),
+    mutationFn: (featureEvent: string | null) => fLink({ data: { opportunityId, featureEvent } }),
     onSuccess: () => {
       setEditingEvent(false);
       qc.invalidateQueries({ queryKey: ["product-analytics", opportunityId] });
@@ -92,7 +91,7 @@ export function ProductAnalyticsPanel({
   const d = analytics.data;
   if (!d) return null;
 
-  const hasData   = d.cohort.length > 0;
+  const hasData = d.cohort.length > 0;
   const latestDay = d.cohort.at(-1);
   const totalUsers = d.cohort.reduce((s, r) => s + r.distinct_users, 0);
   const latestAdj = d.iceAdjustments[0];

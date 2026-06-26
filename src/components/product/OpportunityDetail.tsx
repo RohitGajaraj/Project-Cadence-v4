@@ -183,9 +183,7 @@ export function OpportunityDetail({ id }: { id: string }) {
       <PrecedentNudge kind="opportunity" targetId={id} className="mb-3" />
       <SharedPremiseNudge kind="opportunity" targetId={id} className="mb-3" />
 
-      {o.workspace_id && (
-        <ProductAnalyticsPanel opportunityId={id} workspaceId={o.workspace_id} />
-      )}
+      {o.workspace_id && <ProductAnalyticsPanel opportunityId={id} workspaceId={o.workspace_id} />}
 
       <div
         style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr", gap: 12, marginBottom: 14 }}
