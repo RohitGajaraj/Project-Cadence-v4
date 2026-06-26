@@ -6399,6 +6399,10 @@ export type Database = {
         Args: { _uid: string; _wid: string }
         Returns: undefined
       }
+      admin_reset_demo_workspace: {
+        Args: { _workspace_id: string }
+        Returns: Json
+      }
       admin_reset_user_credit_cycle: {
         Args: { _uid: string }
         Returns: undefined
