@@ -86,6 +86,7 @@ import { Route as AuthenticatedAdminPricingRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminPlatformRouteImport } from './routes/_authenticated.admin.platform'
 import { Route as AuthenticatedAdminPeopleRouteImport } from './routes/_authenticated.admin.people'
 import { Route as AuthenticatedAdminObservabilityRouteImport } from './routes/_authenticated.admin.observability'
+import { Route as AuthenticatedAdminAiCostsRouteImport } from './routes/_authenticated.admin.ai-costs'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
 import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
@@ -511,6 +512,12 @@ const AuthenticatedAdminObservabilityRoute =
     path: '/observability',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAiCostsRoute =
+  AuthenticatedAdminAiCostsRouteImport.update({
+    id: '/ai-costs',
+    path: '/ai-costs',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -706,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
+  '/admin/ai-costs': typeof AuthenticatedAdminAiCostsRoute
   '/admin/observability': typeof AuthenticatedAdminObservabilityRoute
   '/admin/people': typeof AuthenticatedAdminPeopleRoute
   '/admin/platform': typeof AuthenticatedAdminPlatformRoute
@@ -806,6 +814,7 @@ export interface FileRoutesByTo {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
+  '/admin/ai-costs': typeof AuthenticatedAdminAiCostsRoute
   '/admin/observability': typeof AuthenticatedAdminObservabilityRoute
   '/admin/people': typeof AuthenticatedAdminPeopleRoute
   '/admin/platform': typeof AuthenticatedAdminPlatformRoute
@@ -910,6 +919,7 @@ export interface FileRoutesById {
   '/join/$token': typeof JoinTokenRoute
   '/p/$slug': typeof PSlugRoute
   '/t/$slug': typeof TSlugRoute
+  '/_authenticated/admin/ai-costs': typeof AuthenticatedAdminAiCostsRoute
   '/_authenticated/admin/observability': typeof AuthenticatedAdminObservabilityRoute
   '/_authenticated/admin/people': typeof AuthenticatedAdminPeopleRoute
   '/_authenticated/admin/platform': typeof AuthenticatedAdminPlatformRoute
@@ -1014,6 +1024,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
+    | '/admin/ai-costs'
     | '/admin/observability'
     | '/admin/people'
     | '/admin/platform'
@@ -1114,6 +1125,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
+    | '/admin/ai-costs'
     | '/admin/observability'
     | '/admin/people'
     | '/admin/platform'
@@ -1217,6 +1229,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/p/$slug'
     | '/t/$slug'
+    | '/_authenticated/admin/ai-costs'
     | '/_authenticated/admin/observability'
     | '/_authenticated/admin/people'
     | '/_authenticated/admin/platform'
@@ -1840,6 +1853,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPeopleRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ai-costs': {
+      id: '/_authenticated/admin/ai-costs'
+      path: '/ai-costs'
+      fullPath: '/admin/ai-costs'
+      preLoaderRoute: typeof AuthenticatedAdminAiCostsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/observability': {
       id: '/_authenticated/admin/observability'
       path: '/observability'
@@ -2019,6 +2039,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAiCostsRoute: typeof AuthenticatedAdminAiCostsRoute
   AuthenticatedAdminObservabilityRoute: typeof AuthenticatedAdminObservabilityRoute
   AuthenticatedAdminPeopleRoute: typeof AuthenticatedAdminPeopleRoute
   AuthenticatedAdminPlatformRoute: typeof AuthenticatedAdminPlatformRoute
@@ -2028,6 +2049,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAiCostsRoute: AuthenticatedAdminAiCostsRoute,
   AuthenticatedAdminObservabilityRoute: AuthenticatedAdminObservabilityRoute,
   AuthenticatedAdminPeopleRoute: AuthenticatedAdminPeopleRoute,
   AuthenticatedAdminPlatformRoute: AuthenticatedAdminPlatformRoute,

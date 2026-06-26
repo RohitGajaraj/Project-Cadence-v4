@@ -24,8 +24,42 @@ export type ObservabilityStatus = {
     started_at: string;
     duration_ms: number | null;
     error_kind: string | null;
+    error_message: string | null;
   }>;
   failureBreakdown: Array<{ failure_kind: string; count: number }>;
+};
+
+// AFD-12: Moat metric types for the 3 materialized views ──────────────────────
+
+export type DecisionVelocityRow = {
+  workspace_id: string;
+  week: string;
+  decisions_made: number;
+  decisions_shipped: number;
+  decisions_superseded: number;
+};
+
+export type SupersessionRateRow = {
+  workspace_id: string;
+  agent_slug: string;
+  decisions_total: number;
+  decisions_superseded: number;
+  supersession_rate_pct: number;
+};
+
+export type AgentCostRow = {
+  workspace_id: string;
+  agent_slug: string;
+  decisions_30d: number;
+  cost_usd_30d: number;
+  tokens_30d: number;
+  cost_per_decision_usd: number;
+};
+
+export type MoatMetrics = {
+  decisionVelocity: DecisionVelocityRow[];
+  supersessionRate: SupersessionRateRow[];
+  agentCost: AgentCostRow[];
 };
 
 export const getObservabilityStatus = createServerFn({ method: "GET" })
@@ -45,7 +79,7 @@ export const getObservabilityStatus = createServerFn({ method: "GET" })
     const [{ data: jobs }, { data: failures }] = await Promise.all([
       supabaseAdmin
         .from("job_runs")
-        .select("id, job_name, status, started_at, duration_ms, error_kind")
+        .select("id, job_name, status, started_at, duration_ms, error_kind, error_message")
         .order("started_at", { ascending: false })
         .limit(50),
       supabaseAdmin
@@ -86,4 +120,46 @@ export const adminSetObservabilityEnabled = createServerFn({ method: "POST" })
     });
     if (error) return { error: error.message };
     return { enabled: Boolean(v) };
+  });
+
+// ─── AFD-12: /admin/ai-costs — moat metric server function ───────────────────
+
+/**
+ * Returns the 3 moat metric materialized views for the /admin/ai-costs surface.
+ * Views are admin-only (service_role SELECT grant only; authenticated has no direct access).
+ * Admin gate mirrors getObservabilityStatus — user_roles RLS check.
+ */
+export const getMoatMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MoatMetrics | { error: string }> => {
+    const { data: adminRole } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!adminRole) return { error: "Forbidden" };
+
+    const [velocity, supersession, cost] = await Promise.all([
+      supabaseAdmin
+        .from("mv_decision_velocity" as never)
+        .select("workspace_id, week, decisions_made, decisions_shipped, decisions_superseded")
+        .order("week", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("mv_supersession_rate" as never)
+        .select("workspace_id, agent_slug, decisions_total, decisions_superseded, supersession_rate_pct")
+        .order("supersession_rate_pct", { ascending: false })
+        .limit(100),
+      supabaseAdmin
+        .from("mv_agent_cost_per_decision" as never)
+        .select("workspace_id, agent_slug, decisions_30d, cost_usd_30d, tokens_30d, cost_per_decision_usd")
+        .order("cost_per_decision_usd", { ascending: false })
+        .limit(100),
+    ]);
+
+    return {
+      decisionVelocity: ((velocity.data ?? []) as DecisionVelocityRow[]),
+      supersessionRate: ((supersession.data ?? []) as SupersessionRateRow[]),
+      agentCost: ((cost.data ?? []) as AgentCostRow[]),
+    };
   });

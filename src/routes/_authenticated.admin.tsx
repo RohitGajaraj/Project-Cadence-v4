@@ -25,6 +25,7 @@ const TABS = [
   { id: "/admin/workspaces", label: "Workspaces" },
   { id: "/admin/platform", label: "Platform" },
   { id: "/admin/observability", label: "Observability" },
+  { id: "/admin/ai-costs", label: "AI Costs" },
 ] as const;
 
 function AdminLayout() {
@@ -54,10 +55,11 @@ function AdminLayout() {
                   : loc.pathname.startsWith("/admin/workspaces") ? "/admin/workspaces"
                   : loc.pathname.startsWith("/admin/platform") ? "/admin/platform"
                   : loc.pathname.startsWith("/admin/observability") ? "/admin/observability"
+                  : loc.pathname.startsWith("/admin/ai-costs") ? "/admin/ai-costs"
                   : loc.pathname === "/admin/pricing" ? "/admin/pricing"
                   : "/admin"
               }
-              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" | "/admin/workspaces" | "/admin/platform" | "/admin/observability" })}
+              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" | "/admin/workspaces" | "/admin/platform" | "/admin/observability" | "/admin/ai-costs" })}
             />
             <Outlet />
           </>
