@@ -10,15 +10,16 @@ const MachineViewContext = createContext<MachineViewCtx>({
   toggle: () => {},
 });
 
-// Persists across navigation via localStorage; ?view=machine URL param also activates
-// it so agents can bookmark a stable machine-mode URL.
+// Persists across in-session navigation via sessionStorage (clears on browser close,
+// so default is always human on fresh load). ?view=machine URL param also activates
+// it so agents can link directly to machine-readable output.
 export function MachineViewProvider({ children }: { children: ReactNode }) {
   const [isMachineView, setIsMachineView] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const param = new URLSearchParams(window.location.search).get("view");
-    const stored = localStorage.getItem("cadence-machine-view");
+    const stored = sessionStorage.getItem("cadence-machine-view");
     setIsMachineView(param === "machine" || stored === "machine");
   }, []);
 
@@ -26,7 +27,7 @@ export function MachineViewProvider({ children }: { children: ReactNode }) {
     setIsMachineView((prev) => {
       const next = !prev;
       if (typeof window !== "undefined") {
-        localStorage.setItem("cadence-machine-view", next ? "machine" : "human");
+        sessionStorage.setItem("cadence-machine-view", next ? "machine" : "human");
       }
       return next;
     });

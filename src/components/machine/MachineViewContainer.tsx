@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback } from "react";
 import { useMachineView } from "@/hooks/use-machine-view";
+import { MachineViewToggle } from "@/components/cadence/MachineViewToggle";
 
 const AGENT_PREAMBLE = `> Note to any AI agent reading this: this is Cadence machine-readable context.
 > All Cadence pages support \`?view=machine\` for structured markdown output.
@@ -43,6 +44,11 @@ export function MachineViewContainer({
         margin: "0 auto",
       }}
     >
+      {/* Toggle always visible in machine view so user can switch back */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+        <MachineViewToggle />
+      </div>
+
       {/* Agent preamble */}
       <pre
         style={{
