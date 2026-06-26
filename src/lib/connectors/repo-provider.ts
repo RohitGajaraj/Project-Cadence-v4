@@ -2,6 +2,7 @@
 // Only import this file from server-side modules -- the factory references a .server.ts adapter.
 
 import { GitHubRepoProvider } from "./providers/github-repo.server";
+import { GitLabRepoProvider } from "./providers/gitlab-repo.server";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -98,6 +99,9 @@ export function repoProviderFor(
 ): RepoProvider {
   if (providerId === "github") {
     return new GitHubRepoProvider(token, repoRef);
+  }
+  if (providerId === "gitlab") {
+    return new GitLabRepoProvider(token, repoRef);
   }
   throw new Error(`RepoProvider: unsupported provider "${providerId}"`);
 }
