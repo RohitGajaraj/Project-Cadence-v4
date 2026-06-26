@@ -51,6 +51,7 @@ import {
   getMySubscription,
   cancelMySubscription,
   resumeMySubscription,
+  createPortalSession,
   getMyCreditsView,
   getCreditAttribution,
 } from "@/lib/payments.functions";
@@ -259,6 +260,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
   const fGetSub = useServerFn(getMySubscription);
   const fCancelSub = useServerFn(cancelMySubscription);
   const fResumeSub = useServerFn(resumeMySubscription);
+  const fPortal = useServerFn(createPortalSession);
   const confirm = useConfirm();
 
   const billing = useQuery({
@@ -318,6 +320,26 @@ function BillingTab({ checkout }: { checkout?: string }) {
       qc.invalidateQueries({ queryKey: ["billing"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not resume."),
+  });
+
+  const openPortal = useMutation({
+    mutationFn: () =>
+      fPortal({
+        data: {
+          environment: envSafe!,
+          returnUrl: window.location.href,
+        },
+      }),
+    onSuccess: (res) => {
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      if ("url" in res && res.url) {
+        window.location.href = res.url;
+      }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open billing portal."),
   });
 
   async function onCancelClick() {
@@ -407,14 +429,23 @@ function BillingTab({ checkout }: { checkout?: string }) {
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {/* Manage billing → Stripe Customer Portal (payment method, invoices) */}
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={openPortal.isPending || !envSafe}
+                onClick={() => openPortal.mutate()}
+              >
+                {openPortal.isPending ? "Opening" : "Manage billing"}
+              </button>
+
               {sub?.cancelAtPeriodEnd ? (
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-ghost btn-sm"
                   disabled={resumeSub.isPending}
                   onClick={() => resumeSub.mutate()}
                 >
-                  {resumeSub.isPending ? "Resuming" : "Resume subscription"}
+                  {resumeSub.isPending ? "Resuming" : "Resume plan"}
                 </button>
               ) : (
                 <button
@@ -422,19 +453,21 @@ function BillingTab({ checkout }: { checkout?: string }) {
                   disabled={cancelSub.isPending}
                   onClick={onCancelClick}
                 >
-                  {cancelSub.isPending ? "Canceling" : "Cancel subscription"}
+                  {cancelSub.isPending ? "Canceling" : "Cancel plan"}
                 </button>
               )}
+
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => navigate({ search: { section: "credits" } })}
               >
-                Need more credits? Buy a top-up
+                Buy a credit top-up
               </button>
             </div>
             <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-              Top-ups give you extra credits without changing your plan. To move tiers, pick another
-              card below. Changes take effect at the start of your next billing period.
+              Manage billing opens Stripe to update your payment method or download invoices. To
+              switch tiers, pick a plan below — upgrades and downgrades take effect immediately or
+              at cycle end respectively.
             </p>
           </div>
         )}
