@@ -18,6 +18,60 @@ import {
 } from "@/lib/entitlements";
 import { useConfirm } from "@/hooks/use-confirm";
 
+// Connector logo chips — inline under connector feature lines (mirrors Notion's integration icons).
+const CONNECTOR_CHIPS = [
+  { id: "github", label: "GitHub", color: "#fff", bg: "#1b1f23", initial: "GH" },
+  { id: "linear", label: "Linear", color: "#fff", bg: "#5e6ad2", initial: "LN" },
+  { id: "notion", label: "Notion", color: "#fff", bg: "#191919", initial: "N" },
+  { id: "jira", label: "Jira", color: "#fff", bg: "#0052cc", initial: "J" },
+  { id: "google_docs", label: "Google Docs", color: "#fff", bg: "#4285f4", initial: "GD" },
+] as const;
+
+function ConnectorChipsMini({ showWrite = false }: { showWrite?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, marginLeft: 12, flexWrap: "wrap" }}>
+      {CONNECTOR_CHIPS.map((c) => (
+        <span
+          key={c.id}
+          title={c.label}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            height: 20,
+            borderRadius: 4,
+            background: c.bg,
+            color: c.color,
+            fontSize: 7,
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            flexShrink: 0,
+          }}
+        >
+          {c.initial}
+        </span>
+      ))}
+      <span style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>+3 more</span>
+      {showWrite && (
+        <span style={{
+          fontSize: 8,
+          fontWeight: 600,
+          color: "var(--ember, #c2602e)",
+          background: "color-mix(in oklab, var(--ember, #c2602e) 10%, transparent)",
+          border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 20%, transparent)",
+          borderRadius: 3,
+          padding: "1px 4px",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}>
+          read + write
+        </span>
+      )}
+    </div>
+  );
+}
+
 export const TIER_ICON: Record<
   PlanTier,
   React.ComponentType<{ size?: number; strokeWidth?: number }>
@@ -370,24 +424,33 @@ function ExpandableBullets({ items }: { items: string[] }) {
   return (
     <div>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
-        {visible.map((h) => (
-          <li
-            key={h}
-            style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}
-          >
-            <span
-              style={{
-                width: 4,
-                height: 4,
-                borderRadius: 99,
-                background: "var(--ember, #c2602e)",
-                marginTop: 7,
-                flexShrink: 0,
-              }}
-            />
-            <span>{h}</span>
-          </li>
-        ))}
+        {visible.map((h) => {
+          const isReadConnector = h.startsWith("Read connectors:");
+          const isWriteConnector = h.startsWith("Write-back connectors:");
+          return (
+            <li
+              key={h}
+              style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", flexDirection: "column", gap: 0 }}
+            >
+              <div style={{ display: "flex", gap: 8 }}>
+                <span
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: 99,
+                    background: "var(--ember, #c2602e)",
+                    marginTop: 7,
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{h}</span>
+              </div>
+              {(isReadConnector || isWriteConnector) && (
+                <ConnectorChipsMini showWrite={isWriteConnector} />
+              )}
+            </li>
+          );
+        })}
       </ul>
       {hiddenCount > 0 && (
         <button

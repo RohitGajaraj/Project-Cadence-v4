@@ -158,24 +158,30 @@ export async function resolveProviderAuth(args: {
   const { userClient, userId, workspaceId, productId, provider, resourceKind, requiredCapability } =
     args;
 
-  // Tier gate — check BEFORE any credential work so we never leak auth even
-  // transiently for an unauthorized tier. Look up plan_tier from the workspace.
+  // Tier gate — checked BEFORE any credential work so we never materialize auth
+  // for an unauthorized tier. Fails CLOSED: any lookup error defaults to 'free'
+  // (most restrictive), never fails open. assertConnectorCapability throws with a
+  // user-readable upgrade message on insufficient tier; that error propagates as-is.
   if (requiredCapability && workspaceId) {
+    let tier;
     try {
-      const { data: ws } = await admin()
+      const { data: ws, error } = await admin()
         .from("workspaces")
         .select("plan_tier")
         .eq("id", workspaceId)
         .maybeSingle();
-      const tier = normalizePlanTier((ws as { plan_tier?: string } | null)?.plan_tier);
-      assertConnectorCapability(tier, requiredCapability);
-    } catch (err) {
-      // Re-throw upgrade prompts as-is; swallow transient DB errors (fail open,
-      // the credential chain itself will return source:'none' if nothing resolves).
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("require") || msg.includes("Upgrade")) throw err;
-      console.warn(`[connectors] tier check failed for ${provider} (failing open):`, err);
+      // On any DB error, default to 'free' (fail closed — never grant access when
+      // we can't verify the tier). This is intentionally more restrictive than the
+      // credential chain's fail-open policy; a security gate must not fail open.
+      if (error) {
+        console.warn(`[connectors] tier lookup failed for workspace, defaulting free`);
+      }
+      tier = normalizePlanTier((ws as { plan_tier?: string } | null)?.plan_tier);
+    } catch {
+      tier = normalizePlanTier(undefined); // defaults to 'free'
     }
+    // Throws with user-readable upgrade prompt if tier is insufficient.
+    assertConnectorCapability(tier, requiredCapability);
   }
 
   // 0. Product-scoped binding (BYO-P1b). Most specific — overrides workspace.

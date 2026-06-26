@@ -14,6 +14,91 @@ import {
 } from "@/lib/entitlements";
 import { priceForCredits } from "@/lib/billing-tier";
 
+// Connector logos shown inline under connector feature lines, mirroring Notion's
+// integration chip pattern. Simple SVG letter-badges with each tool's brand color.
+// Pro shows read-only connectors; Business shows the same set with a write indicator.
+type ConnectorMeta = { id: string; label: string; color: string; bg: string; initial: string };
+
+const READ_CONNECTORS: ConnectorMeta[] = [
+  { id: "github", label: "GitHub", color: "#fff", bg: "#1b1f23", initial: "GH" },
+  { id: "linear", label: "Linear", color: "#fff", bg: "#5e6ad2", initial: "LN" },
+  { id: "notion", label: "Notion", color: "#fff", bg: "#191919", initial: "N" },
+  { id: "jira", label: "Jira", color: "#fff", bg: "#0052cc", initial: "J" },
+  { id: "google_docs", label: "Google Docs", color: "#fff", bg: "#4285f4", initial: "GD" },
+];
+
+function ConnectorChips({
+  showWrite = false,
+  moreCount = 0,
+}: {
+  showWrite?: boolean;
+  moreCount?: number;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        marginTop: 5,
+        flexWrap: "wrap",
+      }}
+      aria-label={showWrite ? "Write-back connectors" : "Read connectors"}
+    >
+      {READ_CONNECTORS.map((c) => (
+        <span
+          key={c.id}
+          title={c.label}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 22,
+            height: 22,
+            borderRadius: 5,
+            background: c.bg,
+            color: c.color,
+            fontSize: 8,
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            flexShrink: 0,
+          }}
+        >
+          {c.initial}
+        </span>
+      ))}
+      {moreCount > 0 && (
+        <span
+          style={{
+            fontSize: 10,
+            color: "var(--ink-subtle, #6b6457)",
+            fontWeight: 500,
+          }}
+        >
+          +{moreCount} more
+        </span>
+      )}
+      {showWrite && (
+        <span
+          style={{
+            fontSize: 9,
+            fontWeight: 600,
+            color: "var(--ember, #c2602e)",
+            background: "color-mix(in oklab, var(--ember, #c2602e) 10%, transparent)",
+            border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 25%, transparent)",
+            borderRadius: 4,
+            padding: "1px 5px",
+            letterSpacing: "0.03em",
+            textTransform: "uppercase",
+          }}
+        >
+          read + write
+        </span>
+      )}
+    </div>
+  );
+}
+
 const TITLE = "Pricing · Cadence";
 const DESC =
   "Cadence runs your product loop for free. You pay only to keep your decision memory compounding instead of expiring.";
@@ -412,12 +497,15 @@ function PricingCard({ tier, annual }: { tier: PlanTier; annual: boolean }) {
       >
         {visibleHighlights.map((h, i) => {
           const isHeader = h.startsWith("Everything in");
+          const isReadConnector = h.startsWith("Read connectors:");
+          const isWriteConnector = h.startsWith("Write-back connectors:");
           return (
             <li
               key={i}
               style={{
                 display: "flex",
-                gap: 8,
+                flexDirection: "column",
+                gap: 0,
                 fontSize: 12,
                 lineHeight: 1.45,
                 color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
@@ -427,14 +515,18 @@ function PricingCard({ tier, annual }: { tier: PlanTier; annual: boolean }) {
                 paddingTop: isHeader && i > 0 ? 8 : 0,
               }}
             >
-              {!isHeader && (
-                <span
-                  style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0, marginTop: 1 }}
-                >
-                  +
-                </span>
-              )}
-              <span>{h}</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                {!isHeader && (
+                  <span
+                    style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0, marginTop: 1 }}
+                  >
+                    +
+                  </span>
+                )}
+                <span>{h}</span>
+              </div>
+              {isReadConnector && <ConnectorChips moreCount={3} />}
+              {isWriteConnector && <ConnectorChips showWrite moreCount={3} />}
             </li>
           );
         })}
