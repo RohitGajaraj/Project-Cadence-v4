@@ -37,6 +37,7 @@ import { OutcomeCard, type OutcomePrd } from "@/components/product/OutcomeCard";
 import { listTasks } from "@/lib/tasks.functions";
 import { TaskGraphPanel } from "@/components/product/TaskGraphPanel";
 import { DesignReadinessPanel } from "@/components/product/DesignReadinessPanel";
+import { DesignScaffoldPanel } from "@/components/product/DesignScaffoldPanel";
 import { listLinearTeams, createLinearIssuesFromTasks } from "@/lib/linear.functions";
 import { dispatchStudioSession } from "@/lib/studio.functions";
 import { createDecision } from "@/lib/decisions.functions";
@@ -416,6 +417,8 @@ function PrdEditor() {
 
         {/* DEF-04 — design readiness from the spec (states/a11y/responsive/... + gaps). */}
         <DesignReadinessPanel body={body} />
+        {/* DEF-04 generative half — AI mockup in sandboxed iframe (no CDN, no chokepoint change). */}
+        <DesignScaffoldPanel prdId={id} specBody={body} />
 
         {teamsQ.data?.teams && teamsQ.data.teams.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border hairline bg-card px-3 py-2.5 text-xs">
