@@ -46,13 +46,7 @@ const TIER_ICONS: Record<PlanTier, LucideIcon> = {
 };
 
 // Global billing toggle shown above the card grid.
-function BillingToggle({
-  annual,
-  onChange,
-}: {
-  annual: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function BillingToggle({ annual, onChange }: { annual: boolean; onChange: (v: boolean) => void }) {
   return (
     <div
       style={{
@@ -94,8 +88,7 @@ function BillingToggle({
                   fontSize: 10.5,
                   fontWeight: 600,
                   color: "var(--moss-success, #4f8a59)",
-                  background:
-                    "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                  background: "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
                   borderRadius: 99,
                   padding: "1px 6px",
                   lineHeight: 1.5,
@@ -128,9 +121,7 @@ function PricingCard({ tier, annual }: { tier: PlanTier; annual: boolean }) {
 
   const displayPrice = (() => {
     if (monthlyPrice === null) return null;
-    return annual
-      ? priceForCredits(tier, credits, "yearly")
-      : monthlyPrice;
+    return annual ? priceForCredits(tier, credits, "yearly") : monthlyPrice;
   })();
 
   // Exact savings: annual = 10 months, so 2 months free.
@@ -309,8 +300,7 @@ function PricingCard({ tier, annual }: { tier: PlanTier; annual: boolean }) {
                   fontSize: 11,
                   fontWeight: 600,
                   color: "var(--moss-success, #4f8a59)",
-                  background:
-                    "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                  background: "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
                   borderRadius: 99,
                   padding: "2px 8px",
                 }}
