@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "@/lib/notify";
 import { useConfirm } from "@/hooks/use-confirm";
+import { triggerDeploy, type DeployResult } from "@/lib/build.functions";
 import {
   adminListFlags, adminUpsertFlag, adminDeleteFlag,
   getActiveBanner, adminSetBanner, adminClearBanner,
@@ -22,11 +23,55 @@ function AdminPlatform() {
   return (
     <div style={{ marginTop: 12, display: "grid", gap: 14 }}>
       <p className="mono-label" style={{ color: "var(--ink-subtle)", margin: 0 }}>
-        Pull kill switches · post banners · read the audit trail
+        Pull kill switches · post banners · trigger deploys · read the audit trail
       </p>
+      <DeployPanel />
       <BannerPanel />
       <FlagsPanel />
       <AuditPanel />
+    </div>
+  );
+}
+
+function DeployPanel() {
+  const fDeploy = useServerFn(triggerDeploy);
+  const [reason, setReason] = useState("");
+  const deploy = useMutation({
+    mutationFn: () => fDeploy({ data: { reason: reason.trim() || "Manual deploy from admin panel" } }),
+    onSuccess: (result: DeployResult) => {
+      if (result.ok) {
+        toast.success(`Deploy triggered via ${result.provider} at ${new Date(result.triggered_at).toLocaleTimeString()}.`);
+        setReason("");
+      } else if (result.reason === "no_hook_configured") {
+        toast.error("No deploy hook configured. Set CLOUDFLARE_DEPLOY_HOOK_URL as a wrangler secret to activate.");
+      } else {
+        toast.error(result.message);
+      }
+    },
+  });
+
+  return (
+    <div className="bento" style={{ padding: 16, display: "grid", gap: 10 }}>
+      <div className="mono-label">Deploy</div>
+      <p style={{ fontSize: 12, color: "var(--ink-muted)", margin: 0 }}>
+        Trigger a production deploy. Requires <code>CLOUDFLARE_DEPLOY_HOOK_URL</code> or{" "}
+        <code>LOVABLE_DEPLOY_HOOK_URL</code> to be set as a wrangler secret.
+      </p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason (optional)"
+          style={input(320)}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={deploy.isPending}
+          onClick={() => deploy.mutate()}
+        >
+          {deploy.isPending ? "Deploying..." : "Trigger deploy"}
+        </button>
+      </div>
     </div>
   );
 }

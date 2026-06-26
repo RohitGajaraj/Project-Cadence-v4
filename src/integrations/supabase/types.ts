@@ -3163,6 +3163,7 @@ export type Database = {
       meetings: {
         Row: {
           action_items: Json
+          audio_url: string | null
           created_at: string
           decisions_made: Json
           end_at: string
@@ -3179,6 +3180,7 @@ export type Database = {
         }
         Insert: {
           action_items?: Json
+          audio_url?: string | null
           created_at?: string
           decisions_made?: Json
           end_at: string
@@ -3195,6 +3197,7 @@ export type Database = {
         }
         Update: {
           action_items?: Json
+          audio_url?: string | null
           created_at?: string
           decisions_made?: Json
           end_at?: string
@@ -5719,6 +5722,7 @@ export type Database = {
           created_at: string
           current_focus: string
           id: string
+          last_researcher_tick_at: string | null
           mission: string
           notes: string
           target_user: string
@@ -5731,6 +5735,7 @@ export type Database = {
           created_at?: string
           current_focus?: string
           id?: string
+          last_researcher_tick_at?: string | null
           mission?: string
           notes?: string
           target_user?: string
@@ -5743,6 +5748,7 @@ export type Database = {
           created_at?: string
           current_focus?: string
           id?: string
+          last_researcher_tick_at?: string | null
           mission?: string
           notes?: string
           target_user?: string

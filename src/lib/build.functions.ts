@@ -433,3 +433,87 @@ export const dispatchBuilderMission = createServerFn({ method: "POST" })
 
     return { ...result, mission_id: missionId, issue_number: issueNumber, issue_url: issueUrl };
   });
+
+// ─── K1-deploy: Cadence-triggered deploy gate ────────────────────────────────
+
+export type DeployResult =
+  | { ok: true; provider: string; triggered_at: string }
+  | { ok: false; reason: "no_hook_configured" | "forbidden" | "upstream_error"; message: string };
+
+/**
+ * K1-deploy: trigger a deploy from inside Cadence.
+ *
+ * Posts to the `CLOUDFLARE_DEPLOY_HOOK_URL` wrangler secret (or
+ * `LOVABLE_DEPLOY_HOOK_URL` as a fallback). Admins only.
+ *
+ * ACTIVATION GATE: returns a human-readable no-op when neither env var is set.
+ * To activate: add the Cloudflare Deploy Hook URL as a wrangler secret:
+ *   wrangler secret put CLOUDFLARE_DEPLOY_HOOK_URL
+ *
+ * The hook URL should be the "Deploy Hook" URL from the Cloudflare Pages /
+ * Workers dashboard for this project (Settings -> Triggers -> Deploy Hooks).
+ */
+export const triggerDeploy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        reason: z.string().min(1).max(500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }): Promise<DeployResult> => {
+    const { supabase, userId } = context;
+
+    // Admin gate
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan_tier")
+      .eq("id", userId)
+      .single();
+    if (!profile || profile.plan_tier !== "admin") {
+      return { ok: false, reason: "forbidden", message: "Admin role required to trigger a deploy." };
+    }
+
+    // Resolve hook URL: Cloudflare first, Lovable as fallback
+    const hookUrl =
+      process.env.CLOUDFLARE_DEPLOY_HOOK_URL ?? process.env.LOVABLE_DEPLOY_HOOK_URL;
+    if (!hookUrl) {
+      return {
+        ok: false,
+        reason: "no_hook_configured",
+        message:
+          "No deploy hook configured. Set CLOUDFLARE_DEPLOY_HOOK_URL (or LOVABLE_DEPLOY_HOOK_URL) as a wrangler secret to activate. See docs/operations/deploy.md for setup.",
+      };
+    }
+
+    // Determine provider from URL pattern for the receipt
+    const provider = hookUrl.includes("cloudflare") ? "cloudflare" : "lovable";
+
+    const res = await fetch(hookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ triggered_by: userId, reason: data.reason }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => res.statusText);
+      return {
+        ok: false,
+        reason: "upstream_error",
+        message: `Deploy hook returned ${res.status}: ${body.slice(0, 200)}`,
+      };
+    }
+
+    const triggered_at = new Date().toISOString();
+
+    // Audit: record in admin_audit_log
+    await supabase.from("admin_audit_log").insert({
+      admin_id: userId,
+      action: "deploy_triggered",
+      target_id: null,
+      meta: { provider, reason: data.reason, triggered_at },
+    });
+
+    return { ok: true, provider, triggered_at };
+  });
