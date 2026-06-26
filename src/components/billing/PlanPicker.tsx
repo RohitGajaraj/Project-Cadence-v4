@@ -50,7 +50,6 @@ function nextTierFor(tier: PlanTier): PlanTier | null {
   }
 }
 
-
 export function PlanTable({
   currentTier,
   canSelect,
@@ -721,7 +720,6 @@ function PaidTierCard({
           {statusMessage}
         </p>
       )}
-
 
       {/* Feature list below CTA */}
       <div

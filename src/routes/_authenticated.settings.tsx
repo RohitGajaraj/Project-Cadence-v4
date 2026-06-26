@@ -276,10 +276,12 @@ function BillingTab({ checkout }: { checkout?: string }) {
     envSafe = null;
   }
 
+  // getMySubscription is a pure Supabase read — no Stripe key needed.
+  // Fall back to 'sandbox' so local dev without VITE_PAYMENTS_CLIENT_TOKEN still loads sub data.
+  const subEnv: "sandbox" | "live" = envSafe ?? "sandbox";
   const mySub = useQuery({
-    queryKey: ["my-subscription", envSafe],
-    queryFn: () => fGetSub({ data: { environment: envSafe! } }),
-    enabled: !!envSafe,
+    queryKey: ["my-subscription", subEnv],
+    queryFn: () => fGetSub({ data: { environment: subEnv } }),
   });
 
   useEffect(() => {
@@ -295,7 +297,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
   }, [checkout, qc]);
 
   const cancelSub = useMutation({
-    mutationFn: () => fCancelSub({ data: { environment: envSafe! } }),
+    mutationFn: () => fCancelSub({ data: { environment: subEnv } }),
     onSuccess: (res) => {
       if ("error" in res) {
         toast.error(res.error);
@@ -309,7 +311,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
   });
 
   const resumeSub = useMutation({
-    mutationFn: () => fResumeSub({ data: { environment: envSafe! } }),
+    mutationFn: () => fResumeSub({ data: { environment: subEnv } }),
     onSuccess: (res) => {
       if ("error" in res) {
         toast.error(res.error);
@@ -326,7 +328,7 @@ function BillingTab({ checkout }: { checkout?: string }) {
     mutationFn: () =>
       fPortal({
         data: {
-          environment: envSafe!,
+          environment: subEnv,
           returnUrl: window.location.href,
         },
       }),
@@ -373,12 +375,25 @@ function BillingTab({ checkout }: { checkout?: string }) {
       {/* ── Current plan card ────────────────────────────────────────── */}
       <div className="bento" style={{ padding: "var(--card-pad, 18px)", display: "grid", gap: 0 }}>
         {/* Top row: plan identity + status pill */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
           <div>
-            <div className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", marginBottom: 4 }}>
+            <div
+              className="mono-label"
+              style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)", marginBottom: 4 }}
+            >
               Current plan
             </div>
-            <div className="font-display" style={{ fontSize: 22, display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              className="font-display"
+              style={{ fontSize: 22, display: "flex", alignItems: "center", gap: 8 }}
+            >
               <span style={{ color: "var(--ember, #c2602e)", display: "inline-flex" }}>
                 <TierGlyph size={20} strokeWidth={1.5} />
               </span>
@@ -417,7 +432,14 @@ function BillingTab({ checkout }: { checkout?: string }) {
         </div>
 
         {/* Tagline */}
-        <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: "8px 0 0", lineHeight: 1.45 }}>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--ink-muted, #4a4438)",
+            margin: "8px 0 0",
+            lineHeight: 1.45,
+          }}
+        >
           {current.tagline}
         </p>
 
@@ -453,20 +475,19 @@ function BillingTab({ checkout }: { checkout?: string }) {
             {hasSub && (
               <button
                 className="btn btn-primary btn-sm"
-                disabled={openPortal.isPending || !envSafe}
+                disabled={openPortal.isPending}
                 onClick={() => openPortal.mutate()}
-                title={!envSafe ? "Payments not configured in this environment" : undefined}
               >
                 {openPortal.isPending ? "Opening…" : "Manage billing"}
               </button>
             )}
 
             {/* Cancel / Resume — only when subscription exists */}
-            {hasSub && (
-              sub?.cancelAtPeriodEnd ? (
+            {hasSub &&
+              (sub?.cancelAtPeriodEnd ? (
                 <button
                   className="btn btn-ghost btn-sm"
-                  disabled={resumeSub.isPending || !envSafe}
+                  disabled={resumeSub.isPending}
                   onClick={() => resumeSub.mutate()}
                 >
                   {resumeSub.isPending ? "Resuming…" : "Resume plan"}
@@ -474,14 +495,12 @@ function BillingTab({ checkout }: { checkout?: string }) {
               ) : (
                 <button
                   className="btn btn-ghost btn-sm"
-                  disabled={cancelSub.isPending || !envSafe}
+                  disabled={cancelSub.isPending}
                   onClick={onCancelClick}
-                  title={!envSafe ? "Payments not configured in this environment" : undefined}
                 >
                   {cancelSub.isPending ? "Canceling…" : "Cancel plan"}
                 </button>
-              )
-            )}
+              ))}
 
             {/* Top-up always available (navigates in-app, no Stripe needed) */}
             {currentTier !== "free" && (
