@@ -20,6 +20,10 @@ import {
   type SystemBanner,
   type AuditRow,
 } from "@/lib/admin-platform.functions";
+import {
+  getMemoryExpiryEnabled,
+  adminSetMemoryExpiryEnabled,
+} from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/platform")({
   component: AdminPlatform,
@@ -34,6 +38,7 @@ function AdminPlatform() {
       <DeployPanel />
       <BannerPanel />
       <FlagsPanel />
+      <MemoryExpiryPanel />
       <AuditPanel />
     </div>
   );
@@ -306,6 +311,72 @@ function FlagsPanel() {
           ) : null}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function MemoryExpiryPanel() {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const fGet = useServerFn(getMemoryExpiryEnabled);
+  const fSet = useServerFn(adminSetMemoryExpiryEnabled);
+
+  const cur = useQuery({
+    queryKey: ["admin-memory-expiry"],
+    queryFn: () => fGet(),
+  });
+  const enabled =
+    cur.data && !("error" in cur.data) ? (cur.data as { enabled: boolean }).enabled : false;
+
+  const toggle = useMutation({
+    mutationFn: (next: boolean) => fSet({ data: { enabled: next } }),
+    onSuccess: (r) => {
+      if ("error" in r) return toast.error((r as { error: string }).error);
+      toast.success(`Memory expiry ${(r as { enabled: boolean }).enabled ? "enabled" : "disabled"}`);
+      qc.invalidateQueries({ queryKey: ["admin-memory-expiry"] });
+    },
+  });
+
+  const handleToggle = async () => {
+    const next = !enabled;
+    if (next) {
+      const ok = await confirm({
+        title: "Enable memory expiry?",
+        body: "Free-tier users' agent memory rows older than 14 days will start expiring on new inserts. Existing rows are grandfathered. This cannot be silently reversed once users rely on it.",
+        confirmLabel: "Enable",
+        destructive: true,
+      });
+      if (!ok) return;
+    }
+    toggle.mutate(next);
+  };
+
+  return (
+    <div className="bento" style={{ padding: 16, display: "grid", gap: 10 }}>
+      <div className="mono-label">Memory expiry · free tier</div>
+      <p style={{ fontSize: 12, color: "var(--ink-muted)", margin: 0 }}>
+        When enabled, new <code>agent_memory</code> rows for free-tier users are stamped with a
+        14-day <code>expires_at</code>. The nightly cron prunes expired rows. Existing rows are
+        grandfathered.
+      </p>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span
+          style={{
+            fontSize: 12.5,
+            fontWeight: 500,
+            color: enabled ? "var(--accent)" : "var(--ink-subtle)",
+          }}
+        >
+          {cur.isLoading ? "Loading…" : enabled ? "Enabled" : "Disabled"}
+        </span>
+        <button
+          className={`btn btn-sm${enabled ? "" : " btn-primary"}`}
+          disabled={cur.isLoading || toggle.isPending}
+          onClick={handleToggle}
+        >
+          {toggle.isPending ? "Saving…" : enabled ? "Disable" : "Enable"}
+        </button>
+      </div>
     </div>
   );
 }

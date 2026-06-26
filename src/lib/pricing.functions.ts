@@ -201,3 +201,29 @@ export const adminRemoveAdmin = createServerFn({ method: "POST" })
     if (error) return { error: error.message };
     return { ok: true };
   });
+
+// M-C-EXPIRY: memory expiry gate (free-tier 14-day expiry of agent_memory rows)
+export const getMemoryExpiryEnabled = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ enabled: boolean } | { error: string }> => {
+    const { data: adminRole } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!adminRole) return { error: "Forbidden" };
+    const { data, error } = await context.supabase.rpc("memory_expiry_enabled");
+    if (error) return { error: error.message };
+    return { enabled: Boolean(data) };
+  });
+
+export const adminSetMemoryExpiryEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { enabled: boolean }) => d)
+  .handler(async ({ context, data }): Promise<{ enabled: boolean } | { error: string }> => {
+    const { data: v, error } = await context.supabase.rpc("admin_set_memory_expiry_enabled", {
+      _enabled: data.enabled,
+    });
+    if (error) return { error: error.message };
+    return { enabled: Boolean(v) };
+  });
