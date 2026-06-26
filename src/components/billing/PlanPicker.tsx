@@ -511,7 +511,11 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 12 }}>
           <a
             href="/settings/billing?action=manage"
-            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              textDecoration: "underline",
+            }}
           >
             Manage
           </a>
