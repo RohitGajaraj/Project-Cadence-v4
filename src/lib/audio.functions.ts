@@ -117,6 +117,13 @@ export const submitAudioForTranscription = createServerFn({ method: "POST" })
 
     const userId = context.auth.user.id;
 
+    // Ownership guard: storagePath must be under the user's own folder.
+    // The service role bypasses RLS when signing URLs, so we enforce this
+    // server-side before handing the signed URL to AssemblyAI.
+    if (!data.storagePath.startsWith(`${userId}/`)) {
+      throw new Error("Forbidden: storagePath must be under your own user folder");
+    }
+
     // Sign the storage URL so AssemblyAI can fetch the file
     const { data: signed, error: signErr } = await supabaseAdmin.storage
       .from("audio-transcripts")
