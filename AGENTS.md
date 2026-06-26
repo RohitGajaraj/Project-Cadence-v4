@@ -432,6 +432,16 @@ If you hit the same friction twice, add a row here before the third time. The co
 
 ---
 
+### Worktree / primary-checkout law (permanent, founder ruling 2026-06-26)
+
+**`Project-Cadence-v4` on branch `main` is the founder's ONE source of truth.** He views code, reads the feature dashboard, and judges progress from there — not from any lane directory.
+
+- `cadence-lane-0` through `cadence-lane-4` are **git worktrees** (not separate clones). They all share `Project-Cadence-v4/.git`. No work is ever "in a lane and not in v4" — every push goes to `origin/main` and lands in the shared git history immediately.
+- The only gap that was occurring: the **working-tree files** in `Project-Cadence-v4/` did not auto-update when a lane pushed, because git does not rewrite a live working directory. This is now permanently fixed.
+- **Fix (2026-06-26):** `Project-Cadence-v4/.git/hooks/post-push` auto-syncs `Project-Cadence-v4` to `origin/main` after every push from any worktree. One hook in the shared `.git/hooks/` covers all lanes — now and any future worktrees added.
+- **Every agent / session must push to `origin/main` after every commit** (already the standard). The post-push hook then keeps the founder's view live automatically.
+- Never tell the founder to run `git pull`. If the hook fails for any reason (dirty tree, conflict), the hook prints a one-line warning so the session notices.
+
 ### Stale redirect rot (absolute `file://` links to other repos)
 
 18 redirect stubs (root `TASKS.md`, `commits.md`, `skills.md`, `memory.md`, `hooks.md`, `subagents.md`, `tools.md`, `docs/agent-ecosystem-plan.md`, and 11 under `docs/`) silently pointed into the retired `project-Cadence-v3` repo via absolute `file://` links — routing any tool that followed them out of this codebase (found and fixed 2026-06-11). **Rule:** redirect/pointer docs use relative in-repo links only — never absolute `file://` paths, never paths into another repo. When relocating a doc, retarget every stub in the same commit and verify with `grep -rn "file://" --include="*.md" .`.
