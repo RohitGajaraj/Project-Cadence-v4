@@ -45,21 +45,40 @@ function AdminLayout() {
           sub="Manage the credits engine, pricing catalog, and admin access."
         />
         {me.isLoading ? (
-          <div className="bento" style={{ padding: 18, marginTop: 18 }}>Checking access…</div>
+          <div className="bento" style={{ padding: 18, marginTop: 18 }}>
+            Checking access…
+          </div>
         ) : me.data?.isAdmin ? (
           <>
             <TabRow
               tabs={TABS.map((t) => ({ id: t.id, label: t.label }))}
               active={
-                loc.pathname.startsWith("/admin/people") ? "/admin/people"
-                  : loc.pathname.startsWith("/admin/workspaces") ? "/admin/workspaces"
-                  : loc.pathname.startsWith("/admin/platform") ? "/admin/platform"
-                  : loc.pathname.startsWith("/admin/observability") ? "/admin/observability"
-                  : loc.pathname.startsWith("/admin/ai-costs") ? "/admin/ai-costs"
-                  : loc.pathname === "/admin/pricing" ? "/admin/pricing"
-                  : "/admin"
+                loc.pathname.startsWith("/admin/people")
+                  ? "/admin/people"
+                  : loc.pathname.startsWith("/admin/workspaces")
+                    ? "/admin/workspaces"
+                    : loc.pathname.startsWith("/admin/platform")
+                      ? "/admin/platform"
+                      : loc.pathname.startsWith("/admin/observability")
+                        ? "/admin/observability"
+                        : loc.pathname.startsWith("/admin/ai-costs")
+                          ? "/admin/ai-costs"
+                          : loc.pathname === "/admin/pricing"
+                            ? "/admin/pricing"
+                            : "/admin"
               }
-              onSet={(id) => navigate({ to: id as "/admin" | "/admin/pricing" | "/admin/people" | "/admin/workspaces" | "/admin/platform" | "/admin/observability" | "/admin/ai-costs" })}
+              onSet={(id) =>
+                navigate({
+                  to: id as
+                    | "/admin"
+                    | "/admin/pricing"
+                    | "/admin/people"
+                    | "/admin/workspaces"
+                    | "/admin/platform"
+                    | "/admin/observability"
+                    | "/admin/ai-costs",
+                })
+              }
             />
             <Outlet />
           </>
@@ -89,10 +108,12 @@ function NoAccessCard({ anyAdminExists }: { anyAdminExists: boolean }) {
 
   return (
     <div className="bento" style={{ padding: 22, marginTop: 18, display: "grid", gap: 12 }}>
-      <div className="font-display" style={{ fontSize: 20 }}>Admin access required</div>
+      <div className="font-display" style={{ fontSize: 20 }}>
+        Admin access required
+      </div>
       <p style={{ fontSize: 13, color: "var(--ink-muted, #4a4438)", margin: 0 }}>
-        The admin console manages the credits engine, plan and top-up catalog, and the admin
-        list itself. Ask a current admin to grant you access.
+        The admin console manages the credits engine, plan and top-up catalog, and the admin list
+        itself. Ask a current admin to grant you access.
       </p>
       {!anyAdminExists ? (
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

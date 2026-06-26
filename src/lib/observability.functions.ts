@@ -147,19 +147,23 @@ export const getMoatMetrics = createServerFn({ method: "GET" })
         .limit(200),
       supabaseAdmin
         .from("mv_supersession_rate" as never)
-        .select("workspace_id, agent_slug, decisions_total, decisions_superseded, supersession_rate_pct")
+        .select(
+          "workspace_id, agent_slug, decisions_total, decisions_superseded, supersession_rate_pct",
+        )
         .order("supersession_rate_pct", { ascending: false })
         .limit(100),
       supabaseAdmin
         .from("mv_agent_cost_per_decision" as never)
-        .select("workspace_id, agent_slug, decisions_30d, cost_usd_30d, tokens_30d, cost_per_decision_usd")
+        .select(
+          "workspace_id, agent_slug, decisions_30d, cost_usd_30d, tokens_30d, cost_per_decision_usd",
+        )
         .order("cost_per_decision_usd", { ascending: false })
         .limit(100),
     ]);
 
     return {
-      decisionVelocity: ((velocity.data ?? []) as DecisionVelocityRow[]),
-      supersessionRate: ((supersession.data ?? []) as SupersessionRateRow[]),
-      agentCost: ((cost.data ?? []) as AgentCostRow[]),
+      decisionVelocity: (velocity.data ?? []) as DecisionVelocityRow[],
+      supersessionRate: (supersession.data ?? []) as SupersessionRateRow[],
+      agentCost: (cost.data ?? []) as AgentCostRow[],
     };
   });

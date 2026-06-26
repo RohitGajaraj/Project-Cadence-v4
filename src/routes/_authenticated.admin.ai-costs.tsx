@@ -42,7 +42,9 @@ function AdminAiCosts() {
   if (!metrics.data || "error" in metrics.data) {
     return (
       <p style={{ marginTop: 16, fontSize: 13, color: "var(--destructive)" }}>
-        {"error" in (metrics.data ?? {}) ? (metrics.data as { error: string }).error : "Failed to load."}
+        {"error" in (metrics.data ?? {})
+          ? (metrics.data as { error: string }).error
+          : "Failed to load."}
       </p>
     );
   }
@@ -57,7 +59,9 @@ function AdminAiCosts() {
 
       {/* Decision velocity */}
       <section className="bento" style={{ padding: 16 }}>
-        <div className="mono-label" style={{ marginBottom: 8 }}>Decision velocity by week</div>
+        <div className="mono-label" style={{ marginBottom: 8 }}>
+          Decision velocity by week
+        </div>
         {decisionVelocity.length === 0 ? (
           <p style={{ fontSize: 12, color: "var(--ink-subtle)" }}>
             No data yet — decisions will appear here once the DB is seeded.
@@ -88,7 +92,9 @@ function AdminAiCosts() {
 
       {/* Supersession rate */}
       <section className="bento" style={{ padding: 16 }}>
-        <div className="mono-label" style={{ marginBottom: 6 }}>Outcome rate by agent</div>
+        <div className="mono-label" style={{ marginBottom: 6 }}>
+          Outcome rate by agent
+        </div>
         <p style={{ fontSize: 11, color: "var(--ink-subtle)", marginBottom: 8 }}>
           Higher outcome rate = more decisions closed by real results, not guesses.
         </p>
@@ -106,7 +112,9 @@ function AdminAiCosts() {
             <tbody>
               {(supersessionRate as SupersessionRateRow[]).slice(0, 20).map((r, i) => (
                 <tr key={i} style={{ borderTop: "1px solid var(--hairline)" }}>
-                  <td style={{ ...td(), fontFamily: "var(--font-mono, monospace)" }}>{r.agent_slug}</td>
+                  <td style={{ ...td(), fontFamily: "var(--font-mono, monospace)" }}>
+                    {r.agent_slug}
+                  </td>
                   <td style={td()}>{r.decisions_total}</td>
                   <td style={td()}>
                     <span
@@ -131,7 +139,9 @@ function AdminAiCosts() {
 
       {/* Cost per decision */}
       <section className="bento" style={{ padding: 16 }}>
-        <div className="mono-label" style={{ marginBottom: 6 }}>Cost per decision — last 30 days</div>
+        <div className="mono-label" style={{ marginBottom: 6 }}>
+          Cost per decision — last 30 days
+        </div>
         <p style={{ fontSize: 11, color: "var(--ink-subtle)", marginBottom: 8 }}>
           Lower is better. Measures AI spend efficiency: $ burned / decision recorded.
         </p>
@@ -150,7 +160,9 @@ function AdminAiCosts() {
             <tbody>
               {(agentCost as AgentCostRow[]).slice(0, 20).map((r, i) => (
                 <tr key={i} style={{ borderTop: "1px solid var(--hairline)" }}>
-                  <td style={{ ...td(), fontFamily: "var(--font-mono, monospace)" }}>{r.agent_slug}</td>
+                  <td style={{ ...td(), fontFamily: "var(--font-mono, monospace)" }}>
+                    {r.agent_slug}
+                  </td>
                   <td style={td()}>{r.decisions_30d}</td>
                   <td style={td()}>${r.cost_usd_30d.toFixed(4)}</td>
                   <td style={td()}>
@@ -171,7 +183,13 @@ function AdminAiCosts() {
 }
 
 function th(): React.CSSProperties {
-  return { padding: "6px 10px", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "left" };
+  return {
+    padding: "6px 10px",
+    fontSize: 10,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    textAlign: "left",
+  };
 }
 function td(): React.CSSProperties {
   return { padding: "8px 10px", verticalAlign: "middle" };
