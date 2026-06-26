@@ -258,7 +258,8 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
       `- Append \`?view=machine\` to any URL for machine mode, or use the [HUMAN] [MACHINE] toggle`,
       `- A2A agent card: \`/.well-known/agent.json\``,
       `- Site context: \`/llms.txt\``,
-      `- MCP server: coming soon — query decisions, missions, workspace context via typed tool calls`,
+      `- MCP server: POST /api/mcp — 9 read tools + ingest_signal (write:signal scope); bearer token from Settings > Interop`,
+      `- Agent policy: /agents.txt — rate limits, content tiers, write-scope gates`,
     ].join("\n");
   }
 

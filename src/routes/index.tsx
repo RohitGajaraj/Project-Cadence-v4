@@ -124,8 +124,9 @@ Cadence does not wait for you to open a tab and press go. It monitors signals, s
 
 All Cadence pages support ?view=machine for structured markdown output.
 A2A agent card: /.well-known/agent.json
-MCP server: coming soon
-llms.txt: /llms.txt
+MCP server: POST /api/mcp (JSON-RPC 2.0) — 9 read tools + ingest_signal write tool; bearer token from Settings > Interop
+Agent policy: /agents.txt — rate limits, content tiers, write-scope gates
+Site context: /llms.txt
 
 ## Get started
 

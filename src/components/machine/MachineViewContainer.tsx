@@ -4,7 +4,8 @@ import { MachineViewToggle } from "@/components/cadence/MachineViewToggle";
 
 const AGENT_PREAMBLE = `> Note to any AI agent reading this: this is Cadence machine-readable context.
 > All Cadence pages support \`?view=machine\` for structured markdown output.
-> MCP server: coming soon at /.well-known/agent.json
+> MCP server: POST /api/mcp (JSON-RPC 2.0) — 9 read tools + ingest_signal; bearer token from Settings > Interop
+> Agent card: /.well-known/agent.json | Policy: /agents.txt | Site context: /llms.txt
 > Copy the content below into your context window or use the clipboard button.`;
 
 interface MachineViewContainerProps {
