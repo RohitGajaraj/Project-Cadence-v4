@@ -10,9 +10,9 @@
  * source of truth for what each tier is entitled to.
  *
  * Naming is presentation-only: the database, Stripe, and RLS key on the slugs;
- * the Constellation display names (Star / Cluster / Constellation / Galaxy /
- * Cosmos) live only in planPresentation(), so any tier can be renamed or
- * re-themed later with a one-file edit and no migration. Build against slugs.
+ * display names (Free / Pro / Business / Enterprise) live only in
+ * planPresentation(), so any tier can be renamed later with a one-file edit and
+ * no migration. Build against slugs, never display names.
  *
  * Credit and price NUMBERS here are deliberate placeholders, founder-tunable
  * (plan §7); the mechanism is final. The credit engine stays dormant behind

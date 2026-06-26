@@ -149,27 +149,28 @@ describe("planPresentation", () => {
     }
   });
 
-  it("uses the Constellation display names (a skin over the slugs)", () => {
-    expect(planPresentation("free").name).toBe("Star");
-    expect(planPresentation("pro").name).toBe("Cluster");
-    expect(planPresentation("max").name).toBe("Constellation");
-    expect(planPresentation("team").name).toBe("Galaxy");
-    expect(planPresentation("enterprise").name).toBe("Cosmos");
+  it("uses the current display names for each tier", () => {
+    expect(planPresentation("free").name).toBe("Free");
+    expect(planPresentation("pro").name).toBe("Pro");
+    expect(planPresentation("max").name).toBe("Pro (legacy)");
+    expect(planPresentation("team").name).toBe("Business");
+    expect(planPresentation("enterprise").name).toBe("Enterprise");
   });
 
-  it("enterprise is contact-sales, not a fixed price", () => {
-    expect(planPresentation("enterprise").price).toBe("Contact sales");
+  it("enterprise has a platform fee, not contact-sales", () => {
+    expect(planPresentation("enterprise").price).toBe("Platform fee");
   });
 });
 
 describe("planPresentation prices mirror the catalog recommended bundles (M-C-PRICE-SYNC drift guard)", () => {
   it("pins the public/marketing price per tier to the recommended pricing_bundles", () => {
-    // pro 1k/$25, max 5k/$99, team 1k/$30 per seat. If the catalog changes, change both.
+    // free/$0, pro/from $20/mo, max/from $99/mo (legacy), team/from $50/mo, enterprise/Platform fee.
+    // If the catalog changes, change both this test and planPresentation() in entitlements.ts.
     expect(planPresentation("free").price).toBe("$0");
-    expect(planPresentation("pro").price).toBe("$25/mo");
-    expect(planPresentation("max").price).toBe("$99/mo");
-    expect(planPresentation("team").price).toBe("$30/seat/mo");
-    expect(planPresentation("enterprise").price).toBe("Contact sales");
+    expect(planPresentation("pro").price).toBe("from $20/mo");
+    expect(planPresentation("max").price).toBe("from $99/mo");
+    expect(planPresentation("team").price).toBe("from $50/mo");
+    expect(planPresentation("enterprise").price).toBe("Platform fee");
   });
 });
 
