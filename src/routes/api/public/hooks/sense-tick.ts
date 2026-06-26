@@ -3,6 +3,7 @@ import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEMO_FEED, autoTag, inferSentiment, tagSignalUpdate } from "@/lib/sensing/normalize";
 import { ingestGithubSignals } from "@/lib/connectors/providers/github-ingest.server";
+import { ingestPostHogAnalytics } from "@/lib/analytics-ingest.server";
 import { withJobRun } from "@/lib/observability";
 
 /**
@@ -51,12 +52,15 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
         }
 
         const results: Array<{
-          workspace_id: string;
-          tagged?: number;
-          seeded?: number;
+          workspace_id:    string;
+          tagged?:         number;
+          seeded?:         number;
           github_inserted?: number;
-          github_source?: string;
-          error?: string;
+          github_source?:  string;
+          posthog_rows?:   number;
+          posthog_signals?: number;
+          posthog_skipped?: boolean;
+          error?:          string;
         }> = [];
 
         for (const ws of workspaces ?? []) {
@@ -67,17 +71,21 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
             }
             const tagged = await tagUntaggedSignals(ws.owner_id, ws.id);
             const seeded = await topUpDemoFeed(ws.owner_id, ws.id);
-            const gh = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
+            const gh       = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
+            const posthog  = await ingestPostHogAnalytics(ws.id, ws.owner_id).catch(() => null);
             await supabaseAdmin
               .from("workspaces")
               .update({ last_auto_sense_at: new Date().toISOString() })
               .eq("id", ws.id);
             results.push({
-              workspace_id: ws.id,
+              workspace_id:      ws.id,
               tagged,
               seeded,
-              github_inserted: gh?.inserted ?? 0,
-              github_source: gh?.source ?? "none",
+              github_inserted:   gh?.inserted ?? 0,
+              github_source:     gh?.source ?? "none",
+              posthog_rows:      posthog?.rowsUpserted ?? 0,
+              posthog_signals:   posthog?.signalsInserted ?? 0,
+              posthog_skipped:   posthog?.skipped ?? false,
             });
           } catch (e) {
             results.push({

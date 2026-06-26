@@ -18,6 +18,7 @@ import { getLineage, getProvenance, type ArtifactKind } from "@/lib/lineage.func
 import { PrecedentNudge } from "@/components/decision/PrecedentNudge";
 import { SharedPremiseNudge } from "@/components/decision/SharedPremiseNudge";
 import { DecisionCurrencyBanner } from "@/components/decision/DecisionCurrencyBanner";
+import { ProductAnalyticsPanel } from "@/components/product/ProductAnalyticsPanel";
 
 type OppRow = {
   id: string;
@@ -28,6 +29,7 @@ type OppRow = {
   confidence: number;
   ease: number;
   ice_score: number | string;
+  workspace_id: string;
 };
 
 type LearningRow = {
@@ -180,6 +182,10 @@ export function OpportunityDetail({ id }: { id: string }) {
       <DecisionCurrencyBanner kind="opportunity" targetId={id} className="mb-3" />
       <PrecedentNudge kind="opportunity" targetId={id} className="mb-3" />
       <SharedPremiseNudge kind="opportunity" targetId={id} className="mb-3" />
+
+      {o.workspace_id && (
+        <ProductAnalyticsPanel opportunityId={id} workspaceId={o.workspace_id} />
+      )}
 
       <div
         style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr", gap: 12, marginBottom: 14 }}
