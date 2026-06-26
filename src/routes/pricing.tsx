@@ -4,6 +4,7 @@
 // Source: docs/strategy/pricing-strategy.md
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Sprout, Leaf, TreePine, Building2 } from "lucide-react";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import {
   planPresentation,
@@ -34,6 +35,81 @@ export const Route = createFileRoute("/pricing")({
 // Public tiers in display order; max is internal-only (not shown).
 const PUBLIC_TIERS: PlanTier[] = ["free", "pro", "team", "enterprise"];
 
+type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number }>;
+
+const TIER_ICONS: Record<PlanTier, LucideIcon> = {
+  free: Sprout,
+  pro: Leaf,
+  max: Leaf,
+  team: TreePine,
+  enterprise: Building2,
+};
+
+function TierProgressionBar() {
+  const steps: { tier: PlanTier; label: string }[] = [
+    { tier: "free", label: "Free" },
+    { tier: "pro", label: "Pro" },
+    { tier: "team", label: "Business" },
+    { tier: "enterprise", label: "Enterprise" },
+  ];
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 0,
+        marginBottom: 32,
+      }}
+    >
+      {steps.map((step, i) => {
+        const Icon = TIER_ICONS[step.tier];
+        return (
+          <div key={step.tier} style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+              <span
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background:
+                    "color-mix(in oklab, var(--ember, #c2622e) 12%, var(--canvas, #faf7ef))",
+                  border:
+                    "1px solid color-mix(in oklab, var(--ember, #c2622e) 20%, transparent)",
+                  color: "var(--ember, #c2622e)",
+                }}
+              >
+                <Icon size={16} strokeWidth={1.6} />
+              </span>
+              <span
+                className="mono-label"
+                style={{ fontSize: 8.5, color: "var(--ink-subtle, #6b6457)" }}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                style={{
+                  width: 40,
+                  height: 1,
+                  background:
+                    "color-mix(in oklab, var(--ember, #c2622e) 25%, var(--hairline, rgba(0,0,0,0.08)))",
+                  margin: "0 6px",
+                  marginBottom: 16,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function PricingCard({ tier }: { tier: PlanTier }) {
   const p = planPresentation(tier);
   const [credits, setCredits] = useState<CreditTier>(100);
@@ -43,10 +119,11 @@ function PricingCard({ tier }: { tier: PlanTier }) {
   const isEnterprise = tier === "enterprise";
   const isFree = tier === "free";
 
-  // Computed price string for the selected credit tier and billing interval.
+  const TierIcon = TIER_ICONS[tier];
+
   const computedPrice = (() => {
     if (isFree) return "$0";
-    if (isEnterprise) return "Platform fee";
+    if (isEnterprise) return "Custom";
     const price = priceForCredits(tier, credits, annual ? "yearly" : "monthly");
     return price !== null ? `$${price}/mo` : p.price;
   })();
@@ -69,7 +146,24 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         borderRadius: 10,
       }}
     >
-      {/* Header row */}
+      {/* Icon box */}
+      <span
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "color-mix(in oklab, var(--ember, #c2622e) 14%, var(--canvas, #faf7ef))",
+          border: "1px solid color-mix(in oklab, var(--ember, #c2622e) 22%, transparent)",
+          color: "var(--ember, #c2622e)",
+        }}
+      >
+        <TierIcon size={18} strokeWidth={1.6} />
+      </span>
+
+      {/* Header row: plan name + popular badge */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span className="font-display" style={{ fontSize: 19, fontWeight: 460 }}>
           {p.name}
@@ -90,29 +184,49 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         ) : null}
       </div>
 
+      {/* For whom chip */}
+      <span
+        style={{
+          fontSize: 11,
+          color: "var(--ink-subtle, #6b6457)",
+          display: "block",
+          marginTop: -8,
+          lineHeight: 1.4,
+        }}
+      >
+        {p.forWhom}
+      </span>
+
       {/* Price */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span className="font-display" style={{ fontSize: 28, fontWeight: 480 }}>
-          {computedPrice}
-        </span>
-        {!isFree && !isEnterprise && (
-          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
-            {annual ? "billed annually" : "billed monthly"}
+      {isEnterprise ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <span className="font-display" style={{ fontSize: 22, fontWeight: 460, lineHeight: 1.2 }}>
+            Custom
           </span>
-        )}
-        {isEnterprise && (
           <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
-            based on company size
+            Platform fee + $20/seat
           </span>
-        )}
-      </div>
+          <span style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)" }}>
+            Usage at API rates · scales with model and task
+          </span>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span className="font-display" style={{ fontSize: 28, fontWeight: 480 }}>
+            {computedPrice}
+          </span>
+          {!isFree && (
+            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
+              {annual ? "billed annually" : "billed monthly"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Credit dropdown */}
       {p.hasCreditDropdown && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label
-            style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", fontWeight: 500 }}
-          >
+          <label style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", fontWeight: 500 }}>
             Credits per month
           </label>
           <select
@@ -187,21 +301,14 @@ function PricingCard({ tier }: { tier: PlanTier }) {
       )}
 
       {/* Tagline */}
-      <p
-        style={{
-          fontSize: 12.5,
-          lineHeight: 1.5,
-          color: "var(--ink-subtle, #6b6457)",
-          margin: 0,
-        }}
-      >
+      <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
         {p.tagline}
       </p>
 
       {/* CTA button */}
       {isEnterprise ? (
         <a
-          href="/contact-sales?from=pricing"
+          href="mailto:sales@cadence.app?subject=Enterprise%20enquiry"
           style={{
             display: "block",
             textAlign: "center",
@@ -216,11 +323,15 @@ function PricingCard({ tier }: { tier: PlanTier }) {
             cursor: "pointer",
           }}
         >
-          Book a demo
+          Talk to our team
         </a>
       ) : (
         <a
-          href={isFree ? "/signup?from=pricing" : `/signup?from=pricing&plan=${tier}&credits=${credits}&billing=${annual ? "annual" : "monthly"}`}
+          href={
+            isFree
+              ? "/signup?from=pricing"
+              : `/signup?from=pricing&plan=${tier}&credits=${credits}&billing=${annual ? "annual" : "monthly"}`
+          }
           style={{
             display: "block",
             textAlign: "center",
@@ -264,14 +375,13 @@ function PricingCard({ tier }: { tier: PlanTier }) {
                 lineHeight: 1.45,
                 color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
                 fontWeight: isHeader ? 500 : 400,
-                borderTop: isHeader && i > 0 ? "1px solid var(--hairline, rgba(0,0,0,0.06))" : undefined,
+                borderTop:
+                  isHeader && i > 0 ? "1px solid var(--hairline, rgba(0,0,0,0.06))" : undefined,
                 paddingTop: isHeader && i > 0 ? 6 : 0,
               }}
             >
               {!isHeader && (
-                <span style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0 }}>
-                  +
-                </span>
+                <span style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0 }}>+</span>
               )}
               <span style={{ marginLeft: isHeader ? 0 : undefined }}>{h}</span>
             </li>
@@ -349,6 +459,9 @@ function PricingPage() {
               compounding and to give your team shared accountability for what the agents decide.
             </p>
           </div>
+
+          {/* Tier progression indicator */}
+          <TierProgressionBar />
 
           {/* 4-column tier grid */}
           <div

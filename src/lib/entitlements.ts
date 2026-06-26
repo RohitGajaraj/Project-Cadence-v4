@@ -26,7 +26,12 @@ export type PlanTier = "free" | "pro" | "max" | "team" | "enterprise";
  * `max` remains a valid DB slug for backward compat but is not a public tier.
  * `team` is presented as "Business" (slug unchanged; display name is a skin).
  */
-export const PUBLIC_PLAN_TIERS: readonly PlanTier[] = ["free", "pro", "team", "enterprise"] as const;
+export const PUBLIC_PLAN_TIERS: readonly PlanTier[] = [
+  "free",
+  "pro",
+  "team",
+  "enterprise",
+] as const;
 
 /**
  * Credit dropdown ladder for Pro and Business (team) tiers.
@@ -34,7 +39,9 @@ export const PUBLIC_PLAN_TIERS: readonly PlanTier[] = ["free", "pro", "team", "e
  * The annual/monthly toggle is the only discount mechanism (~17% off annual).
  * Source: pricing-strategy.md §2.
  */
-export const CREDIT_DROPDOWN_TIERS = [100, 200, 400, 800, 1200, 2000, 3000, 4000, 5000, 7500, 10000] as const;
+export const CREDIT_DROPDOWN_TIERS = [
+  100, 200, 400, 800, 1200, 2000, 3000, 4000, 5000, 7500, 10000,
+] as const;
 export type CreditTier = (typeof CREDIT_DROPDOWN_TIERS)[number];
 
 /** Annual discount factor (pay for ~10 months, get 12 = ~16.7% off). */
@@ -201,6 +208,7 @@ export type PlanPresentation = {
    */
   price: string;
   tagline: string;
+  forWhom: string;
   highlights: string[];
   /** Whether this tier shows the credit dropdown (Pro + Business only). */
   hasCreditDropdown: boolean;
@@ -215,7 +223,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "pro",
         name: "Pro",
         price: "from $20/mo",
-        tagline: "Your decision memory never fades, and it starts to compound.",
+        tagline: "Your decision memory compounds instead of fading. The loop keeps running.",
+        forWhom: "Individual builders who need persistent memory and deeper AI capacity",
         hasCreditDropdown: true,
         hasBillingToggle: true,
         highlights: [
@@ -238,20 +247,18 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         name: "Pro (legacy)",
         price: "from $99/mo",
         tagline: "Internal tier — not publicly marketed. Use Pro with high credit tier instead.",
+        forWhom: "Internal tier — not publicly marketed",
         hasCreditDropdown: false,
         hasBillingToggle: false,
-        highlights: [
-          "Everything in Pro, plus:",
-          "High credit allocation",
-          "Priority routing",
-        ],
+        highlights: ["Everything in Pro, plus:", "High credit allocation", "Priority routing"],
       };
     case "team":
       return {
         tier: "team",
         name: "Business",
         price: "from $50/mo",
-        tagline: "Shared memory and approval lanes for the whole product team.",
+        tagline: "The whole team shares memory, credits, and accountability.",
+        forWhom: "Product teams that need shared accountability, pooled AI capacity, and governance",
         hasCreditDropdown: true,
         hasBillingToggle: true,
         highlights: [
@@ -273,7 +280,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "enterprise",
         name: "Enterprise",
         price: "Platform fee",
-        tagline: "Your whole product org, governed end to end.",
+        tagline: "End-to-end governance for your entire product organization.",
+        forWhom: "Organizations operating at scale with compliance, security, and procurement requirements",
         hasCreditDropdown: false,
         hasBillingToggle: false,
         highlights: [
@@ -297,6 +305,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         name: "Free",
         price: "$0",
         tagline: "Run the loop. Memory is kept for " + FREE_MEMORY_RETENTION_DAYS + " days.",
+        forWhom: "Anyone exploring AI for product decisions — no card needed",
         hasCreditDropdown: false,
         hasBillingToggle: false,
         highlights: [
