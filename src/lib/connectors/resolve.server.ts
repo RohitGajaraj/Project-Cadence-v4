@@ -59,6 +59,7 @@ type ConnectionRow = {
 type BindingRow = {
   id: string;
   connection_id: string;
+  workspace_id: string;
   resource_id: string;
   resource_label: string | null;
   config: Record<string, unknown> | null;
@@ -153,7 +154,7 @@ export async function resolveProviderAuth(args: {
     try {
       let q = admin()
         .from("connection_bindings")
-        .select("id,connection_id,resource_id,resource_label,config,created_by")
+        .select("id,connection_id,workspace_id,resource_id,resource_label,config,created_by")
         .eq("product_id", productId)
         .eq("provider", provider);
       if (resourceKind) q = q.eq("resource_kind", resourceKind);
@@ -166,30 +167,27 @@ export async function resolveProviderAuth(args: {
           .eq("id", binding.connection_id)
           .maybeSingle();
         if (conn && (conn as ConnectionRow).status === "connected") {
-          // Apply the same cross-tenant guard as for workspace bindings (KI-34).
-          // The product must live in a workspace the connection owner belongs to.
-          // We re-use bindingConnectionAllowed with a workspace lookup derived
-          // from the product's own workspace_id (which was validated at bind time).
-          let lookup = { errored: true, isMember: false };
-          if (workspaceId) {
-            try {
-              const { data: mem, error: memErr } = await admin()
-                .from("workspace_members")
-                .select("user_id")
-                .eq("workspace_id", workspaceId)
-                .eq("user_id", (conn as ConnectionRow).user_id)
-                .maybeSingle();
-              lookup = { errored: !!memErr, isMember: !!mem };
-            } catch {
-              lookup = { errored: true, isMember: false };
-            }
-          } else {
-            // No workspaceId in args — skip the guard (fail open).
-            lookup = { errored: true, isMember: false };
+          // KI-34: derive the authoritative workspace from the binding row itself
+          // (set at write time by RLS) — never trust caller-supplied workspaceId
+          // for this check. Fail-CLOSED: if the membership lookup errors or the
+          // owner is no longer a member, fall through to Tier 2 (workspace binding)
+          // rather than materializing a possibly cross-tenant credential.
+          const bindingWorkspaceId = binding.workspace_id;
+          let isMember = false;
+          try {
+            const { data: mem, error: memErr } = await admin()
+              .from("workspace_members")
+              .select("user_id")
+              .eq("workspace_id", bindingWorkspaceId)
+              .eq("user_id", (conn as ConnectionRow).user_id)
+              .maybeSingle();
+            isMember = !memErr && !!mem;
+          } catch {
+            isMember = false;
           }
-          if (!bindingConnectionAllowed(lookup)) {
+          if (!isMember) {
             console.warn(
-              `[connectors] KI-34: refusing product binding for ${provider} — bound connection owner is not a member of the product's workspace; falling through`,
+              `[connectors] KI-34: refusing product binding for ${provider} — bound connection owner not a member of binding workspace; falling through`,
             );
           } else {
             const auth = await materializeAuth(conn as ConnectionRow, provider);
