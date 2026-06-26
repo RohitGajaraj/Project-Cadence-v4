@@ -223,7 +223,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "pro",
         name: "Pro",
         price: "from $20/mo",
-        tagline: "Persistent memory, no expiration. Your product context stays intact across sprints and tool changes.",
+        tagline:
+          "Persistent memory, no expiration. Your product context stays intact across sprints and tool changes.",
         forWhom: "Built for solo PMs and founders doing product work that needs to compound.",
         hasCreditDropdown: true,
         hasBillingToggle: true,
@@ -257,7 +258,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "team",
         name: "Business",
         price: "from $50/mo",
-        tagline: "One shared memory for the whole team. Stop re-litigating what was already decided.",
+        tagline:
+          "One shared memory for the whole team. Stop re-litigating what was already decided.",
         forWhom: "Built for product teams that need shared context and shared accountability.",
         hasCreditDropdown: true,
         hasBillingToggle: true,
@@ -280,8 +282,10 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "enterprise",
         name: "Enterprise",
         price: "Platform fee",
-        tagline: "Full controls, dedicated support, and audit trails. Shaped to how your org works.",
-        forWhom: "Built for large orgs that need flexibility, scale, and governance across product.",
+        tagline:
+          "Full controls, dedicated support, and audit trails. Shaped to how your org works.",
+        forWhom:
+          "Built for large orgs that need flexibility, scale, and governance across product.",
         hasCreditDropdown: false,
         hasBillingToggle: false,
         highlights: [
@@ -304,7 +308,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "free",
         name: "Free",
         price: "$0",
-        tagline: "The full product loop, free. Memory rolls 30 days. Upgrade when your work outgrows it.",
+        tagline:
+          "The full product loop, free. Memory rolls 30 days. Upgrade when your work outgrows it.",
         forWhom: "Get started with Cadence. No card, no commitment.",
         hasCreditDropdown: false,
         hasBillingToggle: false,

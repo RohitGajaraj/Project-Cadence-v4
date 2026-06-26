@@ -85,15 +85,32 @@ export function CreditCapsCard() {
 
   function addProductCap() {
     const n = parseInt(productAmount, 10);
-    if (!productId) { toast.error("Pick a product to cap."); return; }
-    if (!Number.isFinite(n) || n < 0) { toast.error("Enter a credit amount (0 or more)."); return; }
-    setMut.mutate({ scope: "product", targetId: productId, capCredits: n, windowKind: productWindow });
+    if (!productId) {
+      toast.error("Pick a product to cap.");
+      return;
+    }
+    if (!Number.isFinite(n) || n < 0) {
+      toast.error("Enter a credit amount (0 or more).");
+      return;
+    }
+    setMut.mutate({
+      scope: "product",
+      targetId: productId,
+      capCredits: n,
+      windowKind: productWindow,
+    });
   }
 
   function addMemberCap() {
     const n = parseInt(memberAmount, 10);
-    if (!memberId) { toast.error("Pick a team member to cap."); return; }
-    if (!Number.isFinite(n) || n < 0) { toast.error("Enter a credit amount (0 or more)."); return; }
+    if (!memberId) {
+      toast.error("Pick a team member to cap.");
+      return;
+    }
+    if (!Number.isFinite(n) || n < 0) {
+      toast.error("Enter a credit amount (0 or more).");
+      return;
+    }
     setMut.mutate({ scope: "member", targetId: memberId, capCredits: n, windowKind: memberWindow });
   }
 
@@ -109,7 +126,9 @@ export function CreditCapsCard() {
         </p>
 
         {productCaps.length > 0 && (
-          <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6 }}>
+          <ul
+            style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6 }}
+          >
             {productCaps.map((c) => (
               <li
                 key={c.id}
@@ -211,7 +230,9 @@ export function CreditCapsCard() {
         </p>
 
         {memberCaps.length > 0 && (
-          <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6 }}>
+          <ul
+            style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6 }}
+          >
             {memberCaps.map((c) => (
               <li
                 key={c.id}

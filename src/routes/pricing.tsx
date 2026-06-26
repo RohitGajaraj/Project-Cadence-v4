@@ -291,7 +291,9 @@ function PricingCard({ tier }: { tier: PlanTier }) {
                 }}
               />
             </button>
-            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>Annual billing</span>
+            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
+              Annual billing
+            </span>
             {annual && (
               <span
                 style={{
