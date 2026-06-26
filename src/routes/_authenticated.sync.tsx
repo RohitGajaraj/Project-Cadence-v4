@@ -27,6 +27,7 @@ import { listSyncMappings, resolveSyncConflict } from "@/lib/integrations.functi
 import { pullMapping, pushMapping } from "@/lib/sync.functions";
 import { getIngestToken, rotateIngestToken, revokeIngestToken } from "@/lib/ingest.functions";
 import { buildConnectorCatalog } from "@/lib/connectors/catalog";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   component: SyncInboxPage,
@@ -50,6 +51,7 @@ type Mapping = {
 
 function SyncInboxPage() {
   const qc = useQueryClient();
+  const { activeProductId, activeWorkspaceId, activeProduct } = useWorkspace();
   const fList = useServerFn(listSyncMappings);
   const fResolve = useServerFn(resolveSyncConflict);
   const fPull = useServerFn(pullMapping);
@@ -107,7 +109,25 @@ function SyncInboxPage() {
 
         <WorkspaceBindingsSection />
 
-        <ProductBindingsSection />
+        {activeProductId && activeWorkspaceId && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="font-display text-sm tracking-tight uppercase text-muted-foreground">
+                Product repo override
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Bind a different repo to{" "}
+              <strong>{activeProduct?.name ?? "this product"}</strong> — overrides the workspace
+              default for this product only.
+            </p>
+            <ProductBindingsSection
+              projectId={activeProductId}
+              workspaceId={activeWorkspaceId}
+              projectName={activeProduct?.name}
+            />
+          </section>
+        )}
 
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-3">

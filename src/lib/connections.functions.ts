@@ -608,3 +608,81 @@ export const removeBinding = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ── BYO-P1b: Product-level bindings ──────────────────────────────────────────
+
+/** List all connection_bindings for a specific product (product_id = projectId). */
+export const listProductBindings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ projectId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const { data: rows, error } = await db
+      .from("connection_bindings")
+      .select(BINDING_COLUMNS)
+      .eq("product_id", data.projectId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { bindings: (rows ?? []) as unknown as BindingRow[] };
+  });
+
+/** Bind a connection to a specific product (product-scoped override). */
+export const addProductBinding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        workspaceId: z.string().uuid(),
+        connectionId: z.string().uuid(),
+        provider: z.string().min(1),
+        resourceKind: z.string().min(1),
+        resourceId: z.string().min(1),
+        resourceLabel: z.string().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+
+    const { data: existing } = await db
+      .from("connection_bindings")
+      .select("id")
+      .eq("product_id", data.projectId)
+      .eq("provider", data.provider)
+      .eq("resource_kind", data.resourceKind)
+      .maybeSingle();
+
+    if (existing) {
+      const { data: updated, error } = await db
+        .from("connection_bindings")
+        .update({
+          connection_id: data.connectionId,
+          resource_id: data.resourceId,
+          resource_label: data.resourceLabel ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", (existing as { id: string }).id)
+        .select(BINDING_COLUMNS)
+        .single();
+      if (error) throw new Error(error.message);
+      return { binding: updated as unknown as BindingRow };
+    }
+
+    const { data: inserted, error } = await db
+      .from("connection_bindings")
+      .insert({
+        connection_id: data.connectionId,
+        workspace_id: data.workspaceId,
+        product_id: data.projectId,
+        provider: data.provider,
+        resource_kind: data.resourceKind,
+        resource_id: data.resourceId,
+        resource_label: data.resourceLabel ?? null,
+        created_by: context.userId,
+      })
+      .select(BINDING_COLUMNS)
+      .single();
+    if (error) throw new Error(error.message);
+    return { binding: inserted as unknown as BindingRow };
+  });

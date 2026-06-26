@@ -1,11 +1,10 @@
 // F-CONN Phase 1 — the ONE credential chokepoint. Every external call site
 // resolves provider auth through resolveProviderAuth; nothing else reads
 // connection rows or secrets directly. Resolution order:
-//   1. product binding    (connection_bindings WHERE product_id = $productId, BYO-P1b)
-//   2. workspace binding  (connection_bindings WHERE product_id IS NULL)
-//   3. user connection    (caller's own connections row via their RLS client)
-//   4. env fallback       (legacy GITHUB_TOKEN-style vars from the registry)
-//   5. none
+//   1. workspace binding  (connection_bindings → connections, status connected)
+//   2. user connection    (caller's own connections row via their RLS client)
+//   3. env fallback       (legacy GITHUB_TOKEN-style vars from the registry)
+//   4. none
 // Each tier degrades on failure (warn + fall through) so an unconfigured
 // environment never throws here — call sites decide what "not connected" means.
 
@@ -59,7 +58,6 @@ type ConnectionRow = {
 type BindingRow = {
   id: string;
   connection_id: string;
-  workspace_id: string;
   resource_id: string;
   resource_label: string | null;
   config: Record<string, unknown> | null;
@@ -145,16 +143,14 @@ export async function resolveProviderAuth(args: {
 }): Promise<ResolvedConnector> {
   const { userClient, userId, workspaceId, productId, provider, resourceKind } = args;
 
-  // 1. Product-scoped binding (BYO-P1b). When a productId is supplied, try the
-  // product-specific binding first — it takes precedence over the workspace-level
-  // fallback. Uses the service-role client so the binding is readable regardless
-  // of which user is calling (the binding's workspace_id is RLS-authorised at
-  // write time; here we only read it to materialize a credential).
-  if (productId) {
+  // 0. Product-scoped binding (BYO-P1b). Most specific — overrides workspace.
+  if (productId && workspaceId) {
     try {
-      let q = admin()
+      const db = userClient ?? admin();
+      let q = db
         .from("connection_bindings")
-        .select("id,connection_id,workspace_id,resource_id,resource_label,config,created_by")
+        .select("id,connection_id,resource_id,resource_label,config,created_by")
+        .eq("workspace_id", workspaceId)
         .eq("product_id", productId)
         .eq("provider", provider);
       if (resourceKind) q = q.eq("resource_kind", resourceKind);
@@ -167,27 +163,21 @@ export async function resolveProviderAuth(args: {
           .eq("id", binding.connection_id)
           .maybeSingle();
         if (conn && (conn as ConnectionRow).status === "connected") {
-          // KI-34: derive the authoritative workspace from the binding row itself
-          // (set at write time by RLS) — never trust caller-supplied workspaceId
-          // for this check. Fail-CLOSED: if the membership lookup errors or the
-          // owner is no longer a member, fall through to Tier 2 (workspace binding)
-          // rather than materializing a possibly cross-tenant credential.
-          const bindingWorkspaceId = binding.workspace_id;
-          let isMember = false;
+          let lookup = { errored: true, isMember: false };
           try {
             const { data: mem, error: memErr } = await admin()
               .from("workspace_members")
               .select("user_id")
-              .eq("workspace_id", bindingWorkspaceId)
+              .eq("workspace_id", workspaceId)
               .eq("user_id", (conn as ConnectionRow).user_id)
               .maybeSingle();
-            isMember = !memErr && !!mem;
+            lookup = { errored: !!memErr, isMember: !!mem };
           } catch {
-            isMember = false;
+            lookup = { errored: true, isMember: false };
           }
-          if (!isMember) {
+          if (!bindingConnectionAllowed(lookup)) {
             console.warn(
-              `[connectors] KI-34: refusing product binding for ${provider} — bound connection owner not a member of binding workspace; falling through`,
+              `[connectors] KI-34: refusing product binding for ${provider} — bound connection owner not a workspace member; falling through`,
             );
           } else {
             const auth = await materializeAuth(conn as ConnectionRow, provider);
@@ -211,7 +201,7 @@ export async function resolveProviderAuth(args: {
     }
   }
 
-  // 2. Workspace binding. The binding row itself is the authorization (RLS-gated
+  // 1. Workspace binding. The binding row itself is the authorization (RLS-gated
   // by workspace membership on write); the owning connection is loaded via
   // supabaseAdmin because connections rows are own-row RLS.
   if (workspaceId) {
@@ -274,7 +264,7 @@ export async function resolveProviderAuth(args: {
     }
   }
 
-  // 3. The caller's own connection (their RLS client scopes to own rows).
+  // 2. The caller's own connection (their RLS client scopes to own rows).
   if (userClient) {
     try {
       let q = userClient
@@ -294,7 +284,7 @@ export async function resolveProviderAuth(args: {
     }
   }
 
-  // 4. Legacy env fallback — keeps current behavior alive until bindings exist.
+  // 3. Legacy env fallback — keeps current behavior alive until bindings exist.
   const spec = CONNECTOR_REGISTRY[provider];
   const envToken = spec.envFallback ? process.env[spec.envFallback.tokenEnv] : undefined;
   if (envToken) {
