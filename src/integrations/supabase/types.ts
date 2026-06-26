@@ -1276,6 +1276,68 @@ export type Database = {
           },
         ]
       }
+      audio_transcripts: {
+        Row: {
+          action_items: Json
+          actions_extracted_at: string | null
+          assemblyai_id: string | null
+          chunks: Json
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          file_name: string
+          file_url: string
+          id: string
+          status: string
+          transcript_text: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action_items?: Json
+          actions_extracted_at?: string | null
+          assemblyai_id?: string | null
+          chunks?: Json
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          status?: string
+          transcript_text?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          action_items?: Json
+          actions_extracted_at?: string | null
+          assemblyai_id?: string | null
+          chunks?: Json
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          status?: string
+          transcript_text?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_transcripts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auto_approve_domains: {
         Row: {
           created_at: string
@@ -2804,6 +2866,59 @@ export type Database = {
         }
         Relationships: []
       }
+      ice_adjustments: {
+        Row: {
+          adjusted_at: string
+          feature_event: string
+          id: number
+          new_confidence: number
+          new_impact: number
+          old_confidence: number
+          old_impact: number
+          opportunity_id: string
+          reason: string
+          sample_events: number
+          sample_users: number
+          workspace_id: string
+        }
+        Insert: {
+          adjusted_at?: string
+          feature_event: string
+          id?: never
+          new_confidence: number
+          new_impact: number
+          old_confidence: number
+          old_impact: number
+          opportunity_id: string
+          reason: string
+          sample_events?: number
+          sample_users?: number
+          workspace_id: string
+        }
+        Update: {
+          adjusted_at?: string
+          feature_event?: string
+          id?: never
+          new_confidence?: number
+          new_impact?: number
+          old_confidence?: number
+          old_impact?: number
+          opportunity_id?: string
+          reason?: string
+          sample_events?: number
+          sample_users?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_adjustments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idempotency_keys: {
         Row: {
           created_at: string
@@ -3476,6 +3591,7 @@ export type Database = {
           id: string
           impact: number
           is_public: boolean
+          posthog_event: string | null
           problem: string
           product_id: string | null
           project_id: string | null
@@ -3501,6 +3617,7 @@ export type Database = {
           id?: string
           impact?: number
           is_public?: boolean
+          posthog_event?: string | null
           problem?: string
           product_id?: string | null
           project_id?: string | null
@@ -3526,6 +3643,7 @@ export type Database = {
           id?: string
           impact?: number
           is_public?: boolean
+          posthog_event?: string | null
           problem?: string
           product_id?: string | null
           project_id?: string | null
@@ -3843,6 +3961,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      product_analytics: {
+        Row: {
+          cohort_date: string
+          created_at: string
+          distinct_users: number
+          event_count: number
+          feature_event: string
+          id: number
+          source: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          cohort_date: string
+          created_at?: string
+          distinct_users?: number
+          event_count?: number
+          feature_event: string
+          id?: never
+          source?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          cohort_date?: string
+          created_at?: string
+          distinct_users?: number
+          event_count?: number
+          feature_event?: string
+          id?: never
+          source?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_analytics_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -5719,8 +5881,10 @@ export type Database = {
           created_at: string
           current_focus: string
           id: string
+          last_researcher_tick_at: string | null
           mission: string
           notes: string
+          researcher_targets: string
           target_user: string
           updated_at: string
           updated_by: string | null
@@ -5731,8 +5895,10 @@ export type Database = {
           created_at?: string
           current_focus?: string
           id?: string
+          last_researcher_tick_at?: string | null
           mission?: string
           notes?: string
+          researcher_targets?: string
           target_user?: string
           updated_at?: string
           updated_by?: string | null
@@ -5743,8 +5909,10 @@ export type Database = {
           created_at?: string
           current_focus?: string
           id?: string
+          last_researcher_tick_at?: string | null
           mission?: string
           notes?: string
+          researcher_targets?: string
           target_user?: string
           updated_at?: string
           updated_by?: string | null
