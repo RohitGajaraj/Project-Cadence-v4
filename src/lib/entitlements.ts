@@ -120,6 +120,18 @@ export type Entitlements = {
   /** Priority routing / capacity. */
   priority: boolean;
 
+  // --- Connector access (the integration tier — pricing-strategy.md §3.3, 2026-06-27) ---
+  /**
+   * Which connector operations this plan permits.
+   *   none       - Free: manual input only, no live connectors
+   *   read       - Pro: pull signals in (GitHub issues, Linear cycles, Notion pages, etc.)
+   *   read_write - Business: read + write-back (create issues, update tickets, write to Notion)
+   *   custom     - Enterprise: read_write + custom connector development
+   *
+   * Enforced via assertConnectorCapability() at every outflow call site.
+   */
+  connectorTier: "none" | "read" | "read_write" | "custom";
+
   // --- Legacy aliases (kept so existing consumers do not break) ---
   /** @deprecated Prefer crossWorkspaceMemory. Shared workspace memory across members. */
   sharedWorkspaceMemory: boolean;
@@ -179,10 +191,47 @@ export function entitlementsFor(tier: PlanTier): Entitlements {
     enterpriseCreditModel: enterprise,
     priority: tier === "max" || collab,
 
+    connectorTier:
+      tier === "free"
+        ? "none"
+        : tier === "pro" || tier === "max"
+          ? "read"
+          : enterprise
+            ? "custom"
+            : "read_write", // team = Business
+
     // Legacy aliases.
     sharedWorkspaceMemory: collab,
     perRoleApprovalLanes: collab,
   };
+}
+
+export type ConnectorCapability = "inflow" | "outflow";
+
+/**
+ * Throws if the plan tier does not permit the requested connector operation.
+ *
+ * - Free:     no connectors at all
+ * - Pro/Max:  inflow (read) only — pulling signals in from GitHub, Linear, etc.
+ * - Business: inflow + outflow (write-back) — create issues, update tickets, write to Notion
+ * - Enterprise: all of the above + custom connector development
+ *
+ * Call this in every server function that uses an outflow connector operation.
+ * Inflow enforcement is lighter — fail gracefully via resolveProviderAuth returning source:'none'.
+ * Strategy ref: pricing-strategy.md §3.3 (2026-06-27 decision).
+ */
+export function assertConnectorCapability(tier: PlanTier, capability: ConnectorCapability): void {
+  const e = entitlementsFor(tier);
+  if (e.connectorTier === "none") {
+    throw new Error(
+      "Live connectors require a Pro plan or higher. Upgrade to pull signals from GitHub, Linear, and more.",
+    );
+  }
+  if (capability === "outflow" && e.connectorTier === "read") {
+    throw new Error(
+      "Write-back connectors (creating issues, updating tickets, writing to Notion) require the Business plan. Upgrade to push Cadence decisions back to where your team works.",
+    );
+  }
 }
 
 export type LimitKind = "workspace" | "product";
@@ -233,11 +282,12 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Persistent decision memory that never fades",
           "100-10,000 monthly credits (your choice)",
           "Critic red-teams every spec and bet, automatically",
+          "Read connectors: pull signals from GitHub, Linear, Notion, Jira",
+          "Ambient signal ingestion runs automatically on your account",
           "Memory recalls across all your workspaces",
           "Up to 3 products, pooled workspaces",
           "Fair-use top-ups when you need a boost",
           "Save around 17% with annual billing",
-          "Shareable decision links",
           "Email support, next-business-day",
         ],
       };
@@ -265,9 +315,11 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         hasBillingToggle: true,
         highlights: [
           "Everything in Pro, plus:",
+          "Write-back connectors: push decisions to GitHub, Linear, Jira, Notion",
+          "One shared connector pool for the whole team (one GitHub OAuth covers everyone)",
           "Shared credit pool across the whole team",
           "Members, seats, and role-based access",
-          "Per-role approval lanes for agent actions",
+          "Per-role approval lanes for agent actions and write-back",
           "Shared playbook library for the team",
           "Admin controls: per-user credit limits and spend caps",
           "Team-wide audit trail of agent actions",
@@ -296,7 +348,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Data residency and custom credit model",
           "Dedicated support with a signed SLA",
           "Security review, DPA, and procurement help",
-          "Custom integrations and connector development",
+          "Custom connectors and connector development",
           "Dedicated CSM and quarterly business reviews",
           "Volume pricing on credits and seats",
           "24/7 incident response with named contacts",

@@ -13,6 +13,11 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { CONNECTOR_REGISTRY, type ProviderId } from "./registry";
 import { decryptSecret } from "./crypto.server";
 import { mintInstallationToken } from "./providers/github.server";
+import {
+  assertConnectorCapability,
+  normalizePlanTier,
+  type ConnectorCapability,
+} from "@/lib/entitlements";
 
 export type ResolvedAuth =
   | {
@@ -140,8 +145,38 @@ export async function resolveProviderAuth(args: {
   productId?: string | null;
   provider: ProviderId;
   resourceKind?: string;
+  /**
+   * When set, the workspace plan tier is checked before credentials are
+   * materialized. Pass 'inflow' for read operations (pulling signals in) and
+   * 'outflow' for write operations (creating issues, updating tickets, etc.).
+   * Free blocks both; Pro blocks outflow; Business+ allows both.
+   * Throws with a user-readable upgrade prompt if the tier is insufficient.
+   * Strategy: pricing-strategy.md §3.3 (2026-06-27).
+   */
+  requiredCapability?: ConnectorCapability;
 }): Promise<ResolvedConnector> {
-  const { userClient, userId, workspaceId, productId, provider, resourceKind } = args;
+  const { userClient, userId, workspaceId, productId, provider, resourceKind, requiredCapability } =
+    args;
+
+  // Tier gate — check BEFORE any credential work so we never leak auth even
+  // transiently for an unauthorized tier. Look up plan_tier from the workspace.
+  if (requiredCapability && workspaceId) {
+    try {
+      const { data: ws } = await admin()
+        .from("workspaces")
+        .select("plan_tier")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      const tier = normalizePlanTier((ws as { plan_tier?: string } | null)?.plan_tier);
+      assertConnectorCapability(tier, requiredCapability);
+    } catch (err) {
+      // Re-throw upgrade prompts as-is; swallow transient DB errors (fail open,
+      // the credential chain itself will return source:'none' if nothing resolves).
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("require") || msg.includes("Upgrade")) throw err;
+      console.warn(`[connectors] tier check failed for ${provider} (failing open):`, err);
+    }
+  }
 
   // 0. Product-scoped binding (BYO-P1b). Most specific — overrides workspace.
   if (productId && workspaceId) {

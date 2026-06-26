@@ -130,12 +130,47 @@ This is what "credits" actually buy: the amount of autonomous loop execution the
 
 ### 3.3 Research and Signal Ingestion (the Sense layer)
 
-How much context the loop can pull from the outside world.
+How much context the loop can pull from the outside world — and how far it can push decisions back out.
+
+> **2026-06-27 decision — integration tiering (founder session):**
+> Inspired by Notion's pricing page (Basic integrations on Plus, Premium integrations on Business). Cadence's core value is connecting to where work happens — GitHub, Linear, Notion, Jira. Connector access IS the product, not a feature list item, so tiering it drives the sharpest upgrade signal below memory. The read/write split is the key: Pro lets you pull signals in; Business lets Cadence push decisions back out to where the team works. The upgrade moment: "why is my team still copy-pasting Cadence decisions back into Jira? Business does that automatically."
+
+**Connector tier definitions (enforced at the server credential chokepoint — `resolve.server.ts`):**
+
+| Tier | Connector access |
+|---|---|
+| Free | Manual input only. No live connectors. |
+| Pro | Read connectors — pull signals in (GitHub issues/PRs, Linear cycles, Notion pages, Jira tickets). No write-back. |
+| Business | Read + Write connectors — read signals in AND push decisions back (create GitHub issues from PRDs, update Linear/Jira ticket status, write Cadence decisions to Notion pages). Team-shared sources (one GitHub OAuth covers the whole team). |
+| Enterprise | Custom connectors + connector development. Full API rates. Dedicated pipelines. |
+
+**Why read-only on Pro:** a solo PM who pulls signals in gets enormous value. They can see their GitHub repo health, their Linear backlog health, their Notion docs. That is the aha moment. But write-back is a TEAM operation — creating a GitHub issue from a PRD should be reviewed before it lands in the repo. Governance belongs to Business. This creates a clear, felt upgrade reason even before a second seat is added.
+
+**Why write-back on Business only:** write-back connectors create real-world artifacts. A mis-configured agent that creates 200 duplicate Jira tickets is a team incident, not a personal one. Approval lanes (also Business) are the safety gate for write-back connectors. The two features are designed to ship together.
+
+**Per-connector capability map:**
+
+| Provider | Reads in (Pro+) | Writes out (Business+) |
+|---|---|---|
+| GitHub | Issues, PRs, commits, repo health | Create issues from PRDs; auto-close on ship |
+| Linear | Cycles, issues, project status | Create/update issues; link PRDs to cycles |
+| Jira | Tickets, sprints, epic health | Create tickets; transition status from agent decisions |
+| Notion | Pages, databases, docs | Write decision records; update PRD status |
+| Google Docs | Documents as signal source | Write Cadence summaries to docs |
+| Figma | Design files (reference only) | N/A (read-only by nature) |
+| Google Calendar | Meeting events for context | N/A (read-only) |
+| Microsoft Outlook | Meeting events for context | N/A (read-only) |
+
+**Implementation:** `connectorTier: 'none' | 'read' | 'read_write' | 'custom'` field in `Entitlements`. The enforcement chokepoint is `assertConnectorCapability(planTier, capability)` in `entitlements.ts`, called in every server function that triggers an outflow operation.
 
 | Dimension | Free | Pro | Business | Enterprise |
 |---|---|---|---|---|
-| Personal connectors (GitHub, PostHog, etc.) | 1 connector | Full connector set | Full connector set | Custom connectors + connector development |
-| Ambient signal ingestion | Manual | Auto (sense-tick runs on your account) | Auto + team-shared sources | Auto + dedicated pipelines |
+| Connector tier | None (manual input) | Read (inflow only) | Read + Write (inflow + outflow) | Custom + write-back |
+| Max connectors | 0 live | Unlimited (read-only) | Unlimited (read + write) | Unlimited + bespoke |
+| Write-back to GitHub/Linear/Jira/Notion | No | No | Yes | Yes |
+| Team-shared connector pool | No | No (personal per-user OAuth) | Yes (one OAuth covers team) | Yes + dedicated pipelines |
+| Ambient signal ingestion | Manual | Auto (sense-tick on your account) | Auto + team-shared sources | Auto + dedicated pipelines |
+| Custom connector development | No | No | No | Yes |
 | Web research | Basic | Full | Full | Full |
 | Research depth (concurrent agents) | 1 | 3 | 5+ | Custom |
 
@@ -340,6 +375,17 @@ Enterprise (Cosmos slug) is not a self-serve tier. The contact-sales path is del
 ---
 
 ## 9. Implementation map (what code changes)
+
+> **2026-06-27 additions — connector tiering:**
+>
+> | What | File | Change |
+> |---|---|---|
+> | Add `connectorTier` entitlement + `assertConnectorCapability` helper | `src/lib/entitlements.ts` | New field + exported function |
+> | Enforce connector capability at credential chokepoint | `src/lib/connectors/resolve.server.ts` | Add `requiredCapability` param; block outflow for Free/Pro |
+> | Add `minTier` to catalog entries | `src/lib/connectors/catalog.ts` | `CatalogEntry` gains `minTier: PlanTier` |
+> | Surface connector tiers on pricing page | `src/routes/pricing.tsx` | Add connector access row to feature highlights |
+> | Surface connector tiers in settings/billing | `src/components/billing/PlanPicker.tsx` | Update highlights |
+> | Update `planPresentation()` highlights | `src/lib/entitlements.ts` | Pro highlights get "read connectors"; Business gets "write-back connectors" |
 
 This section maps the strategy to the build items. Full per-file specs live in [`workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md) §4.2.2.
 

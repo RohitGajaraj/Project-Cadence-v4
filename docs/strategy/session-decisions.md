@@ -1564,3 +1564,29 @@ _This log is maintained as part of the closed documentation loop. Every session 
 **Decision / actions.** (1) Scheduled `resume-runs` every minute via pg_cron (same proven `net.http_post` + `get_cron_hook_secret()` pattern as `sense-tick`), migration-tracked + applied live → runs immediately advanced. The product's autonomous engine genuinely needs this cron family scheduled; a deliberate full-cron activation pass (the other ticks) is a separate, founder-gated step. (2) Capped the demo workspace AI budget to free-tier-equivalent (daily 10M tokens / $5). Gemini 3 Flash free tier = 1,500 req/day ≈ ~250 build runs/day; the genuine $0 path is a **BYO free Gemini key** (the workspace is currently on the metered gateway at ~$92/mo — switching to a BYO free key is the efficient long-term move). (3) **Honest diagnosis of the remaining blocker:** engine, GitHub (repo `RohitGajaraj/Test-Project-Cadence` bound), and budget are all fine — the build still can't finish because the free **Gemini 3 Flash emitted an incomplete `studio.stage` call** (named the file, omitted its content), which `studio.stage` rejects. **This is a model-capability ceiling, not infra.** Path forward: a stronger model for Build (costs money — Pro left the free tier April 2026), or harden the Builder so weak models self-correct (make `content` required-for-create in the schema + a retry) — the durable fix, but it lives in a chokepoint-pinned file (flagged for an attended core change).
 
 **Why it matters.** The "it's not working" was two separable things: a dormant cron (fixed) and a too-weak free model (a real product tradeoff). For shipping Build to consumers, the lesson is that reliable agentic file-building needs either a capable model or a self-correcting Builder loop — and that the cheapest reliable answer is to harden the loop so a free model suffices, not to pay for a bigger model per build.
+
+---
+
+## 2026-06-27 — Integration tiering: read connectors on Pro, write-back connectors on Business
+
+**Context.** Founder flagged Notion's pricing page as a strategic reference: Notion tiers integrations (Basic on Plus, Premium on Business, Advanced on Enterprise). The observation: for Cadence, connector access IS the product — GitHub, Linear, Notion, Jira are where signals live. Gating integration depth by tier creates the sharpest upgrade signal after memory decay.
+
+**Decision — the read/write split:**
+- **Free:** manual input only. No live connectors. The product works but the user must paste or type context.
+- **Pro:** read connectors (inflow). Pull signals in from GitHub issues/PRs, Linear cycles, Notion pages, Jira tickets. Ambient sense-tick runs automatically. The connector is a one-way antenna.
+- **Business:** read + write-back connectors (inflow + outflow). Cadence pushes decisions back out — creates GitHub issues from PRDs, updates Linear/Jira status, writes Cadence decisions to Notion pages. Team-shared connector pool (one GitHub OAuth covers the whole team). Write-back pairs with approval lanes (also Business): agents cannot push to external tools without a human gate.
+- **Enterprise:** custom connectors + dedicated pipelines + connector development.
+
+**Why this split works:**
+1. The upgrade story is a felt moment: "why is my team still copy-pasting Cadence decisions back into Jira?" Write-back is the answer, and it only lands at Business.
+2. Write-back is a team operation by nature — a mis-configured agent creating 200 duplicate Jira tickets is a team incident. Approval lanes (Business) are the governance gate for write-back. The two features are designed together.
+3. Read-only on Pro is already enormous value: a solo PM with full GitHub/Linear/Notion signal visibility is dramatically more informed. This makes Pro a real product, not a trial.
+
+**Shipped (2026-06-27):**
+- `pricing-strategy.md §3.3` — connector tier matrix documented as canonical
+- `entitlements.ts` — `connectorTier: 'none' | 'read' | 'read_write' | 'custom'` added to `Entitlements` type + `assertConnectorCapability(tier, capability)` enforcer exported
+- `connectors/catalog.ts` — `minTier: PlanTier` added to `CatalogEntry`; outflow-capable connectors = 'team', inflow-only = 'pro'
+- `connectors/resolve.server.ts` — `requiredCapability` param added to `resolveProviderAuth`; workspace plan tier checked before credentials materialized; outflow blocked for Free/Pro with a user-readable upgrade prompt
+- `planPresentation()` highlights updated: Pro shows "Read connectors: pull signals from GitHub, Linear, Notion, Jira"; Business shows "Write-back connectors: push decisions to GitHub, Linear, Jira, Notion" — flows through to pricing page and billing tab automatically
+
+**Cross-refs:** `pricing-strategy.md §3.3`, `entitlements.ts`, `connectors/resolve.server.ts`, `connectors/catalog.ts`

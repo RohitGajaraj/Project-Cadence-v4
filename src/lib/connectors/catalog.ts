@@ -14,6 +14,7 @@
 // invariants (every user-facing provider categorized exactly once, the flow +
 // connect derivations) are unit-verified.
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "./registry";
+import type { PlanTier } from "@/lib/entitlements";
 
 export type ConnectorCategory = "code" | "issues" | "docs" | "calendar" | "design";
 
@@ -32,6 +33,13 @@ export type CatalogEntry = {
   connectMethod: ConnectMethod;
   /** The thing you bind after connecting (Repository / Team / Database / …), or null. */
   resourceLabel: string | null;
+  /**
+   * The minimum plan tier needed to connect this provider.
+   * - Inflow-only (no outflow): 'pro' — readable on Pro+
+   * - Outflow capable: 'team' — write-back requires Business+
+   * Strategy: pricing-strategy.md §3.3 (2026-06-27).
+   */
+  minTier: PlanTier;
 };
 
 export type CatalogCategoryGroup = {
@@ -84,6 +92,8 @@ function toEntry(spec: ProviderSpec): CatalogEntry {
   const category = PROVIDER_CATEGORY[spec.id];
   const connectMethod: ConnectMethod =
     spec.authMethods[0]?.kind === "github_app" ? "github_app" : "oauth";
+  // Outflow-capable connectors require Business (team); read-only require Pro.
+  const minTier: PlanTier = spec.capabilities.outflow ? "team" : "pro";
   return {
     id: spec.id,
     label: spec.label,
@@ -94,6 +104,7 @@ function toEntry(spec: ProviderSpec): CatalogEntry {
     flowLabel: flowLabelFor(spec.capabilities),
     connectMethod,
     resourceLabel: spec.resourceTypes[0]?.label ?? null,
+    minTier,
   };
 }
 
