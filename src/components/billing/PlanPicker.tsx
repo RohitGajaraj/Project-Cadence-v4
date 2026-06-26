@@ -37,11 +37,16 @@ type AudienceTab = "personal" | "teams";
 /** The single next tier up — the one that gets the "Recommended" badge. */
 function nextTierFor(tier: PlanTier): PlanTier | null {
   switch (tier) {
-    case "free": return "pro";
-    case "pro": return "team";
-    case "max": return "team";
-    case "team": return "enterprise";
-    case "enterprise": return null;
+    case "free":
+      return "pro";
+    case "pro":
+      return "team";
+    case "max":
+      return "team";
+    case "team":
+      return "enterprise";
+    case "enterprise":
+      return null;
   }
 }
 
@@ -125,6 +130,8 @@ export function PlanTable({
   const defaultTab: AudienceTab =
     currentTier === "team" || currentTier === "enterprise" ? "teams" : "personal";
   const [tab, setTab] = useState<AudienceTab>(defaultTab);
+  // Global billing toggle — one switch updates all plan prices at once.
+  const [annual, setAnnual] = useState(false);
 
   // The tier that earns the "Recommended" badge — always the single next step up.
   const recommended = nextTierFor(currentTier);
@@ -134,8 +141,17 @@ export function PlanTable({
       {/* Current plan strip */}
       <CurrentPlanStrip currentTier={currentTier} />
 
-      {/* Personal | Teams tab toggle */}
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      {/* Row: Personal | Teams tab on left, Monthly | Annual toggle on right */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
+        {/* Audience tab */}
         <div
           style={{
             display: "inline-flex",
@@ -152,11 +168,11 @@ export function PlanTable({
                 type="button"
                 onClick={() => setTab(t)}
                 style={{
-                  padding: "7px 22px",
+                  padding: "6px 18px",
                   borderRadius: 99,
                   border: "none",
                   cursor: "pointer",
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: active ? 600 : 500,
                   background: active ? "var(--canvas, #fbf7ef)" : "transparent",
                   color: active ? "var(--ink, #1d1a14)" : "var(--ink-subtle, #6b6457)",
@@ -165,6 +181,59 @@ export function PlanTable({
                 }}
               >
                 {t === "personal" ? "Personal" : "Teams"}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Global billing toggle */}
+        <div
+          style={{
+            display: "inline-flex",
+            borderRadius: 99,
+            padding: 3,
+            background: "var(--soft-stone, rgba(0,0,0,0.06))",
+          }}
+        >
+          {(["monthly", "annual"] as const).map((mode) => {
+            const active = mode === (annual ? "annual" : "monthly");
+            return (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setAnnual(mode === "annual")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 99,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: active ? 600 : 500,
+                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                  color: active ? "var(--ink, #1d1a14)" : "var(--ink-subtle, #6b6457)",
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                {mode === "monthly" ? "Monthly" : "Annual"}
+                {mode === "annual" && (
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 600,
+                      color: "var(--moss-success, #4f8a59)",
+                      background:
+                        "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                      borderRadius: 99,
+                      padding: "1px 5px",
+                    }}
+                  >
+                    -17%
+                  </span>
+                )}
               </button>
             );
           })}
@@ -182,6 +251,7 @@ export function PlanTable({
               currentTier={currentTier}
               canSelect={canSelect}
               popular={recommended === "pro"}
+              annual={annual}
             />
           </>
         ) : (
@@ -192,6 +262,7 @@ export function PlanTable({
               currentTier={currentTier}
               canSelect={canSelect}
               popular={recommended === "team"}
+              annual={annual}
             />
             <EnterpriseCard
               isCurrent={currentTier === "enterprise"}
@@ -533,20 +604,25 @@ function PaidTierCard({
   currentTier,
   canSelect,
   popular,
+  annual,
 }: {
   tier: "pro" | "team";
   isCurrent: boolean;
   currentTier: PlanTier;
   canSelect: boolean;
   popular?: boolean;
+  annual?: boolean;
 }) {
   const p = planPresentation(tier);
   const [credits, setCredits] = useState<CreditTier>(100);
-  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [open, setOpen] = useState(false);
   const confirm = useConfirm();
 
+  const billing: "monthly" | "yearly" = annual ? "yearly" : "monthly";
   const price = priceForCredits(tier, credits, billing);
+  const monthlyPrice = priceForCredits(tier, credits, "monthly");
+  // Exact savings: annual = 10 months → 2 months free per year.
+  const yearlySavings = annual && monthlyPrice ? monthlyPrice * 2 : null;
   const lookupKey = lookupKeyFor(tier, credits, billing);
 
   const TIER_ORDER: PlanTier[] = ["free", "pro", "max", "team", "enterprise"];
@@ -615,19 +691,45 @@ function PaidTierCard({
         popular={popular && !isCurrent}
       />
 
-      {/* Price display */}
-      <div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+      {/* Price — billing label — dollar savings (when annual) */}
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span className="font-display" style={{ fontSize: 28, lineHeight: 1 }}>
-            ${price ?? "--"}/mo
+            ${price ?? "--"}
           </span>
+          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>/mo</span>
         </div>
-        <div style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", marginTop: 2 }}>
-          {billing === "yearly" ? "billed annually · ~17% off" : "billed monthly"}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            marginTop: 5,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)" }}>
+            {billing === "yearly" ? "billed annually" : "billed monthly"}
+          </span>
+          {yearlySavings && (
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: "var(--moss-success, #4f8a59)",
+                background:
+                  "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                borderRadius: 99,
+                padding: "2px 7px",
+              }}
+            >
+              Save ${yearlySavings}/yr
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Credit dropdown */}
+      {/* Credit dropdown — per card so users can compare different tiers across plans */}
       <label style={{ display: "grid", gap: 4 }}>
         <span className="mono-label" style={{ fontSize: 9, color: "var(--ink-faint, #8a8377)" }}>
           Credits / month
@@ -653,50 +755,7 @@ function PaidTierCard({
         </select>
       </label>
 
-      {/* Billing toggle */}
-      <div
-        style={{
-          display: "inline-flex",
-          padding: 2,
-          borderRadius: 99,
-          background: "var(--soft-stone, rgba(0,0,0,0.06))",
-          alignSelf: "flex-start",
-        }}
-      >
-        {(["monthly", "yearly"] as const).map((i) => {
-          const active = i === billing;
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setBilling(i)}
-              style={{
-                background: active ? "var(--canvas, #fbf7ef)" : "transparent",
-                color: "var(--ink, #1d1a14)",
-                border: "none",
-                padding: "4px 12px",
-                borderRadius: 99,
-                fontSize: 11,
-                fontWeight: active ? 600 : 500,
-                cursor: "pointer",
-                boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : undefined,
-              }}
-            >
-              {i === "monthly" ? "Monthly" : "Yearly"}
-              {i === "yearly" ? (
-                <span
-                  className="mono-label"
-                  style={{ fontSize: 9, marginLeft: 6, color: "var(--emerald, #2f8f6b)" }}
-                >
-                  -17%
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* CTA — immediately after price/billing controls */}
+      {/* CTA — immediately after price + credit selection, before features */}
       <button
         className={
           isCurrent || direction === "downgrade" ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"
