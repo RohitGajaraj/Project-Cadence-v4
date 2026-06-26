@@ -2,7 +2,7 @@
 // Pure functions — no DB. Shared between the card route AND the server.ts
 // well-known handler so the two representations never drift.
 
-export const AGENT_CARD_VERSION = "0.7.1";
+export const AGENT_CARD_VERSION = "0.8.0";
 export const AGENT_CARD_SCHEMA_VERSION = "0.1";
 
 export function buildAgentCard(origin: string): Record<string, unknown> {
@@ -20,6 +20,27 @@ export function buildAgentCard(origin: string): Record<string, unknown> {
       message_send: `${origin}/api/public/a2a/message/send`,
       message_stream: `${origin}/api/public/a2a/message/stream`,
       tasks: `${origin}/api/public/a2a/tasks`,
+      mcp: `${origin}/api/mcp`,
+    },
+    mcp: {
+      endpoint: `${origin}/api/mcp`,
+      protocol_versions: ["2025-06-18", "2025-03-26", "2024-11-05"],
+      transport: "http+json-rpc-2.0",
+      authentication: "bearer",
+      token_issuance: `${origin}/settings?section=interop`,
+      read_tools: [
+        "search_signals",
+        "search_opportunities",
+        "search_decisions",
+        "search_prds",
+        "get_prd",
+        "get_roadmap",
+        "export_skillpack",
+        "get_governing_decision",
+        "get_contradiction_history",
+      ],
+      write_tools: [{ name: "ingest_signal", required_scope: "write:signal" }],
+      rate_limit_per_minute: 60,
     },
     authentication: {
       schemes: ["bearer"],

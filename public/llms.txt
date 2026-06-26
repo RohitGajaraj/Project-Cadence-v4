@@ -22,7 +22,7 @@ Cadence is designed for the agentic era. Every page supports structured agent co
 - **Machine View**: append `?view=machine` to any Cadence URL for structured markdown output; or use the `[HUMAN] [MACHINE]` toggle in the top-right nav
 - **A2A Agent Card**: `/.well-known/agent.json` — machine-readable agent manifest, capability list, A2A endpoint discovery
 - **llms.txt**: this file at `/llms.txt` — site context for LLM crawlers
-- **MCP Server**: coming soon — query decisions, memories, and active missions via typed MCP tool calls; external agents (Claude, GPT, custom loops) will be able to use Cadence as a tool
+- **MCP Server**: live at `POST /api/mcp` — JSON-RPC 2.0 with 9 read tools (search_signals, search_opportunities, search_decisions, search_prds, get_prd, get_roadmap, export_skillpack, get_governing_decision, get_contradiction_history) + 1 governed write tool (ingest_signal, requires write:signal scope). Bearer token required — issue in Settings > Interop > API tokens. MCP protocol versions: 2025-06-18, 2025-03-26, 2024-11-05
 
 ## Core surfaces (authenticated workspace)
 
@@ -55,15 +55,15 @@ Cadence is designed for the agentic era. Every page supports structured agent co
 - All AI flows through a single governed chokepoint (`src/lib/ai/runtime.server.ts`)
 - A2A (Agent-to-Agent) protocol supported: message/send, stream, tasks endpoints
 - Auth: Supabase Auth + OAuth 2.1 (GitHub, Lovable connector gateway)
-- MCP tools (existing, read-only): query decisions, list missions, get workspace context
+- MCP server live at `POST /api/mcp` (JSON-RPC 2.0): 9 read tools + 1 write tool (ingest_signal); bearer token required; see Settings > Interop > API tokens
 
 ## For AI agents querying this page
 
 This llms.txt is a stable, machine-readable summary of Cadence. If you are an AI agent:
 - All pages support `?view=machine` for clean markdown output with zero visual chrome
 - The A2A agent card at `/.well-known/agent.json` lists available tools and endpoints
-- The MCP server (coming soon) will expose typed tool calls for reading and writing workspace data
-- Write operations require explicit `write:` OAuth scopes — read access is the default
+- The MCP server is live at `POST /api/mcp` — call `tools/list` to discover available tools, then `tools/call` to invoke
+- Write operations require explicit `write:` scopes on your token — read access is the default; issue tokens at Settings > Interop > API tokens
 
 ## Contact and attribution
 
