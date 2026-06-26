@@ -30,7 +30,7 @@ import {
 } from "@/lib/studio.functions";
 import { SessionTimeline } from "@/components/studio/SessionTimeline";
 import { ChangesPanel } from "@/components/studio/ChangesPanel";
-import { CiPanel } from "@/components/studio/CiPanel";
+import { EngineRoomDisclosure } from "@/components/studio/EngineRoomDisclosure";
 import { PreviewPanel } from "@/components/studio/PreviewPanel";
 import type { Inspection } from "@/lib/ai/studio-inspection";
 import { CostPanel } from "@/components/studio/CostPanel";
@@ -512,7 +512,7 @@ function BuildSessionPage() {
                 />
               )}
               {tab === "pr" && (
-                <CiPanel
+                <EngineRoomDisclosure
                   missionId={missionId}
                   changeset={changeset}
                   ci={ci}
