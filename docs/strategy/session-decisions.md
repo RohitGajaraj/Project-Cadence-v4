@@ -8,6 +8,34 @@
 >
 > **Update rule.** When a session produces a strategic decision, a major tradeoff resolution, or a significant positioning or architecture change, add an entry here in the same session. This is not a one-time activity; it is a constant update obligation. Reference: `docs/strategy/README.md` (cascade rule).
 >
+
+---
+
+## 2026-06-26 — 4-tier pricing model + Lovable-style credit dropdown (WM-M17/M19 resolution)
+
+**Context.** The founder reviewed six reference pricing pages (Lovable with credit dropdown, Replit, Bolt.new, Claude Individual, Claude Team & Enterprise) and resolved the open WM-M17/M19 packaging questions.
+
+**Decisions made (all binding; full rationale in [`pricing-strategy.md`](./pricing-strategy.md)):**
+
+1. **4 public tiers, not 5.** Free / Pro / Business / Enterprise. The separate "Max/Constellation" tier is dropped from public pricing. A credit dropdown on Pro covers the power-individual persona Max was designed for. The `max` DB slug remains valid for backward compat but is not marketed.
+
+2. **Lovable-style credit dropdown, not Anthropic-style usage multipliers.** Pro and Business each show a credit dropdown (100 / 200 / 400 / 800 / 1,200 / 2,000 / 3,000 / 4,000 / 5,000 / 7,500 / 10,000 credits/mo). The Anthropic "5x or 20x more usage than Pro" framing was rejected because Cadence users think in outcomes (missions run, decisions analyzed), not in abstract multipliers. The dropdown is concrete and self-sizing.
+
+3. **Linear credit pricing — no volume discount on credit selection.** More credits = proportionally more cost. The only discount is switching from monthly to annual billing (~17% off, framed as "2 months free"). This keeps the pricing legible and the upgrade motivation honest.
+
+4. **Annual/monthly toggle on Pro and Business cards only.** Shows a "Save X%" nudge. Free and Enterprise do not have annual toggles (Free has no toggle; Enterprise is negotiated).
+
+5. **Enterprise = platform fee + per-seat + API usage rates.** Contact sales path, no public self-serve price. Mirrors Anthropic's Enterprise model (Standard $20/seat + Premium $100/seat as reference; actual numbers negotiated per deal). For Cadence: a base platform fee indexed to company size + per active seat + metered API-rate usage.
+
+6. **Business plan credits are account-level pooled, not per-seat.** $50/mo (base) buys a credit pool for the whole team, not per-user. Per-user spend caps via the already-built `credit_caps` engine (WM-M14). The pooling model is the right architecture for a decision OS where AI usage is uneven across team members.
+
+7. **The primary upgrade drivers are:** (a) memory decay pain (Free → Pro), (b) shared accountability and governance (Pro → Business), (c) compliance and procurement (Business → Enterprise). Workspace and product count limits are secondary guardrails, not the headline.
+
+**What this supersedes:** the 5-tier Anthropic-style packaging from `workspace-tenancy-and-monetization-plan.md` §2.4.1 (Max 5x/20x + Team Standard/Premium variants). That section is retained as historical reasoning; this decision governs.
+
+**Implementation:** WM-M17 + WM-M18 + WM-M19 in [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md) §4.2.2. Full strategy: [`pricing-strategy.md`](./pricing-strategy.md).
+
+
 > **Cross-references.** Versioned positioning: [`archive/v2-positioning.md`](./archive/v2-positioning.md). Feature backlog: [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
 
 ---

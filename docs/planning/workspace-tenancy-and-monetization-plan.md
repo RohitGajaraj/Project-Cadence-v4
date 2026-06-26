@@ -79,6 +79,8 @@ Notes:
 
 ### 2.4.1 Usage-variant packaging (the Anthropic-style presentation, target model)
 
+> **SUPERSEDED (2026-06-26) for PUBLIC PRICING by [`../strategy/pricing-strategy.md`](../strategy/pricing-strategy.md).** The founder resolved the WM-M17/M19 open questions in a 2026-06-26 session after reviewing six reference pricing pages. The new model: **4 public tiers (Free/Pro/Business/Enterprise)**, **Lovable-style credit dropdown** (linear pricing, no volume discount), **annual/monthly toggle as the only discount mechanism**, and **Enterprise = platform fee + per-seat + API rates (contact sales)**. The separate "Max/Constellation" tier is dropped from public pricing; the `max` DB slug stays valid for backward compat. The §2.4.1 text below is retained as historical reasoning for WHY the Anthropic-style model was considered; `pricing-strategy.md` documents why it was superseded and what replaced it.
+
 Decision 2026-06-19 (founder): present the ladder the way Anthropic Claude does, tuned to our moat. The slugs and the entitlements engine do not change; this is a presentation + packaging layer over §2.4, plus two new priced variants. It is documented here and scheduled as WM-M17 / WM-M18 / WM-M19 (deferred behind the core builds, picked up once the core elemental work lands; §4.0, §4.2.2).
 
 **Two toggles, not one flat grid.**

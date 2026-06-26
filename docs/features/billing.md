@@ -1,6 +1,8 @@
 # Billing rail (Stripe, credit-bundle model)
 
-> _Created: 2026-06-20 · Last updated: 2026-06-20 (Lovable cycle: cancel/resume + Stripe-id lockdown)_
+> _Created: 2026-06-20 · Last updated: 2026-06-26_
+
+> **Pricing strategy reference:** the WHY behind the tier model, credit dropdown architecture, upgrade narrative, and value matrix lives in [`../strategy/pricing-strategy.md`](../strategy/pricing-strategy.md) (2026-06-26 founder decision: 4 tiers / Lovable-style dropdown / linear credit pricing / annual-only discount). This file documents the HOW (Stripe rail, webhook, catalog tables). Read pricing-strategy.md first if you are working on pricing surfaces.
 
 > Status · Stripe rail SHIPPED 2026-06-20 (Stripe-capable in sandbox; admin-editable pricing catalog + service-role billing vault tables). **Checkout + customer portal + cancel/resume + top-up checkout are all wired in `src/lib/payments.functions.ts`, plus the live webhook at `src/routes/api/public/payments/webhook.ts`.** Webhook handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`. Sandbox/test env active; live env gated on the founder.
 >
