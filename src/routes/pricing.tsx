@@ -4,7 +4,7 @@
 // Source: docs/strategy/pricing-strategy.md
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sprout, Leaf, TreePine, Building2 } from "lucide-react";
+import { Zap, User, Users, Building2, Star } from "lucide-react";
 import { CadenceMark } from "@/components/cadence/Primitives";
 import {
   planPresentation,
@@ -38,77 +38,12 @@ const PUBLIC_TIERS: PlanTier[] = ["free", "pro", "team", "enterprise"];
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number }>;
 
 const TIER_ICONS: Record<PlanTier, LucideIcon> = {
-  free: Sprout,
-  pro: Leaf,
-  max: Leaf,
-  team: TreePine,
+  free: Zap,
+  pro: User,
+  max: Star,
+  team: Users,
   enterprise: Building2,
 };
-
-function TierProgressionBar() {
-  const steps: { tier: PlanTier; label: string }[] = [
-    { tier: "free", label: "Free" },
-    { tier: "pro", label: "Pro" },
-    { tier: "team", label: "Business" },
-    { tier: "enterprise", label: "Enterprise" },
-  ];
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 0,
-        marginBottom: 32,
-      }}
-    >
-      {steps.map((step, i) => {
-        const Icon = TIER_ICONS[step.tier];
-        return (
-          <div key={step.tier} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-              <span
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background:
-                    "color-mix(in oklab, var(--ember, #c2622e) 12%, var(--canvas, #faf7ef))",
-                  border:
-                    "1px solid color-mix(in oklab, var(--ember, #c2622e) 20%, transparent)",
-                  color: "var(--ember, #c2622e)",
-                }}
-              >
-                <Icon size={16} strokeWidth={1.6} />
-              </span>
-              <span
-                className="mono-label"
-                style={{ fontSize: 8.5, color: "var(--ink-subtle, #6b6457)" }}
-              >
-                {step.label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div
-                style={{
-                  width: 40,
-                  height: 1,
-                  background:
-                    "color-mix(in oklab, var(--ember, #c2622e) 25%, var(--hairline, rgba(0,0,0,0.08)))",
-                  margin: "0 6px",
-                  marginBottom: 16,
-                }}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function PricingCard({ tier }: { tier: PlanTier }) {
   const p = planPresentation(tier);
@@ -300,15 +235,10 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         </div>
       )}
 
-      {/* Tagline */}
-      <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--ink-subtle, #6b6457)", margin: 0 }}>
-        {p.tagline}
-      </p>
-
       {/* CTA button */}
       {isEnterprise ? (
         <a
-          href="mailto:sales@cadence.app?subject=Enterprise%20enquiry"
+          href="mailto:sales@cadence.app?subject=Enterprise enquiry"
           style={{
             display: "block",
             textAlign: "center",
@@ -348,46 +278,59 @@ function PricingCard({ tier }: { tier: PlanTier }) {
             cursor: "pointer",
           }}
         >
-          {isFree ? "Start free" : "Get started"}
+          {isFree ? "Start free" : isBusiness ? "Get Business" : "Get Pro"}
         </a>
       )}
 
-      {/* Feature list */}
-      <ul
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: "2px 0 0",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        {p.highlights.map((h, i) => {
-          const isHeader = h.startsWith("Everything in");
-          return (
-            <li
-              key={i}
-              style={{
-                display: "flex",
-                gap: 8,
-                fontSize: 12.5,
-                lineHeight: 1.45,
-                color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
-                fontWeight: isHeader ? 500 : 400,
-                borderTop:
-                  isHeader && i > 0 ? "1px solid var(--hairline, rgba(0,0,0,0.06))" : undefined,
-                paddingTop: isHeader && i > 0 ? 6 : 0,
-              }}
-            >
-              {!isHeader && (
-                <span style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0 }}>+</span>
-              )}
-              <span style={{ marginLeft: isHeader ? 0 : undefined }}>{h}</span>
-            </li>
-          );
-        })}
-      </ul>
+      {/* Feature list — max 5, remainder collapsed to "+ N more" */}
+      {(() => {
+        const visible = p.highlights.slice(0, 5);
+        const hidden = p.highlights.length - visible.length;
+        return (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "2px 0 0",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {visible.map((h, i) => {
+              const isHeader = h.startsWith("Everything in");
+              return (
+                <li
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
+                    fontWeight: isHeader ? 500 : 400,
+                    borderTop:
+                      isHeader && i > 0
+                        ? "1px solid var(--hairline, rgba(0,0,0,0.06))"
+                        : undefined,
+                    paddingTop: isHeader && i > 0 ? 6 : 0,
+                  }}
+                >
+                  {!isHeader && (
+                    <span style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0 }}>+</span>
+                  )}
+                  <span>{h}</span>
+                </li>
+              );
+            })}
+            {hidden > 0 && (
+              <li style={{ fontSize: 11.5, color: "var(--ink-faint, #8a8377)" }}>
+                + {hidden} more
+              </li>
+            )}
+          </ul>
+        );
+      })()}
     </div>
   );
 }
@@ -459,9 +402,6 @@ function PricingPage() {
               compounding and to give your team shared accountability for what the agents decide.
             </p>
           </div>
-
-          {/* Tier progression indicator */}
-          <TierProgressionBar />
 
           {/* 4-column tier grid */}
           <div

@@ -1,12 +1,11 @@
 /**
- * PlanTable: in-product settings billing tab plan picker.
- * 4-tier flat grid: Free · Pro · Business · Enterprise.
- * Driven by entitlements + billing-tier — no DB catalog dependency.
- * Credit dropdown and billing toggle computed from CREDIT_DROPDOWN_TIERS + priceForCredits.
- * Audience switcher removed; Business is always highlighted as recommended.
+ * PlanTable: in-product Settings > Billing plan picker.
+ * Personal | Teams tab toggle. 2-column grid per tab.
+ * Personal: Free + Pro. Teams: Business + Enterprise.
+ * Driven by entitlements + billing-tier; no DB catalog dependency.
  */
 import { useState } from "react";
-import { Sprout, Leaf, TreePine, Building2, Stars } from "lucide-react";
+import { Zap, User, Users, Building2, Star } from "lucide-react";
 import { StripeEmbeddedCheckout } from "@/components/billing/StripeEmbeddedCheckout";
 import { toast } from "@/lib/notify";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -23,15 +22,17 @@ export const TIER_ICON: Record<
   PlanTier,
   React.ComponentType<{ size?: number; strokeWidth?: number }>
 > = {
-  free: Sprout,
-  pro: Leaf,
-  max: Stars,
-  team: TreePine,
+  free: Zap,
+  pro: User,
+  max: Star,
+  team: Users,
   enterprise: Building2,
 };
 
 /** Backwards-compat alias so existing imports keep working. */
 export const PlanPicker = PlanTable;
+
+type AudienceTab = "personal" | "teams";
 
 export function PlanTable({
   currentTier,
@@ -40,6 +41,10 @@ export function PlanTable({
   currentTier: PlanTier;
   canSelect: boolean;
 }) {
+  const defaultTab: AudienceTab =
+    currentTier === "team" || currentTier === "enterprise" ? "teams" : "personal";
+  const [tab, setTab] = useState<AudienceTab>(defaultTab);
+
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div style={{ textAlign: "center" }}>
@@ -53,31 +58,73 @@ export function PlanTable({
           className="font-display"
           style={{ fontSize: 26, lineHeight: 1.15, margin: "6px 0 4px", fontWeight: 480 }}
         >
-          Pick the plan that fits your team
+          Pick the plan that fits
         </h2>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          alignItems: "start",
-        }}
-      >
-        <FreeCard isCurrent={currentTier === "free"} />
-        <PaidTierCard
-          tier="pro"
-          isCurrent={currentTier === "pro" || currentTier === "max"}
-          currentTier={currentTier}
-          canSelect={canSelect}
-        />
-        <PaidTierCard
-          tier="team"
-          isCurrent={currentTier === "team"}
-          currentTier={currentTier}
-          canSelect={canSelect}
-        />
-        <EnterpriseCard isCurrent={currentTier === "enterprise"} />
+
+      {/* Personal | Teams tab toggle */}
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            borderRadius: 99,
+            padding: 3,
+            background: "var(--soft-stone, rgba(0,0,0,0.06))",
+            alignSelf: "flex-start",
+          }}
+        >
+          {(["personal", "teams"] as const).map((t) => {
+            const active = t === tab;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                style={{
+                  padding: "7px 22px",
+                  borderRadius: 99,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                  color: active ? "var(--ink, #1d1a14)" : "var(--ink-subtle, #6b6457)",
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {t === "personal" ? "Personal" : "Teams"}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2-column grid per tab */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {tab === "personal" ? (
+          <>
+            <FreeCard isCurrent={currentTier === "free"} />
+            <PaidTierCard
+              tier="pro"
+              isCurrent={currentTier === "pro" || currentTier === "max"}
+              currentTier={currentTier}
+              canSelect={canSelect}
+              popular
+            />
+          </>
+        ) : (
+          <>
+            <PaidTierCard
+              tier="team"
+              isCurrent={currentTier === "team"}
+              currentTier={currentTier}
+              canSelect={canSelect}
+              popular
+            />
+            <EnterpriseCard isCurrent={currentTier === "enterprise"} currentTier={currentTier} />
+          </>
+        )}
       </div>
     </div>
   );
@@ -85,11 +132,9 @@ export function PlanTable({
 
 function CardShell({
   isCurrent,
-  recommended,
   children,
 }: {
   isCurrent: boolean;
-  recommended?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -100,19 +145,13 @@ function CardShell({
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        borderColor: isCurrent
-          ? "var(--ember, #c2602e)"
-          : recommended
-            ? "var(--ink-faint, #8a8377)"
-            : undefined,
+        borderColor: isCurrent ? "var(--ember, #c2602e)" : undefined,
         background: isCurrent
           ? "color-mix(in oklab, var(--ember, #c2602e) 7%, var(--canvas, #fbf7ef))"
           : undefined,
         boxShadow: isCurrent
           ? "0 0 0 1.5px var(--ember, #c2602e), 0 0 0 6px color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), 0 0 24px -2px color-mix(in oklab, var(--ember, #c2602e) 35%, transparent), 0 18px 44px -18px color-mix(in oklab, var(--ember, #c2602e) 55%, transparent)"
-          : recommended
-            ? "0 4px 18px -10px rgba(0,0,0,0.18)"
-            : undefined,
+          : undefined,
         position: "relative",
         overflow: "visible",
       }}
@@ -133,28 +172,6 @@ function CardShell({
           }}
         />
       ) : null}
-      {recommended && !isCurrent ? (
-        <span
-          className="mono-label"
-          style={{
-            position: "absolute",
-            top: -10,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "var(--ink, #1d1a14)",
-            color: "var(--canvas, #fbf7ef)",
-            padding: "3px 10px",
-            borderRadius: 99,
-            fontSize: 9.5,
-            letterSpacing: "0.14em",
-            whiteSpace: "nowrap",
-            boxShadow: "0 4px 12px -4px rgba(0,0,0,0.25)",
-            zIndex: 2,
-          }}
-        >
-          Most popular
-        </span>
-      ) : null}
       {children}
     </div>
   );
@@ -166,12 +183,14 @@ function CardHeader({
   tagline,
   forWhom,
   isCurrent,
+  popular,
 }: {
   tier: PlanTier;
   name: string;
   tagline: string;
   forWhom: string;
   isCurrent: boolean;
+  popular?: boolean;
 }) {
   const Icon = TIER_ICON[tier];
   return (
@@ -217,6 +236,19 @@ function CardHeader({
             }}
           >
             Current plan
+          </span>
+        ) : popular ? (
+          <span
+            className="mono-label"
+            style={{
+              fontSize: 8.5,
+              color: "var(--ember, #c2602e)",
+              border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 40%, transparent)",
+              borderRadius: 99,
+              padding: "2px 8px",
+            }}
+          >
+            Popular
           </span>
         ) : null}
       </div>
@@ -303,24 +335,19 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
       >
         {isCurrent ? "You're on Free" : "Start on Free"}
       </button>
-      {!isCurrent ? (
-        <p
-          style={{
-            fontSize: 10.5,
-            color: "var(--ink-subtle, #6b6457)",
-            margin: 0,
-            textAlign: "center",
-          }}
-        >
-          Memory fades after 30 days. Upgrade to keep it.
-        </p>
-      ) : null}
     </CardShell>
   );
 }
 
-function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
+function EnterpriseCard({
+  isCurrent,
+  currentTier,
+}: {
+  isCurrent: boolean;
+  currentTier: PlanTier;
+}) {
   const p = planPresentation("enterprise");
+  const isComingFromBusiness = currentTier === "team" && !isCurrent;
   return (
     <CardShell isCurrent={isCurrent}>
       <CardHeader
@@ -334,34 +361,67 @@ function EnterpriseCard({ isCurrent }: { isCurrent: boolean }) {
         <span className="font-display" style={{ fontSize: 22, lineHeight: 1.2 }}>
           Custom
         </span>
-        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          Platform fee + $20/seat
-        </span>
-        <span style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)" }}>
-          Usage at API rates · scales with model and task
-        </span>
+        {isComingFromBusiness ? (
+          <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
+            Custom platform fee + $20/seat + usage at API rates
+          </span>
+        ) : (
+          <>
+            <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
+              Platform fee + $20/seat
+            </span>
+            <span style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)" }}>
+              Usage at API rates · scales with model and task
+            </span>
+          </>
+        )}
       </div>
       <div style={{ flex: 1 }}>
         <Bullets items={p.highlights} />
       </div>
-      <a
-        className="btn btn-primary btn-sm"
-        href="mailto:sales@cadence.app?subject=Enterprise%20enquiry"
-        style={{ marginTop: 4, textAlign: "center", width: "100%" }}
-      >
-        Talk to our team
-      </a>
-      {isCurrent && (
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--ink-subtle, #6b6457)",
-            margin: 0,
-            textAlign: "center",
-          }}
+      {isCurrent ? (
+        <>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            Reach your account manager to adjust seats or API rates.
+          </p>
+          <a
+            className="btn btn-ghost btn-sm"
+            href="mailto:sales@cadence.app?subject=Enterprise plan management"
+            style={{ marginTop: 4, textAlign: "center", width: "100%" }}
+          >
+            Contact account manager
+          </a>
+          <div
+            style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}
+          >
+            <a
+              href="mailto:sales@cadence.app?subject=Enterprise plan management"
+              style={{
+                fontSize: 11,
+                color: "var(--ink-subtle, #6b6457)",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+            >
+              Manage subscription
+            </a>
+          </div>
+        </>
+      ) : (
+        <a
+          className="btn btn-primary btn-sm"
+          href="mailto:sales@cadence.app?subject=Enterprise enquiry"
+          style={{ marginTop: 4, textAlign: "center", width: "100%" }}
         >
-          Reach your account manager to adjust seats or usage rates.
-        </p>
+          Talk to our team
+        </a>
       )}
     </CardShell>
   );
@@ -372,11 +432,13 @@ function PaidTierCard({
   isCurrent,
   currentTier,
   canSelect,
+  popular,
 }: {
   tier: "pro" | "team";
   isCurrent: boolean;
   currentTier: PlanTier;
   canSelect: boolean;
+  popular?: boolean;
 }) {
   const p = planPresentation(tier);
   const [credits, setCredits] = useState<CreditTier>(100);
@@ -403,7 +465,7 @@ function PaidTierCard({
     if (direction === "upgrade" && currentTier !== "free") {
       const ok = await confirm({
         title: `Upgrade to ${p.name}?`,
-        body: `Switching plans mid-cycle: Stripe prorates the charge automatically — you'll receive credit for unused days on your current plan and be charged for ${p.name} days remaining in the cycle. Your ${p.name} credit pool starts immediately.`,
+        body: `Stripe prorates the switch automatically. You get credit for unused days on your current plan and are charged for remaining ${p.name} days in the cycle. Your new credit pool starts immediately.`,
         confirmLabel: `Upgrade to ${p.name}`,
         cancelLabel: "Stay on current plan",
       });
@@ -412,7 +474,7 @@ function PaidTierCard({
     if (direction === "downgrade") {
       const ok = await confirm({
         title: `Move to ${p.name}?`,
-        body: `${p.name} includes fewer monthly credits and capabilities than your current plan. The change takes effect from your next billing cycle, and you can move back up anytime.`,
+        body: `${p.name} includes fewer monthly credits and capabilities. The change takes effect next billing cycle, and you can move back up anytime.`,
         confirmLabel: `Move to ${p.name}`,
         cancelLabel: "Keep my current plan",
       });
@@ -421,25 +483,36 @@ function PaidTierCard({
     setOpen(true);
   }
 
+  const displayName = tier === "team" ? "Business" : "Pro";
+
   const ctaLabel = (() => {
     if (isCurrent) return "Current plan";
-    if (tier === "team") {
-      if (direction === "upgrade") return "Bring the team into Business";
-      return "Switch to Business";
+    if (direction === "upgrade") return `Upgrade to ${displayName}`;
+    if (direction === "downgrade") return `Move to ${displayName}`;
+    return `Get ${displayName}`;
+  })();
+
+  const statusMessage = (() => {
+    if (isCurrent) {
+      if (tier === "pro") return "You are on Pro. Credits refresh monthly.";
+      if (tier === "team") return "Your team shares this pool. Credits refresh monthly.";
     }
-    if (direction === "upgrade") return "Upgrade to Pro";
-    if (direction === "downgrade") return "Move to Pro";
-    return "Get started with Pro";
+    if (direction === "upgrade") {
+      if (currentTier === "free") return `Start using ${displayName} immediately. No wait.`;
+      return "Stripe prorates the switch. Your new credit pool starts right away.";
+    }
+    return null;
   })();
 
   return (
-    <CardShell isCurrent={isCurrent} recommended={tier === "team" && !isCurrent}>
+    <CardShell isCurrent={isCurrent}>
       <CardHeader
         tier={tier}
         name={p.name}
         tagline={p.tagline}
         forWhom={p.forWhom}
         isCurrent={isCurrent}
+        popular={popular && !isCurrent}
       />
 
       {/* Price display */}
@@ -523,25 +596,66 @@ function PaidTierCard({
         })}
       </div>
 
-      {isCurrent && (
-        <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: 0, lineHeight: 1.4 }}>
-          Need extra credits this cycle? Buy a top-up — credits land in your balance and stay until
-          used.
-        </p>
-      )}
-
       <div style={{ flex: 1 }}>
         <Bullets items={p.highlights} />
       </div>
 
       <button
-        className={isCurrent ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"}
+        className={
+          isCurrent
+            ? "btn btn-ghost btn-sm"
+            : direction === "downgrade"
+              ? "btn btn-ghost btn-sm"
+              : "btn btn-primary btn-sm"
+        }
         disabled={!canSelect || !lookupKey || isCurrent}
         onClick={onSubscribe}
         style={{ marginTop: 4, width: "100%", textAlign: "center" }}
       >
         {ctaLabel}
       </button>
+
+      {statusMessage ? (
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--ink-subtle, #6b6457)",
+            margin: "0",
+            textAlign: "center",
+            lineHeight: 1.4,
+          }}
+        >
+          {statusMessage}
+        </p>
+      ) : null}
+
+      {isCurrent && (
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
+          <a
+            href="/settings/billing?action=manage"
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+          >
+            Manage subscription
+          </a>
+          <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
+          <a
+            href="/settings/billing?action=cancel"
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+          >
+            Cancel plan
+          </a>
+        </div>
+      )}
 
       {lookupKey ? (
         <StripeEmbeddedCheckout
