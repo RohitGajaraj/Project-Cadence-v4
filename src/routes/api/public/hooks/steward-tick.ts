@@ -57,11 +57,22 @@ export const Route = createFileRoute("/api/public/hooks/steward-tick")({
           }
 
           const now = new Date();
-          const cooldownCutoff = new Date(now.getTime() - NUDGE_COOLDOWN_HOURS * 3600_000).toISOString();
-          const staleDecisionCutoff = new Date(now.getTime() - STALE_DECISION_DAYS * 86400_000).toISOString();
-          const staleBriefCutoff = new Date(now.getTime() - STALE_BRIEF_DAYS * 86400_000).toISOString();
+          const cooldownCutoff = new Date(
+            now.getTime() - NUDGE_COOLDOWN_HOURS * 3600_000,
+          ).toISOString();
+          const staleDecisionCutoff = new Date(
+            now.getTime() - STALE_DECISION_DAYS * 86400_000,
+          ).toISOString();
+          const staleBriefCutoff = new Date(
+            now.getTime() - STALE_BRIEF_DAYS * 86400_000,
+          ).toISOString();
 
-          const results: Array<{ workspace_id: string; nudged?: boolean; reason?: string; error?: string }> = [];
+          const results: Array<{
+            workspace_id: string;
+            nudged?: boolean;
+            reason?: string;
+            error?: string;
+          }> = [];
 
           for (const ws of workspaces ?? []) {
             try {
@@ -113,16 +124,14 @@ export const Route = createFileRoute("/api/public/hooks/steward-tick")({
               // Build nudge signal
               const nudgeParts: string[] = [];
               if (hasStaleDecisions) {
-                const titles = staleDecisions!
-                  .map((d) => `"${d.title}"`)
-                  .join(", ");
+                const titles = staleDecisions!.map((d) => `"${d.title}"`).join(", ");
                 const days = Math.floor(
                   (now.getTime() - new Date(staleDecisions![0].created_at).getTime()) / 86400_000,
                 );
                 nudgeParts.push(
                   `${staleDecisions!.length} decision${staleDecisions!.length > 1 ? "s" : ""} ` +
-                  `(${titles}) ${staleDecisions!.length > 1 ? "have" : "has"} been active for ${days}+ days ` +
-                  `with no recorded outcome or supersession. Are these still the right calls?`,
+                    `(${titles}) ${staleDecisions!.length > 1 ? "have" : "has"} been active for ${days}+ days ` +
+                    `with no recorded outcome or supersession. Are these still the right calls?`,
                 );
               }
               if (hasStaleBrief) {
@@ -131,7 +140,7 @@ export const Route = createFileRoute("/api/public/hooks/steward-tick")({
                 );
                 nudgeParts.push(
                   `The workspace brief ("${brief!.current_focus.slice(0, 80)}${brief!.current_focus.length > 80 ? "..." : ""}") ` +
-                  `has not been updated in ${briefDays} days. Does this still reflect the team's direction?`,
+                    `has not been updated in ${briefDays} days. Does this still reflect the team's direction?`,
                 );
               }
 
@@ -139,7 +148,8 @@ export const Route = createFileRoute("/api/public/hooks/steward-tick")({
                 ? `Steward check: ${staleDecisions!.length} decision${staleDecisions!.length > 1 ? "s need" : " needs"} revisiting`
                 : "Steward check: workspace brief may be outdated";
 
-              const nudgeContent = nudgeParts.join("\n\n") +
+              const nudgeContent =
+                nudgeParts.join("\n\n") +
                 "\n\nThe Workspace Steward surfaces this as a prompt to revisit, not a problem. " +
                 "Confirm a decision is still active, supersede it with a new one, or update the brief in Settings.";
 
@@ -152,7 +162,16 @@ export const Route = createFileRoute("/api/public/hooks/steward-tick")({
               });
 
               if (insertErr) throw insertErr;
-              results.push({ workspace_id: ws.id, nudged: true, reason: nudgeParts.length > 1 ? "decisions+brief" : hasStaleDecisions ? "decisions" : "brief" });
+              results.push({
+                workspace_id: ws.id,
+                nudged: true,
+                reason:
+                  nudgeParts.length > 1
+                    ? "decisions+brief"
+                    : hasStaleDecisions
+                      ? "decisions"
+                      : "brief",
+              });
             } catch (e) {
               results.push({
                 workspace_id: ws.id,

@@ -51,9 +51,7 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
   const qc = useQueryClient();
 
   if (showConcierge) {
-    return (
-      <ConciergeContextStep onDone={onTrackSelected} onBack={() => setShowConcierge(false)} />
-    );
+    return <ConciergeContextStep onDone={onTrackSelected} onBack={() => setShowConcierge(false)} />;
   }
 
   const mSeed = useMutation({
@@ -159,9 +157,16 @@ export function TrackSelector({ onTrackSelected }: TrackSelectorProps) {
                 recommended
               </span>
             </div>
-            <div style={{ fontSize: 12.5, color: "var(--ink-subtle)", lineHeight: 1.5, paddingLeft: 22 }}>
-              Tell Cadence about your real product and it builds your workspace from your situation --
-              signals from your market, opportunities sized to what you're facing.
+            <div
+              style={{
+                fontSize: 12.5,
+                color: "var(--ink-subtle)",
+                lineHeight: 1.5,
+                paddingLeft: 22,
+              }}
+            >
+              Tell Cadence about your real product and it builds your workspace from your situation
+              -- signals from your market, opportunities sized to what you're facing.
             </div>
           </button>
 

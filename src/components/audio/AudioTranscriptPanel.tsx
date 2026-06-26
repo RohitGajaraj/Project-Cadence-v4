@@ -12,7 +12,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Mic, Upload, CheckCircle, AlertCircle, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Loader2,
+  Mic,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   submitAudioForTranscription,
@@ -24,8 +33,15 @@ import {
 } from "@/lib/audio.functions";
 
 const ACCEPTED_MIME = [
-  "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm",
-  "audio/ogg", "audio/flac", "audio/m4a", "video/mp4", "video/webm",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/webm",
+  "audio/ogg",
+  "audio/flac",
+  "audio/m4a",
+  "video/mp4",
+  "video/webm",
 ].join(",");
 
 const SPEAKER_COLORS: Record<string, string> = {
@@ -44,10 +60,25 @@ function formatMs(ms: number) {
 
 function StatusBadge({ status }: { status: AudioTranscript["status"] }) {
   if (status === "processing")
-    return <Badge variant="secondary" className="gap-1"><Loader2 className="h-3 w-3 animate-spin" />Processing</Badge>;
+    return (
+      <Badge variant="secondary" className="gap-1">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Processing
+      </Badge>
+    );
   if (status === "done")
-    return <Badge variant="default" className="gap-1 bg-emerald-600"><CheckCircle className="h-3 w-3" />Done</Badge>;
-  return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" />Error</Badge>;
+    return (
+      <Badge variant="default" className="gap-1 bg-emerald-600">
+        <CheckCircle className="h-3 w-3" />
+        Done
+      </Badge>
+    );
+  return (
+    <Badge variant="destructive" className="gap-1">
+      <AlertCircle className="h-3 w-3" />
+      Error
+    </Badge>
+  );
 }
 
 function ChunkView({ chunks }: { chunks: TranscriptChunk[] }) {
@@ -136,9 +167,7 @@ function TranscriptCard({
                       <span className="text-emerald-500 mt-0.5">+</span>
                       <div>
                         <span className="font-medium">{item.title}</span>
-                        {item.owner && (
-                          <span className="text-slate-400 ml-1">— {item.owner}</span>
-                        )}
+                        {item.owner && <span className="text-slate-400 ml-1">— {item.owner}</span>}
                         {item.due_date && (
                           <span className="text-slate-400 ml-1">by {item.due_date}</span>
                         )}
@@ -193,45 +222,49 @@ export function AudioTranscriptPanel() {
   });
 
   const extractMutation = useMutation({
-    mutationFn: (transcriptId: string) =>
-      extractActionsFromTranscript({ data: { transcriptId } }),
+    mutationFn: (transcriptId: string) => extractActionsFromTranscript({ data: { transcriptId } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["audio-transcripts"] }),
   });
 
-  const handleUpload = useCallback(async (file: File) => {
-    setUploading(true);
-    setGateError(null);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+  const handleUpload = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setGateError(null);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
-      const ext = file.name.split(".").pop() ?? "mp3";
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const ext = file.name.split(".").pop() ?? "mp3";
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
 
-      const { error: upErr } = await supabase.storage
-        .from("audio-transcripts")
-        .upload(path, file, { cacheControl: "3600", upsert: false });
+        const { error: upErr } = await supabase.storage
+          .from("audio-transcripts")
+          .upload(path, file, { cacheControl: "3600", upsert: false });
 
-      if (upErr) throw upErr;
+        if (upErr) throw upErr;
 
-      await submitAudioForTranscription({
-        data: { storagePath: path, fileName: file.name },
-      });
+        await submitAudioForTranscription({
+          data: { storagePath: path, fileName: file.name },
+        });
 
-      qc.invalidateQueries({ queryKey: ["audio-transcripts"] });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("ASSEMBLYAI_API_KEY")) {
-        setGateError("Audio transcription is not yet active. The founder needs to set ASSEMBLYAI_API_KEY.");
-      } else {
-        setGateError(msg);
+        qc.invalidateQueries({ queryKey: ["audio-transcripts"] });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("ASSEMBLYAI_API_KEY")) {
+          setGateError(
+            "Audio transcription is not yet active. The founder needs to set ASSEMBLYAI_API_KEY.",
+          );
+        } else {
+          setGateError(msg);
+        }
+      } finally {
+        setUploading(false);
       }
-    } finally {
-      setUploading(false);
-    }
-  }, [qc]);
+    },
+    [qc],
+  );
 
   return (
     <div className="space-y-4">

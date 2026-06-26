@@ -120,8 +120,9 @@ export const submitAudioForTranscription = createServerFn({ method: "POST" })
     // Ownership guard: storagePath must be under the user's own folder.
     // The service role bypasses RLS when signing URLs, so we enforce this
     // server-side before handing the signed URL to AssemblyAI.
-    if (!data.storagePath.startsWith(`${userId}/`)) {
-      throw new Error("Forbidden: storagePath must be under your own user folder");
+    // Reject '..' components to prevent path traversal (e.g. userId/../../other/file).
+    if (!data.storagePath.startsWith(`${userId}/`) || data.storagePath.includes("..")) {
+      throw new Error("Forbidden: invalid storagePath");
     }
 
     // Sign the storage URL so AssemblyAI can fetch the file
@@ -284,83 +285,85 @@ const ACTION_ITEM_SCHEMA = z.object({
 export const extractActionsFromTranscript = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ transcriptId: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }): Promise<{ actionItems: ActionItem[]; signalsInserted: number }> => {
-    const userId = context.auth.user.id;
+  .handler(
+    async ({ context, data }): Promise<{ actionItems: ActionItem[]; signalsInserted: number }> => {
+      const userId = context.auth.user.id;
 
-    const { data: row, error } = await audioDb
-      .from("audio_transcripts")
-      .select("*")
-      .eq("id", data.transcriptId)
-      .eq("user_id", userId)
-      .single();
+      const { data: row, error } = await audioDb
+        .from("audio_transcripts")
+        .select("*")
+        .eq("id", data.transcriptId)
+        .eq("user_id", userId)
+        .single();
 
-    if (error || !row) throw new Error("Transcript not found");
-    const transcript = row as unknown as AudioTranscript & { workspace_id: string };
+      if (error || !row) throw new Error("Transcript not found");
+      const transcript = row as unknown as AudioTranscript & { workspace_id: string };
 
-    if (transcript.status !== "done") {
-      throw new Error("Transcript is not yet complete");
-    }
-    if (!transcript.transcript_text?.trim()) {
-      throw new Error("Transcript text is empty");
-    }
+      if (transcript.status !== "done") {
+        throw new Error("Transcript is not yet complete");
+      }
+      if (!transcript.transcript_text?.trim()) {
+        throw new Error("Transcript text is empty");
+      }
 
-    const system = `You are an executive assistant. Extract every concrete action item from the meeting transcript below.
+      const system = `You are an executive assistant. Extract every concrete action item from the meeting transcript below.
 Return JSON with key "action_items" — an array of objects with: title (brief action description), owner (person responsible, if named), due_date (if mentioned, ISO format), raw_text (the verbatim excerpt that surfaced this action).
 Only include real commitments, not vague discussion points.`;
 
-    const userMsg = `Meeting transcript:\n\n${transcript.transcript_text.slice(0, 8000)}`;
+      const userMsg = `Meeting transcript:\n\n${transcript.transcript_text.slice(0, 8000)}`;
 
-    const res = await callModel(supabaseAdmin as never, userId, {
-      surface: "agent",
-      surface_ref: `audio:actions:${data.transcriptId}`,
-      model: "google/gemini-2.5-flash",
-      fallbackModel: "anthropic/claude-haiku-4-5-20251001",
-      responseFormat: "json_object",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userMsg },
-      ],
-    });
+      const res = await callModel(supabaseAdmin as never, userId, {
+        surface: "agent",
+        surface_ref: `audio:actions:${data.transcriptId}`,
+        model: "google/gemini-2.5-flash",
+        fallbackModel: "anthropic/claude-haiku-4-5-20251001",
+        responseFormat: "json_object",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: userMsg },
+        ],
+      });
 
-    let actionItems: ActionItem[] = [];
-    try {
-      const parsed = ACTION_ITEM_SCHEMA.parse(res.json);
-      actionItems = parsed.action_items;
-    } catch {
-      // Fallback: try to parse res.output as JSON
+      let actionItems: ActionItem[] = [];
       try {
-        const parsed = ACTION_ITEM_SCHEMA.parse(JSON.parse(res.output));
+        const parsed = ACTION_ITEM_SCHEMA.parse(res.json);
         actionItems = parsed.action_items;
       } catch {
-        actionItems = [];
+        // Fallback: try to parse res.output as JSON
+        try {
+          const parsed = ACTION_ITEM_SCHEMA.parse(JSON.parse(res.output));
+          actionItems = parsed.action_items;
+        } catch {
+          actionItems = [];
+        }
       }
-    }
 
-    // Store action items on the transcript row
-    await audioDb
-      .from("audio_transcripts")
-      .update({
-        action_items: actionItems,
-        actions_extracted_at: new Date().toISOString(),
-      })
-      .eq("id", data.transcriptId);
+      // Store action items on the transcript row
+      await audioDb
+        .from("audio_transcripts")
+        .update({
+          action_items: actionItems,
+          actions_extracted_at: new Date().toISOString(),
+        })
+        .eq("id", data.transcriptId);
 
-    // Insert a signal per action item so the ambient engine surfaces them
-    let signalsInserted = 0;
-    for (const item of actionItems.slice(0, 10)) {
-      const { error: sigErr } = await supabaseAdmin.from("signals").insert({
-        user_id: userId,
-        workspace_id: transcript.workspace_id,
-        source: "transcript_action",
-        title: item.title.slice(0, 200),
-        content:
-          `From meeting transcript "${transcript.file_name}"` +
-          (item.owner ? ` — owner: ${item.owner}` : "") +
-          (item.due_date ? ` — due: ${item.due_date}` : "") +
-          `\n\n"${item.raw_text}"`,
-      });
-      if (!sigErr) signalsInserted++;
-    }
+      // Insert a signal per action item so the ambient engine surfaces them
+      let signalsInserted = 0;
+      for (const item of actionItems.slice(0, 10)) {
+        const { error: sigErr } = await supabaseAdmin.from("signals").insert({
+          user_id: userId,
+          workspace_id: transcript.workspace_id,
+          source: "transcript_action",
+          title: item.title.slice(0, 200),
+          content:
+            `From meeting transcript "${transcript.file_name}"` +
+            (item.owner ? ` — owner: ${item.owner}` : "") +
+            (item.due_date ? ` — due: ${item.due_date}` : "") +
+            `\n\n"${item.raw_text}"`,
+        });
+        if (!sigErr) signalsInserted++;
+      }
 
-    return { actionItems, signalsInserted };
-  });
+      return { actionItems, signalsInserted };
+    },
+  );

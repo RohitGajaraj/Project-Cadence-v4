@@ -39,7 +39,8 @@ const FIELDS: Array<{
   {
     key: "whatItDoes",
     label: "What it does",
-    placeholder: "Help PMs make better decisions by connecting their signals into a living decision graph.",
+    placeholder:
+      "Help PMs make better decisions by connecting their signals into a living decision graph.",
     multiline: true,
   },
   {
@@ -55,7 +56,8 @@ const FIELDS: Array<{
   {
     key: "keyChallenge",
     label: "Biggest challenge right now",
-    placeholder: "Retention is flat, we can't prioritize the roadmap, investors want clearer traction metrics...",
+    placeholder:
+      "Retention is flat, we can't prioritize the roadmap, investors want clearer traction metrics...",
     multiline: true,
   },
   {
@@ -165,9 +167,7 @@ export function ConciergeContextStep({ onDone, onBack }: ConciergeContextStepPro
                 style={{ fontSize: 12, fontWeight: 550, color: "var(--ink-muted)" }}
               >
                 {f.label}
-                {f.required && (
-                  <span style={{ color: "var(--ember)", marginLeft: 3 }}>*</span>
-                )}
+                {f.required && <span style={{ color: "var(--ember)", marginLeft: 3 }}>*</span>}
               </label>
               {f.multiline ? (
                 <textarea

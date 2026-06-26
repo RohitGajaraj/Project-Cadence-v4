@@ -112,14 +112,19 @@ export const Route = createFileRoute("/api/public/hooks/researcher-tick")({
               }
 
               if (queries.length === 0) {
-                results.push({ workspace_id: brief.workspace_id, error: "no search terms derived" });
+                results.push({
+                  workspace_id: brief.workspace_id,
+                  error: "no search terms derived",
+                });
                 continue;
               }
 
               // Run web searches in parallel (bounded)
               const searchResults = await Promise.all(
                 queries.map((q) =>
-                  webSearch({ query: q, limit: 3 }).catch(() => ({ results: [] as Array<{ title: string; url: string; description: string }> })),
+                  webSearch({ query: q, limit: 3 }).catch(() => ({
+                    results: [] as Array<{ title: string; url: string; description: string }>,
+                  })),
                 ),
               );
 
@@ -165,7 +170,10 @@ Return only the bullets, nothing else.`;
 
               const briefContent = (res.output ?? "").trim();
               if (!briefContent) {
-                results.push({ workspace_id: brief.workspace_id, error: "AI returned empty brief" });
+                results.push({
+                  workspace_id: brief.workspace_id,
+                  error: "AI returned empty brief",
+                });
                 continue;
               }
 
