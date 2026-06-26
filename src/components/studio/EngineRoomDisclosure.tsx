@@ -82,7 +82,7 @@ export function EngineRoomDisclosure({
 }: Props) {
   const [open, setOpen] = useState(false);
 
-  const showBadge = ci && ci.overall !== "none";
+  const showBadge = ci && ci.overall !== "neutral";
   const isShipped = changeset?.status === "merged";
 
   if (!showBadge && !isShipped) {
