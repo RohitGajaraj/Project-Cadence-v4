@@ -20,15 +20,59 @@ export function tierFromLookupKey(lookupKey: string | null | undefined): PlanTie
   return null;
 }
 
+/**
+ * Base monthly prices (USD) for the 100-credit base tier of each self-serve plan.
+ * Linear pricing: priceForCredits(tier, credits, "monthly") = BASE * (credits / 100).
+ * Annual = monthly * ANNUAL_DISCOUNT_FACTOR (~10/12, roughly 17% off).
+ * Source: pricing-strategy.md §2 (2026-06-26 founder decision).
+ * Set final numbers in the Stripe admin catalog; these are the reference placeholders.
+ */
+const TIER_BASE_MONTHLY_USD: Record<"pro" | "team", number> = {
+  pro: 20,
+  team: 50,
+};
+
+/**
+ * Compute the display price for a given (tier, credits, interval) selection.
+ * Returns null for free or enterprise (no self-serve numeric price).
+ * Pure — used by the pricing page and settings billing tab to update the price
+ * display reactively as the user adjusts the credit dropdown or billing toggle.
+ */
+export function priceForCredits(
+  tier: PlanTier,
+  credits: number,
+  interval: "monthly" | "yearly",
+): number | null {
+  const base = TIER_BASE_MONTHLY_USD[tier as "pro" | "team"];
+  if (!base) return null;
+  const monthly = base * (credits / 100);
+  // Annual = monthly * (10/12) billed per month (or * 10 billed upfront).
+  return interval === "yearly" ? Math.round(monthly * (10 / 12)) : monthly;
+}
+
+/**
+ * Format the price for display. Returns "from $X/mo" for the base tier,
+ * "$X/mo" for a specific credit selection.
+ */
+export function formatPrice(
+  tier: PlanTier,
+  credits: number,
+  interval: "monthly" | "yearly",
+): string {
+  const price = priceForCredits(tier, credits, interval);
+  if (price === null) return interval === "yearly" ? "Contact sales" : "Contact sales";
+  return `$${price}/mo`;
+}
+
 /** Default monthly bundle lookup key for a tier, used when the user clicks "Upgrade" without picking a bundle size. */
 export function defaultMonthlyLookupKey(tier: PlanTier): string | null {
   switch (tier) {
     case "pro":
-      return "cluster_1k_monthly";
+      return "cluster_100_monthly";
     case "max":
-      return "constellation_5k_monthly";
+      return "constellation_100_monthly";
     case "team":
-      return "galaxy_1k_seat_monthly";
+      return "galaxy_100_monthly";
     default:
       return null;
   }

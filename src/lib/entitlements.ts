@@ -21,6 +21,25 @@
 
 export type PlanTier = "free" | "pro" | "max" | "team" | "enterprise";
 
+/**
+ * The four publicly marketed tiers (pricing-strategy.md 2026-06-26 decision).
+ * `max` remains a valid DB slug for backward compat but is not a public tier.
+ * `team` is presented as "Business" (slug unchanged; display name is a skin).
+ */
+export const PUBLIC_PLAN_TIERS: readonly PlanTier[] = ["free", "pro", "team", "enterprise"] as const;
+
+/**
+ * Credit dropdown ladder for Pro and Business (team) tiers.
+ * Linear pricing — no volume discount on credit selection.
+ * The annual/monthly toggle is the only discount mechanism (~17% off annual).
+ * Source: pricing-strategy.md §2.
+ */
+export const CREDIT_DROPDOWN_TIERS = [100, 200, 400, 800, 1200, 2000, 3000, 4000, 5000, 7500, 10000] as const;
+export type CreditTier = (typeof CREDIT_DROPDOWN_TIERS)[number];
+
+/** Annual discount factor (pay for ~10 months, get 12 = ~16.7% off). */
+export const ANNUAL_DISCOUNT_FACTOR = 10 / 12;
+
 export const PLAN_TIERS: readonly PlanTier[] = [
   "free",
   "pro",
@@ -169,12 +188,24 @@ export function limitFor(tier: PlanTier, kind: LimitKind): number | null {
 
 export type PlanPresentation = {
   tier: PlanTier;
-  /** Constellation display name (a skin over the slug; rename-able anytime). */
+  /**
+   * Public display name. Slug is canonical for DB/Stripe/RLS; name is a skin.
+   * 4-tier model (pricing-strategy.md 2026-06-26): Free / Pro / Business / Enterprise.
+   * `max` is internal-only (not a public tier); `team` slug displays as "Business".
+   */
   name: string;
-  /** Display price. team/enterprise are intentionally not fixed numbers (plan §7). */
+  /**
+   * Base display price (lowest credit tier, monthly). The pricing page computes the
+   * actual price reactively via priceForCredits() in billing-tier.ts as the user
+   * adjusts the credit dropdown. Pro and Business show "from $X/mo".
+   */
   price: string;
   tagline: string;
   highlights: string[];
+  /** Whether this tier shows the credit dropdown (Pro + Business only). */
+  hasCreditDropdown: boolean;
+  /** Whether this tier shows the monthly/annual billing toggle. */
+  hasBillingToggle: boolean;
 };
 
 export function planPresentation(tier: PlanTier): PlanPresentation {
@@ -182,84 +213,80 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
     case "pro":
       return {
         tier: "pro",
-        name: "Cluster",
-        // Mirrors the catalog recommended bundle (pro 1k/$25); keep in sync with pricing_bundles.
-        price: "$25/mo",
+        name: "Pro",
+        price: "from $20/mo",
         tagline: "Your decision memory never fades, and it starts to compound.",
+        hasCreditDropdown: true,
+        hasBillingToggle: true,
         highlights: [
-          "Everything in Star, plus:",
+          "Everything in Free, plus:",
           "Persistent decision memory that never fades",
-          "5x the monthly AI credits",
-          "Critic red-teams every spec and bet",
-          "Memory pools across all your workspaces",
-          "3 products, pooled workspaces",
-          "Capped fair-use top-ups when you run hot",
-          "Monthly or yearly billing (save with yearly)",
-          "Unlimited shareable decision links",
+          "100-10,000 AI credits per month (your choice)",
+          "Critic red-teams every spec and bet, automatically",
+          "Memory recalls across all your workspaces",
+          "Up to 3 products, pooled workspaces",
+          "Fair-use top-ups when you need a boost",
+          "Save around 17% with annual billing",
+          "Shareable decision links",
           "Email support, next-business-day",
         ],
       };
     case "max":
+      // Internal-only tier (not on public pricing page). Backward-compat slug.
       return {
         tier: "max",
-        name: "Constellation",
-        // Mirrors the catalog recommended bundle (max 5k/$99); keep in sync with pricing_bundles.
-        price: "$99/mo",
-        tagline: "More room to run, with priority and deeper memory.",
+        name: "Pro (legacy)",
+        price: "from $99/mo",
+        tagline: "Internal tier — not publicly marketed. Use Pro with high credit tier instead.",
+        hasCreditDropdown: false,
+        hasBillingToggle: false,
         highlights: [
-          "Everything in Cluster, plus:",
-          "20x the monthly AI credits, priority routing",
-          "Around 5 products, pooled workspaces",
-          "Higher top-up ceiling for big weeks",
-          "Early access to new agents and tools",
-          "Longer context windows on heavy missions",
-          "Advanced Critic profiles and custom guardrails",
-          "Bring-your-own model keys (BYOK)",
-          "Usage analytics with cost-per-outcome view",
-          "Priority email support",
+          "Everything in Pro, plus:",
+          "High credit allocation",
+          "Priority routing",
         ],
       };
     case "team":
       return {
         tier: "team",
-        name: "Galaxy",
-        // Mirrors the catalog recommended bundle (team 1k/$30 per seat); keep in sync with pricing_bundles.
-        price: "$30/seat/mo",
+        name: "Business",
+        price: "from $50/mo",
         tagline: "Shared memory and approval lanes for the whole product team.",
+        hasCreditDropdown: true,
+        hasBillingToggle: true,
         highlights: [
-          "Everything in Constellation, plus:",
-          "Members, seats, and roles (RBAC)",
-          "Cross-workspace shared memory for the whole team",
+          "Everything in Pro, plus:",
+          "Shared credit pool across the whole team",
+          "Members, seats, and role-based access",
           "Per-role approval lanes for agent actions",
-          "Transparent per-seat pricing",
-          "Centralized billing and usage view",
-          "Shared prompt and playbook library",
+          "Shared playbook library for the team",
+          "Admin controls: per-user credit limits and spend caps",
           "Team-wide audit trail of agent actions",
-          "Slack and Teams notifications",
           "Workspace-level guardrails and budgets",
+          "Centralized billing and usage view",
           "Onboarding session with our team",
-          "Chat support with same-business-day SLA",
+          "Chat support, same-business-day SLA",
         ],
       };
     case "enterprise":
       return {
         tier: "enterprise",
-        name: "Cosmos",
-        price: "Contact sales",
+        name: "Enterprise",
+        price: "Platform fee",
         tagline: "Your whole product org, governed end to end.",
+        hasCreditDropdown: false,
+        hasBillingToggle: false,
         highlights: [
-          "Everything in Constellation and Galaxy, plus:",
+          "Everything in Business, plus:",
+          "Platform fee based on company size",
+          "Per-seat pricing with usage at API rates",
           "SSO, SCIM, and full audit logs",
-          "Data residency and a custom credit model",
+          "Data residency and custom credit model",
           "Dedicated support with a signed SLA",
           "Security review, DPA, and procurement help",
-          "Single-tenant or VPC deployment options",
-          "Custom retention and legal-hold controls",
-          "Private model routing and approved-model lists",
           "Custom integrations and connector development",
           "Dedicated CSM and quarterly business reviews",
           "Volume pricing on credits and seats",
-          "Custom MSA, indemnification, and IP terms",
           "24/7 incident response with named contacts",
         ],
       };
@@ -267,11 +294,14 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
     default:
       return {
         tier: "free",
-        name: "Star",
+        name: "Free",
         price: "$0",
         tagline: "Run the loop. Memory is kept for " + FREE_MEMORY_RETENTION_DAYS + " days.",
+        hasCreditDropdown: false,
+        hasBillingToggle: false,
         highlights: [
           "The full daily loop and rituals",
+          "50 AI credits per month",
           "Decision memory kept " + FREE_MEMORY_RETENTION_DAYS + " days, then it fades",
           "2 products, 1 workspace",
           "Shareable decision links",

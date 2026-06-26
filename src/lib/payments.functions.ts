@@ -547,6 +547,8 @@ export type CreditCapsView = {
   isOwner: boolean;
   caps: CreditCapRow[];
   products: { id: string; name: string }[];
+  /** Account members visible to the owner — used by the per-user allocation surface (WM-M19). */
+  members: { userId: string; label: string }[];
 };
 
 async function resolveAccount(
@@ -568,7 +570,7 @@ export const getCreditCaps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CreditCapsView> => {
     const { supabase, userId } = context;
-    const empty: CreditCapsView = { isOwner: false, caps: [], products: [] };
+    const empty: CreditCapsView = { isOwner: false, caps: [], products: [], members: [] };
     const accountId = await resolveAccount(supabase, userId);
     if (!accountId) return empty;
 
@@ -584,12 +586,17 @@ export const getCreditCaps = createServerFn({ method: "GET" })
       /* default false */
     }
 
-    const [capsRes, prodRes] = await Promise.all([
+    const [capsRes, prodRes, membersRes] = await Promise.all([
       supabase
         .from("credit_caps")
         .select("id, scope, target_id, cap_credits, window_kind, enabled")
         .eq("account_id", accountId),
       supabase.from("projects").select("id, name"),
+      // Fetch account members so the UI can show a dropdown for member-scope caps (WM-M19).
+      supabase
+        .from("account_members" as any)
+        .select("user_id, role")
+        .eq("account_id", accountId),
     ]);
 
     const products = ((prodRes.data ?? []) as Array<{ id: string; name: string }>).map((p) => ({
@@ -621,7 +628,11 @@ export const getCreditCaps = createServerFn({ method: "GET" })
       enabled: !!r.enabled,
     }));
 
-    return { isOwner, caps, products };
+    const members: { userId: string; label: string }[] = (
+      (membersRes.data ?? []) as Array<{ user_id: string; role: string }>
+    ).map((r) => ({ userId: r.user_id, label: `${r.role} · ${r.user_id.slice(0, 8)}` }));
+
+    return { isOwner, caps, products, members };
   });
 
 export const setCreditCap = createServerFn({ method: "POST" })
