@@ -89,11 +89,11 @@ import { Route as AuthenticatedAdminObservabilityRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminAiCostsRouteImport } from './routes/_authenticated.admin.ai-costs'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
-import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
-import { Route as ApiPublicHooksResearcherTickRouteImport } from './routes/api/public/hooks/researcher-tick'
 import { Route as ApiPublicHooksStewardTickRouteImport } from './routes/api/public/hooks/steward-tick'
+import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
+import { Route as ApiPublicHooksResearcherTickRouteImport } from './routes/api/public/hooks/researcher-tick'
 import { Route as ApiPublicHooksOutcomeTickRouteImport } from './routes/api/public/hooks/outcome-tick'
 import { Route as ApiPublicHooksMemoryTickRouteImport } from './routes/api/public/hooks/memory-tick'
 import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/public/hooks/indexer-tick'
@@ -530,19 +530,15 @@ const ApiPublicHooksTriggerTickRoute =
     path: '/api/public/hooks/trigger-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksStewardTickRoute =
+  ApiPublicHooksStewardTickRouteImport.update({
+    id: '/api/public/hooks/steward-tick',
+    path: '/api/public/hooks/steward-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSenseTickRoute = ApiPublicHooksSenseTickRouteImport.update({
   id: '/api/public/hooks/sense-tick',
   path: '/api/public/hooks/sense-tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksResearcherTickRoute = ApiPublicHooksResearcherTickRouteImport.update({
-  id: '/api/public/hooks/researcher-tick',
-  path: '/api/public/hooks/researcher-tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksStewardTickRoute = ApiPublicHooksStewardTickRouteImport.update({
-  id: '/api/public/hooks/steward-tick',
-  path: '/api/public/hooks/steward-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksRetentionTickRoute =
@@ -555,6 +551,12 @@ const ApiPublicHooksResumeRunsRoute =
   ApiPublicHooksResumeRunsRouteImport.update({
     id: '/api/public/hooks/resume-runs',
     path: '/api/public/hooks/resume-runs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksResearcherTickRoute =
+  ApiPublicHooksResearcherTickRouteImport.update({
+    id: '/api/public/hooks/researcher-tick',
+    path: '/api/public/hooks/researcher-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksOutcomeTickRoute =
@@ -746,10 +748,10 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
+  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -847,10 +849,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
+  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -952,10 +954,10 @@ export interface FileRoutesById {
   '/api/public/hooks/indexer-tick': typeof ApiPublicHooksIndexerTickRoute
   '/api/public/hooks/memory-tick': typeof ApiPublicHooksMemoryTickRoute
   '/api/public/hooks/outcome-tick': typeof ApiPublicHooksOutcomeTickRoute
+  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
-  '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -1057,10 +1059,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
+    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
@@ -1158,10 +1160,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
+    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
@@ -1262,10 +1264,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/indexer-tick'
     | '/api/public/hooks/memory-tick'
     | '/api/public/hooks/outcome-tick'
+    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
     | '/api/public/hooks/sense-tick'
-    | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
     | '/api/public/payments/webhook'
@@ -1308,9 +1310,11 @@ export interface RootRouteChildren {
   ApiPublicHooksIndexerTickRoute: typeof ApiPublicHooksIndexerTickRoute
   ApiPublicHooksMemoryTickRoute: typeof ApiPublicHooksMemoryTickRoute
   ApiPublicHooksOutcomeTickRoute: typeof ApiPublicHooksOutcomeTickRoute
+  ApiPublicHooksResearcherTickRoute: typeof ApiPublicHooksResearcherTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicHooksRetentionTickRoute: typeof ApiPublicHooksRetentionTickRoute
   ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
+  ApiPublicHooksStewardTickRoute: typeof ApiPublicHooksStewardTickRoute
   ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicA2aMessageSendRoute: typeof ApiPublicA2aMessageSendRoute
@@ -1853,18 +1857,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPeopleRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/ai-costs': {
-      id: '/_authenticated/admin/ai-costs'
-      path: '/ai-costs'
-      fullPath: '/admin/ai-costs'
-      preLoaderRoute: typeof AuthenticatedAdminAiCostsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/observability': {
       id: '/_authenticated/admin/observability'
       path: '/observability'
       fullPath: '/admin/observability'
       preLoaderRoute: typeof AuthenticatedAdminObservabilityRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/ai-costs': {
+      id: '/_authenticated/admin/ai-costs'
+      path: '/ai-costs'
+      fullPath: '/admin/ai-costs'
+      preLoaderRoute: typeof AuthenticatedAdminAiCostsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/public/payments/webhook': {
@@ -1881,25 +1885,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTriggerTickRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/sense-tick': {
-      id: '/api/public/hooks/sense-tick'
-      path: '/api/public/hooks/sense-tick'
-      fullPath: '/api/public/hooks/sense-tick'
-      preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/researcher-tick': {
-      id: '/api/public/hooks/researcher-tick'
-      path: '/api/public/hooks/researcher-tick'
-      fullPath: '/api/public/hooks/researcher-tick'
-      preLoaderRoute: typeof ApiPublicHooksResearcherTickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/steward-tick': {
       id: '/api/public/hooks/steward-tick'
       path: '/api/public/hooks/steward-tick'
       fullPath: '/api/public/hooks/steward-tick'
       preLoaderRoute: typeof ApiPublicHooksStewardTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sense-tick': {
+      id: '/api/public/hooks/sense-tick'
+      path: '/api/public/hooks/sense-tick'
+      fullPath: '/api/public/hooks/sense-tick'
+      preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/retention-tick': {
@@ -1914,6 +1911,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/resume-runs'
       fullPath: '/api/public/hooks/resume-runs'
       preLoaderRoute: typeof ApiPublicHooksResumeRunsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/researcher-tick': {
+      id: '/api/public/hooks/researcher-tick'
+      path: '/api/public/hooks/researcher-tick'
+      fullPath: '/api/public/hooks/researcher-tick'
+      preLoaderRoute: typeof ApiPublicHooksResearcherTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/outcome-tick': {
@@ -2237,10 +2241,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksIndexerTickRoute: ApiPublicHooksIndexerTickRoute,
   ApiPublicHooksMemoryTickRoute: ApiPublicHooksMemoryTickRoute,
   ApiPublicHooksOutcomeTickRoute: ApiPublicHooksOutcomeTickRoute,
+  ApiPublicHooksResearcherTickRoute: ApiPublicHooksResearcherTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicHooksRetentionTickRoute: ApiPublicHooksRetentionTickRoute,
   ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
-  ApiPublicHooksResearcherTickRoute: ApiPublicHooksResearcherTickRoute,
   ApiPublicHooksStewardTickRoute: ApiPublicHooksStewardTickRoute,
   ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
