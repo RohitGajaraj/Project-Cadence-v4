@@ -11,8 +11,9 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Link2, Loader2, X } from "lucide-react";
+import { CheckCircle2, Link2, Loader2, Plus, X } from "lucide-react";
 import { toast } from "@/lib/notify";
+import { CreateRepoModal } from "./CreateRepoModal";
 import {
   listConnections,
   listProductBindings,
@@ -32,6 +33,7 @@ type Props = {
 export function ProductBindingsSection({ projectId, workspaceId, projectName }: Props) {
   const qc = useQueryClient();
   const [picking, setPicking] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fConnections = useServerFn(listConnections);
   const fBindings = useServerFn(listProductBindings);
@@ -93,6 +95,7 @@ export function ProductBindingsSection({ projectId, workspaceId, projectName }: 
   if (!hasAnyConnection) return null;
 
   return (
+    <>
     <div className="rounded-xl border hairline bg-background/60 divide-y divide-border/40">
       <div className="px-4 py-2.5 flex items-center gap-2">
         <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -103,6 +106,19 @@ export function ProductBindingsSection({ projectId, workspaceId, projectName }: 
           overrides workspace default
         </span>
       </div>
+
+      {/* Create repo affordance — only when GitHub is connected */}
+      {connections.some((c) => c.provider === "github" && c.status === "connected") && (
+        <div className="px-4 py-2 flex justify-end">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1 text-[11px] text-primary hover:underline"
+          >
+            <Plus className="h-3 w-3" />
+            Create new GitHub repo
+          </button>
+        </div>
+      )}
 
       {providers.flatMap((spec) =>
         spec.resourceTypes.map((rt) => {
@@ -186,5 +202,17 @@ export function ProductBindingsSection({ projectId, workspaceId, projectName }: 
         }),
       )}
     </div>
+
+      <CreateRepoModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        productId={projectId}
+        workspaceId={workspaceId}
+        productName={projectName}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ["product-bindings", projectId] });
+        }}
+      />
+    </>
   );
 }

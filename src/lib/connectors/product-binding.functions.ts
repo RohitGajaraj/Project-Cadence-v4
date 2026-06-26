@@ -19,6 +19,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { BindingRow, ConnectionRow, WorkspaceBindingRow } from "@/lib/connections.functions";
 import type { ProviderId } from "@/lib/connectors/registry";
+import { resolveProviderAuth } from "@/lib/connectors/resolve.server";
+import { repoProviderFor } from "@/lib/connectors/repo-provider";
 
 const BINDING_COLUMNS =
   "id,connection_id,workspace_id,product_id,provider,resource_kind,resource_id,resource_label,config,created_by,created_at,updated_at";
@@ -257,4 +259,95 @@ export const listProducts = createServerFn({ method: "GET" })
       (p) => !p.archived_at,
     );
     return { products: visible as ProductRow[] };
+  });
+
+// ── BYO-P1c: Managed auto-create repo ────────────────────────────────────────
+
+export type CreatedRepo = { owner: string; repo: string };
+
+/**
+ * Creates a GitHub repo in the user's own account (or an explicit org they own)
+ * using the authenticated user's GitHub connection. Optionally auto-binds the
+ * new repo as a product-scoped binding.
+ *
+ * Never touches a Cadence-owned org — the endpoint routes to the caller's own
+ * /user/repos unless an explicit org is provided.
+ */
+export const createRepoForProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        name: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-zA-Z0-9._-]+$/, "Repo name can only contain letters, numbers, ., _, -"),
+        isPrivate: z.boolean().default(true),
+        org: z.string().min(1).max(100).optional(),
+        description: z.string().max(350).optional(),
+        // If provided, auto-bind the new repo to this product after creation.
+        productId: z.string().uuid().optional(),
+        workspaceId: z.string().uuid().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as SupabaseClient;
+
+    // Resolve the user's GitHub auth — product → workspace → user connection.
+    const resolved = await resolveProviderAuth({
+      userClient: db,
+      userId: context.userId,
+      workspaceId: data.workspaceId ?? null,
+      productId: data.productId ?? null,
+      provider: "github",
+      resourceKind: "repo",
+    });
+
+    if (!resolved.auth || resolved.source === "none") {
+      throw new Error("No GitHub connection found. Connect your GitHub account in Settings first.");
+    }
+    if (resolved.auth.kind === "gateway") {
+      throw new Error(
+        "GitHub OAuth gateway does not support repo creation. Use a GitHub App or personal access token.",
+      );
+    }
+
+    const token = resolved.auth.token;
+    const provider = repoProviderFor("github", token);
+
+    const repoRef = await provider.createRepo(data.name, {
+      private: data.isPrivate,
+      org: data.org,
+      description: data.description,
+    });
+
+    // Auto-bind: create a product-scoped binding for the new repo.
+    if (data.productId && data.workspaceId && resolved.auth.kind !== "env") {
+      const connectionId =
+        "connectionRowId" in resolved.auth ? resolved.auth.connectionRowId : null;
+      if (connectionId) {
+        const resourceId = `${repoRef.owner}/${repoRef.repo}`;
+        // Ignore bind errors — the repo was created; the user can bind manually.
+        await db
+          .from("connection_bindings")
+          .upsert(
+            {
+              connection_id: connectionId,
+              workspace_id: data.workspaceId,
+              product_id: data.productId,
+              provider: "github",
+              resource_kind: "repo",
+              resource_id: resourceId,
+              resource_label: repoRef.repo,
+              created_by: context.userId,
+            },
+            { ignoreDuplicates: false },
+          )
+          .throwOnError();
+      }
+    }
+
+    return { repo: repoRef satisfies CreatedRepo };
   });
