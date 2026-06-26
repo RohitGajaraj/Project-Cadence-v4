@@ -138,9 +138,6 @@ export function PlanTable({
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      {/* Current plan strip */}
-      <CurrentPlanStrip currentTier={currentTier} />
-
       {/* Row: Personal | Teams tab on left, Monthly | Annual toggle on right */}
       <div
         style={{
@@ -276,7 +273,15 @@ export function PlanTable({
   );
 }
 
-function CardShell({ isCurrent, children }: { isCurrent: boolean; children: React.ReactNode }) {
+function CardShell({
+  isCurrent,
+  popular,
+  children,
+}: {
+  isCurrent: boolean;
+  popular?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div
       className="bento"
@@ -285,18 +290,24 @@ function CardShell({ isCurrent, children }: { isCurrent: boolean; children: Reac
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        borderColor: isCurrent ? "var(--ember, #c2602e)" : undefined,
+        // Recommended card gets the ember glow — it's the conversion target.
+        // Current card gets a softer warm tint — just enough to say "you're here".
+        borderColor: popular
+          ? "var(--ember, #c2602e)"
+          : isCurrent
+            ? "color-mix(in oklab, var(--ember, #c2602e) 30%, transparent)"
+            : undefined,
         background: isCurrent
-          ? "color-mix(in oklab, var(--ember, #c2602e) 7%, var(--canvas, #fbf7ef))"
+          ? "color-mix(in oklab, var(--ember, #c2602e) 5%, var(--canvas, #fbf7ef))"
           : undefined,
-        boxShadow: isCurrent
+        boxShadow: popular
           ? "0 0 0 1.5px var(--ember, #c2602e), 0 0 0 6px color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), 0 0 24px -2px color-mix(in oklab, var(--ember, #c2602e) 35%, transparent), 0 18px 44px -18px color-mix(in oklab, var(--ember, #c2602e) 55%, transparent)"
           : undefined,
         position: "relative",
         overflow: "visible",
       }}
     >
-      {isCurrent ? (
+      {popular ? (
         <span
           aria-hidden
           style={{
@@ -472,7 +483,7 @@ function ExpandableBullets({ items }: { items: string[] }) {
 function FreeCard({ isCurrent }: { isCurrent: boolean }) {
   const p = planPresentation("free");
   return (
-    <CardShell isCurrent={isCurrent}>
+    <CardShell isCurrent={isCurrent} popular={false}>
       <CardHeader
         tier="free"
         name={p.name}
@@ -492,10 +503,20 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
       <button
         className="btn btn-ghost btn-sm"
         disabled
-        style={{ width: "100%", textAlign: "center", marginBottom: 16 }}
+        style={{ width: "100%", textAlign: "center", marginBottom: 4 }}
       >
         {isCurrent ? "You are on Free" : "Start on Free"}
       </button>
+      {isCurrent && (
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 12 }}>
+          <a
+            href="/settings/billing?action=manage"
+            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
+          >
+            Manage
+          </a>
+        </div>
+      )}
       <div
         style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", marginBottom: 14 }}
       />
@@ -516,7 +537,7 @@ function EnterpriseCard({
   const p = planPresentation("enterprise");
   const isComingFromBusiness = currentTier === "team" && !isCurrent;
   return (
-    <CardShell isCurrent={isCurrent}>
+    <CardShell isCurrent={isCurrent} popular={popular}>
       <CardHeader
         tier="enterprise"
         name={p.name}
@@ -681,7 +702,7 @@ function PaidTierCard({
   })();
 
   return (
-    <CardShell isCurrent={isCurrent}>
+    <CardShell isCurrent={isCurrent} popular={popular && !isCurrent}>
       <CardHeader
         tier={tier}
         name={p.name}
@@ -717,8 +738,7 @@ function PaidTierCard({
                 fontSize: 10.5,
                 fontWeight: 600,
                 color: "var(--moss-success, #4f8a59)",
-                background:
-                  "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
+                background: "color-mix(in oklab, var(--moss-success, #4f8a59) 14%, transparent)",
                 borderRadius: 99,
                 padding: "2px 7px",
               }}
