@@ -22,6 +22,7 @@ Cadence is designed for the agentic era. Every page supports structured agent co
 - **Machine View**: append `?view=machine` to any Cadence URL for structured markdown output; or use the `[HUMAN] [MACHINE]` toggle in the top-right nav
 - **A2A Agent Card**: `/.well-known/agent.json` — machine-readable agent manifest, capability list, A2A endpoint discovery
 - **llms.txt**: this file at `/llms.txt` — site context for LLM crawlers
+- **agents.txt**: `/agents.txt` — agent access policy (robots.txt equivalent for the agentic era): allowed paths, auth requirements, rate limits, content tiers, write scopes, MCP tool catalog
 - **MCP Server**: live at `POST /api/mcp` — JSON-RPC 2.0 with 9 read tools (search_signals, search_opportunities, search_decisions, search_prds, get_prd, get_roadmap, export_skillpack, get_governing_decision, get_contradiction_history) + 1 governed write tool (ingest_signal, requires write:signal scope). Bearer token required — issue in Settings > Interop > API tokens. MCP protocol versions: 2025-06-18, 2025-03-26, 2024-11-05
 
 ## Core surfaces (authenticated workspace)
@@ -46,6 +47,7 @@ Cadence is designed for the agentic era. Every page supports structured agent co
 | `/trust` | Trust and privacy statement |
 | `/subprocessors` | Data sub-processor disclosure |
 | `/.well-known/agent.json` | Machine-readable agent manifest |
+| `/agents.txt` | Agent access policy: allowed paths, auth, rate limits, write scopes |
 | `/api/public/health` | App health and readiness endpoint |
 
 ## Technical profile

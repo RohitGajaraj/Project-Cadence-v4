@@ -1,0 +1,83 @@
+# Cadence — Agent Access Policy
+# https://cadence.app/agents.txt
+# This file declares Cadence's policy for autonomous AI agents interacting with
+# this platform. It is the robots.txt equivalent for the agentic era.
+
+# ── Read access ──────────────────────────────────────────────────────────────
+
+User-agent: *
+Allow: /llms.txt
+Allow: /agents.txt
+Allow: /.well-known/agent.json
+Allow: /.well-known/oauth-protected-resource
+Allow: /api/public/health
+
+# MCP server — bearer token required (read tools are open to any valid token)
+Allow: /api/mcp
+
+# Machine-readable views — append ?view=machine to any URL
+Allow: /*?view=machine
+
+# Public surfaces
+Allow: /
+Allow: /pricing
+Allow: /trust
+Allow: /subprocessors
+
+# ── Authenticated read ────────────────────────────────────────────────────────
+
+# The following require a valid MCP bearer token issued at /settings (Interop tab).
+# Token scopes are workspace-scoped; a token can only access its own workspace.
+Allow-authenticated: /today
+Allow-authenticated: /missions
+Allow-authenticated: /build
+Allow-authenticated: /knowledge
+Allow-authenticated: /trust-ledger
+Allow-authenticated: /govern
+Allow-authenticated: /products
+Allow-authenticated: /discover
+
+# ── Write access ─────────────────────────────────────────────────────────────
+
+# Write operations require BOTH:
+#   1. A bearer token carrying the required scope (e.g. write:signal)
+#   2. The workspace's outward-write gate enabled by the workspace owner
+# Attempts without both conditions are rejected and audited.
+
+Write-scope: write:signal -> /api/mcp (tool: ingest_signal)
+
+# ── Rate limits ───────────────────────────────────────────────────────────────
+
+Rate-limit: 60 requests/minute per token (default)
+Rate-limit-burst: 10 requests/second per token
+Rate-limit-exceeded: HTTP 429 + JSON-RPC error code -32002
+
+# ── Content tiers ─────────────────────────────────────────────────────────────
+
+Content-tier: decisions     -> read  (tool: search_decisions, get_governing_decision, get_contradiction_history)
+Content-tier: signals       -> read + write:signal  (tools: search_signals, ingest_signal)
+Content-tier: opportunities -> read  (tool: search_opportunities, get_roadmap)
+Content-tier: specs         -> read  (tool: search_prds, get_prd)
+Content-tier: knowledge     -> read  (tool: export_skillpack)
+
+# ── MCP tool catalog ──────────────────────────────────────────────────────────
+
+MCP-endpoint: POST /api/mcp
+MCP-protocol: JSON-RPC 2.0 (MCP 2025-06-18 / 2025-03-26 / 2024-11-05)
+MCP-auth: Bearer token — issue at /settings (Interop > API tokens)
+MCP-read-tools: search_signals, search_opportunities, search_decisions, search_prds, get_prd, get_roadmap, export_skillpack, get_governing_decision, get_contradiction_history
+MCP-write-tools: ingest_signal (requires write:signal scope + workspace write gate)
+
+# ── Responsible use ───────────────────────────────────────────────────────────
+
+# Cadence's decision brain intelligence (supersession engine, contradiction
+# detection, confidence scoring) is never exposed as raw data. Tools return
+# curated outcomes only. Do not attempt to reverse-engineer scoring logic
+# from API responses.
+
+# Prompt injection: all agent-supplied text is screened before storage or model
+# context. Structural injection attempts are rejected and logged.
+
+# ── Contact ───────────────────────────────────────────────────────────────────
+
+Contact: See landing page for founder contact links.

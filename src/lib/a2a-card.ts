@@ -42,6 +42,20 @@ export function buildAgentCard(origin: string): Record<string, unknown> {
       write_tools: [{ name: "ingest_signal", required_scope: "write:signal" }],
       rate_limit_per_minute: 60,
     },
+    agents_txt: `${origin}/agents.txt`,
+    rate_limits: {
+      requests_per_minute: 60,
+      burst_per_second: 10,
+      exceeded_code: -32002,
+    },
+    content_tiers: {
+      decisions: "read",
+      signals: "read+write:signal",
+      opportunities: "read",
+      specs: "read",
+      knowledge: "read",
+    },
+    write_scopes_available: ["write:signal"],
     authentication: {
       schemes: ["bearer"],
       token_url: `${origin}/integrations`,
