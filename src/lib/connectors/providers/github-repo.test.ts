@@ -23,15 +23,10 @@ let fetchQueue: Array<Response> = [];
 
 beforeEach(() => {
   fetchQueue = [];
-  globalThis.fetch = (async (
-    _url: string | URL | Request,
-    _init?: RequestInit,
-  ) => {
+  globalThis.fetch = (async (_url: string | URL | Request, _init?: RequestInit) => {
     const next = fetchQueue.shift();
     if (!next) {
-      throw new Error(
-        `GitHubRepoProvider test: unexpected fetch call to ${String(_url)}`,
-      );
+      throw new Error(`GitHubRepoProvider test: unexpected fetch call to ${String(_url)}`);
     }
     return next;
   }) as typeof fetch;
@@ -68,9 +63,7 @@ describe("GitHubRepoProvider", () => {
     it("uses the supplied branch without fetching the default", async () => {
       const provider = new GitHubRepoProvider(TOKEN, REF);
       // Only one call expected when branch is explicit
-      fetchQueue.push(
-        okResponse({ tree: [{ path: "feat.ts", type: "blob", sha: "aaa" }] }),
-      );
+      fetchQueue.push(okResponse({ tree: [{ path: "feat.ts", type: "blob", sha: "aaa" }] }));
 
       const entries = await provider.readTree(REF, "feature/x");
       expect(entries).toHaveLength(1);
@@ -259,9 +252,7 @@ describe("GitHubRepoProvider", () => {
       );
       // statuses for deployment 1
       fetchQueue.push(
-        okResponse([
-          { state: "success", environment_url: "https://app.example.com" },
-        ]),
+        okResponse([{ state: "success", environment_url: "https://app.example.com" }]),
       );
 
       const entries = await provider.readDeployments(REF);
@@ -278,9 +269,7 @@ describe("GitHubRepoProvider", () => {
   describe("createRepo", () => {
     it("creates under the authenticated user when no org is given", async () => {
       const provider = new GitHubRepoProvider(TOKEN);
-      fetchQueue.push(
-        okResponse({ name: "my-new-repo", owner: { login: "acme" } }),
-      );
+      fetchQueue.push(okResponse({ name: "my-new-repo", owner: { login: "acme" } }));
 
       const ref = await provider.createRepo("my-new-repo", { private: true });
       expect(ref).toMatchObject({ owner: "acme", repo: "my-new-repo" });
@@ -288,9 +277,7 @@ describe("GitHubRepoProvider", () => {
 
     it("creates under the specified org", async () => {
       const provider = new GitHubRepoProvider(TOKEN);
-      fetchQueue.push(
-        okResponse({ name: "org-repo", owner: { login: "my-org" } }),
-      );
+      fetchQueue.push(okResponse({ name: "org-repo", owner: { login: "my-org" } }));
 
       const ref = await provider.createRepo("org-repo", { org: "my-org" });
       expect(ref).toMatchObject({ owner: "my-org", repo: "org-repo" });

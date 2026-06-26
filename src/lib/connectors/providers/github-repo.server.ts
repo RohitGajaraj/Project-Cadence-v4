@@ -34,9 +34,7 @@ function overallConclusion(
   checks: Array<{ status: string; conclusion: string | null }>,
 ): "success" | "failure" | "pending" | "neutral" {
   if (checks.length === 0) return "neutral";
-  const running = checks.some(
-    (c) => c.status === "queued" || c.status === "in_progress",
-  );
+  const running = checks.some((c) => c.status === "queued" || c.status === "in_progress");
   if (running) return "pending";
   const failed = checks.some(
     (c) =>
@@ -47,10 +45,7 @@ function overallConclusion(
   );
   if (failed) return "failure";
   const allPassed = checks.every(
-    (c) =>
-      c.conclusion === "success" ||
-      c.conclusion === "skipped" ||
-      c.conclusion === "neutral",
+    (c) => c.conclusion === "success" || c.conclusion === "skipped" || c.conclusion === "neutral",
   );
   if (allPassed) return "success";
   return "neutral";
@@ -114,9 +109,7 @@ export class GitHubRepoProvider implements RepoProvider {
     const resolvedBranch = branch ?? (await this.getDefaultBranch(ref));
     const data = await this.ghJson<{
       tree?: Array<{ path: string; type: string; sha?: string }>;
-    }>(
-      `${GH_API}/repos/${rp}/git/trees/${encodeURIComponent(resolvedBranch)}?recursive=1`,
-    );
+    }>(`${GH_API}/repos/${rp}/git/trees/${encodeURIComponent(resolvedBranch)}?recursive=1`);
     return (data.tree ?? [])
       .filter((e) => e.type === "blob" || e.type === "tree")
       .map((e) => ({
@@ -138,10 +131,7 @@ export class GitHubRepoProvider implements RepoProvider {
     return { path, content: decoded, encoding: "utf-8" };
   }
 
-  async searchCode(
-    ref: RepoRef,
-    query: string,
-  ): Promise<Array<{ path: string; excerpt: string }>> {
+  async searchCode(ref: RepoRef, query: string): Promise<Array<{ path: string; excerpt: string }>> {
     const rp = this.repoPath(ref);
     const q = encodeURIComponent(`${query} repo:${rp}`);
     const data = await this.ghJson<{
@@ -201,28 +191,22 @@ export class GitHubRepoProvider implements RepoProvider {
       type: "blob",
       content: f.content,
     }));
-    const newTree = await this.ghJson<{ sha: string }>(
-      `${GH_API}/repos/${rp}/git/trees`,
-      {
-        method: "POST",
-        body: JSON.stringify({ base_tree: parentCommit.tree.sha, tree: treeItems }),
-      },
-    );
+    const newTree = await this.ghJson<{ sha: string }>(`${GH_API}/repos/${rp}/git/trees`, {
+      method: "POST",
+      body: JSON.stringify({ base_tree: parentCommit.tree.sha, tree: treeItems }),
+    });
 
     // 3. Create commit.
-    const commit = await this.ghJson<{ sha: string }>(
-      `${GH_API}/repos/${rp}/git/commits`,
-      {
-        method: "POST",
-        body: JSON.stringify({ message, tree: newTree.sha, parents: [parentSha] }),
-      },
-    );
+    const commit = await this.ghJson<{ sha: string }>(`${GH_API}/repos/${rp}/git/commits`, {
+      method: "POST",
+      body: JSON.stringify({ message, tree: newTree.sha, parents: [parentSha] }),
+    });
 
     // 4. Update branch ref.
-    await this.ghJson(
-      `${GH_API}/repos/${rp}/git/refs/heads/${encodeURIComponent(branch)}`,
-      { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) },
-    );
+    await this.ghJson(`${GH_API}/repos/${rp}/git/refs/heads/${encodeURIComponent(branch)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ sha: commit.sha, force: false }),
+    });
 
     return { sha: commit.sha };
   }
@@ -297,8 +281,7 @@ export class GitHubRepoProvider implements RepoProvider {
     const statusItems = (statusData.statuses ?? []).map((s) => ({
       name: s.context,
       status: s.state === "pending" ? "in_progress" : "completed",
-      conclusion:
-        s.state === "pending" ? null : s.state === "success" ? "success" : "failure",
+      conclusion: s.state === "pending" ? null : s.state === "success" ? "success" : "failure",
     }));
 
     const all = [...checkItems, ...statusItems];

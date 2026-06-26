@@ -121,11 +121,7 @@ function SyncInboxPage() {
               <strong>{activeProduct?.name ?? "this product"}</strong> — overrides the workspace
               default for this product only.
             </p>
-            <ProductBindingsSection
-              projectId={activeProductId}
-              workspaceId={activeWorkspaceId}
-              projectName={activeProduct?.name}
-            />
+            <ProductBindingsSection />
           </section>
         )}
 

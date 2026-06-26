@@ -20,10 +20,7 @@ import {
   type SystemBanner,
   type AuditRow,
 } from "@/lib/admin-platform.functions";
-import {
-  getMemoryExpiryEnabled,
-  adminSetMemoryExpiryEnabled,
-} from "@/lib/pricing.functions";
+import { getMemoryExpiryEnabled, adminSetMemoryExpiryEnabled } from "@/lib/pricing.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/platform")({
   component: AdminPlatform,
@@ -332,7 +329,9 @@ function MemoryExpiryPanel() {
     mutationFn: (next: boolean) => fSet({ data: { enabled: next } }),
     onSuccess: (r) => {
       if ("error" in r) return toast.error((r as { error: string }).error);
-      toast.success(`Memory expiry ${(r as { enabled: boolean }).enabled ? "enabled" : "disabled"}`);
+      toast.success(
+        `Memory expiry ${(r as { enabled: boolean }).enabled ? "enabled" : "disabled"}`,
+      );
       qc.invalidateQueries({ queryKey: ["admin-memory-expiry"] });
     },
   });

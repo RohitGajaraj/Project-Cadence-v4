@@ -1,218 +1,182 @@
-/**
- * BYO-P1b — Per-product repo binding UI.
- *
- * Shows the product's current repo binding (if any) and lets a workspace member
- * override the workspace-level binding with a product-specific one. The product
- * binding is the most specific tier of the resolution chain:
- *   product binding > workspace binding > user connection > env fallback
- *
- * Used on /sync (per-product section) and in the product Settings drawer.
- */
-import { useState } from "react";
+// BYO-P1b: Per-product repo binding UI.
+//
+// Shows every product (projects row) in the active workspace, with its current
+// binding for each provider resource type. Lets the user pick a connection from
+// their account-level connections and bind/unbind it per product.
+//
+// Rendered from the Sync page under "Per-product bindings", only when products
+// exist. Follows the same interaction pattern as WorkspaceBindingsSection.
+
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Link2, Loader2, Plus, X } from "lucide-react";
+import { AlertTriangle, Boxes, Loader2 } from "lucide-react";
 import { toast } from "@/lib/notify";
-import { CreateRepoModal } from "./CreateRepoModal";
+import { listConnections, type ConnectionRow } from "@/lib/connections.functions";
 import {
-  listConnections,
+  listProducts,
   listProductBindings,
-  addProductBinding,
-  removeBinding,
-  type BindingRow,
-  type ConnectionRow,
-} from "@/lib/connections.functions";
+  removeProductBinding,
+  type ProductRow,
+  type ProductBindingRow,
+} from "@/lib/connectors/product-binding.functions";
 import { CONNECTOR_REGISTRY, type ProviderId } from "@/lib/connectors/registry";
+import { ProductBindingPicker } from "@/components/connections/ProductBindingPicker";
 
-type Props = {
-  projectId: string;
-  workspaceId: string;
-  projectName?: string;
-};
-
-export function ProductBindingsSection({ projectId, workspaceId, projectName }: Props) {
+/**
+ * Per-product binding section. Visible only when the workspace has at least one
+ * product. One row per (product x provider resource type); states are bound /
+ * connected-but-unbound (picker) / not connected (settings link).
+ */
+export function ProductBindingsSection() {
   const qc = useQueryClient();
-  const [picking, setPicking] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
   const fConnections = useServerFn(listConnections);
+  const fProducts = useServerFn(listProducts);
   const fBindings = useServerFn(listProductBindings);
-  const fAdd = useServerFn(addProductBinding);
-  const fRemove = useServerFn(removeBinding);
+  const fRemove = useServerFn(removeProductBinding);
 
-  const qConnections = useQuery({ queryKey: ["connections"], queryFn: () => fConnections() });
+  const qConnections = useQuery({
+    queryKey: ["connections"],
+    queryFn: () => fConnections(),
+  });
+  const qProducts = useQuery({
+    queryKey: ["products-for-binding"],
+    queryFn: () => fProducts(),
+  });
   const qBindings = useQuery({
-    queryKey: ["product-bindings", projectId],
-    queryFn: () => fBindings({ data: { projectId } }),
+    queryKey: ["product-bindings"],
+    queryFn: () => fBindings(),
   });
 
   const connections = (qConnections.data?.connections ?? []) as ConnectionRow[];
-  const bindings = (qBindings.data?.bindings ?? []) as BindingRow[];
+  const products = (qProducts.data?.products ?? []) as ProductRow[];
+  const bindings = (qBindings.data?.bindings ?? []) as ProductBindingRow[];
 
-  const mAdd = useMutation({
-    mutationFn: (args: {
-      connectionId: string;
-      provider: string;
-      resourceKind: string;
-      resourceId: string;
-      resourceLabel?: string;
-    }) =>
-      fAdd({
-        data: {
-          projectId,
-          workspaceId,
-          connectionId: args.connectionId,
-          provider: args.provider,
-          resourceKind: args.resourceKind,
-          resourceId: args.resourceId,
-          resourceLabel: args.resourceLabel,
-        },
-      }),
-    onSuccess: () => {
-      toast.success("Product binding saved");
-      setPicking(null);
-      qc.invalidateQueries({ queryKey: ["product-bindings", projectId] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Bind failed"),
-  });
-
-  const mRemove = useMutation({
+  const mUnbind = useMutation({
     mutationFn: (id: string) => fRemove({ data: { id } }),
     onSuccess: () => {
-      toast.success("Product binding removed — falling back to workspace binding");
-      qc.invalidateQueries({ queryKey: ["product-bindings", projectId] });
+      toast.success("Binding removed");
+      qc.invalidateQueries({ queryKey: ["product-bindings"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Unbind failed"),
   });
 
   const providers = (Object.keys(CONNECTOR_REGISTRY) as ProviderId[])
     .map((id) => CONNECTOR_REGISTRY[id])
-    .filter((spec) => spec.resourceTypes.length > 0);
+    .filter((spec) => spec.resourceTypes.length > 0 && spec.userFacing !== false);
 
-  if (qConnections.isLoading || qBindings.isLoading) return null;
+  const isLoading = qConnections.isLoading || qProducts.isLoading || qBindings.isLoading;
 
-  const hasAnyConnection = connections.length > 0;
-  if (!hasAnyConnection) return null;
+  // Only render when there are products to bind.
+  if (!isLoading && products.length === 0) return null;
 
   return (
-    <>
-    <div className="rounded-xl border hairline bg-background/60 divide-y divide-border/40">
-      <div className="px-4 py-2.5 flex items-center gap-2">
-        <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs font-semibold text-muted-foreground">
-          {projectName ? `${projectName} — repo binding` : "Product repo binding"}
-        </span>
-        <span className="text-[10px] text-muted-foreground/60 ml-1">
-          overrides workspace default
-        </span>
+    <section className="mb-10">
+      <div className="flex items-center gap-2 mb-1">
+        <Boxes className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-display text-sm tracking-tight uppercase text-muted-foreground">
+          Per-product bindings
+        </h2>
       </div>
+      <p className="text-sm text-muted-foreground mb-3">
+        Override the workspace-level binding for a specific product. Each product can point to its
+        own repo, team, or other resource.
+      </p>
 
-      {/* Create repo affordance — only when GitHub is connected */}
-      {connections.some((c) => c.provider === "github" && c.status === "connected") && (
-        <div className="px-4 py-2 flex justify-end">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1 text-[11px] text-primary hover:underline"
-          >
-            <Plus className="h-3 w-3" />
-            Create new GitHub repo
-          </button>
+      {isLoading && (
+        <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> Loading...
         </div>
       )}
 
-      {providers.flatMap((spec) =>
-        spec.resourceTypes.map((rt) => {
-          const binding = bindings.find(
-            (b) => b.provider === spec.id && b.resource_kind === rt.kind,
-          );
-          const connected = connections.filter(
-            (c) => c.provider === spec.id && c.status === "connected",
-          );
-          const pickKey = `${spec.id}:${rt.kind}`;
-
-          return (
-            <div key={pickKey} className="px-4 py-2.5 flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="text-xs text-foreground font-medium">{rt.label ?? rt.kind}</div>
-                <div className="text-[11px] text-muted-foreground">{spec.label}</div>
+      {!isLoading && (
+        <div className="space-y-4">
+          {products.map((product) => (
+            <div key={product.id} className="rounded-xl border hairline bg-background/60">
+              <div className="px-4 py-2 border-b border-border/40">
+                <span className="text-xs font-medium text-foreground/80">{product.name}</span>
               </div>
+              <div className="divide-y divide-border/40">
+                {providers.flatMap((spec) =>
+                  spec.resourceTypes.map((rt) => {
+                    const binding = bindings.find(
+                      (b) =>
+                        b.product_id === product.id &&
+                        b.provider === spec.id &&
+                        b.resource_kind === rt.kind,
+                    );
+                    const connection =
+                      connections.find((c) => c.provider === spec.id && c.status === "connected") ??
+                      connections.find((c) => c.provider === spec.id);
 
-              {binding ? (
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
-                  <code className="text-[11px] text-foreground">{binding.resource_id}</code>
-                  <button
-                    onClick={() => mRemove.mutate(binding.id)}
-                    disabled={mRemove.isPending}
-                    title="Remove product override (falls back to workspace binding)"
-                    className="text-muted-foreground hover:text-destructive disabled:opacity-40"
-                  >
-                    {mRemove.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <X className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-              ) : picking === pickKey ? (
-                <div className="flex items-center gap-2">
-                  <select
-                    className="text-xs border border-border rounded px-2 py-1 bg-background"
-                    defaultValue=""
-                    onChange={(e) => {
-                      const conn = connected.find((c) => c.id === e.target.value);
-                      if (!conn) return;
-                      mAdd.mutate({
-                        connectionId: conn.id,
-                        provider: spec.id,
-                        resourceKind: rt.kind,
-                        resourceId: conn.account_label ?? conn.id,
-                        resourceLabel: conn.account_label ?? undefined,
-                      });
-                    }}
-                  >
-                    <option value="" disabled>
-                      Pick account...
-                    </option>
-                    {connected.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.account_label ?? c.id.slice(0, 8)}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => setPicking(null)}
-                    className="text-[10px] text-muted-foreground hover:text-foreground"
-                  >
-                    cancel
-                  </button>
-                </div>
-              ) : connected.length > 0 ? (
-                <button
-                  onClick={() => setPicking(pickKey)}
-                  className="text-[11px] text-primary hover:underline"
-                >
-                  Set product override
-                </button>
-              ) : (
-                <span className="text-[11px] text-muted-foreground/50">Not connected</span>
-              )}
+                    return (
+                      <div
+                        key={`${product.id}:${spec.id}:${rt.kind}`}
+                        className="flex items-center justify-between gap-3 px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium">{spec.label}</div>
+                          <div className="text-xs text-muted-foreground">{rt.label}</div>
+                        </div>
+                        <div className="shrink-0">
+                          {binding ? (
+                            binding.connection_status !== "connected" ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-400">
+                                <AlertTriangle className="h-3 w-3" />
+                                {rt.label}: {binding.resource_label ?? binding.resource_id} ·
+                                reconnect needed ·
+                                <button
+                                  type="button"
+                                  disabled={mUnbind.isPending}
+                                  onClick={() => mUnbind.mutate(binding.id)}
+                                  className="underline underline-offset-2 hover:text-foreground disabled:opacity-40"
+                                >
+                                  Unbind
+                                </button>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border hairline bg-secondary/40 px-2.5 py-1 text-xs">
+                                {rt.label}: {binding.resource_label ?? binding.resource_id} · via{" "}
+                                {binding.account_label ?? spec.label}
+                                {binding.owner_display ? ` (${binding.owner_display})` : ""} ·
+                                <button
+                                  type="button"
+                                  disabled={mUnbind.isPending}
+                                  onClick={() => mUnbind.mutate(binding.id)}
+                                  className="text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-40"
+                                >
+                                  Unbind
+                                </button>
+                              </span>
+                            )
+                          ) : connection ? (
+                            <ProductBindingPicker
+                              connectionId={connection.id}
+                              productId={product.id}
+                              resourceKind={rt.kind}
+                              kindLabel={rt.label}
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              Connect {spec.label} in{" "}
+                              <a
+                                href="/settings?section=connections"
+                                className="underline underline-offset-2 hover:text-foreground"
+                              >
+                                Settings
+                              </a>{" "}
+                              first
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }),
+                )}
+              </div>
             </div>
-          );
-        }),
+          ))}
+        </div>
       )}
-    </div>
-
-      <CreateRepoModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-        productId={projectId}
-        workspaceId={workspaceId}
-        productName={projectName}
-        onSuccess={() => {
-          qc.invalidateQueries({ queryKey: ["product-bindings", projectId] });
-        }}
-      />
-    </>
+    </section>
   );
 }

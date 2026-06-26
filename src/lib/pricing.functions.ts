@@ -73,7 +73,12 @@ export const amIAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ isAdmin: boolean; anyAdminExists: boolean }> => {
     const sb = context.supabase;
     const [mine, all] = await Promise.all([
-      sb.from("user_roles").select("user_id").eq("user_id", context.userId).eq("role", "admin").maybeSingle(),
+      sb
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", context.userId)
+        .eq("role", "admin")
+        .maybeSingle(),
       sb.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "admin"),
     ]);
     return { isAdmin: !!mine.data, anyAdminExists: (all.count ?? 0) > 0 };
@@ -91,7 +96,9 @@ export const adminSetCreditsEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { enabled: boolean }) => d)
   .handler(async ({ context, data }): Promise<{ ok: true } | { error: string }> => {
-    const { error } = await context.supabase.rpc("admin_set_credits_enabled", { _enabled: data.enabled });
+    const { error } = await context.supabase.rpc("admin_set_credits_enabled", {
+      _enabled: data.enabled,
+    });
     if (error) return { error: error.message };
     return { ok: true };
   });

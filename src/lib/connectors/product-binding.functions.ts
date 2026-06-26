@@ -25,8 +25,7 @@ import { repoProviderFor } from "@/lib/connectors/repo-provider";
 const BINDING_COLUMNS =
   "id,connection_id,workspace_id,product_id,provider,resource_kind,resource_id,resource_label,config,created_by,created_at,updated_at";
 
-const CONNECTION_COLUMNS =
-  "id,provider,account_label,status,user_id";
+const CONNECTION_COLUMNS = "id,provider,account_label,status,user_id";
 
 // Product row shape returned from the DB (minimal set needed for the UI).
 export type ProductRow = {
@@ -103,10 +102,7 @@ export const listProductBindings = createServerFn({ method: "GET" })
     const productIds = [...new Set(rows.map((b) => b.product_id!).filter(Boolean))];
     const productMap = new Map<string, string>();
     if (productIds.length > 0) {
-      const { data: projects } = await db
-        .from("projects")
-        .select("id,name")
-        .in("id", productIds);
+      const { data: projects } = await db.from("projects").select("id,name").in("id", productIds);
       for (const p of (projects ?? []) as { id: string; name: string }[]) {
         productMap.set(p.id, p.name);
       }
