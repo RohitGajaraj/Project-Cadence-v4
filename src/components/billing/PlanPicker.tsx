@@ -130,13 +130,7 @@ export function PlanTable({
   );
 }
 
-function CardShell({
-  isCurrent,
-  children,
-}: {
-  isCurrent: boolean;
-  children: React.ReactNode;
-}) {
+function CardShell({ isCurrent, children }: { isCurrent: boolean; children: React.ReactNode }) {
   return (
     <div
       className="bento"
@@ -281,28 +275,51 @@ function CardHeader({
   );
 }
 
-function Bullets({ items }: { items: string[] }) {
+function ExpandableBullets({ items }: { items: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const PREVIEW = 5;
+  const visible = expanded ? items : items.slice(0, PREVIEW);
+  const hiddenCount = items.length - PREVIEW;
   return (
-    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
-      {items.map((h) => (
-        <li
-          key={h}
-          style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}
+    <div>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }}>
+        {visible.map((h) => (
+          <li
+            key={h}
+            style={{ fontSize: 11.5, color: "var(--ink, #1d1a14)", display: "flex", gap: 8 }}
+          >
+            <span
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: 99,
+                background: "var(--ember, #c2602e)",
+                marginTop: 7,
+                flexShrink: 0,
+              }}
+            />
+            <span>{h}</span>
+          </li>
+        ))}
+      </ul>
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: "8px 0 0",
+            fontSize: 11,
+            color: "var(--ink-subtle, #6b6457)",
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
         >
-          <span
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: 99,
-              background: "var(--ember, #c2602e)",
-              marginTop: 7,
-              flexShrink: 0,
-            }}
-          />
-          <span>{h}</span>
-        </li>
-      ))}
-    </ul>
+          {expanded ? "Show less" : `Show ${hiddenCount} more`}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -317,35 +334,31 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
         forWhom={p.forWhom}
         isCurrent={isCurrent}
       />
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
         <span className="font-display" style={{ fontSize: 32, lineHeight: 1 }}>
           $0
         </span>
-        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>
-          /month · no card needed
-        </span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)" }}>/month</span>
       </div>
-      <div style={{ flex: 1 }}>
-        <Bullets items={p.highlights} />
-      </div>
+      <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", margin: "0 0 12px" }}>
+        No credit card needed
+      </p>
       <button
         className="btn btn-ghost btn-sm"
         disabled
-        style={{ marginTop: 4, width: "100%", textAlign: "center" }}
+        style={{ width: "100%", textAlign: "center", marginBottom: 16 }}
       >
-        {isCurrent ? "You're on Free" : "Start on Free"}
+        {isCurrent ? "You are on Free" : "Start on Free"}
       </button>
+      <div
+        style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", marginBottom: 14 }}
+      />
+      <ExpandableBullets items={p.highlights} />
     </CardShell>
   );
 }
 
-function EnterpriseCard({
-  isCurrent,
-  currentTier,
-}: {
-  isCurrent: boolean;
-  currentTier: PlanTier;
-}) {
+function EnterpriseCard({ isCurrent, currentTier }: { isCurrent: boolean; currentTier: PlanTier }) {
   const p = planPresentation("enterprise");
   const isComingFromBusiness = currentTier === "team" && !isCurrent;
   return (
@@ -376,9 +389,6 @@ function EnterpriseCard({
           </>
         )}
       </div>
-      <div style={{ flex: 1 }}>
-        <Bullets items={p.highlights} />
-      </div>
       {isCurrent ? (
         <>
           <p
@@ -398,9 +408,7 @@ function EnterpriseCard({
           >
             Contact account manager
           </a>
-          <div
-            style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}
-          >
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
             <a
               href="mailto:sales@cadence.app?subject=Enterprise plan management"
               style={{
@@ -423,6 +431,10 @@ function EnterpriseCard({
           Talk to our team
         </a>
       )}
+      <div
+        style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", margin: "16px 0 14px" }}
+      />
+      <ExpandableBullets items={p.highlights} />
     </CardShell>
   );
 }
@@ -596,26 +608,19 @@ function PaidTierCard({
         })}
       </div>
 
-      <div style={{ flex: 1 }}>
-        <Bullets items={p.highlights} />
-      </div>
-
+      {/* CTA — immediately after price/billing controls */}
       <button
         className={
-          isCurrent
-            ? "btn btn-ghost btn-sm"
-            : direction === "downgrade"
-              ? "btn btn-ghost btn-sm"
-              : "btn btn-primary btn-sm"
+          isCurrent || direction === "downgrade" ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"
         }
         disabled={!canSelect || !lookupKey || isCurrent}
         onClick={onSubscribe}
-        style={{ marginTop: 4, width: "100%", textAlign: "center" }}
+        style={{ width: "100%", textAlign: "center" }}
       >
         {ctaLabel}
       </button>
 
-      {statusMessage ? (
+      {statusMessage && (
         <p
           style={{
             fontSize: 11,
@@ -627,35 +632,31 @@ function PaidTierCard({
         >
           {statusMessage}
         </p>
-      ) : null}
+      )}
 
       {isCurrent && (
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <a
             href="/settings/billing?action=manage"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-subtle, #6b6457)",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
+            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
           >
             Manage subscription
           </a>
           <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
           <a
             href="/settings/billing?action=cancel"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-subtle, #6b6457)",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
+            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
           >
             Cancel plan
           </a>
         </div>
       )}
+
+      {/* Feature list below CTA */}
+      <div
+        style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", margin: "4px 0 2px" }}
+      />
+      <ExpandableBullets items={p.highlights} />
 
       {lookupKey ? (
         <StripeEmbeddedCheckout

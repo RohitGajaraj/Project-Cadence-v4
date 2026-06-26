@@ -223,8 +223,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "pro",
         name: "Pro",
         price: "from $20/mo",
-        tagline: "Your decisions stay. The loop keeps running.",
-        forWhom: "For solo builders who need memory that persists.",
+        tagline: "Persistent memory, no expiration. Pick how many credits your loop needs each month.",
+        forWhom: "For solo PMs and founders who keep losing context between sprints and tool switches.",
         hasCreditDropdown: true,
         hasBillingToggle: true,
         highlights: [
@@ -257,8 +257,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "team",
         name: "Business",
         price: "from $50/mo",
-        tagline: "Shared memory, shared accountability.",
-        forWhom: "For teams working from shared context.",
+        tagline: "One shared memory for the whole team. Everyone moves from the same picture, every time.",
+        forWhom: "For product teams who spend meetings re-explaining what was already decided.",
         hasCreditDropdown: true,
         hasBillingToggle: true,
         highlights: [
@@ -280,8 +280,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "enterprise",
         name: "Enterprise",
         price: "Platform fee",
-        tagline: "Full governance for your product org.",
-        forWhom: "For orgs that need SSO, audit logs, and procurement support.",
+        tagline: "Enterprise controls, security reviews, DPA, and a dedicated CSM. Shaped to your scale.",
+        forWhom: "For orgs that require SSO, audit trails, and procurement sign-off before adopting any tool.",
         hasCreditDropdown: false,
         hasBillingToggle: false,
         highlights: [
@@ -304,8 +304,8 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         tier: "free",
         name: "Free",
         price: "$0",
-        tagline: "Memory fades after 30 days. Upgrade to keep it.",
-        forWhom: "Try it out. No card required.",
+        tagline: "The full loop, no credit card. Memory fades after 30 days. Upgrade when it starts to matter.",
+        forWhom: "For anyone testing the waters or building their first product on Cadence.",
         hasCreditDropdown: false,
         hasBillingToggle: false,
         highlights: [

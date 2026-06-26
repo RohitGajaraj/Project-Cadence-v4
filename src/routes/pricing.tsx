@@ -49,61 +49,73 @@ function PricingCard({ tier }: { tier: PlanTier }) {
   const p = planPresentation(tier);
   const [credits, setCredits] = useState<CreditTier>(100);
   const [annual, setAnnual] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const isBusiness = tier === "team";
   const isEnterprise = tier === "enterprise";
   const isFree = tier === "free";
-
   const TierIcon = TIER_ICONS[tier];
 
-  const computedPrice = (() => {
-    if (isFree) return "$0";
-    if (isEnterprise) return "Custom";
-    const price = priceForCredits(tier, credits, annual ? "yearly" : "monthly");
-    return price !== null ? `$${price}/mo` : p.price;
+  const numericPrice = (() => {
+    if (isFree || isEnterprise) return null;
+    return priceForCredits(tier, credits, annual ? "yearly" : "monthly");
   })();
 
-  const annualSavingsPercent = 17;
+  const PREVIEW = 5;
+  const visibleHighlights = expanded ? p.highlights : p.highlights.slice(0, PREVIEW);
+  const hiddenCount = p.highlights.length - PREVIEW;
+
+  const sep = (
+    <div
+      style={{
+        height: 1,
+        background: "var(--hairline, rgba(0,0,0,0.07))",
+        margin: "4px 0",
+      }}
+    />
+  );
 
   return (
     <div
       style={{
-        padding: "22px 22px 24px",
+        padding: "28px 28px 24px",
         display: "flex",
         flexDirection: "column",
-        gap: 14,
+        gap: 0,
         border: isBusiness
-          ? "1px solid color-mix(in oklab, var(--ember, #c2622e) 55%, transparent)"
-          : "1px solid var(--hairline, rgba(0,0,0,0.08))",
+          ? "1.5px solid color-mix(in oklab, var(--ember, #c2622e) 55%, transparent)"
+          : "1px solid var(--hairline, rgba(0,0,0,0.09))",
         background: isBusiness
-          ? "color-mix(in oklab, var(--ember, #c2622e) 5%, var(--canvas, #faf7ef))"
+          ? "color-mix(in oklab, var(--ember, #c2622e) 4%, var(--canvas, #faf7ef))"
           : "var(--canvas, #faf7ef)",
-        borderRadius: 10,
+        borderRadius: 12,
       }}
     >
-      {/* Icon box */}
-      <span
+      {/* Icon + plan name row */}
+      <div
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          display: "inline-flex",
+          display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          background: "color-mix(in oklab, var(--ember, #c2622e) 14%, var(--canvas, #faf7ef))",
-          border: "1px solid color-mix(in oklab, var(--ember, #c2622e) 22%, transparent)",
-          color: "var(--ember, #c2622e)",
+          justifyContent: "space-between",
+          marginBottom: 14,
         }}
       >
-        <TierIcon size={18} strokeWidth={1.6} />
-      </span>
-
-      {/* Header row: plan name + popular badge */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span className="font-display" style={{ fontSize: 19, fontWeight: 460 }}>
-          {p.name}
+        <span
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "color-mix(in oklab, var(--ember, #c2622e) 14%, var(--canvas, #faf7ef))",
+            border: "1px solid color-mix(in oklab, var(--ember, #c2622e) 22%, transparent)",
+            color: "var(--ember, #c2622e)",
+          }}
+        >
+          <TierIcon size={18} strokeWidth={1.6} />
         </span>
-        {isBusiness ? (
+        {isBusiness && (
           <span
             className="mono-label"
             style={{
@@ -116,63 +128,110 @@ function PricingCard({ tier }: { tier: PlanTier }) {
           >
             Popular
           </span>
-        ) : null}
+        )}
       </div>
 
-      {/* For whom chip */}
+      {/* Plan name */}
       <span
+        className="font-display"
+        style={{ fontSize: 20, fontWeight: 460, marginBottom: 8, display: "block" }}
+      >
+        {p.name}
+      </span>
+
+      {/* Who it's for — specific, outcome-oriented */}
+      <p
         style={{
-          fontSize: 11,
-          color: "var(--ink-subtle, #6b6457)",
-          display: "block",
-          marginTop: -8,
-          lineHeight: 1.4,
+          fontSize: 13,
+          color: "var(--ink, #1d1a14)",
+          fontWeight: 500,
+          margin: "0 0 6px",
+          lineHeight: 1.45,
         }}
       >
         {p.forWhom}
-      </span>
+      </p>
 
-      {/* Price */}
-      {isEnterprise ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <span className="font-display" style={{ fontSize: 22, fontWeight: 460, lineHeight: 1.2 }}>
-            Custom
-          </span>
-          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
-            Platform fee + $20/seat
-          </span>
-          <span style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)" }}>
-            Usage at API rates · scales with model and task
-          </span>
-        </div>
-      ) : (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-          <span className="font-display" style={{ fontSize: 28, fontWeight: 480 }}>
-            {computedPrice}
-          </span>
-          {!isFree && (
-            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>
-              {annual ? "billed annually" : "billed monthly"}
+      {/* Tagline — supporting context */}
+      <p
+        style={{
+          fontSize: 12,
+          color: "var(--ink-subtle, #6b6457)",
+          margin: "0 0 20px",
+          lineHeight: 1.5,
+        }}
+      >
+        {p.tagline}
+      </p>
+
+      {sep}
+
+      {/* Price zone */}
+      <div style={{ margin: "16px 0 14px" }}>
+        {isEnterprise ? (
+          <>
+            <span
+              className="font-display"
+              style={{ fontSize: 26, fontWeight: 460, lineHeight: 1.2, display: "block" }}
+            >
+              Custom
             </span>
-          )}
-        </div>
-      )}
+            <span
+              style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", display: "block", marginTop: 4 }}
+            >
+              Platform fee + $20/seat
+            </span>
+            <span
+              style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", display: "block", marginTop: 2 }}
+            >
+              Usage at API rates
+            </span>
+          </>
+        ) : isFree ? (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span className="font-display" style={{ fontSize: 32, fontWeight: 480, lineHeight: 1 }}>
+              $0
+            </span>
+            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>/month</span>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+              <span className="font-display" style={{ fontSize: 32, fontWeight: 480, lineHeight: 1 }}>
+                ${numericPrice}
+              </span>
+              <span style={{ fontSize: 13, color: "var(--ink-subtle, #6b6457)" }}>/mo</span>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", marginTop: 4 }}>
+              {annual ? "billed annually" : "billed monthly"}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Credit dropdown */}
       {p.hasCreditDropdown && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", fontWeight: 500 }}>
-            Credits per month
+        <div style={{ marginBottom: 12 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 10,
+              color: "var(--ink-faint, #8a8377)",
+              letterSpacing: "0.08em",
+              marginBottom: 5,
+            }}
+          >
+            CREDITS / MONTH
           </label>
           <select
             value={credits}
             onChange={(e) => setCredits(Number(e.target.value) as CreditTier)}
             style={{
               width: "100%",
-              padding: "7px 10px",
+              padding: "8px 10px",
               fontSize: 13,
               border: "1px solid var(--hairline, rgba(0,0,0,0.12))",
-              borderRadius: 6,
+              borderRadius: 7,
               background: "var(--paper, #f6f2ea)",
               color: "var(--ink, #1f1b16)",
               cursor: "pointer",
@@ -187,11 +246,12 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         </div>
       )}
 
-      {/* Annual/monthly toggle */}
+      {/* Billing toggle */}
       {p.hasBillingToggle && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <button
-            onClick={() => setAnnual((prev) => !prev)}
+            type="button"
+            onClick={() => setAnnual((a) => !a)}
             aria-pressed={annual}
             style={{
               width: 36,
@@ -218,7 +278,7 @@ function PricingCard({ tier }: { tier: PlanTier }) {
               }}
             />
           </button>
-          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>Annual</span>
+          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>Annual billing</span>
           {annual && (
             <span
               style={{
@@ -229,28 +289,28 @@ function PricingCard({ tier }: { tier: PlanTier }) {
                 padding: "2px 7px",
               }}
             >
-              Save {annualSavingsPercent}%
+              Save 17%
             </span>
           )}
         </div>
       )}
 
-      {/* CTA button */}
+      {/* CTA — immediately after price/toggles, before the feature list */}
       {isEnterprise ? (
         <a
           href="mailto:sales@cadence.app?subject=Enterprise enquiry"
           style={{
             display: "block",
             textAlign: "center",
-            padding: "9px 0",
-            borderRadius: 7,
-            fontSize: 13,
+            padding: "11px 0",
+            borderRadius: 8,
+            fontSize: 13.5,
             fontWeight: 500,
             border: "1px solid var(--hairline, rgba(0,0,0,0.15))",
             background: "transparent",
             color: "var(--ink, #1f1b16)",
             textDecoration: "none",
-            cursor: "pointer",
+            marginBottom: 20,
           }}
         >
           Talk to our team
@@ -265,72 +325,84 @@ function PricingCard({ tier }: { tier: PlanTier }) {
           style={{
             display: "block",
             textAlign: "center",
-            padding: "9px 0",
-            borderRadius: 7,
-            fontSize: 13,
-            fontWeight: 500,
+            padding: "11px 0",
+            borderRadius: 8,
+            fontSize: 13.5,
+            fontWeight: 600,
             background: isBusiness ? "var(--ember, #c2622e)" : "transparent",
             border: isBusiness
-              ? "1px solid var(--ember, #c2622e)"
+              ? "1.5px solid var(--ember, #c2622e)"
               : "1px solid var(--hairline, rgba(0,0,0,0.15))",
             color: isBusiness ? "#fff" : "var(--ink, #1f1b16)",
             textDecoration: "none",
-            cursor: "pointer",
+            marginBottom: 20,
           }}
         >
           {isFree ? "Start free" : isBusiness ? "Get Business" : "Get Pro"}
         </a>
       )}
 
-      {/* Feature list — max 5, remainder collapsed to "+ N more" */}
-      {(() => {
-        const visible = p.highlights.slice(0, 5);
-        const hidden = p.highlights.length - visible.length;
-        return (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "2px 0 0",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            {visible.map((h, i) => {
-              const isHeader = h.startsWith("Everything in");
-              return (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                    color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
-                    fontWeight: isHeader ? 500 : 400,
-                    borderTop:
-                      isHeader && i > 0
-                        ? "1px solid var(--hairline, rgba(0,0,0,0.06))"
-                        : undefined,
-                    paddingTop: isHeader && i > 0 ? 6 : 0,
-                  }}
+      {sep}
+
+      {/* Feature list — expandable */}
+      <ul
+        style={{
+          listStyle: "none",
+          padding: 0,
+          margin: "16px 0 0",
+          display: "flex",
+          flexDirection: "column",
+          gap: 9,
+        }}
+      >
+        {visibleHighlights.map((h, i) => {
+          const isHeader = h.startsWith("Everything in");
+          return (
+            <li
+              key={i}
+              style={{
+                display: "flex",
+                gap: 8,
+                fontSize: 12,
+                lineHeight: 1.45,
+                color: isHeader ? "var(--ink-subtle, #6b6457)" : "var(--ink, #1f1b16)",
+                fontWeight: isHeader ? 500 : 400,
+                borderTop:
+                  isHeader && i > 0 ? "1px solid var(--hairline, rgba(0,0,0,0.06))" : undefined,
+                paddingTop: isHeader && i > 0 ? 8 : 0,
+              }}
+            >
+              {!isHeader && (
+                <span
+                  style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0, marginTop: 1 }}
                 >
-                  {!isHeader && (
-                    <span style={{ color: "var(--moss-success, #4f8a59)", flexShrink: 0 }}>+</span>
-                  )}
-                  <span>{h}</span>
-                </li>
-              );
-            })}
-            {hidden > 0 && (
-              <li style={{ fontSize: 11.5, color: "var(--ink-faint, #8a8377)" }}>
-                + {hidden} more
-              </li>
-            )}
-          </ul>
-        );
-      })()}
+                  +
+                </span>
+              )}
+              <span>{h}</span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: "10px 0 0",
+            fontSize: 11.5,
+            color: "var(--ink-subtle, #6b6457)",
+            cursor: "pointer",
+            textDecoration: "underline",
+            textAlign: "left",
+          }}
+        >
+          {expanded ? "Show less" : `Show ${hiddenCount} more features`}
+        </button>
+      )}
     </div>
   );
 }
@@ -379,8 +451,8 @@ function PricingPage() {
         </a>
       </header>
 
-      <main style={{ flex: 1, padding: "44px 18px" }}>
-        <div style={{ width: "100%", maxWidth: 1040, margin: "0 auto" }}>
+      <main style={{ flex: 1, padding: "48px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 1160, margin: "0 auto" }}>
           {/* Headline */}
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <h1
@@ -407,8 +479,8 @@ function PricingPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(252px, 1fr))",
+              gap: 20,
               alignItems: "start",
             }}
           >
