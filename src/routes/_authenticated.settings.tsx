@@ -15,7 +15,13 @@ import { toast } from "@/lib/notify";
 import { Compass, SlidersHorizontal, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/cadence/AppShell";
 import { TopBar } from "@/components/cadence/TopBar";
-import { MonoLabel, StepDot, SubTabs, SurfaceHeader, TabRow } from "@/components/cadence/Primitives";
+import {
+  MonoLabel,
+  StepDot,
+  SubTabs,
+  SurfaceHeader,
+  TabRow,
+} from "@/components/cadence/Primitives";
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listAgents, setAgentToolCap } from "@/lib/agents.functions";
@@ -138,7 +144,8 @@ function SettingsPage() {
   // lands on the group's primary section. The ?section= id stays the routing key.
   const activeGroup = groupForSection(active);
   const groupMembers = findGroup(activeGroup)?.sections ?? [];
-  const setGroup = (gid: string) => navigate({ search: { section: primarySection(gid as GroupId) } });
+  const setGroup = (gid: string) =>
+    navigate({ search: { section: primarySection(gid as GroupId) } });
 
   const workspaceName = activeWorkspace?.name;
   const sub = workspaceName

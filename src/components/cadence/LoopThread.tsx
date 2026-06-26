@@ -13,11 +13,7 @@
 import { Fragment } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, RotateCw } from "lucide-react";
-import {
-  LOOP_SURFACES,
-  loopIndexForPath,
-  loopNeighbors,
-} from "@/lib/loop-surfaces";
+import { LOOP_SURFACES, loopIndexForPath, loopNeighbors } from "@/lib/loop-surfaces";
 
 export function LoopThread() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });

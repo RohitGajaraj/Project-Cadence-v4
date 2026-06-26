@@ -19,9 +19,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 // _performSeed decoupled from the real Supabase type so tests can pass a stub.
 export interface SeedClient {
   from(table: string): {
-    insert(
-      rows: Record<string, unknown>[],
-    ): Promise<{ error: { message: string } | null }>;
+    insert(rows: Record<string, unknown>[]): Promise<{ error: { message: string } | null }>;
   };
 }
 
@@ -147,17 +145,11 @@ export async function _performSeed(
   const prdResult = await db.from("prds").insert(samplePrds(workspaceId, userId));
   if (prdResult.error) throw new Error(`seed prds: ${prdResult.error.message}`);
 
-  const decisionResult = await db
-    .from("decisions")
-    .insert(sampleDecisions(workspaceId, userId));
-  if (decisionResult.error)
-    throw new Error(`seed decisions: ${decisionResult.error.message}`);
+  const decisionResult = await db.from("decisions").insert(sampleDecisions(workspaceId, userId));
+  if (decisionResult.error) throw new Error(`seed decisions: ${decisionResult.error.message}`);
 
-  const memoryResult = await db
-    .from("agent_memory")
-    .insert(sampleMemories(workspaceId, userId));
-  if (memoryResult.error)
-    throw new Error(`seed agent_memory: ${memoryResult.error.message}`);
+  const memoryResult = await db.from("agent_memory").insert(sampleMemories(workspaceId, userId));
+  if (memoryResult.error) throw new Error(`seed agent_memory: ${memoryResult.error.message}`);
 }
 
 /**

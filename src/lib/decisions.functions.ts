@@ -107,13 +107,7 @@ export const createDecision = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const source_kind =
       data.source_kind ??
-      (data.mission_id
-        ? "mission"
-        : data.prd_id
-          ? "prd"
-          : data.meeting_id
-            ? "meeting"
-            : "manual");
+      (data.mission_id ? "mission" : data.prd_id ? "prd" : data.meeting_id ? "meeting" : "manual");
     const { data: row, error } = await context.supabase
       .from("decisions")
       .insert({ ...data, source_kind, user_id: context.userId })

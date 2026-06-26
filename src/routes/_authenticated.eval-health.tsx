@@ -21,10 +21,21 @@ const VERDICT_COLOR: Record<string, string> = {
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div style={{ border: "1px solid var(--hairline)", borderRadius: 10, padding: "14px 16px", background: "var(--surface, #fff)" }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)" }} className="tabular-nums">{value}</div>
+    <div
+      style={{
+        border: "1px solid var(--hairline)",
+        borderRadius: 10,
+        padding: "14px 16px",
+        background: "var(--surface, #fff)",
+      }}
+    >
+      <div style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)" }} className="tabular-nums">
+        {value}
+      </div>
       <div style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 2 }}>{label}</div>
-      {sub ? <div style={{ fontSize: 10.5, color: "var(--ink-faint)", marginTop: 2 }}>{sub}</div> : null}
+      {sub ? (
+        <div style={{ fontSize: 10.5, color: "var(--ink-faint)", marginTop: 2 }}>{sub}</div>
+      ) : null}
     </div>
   );
 }
@@ -41,7 +52,10 @@ function EvalHealthPage() {
   return (
     <AppShell>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Eval Health"]} />
-      <div data-screen-label="Eval Health" style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}>
+      <div
+        data-screen-label="Eval Health"
+        style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}
+      >
         <SurfaceHeader
           kicker="Loop · Quality"
           icon={ShieldCheck}
@@ -50,7 +64,9 @@ function EvalHealthPage() {
         />
 
         {query.isPending ? (
-          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>Reading run history…</div>
+          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>
+            Reading run history…
+          </div>
         ) : query.isError ? (
           <div style={{ fontSize: 13, color: "var(--rose)", padding: "32px 0" }}>
             Could not load eval health. {(query.error as Error)?.message}
@@ -75,20 +91,50 @@ function EvalHealthPage() {
               <p style={{ fontSize: 13.5, color: "var(--ink)", margin: 0 }}>{summary}</p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: 12,
+                marginBottom: 24,
+              }}
+            >
               <Stat label="Pass rate" value={pct(h.passRate)} sub="cases passing" />
-              <Stat label="Completed runs" value={String(h.completedRuns)} sub={`${h.totalRuns} total`} />
+              <Stat
+                label="Completed runs"
+                value={String(h.completedRuns)}
+                sub={`${h.totalRuns} total`}
+              />
               <Stat label="Error rate" value={pct(h.errorRate)} sub="runs that errored" />
-              <Stat label="Trend" value={h.trend === "unknown" ? "-" : h.trend} sub="recent vs prior" />
+              <Stat
+                label="Trend"
+                value={h.trend === "unknown" ? "-" : h.trend}
+                sub="recent vs prior"
+              />
             </div>
 
             {h.flakySuites.length > 0 ? (
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>Flaky suites to fix</div>
+                <div
+                  style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}
+                >
+                  Flaky suites to fix
+                </div>
                 {h.flakySuites.map((s) => (
-                  <div key={s.suiteId} style={{ fontSize: 12.5, color: "var(--ink-subtle)", padding: "6px 0", display: "flex", justifyContent: "space-between" }}>
+                  <div
+                    key={s.suiteId}
+                    style={{
+                      fontSize: 12.5,
+                      color: "var(--ink-subtle)",
+                      padding: "6px 0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <span>{s.title ?? s.suiteId}</span>
-                    <span className="tabular-nums" style={{ color: "var(--coral, #e11d48)" }}>{pct(s.flakiness)} flip rate</span>
+                    <span className="tabular-nums" style={{ color: "var(--coral, #e11d48)" }}>
+                      {pct(s.flakiness)} flip rate
+                    </span>
                   </div>
                 ))}
               </div>
@@ -96,11 +142,27 @@ function EvalHealthPage() {
 
             {h.suites.length > 0 ? (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>By suite</div>
+                <div
+                  style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}
+                >
+                  By suite
+                </div>
                 {h.suites.map((s, i) => (
-                  <div key={s.suiteId} style={{ fontSize: 12.5, color: "var(--ink-subtle)", padding: "6px 0", borderTop: i ? "1px solid var(--hairline)" : "none", display: "flex", justifyContent: "space-between" }}>
+                  <div
+                    key={s.suiteId}
+                    style={{
+                      fontSize: 12.5,
+                      color: "var(--ink-subtle)",
+                      padding: "6px 0",
+                      borderTop: i ? "1px solid var(--hairline)" : "none",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <span>{s.title ?? s.suiteId}</span>
-                    <span className="tabular-nums">{pct(s.passRate)} · {s.runs} run{s.runs === 1 ? "" : "s"}</span>
+                    <span className="tabular-nums">
+                      {pct(s.passRate)} · {s.runs} run{s.runs === 1 ? "" : "s"}
+                    </span>
                   </div>
                 ))}
               </div>

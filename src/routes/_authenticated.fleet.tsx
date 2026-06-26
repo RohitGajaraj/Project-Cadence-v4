@@ -44,7 +44,9 @@ function AgentRow({ a }: { a: FleetAgent }) {
         background: "var(--surface, #fff)",
       }}
     >
-      <span style={{ width: 8, height: 8, borderRadius: 99, background: meta.color, flexShrink: 0 }} />
+      <span
+        style={{ width: 8, height: 8, borderRadius: 99, background: meta.color, flexShrink: 0 }}
+      />
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{a.name}</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 3 }}>
@@ -87,7 +89,10 @@ function FleetPage() {
   return (
     <AppShell>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Fleet"]} />
-      <div data-screen-label="Fleet" style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}>
+      <div
+        data-screen-label="Fleet"
+        style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}
+      >
         <SurfaceHeader
           kicker="Cockpit · Fleet"
           icon={Radar}
@@ -96,14 +101,18 @@ function FleetPage() {
         />
 
         {query.isPending ? (
-          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>Scanning the fleet…</div>
+          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>
+            Scanning the fleet…
+          </div>
         ) : query.isError ? (
           <div style={{ fontSize: 13, color: "var(--rose)", padding: "32px 0" }}>
             Could not load the fleet. {(query.error as Error)?.message}
           </div>
         ) : fleet ? (
           <>
-            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 22px" }}>{fleet.headline}</p>
+            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 22px" }}>
+              {fleet.headline}
+            </p>
             {fleet.agents.length === 0 ? (
               <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "8px 0" }}>
                 No agents have run yet. Dispatch a mission and your fleet shows up here.

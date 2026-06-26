@@ -28,7 +28,10 @@ function ProgressDots({ done, total }: { done: number; total: number }) {
   const shown = Math.min(total, 12);
   const filled = Math.round((done / total) * shown);
   return (
-    <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }} aria-label={`${done} of ${total} steps done`}>
+    <span
+      style={{ display: "inline-flex", gap: 3, alignItems: "center" }}
+      aria-label={`${done} of ${total} steps done`}
+    >
       {Array.from({ length: shown }).map((_, i) => (
         <span
           key={i}
@@ -40,7 +43,10 @@ function ProgressDots({ done, total }: { done: number; total: number }) {
           }}
         />
       ))}
-      <span className="tabular-nums" style={{ fontSize: 10.5, color: "var(--ink-faint)", marginLeft: 4 }}>
+      <span
+        className="tabular-nums"
+        style={{ fontSize: 10.5, color: "var(--ink-faint)", marginLeft: 4 }}
+      >
         {done}/{total}
       </span>
     </span>
@@ -90,7 +96,14 @@ function LaneColumn({ lane }: { lane: DeskLane }) {
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-        <span style={{ width: 7, height: 7, borderRadius: 99, background: LANE_ACCENT[lane.id] ?? "var(--ink-faint)" }} />
+        <span
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 99,
+            background: LANE_ACCENT[lane.id] ?? "var(--ink-faint)",
+          }}
+        />
         <h2 style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
           {lane.label}
         </h2>
@@ -100,7 +113,14 @@ function LaneColumn({ lane }: { lane: DeskLane }) {
       </div>
       <p style={{ fontSize: 11, color: "var(--ink-faint)", margin: "0 0 10px" }}>{lane.blurb}</p>
       {lane.missions.length === 0 ? (
-        <div style={{ fontSize: 11.5, color: "var(--ink-faint)", fontStyle: "italic", padding: "4px 0" }}>
+        <div
+          style={{
+            fontSize: 11.5,
+            color: "var(--ink-faint)",
+            fontStyle: "italic",
+            padding: "4px 0",
+          }}
+        >
           Nothing here.
         </div>
       ) : (
@@ -123,7 +143,10 @@ function DelegatePage() {
   return (
     <AppShell>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Delegate"]} />
-      <div data-screen-label="Delegate" style={{ padding: "30px 44px 56px", maxWidth: 1080, margin: "0 auto" }}>
+      <div
+        data-screen-label="Delegate"
+        style={{ padding: "30px 44px 56px", maxWidth: 1080, margin: "0 auto" }}
+      >
         <SurfaceHeader
           kicker="Cockpit · Delegate"
           icon={Send}
@@ -132,14 +155,18 @@ function DelegatePage() {
         />
 
         {query.isPending ? (
-          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>Reading the desk…</div>
+          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>
+            Reading the desk…
+          </div>
         ) : query.isError ? (
           <div style={{ fontSize: 13, color: "var(--rose)", padding: "32px 0" }}>
             Could not load the desk. {(query.error as Error)?.message}
           </div>
         ) : desk ? (
           <>
-            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 22px" }}>{desk.summary}</p>
+            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 22px" }}>
+              {desk.summary}
+            </p>
             <div
               style={{
                 display: "grid",

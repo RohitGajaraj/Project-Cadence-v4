@@ -489,7 +489,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
               ))}
             </div>
           </nav>
-
         </div>
 
         {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}

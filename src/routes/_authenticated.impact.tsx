@@ -27,7 +27,9 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
         {value}
       </div>
       <div style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 2 }}>{label}</div>
-      {sub ? <div style={{ fontSize: 10.5, color: "var(--ink-faint)", marginTop: 2 }}>{sub}</div> : null}
+      {sub ? (
+        <div style={{ fontSize: 10.5, color: "var(--ink-faint)", marginTop: 2 }}>{sub}</div>
+      ) : null}
     </div>
   );
 }
@@ -67,13 +69,18 @@ function ImpactPage() {
   }
 
   const hitRate =
-    ledger && ledger.outcomes.hitRate !== null ? `${Math.round(ledger.outcomes.hitRate * 100)}%` : "-";
+    ledger && ledger.outcomes.hitRate !== null
+      ? `${Math.round(ledger.outcomes.hitRate * 100)}%`
+      : "-";
   const iceSign = ledger && ledger.iceShiftTotal >= 0 ? "+" : "";
 
   return (
     <AppShell>
       <TopBar crumbs={[activeWorkspace?.name ?? "Workspace", "Impact Ledger"]} />
-      <div data-screen-label="Impact Ledger" style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}>
+      <div
+        data-screen-label="Impact Ledger"
+        style={{ padding: "30px 44px 56px", maxWidth: 880, margin: "0 auto" }}
+      >
         <SurfaceHeader
           kicker="Loop · Trust"
           icon={Award}
@@ -82,14 +89,18 @@ function ImpactPage() {
         />
 
         {query.isPending ? (
-          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>Building your record…</div>
+          <div style={{ fontSize: 13, color: "var(--ink-subtle)", padding: "32px 0" }}>
+            Building your record…
+          </div>
         ) : query.isError ? (
           <div style={{ fontSize: 13, color: "var(--rose)", padding: "32px 0" }}>
             Could not build the Impact Ledger. {(query.error as Error)?.message}
           </div>
         ) : ledger ? (
           <>
-            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 20px" }}>{ledger.headline}</p>
+            <p style={{ fontSize: 13.5, color: "var(--ink)", margin: "4px 0 20px" }}>
+              {ledger.headline}
+            </p>
 
             <div
               style={{
@@ -114,27 +125,51 @@ function ImpactPage() {
                 value={ledger.measuredOutcomes > 0 ? `${iceSign}${ledger.iceShiftTotal}` : "-"}
                 sub={`net ICE · ${ledger.measuredOutcomes} measured`}
               />
-              <Stat label="Beliefs revised" value={String(ledger.beliefsRevised)} sub="changed your mind on evidence" />
+              <Stat
+                label="Beliefs revised"
+                value={String(ledger.beliefsRevised)}
+                sub="changed your mind on evidence"
+              />
             </div>
 
             {ledger.highlights.length > 0 ? (
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>Standout calls</div>
+                <div
+                  style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}
+                >
+                  Standout calls
+                </div>
                 {ledger.highlights.map((h, i) => (
                   <div
                     key={i}
-                    style={{ fontSize: 12.5, color: "var(--ink-subtle)", padding: "6px 0", borderTop: i ? "1px solid var(--hairline)" : "none" }}
+                    style={{
+                      fontSize: 12.5,
+                      color: "var(--ink-subtle)",
+                      padding: "6px 0",
+                      borderTop: i ? "1px solid var(--hairline)" : "none",
+                    }}
                   >
                     {h.summary}
                     {h.metricLabel && h.metricValue ? (
-                      <span style={{ color: "var(--ink-faint)" }}> ({h.metricLabel}: {h.metricValue})</span>
+                      <span style={{ color: "var(--ink-faint)" }}>
+                        {" "}
+                        ({h.metricLabel}: {h.metricValue})
+                      </span>
                     ) : null}
                   </div>
                 ))}
               </div>
             ) : null}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}

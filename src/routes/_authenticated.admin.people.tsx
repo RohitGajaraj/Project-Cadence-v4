@@ -56,7 +56,13 @@ function AdminPeople() {
           </button>
         ))}
       </div>
-      {sub === "users" ? <UsersPanel /> : sub === "invitations" ? <InvitationsPanel /> : <VouchersPanel />}
+      {sub === "users" ? (
+        <UsersPanel />
+      ) : sub === "invitations" ? (
+        <InvitationsPanel />
+      ) : (
+        <VouchersPanel />
+      )}
     </div>
   );
 }
@@ -114,7 +120,10 @@ function UsersPanel() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.user_id} style={{ borderTop: "1px solid var(--hairline, rgba(0,0,0,0.08))" }}>
+              <tr
+                key={r.user_id}
+                style={{ borderTop: "1px solid var(--hairline, rgba(0,0,0,0.08))" }}
+              >
                 <td style={td()}>{r.email}</td>
                 <td style={td()}>{r.display_name ?? "-"}</td>
                 <td style={td()}>{r.plan_tier}</td>
@@ -130,7 +139,10 @@ function UsersPanel() {
             ))}
             {!search.isLoading && rows.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: 16, textAlign: "center", color: "var(--ink-subtle)" }}>
+                <td
+                  colSpan={7}
+                  style={{ padding: 16, textAlign: "center", color: "var(--ink-subtle)" }}
+                >
                   No users match.
                 </td>
               </tr>
@@ -153,7 +165,13 @@ function td(): React.CSSProperties {
 type UserDetail = {
   user?: { id: string; email: string; created_at: string; last_sign_in_at: string | null };
   profile?: { suspended?: boolean; display_name?: string };
-  accounts?: Array<{ id: string; plan_tier: string; balance_credits: number; monthly_grant_credits: number; topup_credits: number }>;
+  accounts?: Array<{
+    id: string;
+    plan_tier: string;
+    balance_credits: number;
+    monthly_grant_credits: number;
+    topup_credits: number;
+  }>;
   workspaces?: Array<{ id: string; name: string; role: string }>;
   subscription?: {
     plan_tier?: string;
@@ -161,7 +179,12 @@ type UserDetail = {
     plan_override_expires_at?: string | null;
     plan_override_reason?: string | null;
   };
-  audit?: Array<{ id: string; action: string; payload: Record<string, unknown>; created_at: string }>;
+  audit?: Array<{
+    id: string;
+    action: string;
+    payload: Record<string, unknown>;
+    created_at: string;
+  }>;
 };
 
 function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () => void }) {
@@ -246,7 +269,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
         ) : !d ? null : (
           <div style={{ marginTop: 16, display: "grid", gap: 18 }}>
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Identity</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Identity
+              </div>
               <div style={{ fontSize: 12.5, display: "grid", gap: 4 }}>
                 <div>Name · {d.profile?.display_name ?? "-"}</div>
                 <div>Joined · {d.user?.created_at?.slice(0, 10)}</div>
@@ -256,12 +281,17 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             </section>
 
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Plan & override</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Plan & override
+              </div>
               {d.subscription ? (
                 <div style={{ fontSize: 12.5, display: "grid", gap: 4 }}>
                   <div>Base plan · {d.subscription.plan_tier ?? "-"}</div>
                   <div>Override tier · {d.subscription.plan_override_tier ?? "-"}</div>
-                  <div>Override expires · {d.subscription.plan_override_expires_at?.slice(0, 10) ?? "-"}</div>
+                  <div>
+                    Override expires ·{" "}
+                    {d.subscription.plan_override_expires_at?.slice(0, 10) ?? "-"}
+                  </div>
                 </div>
               ) : (
                 <p style={{ fontSize: 12, color: "var(--ink-subtle)" }}>No subscription row.</p>
@@ -269,7 +299,8 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
               <PlanOverrideForm
                 pending={override.isPending}
                 onSubmit={(planTier, days, reason) => {
-                  const expiresAt = days > 0 ? new Date(Date.now() + days * 86400_000).toISOString() : null;
+                  const expiresAt =
+                    days > 0 ? new Date(Date.now() + days * 86400_000).toISOString() : null;
                   override.mutate({ planTier, expiresAt, reason });
                 }}
                 onClear={() => clearOverride.mutate()}
@@ -278,10 +309,14 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             </section>
 
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Credits</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Credits
+              </div>
               {(d.accounts ?? []).map((a) => (
                 <div key={a.id} style={{ fontSize: 12.5 }}>
-                  Account {a.id.slice(0, 8)} · balance {a.balance_credits.toLocaleString()} · cycle {a.monthly_grant_credits.toLocaleString()} · topup {a.topup_credits.toLocaleString()}
+                  Account {a.id.slice(0, 8)} · balance {a.balance_credits.toLocaleString()} · cycle{" "}
+                  {a.monthly_grant_credits.toLocaleString()} · topup{" "}
+                  {a.topup_credits.toLocaleString()}
                 </div>
               ))}
               <GrantCreditsForm
@@ -306,7 +341,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             </section>
 
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Workspaces</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Workspaces
+              </div>
               {(d.workspaces ?? []).length === 0 ? (
                 <p style={{ fontSize: 12, color: "var(--ink-subtle)" }}>Not in any workspaces.</p>
               ) : (
@@ -321,7 +358,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             </section>
 
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Access</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Access
+              </div>
               <button
                 className="btn btn-sm"
                 disabled={suspend.isPending}
@@ -332,7 +371,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
                     body: isSuspended
                       ? "User regains the ability to sign in."
                       : "User is blocked from new sign-ins. Existing sessions stay until they expire.",
-                    confirmLabel: isSuspended ? "Restore · allows sign-in" : "Suspend · blocks sign-in",
+                    confirmLabel: isSuspended
+                      ? "Restore · allows sign-in"
+                      : "Suspend · blocks sign-in",
                     destructive: !isSuspended,
                   });
                   if (ok) suspend.mutate({ suspend: !isSuspended, reason: "" });
@@ -343,7 +384,9 @@ function UserDrawer({ userId, onClose }: { userId: string | null; onClose: () =>
             </section>
 
             <section>
-              <div className="mono-label" style={{ marginBottom: 6 }}>Recent audit</div>
+              <div className="mono-label" style={{ marginBottom: 6 }}>
+                Recent audit
+              </div>
               {(d.audit ?? []).length === 0 ? (
                 <p style={{ fontSize: 12, color: "var(--ink-subtle)" }}>No prior admin actions.</p>
               ) : (
@@ -385,13 +428,26 @@ function GrantCreditsForm({
         type="number"
         value={delta}
         onChange={(e) => setDelta(Number(e.target.value))}
-        style={{ width: 100, padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }}
+        style={{
+          width: 100,
+          padding: "6px 8px",
+          border: "1px solid var(--hairline)",
+          borderRadius: 6,
+          fontSize: 12.5,
+        }}
       />
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder="Reason"
-        style={{ flex: 1, minWidth: 160, padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }}
+        style={{
+          flex: 1,
+          minWidth: 160,
+          padding: "6px 8px",
+          border: "1px solid var(--hairline)",
+          borderRadius: 6,
+          fontSize: 12.5,
+        }}
       />
       <button className="btn btn-primary btn-sm" disabled={pending}>
         {pending ? "Granting…" : `Grant ${delta} · adds to balance`}
@@ -425,7 +481,12 @@ function PlanOverrideForm({
       <select
         value={tier}
         onChange={(e) => setTier(e.target.value)}
-        style={{ padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }}
+        style={{
+          padding: "6px 8px",
+          border: "1px solid var(--hairline)",
+          borderRadius: 6,
+          fontSize: 12.5,
+        }}
       >
         <option value="free">free</option>
         <option value="pro">pro</option>
@@ -438,14 +499,27 @@ function PlanOverrideForm({
         value={days}
         min={0}
         onChange={(e) => setDays(Number(e.target.value))}
-        style={{ width: 80, padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }}
+        style={{
+          width: 80,
+          padding: "6px 8px",
+          border: "1px solid var(--hairline)",
+          borderRadius: 6,
+          fontSize: 12.5,
+        }}
       />
       <span style={{ fontSize: 11.5, color: "var(--ink-subtle)" }}>days (0 = no expiry)</span>
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder="Reason"
-        style={{ flex: 1, minWidth: 160, padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }}
+        style={{
+          flex: 1,
+          minWidth: 160,
+          padding: "6px 8px",
+          border: "1px solid var(--hairline)",
+          borderRadius: 6,
+          fontSize: 12.5,
+        }}
       />
       <button className="btn btn-primary btn-sm" disabled={pending}>
         {pending ? "Saving…" : "Override · temporary plan"}

@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { evaluateTriggers, isAutoMissionTitle, type ThemeState, type OutcomeState } from "@/lib/sensing/trigger";
+import {
+  evaluateTriggers,
+  isAutoMissionTitle,
+  type ThemeState,
+  type OutcomeState,
+} from "@/lib/sensing/trigger";
 import { withJobRun } from "@/lib/observability";
 
 /**
@@ -61,7 +66,10 @@ export const Route = createFileRoute("/api/public/hooks/trigger-tick")({
                 .eq("id", ws.id);
               results.push({ workspace_id: ws.id, proposed });
             } catch (e) {
-              results.push({ workspace_id: ws.id, error: e instanceof Error ? e.message : String(e) });
+              results.push({
+                workspace_id: ws.id,
+                error: e instanceof Error ? e.message : String(e),
+              });
             }
           }
 

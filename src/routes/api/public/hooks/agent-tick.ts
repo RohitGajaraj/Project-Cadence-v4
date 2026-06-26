@@ -26,7 +26,9 @@ export const Route = createFileRoute("/api/public/hooks/agent-tick")({
             let touched = 0;
             const cutoff = Date.now() - 60 * 60 * 1000;
             for (const a of agents ?? []) {
-              const last = a.last_scheduled_run_at ? new Date(a.last_scheduled_run_at).getTime() : 0;
+              const last = a.last_scheduled_run_at
+                ? new Date(a.last_scheduled_run_at).getTime()
+                : 0;
               if (last < cutoff) {
                 await supabaseAdmin
                   .from("agents")

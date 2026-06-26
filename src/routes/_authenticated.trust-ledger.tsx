@@ -321,7 +321,9 @@ function SealPanel() {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <ShieldCheck size={15} strokeWidth={1.9} color="var(--emerald)" />
-        <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink)" }}>Integrity check</span>
+        <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink)" }}>
+          Integrity check
+        </span>
         <span
           className="tabular-nums"
           title={seal.head}

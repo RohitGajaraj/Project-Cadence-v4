@@ -24,7 +24,8 @@ export const Route = createFileRoute("/api/public/hooks/admin-expiry-tick")({
           } catch (e) {
             const message = e instanceof Error ? e.message : "tick failed";
             return new Response(JSON.stringify({ ok: false, error: message }), {
-              status: 500, headers: { "Content-Type": "application/json" },
+              status: 500,
+              headers: { "Content-Type": "application/json" },
             });
           }
         });

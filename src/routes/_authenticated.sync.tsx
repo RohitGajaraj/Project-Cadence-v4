@@ -441,9 +441,7 @@ function WebhookIngestCard() {
           ) : token ? (
             <>
               <code className="min-w-0 flex-1 truncate rounded-md bg-secondary/40 px-2 py-1 text-xs">
-                {revealed && freshToken
-                  ? freshToken
-                  : `${(token.token_prefix ?? "").slice(0, 8)}…`}
+                {revealed && freshToken ? freshToken : `${(token.token_prefix ?? "").slice(0, 8)}…`}
               </code>
               {freshToken ? (
                 <>

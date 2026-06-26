@@ -21,7 +21,9 @@ function iconFor(kind: string) {
 }
 
 /** Deep-link to the source row. Fall back to no-link when we don't have a route for that kind. */
-function linkFor(c: Citation): { to: string; params?: Record<string, string>; search?: Record<string, string> } | null {
+function linkFor(
+  c: Citation,
+): { to: string; params?: Record<string, string>; search?: Record<string, string> } | null {
   if (!c.source_id) return null;
   switch (c.source_kind) {
     case "signal":

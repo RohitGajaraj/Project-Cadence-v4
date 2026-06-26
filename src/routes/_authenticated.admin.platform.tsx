@@ -9,10 +9,16 @@ import { toast } from "@/lib/notify";
 import { useConfirm } from "@/hooks/use-confirm";
 import { triggerDeploy, type DeployResult } from "@/lib/build.functions";
 import {
-  adminListFlags, adminUpsertFlag, adminDeleteFlag,
-  getActiveBanner, adminSetBanner, adminClearBanner,
+  adminListFlags,
+  adminUpsertFlag,
+  adminDeleteFlag,
+  getActiveBanner,
+  adminSetBanner,
+  adminClearBanner,
   adminListAuditLog,
-  type FeatureFlag, type SystemBanner, type AuditRow,
+  type FeatureFlag,
+  type SystemBanner,
+  type AuditRow,
 } from "@/lib/admin-platform.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/platform")({
@@ -37,13 +43,18 @@ function DeployPanel() {
   const fDeploy = useServerFn(triggerDeploy);
   const [reason, setReason] = useState("");
   const deploy = useMutation({
-    mutationFn: () => fDeploy({ data: { reason: reason.trim() || "Manual deploy from admin panel" } }),
+    mutationFn: () =>
+      fDeploy({ data: { reason: reason.trim() || "Manual deploy from admin panel" } }),
     onSuccess: (result: DeployResult) => {
       if (result.ok) {
-        toast.success(`Deploy triggered via ${result.provider} at ${new Date(result.triggered_at).toLocaleTimeString()}.`);
+        toast.success(
+          `Deploy triggered via ${result.provider} at ${new Date(result.triggered_at).toLocaleTimeString()}.`,
+        );
         setReason("");
       } else if (result.reason === "no_hook_configured") {
-        toast.error("No deploy hook configured. Set CLOUDFLARE_DEPLOY_HOOK_URL as a wrangler secret to activate.");
+        toast.error(
+          "No deploy hook configured. Set CLOUDFLARE_DEPLOY_HOOK_URL as a wrangler secret to activate.",
+        );
       } else {
         toast.error(result.message);
       }
@@ -90,7 +101,10 @@ function BannerPanel() {
 
   const set = useMutation({
     mutationFn: () => {
-      const expiresAt = days && Number(days) > 0 ? new Date(Date.now() + Number(days) * 86400_000).toISOString() : null;
+      const expiresAt =
+        days && Number(days) > 0
+          ? new Date(Date.now() + Number(days) * 86400_000).toISOString()
+          : null;
       return fSet({ data: { message, level, active: true, expiresAt } });
     },
     onSuccess: (r) => {
@@ -102,31 +116,74 @@ function BannerPanel() {
   });
   const clear = useMutation({
     mutationFn: () => fClear(),
-    onSuccess: () => { toast.success("Banner cleared"); qc.invalidateQueries({ queryKey: ["admin-banner"] }); },
+    onSuccess: () => {
+      toast.success("Banner cleared");
+      qc.invalidateQueries({ queryKey: ["admin-banner"] });
+    },
   });
 
   return (
     <div className="bento" style={{ padding: 16, display: "grid", gap: 10 }}>
       <div className="mono-label">System banner</div>
       {banner ? (
-        <div style={{ fontSize: 12.5, padding: 10, border: "1px solid var(--hairline)", borderRadius: 6 }}>
+        <div
+          style={{
+            fontSize: 12.5,
+            padding: 10,
+            border: "1px solid var(--hairline)",
+            borderRadius: 6,
+          }}
+        >
           <strong>{banner.level.toUpperCase()}</strong> · {banner.message}
-          {banner.expires_at ? <> · expires {banner.expires_at.slice(0, 16).replace("T", " ")}</> : null}
+          {banner.expires_at ? (
+            <> · expires {banner.expires_at.slice(0, 16).replace("T", " ")}</>
+          ) : null}
         </div>
       ) : (
         <p style={{ fontSize: 12, color: "var(--ink-subtle)", margin: 0 }}>No active banner.</p>
       )}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Banner message"
-          style={{ flex: 1, minWidth: 220, padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, fontSize: 12.5 }} />
-        <select value={level} onChange={(e) => setLevel(e.target.value as typeof level)} style={input(100)}>
-          <option value="info">info</option><option value="warn">warn</option><option value="alert">alert</option>
+        <input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Banner message"
+          style={{
+            flex: 1,
+            minWidth: 220,
+            padding: "6px 8px",
+            border: "1px solid var(--hairline)",
+            borderRadius: 6,
+            fontSize: 12.5,
+          }}
+        />
+        <select
+          value={level}
+          onChange={(e) => setLevel(e.target.value as typeof level)}
+          style={input(100)}
+        >
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="alert">alert</option>
         </select>
-        <input type="number" value={days} onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))} placeholder="days" style={input(80)} />
-        <button className="btn btn-primary btn-sm" disabled={!message || set.isPending} onClick={() => set.mutate()}>
+        <input
+          type="number"
+          value={days}
+          onChange={(e) => setDays(e.target.value === "" ? "" : Number(e.target.value))}
+          placeholder="days"
+          style={input(80)}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!message || set.isPending}
+          onClick={() => set.mutate()}
+        >
           {set.isPending ? "Publishing…" : "Publish · shows to everyone"}
         </button>
-        {banner ? <button className="btn btn-sm" onClick={() => clear.mutate()}>Clear</button> : null}
+        {banner ? (
+          <button className="btn btn-sm" onClick={() => clear.mutate()}>
+            Clear
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -151,7 +208,8 @@ function FlagsPanel() {
     onSuccess: (r) => {
       if ("error" in r) return toast.error(r.error);
       toast.success("Flag saved");
-      setKey(""); setPayload("{}");
+      setKey("");
+      setPayload("{}");
       qc.invalidateQueries({ queryKey: ["admin-flags"] });
     },
   });
@@ -164,40 +222,88 @@ function FlagsPanel() {
     <div className="bento" style={{ padding: 16, display: "grid", gap: 10 }}>
       <div className="mono-label">Feature flags · {rows.length}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="experimental.x" style={input(220)} />
+        <input
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="experimental.x"
+          style={input(220)}
+        />
         <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} /> enabled
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />{" "}
+          enabled
         </label>
-        <input value={payload} onChange={(e) => setPayload(e.target.value)} placeholder='{"rolloutPct":10}' style={input(220)} />
-        <button className="btn btn-primary btn-sm" disabled={!key || upsert.isPending}
-          onClick={() => upsert.mutate({ key, enabled, payloadJson: payload })}>
+        <input
+          value={payload}
+          onChange={(e) => setPayload(e.target.value)}
+          placeholder='{"rolloutPct":10}'
+          style={input(220)}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!key || upsert.isPending}
+          onClick={() => upsert.mutate({ key, enabled, payloadJson: payload })}
+        >
           {upsert.isPending ? "Saving…" : "Upsert flag"}
         </button>
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-        <thead><tr className="mono-label" style={{ color: "var(--ink-subtle)" }}>
-          <th style={th()}>Key</th><th style={th()}>Enabled</th><th style={th()}>Payload</th><th style={th()}>Updated</th><th style={th()}></th>
-        </tr></thead>
+        <thead>
+          <tr className="mono-label" style={{ color: "var(--ink-subtle)" }}>
+            <th style={th()}>Key</th>
+            <th style={th()}>Enabled</th>
+            <th style={th()}>Payload</th>
+            <th style={th()}>Updated</th>
+            <th style={th()}></th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map((f) => (
             <tr key={f.id} style={{ borderTop: "1px solid var(--hairline)" }}>
-              <td style={td()}><code>{f.key}</code></td>
               <td style={td()}>
-                <button className="btn btn-sm" onClick={() => upsert.mutate({ key: f.key, enabled: !f.enabled, payloadJson: f.payload })}>
+                <code>{f.key}</code>
+              </td>
+              <td style={td()}>
+                <button
+                  className="btn btn-sm"
+                  onClick={() =>
+                    upsert.mutate({ key: f.key, enabled: !f.enabled, payloadJson: f.payload })
+                  }
+                >
                   {f.enabled ? "on" : "off"} · click to toggle
                 </button>
               </td>
-              <td style={td()}><code style={{ fontSize: 11 }}>{f.payload}</code></td>
+              <td style={td()}>
+                <code style={{ fontSize: 11 }}>{f.payload}</code>
+              </td>
               <td style={td()}>{f.updated_at.slice(0, 10)}</td>
               <td style={td()}>
-                <button className="btn btn-sm" onClick={async () => {
-                  const ok = await confirm({ title: "Delete flag?", body: `${f.key} will be removed.`, confirmLabel: "Delete", destructive: true });
-                  if (ok) del.mutate(f.id);
-                }}>Delete</button>
+                <button
+                  className="btn btn-sm"
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Delete flag?",
+                      body: `${f.key} will be removed.`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                    });
+                    if (ok) del.mutate(f.id);
+                  }}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}
-          {rows.length === 0 ? <tr><td colSpan={5} style={{ padding: 12, textAlign: "center", color: "var(--ink-subtle)" }}>No flags yet.</td></tr> : null}
+          {rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                style={{ padding: 12, textAlign: "center", color: "var(--ink-subtle)" }}
+              >
+                No flags yet.
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
     </div>
@@ -209,7 +315,8 @@ function AuditPanel() {
   const [targetKind, setTargetKind] = useState<string>("");
   const list = useQuery({
     queryKey: ["admin-audit", targetKind],
-    queryFn: () => fList({ data: { targetKind: targetKind || null, targetId: null, limit: 200, offset: 0 } }),
+    queryFn: () =>
+      fList({ data: { targetKind: targetKind || null, targetId: null, limit: 200, offset: 0 } }),
   });
   const rows: AuditRow[] = Array.isArray(list.data) ? (list.data as AuditRow[]) : [];
 
@@ -217,30 +324,59 @@ function AuditPanel() {
     <div className="bento" style={{ padding: 16, display: "grid", gap: 10 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <div className="mono-label">Audit log · {rows.length}</div>
-        <select value={targetKind} onChange={(e) => setTargetKind(e.target.value)} style={{ ...input(160), marginLeft: "auto" }}>
+        <select
+          value={targetKind}
+          onChange={(e) => setTargetKind(e.target.value)}
+          style={{ ...input(160), marginLeft: "auto" }}
+        >
           <option value="">all kinds</option>
-          <option value="user">user</option><option value="workspace">workspace</option>
-          <option value="voucher">voucher</option><option value="invitation">invitation</option>
-          <option value="flag">flag</option><option value="banner">banner</option>
-          <option value="subscription">subscription</option><option value="domain">domain</option>
+          <option value="user">user</option>
+          <option value="workspace">workspace</option>
+          <option value="voucher">voucher</option>
+          <option value="invitation">invitation</option>
+          <option value="flag">flag</option>
+          <option value="banner">banner</option>
+          <option value="subscription">subscription</option>
+          <option value="domain">domain</option>
           <option value="signup_approval">signup_approval</option>
         </select>
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-        <thead><tr className="mono-label" style={{ color: "var(--ink-subtle)" }}>
-          <th style={th()}>When</th><th style={th()}>Actor</th><th style={th()}>Action</th><th style={th()}>Target</th><th style={th()}>Payload</th>
-        </tr></thead>
+        <thead>
+          <tr className="mono-label" style={{ color: "var(--ink-subtle)" }}>
+            <th style={th()}>When</th>
+            <th style={th()}>Actor</th>
+            <th style={th()}>Action</th>
+            <th style={th()}>Target</th>
+            <th style={th()}>Payload</th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id} style={{ borderTop: "1px solid var(--hairline)" }}>
               <td style={td()}>{r.created_at.slice(0, 16).replace("T", " ")}</td>
               <td style={td()}>{r.actor_email ?? r.actor_user_id?.slice(0, 8) ?? "-"}</td>
-              <td style={td()}><code>{r.action}</code></td>
-              <td style={td()}>{r.target_kind} · {r.target_id?.slice(0, 8) ?? "-"}</td>
-              <td style={td()}><code style={{ fontSize: 10 }}>{r.payload}</code></td>
+              <td style={td()}>
+                <code>{r.action}</code>
+              </td>
+              <td style={td()}>
+                {r.target_kind} · {r.target_id?.slice(0, 8) ?? "-"}
+              </td>
+              <td style={td()}>
+                <code style={{ fontSize: 10 }}>{r.payload}</code>
+              </td>
             </tr>
           ))}
-          {rows.length === 0 ? <tr><td colSpan={5} style={{ padding: 12, textAlign: "center", color: "var(--ink-subtle)" }}>No entries.</td></tr> : null}
+          {rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                style={{ padding: 12, textAlign: "center", color: "var(--ink-subtle)" }}
+              >
+                No entries.
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
     </div>
@@ -248,7 +384,24 @@ function AuditPanel() {
 }
 
 function input(width?: number): React.CSSProperties {
-  return { padding: "6px 8px", border: "1px solid var(--hairline)", borderRadius: 6, background: "var(--canvas)", fontSize: 12.5, width };
+  return {
+    padding: "6px 8px",
+    border: "1px solid var(--hairline)",
+    borderRadius: 6,
+    background: "var(--canvas)",
+    fontSize: 12.5,
+    width,
+  };
 }
-function th(): React.CSSProperties { return { padding: "8px 10px", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "left" }; }
-function td(): React.CSSProperties { return { padding: "8px 10px", verticalAlign: "middle" }; }
+function th(): React.CSSProperties {
+  return {
+    padding: "8px 10px",
+    fontSize: 10,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    textAlign: "left",
+  };
+}
+function td(): React.CSSProperties {
+  return { padding: "8px 10px", verticalAlign: "middle" };
+}

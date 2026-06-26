@@ -152,13 +152,33 @@ function PublicDecisionPage() {
       <h1 className="font-display" style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 14px" }}>
         {decision.title}
       </h1>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexWrap: "wrap",
+          marginBottom: 20,
+        }}
+      >
         <span
           className="mono-label"
-          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: st.color }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 10,
+            color: st.color,
+          }}
         >
           <span
-            style={{ width: 6, height: 6, borderRadius: 99, background: st.color, display: "inline-block" }}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 99,
+              background: st.color,
+              display: "inline-block",
+            }}
           />
           {st.label}
         </span>
@@ -178,7 +198,9 @@ function PublicDecisionPage() {
             padding: "2px 8px",
             borderRadius: 99,
             color:
-              decision.outcome === "superseded" ? "var(--ink-subtle, #6b6457)" : "var(--emerald, #2f8f6b)",
+              decision.outcome === "superseded"
+                ? "var(--ink-subtle, #6b6457)"
+                : "var(--emerald, #2f8f6b)",
             border: `1px solid ${decision.outcome === "superseded" ? "var(--hairline, rgba(0,0,0,0.12))" : "color-mix(in srgb, var(--emerald, #2f8f6b) 35%, transparent)"}`,
           }}
         >

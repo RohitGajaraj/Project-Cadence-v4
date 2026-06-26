@@ -152,10 +152,7 @@ describe("_performSeed (RLS isolation)", () => {
     const { db: db1, inserts: inserts1 } = fakeDb();
     const { db: db2, inserts: inserts2 } = fakeDb();
 
-    await Promise.all([
-      _performSeed(db1, WS_ID, USER_ID),
-      _performSeed(db2, WS_ID_2, USER_ID_2),
-    ]);
+    await Promise.all([_performSeed(db1, WS_ID, USER_ID), _performSeed(db2, WS_ID_2, USER_ID_2)]);
 
     for (const capture of inserts1) {
       for (const row of capture.rows) {
