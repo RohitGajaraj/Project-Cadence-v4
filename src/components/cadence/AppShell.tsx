@@ -1,4 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useMachineView } from "@/hooks/use-machine-view";
+import { MachineViewContainer } from "@/components/machine/MachineViewContainer";
 import {
   Settings,
   LogOut,
@@ -195,6 +197,62 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
     .toUpperCase();
 
   const activeProduct = products.find((p) => p.id === activeProductId) ?? null;
+  const { isMachineView } = useMachineView();
+
+  const PAGE_DESCRIPTIONS: Record<string, string> = {
+    "/today": "Live dashboard — active missions, recent decisions, signal queue, pending approvals, loop health.",
+    "/missions": "Autonomous mission management — running, completed, and staged missions with full agent trace.",
+    "/build": "Build surface — live agent activity, PR and CI status, cost per session, build controls.",
+    "/knowledge": "Decision brain and memory layer — beliefs, supersession graph, learnings, precedents.",
+    "/trust-ledger": "Trust Ledger — every decision and outcome with SHA-256 integrity fingerprint. The receipts layer.",
+    "/govern": "Governance and cost controls — agent trust arcs, approval modes, spend caps, pause state.",
+    "/products": "Product portfolio and opportunity register — all products, ICE-ranked opportunities, lineage.",
+    "/discover": "Discovery feed — opportunities ranked by ICE score, signals, analytics, competitor moves.",
+    "/settings": "Settings — account, workspace, connections, AI keys, billing.",
+    "/sync": "Connectors — available sources, connected repos, sync mappings, conflict resolution.",
+    "/impact": "PM Impact Ledger — portable decision + outcome track record with Markdown export.",
+    "/stakeholder": "Stakeholder Pack — audience-tuned alignment artifacts from decisions and their receipts.",
+    "/trust": "Trust and privacy statement.",
+  };
+
+  function buildMachineContent() {
+    const ws = activeWorkspace?.name ?? "workspace";
+    const prod = activeProduct?.name;
+    const pageDesc =
+      Object.entries(PAGE_DESCRIPTIONS).find(([route]) => path.startsWith(route))?.[1] ??
+      `Cadence authenticated page at ${path}`;
+
+    return [
+      `# Cadence — ${ws}`,
+      prod ? `**Active product:** ${prod}` : "",
+      `**Current route:** ${path}`,
+      ``,
+      `## This page`,
+      ``,
+      pageDesc,
+      ``,
+      `## Authenticated workspace surfaces`,
+      ``,
+      `| Route | What it contains |`,
+      `|---|---|`,
+      `| /today | Live dashboard: active missions, recent decisions, signal queue, pending approvals |`,
+      `| /missions | Autonomous mission management: running, completed, staged |`,
+      `| /build | Live build surface: agent activity, PR/CI status, cost per session |`,
+      `| /knowledge | Decision brain and memory layer: beliefs, supersession graph, learnings |`,
+      `| /trust-ledger | Audit trail: every decision, every outcome, integrity fingerprint |`,
+      `| /govern | Governance and cost controls: agent trust arcs, spend caps, approval modes |`,
+      `| /products | Product portfolio and opportunity register |`,
+      `| /discover | Discovery feed: opportunities ranked by ICE, signals, precedents |`,
+      ``,
+      `## Agent interfaces`,
+      ``,
+      `- Append \`?view=machine\` to any URL for machine mode, or use the [HUMAN] [MACHINE] toggle`,
+      `- A2A agent card: \`/.well-known/agent.json\``,
+      `- Site context: \`/llms.txt\``,
+      `- MCP server: coming soon — query decisions, missions, workspace context via typed tool calls`,
+    ]
+      .join("\n");
+  }
 
   async function createWorkspace() {
     const name = await prompt({
@@ -333,6 +391,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const isItemActive = (n: NavItem) => navItemActive(n, path, searchTab);
 
   return (
+    <MachineViewContainer machineContent={buildMachineContent()} title={`Cadence · ${activeWorkspace?.name ?? "workspace"}`}>
     <div className="min-h-screen flex bg-background text-foreground relative">
       <aside className="hidden lg:flex h-screen sticky top-0 w-[232px] shrink-0 flex-col border-r hairline bg-sidebar">
         {/* Workspace switcher — butterfly + Cadence wordmark, per shell.jsx */}
@@ -660,5 +719,6 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
       </main>
     </div>
+    </MachineViewContainer>
   );
 }
