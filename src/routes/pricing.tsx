@@ -177,12 +177,22 @@ function PricingCard({ tier }: { tier: PlanTier }) {
               Custom
             </span>
             <span
-              style={{ fontSize: 12, color: "var(--ink-muted, #4a4438)", display: "block", marginTop: 4 }}
+              style={{
+                fontSize: 12,
+                color: "var(--ink-muted, #4a4438)",
+                display: "block",
+                marginTop: 4,
+              }}
             >
               Platform fee + $20/seat
             </span>
             <span
-              style={{ fontSize: 11.5, color: "var(--ink-subtle, #6b6457)", display: "block", marginTop: 2 }}
+              style={{
+                fontSize: 11.5,
+                color: "var(--ink-subtle, #6b6457)",
+                display: "block",
+                marginTop: 2,
+              }}
             >
               Usage at API rates
             </span>
@@ -197,7 +207,10 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-              <span className="font-display" style={{ fontSize: 32, fontWeight: 480, lineHeight: 1 }}>
+              <span
+                className="font-display"
+                style={{ fontSize: 32, fontWeight: 480, lineHeight: 1 }}
+              >
                 ${numericPrice}
               </span>
               <span style={{ fontSize: 13, color: "var(--ink-subtle, #6b6457)" }}>/mo</span>
@@ -209,91 +222,92 @@ function PricingCard({ tier }: { tier: PlanTier }) {
         )}
       </div>
 
-      {/* Credit dropdown */}
-      {p.hasCreditDropdown && (
-        <div style={{ marginBottom: 12 }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: 10,
-              color: "var(--ink-faint, #8a8377)",
-              letterSpacing: "0.08em",
-              marginBottom: 5,
-            }}
-          >
-            CREDITS / MONTH
-          </label>
-          <select
-            value={credits}
-            onChange={(e) => setCredits(Number(e.target.value) as CreditTier)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              fontSize: 13,
-              border: "1px solid var(--hairline, rgba(0,0,0,0.12))",
-              borderRadius: 7,
-              background: "var(--paper, #f6f2ea)",
-              color: "var(--ink, #1f1b16)",
-              cursor: "pointer",
-            }}
-          >
-            {CREDIT_DROPDOWN_TIERS.map((c) => (
-              <option key={c} value={c}>
-                {c.toLocaleString()} credits / month
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Billing toggle */}
-      {p.hasBillingToggle && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <button
-            type="button"
-            onClick={() => setAnnual((a) => !a)}
-            aria-pressed={annual}
-            style={{
-              width: 36,
-              height: 20,
-              borderRadius: 10,
-              border: "none",
-              background: annual ? "var(--ember, #c2622e)" : "var(--hairline, rgba(0,0,0,0.18))",
-              position: "relative",
-              cursor: "pointer",
-              transition: "background 0.15s",
-              flexShrink: 0,
-            }}
-          >
-            <span
+      {/* Interactive zone — uniform height across all cards */}
+      <div style={{ minHeight: 108 }}>
+        {p.hasCreditDropdown && (
+          <div style={{ marginBottom: 12 }}>
+            <label
               style={{
-                position: "absolute",
-                top: 2,
-                left: annual ? 18 : 2,
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                background: "#fff",
-                transition: "left 0.15s",
-              }}
-            />
-          </button>
-          <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>Annual billing</span>
-          {annual && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--moss-success, #4f8a59)",
-                background: "color-mix(in oklab, var(--moss-success, #4f8a59) 12%, transparent)",
-                borderRadius: 99,
-                padding: "2px 7px",
+                display: "block",
+                fontSize: 10,
+                color: "var(--ink-faint, #8a8377)",
+                letterSpacing: "0.08em",
+                marginBottom: 5,
               }}
             >
-              Save 17%
-            </span>
-          )}
-        </div>
-      )}
+              CREDITS / MONTH
+            </label>
+            <select
+              value={credits}
+              onChange={(e) => setCredits(Number(e.target.value) as CreditTier)}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                fontSize: 13,
+                border: "1px solid var(--hairline, rgba(0,0,0,0.12))",
+                borderRadius: 7,
+                background: "var(--paper, #f6f2ea)",
+                color: "var(--ink, #1f1b16)",
+                cursor: "pointer",
+              }}
+            >
+              {CREDIT_DROPDOWN_TIERS.map((c) => (
+                <option key={c} value={c}>
+                  {c.toLocaleString()} credits / month
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {p.hasBillingToggle && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <button
+              type="button"
+              onClick={() => setAnnual((a) => !a)}
+              aria-pressed={annual}
+              style={{
+                width: 36,
+                height: 20,
+                borderRadius: 10,
+                border: "none",
+                background: annual ? "var(--ember, #c2622e)" : "var(--hairline, rgba(0,0,0,0.18))",
+                position: "relative",
+                cursor: "pointer",
+                transition: "background 0.15s",
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  left: annual ? 18 : 2,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  transition: "left 0.15s",
+                }}
+              />
+            </button>
+            <span style={{ fontSize: 12, color: "var(--ink-subtle, #6b6457)" }}>Annual billing</span>
+            {annual && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--moss-success, #4f8a59)",
+                  background: "color-mix(in oklab, var(--moss-success, #4f8a59) 12%, transparent)",
+                  borderRadius: 99,
+                  padding: "2px 7px",
+                }}
+              >
+                Save 17%
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* CTA — immediately after price/toggles, before the feature list */}
       {isEnterprise ? (
@@ -481,7 +495,6 @@ function PricingPage() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(252px, 1fr))",
               gap: 20,
-              alignItems: "start",
             }}
           >
             {PUBLIC_TIERS.map((tier) => (

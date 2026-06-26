@@ -32,7 +32,85 @@ export const TIER_ICON: Record<
 /** Backwards-compat alias so existing imports keep working. */
 export const PlanPicker = PlanTable;
 
-type AudienceTab = "personal" | "teams";
+function nextTierFor(tier: PlanTier): PlanTier | null {
+  switch (tier) {
+    case "free": return "pro";
+    case "pro": return "team";
+    case "max": return "team";
+    case "team": return "enterprise";
+    case "enterprise": return null;
+  }
+}
+
+function CurrentPlanStrip({ currentTier }: { currentTier: PlanTier }) {
+  const p = planPresentation(currentTier);
+  const Icon = TIER_ICON[currentTier];
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 18px",
+        borderRadius: 10,
+        border: "1px solid var(--hairline, rgba(0,0,0,0.08))",
+        background: "color-mix(in oklab, var(--ember, #c2602e) 5%, var(--canvas, #fbf7ef))",
+        boxShadow: "0 0 0 1px color-mix(in oklab, var(--ember, #c2602e) 25%, transparent)",
+      }}
+    >
+      <span
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background:
+            "linear-gradient(145deg, color-mix(in oklab, var(--ember, #c2602e) 18%, transparent), color-mix(in oklab, var(--ember, #c2602e) 6%, transparent))",
+          border: "1px solid color-mix(in oklab, var(--ember, #c2602e) 22%, transparent)",
+          color: "var(--ember, #c2602e)",
+        }}
+      >
+        <Icon size={18} strokeWidth={1.6} />
+      </span>
+      <div style={{ flex: 1 }}>
+        <div
+          className="mono-label"
+          style={{ fontSize: 8.5, color: "var(--ink-faint, #8a8377)", letterSpacing: "0.14em" }}
+        >
+          CURRENT PLAN
+        </div>
+        <div className="font-display" style={{ fontSize: 15 }}>
+          {p.name}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <a
+          href="/settings/billing?action=manage"
+          style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
+        >
+          Manage
+        </a>
+        {currentTier !== "free" && currentTier !== "enterprise" && (
+          <>
+            <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
+            <a
+              href="/settings/billing?action=cancel"
+              style={{
+                fontSize: 11,
+                color: "var(--ink-subtle, #6b6457)",
+                textDecoration: "underline",
+              }}
+            >
+              Cancel
+            </a>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function PlanTable({
   currentTier,
@@ -41,12 +119,10 @@ export function PlanTable({
   currentTier: PlanTier;
   canSelect: boolean;
 }) {
-  const defaultTab: AudienceTab =
-    currentTier === "team" || currentTier === "enterprise" ? "teams" : "personal";
-  const [tab, setTab] = useState<AudienceTab>(defaultTab);
+  const nextTier = nextTierFor(currentTier);
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    <div style={{ display: "grid", gap: 20 }}>
       <div style={{ textAlign: "center" }}>
         <span
           className="mono-label"
@@ -62,70 +138,68 @@ export function PlanTable({
         </h2>
       </div>
 
-      {/* Personal | Teams tab toggle */}
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      {/* Current plan summary strip */}
+      <CurrentPlanStrip currentTier={currentTier} />
+
+      {/* Next step card — single focused upgrade offer */}
+      {nextTier ? (
+        <div>
+          <p
+            className="mono-label"
+            style={{
+              fontSize: 9,
+              color: "var(--ink-faint, #8a8377)",
+              letterSpacing: "0.18em",
+              marginBottom: 12,
+            }}
+          >
+            YOUR NEXT STEP
+          </p>
+          {nextTier === "enterprise" ? (
+            <EnterpriseCard isCurrent={false} currentTier={currentTier} />
+          ) : (
+            <PaidTierCard
+              tier={nextTier as "pro" | "team"}
+              isCurrent={false}
+              currentTier={currentTier}
+              canSelect={canSelect}
+              popular={false}
+            />
+          )}
+        </div>
+      ) : (
         <div
           style={{
-            display: "inline-flex",
-            borderRadius: 99,
-            padding: 3,
-            background: "var(--soft-stone, rgba(0,0,0,0.06))",
-            alignSelf: "flex-start",
+            padding: "24px",
+            textAlign: "center",
+            borderRadius: 10,
+            border: "1px solid var(--hairline, rgba(0,0,0,0.08))",
+            background: "var(--canvas, #fbf7ef)",
           }}
         >
-          {(["personal", "teams"] as const).map((t) => {
-            const active = t === tab;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                style={{
-                  padding: "7px 22px",
-                  borderRadius: 99,
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: active ? 600 : 500,
-                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
-                  color: active ? "var(--ink, #1d1a14)" : "var(--ink-subtle, #6b6457)",
-                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                  transition: "all 0.15s",
-                }}
-              >
-                {t === "personal" ? "Personal" : "Teams"}
-              </button>
-            );
-          })}
+          <p style={{ fontSize: 13, color: "var(--ink, #1d1a14)", margin: 0 }}>
+            You are on our highest plan. Reach your account manager for any changes.
+          </p>
+          <a
+            href="mailto:sales@cadence.app?subject=Enterprise plan management"
+            style={{
+              fontSize: 12,
+              color: "var(--ember, #c2602e)",
+              marginTop: 8,
+              display: "inline-block",
+            }}
+          >
+            Contact account manager
+          </a>
         </div>
-      </div>
+      )}
 
-      {/* 2-column grid per tab */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {tab === "personal" ? (
-          <>
-            <FreeCard isCurrent={currentTier === "free"} />
-            <PaidTierCard
-              tier="pro"
-              isCurrent={currentTier === "pro" || currentTier === "max"}
-              currentTier={currentTier}
-              canSelect={canSelect}
-              popular
-            />
-          </>
-        ) : (
-          <>
-            <PaidTierCard
-              tier="team"
-              isCurrent={currentTier === "team"}
-              currentTier={currentTier}
-              canSelect={canSelect}
-              popular
-            />
-            <EnterpriseCard isCurrent={currentTier === "enterprise"} currentTier={currentTier} />
-          </>
-        )}
-      </div>
+      {/* Link to full pricing page */}
+      <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textAlign: "center", margin: 0 }}>
+        <a href="/pricing" style={{ color: "var(--ink-subtle, #6b6457)" }}>
+          Compare all plans
+        </a>
+      </p>
     </div>
   );
 }
@@ -432,7 +506,11 @@ function EnterpriseCard({ isCurrent, currentTier }: { isCurrent: boolean; curren
         </a>
       )}
       <div
-        style={{ height: 1, background: "var(--hairline, rgba(0,0,0,0.07))", margin: "16px 0 14px" }}
+        style={{
+          height: 1,
+          background: "var(--hairline, rgba(0,0,0,0.07))",
+          margin: "16px 0 14px",
+        }}
       />
       <ExpandableBullets items={p.highlights} />
     </CardShell>
@@ -638,14 +716,22 @@ function PaidTierCard({
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <a
             href="/settings/billing?action=manage"
-            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              textDecoration: "underline",
+            }}
           >
             Manage subscription
           </a>
           <span style={{ color: "var(--hairline, rgba(0,0,0,0.2))" }}>·</span>
           <a
             href="/settings/billing?action=cancel"
-            style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textDecoration: "underline" }}
+            style={{
+              fontSize: 11,
+              color: "var(--ink-subtle, #6b6457)",
+              textDecoration: "underline",
+            }}
           >
             Cancel plan
           </a>
