@@ -32,6 +32,9 @@ export const TIER_ICON: Record<
 /** Backwards-compat alias so existing imports keep working. */
 export const PlanPicker = PlanTable;
 
+type AudienceTab = "personal" | "teams";
+
+/** The single next tier up — the one that gets the "Recommended" badge. */
 function nextTierFor(tier: PlanTier): PlanTier | null {
   switch (tier) {
     case "free": return "pro";
@@ -119,87 +122,85 @@ export function PlanTable({
   currentTier: PlanTier;
   canSelect: boolean;
 }) {
-  const nextTier = nextTierFor(currentTier);
+  const defaultTab: AudienceTab =
+    currentTier === "team" || currentTier === "enterprise" ? "teams" : "personal";
+  const [tab, setTab] = useState<AudienceTab>(defaultTab);
+
+  // The tier that earns the "Recommended" badge — always the single next step up.
+  const recommended = nextTierFor(currentTier);
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ textAlign: "center" }}>
-        <span
-          className="mono-label"
-          style={{ fontSize: 9, color: "var(--ember, #c2602e)", letterSpacing: "0.18em" }}
-        >
-          Plans
-        </span>
-        <h2
-          className="font-display"
-          style={{ fontSize: 26, lineHeight: 1.15, margin: "6px 0 4px", fontWeight: 480 }}
-        >
-          Pick the plan that fits
-        </h2>
-      </div>
-
-      {/* Current plan summary strip */}
+      {/* Current plan strip */}
       <CurrentPlanStrip currentTier={currentTier} />
 
-      {/* Next step card — single focused upgrade offer */}
-      {nextTier ? (
-        <div>
-          <p
-            className="mono-label"
-            style={{
-              fontSize: 9,
-              color: "var(--ink-faint, #8a8377)",
-              letterSpacing: "0.18em",
-              marginBottom: 12,
-            }}
-          >
-            YOUR NEXT STEP
-          </p>
-          {nextTier === "enterprise" ? (
-            <EnterpriseCard isCurrent={false} currentTier={currentTier} />
-          ) : (
-            <PaidTierCard
-              tier={nextTier as "pro" | "team"}
-              isCurrent={false}
-              currentTier={currentTier}
-              canSelect={canSelect}
-              popular={false}
-            />
-          )}
-        </div>
-      ) : (
+      {/* Personal | Teams tab toggle */}
+      <div style={{ display: "flex", justifyContent: "center" }}>
         <div
           style={{
-            padding: "24px",
-            textAlign: "center",
-            borderRadius: 10,
-            border: "1px solid var(--hairline, rgba(0,0,0,0.08))",
-            background: "var(--canvas, #fbf7ef)",
+            display: "inline-flex",
+            borderRadius: 99,
+            padding: 3,
+            background: "var(--soft-stone, rgba(0,0,0,0.06))",
           }}
         >
-          <p style={{ fontSize: 13, color: "var(--ink, #1d1a14)", margin: 0 }}>
-            You are on our highest plan. Reach your account manager for any changes.
-          </p>
-          <a
-            href="mailto:sales@cadence.app?subject=Enterprise plan management"
-            style={{
-              fontSize: 12,
-              color: "var(--ember, #c2602e)",
-              marginTop: 8,
-              display: "inline-block",
-            }}
-          >
-            Contact account manager
-          </a>
+          {(["personal", "teams"] as const).map((t) => {
+            const active = t === tab;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                style={{
+                  padding: "7px 22px",
+                  borderRadius: 99,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  background: active ? "var(--canvas, #fbf7ef)" : "transparent",
+                  color: active ? "var(--ink, #1d1a14)" : "var(--ink-subtle, #6b6457)",
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {t === "personal" ? "Personal" : "Teams"}
+              </button>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      {/* Link to full pricing page */}
-      <p style={{ fontSize: 11, color: "var(--ink-subtle, #6b6457)", textAlign: "center", margin: 0 }}>
-        <a href="/pricing" style={{ color: "var(--ink-subtle, #6b6457)" }}>
-          Compare all plans
-        </a>
-      </p>
+      {/* 2-column grid per tab — popular badge tracks the user's actual next step */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {tab === "personal" ? (
+          <>
+            <FreeCard isCurrent={currentTier === "free"} />
+            <PaidTierCard
+              tier="pro"
+              isCurrent={currentTier === "pro" || currentTier === "max"}
+              currentTier={currentTier}
+              canSelect={canSelect}
+              popular={recommended === "pro"}
+            />
+          </>
+        ) : (
+          <>
+            <PaidTierCard
+              tier="team"
+              isCurrent={currentTier === "team"}
+              currentTier={currentTier}
+              canSelect={canSelect}
+              popular={recommended === "team"}
+            />
+            <EnterpriseCard
+              isCurrent={currentTier === "enterprise"}
+              currentTier={currentTier}
+              popular={recommended === "enterprise"}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -432,7 +433,15 @@ function FreeCard({ isCurrent }: { isCurrent: boolean }) {
   );
 }
 
-function EnterpriseCard({ isCurrent, currentTier }: { isCurrent: boolean; currentTier: PlanTier }) {
+function EnterpriseCard({
+  isCurrent,
+  currentTier,
+  popular,
+}: {
+  isCurrent: boolean;
+  currentTier: PlanTier;
+  popular?: boolean;
+}) {
   const p = planPresentation("enterprise");
   const isComingFromBusiness = currentTier === "team" && !isCurrent;
   return (
@@ -443,6 +452,7 @@ function EnterpriseCard({ isCurrent, currentTier }: { isCurrent: boolean; curren
         tagline={p.tagline}
         forWhom={p.forWhom}
         isCurrent={isCurrent}
+        popular={popular}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <span className="font-display" style={{ fontSize: 22, lineHeight: 1.2 }}>
