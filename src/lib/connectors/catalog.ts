@@ -75,7 +75,11 @@ const PROVIDER_CATEGORY: Record<ProviderId, ConnectorCategory | null> = {
 };
 
 /** PURE — the plain-language "which way does data move" phrase for a connector. */
-export function flowLabelFor(caps: { inflow: boolean; outflow: boolean; sync: boolean }): FlowLabel {
+export function flowLabelFor(caps: {
+  inflow: boolean;
+  outflow: boolean;
+  sync: boolean;
+}): FlowLabel {
   if (caps.sync) return "Two-way sync";
   if (caps.inflow && caps.outflow) return "In & out";
   if (caps.inflow) return "Pulls in";

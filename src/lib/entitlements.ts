@@ -282,7 +282,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
           "Persistent decision memory that never fades",
           "100-10,000 monthly credits (your choice)",
           "Critic red-teams every spec and bet, automatically",
-          "Read connectors: pull signals from GitHub, Linear, Notion, Jira",
+          "Read connectors",
           "Ambient signal ingestion runs automatically on your account",
           "Memory recalls across all your workspaces",
           "Up to 3 products, pooled workspaces",
@@ -315,7 +315,7 @@ export function planPresentation(tier: PlanTier): PlanPresentation {
         hasBillingToggle: true,
         highlights: [
           "Everything in Pro, plus:",
-          "Write-back connectors: push decisions to GitHub, Linear, Jira, Notion",
+          "Write-back connectors",
           "One shared connector pool for the whole team (one GitHub OAuth covers everyone)",
           "Shared credit pool across the whole team",
           "Members, seats, and role-based access",
