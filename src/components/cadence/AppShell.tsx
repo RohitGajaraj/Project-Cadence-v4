@@ -200,18 +200,27 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const { isMachineView } = useMachineView();
 
   const PAGE_DESCRIPTIONS: Record<string, string> = {
-    "/today": "Live dashboard — active missions, recent decisions, signal queue, pending approvals, loop health.",
-    "/missions": "Autonomous mission management — running, completed, and staged missions with full agent trace.",
-    "/build": "Build surface — live agent activity, PR and CI status, cost per session, build controls.",
-    "/knowledge": "Decision brain and memory layer — beliefs, supersession graph, learnings, precedents.",
-    "/trust-ledger": "Trust Ledger — every decision and outcome with SHA-256 integrity fingerprint. The receipts layer.",
-    "/govern": "Governance and cost controls — agent trust arcs, approval modes, spend caps, pause state.",
-    "/products": "Product portfolio and opportunity register — all products, ICE-ranked opportunities, lineage.",
-    "/discover": "Discovery feed — opportunities ranked by ICE score, signals, analytics, competitor moves.",
+    "/today":
+      "Live dashboard — active missions, recent decisions, signal queue, pending approvals, loop health.",
+    "/missions":
+      "Autonomous mission management — running, completed, and staged missions with full agent trace.",
+    "/build":
+      "Build surface — live agent activity, PR and CI status, cost per session, build controls.",
+    "/knowledge":
+      "Decision brain and memory layer — beliefs, supersession graph, learnings, precedents.",
+    "/trust-ledger":
+      "Trust Ledger — every decision and outcome with SHA-256 integrity fingerprint. The receipts layer.",
+    "/govern":
+      "Governance and cost controls — agent trust arcs, approval modes, spend caps, pause state.",
+    "/products":
+      "Product portfolio and opportunity register — all products, ICE-ranked opportunities, lineage.",
+    "/discover":
+      "Discovery feed — opportunities ranked by ICE score, signals, analytics, competitor moves.",
     "/settings": "Settings — account, workspace, connections, AI keys, billing.",
     "/sync": "Connectors — available sources, connected repos, sync mappings, conflict resolution.",
     "/impact": "PM Impact Ledger — portable decision + outcome track record with Markdown export.",
-    "/stakeholder": "Stakeholder Pack — audience-tuned alignment artifacts from decisions and their receipts.",
+    "/stakeholder":
+      "Stakeholder Pack — audience-tuned alignment artifacts from decisions and their receipts.",
     "/trust": "Trust and privacy statement.",
   };
 
@@ -250,8 +259,7 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
       `- A2A agent card: \`/.well-known/agent.json\``,
       `- Site context: \`/llms.txt\``,
       `- MCP server: coming soon — query decisions, missions, workspace context via typed tool calls`,
-    ]
-      .join("\n");
+    ].join("\n");
   }
 
   async function createWorkspace() {
@@ -391,334 +399,343 @@ export function AppShell({ children }: { children: React.ReactNode; projects?: u
   const isItemActive = (n: NavItem) => navItemActive(n, path, searchTab);
 
   return (
-    <MachineViewContainer machineContent={buildMachineContent()} title={`Cadence · ${activeWorkspace?.name ?? "workspace"}`}>
-    <div className="min-h-screen flex bg-background text-foreground relative">
-      <aside className="hidden lg:flex h-screen sticky top-0 w-[232px] shrink-0 flex-col border-r hairline bg-sidebar">
-        {/* Workspace switcher — butterfly + Cadence wordmark, per shell.jsx */}
-        <div className="shrink-0 border-b hairline" style={{ padding: "14px 14px 10px" }}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="w-full flex items-center gap-[9px] text-left group"
-                aria-label="Workspace switcher"
-              >
-                <span className="inline-flex h-7 w-7 items-center justify-center text-foreground shrink-0">
-                  <CadenceMark size={26} />
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span
-                    className="block font-display"
-                    style={{
-                      fontSize: 14.5,
-                      fontWeight: 500,
-                      lineHeight: 1.2,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    Cadence
-                  </span>
-                  <span className="block text-[11px] text-ink-subtle truncate">
-                    {activeWorkspace?.name || "Select workspace"}
-                    {activeProduct ? ` · ${activeProduct.name}` : ""}
-                  </span>
-                </span>
-                <ChevronDown className="h-3 w-3 text-ink-faint group-hover:text-foreground shrink-0 transition" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-52" align="start">
-              <DropdownMenuLabel className="mono-label">Switch workspace</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {workspaces.map((w) => (
-                <DropdownMenuItem
-                  key={w.id}
-                  onClick={() => setActiveWorkspaceId(w.id)}
-                  className="flex items-center justify-between cursor-pointer"
+    <MachineViewContainer
+      machineContent={buildMachineContent()}
+      title={`Cadence · ${activeWorkspace?.name ?? "workspace"}`}
+    >
+      <div className="min-h-screen flex bg-background text-foreground relative">
+        <aside className="hidden lg:flex h-screen sticky top-0 w-[232px] shrink-0 flex-col border-r hairline bg-sidebar">
+          {/* Workspace switcher — butterfly + Cadence wordmark, per shell.jsx */}
+          <div className="shrink-0 border-b hairline" style={{ padding: "14px 14px 10px" }}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-[9px] text-left group"
+                  aria-label="Workspace switcher"
                 >
-                  <span className="truncate font-medium">{w.name}</span>
-                  {w.id === activeWorkspaceId && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              {workspaces.length === 0 && (
-                <div className="px-2 py-1.5 text-xs text-ink-faint italic">No workspaces yet</div>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
-                <Plus className="h-3.5 w-3.5" />
-                <span>New workspace</span>
-              </DropdownMenuItem>
-              {/* Products — context switcher inside the workspace switcher (IA-DEPTH-V11) */}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="mono-label">Product</DropdownMenuLabel>
-              {products.map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => setActiveProductId(activeProductId === p.id ? null : p.id)}
-                  className="flex items-center justify-between cursor-pointer"
-                >
-                  <span className="truncate">{p.name}</span>
-                  {p.id === activeProductId && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              {products.length === 0 && (
-                <div className="px-2 py-1.5 text-xs text-ink-faint italic">No products yet</div>
-              )}
-              <DropdownMenuItem onClick={createProduct} className="cursor-pointer gap-2">
-                <Plus className="h-3.5 w-3.5" />
-                <span>New product</span>
-              </DropdownMenuItem>
-              {activeWorkspace && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
+                  <span className="inline-flex h-7 w-7 items-center justify-center text-foreground shrink-0">
+                    <CadenceMark size={26} />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span
+                      className="block font-display"
+                      style={{
+                        fontSize: 14.5,
+                        fontWeight: 500,
+                        lineHeight: 1.2,
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      Cadence
+                    </span>
+                    <span className="block text-[11px] text-ink-subtle truncate">
+                      {activeWorkspace?.name || "Select workspace"}
+                      {activeProduct ? ` · ${activeProduct.name}` : ""}
+                    </span>
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-ink-faint group-hover:text-foreground shrink-0 transition" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52" align="start">
+                <DropdownMenuLabel className="mono-label">Switch workspace</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {workspaces.map((w) => (
                   <DropdownMenuItem
-                    onClick={renameActiveWorkspace}
-                    className="cursor-pointer gap-2"
+                    key={w.id}
+                    onClick={() => setActiveWorkspaceId(w.id)}
+                    className="flex items-center justify-between cursor-pointer"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Rename</span>
+                    <span className="truncate font-medium">{w.name}</span>
+                    {w.id === activeWorkspaceId && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    )}
                   </DropdownMenuItem>
-                  <Link to="/settings">
-                    <DropdownMenuItem className="cursor-pointer gap-2">
-                      <Settings className="h-3.5 w-3.5" />
-                      <span>Workspace settings</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuItem onClick={leaveActiveWorkspace} className="cursor-pointer gap-2">
-                    <LeaveIcon className="h-3.5 w-3.5" />
-                    <span>Leave</span>
-                  </DropdownMenuItem>
+                ))}
+                {workspaces.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-ink-faint italic">No workspaces yet</div>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={createWorkspace} className="cursor-pointer gap-2">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>New workspace</span>
+                </DropdownMenuItem>
+                {/* Products — context switcher inside the workspace switcher (IA-DEPTH-V11) */}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="mono-label">Product</DropdownMenuLabel>
+                {products.map((p) => (
                   <DropdownMenuItem
-                    onClick={deleteActiveWorkspace}
-                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                    key={p.id}
+                    onClick={() => setActiveProductId(activeProductId === p.id ? null : p.id)}
+                    className="flex items-center justify-between cursor-pointer"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete workspace</span>
+                    <span className="truncate">{p.name}</span>
+                    {p.id === activeProductId && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    )}
                   </DropdownMenuItem>
-                </>
-              )}
-              {(isAdmin || noAdminsYet) && (
-                <>
-                  <DropdownMenuSeparator />
-                  <Link to="/admin">
-                    <DropdownMenuItem className="cursor-pointer gap-2">
-                      <ShieldAlert className="h-3.5 w-3.5" />
-                      <span>{isAdmin ? "Admin console" : "Claim admin"}</span>
+                ))}
+                {products.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-ink-faint italic">No products yet</div>
+                )}
+                <DropdownMenuItem onClick={createProduct} className="cursor-pointer gap-2">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>New product</span>
+                </DropdownMenuItem>
+                {activeWorkspace && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="mono-label">Manage</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={renameActiveWorkspace}
+                      className="cursor-pointer gap-2"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Rename</span>
                     </DropdownMenuItem>
-                  </Link>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="cursor-pointer gap-2">
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                    <Link to="/settings">
+                      <DropdownMenuItem className="cursor-pointer gap-2">
+                        <Settings className="h-3.5 w-3.5" />
+                        <span>Workspace settings</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuItem
+                      onClick={leaveActiveWorkspace}
+                      className="cursor-pointer gap-2"
+                    >
+                      <LeaveIcon className="h-3.5 w-3.5" />
+                      <span>Leave</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={deleteActiveWorkspace}
+                      className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Delete workspace</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {(isAdmin || noAdminsYet) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <Link to="/admin">
+                      <DropdownMenuItem className="cursor-pointer gap-2">
+                        <ShieldAlert className="h-3.5 w-3.5" />
+                        <span>{isAdmin ? "Admin console" : "Claim admin"}</span>
+                      </DropdownMenuItem>
+                    </Link>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="cursor-pointer gap-2">
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        {/* ⌘K search — opens the command palette */}
-        <div style={{ padding: "10px 12px 4px" }}>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("cadence:open-cmdk"))}
-            className="flex w-full items-center gap-2 rounded-md border hairline bg-surface-1 px-2.5 py-1.5 text-[12.5px] text-ink-faint hover:text-ink-muted transition"
-          >
-            <Search className="h-[13px] w-[13px]" strokeWidth={1.75} />
-            <span className="flex-1 text-left">Jump to…</span>
-            <span className="mono-label" style={{ fontSize: 10 }}>
-              ⌘K
-            </span>
-          </button>
-        </div>
+          {/* ⌘K search — opens the command palette */}
+          <div style={{ padding: "10px 12px 4px" }}>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("cadence:open-cmdk"))}
+              className="flex w-full items-center gap-2 rounded-md border hairline bg-surface-1 px-2.5 py-1.5 text-[12.5px] text-ink-faint hover:text-ink-muted transition"
+            >
+              <Search className="h-[13px] w-[13px]" strokeWidth={1.75} />
+              <span className="flex-1 text-left">Jump to…</span>
+              <span className="mono-label" style={{ fontSize: 10 }}>
+                ⌘K
+              </span>
+            </button>
+          </div>
 
-        {/* Scrollable middle: nav + products */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
-          <nav className="flex flex-col">
-            {/* IA-NAV-V11: one flat, calm list of outcome-named destinations — no
+          {/* Scrollable middle: nav + products */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3">
+            <nav className="flex flex-col">
+              {/* IA-NAV-V11: one flat, calm list of outcome-named destinations — no
                 "Workspace"/"Loop" labels, no NavGroup indirection. The engine room
                 lives behind the single door in the footer below. */}
-            <div className="flex flex-col gap-0.5 pt-1.5">
-              {PRIMARY_NAV.map((n) => (
-                <NavRow key={n.to} item={n} active={isItemActive(n)} />
-              ))}
-            </div>
-          </nav>
-        </div>
-
-        {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}
-        <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-sidebar">
-          {pauseState?.paused && (
-            <Link
-              to="/govern"
-              search={{ tab: "controls" }}
-              className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition"
-            >
-              <div className="flex items-center gap-2">
-                <PauseCircle className="h-4 w-4 shrink-0" />
-                <div className="leading-tight overflow-hidden">
-                  <div className="text-[11px] font-medium truncate">
-                    {pauseState.systemPaused ? "System paused" : "Workspace paused"}
-                  </div>
-                  {pauseState.reason && (
-                    <div className="text-[10px] opacity-80 truncate">{pauseState.reason}</div>
-                  )}
-                </div>
+              <div className="flex flex-col gap-0.5 pt-1.5">
+                {PRIMARY_NAV.map((n) => (
+                  <NavRow key={n.to} item={n} active={isItemActive(n)} />
+                ))}
               </div>
-            </Link>
-          )}
-          {/* Running status lives at the sidebar bottom, above Trust
+            </nav>
+          </div>
+
+          {/* Fixed footer: alerts, budget, trust row, mission mode, sign out, theme */}
+          <div className="shrink-0 border-t hairline px-3 py-3 space-y-2 bg-sidebar">
+            {pauseState?.paused && (
+              <Link
+                to="/govern"
+                search={{ tab: "controls" }}
+                className="block rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/15 transition"
+              >
+                <div className="flex items-center gap-2">
+                  <PauseCircle className="h-4 w-4 shrink-0" />
+                  <div className="leading-tight overflow-hidden">
+                    <div className="text-[11px] font-medium truncate">
+                      {pauseState.systemPaused ? "System paused" : "Workspace paused"}
+                    </div>
+                    {pauseState.reason && (
+                      <div className="text-[10px] opacity-80 truncate">{pauseState.reason}</div>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )}
+            {/* Running status lives at the sidebar bottom, above Trust
               (contract). Indigo pulsing line while agents run, with queued
               depth as a quiet suffix; queued-only shows a static quiet line
               (queued is live state, not "running" — never a fake pulse). */}
-          {runningCount > 0 ? (
-            <Link
-              to="/missions"
-              search={{ tab: "missions" } as never}
-              className="mono-label flex items-center gap-[7px] px-1 pb-1"
-              style={{ color: "var(--action-blue)", fontSize: 9.5 }}
-            >
-              <span className="dot dot-running" style={{ width: 5, height: 5 }} />
-              {runningCount} agent{runningCount === 1 ? "" : "s"} running
-              {queuedCount > 0 && (
-                <span style={{ color: "var(--ink-subtle)" }}>· {queuedCount} queued</span>
-              )}{" "}
-              →
-            </Link>
-          ) : queuedCount > 0 ? (
-            <Link
-              to="/missions"
-              search={{ tab: "missions" } as never}
-              className="mono-label flex items-center gap-[7px] px-1 pb-1"
-              style={{ color: "var(--ink-subtle)", fontSize: 9.5 }}
-            >
-              <span
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: 99,
-                  background: "var(--ink-faint)",
-                }}
-              />
-              {queuedCount} queued →
-            </Link>
-          ) : null}
-          {/* IA-NAV-V11: the engine room behind ONE recessed door. The old 5-icon
+            {runningCount > 0 ? (
+              <Link
+                to="/missions"
+                search={{ tab: "missions" } as never}
+                className="mono-label flex items-center gap-[7px] px-1 pb-1"
+                style={{ color: "var(--action-blue)", fontSize: 9.5 }}
+              >
+                <span className="dot dot-running" style={{ width: 5, height: 5 }} />
+                {runningCount} agent{runningCount === 1 ? "" : "s"} running
+                {queuedCount > 0 && (
+                  <span style={{ color: "var(--ink-subtle)" }}>· {queuedCount} queued</span>
+                )}{" "}
+                →
+              </Link>
+            ) : queuedCount > 0 ? (
+              <Link
+                to="/missions"
+                search={{ tab: "missions" } as never}
+                className="mono-label flex items-center gap-[7px] px-1 pb-1"
+                style={{ color: "var(--ink-subtle)", fontSize: 9.5 }}
+              >
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: 99,
+                    background: "var(--ink-faint)",
+                  }}
+                />
+                {queuedCount} queued →
+              </Link>
+            ) : null}
+            {/* IA-NAV-V11: the engine room behind ONE recessed door. The old 5-icon
               Trust row collapses into a single quiet door carrying the live
               approvals badge; clicking reveals the governance surfaces on demand
               (engine-room doctrine: deep engine, surfaced only when asked). Every
               surface the old row exposed is preserved in ENGINE_ROOM_LINKS, so
               nothing is orphaned (Trust Ledger + Connectors aren't in ⌘K). */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={callCount > 0 ? `Engine Room · ${callCount} pending` : "Engine Room"}
+                  className={`relative flex w-full items-center gap-2.5 rounded-md border hairline px-3 py-1.5 text-[12.5px] transition ${
+                    engineRoomActive(path)
+                      ? "bg-secondary text-foreground font-medium"
+                      : "text-ink-subtle hover:text-foreground hover:bg-secondary/60"
+                  }`}
+                >
+                  <ENGINE_ROOM_DOOR.icon
+                    className="h-[14px] w-[14px] shrink-0"
+                    strokeWidth={1.75}
+                  />
+                  <span className="flex-1 text-left">{ENGINE_ROOM_DOOR.label}</span>
+                  {callCount > 0 && (
+                    <span
+                      className="dot-gate inline-flex items-center justify-center rounded-full px-[3px]"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 8.5,
+                        fontWeight: 700,
+                        background: "var(--coral)",
+                        color: "oklch(0.99 0.005 60)",
+                        minWidth: 14,
+                        height: 14,
+                      }}
+                    >
+                      {callCount}
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-52">
+                <DropdownMenuLabel className="mono-label">Engine Room</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ENGINE_ROOM_LINKS.map((t) => {
+                  const Icon = t.icon;
+                  const showBadge = t.label === "Approvals" && callCount > 0;
+                  return (
+                    <Link key={t.label} to={t.to} search={t.search as never}>
+                      <DropdownMenuItem className="cursor-pointer gap-2">
+                        <Icon className="h-3.5 w-3.5" />
+                        <span className="flex-1">{t.label}</span>
+                        {showBadge && (
+                          <span
+                            className="mono-label tabular-nums"
+                            style={{ color: "var(--coral)", fontSize: 10, fontWeight: 700 }}
+                          >
+                            {callCount}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    </Link>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="flex items-center gap-2 px-0.5">
+              <BudgetBar />
+              <span className="flex-1" />
+              <FlowWidget />
               <button
                 type="button"
-                aria-label={callCount > 0 ? `Engine Room · ${callCount} pending` : "Engine Room"}
-                className={`relative flex w-full items-center gap-2.5 rounded-md border hairline px-3 py-1.5 text-[12.5px] transition ${
-                  engineRoomActive(path)
-                    ? "bg-secondary text-foreground font-medium"
-                    : "text-ink-subtle hover:text-foreground hover:bg-secondary/60"
-                }`}
+                aria-label="Toggle theme"
+                title="Toggle theme"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="flex p-1 text-ink-subtle hover:text-foreground transition"
               >
-                <ENGINE_ROOM_DOOR.icon className="h-[14px] w-[14px] shrink-0" strokeWidth={1.75} />
-                <span className="flex-1 text-left">{ENGINE_ROOM_DOOR.label}</span>
-                {callCount > 0 && (
-                  <span
-                    className="dot-gate inline-flex items-center justify-center rounded-full px-[3px]"
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 8.5,
-                      fontWeight: 700,
-                      background: "var(--coral)",
-                      color: "oklch(0.99 0.005 60)",
-                      minWidth: 14,
-                      height: 14,
-                    }}
-                  >
-                    {callCount}
-                  </span>
+                {theme === "dark" ? (
+                  <Sun className="h-[13px] w-[13px]" strokeWidth={1.75} />
+                ) : (
+                  <Moon className="h-[13px] w-[13px]" strokeWidth={1.75} />
                 )}
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-52">
-              <DropdownMenuLabel className="mono-label">Engine Room</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {ENGINE_ROOM_LINKS.map((t) => {
-                const Icon = t.icon;
-                const showBadge = t.label === "Approvals" && callCount > 0;
-                return (
-                  <Link key={t.label} to={t.to} search={t.search as never}>
-                    <DropdownMenuItem className="cursor-pointer gap-2">
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="flex-1">{t.label}</span>
-                      {showBadge && (
-                        <span
-                          className="mono-label tabular-nums"
-                          style={{ color: "var(--coral)", fontSize: 10, fontWeight: 700 }}
-                        >
-                          {callCount}
-                        </span>
-                      )}
-                    </DropdownMenuItem>
-                  </Link>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="flex items-center gap-2 px-0.5">
-            <BudgetBar />
-            <span className="flex-1" />
-            <FlowWidget />
-            <button
-              type="button"
-              aria-label="Toggle theme"
-              title="Toggle theme"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex p-1 text-ink-subtle hover:text-foreground transition"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-[13px] w-[13px]" strokeWidth={1.75} />
-              ) : (
-                <Moon className="h-[13px] w-[13px]" strokeWidth={1.75} />
-              )}
-            </button>
+            </div>
+            <div className="flex items-center gap-[9px] pt-0.5">
+              <span
+                className="inline-flex items-center justify-center rounded-full bg-soft-stone text-foreground"
+                style={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 600 }}
+              >
+                {userInitials}
+              </span>
+              <span className="flex-1 truncate text-[12.5px] text-ink-muted">{userName}</span>
+              <Link
+                to="/settings"
+                title="Settings"
+                aria-label="Settings"
+                className={`flex transition ${path === "/settings" ? "text-foreground" : "text-ink-subtle hover:text-foreground"}`}
+              >
+                <Settings className="h-[13px] w-[13px]" strokeWidth={1.75} />
+              </Link>
+              <span className="dot dot-completed" title="All systems normal" />
+            </div>
           </div>
-          <div className="flex items-center gap-[9px] pt-0.5">
-            <span
-              className="inline-flex items-center justify-center rounded-full bg-soft-stone text-foreground"
-              style={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 600 }}
-            >
-              {userInitials}
-            </span>
-            <span className="flex-1 truncate text-[12.5px] text-ink-muted">{userName}</span>
-            <Link
-              to="/settings"
-              title="Settings"
-              aria-label="Settings"
-              className={`flex transition ${path === "/settings" ? "text-foreground" : "text-ink-subtle hover:text-foreground"}`}
-            >
-              <Settings className="h-[13px] w-[13px]" strokeWidth={1.75} />
-            </Link>
-            <span className="dot dot-completed" title="All systems normal" />
-          </div>
-        </div>
-      </aside>
+        </aside>
 
-      <main className="flex-1 min-w-0 flex flex-col min-h-screen">
-        {/* CookingBanner + ConstructionPill moved into TopBar (founder
+        <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+          {/* CookingBanner + ConstructionPill moved into TopBar (founder
             top-chrome review 2026-06-12): the pill is in-flow in the bar's
             center slot (a fixed overlay covered the ticker), the banner is
             the row below the bar — the reference chrome order. */}
-        {/* Flex column so full-height screens (Chat) can pin to the viewport
+          {/* Flex column so full-height screens (Chat) can pin to the viewport
             with internal scroll, per the reference app.jsx main wrapper.
             Block screens are unaffected — they stretch and scroll the page. */}
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
-      </main>
-    </div>
+          <div className="flex-1 min-w-0 min-h-0 flex flex-col">{children}</div>
+        </main>
+      </div>
     </MachineViewContainer>
   );
 }
