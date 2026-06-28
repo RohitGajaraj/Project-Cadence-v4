@@ -241,19 +241,19 @@ const MOAT_PILLARS = [
   {
     icon: "◈",
     title: "Decision layer",
-    body: "Every call Cadence proposes runs against your team's own history of decisions and outcomes. Generic AI trains on the internet. Cadence trains on your product.",
+    body: "Every call runs against two things: your product's history of decisions and outcomes, and the judgment, taste, and standards your team has established over time. Generic AI trains on the internet. Cadence trains on your product and your craft.",
     col: C.violetBright,
   },
   {
     icon: "◉",
     title: "Outcome memory",
-    body: "When a decision fails, Cadence records why. When it succeeds, it records how. Both write into every future call. No human has to remember. The system does.",
+    body: "Every signal that came in, every spec that got written, every feature that shipped, every user who reacted. The full product journey writes into every future call. No human has to remember. The system does.",
     col: C.cyan,
   },
   {
     icon: "◱",
     title: "Compounding edge",
-    body: "At six months, your Cadence instance knows your product better than any new hire. At eighteen, it's institutional memory no competitor can buy, copy, or reconstruct.",
+    body: "It compounds from the first call. Every outcome makes the next decision sharper. Day one, it closes the loop. The longer it runs, the more of your product's institutional intelligence it holds. There is no backfill. There is no shortcut.",
     col: C.green,
   },
 ];
@@ -1216,9 +1216,10 @@ function HeroSection() {
                 maxWidth: 440,
               }}
             >
-              <Brand /> senses signals, proposes decisions, writes specs, builds, ships, and learns
-              from every outcome. Your product moves. Your team stays on strategy. You see every
-              decision and step in only when it truly matters.
+              <Brand /> runs autonomous agents across the full product lifecycle: sensing signals,
+              proposing decisions, writing specs, building, shipping, and learning from every outcome.
+              Your product moves. Your team stays on strategy. You step in only when it truly matters.
+              Everything else runs.
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -1314,6 +1315,81 @@ function OrbitSection({ active }: { active: number }) {
       >
         <StationPills active={active} />
       </div>
+
+      {/* Memory layer — the beneath-the-loop compounding brain, visually distinct from the six stations */}
+      <div
+        style={{
+          opacity: on ? 1 : 0,
+          transform: on ? "translateY(0)" : "translateY(10px)",
+          transition: "opacity 0.6s ease 0.42s, transform 0.6s ease 0.42s",
+          width: "100%",
+          maxWidth: 640,
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(139,92,246,0.07)",
+            border: "1px solid rgba(167,139,250,0.22)",
+            borderRadius: 14,
+            padding: "18px 22px",
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "rgba(139,92,246,0.2)",
+              border: "1px solid rgba(167,139,250,0.38)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              fontSize: 18,
+              color: C.violetBright,
+            }}
+          >
+            ◉
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: 9.5,
+                fontFamily: "JetBrains Mono, monospace",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.violetBright,
+                marginBottom: 5,
+              }}
+            >
+              Compounding memory layer
+            </div>
+            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.55 }}>
+              Beneath every station: every signal, spec, build, and outcome is recorded and
+              weighted. Each loop trains the next. Cadence doesn't just run the process. It
+              remembers it.
+            </p>
+          </div>
+          <div
+            style={{ display: "flex", alignItems: "flex-end", gap: 3, flexShrink: 0, paddingRight: 4 }}
+          >
+            {[6, 9, 12, 16, 20].map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 4,
+                  height: h,
+                  borderRadius: 2,
+                  background: `rgba(167,139,250,${0.22 + i * 0.16})`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -1375,24 +1451,69 @@ function ManifestoStrip() {
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
-        <p
-          style={{
-            fontSize: "clamp(18px,2.8vw,26px)",
-            lineHeight: 1.5,
-            color: C.text,
-            margin: 0,
-            fontWeight: 440,
-            maxWidth: 700,
-          }}
-        >
-          Every team has Jira, Slack, GitHub, and a dozen AI tools. None of them close the loop.{" "}
-          <span style={{ color: C.muted }}>
-            The signal that triggers a decision never reaches the outcome that validates it. Data
-            fragments. Institutional knowledge walks out the door. <Brand /> closes that gap end to
-            end: sense to shipped, with every decision recorded, weighted, and fed back in. The loop
-            is not the product. The loop is the floor.
-          </span>
-        </p>
+        <div style={{ maxWidth: 720 }}>
+          <p
+            style={{
+              fontSize: "clamp(15px,1.9vw,20px)",
+              lineHeight: 1.6,
+              color: "rgba(255,255,255,0.45)",
+              margin: "0 0 18px",
+              fontWeight: 440,
+            }}
+          >
+            Every team has Jira, Slack, GitHub, and a dozen AI tools.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(22px,3.2vw,34px)",
+              lineHeight: 1.3,
+              color: C.text,
+              margin: "0 0 24px",
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+            }}
+          >
+            None of them close the loop.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(15px,1.9vw,20px)",
+              lineHeight: 1.65,
+              color: "rgba(255,255,255,0.6)",
+              margin: "0 0 24px",
+              fontWeight: 440,
+            }}
+          >
+            The signal that triggers a decision never reaches the outcome that validates it.
+            Data fragments. Institutional knowledge walks out the door.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(16px,2.1vw,22px)",
+              lineHeight: 1.55,
+              color: "rgba(255,255,255,0.82)",
+              margin: "0 0 28px",
+              fontWeight: 500,
+            }}
+          >
+            <Brand /> closes that gap: sense to shipped, with every decision recorded, weighted,
+            and fed back in.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(20px,2.8vw,30px)",
+              lineHeight: 1.25,
+              margin: 0,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            The loop is not the product. The loop is the floor.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -1808,25 +1929,44 @@ function MoatSection() {
           >
             The brain that compounds.
           </h2>
-          <p style={{ fontSize: 14, color: C.muted, maxWidth: 540, margin: "0 0 10px", lineHeight: 1.65 }}>
-            The six stations are the loop. What no competitor can replicate is what lives beneath:
-            a decision layer trained on your team's own outcomes. Six months of this data is a moat.
-            Eighteen months is insurmountable.
+          <p
+            style={{
+              fontSize: 14,
+              color: C.muted,
+              maxWidth: 540,
+              margin: "0 0 10px",
+              lineHeight: 1.65,
+            }}
+          >
+            The six stations are the loop. What lives beneath is what compounds: a decision layer
+            trained on your team's own taste, standards, and outcomes. It starts shaping calls from
+            day one. The longer it runs, the more irreplaceable it becomes.
           </p>
         </div>
 
         {/* Moat proof bar */}
-        <div style={{
-          marginBottom: 32,
-          padding: "14px 20px",
-          background: "rgba(139,92,246,0.07)",
-          border: `1px solid rgba(167,139,250,0.18)`,
-          borderRadius: 10,
-          opacity: on ? 1 : 0,
-          transition: "opacity 0.5s ease 0.1s",
-        }}>
-          <p style={{ fontSize: 13, color: "rgba(167,139,250,0.75)", margin: 0, lineHeight: 1.6, fontStyle: "italic" }}>
-            "Generic AI trains on the internet. Cadence trains on your product. That distinction is the moat."
+        <div
+          style={{
+            marginBottom: 32,
+            padding: "14px 20px",
+            background: "rgba(139,92,246,0.07)",
+            border: `1px solid rgba(167,139,250,0.18)`,
+            borderRadius: 10,
+            opacity: on ? 1 : 0,
+            transition: "opacity 0.5s ease 0.1s",
+          }}
+        >
+          <p
+            style={{
+              fontSize: 13,
+              color: "rgba(167,139,250,0.75)",
+              margin: 0,
+              lineHeight: 1.6,
+              fontStyle: "italic",
+            }}
+          >
+            "Generic AI trains on the internet. Cadence trains on your product and your taste. That
+            distinction is the moat."
           </p>
         </div>
 
@@ -1872,12 +2012,18 @@ function MoatSection() {
               >
                 {p.icon}
               </div>
-              <h3 style={{ fontSize: 16, fontWeight: 620, margin: "0 0 10px", color: C.text, letterSpacing: "-0.01em" }}>
+              <h3
+                style={{
+                  fontSize: 16,
+                  fontWeight: 620,
+                  margin: "0 0 10px",
+                  color: C.text,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 {p.title}
               </h3>
-              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.muted, margin: 0 }}>
-                {p.body}
-              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.muted, margin: 0 }}>{p.body}</p>
             </div>
           ))}
         </div>
@@ -1891,110 +2037,186 @@ function GuerrillaSection() {
   return (
     <section
       ref={ref}
-      style={{ padding: "100px 24px", borderBottom: `1px solid ${C.divider}`, textAlign: "center" }}
+      style={{ padding: "100px 24px 80px", borderBottom: `1px solid ${C.divider}` }}
     >
-      <div
-        style={{
-          maxWidth: 760,
-          margin: "0 auto",
-          opacity: on ? 1 : 0,
-          transform: on ? "translateY(0)" : "translateY(22px)",
-          transition: "opacity 0.65s ease, transform 0.65s ease",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "clamp(28px, 5.2vw, 58px)",
-            fontWeight: 800,
-            lineHeight: 1.07,
-            letterSpacing: "-0.035em",
-            color: C.text,
-            margin: "0 0 4px",
-          }}
-        >
-          Your competitors
-          <br />
-          aren't moving faster.
-        </p>
-        <p
-          style={{
-            fontSize: "clamp(28px, 5.2vw, 58px)",
-            fontWeight: 800,
-            lineHeight: 1.07,
-            letterSpacing: "-0.035em",
-            margin: "0 0 36px",
-            background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Their agents are.
-        </p>
-
-        {/* Proof statements — no bullets, typographic weight */}
+      <div style={{ maxWidth: 820, margin: "0 auto" }}>
+        {/* Hero statement — positive, pain-naming, no competitor framing */}
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-            maxWidth: 560,
-            margin: "0 auto 44px",
-            textAlign: "left",
-            borderLeft: `2px solid rgba(167,139,250,0.18)`,
-            paddingLeft: 24,
+            opacity: on ? 1 : 0,
+            transform: on ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.65s ease, transform 0.65s ease",
+            marginBottom: 64,
+            textAlign: "center",
           }}
         >
-          <p style={{
-            fontSize: 16, lineHeight: 1.65, color: "rgba(255,255,255,0.62)", margin: 0,
-            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.15s",
-            fontWeight: 440,
-          }}>
-            While you're in a meeting deciding what to build, Cadence already built it.
+          <p
+            style={{
+              fontSize: "clamp(26px, 4.8vw, 54px)",
+              fontWeight: 800,
+              lineHeight: 1.08,
+              letterSpacing: "-0.035em",
+              color: C.text,
+              margin: "0 0 8px",
+            }}
+          >
+            Every product team knows what to build next.
           </p>
-          <p style={{
-            fontSize: 15, lineHeight: 1.65, color: C.muted, margin: 0,
-            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.26s",
-          }}>
-            While your team is writing the next spec, the outcome from the last one is already
-            being measured. Automatically.
-          </p>
-          <p style={{
-            fontSize: 15, lineHeight: 1.65, color: C.muted, margin: 0,
-            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.37s",
-          }}>
-            The teams winning right now don't have better people. They run better systems.
+          <p
+            style={{
+              fontSize: "clamp(26px, 4.8vw, 54px)",
+              fontWeight: 800,
+              lineHeight: 1.08,
+              letterSpacing: "-0.035em",
+              margin: 0,
+              background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Almost none know why the last thing shipped the way it did.
           </p>
         </div>
 
-        <p
-          style={{
-            fontSize: 15,
-            lineHeight: 1.7,
-            color: C.muted,
-            maxWidth: 460,
-            margin: "0 auto 36px",
-          }}
-        >
-          Every team that wires <Brand /> now builds a compounding advantage. The longer it runs,
-          the smarter it gets. The gap widens with every call.
-        </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
-            Start free
-          </a>
-          <Link
-            to="/pricing"
+        {/* Three cascading scenarios — numbered, crescendo */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div
             style={{
-              textDecoration: "none",
-              padding: "10px 18px",
-              borderRadius: 8,
-              border: `1px solid ${C.border}`,
-              color: C.muted,
-              fontSize: 13,
+              padding: "36px 0",
+              borderTop: `1px solid ${C.divider}`,
+              opacity: on ? 1 : 0,
+              transform: on ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 0.55s ease 0.18s, transform 0.55s ease 0.18s",
             }}
           >
-            See pricing
-          </Link>
+            <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontFamily: "JetBrains Mono, monospace",
+                  letterSpacing: "0.16em",
+                  color: C.faint,
+                  textTransform: "uppercase",
+                  paddingTop: 5,
+                  flexShrink: 0,
+                  width: 24,
+                }}
+              >
+                01
+              </div>
+              <p
+                style={{
+                  fontSize: "clamp(17px,2.2vw,23px)",
+                  lineHeight: 1.5,
+                  color: "rgba(255,255,255,0.72)",
+                  margin: 0,
+                  fontWeight: 440,
+                }}
+              >
+                Decisions that used to require three days of alignment now take seconds. Cadence
+                has already checked the precedent, weighed the history, and surfaced what your
+                team would have decided.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: "36px 0",
+              borderTop: `1px solid ${C.divider}`,
+              opacity: on ? 1 : 0,
+              transform: on ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 0.55s ease 0.32s, transform 0.55s ease 0.32s",
+            }}
+          >
+            <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontFamily: "JetBrains Mono, monospace",
+                  letterSpacing: "0.16em",
+                  color: C.faint,
+                  textTransform: "uppercase",
+                  paddingTop: 5,
+                  flexShrink: 0,
+                  width: 24,
+                }}
+              >
+                02
+              </div>
+              <p
+                style={{
+                  fontSize: "clamp(17px,2.2vw,23px)",
+                  lineHeight: 1.5,
+                  color: "rgba(255,255,255,0.72)",
+                  margin: 0,
+                  fontWeight: 440,
+                }}
+              >
+                The outcome from your last sprint is not sitting in a retrospective doc. It is
+                already weighted into the next call. Automatically. Every time.
+              </p>
+            </div>
+          </div>
+
+          {/* The punch — centered, largest, gradient finale */}
+          <div
+            style={{
+              padding: "52px 0 0",
+              borderTop: `1px solid ${C.divider}`,
+              textAlign: "center",
+              opacity: on ? 1 : 0,
+              transform: on ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 0.55s ease 0.46s, transform 0.55s ease 0.46s",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "clamp(26px,4.5vw,50px)",
+                fontWeight: 800,
+                lineHeight: 1.1,
+                letterSpacing: "-0.03em",
+                color: C.text,
+                margin: "0 0 6px",
+              }}
+            >
+              The teams winning right now
+              <br />
+              don't have better people.
+            </p>
+            <p
+              style={{
+                fontSize: "clamp(26px,4.5vw,50px)",
+                fontWeight: 800,
+                lineHeight: 1.1,
+                letterSpacing: "-0.03em",
+                margin: "0 0 44px",
+                background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              They stopped waiting on them.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
+                Start free
+              </a>
+              <Link
+                to="/pricing"
+                style={{
+                  textDecoration: "none",
+                  padding: "10px 18px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  color: C.muted,
+                  fontSize: 13,
+                }}
+              >
+                See pricing
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -2049,8 +2271,8 @@ function CtaSection() {
           Put your signal in.
         </h2>
         <p style={{ fontSize: 14.5, lineHeight: 1.7, color: C.muted, margin: "0 0 34px" }}>
-          Start free. Bring your own signal source or use the webhook. The ledger starts compounding
-          from the first call.
+          Connect what you're watching. Cadence reads your market, your users, and your team's
+          decisions. The loop starts closing from day one.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
