@@ -611,8 +611,18 @@ function OrbitRingLabeled({ active }: { active: number }) {
 
       {/* Write-pulse traveling the active spoke into the brain (data → memory) */}
       <circle key={`wp-${active}`} r="2.6" fill={C.emberBright} opacity="0">
-        <animate attributeName="cx" values={`${act.x};${act.ex}`} dur="1s" repeatCount="indefinite" />
-        <animate attributeName="cy" values={`${act.y};${act.ey}`} dur="1s" repeatCount="indefinite" />
+        <animate
+          attributeName="cx"
+          values={`${act.x};${act.ex}`}
+          dur="1s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="cy"
+          values={`${act.y};${act.ey}`}
+          dur="1s"
+          repeatCount="indefinite"
+        />
         <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" />
       </circle>
 
@@ -702,7 +712,14 @@ function OrbitRingLabeled({ active }: { active: number }) {
           filter: `drop-shadow(0 0 26px ${C.emberGlow}) drop-shadow(0 0 48px rgba(251,113,0,0.32))`,
         }}
       />
-      <circle cx={cx} cy={cy} r={coreR} fill="none" stroke="rgba(255,222,184,0.5)" strokeWidth="0.75" />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={coreR}
+        fill="none"
+        stroke="rgba(255,222,184,0.5)"
+        strokeWidth="0.75"
+      />
       <text
         x={cx}
         y={cy + 3}
@@ -885,11 +902,21 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
         }}
       >
         <span
-          style={{ color: C.violetBright, fontSize: 10, fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace' }}
+          style={{
+            color: C.violetBright,
+            fontSize: 10,
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+          }}
         >
           ◎
         </span>
-        <span style={{ fontSize: 11, color: C.muted, fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace' }}>
+        <span
+          style={{
+            fontSize: 11,
+            color: C.muted,
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+          }}
+        >
           cadence / today
         </span>
         <span
@@ -1116,7 +1143,9 @@ function MockLiveRun({ revealed }: { revealed: boolean }) {
         );
       })}
       <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ flex: 1, height: 2, background: C.border, borderRadius: 1, overflow: "hidden" }}>
+        <div
+          style={{ flex: 1, height: 2, background: C.border, borderRadius: 1, overflow: "hidden" }}
+        >
           <div
             style={{
               height: "100%",
@@ -1230,7 +1259,11 @@ function FlowList({ entries, revealed }: { entries: LogEntry[]; revealed: boolea
             <div style={{ paddingBottom: i < entries.length - 1 ? 14 : 0, paddingTop: 9 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
                 <span
-                  style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}
+                  style={{
+                    fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+                    fontSize: 9,
+                    color: C.faint,
+                  }}
                 >
                   {e.ts}
                 </span>
@@ -1637,8 +1670,8 @@ function ManifestoStrip() {
           }}
         >
           Every signal, decision, and outcome scatters across a dozen tools, then walks out the door
-          with the people who made it. <Brand /> keeps the whole thread, from first signal to shipped
-          outcome, and feeds it back into the next call.
+          with the people who made it. <Brand /> keeps the whole thread, from first signal to
+          shipped outcome, and feeds it back into the next call.
         </p>
       </div>
     </section>
@@ -1703,7 +1736,11 @@ function StationsSection({ active }: { active: number }) {
               >
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span
-                    style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}
+                    style={{
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+                      fontSize: 9,
+                      color: C.faint,
+                    }}
                   >
                     {s.num}
                   </span>
@@ -1909,12 +1946,12 @@ function AgentInActionSection() {
 function LedgerSection() {
   const { ref, on } = useReveal(0.08);
   const REUSE = [4, 2, 3, 5];
-  // Trust-and-outcome oriented: the record is what makes the next call defensible.
+  // Short trust phrases: only the key highlight, chipped (not a full sentence).
   const INSIGHTS = [
-    "logged with its evidence, a default the team can stand behind.",
-    "the miss owned on the record, so developer work ranks higher now.",
-    "proven, not argued: the simpler call wins on evidence next time.",
-    "attributed to the decision, a bet anyone can audit later.",
+    "now a team default",
+    "owned, not buried",
+    "proven, not argued",
+    "a bet anyone can audit",
   ];
   const [hot, setHot] = useState(0);
   useEffect(() => {
@@ -1958,7 +1995,6 @@ function LedgerSection() {
           style={{
             overflowX: "auto",
             WebkitOverflowScrolling: "touch",
-            maxWidth: 900,
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(14px)",
             transition: "opacity 0.5s ease 0.14s, transform 0.5s ease 0.14s",
@@ -2080,10 +2116,28 @@ function LedgerSection() {
           >
             On the record
           </span>
-          <span key={hot} style={{ animation: "fadeIn 0.6s ease" }}>
+          <span
+            key={hot}
+            style={{
+              animation: "fadeIn 0.6s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
             <span style={{ color: C.muted }}>{LEDGER_ROWS[hot].outcome}</span>
-            <span style={{ color: C.faint }}>{"  ·  "}</span>
-            <span className="lp-memwrite" style={{ fontWeight: 600 }}>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: C.emberBright,
+                border: `1px solid ${C.emberBorder}`,
+                background: "rgba(251,113,0,0.08)",
+                borderRadius: 99,
+                padding: "3px 11px",
+              }}
+            >
               {INSIGHTS[hot]}
             </span>
           </span>
@@ -2597,9 +2651,9 @@ function GuerrillaSection() {
                   fontWeight: 430,
                 }}
               >
-                Decisions that used to take three days of alignment take seconds. Cadence has already
-                pulled the precedent, weighed how similar calls played out, and surfaced what your
-                team would most likely choose.
+                Decisions that used to take three days of alignment take seconds. Cadence has
+                already pulled the precedent, weighed how similar calls played out, and surfaced
+                what your team would most likely choose.
               </p>
             </div>
           </div>
@@ -2641,7 +2695,6 @@ function GuerrillaSection() {
               </p>
             </div>
           </div>
-
         </div>
 
         {/* Close: clean centered statement, no marker, ends on the compounding edge */}
@@ -2664,8 +2717,8 @@ function GuerrillaSection() {
               maxWidth: 620,
             }}
           >
-            The best product teams aren&apos;t working harder. They run a system that remembers every
-            decision and sharpens with every outcome.
+            The best product teams aren&apos;t working harder. They run a system that remembers
+            every decision and sharpens with every outcome.
           </p>
           <p
             style={{
@@ -2688,7 +2741,15 @@ function GuerrillaSection() {
 function CtaSection() {
   const { ref, on } = useReveal(0.12);
   return (
-    <section ref={ref} style={{ position: "relative", overflow: "hidden", padding: "76px 24px 96px", textAlign: "center" }}>
+    <section
+      ref={ref}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "76px 24px 96px",
+        textAlign: "center",
+      }}
+    >
       <div
         aria-hidden="true"
         className="lp-aurora"
@@ -2729,7 +2790,9 @@ function CtaSection() {
             justifyContent: "center",
           }}
         >
-          <span style={{ color: C.emberBright, fontSize: 18, textShadow: `0 0 12px ${C.emberGlow}` }}>
+          <span
+            style={{ color: C.emberBright, fontSize: 18, textShadow: `0 0 12px ${C.emberGlow}` }}
+          >
             ↺
           </span>
         </div>
@@ -2749,8 +2812,8 @@ function CtaSection() {
         </h2>
         <p style={{ fontSize: 14.5, lineHeight: 1.7, color: C.muted, margin: "0 0 34px" }}>
           Cadence learns how your team thinks, then makes each call with the evidence and the memory
-          of every call before it. Not workflows on autopilot. Judgment, applied at the speed of your
-          product. You weigh in only when the call is genuinely yours to make.
+          of every call before it. Not workflows on autopilot. Judgment, applied at the speed of
+          your product. You weigh in only when the call is genuinely yours to make.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
@@ -2874,24 +2937,28 @@ function LandingPage() {
               </span>
             </Link>
             <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <Link
-              to="/pricing"
-              className="lp-nav"
-              style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
-            >
-              Pricing
-            </Link>
-            <a
-              href="/login"
-              className="lp-nav"
-              style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
-            >
-              Sign in
-            </a>
-            <MachineViewToggle />
-            <a href="/signup" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
-              Start free
-            </a>
+              <Link
+                to="/pricing"
+                className="lp-nav"
+                style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
+              >
+                Pricing
+              </Link>
+              <a
+                href="/login"
+                className="lp-nav"
+                style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
+              >
+                Sign in
+              </a>
+              <MachineViewToggle />
+              <a
+                href="/signup"
+                className="btn btn-primary btn-sm"
+                style={{ textDecoration: "none" }}
+              >
+                Start free
+              </a>
             </nav>
           </div>
         </header>
@@ -2919,7 +2986,13 @@ function LandingPage() {
               justifyContent: "space-between",
             }}
           >
-            <span style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}>
+            <span
+              style={{
+                fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+                fontSize: 9,
+                color: C.faint,
+              }}
+            >
               Made with Cadence
             </span>
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
