@@ -2,7 +2,7 @@
 // Voice: Cadence IS the actor. OS-level, not just an agent. Six stations plus what lies beyond.
 // Design: one dark canvas, glassmorphism, sequential dot flow, labeled orbit ring centered.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineViewToggle } from "@/components/cadence/MachineViewToggle";
 import { MachineViewContainer } from "@/components/machine/MachineViewContainer";
@@ -314,12 +314,26 @@ const STYLES = `
   @keyframes orbitNodePulse  { 0%{r:7} 50%{r:9} 100%{r:7} }
 
   .lp-card {
-    transition: border-color 0.25s ease, background 0.25s ease,
-                transform 0.22s cubic-bezier(0.23,1,0.32,1), box-shadow 0.25s ease;
+    transition: border-color 0.22s ease, background 0.22s ease,
+                transform 0.24s cubic-bezier(0.23,1,0.32,1), box-shadow 0.24s ease;
   }
-  .lp-card:hover { transform:translateY(-3px); box-shadow:0 14px 36px rgba(0,0,0,0.4); }
+  .lp-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent, rgba(255,255,255,0.26)) !important;
+    box-shadow: 0 22px 56px rgba(0,0,0,0.55), 0 0 30px var(--accent-soft, rgba(255,255,255,0.05)), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .lp-card:hover .lp-card-icon { transform: translateY(-2px) scale(1.06); }
+  .lp-card-icon { transition: transform 0.24s cubic-bezier(0.23,1,0.32,1); }
   .lp-conn { animation: connPulse 2.8s ease-in-out infinite; }
   .bg-float { animation: bgFloat 7s ease-in-out infinite; }
+
+  /* Interactive chrome: ghost buttons, nav links, ledger rows */
+  .lp-ghost { transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease; }
+  .lp-ghost:hover { color:#fff !important; border-color: rgba(251,113,0,0.5) !important; background: rgba(251,113,0,0.07); transform: translateY(-1px); }
+  .lp-nav { transition: color 0.18s ease; }
+  .lp-nav:hover { color:#fff !important; }
+  .lp-ledger-row { transition: background 0.25s ease, border-left-color 0.4s ease; }
+  .lp-ledger-row:hover { background: rgba(255,255,255,0.04) !important; }
 
   /* Glowing orange "writing to memory" text - highlight drifts left to right */
   @keyframes memShimmer { 0% { background-position: 210% 0 } 100% { background-position: -70% 0 } }
@@ -329,6 +343,16 @@ const STYLES = `
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: transparent;
     animation: memShimmer 2.6s linear infinite;
+  }
+  /* Hero headline sheen - a bright band sweeps across "Agents do." */
+  @keyframes headSheen { 0% { background-position: 120% 50% } 100% { background-position: -80% 50% } }
+  .lp-agentsdo {
+    background: linear-gradient(110deg, #fb7100 0%, #ff9542 24%, #ffd9a0 42%, #fff4e3 50%, #ffd9a0 58%, #ff9542 76%, #fb7100 100%);
+    background-size: 230% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: headSheen 5s linear infinite;
+    filter: drop-shadow(0 0 26px rgba(251,113,0,0.26));
   }
   /* Space backdrop - slow nebula drift */
   @keyframes auroraDrift { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity:0.55 } 50% { transform: translate3d(0,-18px,0) scale(1.06); opacity:0.8 } }
@@ -1306,17 +1330,13 @@ function HeroSection() {
               don't build anymore.
             </h1>
             <h1
+              className="lp-agentsdo"
               style={{
                 fontSize: "clamp(32px, 4.5vw, 52px)",
                 lineHeight: 1.06,
                 fontWeight: 750,
                 margin: "0 0 28px",
                 letterSpacing: "-0.03em",
-                background: `linear-gradient(135deg, ${C.emberBright} 0%, ${C.amber} 48%, ${C.ember} 100%)`,
-                backgroundSize: "200% 200%",
-                animation: "gradShift 5s ease infinite",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
               }}
             >
               Agents do.
@@ -1344,6 +1364,7 @@ function HeroSection() {
               </a>
               <Link
                 to="/pricing"
+                className="lp-ghost"
                 style={{
                   textDecoration: "none",
                   padding: "10px 18px",
@@ -1501,9 +1522,9 @@ function StatsStrip() {
               style={{
                 fontSize: "clamp(22px,3vw,30px)",
                 fontWeight: 700,
-                color: C.violetBright,
+                color: C.emberBright,
                 fontFamily: "JetBrains Mono, monospace",
-                textShadow: `0 0 20px ${C.violetGlow}`,
+                textShadow: `0 0 20px ${C.emberGlow}`,
                 lineHeight: 1.1,
               }}
             >
@@ -1651,17 +1672,21 @@ function StationsSection({ active }: { active: number }) {
               <div
                 key={s.id}
                 className="lp-card"
-                style={{
-                  padding: "22px 20px 24px",
-                  background: i === active ? C.bgCardHot : C.bgCard,
-                  border: `1px solid ${i === active ? C.borderHot : C.border}`,
-                  borderRadius: 14,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.06}s both`,
-                  boxShadow: i === active ? `0 0 28px rgba(139,92,246,0.12)` : "none",
-                }}
+                style={
+                  {
+                    padding: "22px 20px 24px",
+                    background: i === active ? C.bgCardHot : C.bgCard,
+                    border: `1px solid ${i === active ? C.borderHot : C.border}`,
+                    borderRadius: 14,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.06}s both`,
+                    boxShadow: i === active ? `0 0 28px rgba(139,92,246,0.12)` : "none",
+                    "--accent": `${s.color}66`,
+                    "--accent-soft": `${s.color}1f`,
+                  } as CSSProperties
+                }
               >
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span
@@ -1870,11 +1895,18 @@ function AgentInActionSection() {
 
 function LedgerSection() {
   const { ref, on } = useReveal(0.08);
-  const REUSE = [4, 2, 3, 5, 2];
+  const REUSE = [4, 2, 3, 5];
+  // What each call taught the system: outcome-oriented, not a restatement of the row.
+  const INSIGHTS = [
+    "short onboarding became the default for every new flow.",
+    "Cadence now weights developer-facing work higher.",
+    "the simpler interaction ships first, every time.",
+    "the platform-first bet now anchors the roadmap.",
+  ];
   const [hot, setHot] = useState(0);
   useEffect(() => {
     if (!on) return;
-    const id = setInterval(() => setHot((h) => (h + 1) % LEDGER_ROWS.length), 2200);
+    const id = setInterval(() => setHot((h) => (h + 1) % LEDGER_ROWS.length), 3800);
     return () => clearInterval(id);
   }, [on]);
 
@@ -1958,6 +1990,7 @@ function LedgerSection() {
               return (
                 <div
                   key={i}
+                  className="lp-ledger-row"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1.5fr 1.1fr 84px 78px",
@@ -2007,26 +2040,38 @@ function LedgerSection() {
           </div>
         </div>
 
-        {/* Live precedent line: the compounding made visible */}
+        {/* What the highlighted call taught the system: outcome-oriented, reads slowly */}
         <div
           style={{
-            marginTop: 14,
-            minHeight: 20,
+            marginTop: 16,
+            minHeight: 24,
             opacity: on ? 1 : 0,
             transition: "opacity 0.45s ease 0.4s",
-            fontSize: 12.5,
+            fontSize: 13,
             display: "flex",
             flexWrap: "wrap",
-            gap: 6,
-            alignItems: "center",
+            gap: 12,
+            alignItems: "baseline",
           }}
         >
-          <span style={{ color: C.faint }}>Once graded, a call becomes precedent.</span>
-          <span key={hot} style={{ animation: "fadeIn 0.4s ease" }}>
-            <span style={{ color: C.emberBright }}>{'"' + LEDGER_ROWS[hot].decision + '"'}</span>
-            <span style={{ color: C.muted }}>
-              {" has shaped " + REUSE[hot] + " later decision" + (REUSE[hot] === 1 ? "" : "s") + "."}
+          <span
+            style={{
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 9.5,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: C.faint,
+              flexShrink: 0,
+            }}
+          >
+            What it changed
+          </span>
+          <span key={hot} style={{ animation: "fadeIn 0.6s ease" }}>
+            <span style={{ color: C.emberBright, fontWeight: 500 }}>
+              {LEDGER_ROWS[hot].outcome}
             </span>
+            <span style={{ color: C.faint }}>{"  so  "}</span>
+            <span style={{ color: C.muted }}>{INSIGHTS[hot]}</span>
           </span>
         </div>
 
@@ -2104,8 +2149,8 @@ function MoatSection() {
           height: 640,
           pointerEvents: "none",
           background:
-            "radial-gradient(ellipse at center, rgba(251,113,0,0.17) 0%, rgba(251,113,0,0.05) 38%, transparent 70%)",
-          filter: "blur(46px)",
+            "radial-gradient(ellipse at center, rgba(251,113,0,0.1) 0%, rgba(251,113,0,0.035) 40%, transparent 72%)",
+          filter: "blur(48px)",
         }}
       />
       {/* Elevated slab: lifts the entire moat section off the flat page */}
@@ -2116,10 +2161,10 @@ function MoatSection() {
           margin: "0 auto",
           padding: "52px clamp(20px,4vw,52px) 56px",
           borderRadius: 28,
-          border: "1px solid rgba(251,113,0,0.2)",
+          border: "1px solid rgba(251,113,0,0.14)",
           background:
-            "linear-gradient(180deg, rgba(251,113,0,0.06) 0%, rgba(255,255,255,0.015) 36%, rgba(0,0,0,0) 100%)",
-          boxShadow: "0 0 90px rgba(251,113,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
+            "linear-gradient(180deg, rgba(251,113,0,0.03) 0%, rgba(255,255,255,0.012) 42%, rgba(0,0,0,0) 100%)",
+          boxShadow: "0 0 70px rgba(251,113,0,0.045), inset 0 1px 0 rgba(255,255,255,0.05)",
         }}
       >
         <div
@@ -2203,32 +2248,36 @@ function MoatSection() {
             <div
               key={i}
               className="lp-card"
-              style={{
-                position: "relative",
-                padding: "28px 24px",
-                background: `linear-gradient(160deg, ${p.col}14 0%, rgba(255,255,255,0.02) 28%, rgba(0,0,0,0) 100%)`,
-                border: `1px solid ${p.col}33`,
-                borderTop: `2px solid ${p.col}`,
-                borderRadius: 16,
-                animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s both`,
-                boxShadow: `0 12px 44px ${p.col}14, inset 0 1px 0 ${p.col}1f`,
-              }}
+              style={
+                {
+                  position: "relative",
+                  padding: "28px 24px",
+                  background: "rgba(255,255,255,0.022)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 16,
+                  animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s both`,
+                  boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
+                  "--accent": `${p.col}66`,
+                  "--accent-soft": `${p.col}1f`,
+                } as CSSProperties
+              }
             >
               <div
+                className="lp-card-icon"
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   borderRadius: 10,
-                  background: `${p.col}1a`,
-                  border: `1px solid ${p.col}40`,
+                  background: `${p.col}16`,
+                  border: `1px solid ${p.col}38`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 16,
                   fontSize: 16,
                   color: p.col,
-                  textShadow: `0 0 14px ${p.col}66`,
-                  boxShadow: `0 0 20px ${p.col}15`,
+                  textShadow: `0 0 12px ${p.col}55`,
+                  boxShadow: `0 0 18px ${p.col}12`,
                 }}
               >
                 {p.icon}
@@ -2258,7 +2307,7 @@ function GuerrillaSection() {
   return (
     <section
       ref={ref}
-      style={{ padding: "100px 24px 80px", borderBottom: `1px solid ${C.divider}` }}
+      style={{ padding: "92px 24px 60px", borderBottom: `1px solid ${C.divider}` }}
     >
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
         <div
@@ -2460,10 +2509,27 @@ function GuerrillaSection() {
 function CtaSection() {
   const { ref, on } = useReveal(0.12);
   return (
-    <section ref={ref} style={{ padding: "96px 24px", textAlign: "center" }}>
+    <section ref={ref} style={{ position: "relative", overflow: "hidden", padding: "76px 24px 96px", textAlign: "center" }}>
+      <div
+        aria-hidden="true"
+        className="lp-aurora"
+        style={{
+          position: "absolute",
+          bottom: "-30%",
+          left: "50%",
+          marginLeft: -360,
+          width: 720,
+          height: 560,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse at center, rgba(251,113,0,0.12) 0%, rgba(251,113,0,0.04) 40%, transparent 72%)",
+          filter: "blur(50px)",
+        }}
+      />
       <div
         style={{
-          maxWidth: 520,
+          position: "relative",
+          maxWidth: 540,
           margin: "0 auto",
           opacity: on ? 1 : 0,
           transform: on ? "translateY(0)" : "translateY(22px)",
@@ -2498,13 +2564,14 @@ function CtaSection() {
             margin: "0 0 14px",
           }}
         >
-          The loop is wired.
+          Decisions made the way
           <br />
-          Put your signal in.
+          your team would make them.
         </h2>
         <p style={{ fontSize: 14.5, lineHeight: 1.7, color: C.muted, margin: "0 0 34px" }}>
-          Connect what you're watching. Cadence reads your market, your users, and your team's
-          decisions. The loop starts closing from day one.
+          Cadence learns how your team thinks, then makes each call with the evidence and the memory
+          of every call before it. Not workflows on autopilot. Judgment, applied at the speed of your
+          product. You weigh in only when the call is genuinely yours to make.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
@@ -2512,6 +2579,7 @@ function CtaSection() {
           </a>
           <Link
             to="/pricing"
+            className="lp-ghost"
             style={{
               textDecoration: "none",
               padding: "10px 18px",
@@ -2548,6 +2616,18 @@ function LandingPage() {
           flexDirection: "column",
         }}
       >
+        {/* Scroll-reactive ambient glow: a warm light that drifts down the viewport as you scroll */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+            background: `radial-gradient(64% 52% at 50% ${18 + progress * 60}%, rgba(251,113,0,0.06) 0%, rgba(139,92,246,0.035) 38%, transparent 64%)`,
+            transition: "background 0.18s linear",
+          }}
+        />
         {/* Scroll progress bar - premium top-level feedback */}
         <div
           style={{
@@ -2597,10 +2677,18 @@ function LandingPage() {
             </span>
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <Link to="/pricing" style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}>
+            <Link
+              to="/pricing"
+              className="lp-nav"
+              style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
+            >
               Pricing
             </Link>
-            <a href="/login" style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}>
+            <a
+              href="/login"
+              className="lp-nav"
+              style={{ fontSize: 13, color: C.faint, textDecoration: "none" }}
+            >
               Sign in
             </a>
             <MachineViewToggle />
@@ -2610,7 +2698,7 @@ function LandingPage() {
           </nav>
         </header>
 
-        <main style={{ flex: 1 }}>
+        <main style={{ flex: 1, position: "relative", zIndex: 1 }}>
           <HeroSection />
           <OrbitSection active={active} />
           <StatsStrip />
