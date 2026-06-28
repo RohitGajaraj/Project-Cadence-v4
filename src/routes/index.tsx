@@ -1946,12 +1946,12 @@ function AgentInActionSection() {
 function LedgerSection() {
   const { ref, on } = useReveal(0.08);
   const REUSE = [4, 2, 3, 5];
-  // Short trust phrases: only the key highlight, chipped (not a full sentence).
+  // Key trust phrase (chipped) + the impact in plain text, so the message still lands.
   const INSIGHTS = [
-    "now a team default",
-    "owned, not buried",
-    "proven, not argued",
-    "a bet anyone can audit",
+    { chip: "now a team default", impact: "logged with the evidence behind it." },
+    { chip: "owned, not buried", impact: "so developer work ranks higher next time." },
+    { chip: "proven, not argued", impact: "the simpler call wins on evidence." },
+    { chip: "anyone can audit", impact: "the platform bet, attributed to the call." },
   ];
   const [hot, setHot] = useState(0);
   useEffect(() => {
@@ -2138,8 +2138,9 @@ function LedgerSection() {
                 padding: "3px 11px",
               }}
             >
-              {INSIGHTS[hot]}
+              {INSIGHTS[hot].chip}
             </span>
+            <span style={{ color: C.muted }}>{INSIGHTS[hot].impact}</span>
           </span>
         </div>
 
