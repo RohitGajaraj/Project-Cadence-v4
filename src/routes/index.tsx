@@ -51,6 +51,13 @@ const C = {
   roseGlow: "rgba(248,113,113,0.35)",
   amber: "#fbbf24",
   amberGlow: "rgba(251,191,36,0.35)",
+  // Ember orange - the Cadence brand signature (tuned to the reference #fb7100).
+  // Used for the product itself: wordmark, hero, CTAs, and the memory/brain core.
+  ember: "#fb7100",
+  emberBright: "#ff9542",
+  emberGlow: "rgba(251,113,0,0.4)",
+  emberDim: "rgba(251,113,0,0.12)",
+  emberBorder: "rgba(251,113,0,0.42)",
   text: "#f8fafc",
   muted: "#94a3b8",
   faint: "#475569",
@@ -132,6 +139,16 @@ const STATIONS = [
     glow: C.greenDim,
   },
 ];
+
+// What each station writes into the memory core - varies the live status line.
+const MEM_WRITES: Record<string, string> = {
+  sense: "the signal, remembered",
+  decide: "the rationale, recorded",
+  define: "the spec, linked to evidence",
+  build: "the change, captured",
+  ship: "the release, timestamped",
+  learn: "the outcome, written back",
+};
 
 type LogEntry = { ts: string; tag: string; msg: string; col: string; brand?: boolean };
 
@@ -242,19 +259,19 @@ const MOAT_PILLARS = [
     icon: "◈",
     title: "Decision layer",
     body: "Every call runs against two things: your product's history of decisions and outcomes, and the judgment, taste, and standards your team has established over time. Generic AI trains on the internet. Cadence trains on your product and your craft.",
-    col: C.violetBright,
+    col: C.ember,
   },
   {
     icon: "◉",
     title: "Outcome memory",
     body: "Every signal that came in, every spec that got written, every feature that shipped, every user who reacted. The full product journey writes into every future call. No human has to remember. The system does.",
-    col: C.cyan,
+    col: C.amber,
   },
   {
     icon: "◱",
     title: "Compounding edge",
     body: "It compounds from the first call. Every outcome makes the next decision sharper. Day one, it closes the loop. The longer it runs, the more of your product's institutional intelligence it holds. There is no backfill. There is no shortcut.",
-    col: C.green,
+    col: C.emberBright,
   },
 ];
 
@@ -304,10 +321,24 @@ const STYLES = `
   .lp-conn { animation: connPulse 2.8s ease-in-out infinite; }
   .bg-float { animation: bgFloat 7s ease-in-out infinite; }
 
+  /* Glowing orange "writing to memory" text - highlight drifts left to right */
+  @keyframes memShimmer { 0% { background-position: 210% 0 } 100% { background-position: -70% 0 } }
+  .lp-memwrite {
+    background: linear-gradient(90deg, rgba(251,113,0,0.5) 0%, #ffb870 42%, #fff1de 50%, #ffb870 58%, rgba(251,113,0,0.5) 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: memShimmer 2.6s linear infinite;
+  }
+  /* Space backdrop - slow nebula drift */
+  @keyframes auroraDrift { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity:0.55 } 50% { transform: translate3d(0,-18px,0) scale(1.06); opacity:0.8 } }
+  .lp-aurora { animation: auroraDrift 14s ease-in-out infinite; will-change: transform, opacity; }
+
   @media (prefers-reduced-motion: reduce) {
     *,*::before,*::after { animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; }
   }
   @media (max-width:720px) { .lp-hero-grid { grid-template-columns:1fr!important; } }
+  @media (max-width:720px) { .lp-manifesto-grid { grid-template-columns:1fr!important; gap:18px!important; } }
   @media (max-width:640px) { .lp-stats-grid { grid-template-columns:repeat(2,1fr)!important; } }
 `;
 
@@ -349,6 +380,26 @@ function useScrolled(px = 64) {
     return () => window.removeEventListener("scroll", fn);
   }, [px]);
   return s;
+}
+
+// Scroll progress 0..1 across the whole page (drives the top progress bar).
+function useScrollProgress() {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fn = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      setP(h > 0 ? Math.min(1, Math.max(0, window.scrollY / h)) : 0);
+    };
+    fn();
+    window.addEventListener("scroll", fn, { passive: true });
+    window.addEventListener("resize", fn);
+    return () => {
+      window.removeEventListener("scroll", fn);
+      window.removeEventListener("resize", fn);
+    };
+  }, []);
+  return p;
 }
 
 function useTerminalLog(entries: LogEntry[], revealed: boolean, msPerEntry = 320) {
@@ -401,9 +452,9 @@ function Brand() {
   return (
     <span
       style={{
-        color: C.violetBright,
-        textShadow: `0 0 18px ${C.violetGlow}`,
-        borderBottom: `1px solid rgba(167,139,250,0.35)`,
+        color: C.emberBright,
+        textShadow: `0 0 18px ${C.emberGlow}`,
+        borderBottom: `1px solid ${C.emberBorder}`,
         paddingBottom: 1,
       }}
     >
@@ -438,32 +489,36 @@ function Tag({ children, col }: { children: React.ReactNode; col: string }) {
   );
 }
 
-// Orbit ring -- large, centered, with per-station labels
+// Orbit ring -- the six stations orbiting one glowing brain core (the memory layer).
+// Warm core = Cadence's compounding memory; cool nodes = the machinery of the loop.
 function OrbitRingLabeled({ active }: { active: number }) {
-  const W = 360,
-    H = 310,
-    cx = 180,
-    cy = 155,
-    r = 100;
+  const W = 384,
+    H = 336,
+    cx = 192,
+    cy = 168,
+    r = 112,
+    coreR = 30;
 
   const nodes = STATIONS.map((s, i) => {
     const a = (-90 + i * 60) * (Math.PI / 180);
-    const lR = 132; // label radius from center
+    const lR = 146; // label radius from center
     const lx = cx + lR * Math.cos(a);
     const ly = cy + lR * Math.sin(a);
-    // text anchor based on x position
     const anchor: "end" | "start" | "middle" =
       lx < cx - 10 ? "end" : lx > cx + 10 ? "start" : "middle";
     return {
       ...s,
       x: cx + r * Math.cos(a),
       y: cy + r * Math.sin(a),
+      ex: cx + (coreR + 5) * Math.cos(a), // spoke endpoint at the core edge
+      ey: cy + (coreR + 5) * Math.sin(a),
       lx,
       ly,
       anchor,
       isActive: i === active,
     };
   });
+  const act = nodes[active] ?? nodes[0];
 
   return (
     <svg
@@ -473,7 +528,20 @@ function OrbitRingLabeled({ active }: { active: number }) {
       style={{ display: "block", maxWidth: "100%" }}
       aria-hidden="true"
     >
-      {/* Orbit circle */}
+      <defs>
+        <radialGradient id="cadBrain" cx="42%" cy="38%" r="68%">
+          <stop offset="0%" stopColor="#ffc488" />
+          <stop offset="48%" stopColor={C.ember} />
+          <stop offset="100%" stopColor="#bf4a00" />
+        </radialGradient>
+        <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(251,113,0,0.34)" />
+          <stop offset="45%" stopColor="rgba(251,113,0,0.12)" />
+          <stop offset="100%" stopColor="rgba(251,113,0,0)" />
+        </radialGradient>
+      </defs>
+
+      {/* Outer orbit ring */}
       <circle
         cx={cx}
         cy={cy}
@@ -484,29 +552,40 @@ function OrbitRingLabeled({ active }: { active: number }) {
         strokeDasharray="3 6"
       />
 
-      {/* Spoke lines center to each node */}
+      {/* Memory stratum - faint orange ring wrapping the core */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={coreR + 18}
+        fill="none"
+        stroke={C.emberBorder}
+        strokeWidth="1"
+        strokeDasharray="2 5"
+        opacity="0.4"
+      />
+
+      {/* Spokes feeding the core */}
       {nodes.map((n) => (
         <line
           key={`sp-${n.id}`}
-          x1={cx}
-          y1={cy}
-          x2={n.x}
-          y2={n.y}
-          stroke={n.isActive ? "rgba(139,92,246,0.22)" : "rgba(255,255,255,0.03)"}
-          strokeWidth="0.7"
-          style={{ transition: "stroke 0.5s" }}
+          x1={n.x}
+          y1={n.y}
+          x2={n.ex}
+          y2={n.ey}
+          stroke={n.isActive ? C.ember : "rgba(255,255,255,0.045)"}
+          strokeWidth={n.isActive ? 1.4 : 0.7}
+          style={{ transition: "stroke 0.5s, stroke-width 0.5s" }}
         />
       ))}
 
-      {/* Active node halo */}
-      {nodes.map(
-        (n) =>
-          n.isActive && (
-            <circle key={`gr-${n.id}`} cx={n.x} cy={n.y} r={16} fill="rgba(139,92,246,0.12)" />
-          ),
-      )}
+      {/* Write-pulse traveling the active spoke into the brain (data → memory) */}
+      <circle key={`wp-${active}`} r="2.6" fill={C.emberBright} opacity="0">
+        <animate attributeName="cx" values={`${act.x};${act.ex}`} dur="1s" repeatCount="indefinite" />
+        <animate attributeName="cy" values={`${act.y};${act.ey}`} dur="1s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" />
+      </circle>
 
-      {/* Nodes */}
+      {/* Station nodes */}
       {nodes.map((n) => (
         <circle
           key={`dot-${n.id}`}
@@ -528,7 +607,7 @@ function OrbitRingLabeled({ active }: { active: number }) {
             x={n.lx}
             y={n.ly - 5}
             textAnchor={n.anchor}
-            fill={n.isActive ? C.violetBright : "rgba(255,255,255,0.38)"}
+            fill={n.isActive ? C.violetBright : "rgba(255,255,255,0.4)"}
             fontSize="8.5"
             fontFamily="JetBrains Mono, monospace"
             letterSpacing="0.1em"
@@ -540,7 +619,7 @@ function OrbitRingLabeled({ active }: { active: number }) {
             x={n.lx}
             y={n.ly + 8}
             textAnchor={n.anchor}
-            fill={n.isActive ? "rgba(103,232,249,0.85)" : "rgba(255,255,255,0.22)"}
+            fill={n.isActive ? "rgba(103,232,249,0.85)" : "rgba(255,255,255,0.24)"}
             fontSize="7"
             fontFamily="JetBrains Mono, monospace"
             style={{ transition: "fill 0.4s" }}
@@ -550,80 +629,62 @@ function OrbitRingLabeled({ active }: { active: number }) {
         </g>
       ))}
 
-      {/* Center label */}
+      {/* Soft spotlight glow behind the core */}
+      <circle cx={cx} cy={cy} r={coreR + 44} fill="url(#coreGlow)">
+        <animate attributeName="opacity" values="0.7;1;0.7" dur="3.4s" repeatCount="indefinite" />
+      </circle>
+
+      {/* Two staggered pulsing halos - a spotlight radiating from the core */}
+      <circle cx={cx} cy={cy} r={coreR + 4} fill="none" stroke={C.ember} strokeWidth="1.2">
+        <animate
+          attributeName="r"
+          values={`${coreR + 2};${coreR + 28}`}
+          dur="2.8s"
+          repeatCount="indefinite"
+        />
+        <animate attributeName="opacity" values="0.6;0" dur="2.8s" repeatCount="indefinite" />
+      </circle>
+      <circle cx={cx} cy={cy} r={coreR + 4} fill="none" stroke={C.emberBright} strokeWidth="1">
+        <animate
+          attributeName="r"
+          values={`${coreR + 2};${coreR + 28}`}
+          dur="2.8s"
+          begin="1.4s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="0.5;0"
+          dur="2.8s"
+          begin="1.4s"
+          repeatCount="indefinite"
+        />
+      </circle>
+
+      {/* The Cadence core - the whole product at the heart of the loop */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={coreR}
+        fill="url(#cadBrain)"
+        style={{
+          filter: `drop-shadow(0 0 26px ${C.emberGlow}) drop-shadow(0 0 48px rgba(251,113,0,0.32))`,
+        }}
+      />
+      <circle cx={cx} cy={cy} r={coreR} fill="none" stroke="rgba(255,222,184,0.5)" strokeWidth="0.75" />
       <text
         x={cx}
-        y={cy - 5}
+        y={cy + 3}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.22)"
-        fontSize="8"
+        fill="#2a1300"
+        fontSize="9.5"
         fontFamily="JetBrains Mono, monospace"
-        letterSpacing="0.14em"
+        fontWeight="700"
+        letterSpacing="0.12em"
       >
         CADENCE
       </text>
-      <text
-        x={cx}
-        y={cy + 8}
-        textAnchor="middle"
-        fill="rgba(255,255,255,0.09)"
-        fontSize="6"
-        fontFamily="JetBrains Mono, monospace"
-        letterSpacing="0.1em"
-      >
-        OS
-      </text>
     </svg>
-  );
-}
-
-// Station pills
-function StationPills({ active }: { active: number }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: 0,
-        justifyContent: "center",
-      }}
-    >
-      {STATIONS.map((s, i) => (
-        <span key={s.id} style={{ display: "flex", alignItems: "center" }}>
-          <span
-            style={{
-              fontSize: 9,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              padding: "4px 12px",
-              borderRadius: 99,
-              fontFamily: "JetBrains Mono, monospace",
-              border: i === active ? `1px solid rgba(167,139,250,0.55)` : `1px solid ${C.border}`,
-              background: i === active ? C.violetDim : "transparent",
-              color: i === active ? C.violetBright : C.faint,
-              fontWeight: i === active ? 600 : 400,
-              transition: "all 0.35s cubic-bezier(0.23,1,0.32,1)",
-              boxShadow: i === active ? `0 0 14px rgba(139,92,246,0.28)` : "none",
-            }}
-          >
-            {s.label}
-          </span>
-          {i < STATIONS.length - 1 && (
-            <span
-              className="lp-conn"
-              style={{
-                width: 14,
-                height: 1,
-                background: C.divider,
-                display: "block",
-                animationDelay: `${i * 0.4}s`,
-              }}
-            />
-          )}
-        </span>
-      ))}
-    </div>
   );
 }
 
@@ -1134,11 +1195,65 @@ function FlowList({ entries, revealed }: { entries: LogEntry[]; revealed: boolea
 
 // Sections
 
+// Premium space backdrop - drifting aurora glows + a masked dot-grid for depth.
+function HeroBackdrop() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}
+    >
+      <div
+        className="lp-aurora"
+        style={{
+          position: "absolute",
+          top: "-32%",
+          left: "-8%",
+          width: 640,
+          height: 640,
+          background: `radial-gradient(circle at center, rgba(251,113,0,0.16) 0%, rgba(251,113,0,0.05) 36%, transparent 70%)`,
+          filter: "blur(30px)",
+        }}
+      />
+      <div
+        className="lp-aurora"
+        style={{
+          position: "absolute",
+          top: "6%",
+          right: "-14%",
+          width: 580,
+          height: 580,
+          background: `radial-gradient(circle at center, rgba(139,92,246,0.13) 0%, rgba(103,232,249,0.05) 42%, transparent 70%)`,
+          filter: "blur(34px)",
+          animationDelay: "-7s",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)`,
+          backgroundSize: "26px 26px",
+          WebkitMaskImage: "radial-gradient(ellipse 78% 62% at 50% 28%, #000 28%, transparent 76%)",
+          maskImage: "radial-gradient(ellipse 78% 62% at 50% 28%, #000 28%, transparent 76%)",
+        }}
+      />
+    </div>
+  );
+}
+
 function HeroSection() {
   const { ref, on } = useReveal(0.01);
   return (
-    <section style={{ padding: "80px 24px 72px", borderBottom: `1px solid ${C.divider}` }}>
-      <div ref={ref} style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <section
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "80px 24px 72px",
+        borderBottom: `1px solid ${C.divider}`,
+      }}
+    >
+      <HeroBackdrop />
+      <div ref={ref} style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
         <div
           className="lp-hero-grid"
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 52, alignItems: "center" }}
@@ -1156,7 +1271,7 @@ function HeroSection() {
                 fontSize: 9,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: C.amber,
+                color: C.emberBright,
                 marginBottom: 22,
                 display: "flex",
                 alignItems: "center",
@@ -1168,8 +1283,8 @@ function HeroSection() {
                   width: 6,
                   height: 6,
                   borderRadius: "50%",
-                  background: C.amber,
-                  boxShadow: `0 0 8px ${C.amberGlow}`,
+                  background: C.ember,
+                  boxShadow: `0 0 8px ${C.emberGlow}`,
                   display: "inline-block",
                 }}
               />
@@ -1197,7 +1312,7 @@ function HeroSection() {
                 fontWeight: 750,
                 margin: "0 0 28px",
                 letterSpacing: "-0.03em",
-                background: `linear-gradient(135deg, ${C.violetBright} 0%, #c4b5fd 45%, ${C.cyan} 100%)`,
+                background: `linear-gradient(135deg, ${C.emberBright} 0%, ${C.amber} 48%, ${C.ember} 100%)`,
                 backgroundSize: "200% 200%",
                 animation: "gradShift 5s ease infinite",
                 WebkitBackgroundClip: "text",
@@ -1216,10 +1331,11 @@ function HeroSection() {
                 maxWidth: 440,
               }}
             >
-              <Brand /> runs autonomous agents across the full product lifecycle: sensing signals,
-              proposing decisions, writing specs, building, shipping, and learning from every outcome.
-              Your product moves. Your team stays on strategy. You step in only when it truly matters.
-              Everything else runs.
+              <Brand /> is the agent-native operating system for your entire product. It runs the
+              full lifecycle end to end: sensing what matters, making the call, writing the spec,
+              building, shipping, and learning from every outcome. Your product moves on its own.
+              Your team stays on the decisions that need real judgment. Everything else runs
+              autonomously.
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -1257,19 +1373,20 @@ function HeroSection() {
   );
 }
 
-// Orbit section: centered, full-width, below hero
+// Orbit section: the loop with the brain at its center.
 function OrbitSection({ active }: { active: number }) {
   const { ref, on } = useReveal(0.08);
+  const s = STATIONS[active] ?? STATIONS[0];
   return (
     <section
       ref={ref}
       style={{
-        padding: "56px 24px 52px",
+        padding: "60px 24px 56px",
         borderBottom: `1px solid ${C.divider}`,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 28,
+        gap: 24,
       }}
     >
       <div
@@ -1278,25 +1395,28 @@ function OrbitSection({ active }: { active: number }) {
           transform: on ? "translateY(0)" : "translateY(16px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
           textAlign: "center",
+          maxWidth: 540,
         }}
       >
         <p
           style={{
             fontSize: 11,
             fontFamily: "JetBrains Mono, monospace",
-            color: C.faint,
-            letterSpacing: "0.14em",
+            color: C.emberBright,
+            letterSpacing: "0.16em",
             textTransform: "uppercase",
-            margin: "0 0 6px",
+            margin: "0 0 8px",
           }}
         >
-          The loop
+          The loop, with Cadence at its center
         </p>
-        <p style={{ fontSize: 14, color: C.muted, margin: 0, maxWidth: 460, lineHeight: 1.6 }}>
-          Six stations. All connected. Beyond the loop, the memory layer and compounding decision
-          brain make every future call smarter.
+        <p style={{ fontSize: 14.5, color: C.muted, margin: 0, lineHeight: 1.65 }}>
+          Six stations run the work. Cadence sits at the center, holding the memory of every signal,
+          decision, and outcome your product has produced. Each loop writes to it. Every call reads
+          from it.
         </p>
       </div>
+
       <div
         style={{
           opacity: on ? 1 : 0,
@@ -1306,89 +1426,48 @@ function OrbitSection({ active }: { active: number }) {
       >
         <OrbitRingLabeled active={active} />
       </div>
-      <div
-        style={{
-          opacity: on ? 1 : 0,
-          transform: on ? "translateY(0)" : "translateY(8px)",
-          transition: "opacity 0.55s ease 0.24s, transform 0.55s ease 0.24s",
-        }}
-      >
-        <StationPills active={active} />
-      </div>
 
-      {/* Memory layer — the beneath-the-loop compounding brain, visually distinct from the six stations */}
+      {/* Live status - one line tied to the active station, gives the motion a purpose */}
       <div
         style={{
           opacity: on ? 1 : 0,
-          transform: on ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 0.6s ease 0.42s, transform 0.6s ease 0.42s",
-          width: "100%",
-          maxWidth: 640,
+          transition: "opacity 0.55s ease 0.24s",
+          display: "flex",
+          alignItems: "center",
+          gap: 9,
+          flexWrap: "wrap",
+          justifyContent: "center",
+          fontFamily: "JetBrains Mono, monospace",
+          fontSize: 11.5,
+          minHeight: 18,
         }}
       >
-        <div
+        <span
           style={{
-            background: "rgba(139,92,246,0.07)",
-            border: "1px solid rgba(167,139,250,0.22)",
-            borderRadius: 14,
-            padding: "18px 22px",
-            display: "flex",
-            alignItems: "center",
-            gap: 18,
+            width: 7,
+            height: 7,
+            borderRadius: "50%",
+            background: s.color,
+            boxShadow: `0 0 8px ${s.color}`,
+            flexShrink: 0,
+            transition: "background 0.4s, box-shadow 0.4s",
+          }}
+        />
+        <span
+          style={{
+            color: C.text,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
           }}
         >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "rgba(139,92,246,0.2)",
-              border: "1px solid rgba(167,139,250,0.38)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              fontSize: 18,
-              color: C.violetBright,
-            }}
-          >
-            ◉
-          </div>
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontSize: 9.5,
-                fontFamily: "JetBrains Mono, monospace",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: C.violetBright,
-                marginBottom: 5,
-              }}
-            >
-              Compounding memory layer
-            </div>
-            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.55 }}>
-              Beneath every station: every signal, spec, build, and outcome is recorded and
-              weighted. Each loop trains the next. Cadence doesn't just run the process. It
-              remembers it.
-            </p>
-          </div>
-          <div
-            style={{ display: "flex", alignItems: "flex-end", gap: 3, flexShrink: 0, paddingRight: 4 }}
-          >
-            {[6, 9, 12, 16, 20].map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 4,
-                  height: h,
-                  borderRadius: 2,
-                  background: `rgba(167,139,250,${0.22 + i * 0.16})`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
+          {s.label}
+        </span>
+        <span style={{ color: C.faint }}>·</span>
+        <span style={{ color: C.muted }}>{s.kicker.toLowerCase()}</span>
+        <span style={{ color: C.faint, marginLeft: 2 }}>→</span>
+        <span key={s.id} className="lp-memwrite" style={{ fontWeight: 600 }}>
+          {MEM_WRITES[s.id]}
+        </span>
       </div>
     </section>
   );
@@ -1441,76 +1520,89 @@ function StatsStrip() {
 function ManifestoStrip() {
   const { ref, on } = useReveal(0.12);
   return (
-    <section ref={ref} style={{ padding: "72px 24px", borderBottom: `1px solid ${C.divider}` }}>
+    <section ref={ref} style={{ padding: "88px 24px", borderBottom: `1px solid ${C.divider}` }}>
       <div
+        className="lp-manifesto-grid"
         style={{
-          maxWidth: 860,
+          maxWidth: 960,
           margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: "150px 1fr",
+          gap: 44,
+          alignItems: "start",
           opacity: on ? 1 : 0,
           transform: on ? "translateY(0)" : "translateY(18px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
-        <div style={{ maxWidth: 720 }}>
-          <p
+        {/* Left rail - a section marker, like an editorial column header */}
+        <div style={{ paddingTop: 7 }}>
+          <div
             style={{
-              fontSize: "clamp(15px,1.9vw,20px)",
-              lineHeight: 1.6,
-              color: "rgba(255,255,255,0.45)",
-              margin: "0 0 18px",
-              fontWeight: 440,
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.emberBright,
+              marginBottom: 12,
             }}
           >
-            Every team has Jira, Slack, GitHub, and a dozen AI tools.
+            Why Cadence exists
+          </div>
+          <div style={{ width: 30, height: 2, background: C.emberBorder }} />
+        </div>
+
+        {/* Right column - flowing editorial prose, one signature closing line */}
+        <div style={{ maxWidth: 640 }}>
+          <p
+            style={{
+              fontSize: "clamp(17px,2.1vw,23px)",
+              lineHeight: 1.62,
+              color: "rgba(255,255,255,0.74)",
+              margin: "0 0 22px",
+              fontWeight: 420,
+            }}
+          >
+            Every team already has Jira, Slack, GitHub, and a dozen AI tools, and not one of them
+            closes the loop. The signal that triggers a decision never reaches the outcome that
+            proves it right or wrong. Context scatters across tabs. The reasoning behind what shipped
+            quietly disappears.
           </p>
           <p
             style={{
-              fontSize: "clamp(22px,3.2vw,34px)",
+              fontSize: "clamp(17px,2.1vw,23px)",
+              lineHeight: 1.62,
+              color: "rgba(255,255,255,0.74)",
+              margin: "0 0 34px",
+              fontWeight: 420,
+            }}
+          >
+            <Brand /> exists to close it, sense to shipped, with every decision recorded, weighted,
+            and fed straight back into the next one.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(19px,2.5vw,28px)",
               lineHeight: 1.3,
-              color: C.text,
-              margin: "0 0 24px",
-              fontWeight: 700,
-              letterSpacing: "-0.025em",
-            }}
-          >
-            None of them close the loop.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(15px,1.9vw,20px)",
-              lineHeight: 1.65,
-              color: "rgba(255,255,255,0.6)",
-              margin: "0 0 24px",
-              fontWeight: 440,
-            }}
-          >
-            The signal that triggers a decision never reaches the outcome that validates it.
-            Data fragments. Institutional knowledge walks out the door.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(16px,2.1vw,22px)",
-              lineHeight: 1.55,
-              color: "rgba(255,255,255,0.82)",
-              margin: "0 0 28px",
-              fontWeight: 500,
-            }}
-          >
-            <Brand /> closes that gap: sense to shipped, with every decision recorded, weighted,
-            and fed back in.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(20px,2.8vw,30px)",
-              lineHeight: 1.25,
               margin: 0,
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: C.text,
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
             }}
           >
+            <span
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: 2,
+                background: C.ember,
+                boxShadow: `0 0 12px ${C.emberGlow}`,
+                flexShrink: 0,
+              }}
+            />
             The loop is not the product. The loop is the floor.
           </p>
         </div>
@@ -1532,7 +1624,7 @@ function StationsSection({ active }: { active: number }) {
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <Tag col={C.violet}>Six stations</Tag>
+          <Tag col={C.emberBright}>Six stations</Tag>
           <h2
             style={{
               fontSize: "clamp(22px,3vw,30px)",
@@ -1672,7 +1764,7 @@ function AgentInActionSection() {
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <Tag col={C.violet}>The engine in motion</Tag>
+          <Tag col={C.emberBright}>The engine in motion</Tag>
           <h2
             style={{
               fontSize: "clamp(22px,3vw,30px)",
@@ -1778,33 +1870,45 @@ function AgentInActionSection() {
 
 function LedgerSection() {
   const { ref, on } = useReveal(0.08);
+  const REUSE = [4, 2, 3, 5, 2];
+  const [hot, setHot] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    const id = setInterval(() => setHot((h) => (h + 1) % LEDGER_ROWS.length), 2200);
+    return () => clearInterval(id);
+  }, [on]);
+
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
-      <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      <div style={{ maxWidth: 880, margin: "0 auto" }}>
         <div
           style={{
-            marginBottom: 40,
+            marginBottom: 36,
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(16px)",
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <Tag col={C.violet}>Trust Ledger</Tag>
+          <Tag col={C.emberBright}>Trust Ledger</Tag>
           <h2
             style={{
-              fontSize: "clamp(22px,3vw,30px)",
+              fontSize: "clamp(22px,3vw,32px)",
               fontWeight: 600,
-              margin: "0 0 10px",
+              margin: "0 0 12px",
               color: C.text,
+              letterSpacing: "-0.02em",
             }}
           >
-            What compounds.
+            Every call, graded by its outcome.
           </h2>
-          <p style={{ fontSize: 14, color: C.muted, maxWidth: 500, margin: 0, lineHeight: 1.65 }}>
-            Every call: why, on what evidence, who approved, what happened. Eighteen months of this
-            cannot be backfilled by any model or competitor.
+          <p style={{ fontSize: 14.5, color: C.muted, maxWidth: 600, margin: 0, lineHeight: 1.66 }}>
+            This is the Trust Ledger. Every decision Cadence makes is recorded with the evidence
+            behind it, then graded once the outcome lands. Right or wrong, each call becomes
+            precedent the next one reads from. It cannot be backfilled or bought. It exists only
+            because Cadence was in the loop when the call was made.
           </p>
         </div>
+
         <div
           style={{
             overflowX: "auto",
@@ -1820,21 +1924,21 @@ function LedgerSection() {
               background: C.bgCard,
               borderRadius: 14,
               overflow: "hidden",
-              minWidth: 520,
+              minWidth: 580,
               backdropFilter: "blur(12px)",
             }}
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 90px",
+                gridTemplateColumns: "1.5fr 1.1fr 84px 78px",
                 padding: "10px 20px",
                 gap: 16,
                 borderBottom: `1px solid ${C.border}`,
                 background: "rgba(255,255,255,0.025)",
               }}
             >
-              {["Decision", "Outcome", "Verdict"].map((h) => (
+              {["Decision", "Outcome", "Verdict", "Reused"].map((h) => (
                 <span
                   key={h}
                   style={{
@@ -1849,51 +1953,122 @@ function LedgerSection() {
                 </span>
               ))}
             </div>
-            {LEDGER_ROWS.map((row, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 90px",
-                  padding: "14px 20px",
-                  gap: 16,
-                  alignItems: "center",
-                  borderBottom: i < LEDGER_ROWS.length - 1 ? `1px solid ${C.divider}` : undefined,
-                  opacity: on ? 1 : 0,
-                  transform: on ? "translateX(0)" : "translateX(-10px)",
-                  transition: `opacity 0.45s ease ${0.22 + i * 0.08}s, transform 0.45s ease ${0.22 + i * 0.08}s`,
-                }}
-              >
-                <span style={{ fontSize: 13, lineHeight: 1.48, color: C.text }}>
-                  {row.decision}
-                </span>
-                <span style={{ fontSize: 13, color: C.muted }}>{row.outcome}</span>
-                <span
+            {LEDGER_ROWS.map((row, i) => {
+              const isHot = hot === i;
+              return (
+                <div
+                  key={i}
                   style={{
-                    fontFamily: "JetBrains Mono, monospace",
-                    fontSize: 9.5,
-                    color: row.col,
-                    border: `1px solid ${row.col}44`,
-                    borderRadius: 99,
-                    padding: "2px 9px",
-                    display: "inline-block",
-                    boxShadow: `0 0 8px ${row.col}22`,
+                    display: "grid",
+                    gridTemplateColumns: "1.5fr 1.1fr 84px 78px",
+                    padding: "14px 20px",
+                    gap: 16,
+                    alignItems: "center",
+                    borderBottom: i < LEDGER_ROWS.length - 1 ? `1px solid ${C.divider}` : undefined,
+                    borderLeft: `2px solid ${isHot ? C.ember : "transparent"}`,
+                    background: isHot ? "rgba(251,113,0,0.05)" : "transparent",
+                    opacity: on ? 1 : 0,
+                    transform: on ? "translateX(0)" : "translateX(-10px)",
+                    transition: `opacity 0.45s ease ${0.22 + i * 0.08}s, transform 0.45s ease ${0.22 + i * 0.08}s, background 0.4s ease, border-left-color 0.4s ease`,
                   }}
                 >
-                  {row.verdict}
-                </span>
-              </div>
-            ))}
+                  <span style={{ fontSize: 13, lineHeight: 1.48, color: C.text }}>
+                    {row.decision}
+                  </span>
+                  <span style={{ fontSize: 13, color: C.muted }}>{row.outcome}</span>
+                  <span
+                    style={{
+                      fontFamily: "JetBrains Mono, monospace",
+                      fontSize: 9.5,
+                      color: row.col,
+                      border: `1px solid ${row.col}44`,
+                      borderRadius: 99,
+                      padding: "2px 9px",
+                      display: "inline-block",
+                      boxShadow: `0 0 8px ${row.col}22`,
+                    }}
+                  >
+                    {row.verdict}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "JetBrains Mono, monospace",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: isHot ? C.emberBright : C.faint,
+                      transition: "color 0.4s",
+                    }}
+                  >
+                    {"x" + REUSE[i]}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Live precedent line: the compounding made visible */}
+        <div
+          style={{
+            marginTop: 14,
+            minHeight: 20,
+            opacity: on ? 1 : 0,
+            transition: "opacity 0.45s ease 0.4s",
+            fontSize: 12.5,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            alignItems: "center",
+          }}
+        >
+          <span style={{ color: C.faint }}>Once graded, a call becomes precedent.</span>
+          <span key={hot} style={{ animation: "fadeIn 0.4s ease" }}>
+            <span style={{ color: C.emberBright }}>{'"' + LEDGER_ROWS[hot].decision + '"'}</span>
+            <span style={{ color: C.muted }}>
+              {" has shaped " + REUSE[hot] + " later decision" + (REUSE[hot] === 1 ? "" : "s") + "."}
+            </span>
+          </span>
+        </div>
+
+        {/* Why it matters, in three numbers */}
+        <div
+          style={{
+            marginTop: 26,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 30,
+            opacity: on ? 1 : 0,
+            transition: "opacity 0.5s ease 0.5s",
+          }}
+        >
+          {[
+            ["48", "calls recorded"],
+            ["92%", "later validated"],
+            ["100%", "reusable as precedent"],
+          ].map(([n, l]) => (
+            <div key={l} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span
+                style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: C.emberBright,
+                }}
+              >
+                {n}
+              </span>
+              <span style={{ fontSize: 12, color: C.muted }}>{l}</span>
+            </div>
+          ))}
+        </div>
+
         <p
           style={{
             fontSize: 11,
             color: C.faint,
-            textAlign: "center",
-            marginTop: 10,
+            marginTop: 22,
             opacity: on ? 0.7 : 0,
-            transition: "opacity 0.45s ease 0.5s",
+            transition: "opacity 0.45s ease 0.55s",
           }}
         >
           Illustrative. Your real ledger populates from live calls and outcomes.
@@ -1907,27 +2082,71 @@ function LedgerSection() {
 function MoatSection() {
   const { ref, on } = useReveal(0.08);
   return (
-    <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <section
+      ref={ref}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "104px 24px",
+        borderBottom: `1px solid ${C.divider}`,
+      }}
+    >
+      {/* Spotlight glow behind the moat: this is the differentiator, lit accordingly */}
+      <div
+        aria-hidden="true"
+        className="lp-aurora"
+        style={{
+          position: "absolute",
+          top: "-6%",
+          left: "50%",
+          marginLeft: -470,
+          width: 940,
+          height: 640,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse at center, rgba(251,113,0,0.17) 0%, rgba(251,113,0,0.05) 38%, transparent 70%)",
+          filter: "blur(46px)",
+        }}
+      />
+      {/* Elevated slab: lifts the entire moat section off the flat page */}
+      <div
+        style={{
+          position: "relative",
+          maxWidth: 940,
+          margin: "0 auto",
+          padding: "52px clamp(20px,4vw,52px) 56px",
+          borderRadius: 28,
+          border: "1px solid rgba(251,113,0,0.2)",
+          background:
+            "linear-gradient(180deg, rgba(251,113,0,0.06) 0%, rgba(255,255,255,0.015) 36%, rgba(0,0,0,0) 100%)",
+          boxShadow: "0 0 90px rgba(251,113,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}
+      >
         <div
           style={{
-            marginBottom: 44,
+            marginBottom: 40,
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(16px)",
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <Tag col={C.violet}>Beyond the loop</Tag>
+          <Tag col={C.emberBright}>The moat</Tag>
           <h2
+            className="font-display"
             style={{
-              fontSize: "clamp(22px,3vw,32px)",
-              fontWeight: 700,
-              margin: "0 0 10px",
+              fontSize: "clamp(28px,3.8vw,42px)",
+              fontWeight: 600,
+              margin: "0 0 14px",
               color: C.text,
               letterSpacing: "-0.02em",
+              lineHeight: 1.08,
             }}
           >
-            The brain that compounds.
+            The brain that{" "}
+            <span style={{ color: C.emberBright, textShadow: `0 0 30px ${C.emberGlow}` }}>
+              compounds
+            </span>
+            .
           </h2>
           <p
             style={{
@@ -1949,8 +2168,8 @@ function MoatSection() {
           style={{
             marginBottom: 32,
             padding: "14px 20px",
-            background: "rgba(139,92,246,0.07)",
-            border: `1px solid rgba(167,139,250,0.18)`,
+            background: "rgba(251,113,0,0.07)",
+            border: `1px solid rgba(251,113,0,0.22)`,
             borderRadius: 10,
             opacity: on ? 1 : 0,
             transition: "opacity 0.5s ease 0.1s",
@@ -1959,7 +2178,7 @@ function MoatSection() {
           <p
             style={{
               fontSize: 13,
-              color: "rgba(167,139,250,0.75)",
+              color: "rgba(255,165,90,0.82)",
               margin: 0,
               lineHeight: 1.6,
               fontStyle: "italic",
@@ -1985,12 +2204,14 @@ function MoatSection() {
               key={i}
               className="lp-card"
               style={{
-                padding: "26px 22px",
-                background: `linear-gradient(135deg, ${p.col}08 0%, rgba(0,0,0,0) 100%)`,
-                border: `1px solid ${p.col}28`,
+                position: "relative",
+                padding: "28px 24px",
+                background: `linear-gradient(160deg, ${p.col}14 0%, rgba(255,255,255,0.02) 28%, rgba(0,0,0,0) 100%)`,
+                border: `1px solid ${p.col}33`,
+                borderTop: `2px solid ${p.col}`,
                 borderRadius: 16,
                 animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s both`,
-                boxShadow: `0 0 32px ${p.col}0a`,
+                boxShadow: `0 12px 44px ${p.col}14, inset 0 1px 0 ${p.col}1f`,
               }}
             >
               <div
@@ -2040,63 +2261,81 @@ function GuerrillaSection() {
       style={{ padding: "100px 24px 80px", borderBottom: `1px solid ${C.divider}` }}
     >
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
-        {/* Hero statement — positive, pain-naming, no competitor framing */}
         <div
           style={{
             opacity: on ? 1 : 0,
-            transform: on ? "translateY(0)" : "translateY(22px)",
+            transform: on ? "translateY(0)" : "translateY(20px)",
             transition: "opacity 0.65s ease, transform 0.65s ease",
-            marginBottom: 64,
-            textAlign: "center",
+            marginBottom: 26,
           }}
         >
-          <p
-            style={{
-              fontSize: "clamp(26px, 4.8vw, 54px)",
-              fontWeight: 800,
-              lineHeight: 1.08,
-              letterSpacing: "-0.035em",
-              color: C.text,
-              margin: "0 0 8px",
-            }}
-          >
-            Every product team knows what to build next.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(26px, 4.8vw, 54px)",
-              fontWeight: 800,
-              lineHeight: 1.08,
-              letterSpacing: "-0.035em",
-              margin: 0,
-              background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Almost none know why the last thing shipped the way it did.
-          </p>
-        </div>
-
-        {/* Three cascading scenarios — numbered, crescendo */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <div
             style={{
-              padding: "36px 0",
-              borderTop: `1px solid ${C.divider}`,
-              opacity: on ? 1 : 0,
-              transform: on ? "translateY(0)" : "translateY(16px)",
-              transition: "opacity 0.55s ease 0.18s, transform 0.55s ease 0.18s",
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.emberBright,
+              marginBottom: 18,
             }}
           >
-            <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+            The shift
+          </div>
+          <h2
+            style={{
+              fontSize: "clamp(28px,4.6vw,50px)",
+              fontWeight: 780,
+              lineHeight: 1.08,
+              letterSpacing: "-0.032em",
+              color: C.text,
+              margin: 0,
+            }}
+          >
+            Building used to be the hard part.
+            <br />
+            Now it&apos;s the{" "}
+            <span style={{ color: C.emberBright, textShadow: `0 0 26px ${C.emberGlow}` }}>
+              easy
+            </span>{" "}
+            part.
+          </h2>
+        </div>
+
+        <p
+          style={{
+            fontSize: "clamp(16px,2vw,20px)",
+            lineHeight: 1.66,
+            color: "rgba(255,255,255,0.7)",
+            margin: "0 0 8px",
+            maxWidth: 660,
+            opacity: on ? 1 : 0,
+            transition: "opacity 0.6s ease 0.12s",
+            fontWeight: 420,
+          }}
+        >
+          Anyone can ship in a weekend now. AI collapsed the cost of building, and the old edge with
+          it. The hard part moved: not how to build, but knowing what to build next, and being able
+          to say why the last thing shipped the way it did. That knowledge still lives in
+          people&apos;s heads, in closed tabs, in threads nobody reads twice.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 8 }}>
+          <div
+            style={{
+              padding: "30px 0",
+              borderTop: `1px solid ${C.divider}`,
+              opacity: on ? 1 : 0,
+              transform: on ? "translateY(0)" : "translateY(14px)",
+              transition: "opacity 0.55s ease 0.2s, transform 0.55s ease 0.2s",
+            }}
+          >
+            <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
               <div
                 style={{
                   fontSize: 11,
                   fontFamily: "JetBrains Mono, monospace",
                   letterSpacing: "0.16em",
-                  color: C.faint,
-                  textTransform: "uppercase",
+                  color: C.emberBright,
                   paddingTop: 5,
                   flexShrink: 0,
                   width: 24,
@@ -2106,37 +2345,36 @@ function GuerrillaSection() {
               </div>
               <p
                 style={{
-                  fontSize: "clamp(17px,2.2vw,23px)",
-                  lineHeight: 1.5,
-                  color: "rgba(255,255,255,0.72)",
+                  fontSize: "clamp(16px,2.1vw,22px)",
+                  lineHeight: 1.52,
+                  color: "rgba(255,255,255,0.78)",
                   margin: 0,
-                  fontWeight: 440,
+                  fontWeight: 430,
                 }}
               >
-                Decisions that used to require three days of alignment now take seconds. Cadence
-                has already checked the precedent, weighed the history, and surfaced what your
-                team would have decided.
+                Decisions that used to take three days of alignment take seconds. Cadence has already
+                pulled the precedent, weighed how similar calls played out, and surfaced what your
+                team would most likely choose.
               </p>
             </div>
           </div>
 
           <div
             style={{
-              padding: "36px 0",
+              padding: "30px 0",
               borderTop: `1px solid ${C.divider}`,
               opacity: on ? 1 : 0,
-              transform: on ? "translateY(0)" : "translateY(16px)",
+              transform: on ? "translateY(0)" : "translateY(14px)",
               transition: "opacity 0.55s ease 0.32s, transform 0.55s ease 0.32s",
             }}
           >
-            <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+            <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
               <div
                 style={{
                   fontSize: 11,
                   fontFamily: "JetBrains Mono, monospace",
                   letterSpacing: "0.16em",
-                  color: C.faint,
-                  textTransform: "uppercase",
+                  color: C.emberBright,
                   paddingTop: 5,
                   flexShrink: 0,
                   width: 24,
@@ -2146,76 +2384,72 @@ function GuerrillaSection() {
               </div>
               <p
                 style={{
-                  fontSize: "clamp(17px,2.2vw,23px)",
-                  lineHeight: 1.5,
-                  color: "rgba(255,255,255,0.72)",
+                  fontSize: "clamp(16px,2.1vw,22px)",
+                  lineHeight: 1.52,
+                  color: "rgba(255,255,255,0.78)",
                   margin: 0,
-                  fontWeight: 440,
+                  fontWeight: 430,
                 }}
               >
-                The outcome from your last sprint is not sitting in a retrospective doc. It is
-                already weighted into the next call. Automatically. Every time.
+                The result of your last sprint is not waiting in a retro nobody opens. It is already
+                scored and folded into the next decision, automatically, every time.
               </p>
             </div>
           </div>
 
-          {/* The punch — centered, largest, gradient finale */}
+          {/* Close: positive, system-led, ends on the compounding edge */}
           <div
             style={{
-              padding: "52px 0 0",
+              marginTop: 52,
+              paddingTop: 40,
               borderTop: `1px solid ${C.divider}`,
-              textAlign: "center",
               opacity: on ? 1 : 0,
-              transform: on ? "translateY(0)" : "translateY(16px)",
+              transform: on ? "translateY(0)" : "translateY(14px)",
               transition: "opacity 0.55s ease 0.46s, transform 0.55s ease 0.46s",
             }}
           >
             <p
               style={{
-                fontSize: "clamp(26px,4.5vw,50px)",
-                fontWeight: 800,
-                lineHeight: 1.1,
-                letterSpacing: "-0.03em",
+                fontSize: "clamp(22px,3.4vw,36px)",
+                fontWeight: 680,
+                lineHeight: 1.18,
+                letterSpacing: "-0.025em",
                 color: C.text,
-                margin: "0 0 6px",
+                margin: 0,
+                display: "flex",
+                gap: 16,
+                alignItems: "flex-start",
               }}
             >
-              The teams winning right now
-              <br />
-              don't have better people.
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 2,
+                  background: C.ember,
+                  boxShadow: `0 0 14px ${C.emberGlow}`,
+                  flexShrink: 0,
+                  marginTop: "0.4em",
+                }}
+              />
+              <span>
+                The best product teams aren&apos;t working harder. They run on a system that
+                remembers every decision and gets sharper with every outcome.
+              </span>
             </p>
             <p
               style={{
-                fontSize: "clamp(26px,4.5vw,50px)",
-                fontWeight: 800,
-                lineHeight: 1.1,
-                letterSpacing: "-0.03em",
-                margin: "0 0 44px",
-                background: `linear-gradient(135deg, ${C.violetBright}, ${C.cyan})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                fontSize: "clamp(22px,3.4vw,36px)",
+                fontWeight: 780,
+                lineHeight: 1.18,
+                letterSpacing: "-0.025em",
+                color: C.emberBright,
+                textShadow: `0 0 26px ${C.emberGlow}`,
+                margin: "10px 0 0 26px",
               }}
             >
-              They stopped waiting on them.
+              That edge compounds.
             </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <a href="/signup" className="btn btn-primary" style={{ textDecoration: "none" }}>
-                Start free
-              </a>
-              <Link
-                to="/pricing"
-                style={{
-                  textDecoration: "none",
-                  padding: "10px 18px",
-                  borderRadius: 8,
-                  border: `1px solid ${C.border}`,
-                  color: C.muted,
-                  fontSize: 13,
-                }}
-              >
-                See pricing
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -2241,18 +2475,16 @@ function CtaSection() {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            background: C.violetDim,
-            border: `1px solid ${C.borderHot}`,
-            boxShadow: `0 0 24px ${C.violetGlow}`,
+            background: C.emberDim,
+            border: `1px solid ${C.emberBorder}`,
+            boxShadow: `0 0 24px ${C.emberGlow}`,
             margin: "0 auto 26px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <span
-            style={{ color: C.violetBright, fontSize: 18, textShadow: `0 0 12px ${C.violetGlow}` }}
-          >
+          <span style={{ color: C.emberBright, fontSize: 18, textShadow: `0 0 12px ${C.emberGlow}` }}>
             ↺
           </span>
         </div>
@@ -2302,6 +2534,7 @@ function CtaSection() {
 function LandingPage() {
   const active = useActiveStation(6, 2500);
   const scrolled = useScrolled(56);
+  const progress = useScrollProgress();
 
   return (
     <MachineViewContainer machineContent={MACHINE_CONTENT} title="Cadence">
@@ -2315,6 +2548,28 @@ function LandingPage() {
           flexDirection: "column",
         }}
       >
+        {/* Scroll progress bar - premium top-level feedback */}
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            zIndex: 60,
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${progress * 100}%`,
+              background: `linear-gradient(90deg, ${C.ember}, ${C.amber} 55%, ${C.violetBright})`,
+              boxShadow: `0 0 10px ${C.emberGlow}`,
+              transition: "width 0.12s linear",
+            }}
+          />
+        </div>
         <header
           style={{
             position: "sticky",
