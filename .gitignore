@@ -83,3 +83,7 @@ docs/screenshots/
 !design-reference/**/*.jpg
 !design-reference/**/*.gif
 !design-reference/**/*.webp
+
+# Served social/preview image (the cosmic brand-band OG card) must be committed so it
+# deploys and link previews work.
+!public/og-cadence.png

@@ -27,6 +27,15 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://cadence-flow-beta.lovable.app/" },
+      { property: "og:image", content: "https://cadence-flow-beta.lovable.app/og-cadence.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Cadence, the agent-native product OS" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESC },
+      { name: "twitter:image", content: "https://cadence-flow-beta.lovable.app/og-cadence.png" },
     ],
   }),
 });
@@ -1770,7 +1779,7 @@ function ManifestoStrip() {
             margin: "0 0 24px",
           }}
         >
-          Your stack runs the work.
+          Your current stack runs the work.
           <br />
           <span style={{ color: C.emberBright }}>It forgets the thinking.</span>
         </h2>
@@ -1779,13 +1788,14 @@ function ManifestoStrip() {
             fontSize: "clamp(15px,1.8vw,18px)",
             lineHeight: 1.66,
             color: C.muted,
-            maxWidth: 560,
+            maxWidth: 580,
             margin: "0 auto",
           }}
         >
-          Every signal, decision, and outcome scatters across a dozen tools, then walks out the door
-          with the people who made it. <Brand /> keeps the whole thread, from first signal to
-          shipped outcome, and feeds it back into the next call.
+          Every signal, decision, and outcome scatters across the tools you already run, then walks
+          out the door with the people who made it. <Brand /> works on top of your current stack,
+          keeping the whole thread from first signal to shipped outcome and feeding it into the next
+          call.
         </p>
       </div>
     </section>
