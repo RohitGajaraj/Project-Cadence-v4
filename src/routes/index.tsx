@@ -433,14 +433,32 @@ function useScrollProgress() {
   return p;
 }
 
-function useTerminalLog(entries: LogEntry[], revealed: boolean, msPerEntry = 320) {
-  const [count, setCount] = useState(0);
+// Live terminal: types each line out char by char, pauses, then loops, for a
+// perpetually-running feel instead of a one-time reveal.
+function useTerminalStream(entries: LogEntry[], revealed: boolean) {
+  const [count, setCount] = useState(0); // lines fully typed
+  const [typed, setTyped] = useState(0); // chars typed of the current line
   useEffect(() => {
-    if (!revealed || count >= entries.length) return;
-    const id = setTimeout(() => setCount((c) => c + 1), count === 0 ? 100 : msPerEntry);
-    return () => clearTimeout(id);
-  }, [revealed, count, entries.length, msPerEntry]);
-  return entries.slice(0, count);
+    if (!revealed) return;
+    if (count >= entries.length) {
+      const t = setTimeout(() => {
+        setCount(0);
+        setTyped(0);
+      }, 3400);
+      return () => clearTimeout(t);
+    }
+    const msg = entries[count].msg;
+    if (typed < msg.length) {
+      const t = setTimeout(() => setTyped((n) => n + 1), 11);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setCount((c) => c + 1);
+      setTyped(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [revealed, count, typed, entries]);
+  return { count, typed };
 }
 
 // Sequential flow: each dot pulses in turn, "blow off" effect step by step
@@ -746,21 +764,96 @@ function TerminalCard({
   entries: LogEntry[];
   revealed: boolean;
 }) {
-  const visible = useTerminalLog(entries, revealed, 300);
+  const { count, typed } = useTerminalStream(entries, revealed);
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!revealed) return;
+    const id = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+  }, [revealed]);
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [visible.length]);
+  }, [count, typed]);
+
+  const mono = '"IBM Plex Mono", "JetBrains Mono", monospace';
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
+  const typingLine = count < entries.length ? entries[count] : null;
+
+  const line = (e: LogEntry, msg: string, key: number, caret: boolean) => (
+    <div
+      key={key}
+      style={{
+        display: "flex",
+        gap: 10,
+        alignItems: "baseline",
+        animation: caret ? "none" : "fadeUp 0.2s ease both",
+      }}
+    >
+      <span style={{ color: C.faint, flexShrink: 0, fontSize: 9.5 }}>{e.ts}</span>
+      <span
+        style={{
+          color: e.col,
+          flexShrink: 0,
+          minWidth: 88,
+          fontWeight: 600,
+          letterSpacing: "0.05em",
+          textShadow: e.brand ? `0 0 12px ${e.col}` : "none",
+        }}
+      >
+        {e.tag}
+      </span>
+      <span
+        style={{
+          color: e.brand ? e.col : C.muted,
+          lineHeight: 1.5,
+          textShadow: e.brand ? `0 0 8px ${e.col}` : "none",
+        }}
+      >
+        {msg}
+        {caret ? (
+          <span
+            style={{
+              display: "inline-block",
+              width: 6,
+              height: 12,
+              marginLeft: 2,
+              transform: "translateY(1px)",
+              background: e.col,
+              animation: "cursorBlink 0.9s step-end infinite",
+            }}
+          />
+        ) : null}
+      </span>
+    </div>
+  );
 
   return (
     <div
       style={{
+        position: "relative",
         background: "rgba(0,0,0,0.6)",
         border: `1px solid ${C.border}`,
         borderRadius: 14,
         overflow: "hidden",
       }}
     >
+      {/* CRT scanline sweep */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: "38%",
+          pointerEvents: "none",
+          zIndex: 2,
+          background: "linear-gradient(to bottom, transparent, rgba(251,113,0,0.05), transparent)",
+          animation: "scanLine 6s linear infinite",
+        }}
+      />
       <div
         style={{
           display: "flex",
@@ -779,7 +872,7 @@ function TerminalCard({
         ))}
         <span
           style={{
-            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+            fontFamily: mono,
             fontSize: 10,
             color: C.muted,
             letterSpacing: "0.1em",
@@ -788,20 +881,37 @@ function TerminalCard({
         >
           {title}
         </span>
-        <span
-          style={{
-            marginLeft: "auto",
-            fontSize: 8,
-            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
-            color: C.green,
-            opacity: 0.7,
-          }}
-        >
-          LIVE
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: mono, fontSize: 9, color: C.faint }}>{`${mm}:${ss}`}</span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              fontFamily: mono,
+              fontSize: 8,
+              color: C.green,
+              letterSpacing: "0.1em",
+            }}
+          >
+            <span
+              className="lp-conn"
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: C.green,
+                boxShadow: `0 0 8px ${C.greenGlow}`,
+              }}
+            />
+            LIVE
+          </span>
         </span>
       </div>
       <div
         style={{
+          position: "relative",
+          zIndex: 1,
           padding: "14px 16px",
           minHeight: 220,
           maxHeight: 310,
@@ -809,59 +919,13 @@ function TerminalCard({
           display: "flex",
           flexDirection: "column",
           gap: 5,
-          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+          fontFamily: mono,
           fontSize: 11,
           scrollbarWidth: "none",
         }}
       >
-        {visible.map((e, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "baseline",
-              animation: "fadeUp 0.28s ease both",
-            }}
-          >
-            <span style={{ color: C.faint, flexShrink: 0, fontSize: 9.5 }}>{e.ts}</span>
-            <span
-              style={{
-                color: e.col,
-                flexShrink: 0,
-                minWidth: 88,
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textShadow: e.brand ? `0 0 12px ${e.col}` : "none",
-              }}
-            >
-              {e.tag}
-            </span>
-            <span
-              style={{
-                color: e.brand ? e.col : C.muted,
-                lineHeight: 1.5,
-                textShadow: e.brand ? `0 0 8px ${e.col}` : "none",
-              }}
-            >
-              {e.msg}
-            </span>
-          </div>
-        ))}
-        {visible.length < entries.length && (
-          <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 2 }}>
-            <span style={{ color: C.faint, fontSize: 9 }}>...</span>
-            <span
-              style={{
-                display: "inline-block",
-                width: 5,
-                height: 13,
-                background: C.violetBright,
-                animation: "cursorBlink 0.9s step-end infinite",
-              }}
-            />
-          </div>
-        )}
+        {entries.slice(0, count).map((e, i) => line(e, e.msg, i, false))}
+        {typingLine ? line(typingLine, typingLine.msg.slice(0, typed), count, true) : null}
         <div ref={bottomRef} />
       </div>
     </div>
