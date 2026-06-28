@@ -985,12 +985,54 @@ function TerminalCard({
 
 // Mock animated decision card
 function MockDecisionCard({ revealed }: { revealed: boolean }) {
-  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 to 1, driven by elapsed time
+  const [resetting, setResetting] = useState(false);
+  // Continuous smooth animation: the bar always moves 0→100% over FILL_TIME at a
+  // constant slow speed (never pauses or stalls), lingers at 100% for HOLD_TIME so
+  // the completed state is felt, then fades out at full width and refills — it never
+  // sweeps backward. Labels and bar both derive from `progress`, so a station lights
+  // the EXACT frame the bar's edge reaches it (see the step derivation below).
   useEffect(() => {
     if (!revealed) return;
-    const id = setInterval(() => setStep((s) => (s + 1) % 4), 2200);
-    return () => clearInterval(id);
+    let frameId: number;
+    const FILL_TIME = 10000; // 10s to smoothly progress 0→100% (slow, steady)
+    const HOLD_TIME = 2200; // linger on the completed decision
+    const FADE_TIME = 600; // graceful fade-out at full width before the refill
+    const CYCLE_TIME = FILL_TIME + HOLD_TIME + FADE_TIME;
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const cycleElapsed = elapsed % CYCLE_TIME;
+      let p: number;
+      let fading = false;
+
+      if (cycleElapsed < FILL_TIME) {
+        // Fill phase: 0→1 over FILL_TIME
+        p = cycleElapsed / FILL_TIME;
+      } else if (cycleElapsed < FILL_TIME + HOLD_TIME) {
+        // Hold phase: stay at 1
+        p = 1;
+      } else {
+        // Fade phase: keep the bar at FULL width but fade it out, so the reset is a
+        // gentle dissolve — never a backward sweep. It refills from 0 next cycle.
+        p = 1;
+        fading = true;
+      }
+
+      setProgress(p);
+      setResetting(fading);
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
   }, [revealed]);
+
+  // Stations sit at 0, 1/3, 2/3, 1 of the track (space-between). Deriving step at
+  // ×3 — not ×4 — makes each station light the exact frame the bar's edge reaches
+  // its label: Sense at 0%, Decide at 33%, Define at 67%, Build at 100%.
+  const step = Math.min(Math.floor(progress * 3), 3);
 
   const labels = ["Signal detected", "Decision proposed", "You approved", "Agents dispatched"];
   const icons = [C.cyan, C.violetBright, C.green, C.amber];
@@ -1130,9 +1172,17 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
             style={{
               height: "100%",
               borderRadius: 1,
-              background: `linear-gradient(90deg, ${C.violet}, ${C.violetBright})`,
-              width: `${(step + 1) * 25}%`,
-              transition: "width 0.5s cubic-bezier(0.23,1,0.32,1)",
+              // Slow drifting gradient: light & dimming on the left (the settled
+              // progress), deepening toward the leading edge on the right.
+              background: `linear-gradient(90deg, rgba(167,139,250,0.3) 0%, ${C.violetBright} 50%, ${C.violet} 100%)`,
+              backgroundSize: "200% 100%",
+              animation: "gradShift 6s ease-in-out infinite",
+              // Continuous smooth fill: width driven by elapsed time, never pauses.
+              width: `${Math.min(progress * 100, 100)}%`,
+              opacity: resetting ? 0 : 1,
+              // No width transition; motion is time-driven (60fps via requestAnimationFrame).
+              // Only opacity fades during reset; width snaps invisibly while faded out.
+              transition: "opacity 0.4s ease",
               boxShadow: `0 0 8px ${C.violetGlow}`,
             }}
           />
@@ -1165,13 +1215,53 @@ function MockLiveRun({ revealed }: { revealed: boolean }) {
     { name: "Builder", act: "3 commits, CI green", col: C.amber },
     { name: "Sentry", act: "watching D+14 outcome", col: C.green },
   ];
-  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 to 1
+  const [resetting, setResetting] = useState(false);
+  // Same continuous smooth animation as MockDecisionCard.
+  // Bar fills 0→100% smoothly, holds at complete, then fades and resets.
   useEffect(() => {
     if (!revealed) return;
-    const id = setInterval(() => setStep((s) => (s + 1) % (AGENTS.length + 1)), 1500);
-    return () => clearInterval(id);
+    let frameId: number;
+    const FILL_TIME = 10000; // 10s to smoothly progress 0→100% (slow, steady)
+    const HOLD_TIME = 2200; // linger on the shipped state
+    const FADE_TIME = 600; // graceful fade-out at full width before the refill
+    const CYCLE_TIME = FILL_TIME + HOLD_TIME + FADE_TIME;
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const cycleElapsed = elapsed % CYCLE_TIME;
+      let p: number;
+      let fading = false;
+
+      if (cycleElapsed < FILL_TIME) {
+        p = cycleElapsed / FILL_TIME;
+      } else if (cycleElapsed < FILL_TIME + HOLD_TIME) {
+        p = 1;
+      } else {
+        // Keep the bar full but fade it out — a gentle dissolve, never a rewind.
+        p = 1;
+        fading = true;
+      }
+
+      setProgress(p);
+      setResetting(fading);
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
   }, [revealed]);
-  const working = Math.min(step, AGENTS.length);
+
+  // Four agents own four equal quarters of the bar; each flips to "done" as the bar
+  // clears its quarter (25/50/75/100%). Allowing step to reach AGENTS.length lets the
+  // final agent (Sentry) settle into "done" once the bar completes.
+  const step = Math.min(Math.floor(progress * AGENTS.length), AGENTS.length);
+  const working = Math.min(step + 1, AGENTS.length);
+  const allDone = step >= AGENTS.length; // bar at 100%, every agent done
+  // ETA falls off the SAME `progress` clock as the bar, so the number drops because
+  // the bar fills — 8 min down to 1, then resolves to "shipped" (never a stuck clock).
+  const etaMin = Math.max(1, Math.ceil((1 - progress) * 8));
   const mono = '"IBM Plex Mono", "JetBrains Mono", monospace';
 
   return (
@@ -1264,15 +1354,31 @@ function MockLiveRun({ revealed }: { revealed: boolean }) {
           <div
             style={{
               height: "100%",
-              width: `${(step / AGENTS.length) * 100}%`,
-              background: `linear-gradient(90deg, ${C.ember}, ${C.amber})`,
+              // Continuous smooth fill: width driven by elapsed time, never pauses.
+              width: `${Math.min(progress * 100, 100)}%`,
+              // Slow drifting gradient: light amber dimming on the left, deepening to
+              // ember at the leading edge on the right.
+              background: `linear-gradient(90deg, rgba(251,191,36,0.4) 0%, ${C.amber} 50%, ${C.ember} 100%)`,
+              backgroundSize: "200% 100%",
+              animation: "gradShift 6s ease-in-out infinite",
               boxShadow: `0 0 8px ${C.emberGlow}`,
-              transition: "width 0.5s cubic-bezier(0.23,1,0.32,1)",
+              opacity: resetting ? 0 : 1,
+              // No width transition; motion is time-driven (60fps). Only opacity fades.
+              transition: "opacity 0.4s ease",
             }}
           />
         </div>
-        <span style={{ fontSize: 8.5, fontFamily: mono, color: C.faint, flexShrink: 0 }}>
-          ETA to ship 8 min
+        <span
+          style={{
+            fontSize: 8.5,
+            fontFamily: mono,
+            color: allDone ? C.green : C.faint,
+            textShadow: allDone ? `0 0 8px ${C.greenGlow}` : "none",
+            flexShrink: 0,
+            transition: "color 0.4s ease",
+          }}
+        >
+          {allDone ? "shipped ✓" : `ETA to ship ${etaMin} min`}
         </span>
       </div>
     </div>
@@ -3049,11 +3155,21 @@ function CtaSection() {
             justifyContent: "center",
           }}
         >
-          <span
-            style={{ color: C.emberBright, fontSize: 18, textShadow: `0 0 12px ${C.emberGlow}` }}
+          <svg
+            width={22}
+            height={22}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={C.emberBright}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ filter: `drop-shadow(0 0 8px ${C.emberGlow})` }}
+            aria-hidden="true"
           >
-            ↺
-          </span>
+            {/* infinity — the continuous Sense -> Decide -> Build -> Ship -> Learn loop */}
+            <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z" />
+          </svg>
         </div>
         <h2
           style={{
