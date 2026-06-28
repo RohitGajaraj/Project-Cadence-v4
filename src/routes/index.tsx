@@ -499,7 +499,7 @@ function Tag({ children, col }: { children: React.ReactNode; col: string }) {
   return (
     <span
       style={{
-        fontFamily: "JetBrains Mono, monospace",
+        fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
         fontSize: 9,
         letterSpacing: "0.14em",
         textTransform: "uppercase",
@@ -633,7 +633,7 @@ function OrbitRingLabeled({ active }: { active: number }) {
             textAnchor={n.anchor}
             fill={n.isActive ? C.violetBright : "rgba(255,255,255,0.4)"}
             fontSize="8.5"
-            fontFamily="JetBrains Mono, monospace"
+            fontFamily='"IBM Plex Mono", "JetBrains Mono", monospace'
             letterSpacing="0.1em"
             style={{ transition: "fill 0.4s" }}
           >
@@ -645,7 +645,7 @@ function OrbitRingLabeled({ active }: { active: number }) {
             textAnchor={n.anchor}
             fill={n.isActive ? "rgba(103,232,249,0.85)" : "rgba(255,255,255,0.24)"}
             fontSize="7"
-            fontFamily="JetBrains Mono, monospace"
+            fontFamily='"IBM Plex Mono", "JetBrains Mono", monospace'
             style={{ transition: "fill 0.4s" }}
           >
             {n.orbitKicker}
@@ -702,7 +702,7 @@ function OrbitRingLabeled({ active }: { active: number }) {
         textAnchor="middle"
         fill="#2a1300"
         fontSize="9.5"
-        fontFamily="JetBrains Mono, monospace"
+        fontFamily='"IBM Plex Mono", "JetBrains Mono", monospace'
         fontWeight="700"
         letterSpacing="0.12em"
       >
@@ -755,7 +755,7 @@ function TerminalCard({
         ))}
         <span
           style={{
-            fontFamily: "JetBrains Mono, monospace",
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
             fontSize: 10,
             color: C.muted,
             letterSpacing: "0.1em",
@@ -768,7 +768,7 @@ function TerminalCard({
           style={{
             marginLeft: "auto",
             fontSize: 8,
-            fontFamily: "JetBrains Mono, monospace",
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
             color: C.green,
             opacity: 0.7,
           }}
@@ -785,7 +785,7 @@ function TerminalCard({
           display: "flex",
           flexDirection: "column",
           gap: 5,
-          fontFamily: "JetBrains Mono, monospace",
+          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
           fontSize: 11,
           scrollbarWidth: "none",
         }}
@@ -878,18 +878,18 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
         }}
       >
         <span
-          style={{ color: C.violetBright, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+          style={{ color: C.violetBright, fontSize: 10, fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace' }}
         >
           ◎
         </span>
-        <span style={{ fontSize: 11, color: C.muted, fontFamily: "JetBrains Mono, monospace" }}>
+        <span style={{ fontSize: 11, color: C.muted, fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace' }}>
           cadence / today
         </span>
         <span
           style={{
             marginLeft: "auto",
             fontSize: 8,
-            fontFamily: "JetBrains Mono, monospace",
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
             color: C.violetBright,
             border: `1px solid rgba(167,139,250,0.3)`,
             borderRadius: 4,
@@ -925,7 +925,7 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
             <div
               style={{
                 fontSize: 9,
-                fontFamily: "JetBrains Mono, monospace",
+                fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                 color: icons[step],
                 letterSpacing: "0.1em",
                 marginBottom: 5,
@@ -994,7 +994,7 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
               key={s.id}
               style={{
                 fontSize: 8,
-                fontFamily: "JetBrains Mono, monospace",
+                fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                 color: i <= step ? C.violetBright : C.faint,
                 transition: "color 0.4s",
               }}
@@ -1031,7 +1031,7 @@ function MockTrustLedger({ revealed }: { revealed: boolean }) {
         style={{
           fontSize: 11,
           color: C.muted,
-          fontFamily: "JetBrains Mono, monospace",
+          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
           marginBottom: 12,
           paddingBottom: 10,
           borderBottom: `1px solid ${C.border}`,
@@ -1070,7 +1070,7 @@ function MockTrustLedger({ revealed }: { revealed: boolean }) {
           <span
             style={{
               fontSize: 9,
-              fontFamily: "JetBrains Mono, monospace",
+              fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
               color: row.col,
               border: `1px solid ${row.col}44`,
               borderRadius: 4,
@@ -1181,13 +1181,13 @@ function FlowList({ entries, revealed }: { entries: LogEntry[]; revealed: boolea
             <div style={{ paddingBottom: i < entries.length - 1 ? 14 : 0, paddingTop: 9 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
                 <span
-                  style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: C.faint }}
+                  style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}
                 >
                   {e.ts}
                 </span>
                 <span
                   style={{
-                    fontFamily: "JetBrains Mono, monospace",
+                    fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                     fontSize: 9.5,
                     fontWeight: 600,
                     color: e.col,
@@ -1277,7 +1277,7 @@ function HeroSection() {
       }}
     >
       <HeroBackdrop />
-      <div ref={ref} style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
+      <div ref={ref} style={{ position: "relative", maxWidth: 1120, margin: "0 auto" }}>
         <div
           className="lp-hero-grid"
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 52, alignItems: "center" }}
@@ -1291,7 +1291,7 @@ function HeroSection() {
           >
             <div
               style={{
-                fontFamily: "JetBrains Mono, monospace",
+                fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                 fontSize: 9,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
@@ -1422,7 +1422,7 @@ function OrbitSection({ active }: { active: number }) {
         <p
           style={{
             fontSize: 11,
-            fontFamily: "JetBrains Mono, monospace",
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
             color: C.emberBright,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
@@ -1458,7 +1458,7 @@ function OrbitSection({ active }: { active: number }) {
           gap: 9,
           flexWrap: "wrap",
           justifyContent: "center",
-          fontFamily: "JetBrains Mono, monospace",
+          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
           fontSize: 11.5,
           minHeight: 18,
         }}
@@ -1523,7 +1523,7 @@ function StatsStrip() {
                 fontSize: "clamp(22px,3vw,30px)",
                 fontWeight: 700,
                 color: C.emberBright,
-                fontFamily: "JetBrains Mono, monospace",
+                fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                 textShadow: `0 0 20px ${C.emberGlow}`,
                 lineHeight: 1.1,
               }}
@@ -1541,92 +1541,56 @@ function StatsStrip() {
 function ManifestoStrip() {
   const { ref, on } = useReveal(0.12);
   return (
-    <section ref={ref} style={{ padding: "88px 24px", borderBottom: `1px solid ${C.divider}` }}>
+    <section ref={ref} style={{ padding: "84px 24px", borderBottom: `1px solid ${C.divider}` }}>
       <div
-        className="lp-manifesto-grid"
         style={{
-          maxWidth: 960,
+          maxWidth: 720,
           margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: "150px 1fr",
-          gap: 44,
-          alignItems: "start",
+          textAlign: "center",
           opacity: on ? 1 : 0,
           transform: on ? "translateY(0)" : "translateY(18px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
-        {/* Left rail - a section marker, like an editorial column header */}
-        <div style={{ paddingTop: 7 }}>
-          <div
-            style={{
-              fontFamily: "JetBrains Mono, monospace",
-              fontSize: 10,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: C.emberBright,
-              marginBottom: 12,
-            }}
-          >
-            Why Cadence exists
-          </div>
-          <div style={{ width: 30, height: 2, background: C.emberBorder }} />
+        <div
+          style={{
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.emberBright,
+            marginBottom: 22,
+          }}
+        >
+          Why Cadence exists
         </div>
-
-        {/* Right column - flowing editorial prose, one signature closing line */}
-        <div style={{ maxWidth: 640 }}>
-          <p
-            style={{
-              fontSize: "clamp(17px,2.1vw,23px)",
-              lineHeight: 1.62,
-              color: "rgba(255,255,255,0.74)",
-              margin: "0 0 22px",
-              fontWeight: 420,
-            }}
-          >
-            Every team already has Jira, Slack, GitHub, and a dozen AI tools, and not one of them
-            closes the loop. The signal that triggers a decision never reaches the outcome that
-            proves it right or wrong. Context scatters across tabs. The reasoning behind what shipped
-            quietly disappears.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(17px,2.1vw,23px)",
-              lineHeight: 1.62,
-              color: "rgba(255,255,255,0.74)",
-              margin: "0 0 34px",
-              fontWeight: 420,
-            }}
-          >
-            <Brand /> exists to close it, sense to shipped, with every decision recorded, weighted,
-            and fed straight back into the next one.
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(19px,2.5vw,28px)",
-              lineHeight: 1.3,
-              margin: 0,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: C.text,
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            <span
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 2,
-                background: C.ember,
-                boxShadow: `0 0 12px ${C.emberGlow}`,
-                flexShrink: 0,
-              }}
-            />
-            The loop is not the product. The loop is the floor.
-          </p>
-        </div>
+        <h2
+          style={{
+            fontSize: "clamp(27px,4vw,44px)",
+            fontWeight: 600,
+            lineHeight: 1.1,
+            letterSpacing: "-0.025em",
+            color: C.text,
+            margin: "0 0 24px",
+          }}
+        >
+          Your stack runs the work.
+          <br />
+          <span style={{ color: C.emberBright }}>It forgets the thinking.</span>
+        </h2>
+        <p
+          style={{
+            fontSize: "clamp(15px,1.8vw,18px)",
+            lineHeight: 1.66,
+            color: C.muted,
+            maxWidth: 560,
+            margin: "0 auto",
+          }}
+        >
+          Every signal, decision, and outcome scatters across a dozen tools, then walks out the door
+          with the people who made it. <Brand /> keeps the whole thread, from first signal to shipped
+          outcome, and feeds it back into the next call.
+        </p>
       </div>
     </section>
   );
@@ -1636,7 +1600,7 @@ function StationsSection({ active }: { active: number }) {
   const { ref, on } = useReveal(0.04);
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <div
           style={{
             marginBottom: 44,
@@ -1690,13 +1654,13 @@ function StationsSection({ active }: { active: number }) {
               >
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span
-                    style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: C.faint }}
+                    style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}
                   >
                     {s.num}
                   </span>
                   <span
                     style={{
-                      fontFamily: "JetBrains Mono, monospace",
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                       fontSize: 14,
                       color: i === active ? s.color : C.faint,
                       textShadow: i === active ? `0 0 14px ${s.glow}` : "none",
@@ -1712,7 +1676,7 @@ function StationsSection({ active }: { active: number }) {
                       fontSize: 9,
                       letterSpacing: "0.12em",
                       textTransform: "uppercase",
-                      fontFamily: "JetBrains Mono, monospace",
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                       color: i === active ? s.color : C.faint,
                       marginBottom: 6,
                       transition: "color 0.35s",
@@ -1746,7 +1710,7 @@ function StationsSection({ active }: { active: number }) {
                 >
                   <span
                     style={{
-                      fontFamily: "JetBrains Mono, monospace",
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                       fontSize: 8,
                       color: C.faint,
                       display: "block",
@@ -1780,7 +1744,7 @@ function AgentInActionSection() {
 
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
-      <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <div
           style={{
             marginBottom: 36,
@@ -1896,12 +1860,12 @@ function AgentInActionSection() {
 function LedgerSection() {
   const { ref, on } = useReveal(0.08);
   const REUSE = [4, 2, 3, 5];
-  // What each call taught the system: outcome-oriented, not a restatement of the row.
+  // Trust-and-outcome oriented: the record is what makes the next call defensible.
   const INSIGHTS = [
-    "short onboarding became the default for every new flow.",
-    "Cadence now weights developer-facing work higher.",
-    "the simpler interaction ships first, every time.",
-    "the platform-first bet now anchors the roadmap.",
+    "logged with its evidence, a default the team can stand behind.",
+    "the miss owned on the record, so developer work ranks higher now.",
+    "proven, not argued: the simpler call wins on evidence next time.",
+    "attributed to the decision, a bet anyone can audit later.",
   ];
   const [hot, setHot] = useState(0);
   useEffect(() => {
@@ -1912,7 +1876,7 @@ function LedgerSection() {
 
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
-      <div style={{ maxWidth: 880, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <div
           style={{
             marginBottom: 36,
@@ -1945,6 +1909,7 @@ function LedgerSection() {
           style={{
             overflowX: "auto",
             WebkitOverflowScrolling: "touch",
+            maxWidth: 900,
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(14px)",
             transition: "opacity 0.5s ease 0.14s, transform 0.5s ease 0.14s",
@@ -1974,7 +1939,7 @@ function LedgerSection() {
                 <span
                   key={h}
                   style={{
-                    fontFamily: "JetBrains Mono, monospace",
+                    fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                     fontSize: 9,
                     color: C.faint,
                     letterSpacing: "0.1em",
@@ -2011,7 +1976,7 @@ function LedgerSection() {
                   <span style={{ fontSize: 13, color: C.muted }}>{row.outcome}</span>
                   <span
                     style={{
-                      fontFamily: "JetBrains Mono, monospace",
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                       fontSize: 9.5,
                       color: row.col,
                       border: `1px solid ${row.col}44`,
@@ -2025,7 +1990,7 @@ function LedgerSection() {
                   </span>
                   <span
                     style={{
-                      fontFamily: "JetBrains Mono, monospace",
+                      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                       fontSize: 11,
                       fontWeight: 600,
                       color: isHot ? C.emberBright : C.faint,
@@ -2056,7 +2021,7 @@ function LedgerSection() {
         >
           <span
             style={{
-              fontFamily: "JetBrains Mono, monospace",
+              fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
               fontSize: 9.5,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -2064,21 +2029,21 @@ function LedgerSection() {
               flexShrink: 0,
             }}
           >
-            What it changed
+            On the record
           </span>
           <span key={hot} style={{ animation: "fadeIn 0.6s ease" }}>
-            <span style={{ color: C.emberBright, fontWeight: 500 }}>
-              {LEDGER_ROWS[hot].outcome}
+            <span style={{ color: C.muted }}>{LEDGER_ROWS[hot].outcome}</span>
+            <span style={{ color: C.faint }}>{"  ·  "}</span>
+            <span className="lp-memwrite" style={{ fontWeight: 600 }}>
+              {INSIGHTS[hot]}
             </span>
-            <span style={{ color: C.faint }}>{"  so  "}</span>
-            <span style={{ color: C.muted }}>{INSIGHTS[hot]}</span>
           </span>
         </div>
 
         {/* Why it matters, in three numbers */}
         <div
           style={{
-            marginTop: 26,
+            marginTop: 20,
             display: "flex",
             flexWrap: "wrap",
             gap: 30,
@@ -2094,7 +2059,7 @@ function LedgerSection() {
             <div key={l} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span
                 style={{
-                  fontFamily: "JetBrains Mono, monospace",
+                  fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                   fontSize: 18,
                   fontWeight: 700,
                   color: C.emberBright,
@@ -2157,7 +2122,7 @@ function MoatSection() {
       <div
         style={{
           position: "relative",
-          maxWidth: 940,
+          maxWidth: 1120,
           margin: "0 auto",
           padding: "52px clamp(20px,4vw,52px) 56px",
           borderRadius: 28,
@@ -2309,18 +2274,18 @@ function GuerrillaSection() {
       ref={ref}
       style={{ padding: "92px 24px 60px", borderBottom: `1px solid ${C.divider}` }}
     >
-      <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
         <div
           style={{
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(20px)",
             transition: "opacity 0.65s ease, transform 0.65s ease",
-            marginBottom: 26,
+            marginBottom: 22,
           }}
         >
           <div
             style={{
-              fontFamily: "JetBrains Mono, monospace",
+              fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
               fontSize: 10,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
@@ -2332,10 +2297,10 @@ function GuerrillaSection() {
           </div>
           <h2
             style={{
-              fontSize: "clamp(28px,4.6vw,50px)",
-              fontWeight: 780,
-              lineHeight: 1.08,
-              letterSpacing: "-0.032em",
+              fontSize: "clamp(28px,4.4vw,46px)",
+              fontWeight: 700,
+              lineHeight: 1.1,
+              letterSpacing: "-0.03em",
               color: C.text,
               margin: 0,
             }}
@@ -2352,23 +2317,30 @@ function GuerrillaSection() {
 
         <p
           style={{
-            fontSize: "clamp(16px,2vw,20px)",
-            lineHeight: 1.66,
-            color: "rgba(255,255,255,0.7)",
-            margin: "0 0 8px",
-            maxWidth: 660,
+            fontSize: "clamp(15px,1.9vw,19px)",
+            lineHeight: 1.6,
+            color: C.muted,
+            margin: "0 auto",
+            maxWidth: 560,
             opacity: on ? 1 : 0,
             transition: "opacity 0.6s ease 0.12s",
             fontWeight: 420,
           }}
         >
-          Anyone can ship in a weekend now. AI collapsed the cost of building, and the old edge with
-          it. The hard part moved: not how to build, but knowing what to build next, and being able
-          to say why the last thing shipped the way it did. That knowledge still lives in
-          people&apos;s heads, in closed tabs, in threads nobody reads twice.
+          Anyone can ship in a weekend now. The hard part moved: knowing what to build next, and
+          being able to say why the last thing shipped the way it did.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 8 }}>
+        <div
+          style={{
+            maxWidth: 600,
+            margin: "44px auto 0",
+            textAlign: "left",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0,
+          }}
+        >
           <div
             style={{
               padding: "30px 0",
@@ -2382,7 +2354,7 @@ function GuerrillaSection() {
               <div
                 style={{
                   fontSize: 11,
-                  fontFamily: "JetBrains Mono, monospace",
+                  fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                   letterSpacing: "0.16em",
                   color: C.emberBright,
                   paddingTop: 5,
@@ -2421,7 +2393,7 @@ function GuerrillaSection() {
               <div
                 style={{
                   fontSize: 11,
-                  fontFamily: "JetBrains Mono, monospace",
+                  fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
                   letterSpacing: "0.16em",
                   color: C.emberBright,
                   paddingTop: 5,
@@ -2446,60 +2418,43 @@ function GuerrillaSection() {
             </div>
           </div>
 
-          {/* Close: positive, system-led, ends on the compounding edge */}
-          <div
+        </div>
+
+        {/* Close: clean centered statement, no marker, ends on the compounding edge */}
+        <div
+          style={{
+            marginTop: 60,
+            opacity: on ? 1 : 0,
+            transform: on ? "translateY(0)" : "translateY(14px)",
+            transition: "opacity 0.55s ease 0.46s, transform 0.55s ease 0.46s",
+          }}
+        >
+          <p
             style={{
-              marginTop: 52,
-              paddingTop: 40,
-              borderTop: `1px solid ${C.divider}`,
-              opacity: on ? 1 : 0,
-              transform: on ? "translateY(0)" : "translateY(14px)",
-              transition: "opacity 0.55s ease 0.46s, transform 0.55s ease 0.46s",
+              fontSize: "clamp(21px,3.1vw,33px)",
+              fontWeight: 680,
+              lineHeight: 1.2,
+              letterSpacing: "-0.025em",
+              color: C.text,
+              margin: "0 auto",
+              maxWidth: 620,
             }}
           >
-            <p
-              style={{
-                fontSize: "clamp(22px,3.4vw,36px)",
-                fontWeight: 680,
-                lineHeight: 1.18,
-                letterSpacing: "-0.025em",
-                color: C.text,
-                margin: 0,
-                display: "flex",
-                gap: 16,
-                alignItems: "flex-start",
-              }}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: C.ember,
-                  boxShadow: `0 0 14px ${C.emberGlow}`,
-                  flexShrink: 0,
-                  marginTop: "0.4em",
-                }}
-              />
-              <span>
-                The best product teams aren&apos;t working harder. They run on a system that
-                remembers every decision and gets sharper with every outcome.
-              </span>
-            </p>
-            <p
-              style={{
-                fontSize: "clamp(22px,3.4vw,36px)",
-                fontWeight: 780,
-                lineHeight: 1.18,
-                letterSpacing: "-0.025em",
-                color: C.emberBright,
-                textShadow: `0 0 26px ${C.emberGlow}`,
-                margin: "10px 0 0 26px",
-              }}
-            >
-              That edge compounds.
-            </p>
-          </div>
+            The best product teams aren&apos;t working harder. They run a system that remembers every
+            decision and sharpens with every outcome.
+          </p>
+          <p
+            style={{
+              fontSize: "clamp(20px,2.8vw,30px)",
+              fontWeight: 780,
+              letterSpacing: "-0.02em",
+              color: C.emberBright,
+              textShadow: `0 0 26px ${C.emberGlow}`,
+              margin: "14px 0 0",
+            }}
+          >
+            That edge compounds.
+          </p>
         </div>
       </div>
     </section>
@@ -2607,7 +2562,14 @@ function LandingPage() {
   return (
     <MachineViewContainer machineContent={MACHINE_CONTENT} title="Cadence">
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      />
       <div
+        className="lp-page"
         style={{
           minHeight: "100vh",
           background: C.bg,
@@ -2655,28 +2617,39 @@ function LandingPage() {
             position: "sticky",
             top: 0,
             zIndex: 50,
-            padding: "12px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            padding: "12px 24px",
             background: scrolled ? "rgba(7,7,15,0.88)" : C.bg,
             backdropFilter: scrolled ? "blur(16px)" : "none",
             borderBottom: `1px solid ${C.divider}`,
             transition: "background 0.3s ease, backdrop-filter 0.3s ease",
           }}
         >
-          <Link
-            to="/"
-            style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
           >
-            <NavMark />
-            <span
-              style={{ fontSize: 14, fontWeight: 550, color: C.text, letterSpacing: "-0.01em" }}
+            <Link
+              to="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 9,
+                textDecoration: "none",
+              }}
             >
-              Cadence
-            </span>
-          </Link>
-          <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <NavMark />
+              <span
+                style={{ fontSize: 14, fontWeight: 550, color: C.text, letterSpacing: "-0.01em" }}
+              >
+                Cadence
+              </span>
+            </Link>
+            <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <Link
               to="/pricing"
               className="lp-nav"
@@ -2695,7 +2668,8 @@ function LandingPage() {
             <a href="/signup" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
               Start free
             </a>
-          </nav>
+            </nav>
+          </div>
         </header>
 
         <main style={{ flex: 1, position: "relative", zIndex: 1 }}>
@@ -2711,28 +2685,42 @@ function LandingPage() {
           <CtaSection />
         </main>
 
-        <footer
-          style={{
-            padding: "14px 20px",
-            borderTop: `1px solid ${C.divider}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: C.faint }}>
-            Made with Cadence
-          </span>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <Link to="/pricing" style={{ fontSize: 11, color: C.faint, textDecoration: "none" }}>
-              Pricing
-            </Link>
-            <a href="/login" style={{ fontSize: 11, color: C.faint, textDecoration: "none" }}>
-              Sign in
-            </a>
-            <a href="/signup" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
-              Start free
-            </a>
+        <footer style={{ padding: "16px 24px", borderTop: `1px solid ${C.divider}` }}>
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span style={{ fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace', fontSize: 9, color: C.faint }}>
+              Made with Cadence
+            </span>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <Link
+                to="/pricing"
+                className="lp-nav"
+                style={{ fontSize: 11, color: C.faint, textDecoration: "none" }}
+              >
+                Pricing
+              </Link>
+              <a
+                href="/login"
+                className="lp-nav"
+                style={{ fontSize: 11, color: C.faint, textDecoration: "none" }}
+              >
+                Sign in
+              </a>
+              <a
+                href="/signup"
+                className="btn btn-primary btn-sm"
+                style={{ textDecoration: "none" }}
+              >
+                Start free
+              </a>
+            </div>
           </div>
         </footer>
       </div>
