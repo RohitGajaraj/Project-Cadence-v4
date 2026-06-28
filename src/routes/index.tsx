@@ -388,16 +388,40 @@ const STYLES = `
 
 // Hooks
 
-// Cycles 0..total-1. Stays at 0 (Sense) until `run` is true, then begins the loop from
-// the start, so the orbit always opens on Sense the first time it scrolls into view.
-function useActiveStation(total: number, ms = 2500, run = true) {
-  const [a, setA] = useState(0);
+// Cycles 0..total-1, but only while the observed element is genuinely in view, and it
+// RESETS to 0 (Sense) every time the element enters view. So the loop always opens on
+// Sense the first time the user actually looks at it, never mid-cycle from peeking past
+// the hero. Attach the returned ref to the element that should be "looked at".
+function useStationCycle(total: number, ms = 2500, threshold = 0.5) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
   useEffect(() => {
-    if (!run) return;
-    const id = setInterval(() => setA((p) => (p + 1) % total), ms);
-    return () => clearInterval(id);
-  }, [total, ms, run]);
-  return a;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    let id: ReturnType<typeof setInterval> | null = null;
+    const stop = () => {
+      if (id) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        stop();
+        setActive(0); // always start fresh on Sense
+        if (e.isIntersecting) {
+          id = setInterval(() => setActive((p) => (p + 1) % total), ms);
+        }
+      },
+      { threshold },
+    );
+    obs.observe(el);
+    return () => {
+      stop();
+      obs.disconnect();
+    };
+  }, [total, ms, threshold]);
+  return { ref, active };
 }
 
 function useReveal(threshold = 0.1) {
@@ -1565,7 +1589,9 @@ function HeroSection() {
 function OrbitSection() {
   const { ref, on } = useReveal(0.08);
   // Starts on Sense; begins cycling only once the orbit is in view.
-  const active = useActiveStation(STATIONS.length, 2500, on);
+  // The orbit cycle is driven by the ring being genuinely in view (50%), and resets to
+  // Sense on entry, so it always opens on Sense the first time you look at it.
+  const { ref: ringRef, active } = useStationCycle(STATIONS.length, 2500, 0.5);
   const s = STATIONS[active] ?? STATIONS[0];
   return (
     <section
@@ -1608,6 +1634,7 @@ function OrbitSection() {
       </div>
 
       <div
+        ref={ringRef}
         style={{
           opacity: on ? 1 : 0,
           transform: on ? "scale(1)" : "scale(0.94)",
@@ -1767,7 +1794,7 @@ function ManifestoStrip() {
 
 function StationsSection() {
   const { ref, on } = useReveal(0.04);
-  const active = useActiveStation(STATIONS.length, 2500, on);
+  const { ref: gridRef, active } = useStationCycle(STATIONS.length, 2500, 0.25);
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
@@ -1795,6 +1822,7 @@ function StationsSection() {
           </p>
         </div>
         <div
+          ref={gridRef}
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit,minmax(290px,1fr))",
