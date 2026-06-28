@@ -258,19 +258,25 @@ const MOAT_PILLARS = [
   {
     icon: "◈",
     title: "Decision layer",
-    body: "Every call runs against two things: your product's history of decisions and outcomes, and the judgment, taste, and standards your team has established over time. Generic AI trains on the internet. Cadence trains on your product and your craft.",
+    kicker: "How the call gets made",
+    headline: "Trained on your product, and your taste.",
+    body: "Every call Cadence proposes runs against two things at once: your product's full history of decisions and their outcomes, and the judgment your team has shown over time, what you ship, what you cut, what good looks like here. Generic AI trains on the internet. Cadence trains on you, and starts making the calls your sharpest PM would make.",
     col: C.ember,
   },
   {
     icon: "◉",
     title: "Outcome memory",
-    body: "Every signal that came in, every spec that got written, every feature that shipped, every user who reacted. The full product journey writes into every future call. No human has to remember. The system does.",
+    kicker: "What the system remembers",
+    headline: "Nothing is forgotten. Everything is weighted.",
+    body: "Every signal that came in, every spec that shipped, every user who reacted, every result that landed, all of it is recorded and scored. The full product journey, not only the wins, writes into the next decision. No human has to remember why a call was made. The system does, and surfaces it the moment it matters again.",
     col: C.amber,
   },
   {
     icon: "◱",
     title: "Compounding edge",
-    body: "It compounds from the first call. Every outcome makes the next decision sharper. Day one, it closes the loop. The longer it runs, the more of your product's institutional intelligence it holds. There is no backfill. There is no shortcut.",
+    kicker: "Why it can't be copied",
+    headline: "It helps on day one. It never stops.",
+    body: "From the very first call, Cadence is closing the loop and learning from it. Each outcome sharpens the next decision. The record cannot be backfilled, copied, or bought, it exists only because the system was in the loop when each call was made. Day one it earns its place. A year in, it is institutional intelligence nothing else can reconstruct.",
     col: C.emberBright,
   },
 ];
@@ -363,6 +369,7 @@ const STYLES = `
   }
   @media (max-width:720px) { .lp-hero-grid { grid-template-columns:1fr!important; } }
   @media (max-width:720px) { .lp-manifesto-grid { grid-template-columns:1fr!important; gap:18px!important; } }
+  @media (max-width:760px) { .lp-moat-grid { grid-template-columns:1fr!important; gap:14px!important; } }
   @media (max-width:640px) { .lp-stats-grid { grid-template-columns:repeat(2,1fr)!important; } }
 `;
 
@@ -1008,13 +1015,22 @@ function MockDecisionCard({ revealed }: { revealed: boolean }) {
   );
 }
 
-function MockTrustLedger({ revealed }: { revealed: boolean }) {
-  const [highlight, setHighlight] = useState(0);
+// Live agent-mesh execution: the engine in motion (distinct from the audit Trust Ledger).
+function MockLiveRun({ revealed }: { revealed: boolean }) {
+  const AGENTS = [
+    { name: "Scout", act: "clustered 3 signals", col: C.cyan },
+    { name: "Architect", act: "spec locked, 4 criteria", col: C.violetBright },
+    { name: "Builder", act: "3 commits, CI green", col: C.amber },
+    { name: "Sentry", act: "watching D+14 outcome", col: C.green },
+  ];
+  const [step, setStep] = useState(0);
   useEffect(() => {
     if (!revealed) return;
-    const id = setInterval(() => setHighlight((h) => (h + 1) % LEDGER_ROWS.length), 1800);
+    const id = setInterval(() => setStep((s) => (s + 1) % (AGENTS.length + 1)), 1500);
     return () => clearInterval(id);
   }, [revealed]);
+  const working = Math.min(step, AGENTS.length);
+  const mono = '"IBM Plex Mono", "JetBrains Mono", monospace';
 
   return (
     <div
@@ -1029,59 +1045,92 @@ function MockTrustLedger({ revealed }: { revealed: boolean }) {
     >
       <div
         style={{
-          fontSize: 11,
-          color: C.muted,
-          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
           marginBottom: 12,
           paddingBottom: 10,
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        Trust Ledger / 48 calls recorded
-      </div>
-      {LEDGER_ROWS.map((row, i) => (
-        <div
-          key={i}
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 0",
-            borderBottom: i < LEDGER_ROWS.length - 1 ? `1px solid ${C.divider}` : undefined,
-            opacity: highlight === i ? 1 : 0.5,
-            transform: highlight === i ? "translateX(2px)" : "translateX(0)",
-            transition: "all 0.4s ease",
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: C.green,
+            boxShadow: `0 0 8px ${C.greenGlow}`,
           }}
-        >
-          <span
+        />
+        <span style={{ fontSize: 11, color: C.muted, fontFamily: mono }}>
+          live run / agent mesh
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 9, color: C.faint, fontFamily: mono }}>
+          {`${working}/${AGENTS.length} working`}
+        </span>
+      </div>
+      {AGENTS.map((a, i) => {
+        const done = step > i;
+        const active = step === i;
+        const col = done ? C.green : active ? a.col : C.faint;
+        return (
+          <div
+            key={a.name}
             style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: row.col,
-              flexShrink: 0,
-              boxShadow: highlight === i ? `0 0 8px ${row.col}` : "none",
-              transition: "box-shadow 0.4s",
-            }}
-          />
-          <span style={{ fontSize: 11, color: C.text, flex: 1, lineHeight: 1.3 }}>
-            {row.decision}
-          </span>
-          <span
-            style={{
-              fontSize: 9,
-              fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
-              color: row.col,
-              border: `1px solid ${row.col}44`,
-              borderRadius: 4,
-              padding: "1px 6px",
-              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 0",
+              borderBottom: i < AGENTS.length - 1 ? `1px solid ${C.divider}` : undefined,
+              opacity: done || active ? 1 : 0.45,
+              transition: "opacity 0.4s ease",
             }}
           >
-            {row.verdict}
-          </span>
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: col,
+                flexShrink: 0,
+                boxShadow: active ? `0 0 8px ${a.col}` : "none",
+                transition: "all 0.4s ease",
+              }}
+            />
+            <span style={{ fontSize: 11, fontWeight: 600, color: a.col, flexShrink: 0, width: 64 }}>
+              {a.name}
+            </span>
+            <span style={{ fontSize: 11, color: C.muted, flex: 1, lineHeight: 1.3 }}>{a.act}</span>
+            <span
+              style={{
+                fontSize: 8.5,
+                fontFamily: mono,
+                letterSpacing: "0.06em",
+                color: col,
+                flexShrink: 0,
+              }}
+            >
+              {done ? "done" : active ? "running" : "queued"}
+            </span>
+          </div>
+        );
+      })}
+      <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1, height: 2, background: C.border, borderRadius: 1, overflow: "hidden" }}>
+          <div
+            style={{
+              height: "100%",
+              width: `${(step / AGENTS.length) * 100}%`,
+              background: `linear-gradient(90deg, ${C.ember}, ${C.amber})`,
+              boxShadow: `0 0 8px ${C.emberGlow}`,
+              transition: "width 0.5s cubic-bezier(0.23,1,0.32,1)",
+            }}
+          />
         </div>
-      ))}
+        <span style={{ fontSize: 8.5, fontFamily: mono, color: C.faint, flexShrink: 0 }}>
+          ETA to ship 8 min
+        </span>
+      </div>
     </div>
   );
 }
@@ -1849,7 +1898,7 @@ function AgentInActionSection() {
           {/* Right: mock UI screens */}
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <MockDecisionCard revealed={on} />
-            <MockTrustLedger revealed={on} />
+            <MockLiveRun revealed={on} />
           </div>
         </div>
       </div>
@@ -2088,6 +2137,243 @@ function LedgerSection() {
   );
 }
 
+// A small system visual per moat layer, so each shows how it works, not just text.
+function MoatVisual({ idx, col }: { idx: number; col: string }) {
+  const mono = '"IBM Plex Mono", "JetBrains Mono", monospace';
+  const panel: CSSProperties = {
+    marginTop: 24,
+    padding: "14px 16px",
+    borderRadius: 10,
+    background: "rgba(0,0,0,0.32)",
+    border: `1px solid ${C.border}`,
+    fontFamily: mono,
+    fontSize: 11,
+  };
+  const cap: CSSProperties = {
+    fontSize: 9,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    color: col,
+    marginBottom: 10,
+    display: "block",
+  };
+
+  if (idx === 0) {
+    return (
+      <div style={panel}>
+        <span style={cap}>Decision proposed</span>
+        <div style={{ fontSize: 12.5, color: C.text, marginBottom: 8 }}>
+          Simplify onboarding step 2
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", color: C.muted, gap: 10 }}>
+          <span>precedent: similar call, +9%</span>
+          <span style={{ color: col }}>confidence 84%</span>
+        </div>
+        <div style={{ marginTop: 10, color: C.faint, fontSize: 10 }}>
+          weighed against 48 past decisions and your team&apos;s taste
+        </div>
+      </div>
+    );
+  }
+  if (idx === 1) {
+    return (
+      <div style={panel}>
+        <span style={cap}>Written to memory</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+          {["signal", "spec", "ship", "outcome"].map((t) => (
+            <span
+              key={t}
+              style={{
+                padding: "2px 8px",
+                borderRadius: 99,
+                border: `1px solid ${col}40`,
+                color: col,
+                fontSize: 9.5,
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+        <div style={{ color: C.muted }}>D+14 activation +8% · scored, kept, and reusable</div>
+      </div>
+    );
+  }
+  const bars = [26, 38, 50, 64, 78, 92];
+  return (
+    <div style={panel}>
+      <span style={cap}>Decision accuracy, over time</span>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 7, height: 54 }}>
+        {bars.map((h, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: `${h}%`,
+              borderRadius: 2,
+              background: col,
+              opacity: 0.32 + i * 0.12,
+            }}
+          />
+        ))}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 7,
+          color: C.faint,
+          fontSize: 9,
+        }}
+      >
+        <span>day 1</span>
+        <span>month 6</span>
+        <span>year 1</span>
+      </div>
+    </div>
+  );
+}
+
+// The three moat layers as vertical tabs: auto-cycling, each with its own context window.
+function MoatLayers({ on }: { on: boolean }) {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    const id = setInterval(() => setActive((a) => (a + 1) % MOAT_PILLARS.length), 5200);
+    return () => clearInterval(id);
+  }, [on]);
+  const p = MOAT_PILLARS[active];
+  return (
+    <div
+      className="lp-moat-grid"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "290px 1fr",
+        gap: 22,
+        opacity: on ? 1 : 0,
+        transform: on ? "translateY(0)" : "translateY(14px)",
+        transition: "opacity 0.55s ease 0.14s, transform 0.55s ease 0.14s",
+      }}
+    >
+      {/* Left: vertical tab list */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {MOAT_PILLARS.map((pil, i) => {
+          const isA = i === active;
+          return (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              aria-label={pil.title}
+              style={{
+                textAlign: "left",
+                cursor: "pointer",
+                padding: "15px 17px",
+                borderRadius: 12,
+                border: `1px solid ${isA ? `${pil.col}55` : C.border}`,
+                borderLeft: `3px solid ${isA ? pil.col : "transparent"}`,
+                background: isA ? `${pil.col}12` : "rgba(255,255,255,0.015)",
+                display: "flex",
+                alignItems: "center",
+                gap: 13,
+                transition: "border-color 0.3s ease, background 0.3s ease",
+              }}
+            >
+              <span
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 15,
+                  color: isA ? pil.col : C.faint,
+                  background: isA ? `${pil.col}1a` : "transparent",
+                  border: `1px solid ${isA ? `${pil.col}44` : C.border}`,
+                  textShadow: isA ? `0 0 12px ${pil.col}66` : "none",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                {pil.icon}
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span
+                  style={{
+                    fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+                    fontSize: 8.5,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: isA ? pil.col : C.faint,
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  {`0${i + 1}`}
+                </span>
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: isA ? C.text : C.muted,
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  {pil.title}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right: the selected layer's context window */}
+      <div
+        key={active}
+        style={{
+          animation: "fadeIn 0.5s ease",
+          padding: "30px clamp(22px,3vw,34px) 34px",
+          borderRadius: 16,
+          border: `1px solid ${p.col}33`,
+          background: `linear-gradient(160deg, ${p.col}10 0%, rgba(255,255,255,0.015) 30%, rgba(0,0,0,0) 100%)`,
+          boxShadow: `0 12px 44px ${p.col}12`,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+            fontSize: 9.5,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: p.col,
+            marginBottom: 14,
+          }}
+        >
+          {p.kicker}
+        </div>
+        <h3
+          className="font-display"
+          style={{
+            fontSize: "clamp(20px,2.4vw,28px)",
+            fontWeight: 600,
+            lineHeight: 1.18,
+            color: C.text,
+            margin: "0 0 16px",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {p.headline}
+        </h3>
+        <p style={{ fontSize: 14.5, lineHeight: 1.74, color: C.muted, margin: 0, maxWidth: 580 }}>
+          {p.body}
+        </p>
+        <MoatVisual idx={active} col={p.col} />
+      </div>
+    </div>
+  );
+}
+
 // Memory moat section: the layer beyond the six stations
 function MoatSection() {
   const { ref, on } = useReveal(0.08);
@@ -2199,69 +2485,7 @@ function MoatSection() {
           </p>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: 16,
-            opacity: on ? 1 : 0,
-            transform: on ? "translateY(0)" : "translateY(14px)",
-            transition: "opacity 0.55s ease 0.14s, transform 0.55s ease 0.14s",
-          }}
-        >
-          {MOAT_PILLARS.map((p, i) => (
-            <div
-              key={i}
-              className="lp-card"
-              style={
-                {
-                  position: "relative",
-                  padding: "28px 24px",
-                  background: "rgba(255,255,255,0.022)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 16,
-                  animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s both`,
-                  boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
-                  "--accent": `${p.col}66`,
-                  "--accent-soft": `${p.col}1f`,
-                } as CSSProperties
-              }
-            >
-              <div
-                className="lp-card-icon"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  background: `${p.col}16`,
-                  border: `1px solid ${p.col}38`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                  fontSize: 16,
-                  color: p.col,
-                  textShadow: `0 0 12px ${p.col}55`,
-                  boxShadow: `0 0 18px ${p.col}12`,
-                }}
-              >
-                {p.icon}
-              </div>
-              <h3
-                style={{
-                  fontSize: 16,
-                  fontWeight: 620,
-                  margin: "0 0 10px",
-                  color: C.text,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {p.title}
-              </h3>
-              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.muted, margin: 0 }}>{p.body}</p>
-            </div>
-          ))}
-        </div>
+        <MoatLayers on={on} />
       </div>
     </section>
   );
