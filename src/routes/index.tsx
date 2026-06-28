@@ -364,6 +364,19 @@ const STYLES = `
   @keyframes auroraDrift { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity:0.55 } 50% { transform: translate3d(0,-18px,0) scale(1.06); opacity:0.8 } }
   .lp-aurora { animation: auroraDrift 14s ease-in-out infinite; will-change: transform, opacity; }
 
+  /* Pixel display accent (Silkscreen) - innovative type for one signature moment */
+  .lp-pixel { font-family: "Silkscreen", "IBM Plex Mono", monospace; }
+  /* Drifting particles + slow cosmic gradient morph for the brand band */
+  @keyframes floatP { 0%,100% { transform: translateY(0); opacity: 0.45 } 50% { transform: translateY(-16px); opacity: 0.95 } }
+  .lp-particle { animation: floatP 7s ease-in-out infinite; will-change: transform, opacity; }
+  @keyframes cosmicMorph {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    33%  { transform: translate3d(3%,-4%,0) scale(1.12); }
+    66%  { transform: translate3d(-3%,3%,0) scale(1.05); }
+    100% { transform: translate3d(0,0,0) scale(1); }
+  }
+  .lp-cosmic { animation: cosmicMorph 22s ease-in-out infinite; will-change: transform; }
+
   @media (prefers-reduced-motion: reduce) {
     *,*::before,*::after { animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; }
   }
@@ -2803,6 +2816,137 @@ function GuerrillaSection() {
   );
 }
 
+// Cosmic brand band: an artistic, lively moment. A hollow "Cadence" wordmark over a
+// painterly morphing gradient with grain and drifting particles, plus a pixel-font accent.
+function BrandMomentSection() {
+  const { ref, on } = useReveal(0.15);
+  const particles = [
+    { l: "12%", t: "30%", s: 3, d: "0s" },
+    { l: "23%", t: "66%", s: 2, d: "1.4s" },
+    { l: "37%", t: "22%", s: 2.5, d: "2.6s" },
+    { l: "57%", t: "70%", s: 3, d: "0.7s" },
+    { l: "71%", t: "32%", s: 2, d: "3.1s" },
+    { l: "84%", t: "62%", s: 2.5, d: "1.9s" },
+    { l: "47%", t: "46%", s: 2, d: "4.2s" },
+    { l: "90%", t: "42%", s: 3, d: "2.2s" },
+  ];
+  return (
+    <section
+      ref={ref}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "clamp(84px,13vh,150px) 24px",
+        borderBottom: `1px solid ${C.divider}`,
+        minHeight: 440,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="lp-cosmic"
+        style={{
+          position: "absolute",
+          inset: "-22%",
+          pointerEvents: "none",
+          background: `radial-gradient(40% 50% at 28% 38%, rgba(251,113,0,0.22), transparent 60%), radial-gradient(38% 46% at 72% 30%, rgba(167,139,250,0.2), transparent 60%), radial-gradient(44% 50% at 60% 76%, rgba(214,90,40,0.18), transparent 62%), radial-gradient(36% 44% at 16% 78%, rgba(103,232,249,0.1), transparent 60%)`,
+          filter: "blur(40px)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          opacity: 0.05,
+          mixBlendMode: "overlay",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: "radial-gradient(75% 75% at 50% 50%, transparent 38%, rgba(7,7,15,0.72) 100%)",
+        }}
+      />
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="lp-particle"
+          style={{
+            position: "absolute",
+            left: p.l,
+            top: p.t,
+            width: p.s,
+            height: p.s,
+            borderRadius: "50%",
+            background: "rgba(255,222,184,0.9)",
+            boxShadow: "0 0 8px rgba(251,113,0,0.6)",
+            animationDelay: p.d,
+          }}
+        />
+      ))}
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          textAlign: "center",
+          opacity: on ? 1 : 0,
+          transform: on ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 0.7s ease, transform 0.7s ease",
+        }}
+      >
+        <div
+          className="lp-pixel"
+          style={{
+            fontSize: 13,
+            letterSpacing: "0.16em",
+            color: C.emberBright,
+            marginBottom: "clamp(16px,3vw,28px)",
+            textShadow: `0 0 18px ${C.emberGlow}`,
+          }}
+        >
+          SIGNAL TO SHIPPED
+        </div>
+        <div
+          style={{
+            fontSize: "clamp(64px,15vw,208px)",
+            fontWeight: 700,
+            lineHeight: 0.92,
+            letterSpacing: "-0.045em",
+            color: "transparent",
+            WebkitTextStroke: "1.5px rgba(255,255,255,0.55)",
+            filter: `drop-shadow(0 0 34px rgba(251,113,0,0.16))`,
+          }}
+        >
+          Cadence
+        </div>
+        <p
+          style={{
+            fontSize: "clamp(14px,1.8vw,18px)",
+            color: "rgba(255,255,255,0.66)",
+            margin: "clamp(20px,3vw,32px) auto 0",
+            maxWidth: 540,
+            lineHeight: 1.6,
+          }}
+        >
+          One system that senses, decides, builds, ships, and remembers, so your product is always
+          in motion.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function CtaSection() {
   const { ref, on } = useReveal(0.12);
   return (
@@ -2918,7 +3062,7 @@ function LandingPage() {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap"
       />
       <div
         className="lp-page"
@@ -3038,6 +3182,7 @@ function LandingPage() {
           <LedgerSection />
           <MoatSection />
           <GuerrillaSection />
+          <BrandMomentSection />
           <CtaSection />
         </main>
 
