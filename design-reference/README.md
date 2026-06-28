@@ -47,3 +47,13 @@ npx serve .            # or: python3 -m http.server
 
 Screen → source map: find any screen's code by its `data-screen-label`
 attribute in the jsx files.
+
+## Public landing page (v11)
+
+`landing-page-v11/` holds the **design reference, ideology, decision log, and the founder's
+inspiration images** for the public marketing page (`src/routes/index.tsx`) — Perplexity-style
+liveliness, the pixel-font accent, the warm Ember spine, the three-voice type system, and what
+to keep / enhance in a future revamp. **Start at
+[`landing-page-v11/README.md`](./landing-page-v11/README.md)** before changing or revamping the
+landing page. (Unlike the app prototype above, this is a reference + handoff doc, not a runnable
+mockup.)

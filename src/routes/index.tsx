@@ -388,12 +388,15 @@ const STYLES = `
 
 // Hooks
 
-function useActiveStation(total: number, ms = 2500) {
+// Cycles 0..total-1. Stays at 0 (Sense) until `run` is true, then begins the loop from
+// the start, so the orbit always opens on Sense the first time it scrolls into view.
+function useActiveStation(total: number, ms = 2500, run = true) {
   const [a, setA] = useState(0);
   useEffect(() => {
+    if (!run) return;
     const id = setInterval(() => setA((p) => (p + 1) % total), ms);
     return () => clearInterval(id);
-  }, [total, ms]);
+  }, [total, ms, run]);
   return a;
 }
 
@@ -1559,8 +1562,10 @@ function HeroSection() {
 }
 
 // Orbit section: the loop with the brain at its center.
-function OrbitSection({ active }: { active: number }) {
+function OrbitSection() {
   const { ref, on } = useReveal(0.08);
+  // Starts on Sense; begins cycling only once the orbit is in view.
+  const active = useActiveStation(STATIONS.length, 2500, on);
   const s = STATIONS[active] ?? STATIONS[0];
   return (
     <section
@@ -1760,8 +1765,9 @@ function ManifestoStrip() {
   );
 }
 
-function StationsSection({ active }: { active: number }) {
+function StationsSection() {
   const { ref, on } = useReveal(0.04);
+  const active = useActiveStation(STATIONS.length, 2500, on);
   return (
     <section ref={ref} style={{ padding: "80px 24px", borderBottom: `1px solid ${C.divider}` }}>
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
@@ -3057,7 +3063,6 @@ function CtaSection() {
 // Main
 
 function LandingPage() {
-  const active = useActiveStation(6, 2500);
   const scrolled = useScrolled(56);
   const progress = useScrollProgress();
 
@@ -3180,10 +3185,10 @@ function LandingPage() {
 
         <main style={{ flex: 1, position: "relative", zIndex: 1 }}>
           <HeroSection />
-          <OrbitSection active={active} />
+          <OrbitSection />
           <StatsStrip />
           <ManifestoStrip />
-          <StationsSection active={active} />
+          <StationsSection />
           <AgentInActionSection />
           <LedgerSection />
           <MoatSection />
