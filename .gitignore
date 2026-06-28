@@ -53,6 +53,22 @@ agentdb*.rvf
 agentdb*.rvf*.lock
 agentdb*.lock
 .swarm/
+
+# Agent skills installed via the skills CLI. The manifest skills-lock.json IS committed
+# (reproducible source of truth); the installed content (.agents/, ~2MB of third-party
+# skills from vercel-labs / Panniantong) and the .claude/skills/* symlinks that point into
+# it are the node_modules-equivalent — rebuild them by re-running the installer, never vendor.
+.agents/
+.claude/skills/agent-reach
+.claude/skills/deploy-to-vercel
+.claude/skills/vercel-cli-with-tokens
+.claude/skills/vercel-composition-patterns
+.claude/skills/vercel-optimize
+.claude/skills/vercel-react-best-practices
+.claude/skills/vercel-react-native-skills
+.claude/skills/vercel-react-view-transitions
+.claude/skills/web-design-guidelines
+.claude/skills/writing-guidelines
 # Images are local-only by default (bucket map + retention:
 # docs/conventions/workspace-hygiene.md). design-reference/ is re-included below.
 *.png
