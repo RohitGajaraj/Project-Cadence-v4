@@ -65,7 +65,7 @@ const STATIONS = [
     label: "Sense",
     icon: "◎",
     kicker: "The signal arrives",
-    orbitKicker: "signal in",
+    orbitKicker: "any source, live",
     body: "Cadence watches live sources: usage drops, support spikes, CI failures, market moves. It clusters what relates and surfaces what warrants a decision.",
     live: "3 onboarding complaints clustered. Severity: rising. D+7 activation at risk.",
     color: C.cyan,
@@ -77,7 +77,7 @@ const STATIONS = [
     label: "Decide",
     icon: "◈",
     kicker: "The call is made",
-    orbitKicker: "call proposed",
+    orbitKicker: "memory-backed",
     body: "Every decision runs against your team's own precedent. What did a similar call produce? Was it right? Cadence proposes the call and waits for your approval.",
     live: "Friction fix ranked #1. Precedent: similar call drove D+14 activation +9%. Confidence 84%.",
     color: C.violetBright,
@@ -89,7 +89,7 @@ const STATIONS = [
     label: "Define",
     icon: "◧",
     kicker: "The spec writes itself",
-    orbitKicker: "spec written",
+    orbitKicker: "evidence-linked",
     body: "The spec is grounded in the signal that triggered it: rationale, acceptance criteria, edge cases. Every clause has a source. Nothing is invented.",
     live: "Spec: 4 acceptance criteria. Linked to 6 signals. Approved in 90 seconds.",
     color: C.violetBright,
@@ -101,7 +101,7 @@ const STATIONS = [
     label: "Build",
     icon: "◱",
     kicker: "Agents run the execution",
-    orbitKicker: "agents run",
+    orbitKicker: "CI-governed",
     body: "Specialist agents pick up the spec. Cadence governs: checks their work, approves at the merge gate, escalates what genuinely needs a human.",
     live: "3 commits. CI passing. Queued for your merge approval. ETA to ship: 8 min.",
     color: C.amber,
@@ -113,7 +113,7 @@ const STATIONS = [
     label: "Ship",
     icon: "◮",
     kicker: "Deployed and watching",
-    orbitKicker: "deployed",
+    orbitKicker: "outcome-tracked",
     body: "The change deploys. Cadence notifies the team, timestamps the deploy, and immediately begins tracking the outcome signal the decision depends on.",
     live: "Shipped 14:22. Watching activation rate. Signal expected D+7 to D+14.",
     color: C.green,
@@ -125,7 +125,7 @@ const STATIONS = [
     label: "Learn",
     icon: "◉",
     kicker: "The outcome lands",
-    orbitKicker: "outcome logged",
+    orbitKicker: "brain updated",
     body: "D+14 arrives. Cadence records what happened, whether the call was right, and writes a supersession edge so the next similar signal gets smarter precedent.",
     live: "D+14: activation +8%. Call validated. Supersession written. Brain updated.",
     color: C.green,
@@ -241,19 +241,19 @@ const MOAT_PILLARS = [
   {
     icon: "◈",
     title: "Decision layer",
-    body: "Every call is weighted against your team's own precedent. Not training data. Your lived outcomes.",
+    body: "Every call Cadence proposes runs against your team's own history of decisions and outcomes. Generic AI trains on the internet. Cadence trains on your product.",
     col: C.violetBright,
   },
   {
     icon: "◉",
     title: "Outcome memory",
-    body: "Right calls and wrong calls both get recorded. The brain learns from both. Equally. Permanently.",
+    body: "When a decision fails, Cadence records why. When it succeeds, it records how. Both write into every future call. No human has to remember. The system does.",
     col: C.cyan,
   },
   {
     icon: "◱",
     title: "Compounding edge",
-    body: "The longer it runs, the smarter it gets. There is no backfill for lived experience.",
+    body: "At six months, your Cadence instance knows your product better than any new hire. At eighteen, it's institutional memory no competitor can buy, copy, or reconstruct.",
     col: C.green,
   },
 ];
@@ -452,7 +452,8 @@ function OrbitRingLabeled({ active }: { active: number }) {
     const lx = cx + lR * Math.cos(a);
     const ly = cy + lR * Math.sin(a);
     // text anchor based on x position
-    const anchor: "end" | "start" | "middle" = lx < cx - 10 ? "end" : lx > cx + 10 ? "start" : "middle";
+    const anchor: "end" | "start" | "middle" =
+      lx < cx - 10 ? "end" : lx > cx + 10 ? "start" : "middle";
     return {
       ...s,
       x: cx + r * Math.cos(a),
@@ -527,8 +528,8 @@ function OrbitRingLabeled({ active }: { active: number }) {
             x={n.lx}
             y={n.ly - 5}
             textAnchor={n.anchor}
-            fill={n.isActive ? C.violetBright : "rgba(255,255,255,0.28)"}
-            fontSize="7"
+            fill={n.isActive ? C.violetBright : "rgba(255,255,255,0.38)"}
+            fontSize="8.5"
             fontFamily="JetBrains Mono, monospace"
             letterSpacing="0.1em"
             style={{ transition: "fill 0.4s" }}
@@ -537,10 +538,10 @@ function OrbitRingLabeled({ active }: { active: number }) {
           </text>
           <text
             x={n.lx}
-            y={n.ly + 7}
+            y={n.ly + 8}
             textAnchor={n.anchor}
-            fill={n.isActive ? "rgba(103,232,249,0.75)" : "rgba(255,255,255,0.14)"}
-            fontSize="6"
+            fill={n.isActive ? "rgba(103,232,249,0.85)" : "rgba(255,255,255,0.22)"}
+            fontSize="7"
             fontFamily="JetBrains Mono, monospace"
             style={{ transition: "fill 0.4s" }}
           >
@@ -1155,7 +1156,7 @@ function HeroSection() {
                 fontSize: 9,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: C.violet,
+                color: C.amber,
                 marginBottom: 22,
                 display: "flex",
                 alignItems: "center",
@@ -1167,12 +1168,12 @@ function HeroSection() {
                   width: 6,
                   height: 6,
                   borderRadius: "50%",
-                  background: C.violet,
-                  boxShadow: `0 0 8px ${C.violetGlow}`,
+                  background: C.amber,
+                  boxShadow: `0 0 8px ${C.amberGlow}`,
                   display: "inline-block",
                 }}
               />
-              Product Operating System
+              Agent-native product OS
             </div>
 
             <h1
@@ -1215,9 +1216,9 @@ function HeroSection() {
                 maxWidth: 440,
               }}
             >
-              <Brand /> is the product OS that runs your entire lifecycle, from first signal to
-              final outcome. Six stations. One governed engine. You approve the calls that matter.
-              Everything else runs.
+              <Brand /> senses signals, proposes decisions, writes specs, builds, ships, and learns
+              from every outcome. Your product moves. Your team stays on strategy. You see every
+              decision and step in only when it truly matters.
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -1384,12 +1385,12 @@ function ManifestoStrip() {
             maxWidth: 700,
           }}
         >
-          Most tools own one station. Copilots draft specs. Trackers log tasks. Build tools ship
-          code.{" "}
+          Every team has Jira, Slack, GitHub, and a dozen AI tools. None of them close the loop.{" "}
           <span style={{ color: C.muted }}>
-            <Brand /> owns all six, in sequence, as one governed engine. When something breaks, it
-            diagnoses, revises, and recovers. Automatically. The loop is not the product. The loop
-            is the floor.
+            The signal that triggers a decision never reaches the outcome that validates it. Data
+            fragments. Institutional knowledge walks out the door. <Brand /> closes that gap end to
+            end: sense to shipped, with every decision recorded, weighted, and fed back in. The loop
+            is not the product. The loop is the floor.
           </span>
         </p>
       </div>
@@ -1798,24 +1799,42 @@ function MoatSection() {
           <Tag col={C.violet}>Beyond the loop</Tag>
           <h2
             style={{
-              fontSize: "clamp(22px,3vw,30px)",
-              fontWeight: 600,
+              fontSize: "clamp(22px,3vw,32px)",
+              fontWeight: 700,
               margin: "0 0 10px",
               color: C.text,
+              letterSpacing: "-0.02em",
             }}
           >
             The brain that compounds.
           </h2>
-          <p style={{ fontSize: 14, color: C.muted, maxWidth: 520, margin: 0, lineHeight: 1.65 }}>
-            The six stations are the loop. What makes <Brand /> a moat is what lives beneath: a
-            decision layer that grows smarter with every outcome your team records.
+          <p style={{ fontSize: 14, color: C.muted, maxWidth: 540, margin: "0 0 10px", lineHeight: 1.65 }}>
+            The six stations are the loop. What no competitor can replicate is what lives beneath:
+            a decision layer trained on your team's own outcomes. Six months of this data is a moat.
+            Eighteen months is insurmountable.
           </p>
         </div>
+
+        {/* Moat proof bar */}
+        <div style={{
+          marginBottom: 32,
+          padding: "14px 20px",
+          background: "rgba(139,92,246,0.07)",
+          border: `1px solid rgba(167,139,250,0.18)`,
+          borderRadius: 10,
+          opacity: on ? 1 : 0,
+          transition: "opacity 0.5s ease 0.1s",
+        }}>
+          <p style={{ fontSize: 13, color: "rgba(167,139,250,0.75)", margin: 0, lineHeight: 1.6, fontStyle: "italic" }}>
+            "Generic AI trains on the internet. Cadence trains on your product. That distinction is the moat."
+          </p>
+        </div>
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 14,
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: 16,
             opacity: on ? 1 : 0,
             transform: on ? "translateY(0)" : "translateY(14px)",
             transition: "opacity 0.55s ease 0.14s, transform 0.55s ease 0.14s",
@@ -1826,35 +1845,37 @@ function MoatSection() {
               key={i}
               className="lp-card"
               style={{
-                padding: "22px 20px",
-                background: C.bgCard,
-                border: `1px solid ${C.border}`,
-                borderRadius: 14,
-                animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.08}s both`,
+                padding: "26px 22px",
+                background: `linear-gradient(135deg, ${p.col}08 0%, rgba(0,0,0,0) 100%)`,
+                border: `1px solid ${p.col}28`,
+                borderRadius: 16,
+                animation: `fadeUp 0.5s cubic-bezier(0.23,1,0.32,1) ${i * 0.1}s both`,
+                boxShadow: `0 0 32px ${p.col}0a`,
               }}
             >
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: `${p.col}18`,
-                  border: `1px solid ${p.col}33`,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: `${p.col}1a`,
+                  border: `1px solid ${p.col}40`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: 14,
-                  fontSize: 14,
+                  marginBottom: 16,
+                  fontSize: 16,
                   color: p.col,
-                  textShadow: `0 0 12px ${p.col}55`,
+                  textShadow: `0 0 14px ${p.col}66`,
+                  boxShadow: `0 0 20px ${p.col}15`,
                 }}
               >
                 {p.icon}
               </div>
-              <h3 style={{ fontSize: 15, fontWeight: 560, margin: "0 0 8px", color: C.text }}>
+              <h3 style={{ fontSize: 16, fontWeight: 620, margin: "0 0 10px", color: C.text, letterSpacing: "-0.01em" }}>
                 {p.title}
               </h3>
-              <p style={{ fontSize: 12.5, lineHeight: 1.65, color: C.muted, margin: 0 }}>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.muted, margin: 0 }}>
                 {p.body}
               </p>
             </div>
@@ -1910,56 +1931,39 @@ function GuerrillaSection() {
           Their agents are.
         </p>
 
-        {/* Proof lines */}
+        {/* Proof statements — no bullets, typographic weight */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 10,
-            marginBottom: 40,
-            maxWidth: 540,
-            margin: "0 auto 40px",
+            gap: 20,
+            maxWidth: 560,
+            margin: "0 auto 44px",
+            textAlign: "left",
+            borderLeft: `2px solid rgba(167,139,250,0.18)`,
+            paddingLeft: 24,
           }}
         >
-          {[
-            "While you're in a meeting deciding what to build, Cadence already built it.",
-            "While you're writing a spec, Cadence already shipped the fix and measured the outcome.",
-            "The teams that win aren't faster humans. They run faster systems.",
-          ].map((line, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 10,
-                opacity: on ? 1 : 0,
-                transition: `opacity 0.5s ease ${0.15 + i * 0.1}s`,
-              }}
-            >
-              <span
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: C.violetBright,
-                  flexShrink: 0,
-                  marginTop: 7,
-                  boxShadow: `0 0 6px ${C.violetGlow}`,
-                }}
-              />
-              <p
-                style={{
-                  fontSize: 14,
-                  lineHeight: 1.65,
-                  color: C.muted,
-                  margin: 0,
-                  textAlign: "left",
-                }}
-              >
-                {line}
-              </p>
-            </div>
-          ))}
+          <p style={{
+            fontSize: 16, lineHeight: 1.65, color: "rgba(255,255,255,0.62)", margin: 0,
+            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.15s",
+            fontWeight: 440,
+          }}>
+            While you're in a meeting deciding what to build, Cadence already built it.
+          </p>
+          <p style={{
+            fontSize: 15, lineHeight: 1.65, color: C.muted, margin: 0,
+            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.26s",
+          }}>
+            While your team is writing the next spec, the outcome from the last one is already
+            being measured. Automatically.
+          </p>
+          <p style={{
+            fontSize: 15, lineHeight: 1.65, color: C.muted, margin: 0,
+            opacity: on ? 1 : 0, transition: "opacity 0.5s ease 0.37s",
+          }}>
+            The teams winning right now don't have better people. They run better systems.
+          </p>
         </div>
 
         <p
@@ -1967,7 +1971,7 @@ function GuerrillaSection() {
             fontSize: 15,
             lineHeight: 1.7,
             color: C.muted,
-            maxWidth: 480,
+            maxWidth: 460,
             margin: "0 auto 36px",
           }}
         >
