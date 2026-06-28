@@ -784,9 +784,11 @@ function TerminalCard({
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, [revealed]);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  // Auto-scroll the terminal's OWN container only (never the page).
+  const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = bodyRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [count, typed]);
 
   const mono = '"IBM Plex Mono", "JetBrains Mono", monospace';
@@ -922,6 +924,7 @@ function TerminalCard({
         </span>
       </div>
       <div
+        ref={bodyRef}
         style={{
           position: "relative",
           zIndex: 1,
@@ -939,7 +942,6 @@ function TerminalCard({
       >
         {entries.slice(0, count).map((e, i) => line(e, e.msg, i, false))}
         {typingLine ? line(typingLine, typingLine.msg.slice(0, typed), count, true) : null}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
@@ -2873,7 +2875,8 @@ function BrandMomentSection() {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background: "radial-gradient(75% 75% at 50% 50%, transparent 38%, rgba(7,7,15,0.72) 100%)",
+          background:
+            "radial-gradient(75% 75% at 50% 50%, transparent 38%, rgba(7,7,15,0.72) 100%)",
         }}
       />
       {particles.map((p, i) => (
