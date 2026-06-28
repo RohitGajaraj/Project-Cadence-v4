@@ -165,6 +165,7 @@ Two guardrails so the ambition stays buildable and honest:
 ---
 
 ## Related
+- [`build-driver-and-dispatch.md`](./build-driver-and-dispatch.md) - **the code-gen-side twin of this doc.** This doc specced `RepoProvider` (WHERE code lives); that doc specs `BuildDriver` (WHO writes it), so the native loop becomes one adapter and external engines plug in behind one seam. Read both together for the full build picture. (board group G13, founder-gated; decided 2026-06-28).
 - [`../features/lifecycle-gap-map.md`](../planning/lifecycle-gap-map.md) - the Build/Deploy/Review/Ship capture gaps this builds on.
 - [`README.md`](./README.md) - strategy doc role map (link this in when committed).
 - Engine-Room Doctrine ([`../conventions/engine-room-doctrine.md`](../conventions/engine-room-doctrine.md)) - the calm-front law D3/Section 4 implement.

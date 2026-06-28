@@ -87,7 +87,7 @@ Say **"pick `<ID>`"** (e.g. "pick WM-M1", "start SEN-01", "do F-IA-V4") and the 
 | Foundational | Core autonomous loop, memory engine, platform/auth/runtime infra | G0 + G9 |
 | Sense | Get real signal in, cluster it, keep it fresh | G1 |
 | Decide | Turn signal into governed decisions + specs (incl. the wedge) | G2 |
-| Build | The autonomous Build -> QA -> Ship execution chain | G3 |
+| Build | The autonomous Build -> QA -> Ship execution chain | G3 + G13 (build-driver / dispatch) |
 | Launch | Ship to market, learn from outcomes, feed it back | G4 |
 | Monetization | Pricing, entitlements, tenancy/RBAC/billing, PLG | G5 + G10 (tenancy/RBAC/billing rows) |
 | Credit | The credit metering engine (WM-M10..WM-M16) | G10 (credit rows) |
@@ -181,18 +181,18 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 - **Total features = 232** · **Done = 224** · **Not done = 8** (◐ 2 partial + ⬜ 5 open + ⏭️ 1 deferred). **96.6% strict / 97.0% weighted.** _(2026-06-28 lane 1: LANDING-PAGE-V11 ✅ — full lifecycle landing page shipped (6-station autonomous loop, orbit ring, flow timeline, trust ledger, contrast cards, scroll reveals, animated signal feed). 2026-06-27: register restored from 5f8e base; FIRECRAWL-FLOOR ◐→✅; AGENT-NATIVE-L1/L2/L3 ✅. Interop 9/9 = 100%. 2026-06-26: WM-M17/M19 ✅. BYO-P1a/b/c/d/P2 ✅. M-C-EXPIRY ✅. SEN-05/F-ANALYTICS-1/2 ✅. DEF-04 ✅. AFD all ✅. 2026-06-25: DEMO-SEED-RICH ✅ + SHIP-V11 ✅ + AMBIENT-SENSE ✅ + AMBIENT-TRIGGER ✅.)_
 - _By priority class (live, 2026-06-28): **Gated = 7** (👤 founder-marked), Deferred = 1 (F-COCKPIT-MACHINE-MODE ⏭️), In Dev = 0, Open = 0, Done = 224. **RECONCILED: 224. v11 Tier-1 front COMPLETE. ALL AFD/analytics ✅. WM-S complete. BYO-P1a/b/c/d/P2 ✅. M-C-EXPIRY ✅. WM-M17/M19 ✅. AGENT-NATIVE-L1/L2/L3 ✅. INTEROP 9/9 = 100%. LANDING-PAGE-V11 ✅.**_
 
-- **By status (of 232 total), with weighted contribution to the roll-up:**
+- **By status (of 233 total), with weighted contribution to the roll-up:**
 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
 | ✅ Done | 224 | 100% | 224.0 |
-| ◐ Partial | 2 | per-row `[~NN%]` | 1.30 |
+| ◐ Partial | 2 | per-row `[~NN%]` | 1.05 |
 | ⏸️ Paused | 0 | 50% | 0.0 |
 | 🔨 In Dev | 0 | 50% | 0.0 |
 | ⬜ Open | 5 | 0% | 0.0 |
-| ⏭️ Deferred | 1 | 0% | 0.0 |
+| ⏭️ Deferred | 2 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **232** | - | **225.30 / 232 = 97.1%** |
+| **Total** | **233** | - | **225.05 / 233 = 96.6%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -210,9 +210,9 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | Foundational | 33 | 33 | 0 | 100% |
 | Cockpit | 32 | 30 | 2 | 94% |
 | Monetization | 35 | 34 | 1 | 97% |
-| Build | 18 | 15 | 3 | 83% |
+| Build | 19 | 15 | 4 | 79% |
 | BYO | 8 | 6 | 2 | 75% |
-| **Total** | **232** | **224** | **8** | **96.6%** |
+| **Total** | **233** | **224** | **9** | **96.1%** |
 
 > **Pick-order is THE BUILD SEQUENCE above** (founder ruling 2026-06-21): build the lowest open number, do not deliberate. The tier law (foundation/core/USP, then design, then non-essential, then final polish) and the rationale live in the Build Sequence section + [`../../AGENTS.md`](../../AGENTS.md) §3 "Build Sequence" + the SSOT ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0). Positioning rationale: v10 ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16) + moat.md. **The TOPMOST priority is the Decision Brain (H1); the monetization + credit + billing + admin block (WM-M*, M-C-*, BYO-P4) is CLOSED 🔒 (build-complete; founder go-live config only — do NOT re-pick, see the 🔒 banner above); the WM tenancy spine (WM-F*) stays Claude-owned; BYO (BYO-*) awaits founder greenlight.** The Priority column on each row is now superseded by the Build Sequence number for pick-order; it stays as a coarse tier hint.
 
@@ -458,6 +458,7 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | 230 | ✅ | M-C-GOLIVE-GUARD | Credit go-live guard + backfill (incident-prevention) | backfill_account_credits() grants every account its tier base; admin_set_credits_enabled REFUSES to arm metering while any non-enterprise account has 0 credits. Fixes the 2026-06-21 incident (metering armed with 0 credits -> all AI blocked). + the credit-engine go-live runbook (docs/operations/credit-engine-go-live.md). | Monetization | Done | 2026-06-21 | 2026-06-21 SHIPPED (Claude). Migration 20260621130000; guard + backfill dry-run-verified on live; metering left OFF. The one safe go-live switch. |
 | 231 | ✅ | MIG-LINT | Migration SQL apply-safety linter | Static OFFLINE linter fails the build on a migration whose SQL would fail to apply (`CREATE POLICY/TRIGGER ... IF NOT EXISTS`); complements `check-migrations.sh`'s applied-status check | Governance | Done | 2026-06-21 | ✅ SHIPPED (Lane 3, 2026-06-21): considerations.md Build/ship "Migration rollback strategy". The recurring "broken parallel ship" class (e.g. WM-F3's `CREATE POLICY IF NOT EXISTS` = Postgres ERROR 42601) only surfaced on/near publish because nothing linted SQL apply-validity OFFLINE. New PURE `src/lib/migration-lint.ts` (`lintMigrationSql`: 2 always-invalid ERROR rules [policy/trigger if-not-exists, ZERO false positives] + 2 advisory WARNs [new public-table no-RLS, add-column NOT NULL no-default]; `--`/`/* */`/`$$`-body comment-blanking preserves line numbers; 17 tests) + `scripts/lint-migrations.ts` (bun CLI, exit non-zero on error) wired into `check-migrations.sh` (runs offline, before the DB check, degrades if bun absent). VALIDATED against all 168 shipped migrations: 0 apply-fatal errors (no false positives) + 1 advisory warn. Single-agent SQL review (`ecc:database-reviewer`): core logic sound (anchoring/comment-blanking/cross-statement/ReDoS/hook-wiring); flagged 2 real issues (a `$$`-body false-positive trap [build-gating] + a non-public-schema warn mis-capture) → both folded with regression tests + re-validated on the 168 migrations. tsc 0 / 912 tests / eslint 0. Spec: docs/features/migration-lint.md. |
 | 232 | ✅ | F-ADMIN-AUDIT | Admin audit trail completed (sensitive-table triggers) | Bypass-proof DATA-layer audit: AFTER triggers on user_roles / app_settings / pricing_plans / pricing_bundles / pricing_topup_bundles log actor + old/new to admin_audit_log - closing the v1 gap (admin roster grant/revoke, the credits-engine toggle, pricing CRUD) the v2 RPCs did not cover. Skips system/service-role/migration writes (no JWT). | Governance | Done | 2026-06-21 | 2026-06-21 SHIPPED (Claude): F-ADMIN-AUDIT-V1GAP closed. Migration 20260621160000 + extended the target_kind CHECK (role/setting/plan/pricing). Dry-run-verified on live; answers 'who granted admin / flipped metering / changed pricing'. |
+| 233 | ⏭️ | BUILD-DRIVER | BuildDriver dispatch seam (who writes the code) | A pluggable code-gen engine layer, the twin of RepoProvider: the home-grown loop becomes one adapter ("native"), with owned (Claude Agent SDK, OpenHands self-host / white-label) + BYO (Devin / Codex / Cursor) adapters behind one dispatch/poll/result/cancel interface; two control points held (BuildSpec out, merge-gate in). | Build | Deferred | 2026-06-29 | **Founder-gated PROPOSAL (group G13). Decision MADE 2026-06-28: hybrid posture. Not started.** Canonical doc: [`../strategy/build-driver-and-dispatch.md`](../strategy/build-driver-and-dispatch.md). Phases BD-1..BD-6 (extract interface + wrap native; promote `delegate.openhands`; Claude Agent SDK adapter; BYO adapters; per-driver metering; driver-choice surface) detailed in the doc §14. Generalizes the dormant BLD-04 DelegateProvider seam (`src/lib/delegate/*`). Gate: founder greenlight to start BD-1 (touches the pinned AI chokepoint) + endpoints/keys for external adapters. Recovered + authored 2026-06-29 from the 2026-06-28 design session. |
 
 ---
 
@@ -470,6 +471,7 @@ Statuses here are reconciled from [`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) (
 - [`workspace-tenancy-and-monetization-plan.md`](./workspace-tenancy-and-monetization-plan.md) - WM (G10) per-ID build specs incl. the credit engine (WM-M10..WM-M16, §4.2.1)
 - [`byo-build-implementation-plan.md`](./byo-build-implementation-plan.md) - BYO (G11) per-phase build specs
 - [`analytics-and-failure-detection-plan.md`](./analytics-and-failure-detection-plan.md) - AFD (G12) build bible · 14 task IDs `AFD-01..AFD-14` · status: doc-only (founder-gated, no code, no vendor signup)
+- [`../strategy/build-driver-and-dispatch.md`](../strategy/build-driver-and-dispatch.md) - BUILD-DRIVER (G13) canonical doc · phases `BD-1..BD-6` · status: founder-gated PROPOSAL (hybrid posture decided 2026-06-28; the code-gen dispatch twin of `RepoProvider`)
 - [`v10-master-blueprint.md`](../strategy/v10-master-blueprint.md) §15-16 + [`v10_implementation-plan.md`](./v10_implementation-plan.md) - the priority rationale + execution mechanics
 - [`known-issues.md`](./known-issues.md) - open bugs with KI-IDs
 - [`../../AGENTS.md`](../../AGENTS.md) §1 (pre-action) + §5 (doc-update protocol) - where the standing rule is enforced
