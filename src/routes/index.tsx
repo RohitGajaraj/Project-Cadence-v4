@@ -1248,9 +1248,10 @@ function FlowList({ entries, revealed }: { entries: LogEntry[]; revealed: boolea
   const { shown, active } = useSequentialFlow(entries.length, revealed, 1000);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {entries.slice(0, shown).map((e, i) => {
+      {entries.map((e, i) => {
+        const visible = i < shown;
         const isActive = i === active;
-        const isDone = active < 0 || i < active;
+        const isDone = visible && !isActive && (active < 0 || i < active);
         return (
           <div
             key={`${i}-${e.ts}`}
@@ -1258,7 +1259,9 @@ function FlowList({ entries, revealed }: { entries: LogEntry[]; revealed: boolea
               display: "flex",
               gap: 14,
               alignItems: "stretch",
-              animation: "fadeLeft 0.3s ease both",
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateX(0)" : "translateX(-8px)",
+              transition: "opacity 0.35s ease, transform 0.35s ease",
             }}
           >
             {/* Spine + dot */}
