@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
 import { assertSafeBaseUrl } from "@/lib/url-safety";
+import { listConfiguredPlatformProviders } from "@/lib/ai/platform-keys.server";
 
 export const BYO_PROVIDERS = [
   { id: "anthropic", label: "Claude (Anthropic)", placeholder: "sk-ant-…" },
@@ -18,6 +19,17 @@ function maskFromPrefix(prefix: string | null | undefined): string {
   if (!prefix) return "••••••••";
   return `${prefix}••••`;
 }
+
+/**
+ * Returns the provider ids for which the platform operator has configured
+ * a key (AI_PROVIDER_<P>_KEY env var). Used by the model picker to surface
+ * platform-keyed models as selectable without exposing key material to the client.
+ */
+export const listPlatformProviders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return { providers: listConfiguredPlatformProviders() };
+  });
 
 export const listApiKeys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

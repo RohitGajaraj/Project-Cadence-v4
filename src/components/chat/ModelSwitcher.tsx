@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronDown, KeyRound, Sparkles } from "lucide-react";
 import { MODELS, AUTO_MODEL, modelsByProvider, type Model } from "@/lib/ai/models";
-import { listApiKeys } from "@/lib/byokeys.functions";
+import { listApiKeys, listPlatformProviders } from "@/lib/byokeys.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** Friendly provider header label; falls back to a title-cased id for any provider. */
@@ -42,13 +42,23 @@ export function ModelSwitcher({
 }) {
   const [open, setOpen] = useState(false);
   const fKeys = useServerFn(listApiKeys);
+  const fPlatform = useServerFn(listPlatformProviders);
   const keys = useQuery({
     queryKey: ["api-keys"],
     queryFn: () => fKeys(),
     staleTime: 60_000,
     retry: false,
   });
-  const keyProviders = new Set((keys.data?.keys ?? []).map((k) => k.provider));
+  const platform = useQuery({
+    queryKey: ["platform-providers"],
+    queryFn: () => fPlatform(),
+    staleTime: 300_000,
+    retry: false,
+  });
+  const keyProviders = new Set([
+    ...(keys.data?.keys ?? []).map((k) => k.provider),
+    ...(platform.data?.providers ?? []),
+  ]);
 
   const groups = modelsByProvider(MODELS);
   const current = MODELS.find((m) => m.id === value);

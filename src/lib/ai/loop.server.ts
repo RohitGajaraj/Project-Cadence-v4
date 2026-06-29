@@ -30,7 +30,12 @@ const MAX_RUNNING_PER_WORKSPACE = 5;
  * run PAUSES (status 'waiting_approval'); the resume-runs sweeper re-enters
  * it once the operator decides, injecting the outcome.
  */
-const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "studio.pr.merge", "delegate.openhands"]);
+const PAUSE_ON_APPROVAL_TOOLS = new Set([
+  "studio.commit",
+  "studio.pr.open",
+  "studio.pr.merge",
+  "delegate.openhands",
+]);
 /** Safety floor (not overridable by the autonomy dial): at least `confirm`. */
 const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
 /** Safety floor: always `review`. */
@@ -344,7 +349,7 @@ export async function runAgentLoop(
     missionId: input.missionId ?? null,
     workspaceId,
   };
-  const model = input.model ?? "google/gemini-2.5-flash";
+  const model = input.model ?? process.env.DEFAULT_AGENT_MODEL ?? "qwen/qwen-plus";
 
   const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {

@@ -50,3 +50,16 @@ export function resolvePlatformProviderKey(provider: string): PlatformProviderKe
 export function isPlatformProviderConfigured(provider: string): boolean {
   return resolvePlatformProviderKey(provider) !== null;
 }
+
+/**
+ * Returns the set of provider ids that have a platform key configured.
+ * Safe to call from a server function — returns only provider names, never key material.
+ */
+export function listConfiguredPlatformProviders(): string[] {
+  const candidates = [
+    "anthropic", "openai", "google", "deepseek", "xai", "qwen",
+    "groq", "mistral", "together", "openrouter", "moonshot", "minimax",
+    "fireworks", "deepinfra", "cerebras", "perplexity", "ollama", "local",
+  ];
+  return candidates.filter((p) => isPlatformProviderConfigured(p));
+}
