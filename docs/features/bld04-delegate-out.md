@@ -53,7 +53,7 @@ The `delegate_meta` jsonb column on `agent_runs` + the poll/fold cycle:
 - [x] `bunx tsc --noEmit` clean (0 errors); `bun test` green (1585 tests, 0 fail). `src/lib/delegate/poll.test.ts` covers dormancy (no-network-when-disabled), terminal statuses (done/failed/cancelled), in-progress (queued/running/pending), and fail-safe transport (ECONNREFUSED/non-2xx/malformed JSON/unknown status).
 - [x] On the wiring increment + founder config: `delegate.openhands` tool is in `HIGH_RISK_FORCE_REVIEW` (human approval before any delegation leaves), classified irreversible/external in `tool-consequences.ts`. The tool is a safe no-op while `DELEGATE_OUTBOUND_ENABLED` is unset.
 - [x] **Migration applied**: `supabase/migrations/20260626000000_bld04_delegate_job_persistence.sql` — `delegate_meta jsonb` column + sparse index on `agent_runs`.
-- [ ] **Live test** (requires founder config): set `DELEGATE_OUTBOUND_ENABLED=1`, `OPENHANDS_ENDPOINT`, `OPENHANDS_API_KEY`; confirm a delegated task reaches OpenHands behind a human-approval gate; confirm `external_job_id` is recorded in `agent_runs.delegate_meta`; confirm `pollDelegateRun` folds a terminal result back to `mission_steps`.
+- [ ] **Live test** (BLOCKED — requires publicly accessible self-hosted OpenHands endpoint): Recommended path is Railway.app deployment (~$5/month, ~10 min setup; see [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md)). Once `OPENHANDS_ENDPOINT` is updated in Lovable, trigger a test mission with evidence steps + an explicit delegation request; confirm `agent_runs.delegate_meta` records `external_job_id`; confirm `pollDelegateRun` folds the terminal result back to `mission_steps`. Note: All-Hands Cloud Individual tier does not work (GitHub OAuth auth model — see [§All-Hands Cloud findings](#all-hands-cloud-integration-attempt-and-findings-2026-06-29) below).
 
 ## Deployment model decision (2026-06-29)
 
@@ -102,15 +102,96 @@ The `DelegateProvider` seam supports all three — it is a configuration questio
 
 ### Immediate next step (the live test)
 
-Use All-Hands Cloud (the managed service run by All-Hands AI, the OpenHands creators) to test the delegation seam end-to-end today. No infrastructure setup. This proves the Cadence seam works before committing to any hosting decision. After the test passes, BLD-04 moves to ✅.
+**All-Hands Cloud is ruled out** (see [§All-Hands Cloud findings](#all-hands-cloud-integration-attempt-and-findings-2026-06-29) below — not a server-to-server API). The fastest path to a live end-to-end test is deploying OpenHands on **Railway.app** (~$5/month, ~10 min setup, permanent public HTTPS URL), then:
 
-### LLM key decision (2026-06-29)
+1. Set `OPENHANDS_ENDPOINT` in Lovable project settings to the Railway URL
+2. Ensure `DELEGATE_OUTBOUND_ENABLED=1` is set (already configured in Lovable)
+3. Trigger a test mission: open a mission, gather 2-3 evidence items, then explicitly request "delegate to OpenHands"
+4. Confirm `agent_runs.delegate_meta` stores `external_job_id`; confirm `pollDelegateRun` folds the result back
 
-Cadence uses its OWN Anthropic API key inside OpenHands — not the user's key. This means:
-- Zero additional setup for the user (no "enter your OpenAI key" step)
-- One Anthropic account, one bill, one place to monitor spend
-- The delegation cost to users is a flat credit charge per build task (not per-token), with Cadence absorbing the LLM cost inside the flat rate at a margin
+After the live test passes, BLD-04 moves to ✅. Full steps: [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md).
 
-Configure OpenHands with `LLM_MODEL=anthropic/claude-sonnet-4-5` (or the current default Sonnet model) and `LLM_API_KEY=<Cadence's Anthropic key>`. This key is already present in the Cadence runtime environment.
+### LLM key decision (2026-06-29, updated)
 
-See [[docs/strategy/session-decisions.md]] 2026-06-29 entry for the full BYOK→Credits rationale. Activation steps: [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md).
+The original plan was to use Cadence's own Anthropic API key in OpenHands. **That key does not exist** — Cadence currently has no Anthropic key in its env. Cadence's runtime has: `GEMINI_API_KEY`, `OPENAI_API_KEY`, `COHERE_API_KEY`, and the webhook token `OPENHANDS_API_KEY=sk-oh-...` (only valid as auth to the self-hosted OpenHands REST API, not as an LLM key).
+
+The adapter now handles this automatically via `resolveLlmConfig()` (commit `cfaa0d9575`):
+
+| Priority | Env var | Model |
+|----------|---------|-------|
+| 1 | `ANTHROPIC_API_KEY` | `anthropic/claude-sonnet-4-6` |
+| 2 | `OPENAI_API_KEY` | `openai/gpt-4o` |
+| 3 | `GEMINI_API_KEY` | `gemini/gemini-2.0-flash` |
+| 4 | `COHERE_API_KEY` | `cohere/command-r-plus` |
+| none | — | falls back to OpenHands instance-level config |
+
+With `OPENAI_API_KEY` already configured in Lovable, the live test will use `openai/gpt-4o` automatically. No code change needed — just deploy OpenHands and wire the endpoint.
+
+See [`docs/strategy/session-decisions.md`](../strategy/session-decisions.md) 2026-06-29 entry for the full BYOK model-agnostic rationale. Activation steps: [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md).
+
+---
+
+## All-Hands Cloud integration attempt and findings (2026-06-29)
+
+### What was attempted
+
+The founder signed up for All-Hands Cloud Individual plan (`app.all-hands.dev`) expecting it to provide a REST API endpoint compatible with self-hosted OpenHands. The `sk-oh-zZBnvQmzdiengFcSW9UGEW5o8OfTwc5H` key was obtained from the API Keys section of the All-Hands Cloud settings panel and configured in Lovable.
+
+Multiple payload and auth configurations were tested against `https://app.all-hands.dev/api/v1/tasks`:
+
+| Attempt | Auth header | Body | Result |
+|---------|------------|------|--------|
+| 1 | `Authorization: Bearer sk-oh-...` | standard | 405 Method Not Allowed |
+| 2 | `X-User-Token: sk-oh-...` | standard | 401 NoCredentialsError |
+| 3 | `Authorization: Bearer sk-oh-...` | with Gemini LLM key inline | 401 NoCredentialsError |
+| 4 | `Authorization: Bearer sk-oh-...` | no repo field | 401 NoCredentialsError |
+
+A test mission was also run in the Cadence platform while All-Hands Cloud envvars were set in Lovable. The mission produced 10 queue steps but routed through the Studio pipeline (`studio.commit`, `studio.pr.*` tools) rather than `delegate.openhands`, because the mission goal did not include evidence-gathering steps before delegation.
+
+### Root cause
+
+**All-Hands Cloud uses GitHub OAuth as its auth model, not simple API keys.**
+
+The `sk-oh-` key format is the All-Hands outbound webhook token — it is used when All-Hands Cloud sends events TO a webhook endpoint you register. It is NOT a bearer token for making calls TO the All-Hands Cloud REST API. The All-Hands Cloud web application authenticates users via GitHub OAuth sessions in the browser; there is no equivalent token-based auth for server-to-server REST API calls.
+
+This is a fundamental architectural mismatch. Cadence runs as a Cloudflare Worker (server-side, no browser) and needs to make outbound REST calls. All-Hands Cloud does not expose an authenticated REST API for external services to submit tasks.
+
+### Why the Cloudflare Worker -> localhost gap matters
+
+Even if a local Docker OpenHands instance were running on `localhost:3000`, a Cloudflare Worker running in the cloud edge network cannot reach a `localhost` address. `localhost` in a CF Worker refers to the Worker's own process, which has no OpenHands container. Any self-hosted OpenHands instance must be on a **public HTTPS URL** to be reachable from Cadence.
+
+This rules out:
+- Local Docker (no public URL without ngrok/Cloudflare Tunnel)
+- All-Hands Cloud Individual (GitHub OAuth, not server-to-server REST)
+
+### Recommended path forward
+
+**Railway.app self-hosted OpenHands** (~$5/month, permanent public HTTPS URL):
+
+1. Connect GitHub to Railway; create a new service from `docker.all-hands.dev/all-hands-ai/openhands:0.39`
+2. Set Railway env: `SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik`, `PORT=3000`, and LLM vars (`LLM_MODEL=openai/gpt-4o`, `LLM_API_KEY=<same OPENAI_API_KEY>`)
+3. Railway auto-provisions a public HTTPS domain like `https://openhands-<hash>.railway.app`
+4. Update Lovable: `OPENHANDS_ENDPOINT=https://openhands-<hash>.railway.app`
+5. Confirm `DELEGATE_OUTBOUND_ENABLED=1` is set
+
+Other options: Render.com (free tier; cold starts), DigitalOcean App Platform (~$7/month). For local testing only, ngrok or Cloudflare Tunnel can expose `localhost:3000` temporarily.
+
+### What was learned about the Studio vs delegate.openhands routing
+
+During the test mission ("Test Project Cadence"), the agent ran 10 steps but never fired `delegate.openhands`. This happened because:
+
+- The mission goal was framed as a direct build task, not as a request to delegate
+- `delegate.openhands` requires `evidence_ids` (pre-collected evidence items) before it can fire — it is an evidence-first tool
+- Without an evidence-gathering phase first, the agent defaulted to the Studio pipeline (in-house build path)
+
+For the live test to actually exercise BLD-04, the test mission must:
+1. Start with a discovery/research phase that creates 2-3 evidence items in the DB
+2. Then explicitly request delegation ("delegate this to OpenHands" in the mission goal or next step)
+3. The approval queue should then show `delegate.openhands` awaiting human approval
+
+### Status
+
+- Code: complete, merged, tested (1585 tests, 0 fail; `cfaa0d9575`)
+- Env: `DELEGATE_OUTBOUND_ENABLED=1` set in Lovable; `OPENHANDS_ENDPOINT` not yet set (Railway deployment pending)
+- Blocker: founder needs to deploy OpenHands to Railway and set `OPENHANDS_ENDPOINT`
+- Est. time to unblock: ~10-15 min (Railway signup + Docker service + env var)

@@ -70,6 +70,42 @@
 
 ## Decision log
 
+### 2026-06-29 · All-Hands Cloud rejected as the BLD-04 live test path
+
+**Decision:** All-Hands Cloud Individual plan (`app.all-hands.dev`) is ruled out for Cadence server-to-server delegation. Railway.app self-hosted OpenHands is the recommended live-test path.
+
+**Why:** The `sk-oh-` API key visible in All-Hands Cloud settings is an outbound webhook token — it authenticates payloads that All-Hands sends TO a webhook endpoint, not a bearer token for external services to call All-Hands REST API. All-Hands Cloud's auth model is GitHub OAuth via the browser; there is no server-to-server token mechanism. Every test configuration (5 attempts with different headers and payloads) returned 405 or 401. Additionally, even if auth were solvable, Cadence runs as a Cloudflare Worker and cannot reach `localhost:3000`; OpenHands must be on a public HTTPS URL. Railway.app provides a permanent public HTTPS URL with ~10 min setup and ~$5/month cost.
+
+**Tradeoffs considered:** (a) All-Hands Cloud free plan — same auth limitation; plan tier is irrelevant to the auth model. (b) Local Docker + ngrok — valid for one-time tests but URL changes on every ngrok restart; not stable for Lovable env var. (c) Local Docker + Cloudflare Tunnel — stable but adds CF Tunnel setup complexity. (d) Railway.app — simple, stable, permanent URL, ~$5/month, auto-HTTPS; recommended. (e) Render.com — free tier available but cold starts; acceptable fallback.
+
+**Impact:** [`docs/features/bld04-delegate-out.md`](./bld04-delegate-out.md) §Immediate next step and §All-Hands Cloud findings updated. [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md) rewritten with Railway/Render/DO options, model-agnostic LLM table, and delegation trigger guide. BLD-04 status remains ◐ (blocked on founder Railway deployment).
+
+---
+
+### 2026-06-29 · Model-agnostic LLM resolution for BLD-04 OpenHands adapter
+
+**Decision:** The OpenHands adapter (`src/lib/delegate/openhands.server.ts`) resolves the best available LLM key from Cadence's env in priority order (Anthropic → OpenAI → Gemini → Cohere), passing the key inline to OpenHands via LiteLLM-format model IDs. No separate LLM configuration step required for the operator.
+
+**Why:** Cadence has no Anthropic API key. The original plan (use Cadence's Anthropic key as the single LLM for OpenHands) was based on an assumption that turned out to be wrong. The current env has `OPENAI_API_KEY`, `GEMINI_API_KEY`, and `COHERE_API_KEY` but not `ANTHROPIC_API_KEY`. Rather than hardcode a single provider and require the operator to obtain a specific key, `resolveLlmConfig()` checks all configured keys and picks the best available one. This makes the delegation feature work out of the box with whatever LLM provider the operator has already configured — truly model-agnostic.
+
+**Tradeoffs considered:** (a) Hardcode Anthropic key requirement — forces operators without an Anthropic key to get one; not BYOK-friendly. (b) Require operator to configure OpenHands LLM directly (no inline injection) — works but requires extra setup per OpenHands deployment. (c) Model-agnostic priority-ordered resolution (chosen) — zero extra setup, works with any configured provider, Anthropic is still the premium choice if the key exists.
+
+**Impact:** `src/lib/delegate/openhands.server.ts` now exports `resolveLlmConfig()` (type `LlmConfig | null`); `submit()` spreads the resolved config into the OpenHands request body (commit `cfaa0d9575`). With `OPENAI_API_KEY` in Lovable, the live test will use `openai/gpt-4o` automatically.
+
+---
+
+### 2026-06-29 · Deployment model for OpenHands in BLD-04 (Cadence-managed vs BYO vs enterprise)
+
+**Decision:** Three-tier model: (1) Individual/SMB = Cadence-managed OpenHands (Cadence hosts, one bill, no user setup); (2) Enterprise with existing coding agents = BYO endpoint (Devin/Copilot/etc., Cadence adds governance layer); (3) Enterprise consolidation = Cadence-managed white-label. The `DelegateProvider` seam supports all three as a configuration question, not an architecture change.
+
+**Why:** Enterprise IT cannot self-host another container for a SaaS product. Multi-tenant OpenHands on shared Cadence infra is a security risk (tenant isolation). Enterprises with existing coding agents (Devin, Copilot Workspace) already have those audited by security teams — they want Cadence to govern what they have, not replace it. The hybrid model serves all segments. Pricing follows the tier: Individual = flat credits (Cadence absorbs LLM cost at margin); BYO = pass-through no agent fee; Enterprise managed = premium tier.
+
+**Tradeoffs considered:** (a) One model for all — forces enterprises to either self-host or share infrastructure; wrong for both. (b) BYO-only — eliminates the SMB segment that cannot afford Devin. (c) Hybrid (chosen) — serves all segments; the seam is already built for this; only the Cadence-managed hosting increment is deferred.
+
+**Impact:** [`docs/features/bld04-delegate-out.md`](./bld04-delegate-out.md) §Deployment model decision section (the two-segment / three-tier analysis). This informs the future BYO-P5 (managed runtime) sequencing — BYO-P5 becomes the hosting backbone for the "Cadence-managed OpenHands" tier.
+
+---
+
 ### 2026-06-28 · Build-handoff: dispatch the builder behind a `BuildDriver` seam (hybrid posture)
 
 **Decision:** Adopt a pluggable `BuildDriver` layer, the code-gen-side twin of the existing `RepoProvider`. `RepoProvider` abstracts where code lives (git); `BuildDriver` abstracts who writes it (the code-gen engine). The home-grown Gemini loop becomes one adapter ("native", the cheap default floor for small safe changes); owned adapters are the Claude Agent SDK (the brain we brand) and OpenHands (MIT, self-host, white-label / enterprise path, generalizing the dormant `delegate.openhands` / BLD-04 seam); Devin, OpenAI Codex, and Cursor Cloud Agents are demand-gated BYO adapters. Two control points are held sacred regardless of engine: the `BuildSpec` on the way out (where the moat travels: the decision, criteria, design pointers, files, guardrails, budget) and the merge gate on the way in (our evals, guardrails, security, lineage, trust-arc / HITL). Pricing: BYO pass-through floor + managed-credits markup, metered per driver, never flat-fee unlimited. Positioning one-line: "Cadence decides what to build and ships it, on whatever engine you choose." Registered as board group **G13** (`BUILD-DRIVER`, phases `BD-1..BD-6`), founder-gated PROPOSAL; the posture is decided, the build is not started.
