@@ -4,6 +4,7 @@ import { requireHookCaller } from "./-_auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resumeAgentLoop, runAgentLoop } from "@/lib/ai/loop.server";
 import { advanceMissionCore, type MissionLite } from "@/lib/ai/mission-advance.server";
+import { classifyMissionGate } from "@/lib/reliability/gate-state";
 import { withJobRun } from "@/lib/observability";
 
 // agent_approvals.run_id is new in the f_studio_engine migration — not in the
@@ -22,6 +23,13 @@ const admin = supabaseAdmin as unknown as SupabaseClient;
  *   - status='running' with 0 mission_steps and 0 active agent_runs
  *     (KI-17: chat.ts fires runAgentLoop fire-and-forget; Worker may
  *     terminate before orchestrator planning completes — re-plan here)
+ * Plus BLD-GATE-SYNC mission-status reconciliation (deterministic, no AI):
+ *   - un-block missions whose human gate is now decided (status 'blocked'
+ *     → 'running'), BEFORE the resume pass so a resuming/completing run sees
+ *     a 'running' mission (maybeCompleteMission only finalizes running ones)
+ *   - block missions fully parked on a pending human gate ('running' →
+ *     'blocked'), AFTER advancing, so the operator sees them in Needs-You
+ *     instead of a perpetual 'running' (the "why is the loop idle?" bug)
  * Called by pg_cron every minute. Idempotent: resumeAgentLoop is safe to
  * call multiple times — checkpoint + tool idempotency keys dedup, and it
  * skips waiting_approval runs that still have undecided gates.
@@ -45,6 +53,53 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
         return withJobRun("cron.resume-runs", async () => {
           try {
             const cutoff = new Date(Date.now() - STALE_MS).toISOString();
+
+            // BLD-GATE-SYNC helpers: a mission's run statuses + its count of genuinely-pending
+            // human gates (status='pending' only; an 'approved'-but-unexecuted gate is the
+            // system's turn, not the operator's, so it does not count as needs-you).
+            const runStatusesOf = async (missionId: string): Promise<string[]> => {
+              const { data } = await admin
+                .from("agent_runs")
+                .select("status")
+                .eq("mission_id", missionId);
+              return ((data ?? []) as { status: string }[]).map((r) => r.status);
+            };
+            const pendingGatesOf = async (missionId: string): Promise<number> => {
+              const { count } = await admin
+                .from("agent_approvals")
+                .select("id", { count: "exact", head: true })
+                .eq("mission_id", missionId)
+                .eq("status", "pending");
+              return count ?? 0;
+            };
+
+            // BLD-GATE-SYNC un-block pass — run FIRST so a mission whose gate was just decided is
+            // back to 'running' before its run resumes/completes below (maybeCompleteMission only
+            // finalizes running/in_progress). Idempotent; the guarded update no-ops on a race.
+            const unblocked: string[] = [];
+            const { data: blockedMissions } = await admin
+              .from("missions")
+              .select("id")
+              .eq("status", "blocked")
+              .order("updated_at", { ascending: true })
+              .limit(MISSION_BATCH);
+            for (const bm of (blockedMissions ?? []) as { id: string }[]) {
+              const runStatuses = await runStatusesOf(bm.id);
+              const pendingGateCount = await pendingGatesOf(bm.id);
+              if (
+                classifyMissionGate({ status: "blocked", runStatuses, pendingGateCount }) ===
+                "unblock"
+              ) {
+                const { data: upd } = await admin
+                  .from("missions")
+                  .update({ status: "running", updated_at: new Date().toISOString() })
+                  .eq("id", bm.id)
+                  .eq("status", "blocked")
+                  .select("id");
+                if (upd && upd.length) unblocked.push(bm.id);
+              }
+            }
+
             const { data: queued } = await supabaseAdmin
               .from("agent_runs")
               .select("id")
@@ -164,9 +219,40 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
               }
             }
 
-            return new Response(JSON.stringify({ ok: true, resumed, failed, advanced, planned }), {
-              headers: { "Content-Type": "application/json" },
-            });
+            // BLD-GATE-SYNC block pass — run LAST (after resume + advance) so we never block a
+            // mission that progressed this tick. Surfaces missions fully parked on a pending human
+            // gate as 'blocked' (Needs-You lane). The guarded update no-ops if the advance loop
+            // already finalized the mission.
+            const blocked: string[] = [];
+            const { data: blockCandidates } = await admin
+              .from("missions")
+              .select("id,status")
+              .in("status", ["running", "in_progress"])
+              .order("updated_at", { ascending: true })
+              .limit(MISSION_BATCH);
+            for (const cm of (blockCandidates ?? []) as { id: string; status: string }[]) {
+              const runStatuses = await runStatusesOf(cm.id);
+              if (!runStatuses.includes("waiting_approval")) continue; // cheap short-circuit
+              const pendingGateCount = await pendingGatesOf(cm.id);
+              if (
+                classifyMissionGate({ status: cm.status, runStatuses, pendingGateCount }) === "block"
+              ) {
+                const { data: upd } = await admin
+                  .from("missions")
+                  .update({ status: "blocked", updated_at: new Date().toISOString() })
+                  .eq("id", cm.id)
+                  .in("status", ["running", "in_progress"])
+                  .select("id");
+                if (upd && upd.length) blocked.push(cm.id);
+              }
+            }
+
+            return new Response(
+              JSON.stringify({ ok: true, resumed, failed, advanced, planned, unblocked, blocked }),
+              {
+                headers: { "Content-Type": "application/json" },
+              },
+            );
           } catch (e) {
             return new Response(
               JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e) }),
