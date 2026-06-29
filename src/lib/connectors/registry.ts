@@ -20,7 +20,8 @@ export type ProviderId =
   | "microsoft_outlook"
   | "figma"
   | "jira"
-  | "firecrawl";
+  | "firecrawl"
+  | "intercom";
 
 export type AuthMethod =
   | { kind: "github_app"; appSlugEnv: "GITHUB_APP_SLUG"; requiredEnv: string[] }
@@ -83,6 +84,22 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     capabilities: { inflow: true, outflow: true, sync: false },
     envFallback: { tokenEnv: "GITHUB_TOKEN", resourceEnv: "GITHUB_REPO", resourceKind: "repo" },
     setupHint: "Register the GitHub App (GitHub → Settings → Developer settings → GitHub Apps).",
+  },
+  intercom: {
+    id: "intercom",
+    label: "Intercom",
+    description: "Pull support conversations as discovery signals.",
+    authMethods: [
+      {
+        kind: "oauth_gateway",
+        connectorId: "intercom",
+        clientIdEnv: "INTERCOM_APP_USER_CONNECTOR_CLIENT_ID",
+      },
+    ],
+    resourceTypes: [{ kind: "inbox", label: "Inbox" }],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "INTERCOM_ACCESS_TOKEN", resourceKind: "inbox" },
+    setupHint: "Register an OAuth app in the Intercom Developer Hub (app.intercom.com/developers).",
   },
   linear: {
     id: "linear",

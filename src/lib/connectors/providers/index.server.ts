@@ -4,6 +4,7 @@
 
 import type { ProviderId } from "../registry";
 import { githubAdapter } from "./github.server";
+import { intercomAdapter } from "./intercom.server";
 import type { ConnectorAdapter } from "./types.server";
 
 const stubAdapter: ConnectorAdapter = {
@@ -12,6 +13,7 @@ const stubAdapter: ConnectorAdapter = {
 
 export const CONNECTOR_ADAPTERS: Record<ProviderId, ConnectorAdapter> = {
   github: githubAdapter,
+  intercom: intercomAdapter,
   linear: stubAdapter,
   notion: stubAdapter,
   google_docs: stubAdapter,

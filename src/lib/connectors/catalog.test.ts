@@ -29,8 +29,8 @@ describe("connector catalog — de-dup + coverage", () => {
     expect(categoryOf("firecrawl")).toBeNull();
   });
 
-  it("catalogEntryCount equals the number of user-facing providers (8)", () => {
-    expect(catalogEntryCount()).toBe(8);
+  it("catalogEntryCount equals the number of user-facing providers (9)", () => {
+    expect(catalogEntryCount()).toBe(9);
     expect(catalogEntryCount()).toBe(allEntries().length);
   });
 });
@@ -39,6 +39,7 @@ describe("connector catalog — categorization", () => {
   it("groups providers into the expected categories", () => {
     const cat = (id: string) => allEntries().find((e) => e.id === id)?.category;
     expect(cat("github")).toBe("code");
+    expect(cat("intercom")).toBe("support");
     expect(cat("linear")).toBe("issues");
     expect(cat("jira")).toBe("issues");
     expect(cat("notion")).toBe("docs");
@@ -50,7 +51,14 @@ describe("connector catalog — categorization", () => {
 
   it("returns categories in the stable display order, none empty", () => {
     const groups = buildConnectorCatalog();
-    expect(groups.map((g) => g.id)).toEqual(["code", "issues", "docs", "calendar", "design"]);
+    expect(groups.map((g) => g.id)).toEqual([
+      "code",
+      "issues",
+      "docs",
+      "support",
+      "calendar",
+      "design",
+    ]);
     for (const g of groups) {
       expect(g.entries.length).toBeGreaterThan(0);
       expect(g.label.length).toBeGreaterThan(0);
@@ -78,6 +86,7 @@ describe("connector catalog — derivations", () => {
     expect(e("google_calendar").flowLabel).toBe("Two-way sync");
     expect(e("github").flowLabel).toBe("In & out");
     expect(e("google_docs").flowLabel).toBe("Pulls in");
+    expect(e("intercom").flowLabel).toBe("Pulls in");
     expect(e("figma").flowLabel).toBe("Reference");
   });
 
@@ -93,6 +102,7 @@ describe("connector catalog — derivations", () => {
     expect(e("github").resourceLabel).toBe("Repository");
     expect(e("linear").resourceLabel).toBe("Team");
     expect(e("notion").resourceLabel).toBe("Database");
+    expect(e("intercom").resourceLabel).toBe("Inbox");
     expect(e("figma").resourceLabel).toBeNull();
   });
 });
