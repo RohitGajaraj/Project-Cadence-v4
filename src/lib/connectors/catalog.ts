@@ -59,7 +59,14 @@ const CATEGORY_META: Record<ConnectorCategory, { label: string; blurb: string }>
   design: { label: "Design", blurb: "Reference design files from PRDs and briefs." },
 };
 
-const CATEGORY_ORDER: ConnectorCategory[] = ["code", "issues", "docs", "support", "calendar", "design"];
+const CATEGORY_ORDER: ConnectorCategory[] = [
+  "code",
+  "issues",
+  "docs",
+  "support",
+  "calendar",
+  "design",
+];
 
 // Which category each provider belongs to. Keyed explicitly (not inferred) so the
 // grouping is deliberate and a new provider must be placed on purpose.

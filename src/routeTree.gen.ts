@@ -92,6 +92,7 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksTriggerTickRouteImport } from './routes/api/public/hooks/trigger-tick'
 import { Route as ApiPublicHooksStewardTickRouteImport } from './routes/api/public/hooks/steward-tick'
 import { Route as ApiPublicHooksSenseTickRouteImport } from './routes/api/public/hooks/sense-tick'
+import { Route as ApiPublicHooksScoutTickRouteImport } from './routes/api/public/hooks/scout-tick'
 import { Route as ApiPublicHooksRetentionTickRouteImport } from './routes/api/public/hooks/retention-tick'
 import { Route as ApiPublicHooksResumeRunsRouteImport } from './routes/api/public/hooks/resume-runs'
 import { Route as ApiPublicHooksResearcherTickRouteImport } from './routes/api/public/hooks/researcher-tick'
@@ -547,6 +548,11 @@ const ApiPublicHooksSenseTickRoute = ApiPublicHooksSenseTickRouteImport.update({
   path: '/api/public/hooks/sense-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksScoutTickRoute = ApiPublicHooksScoutTickRouteImport.update({
+  id: '/api/public/hooks/scout-tick',
+  path: '/api/public/hooks/scout-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRetentionTickRoute =
   ApiPublicHooksRetentionTickRouteImport.update({
     id: '/api/public/hooks/retention-tick',
@@ -758,6 +764,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/scout-tick': typeof ApiPublicHooksScoutTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
@@ -860,6 +867,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/scout-tick': typeof ApiPublicHooksScoutTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
@@ -966,6 +974,7 @@ export interface FileRoutesById {
   '/api/public/hooks/researcher-tick': typeof ApiPublicHooksResearcherTickRoute
   '/api/public/hooks/resume-runs': typeof ApiPublicHooksResumeRunsRoute
   '/api/public/hooks/retention-tick': typeof ApiPublicHooksRetentionTickRoute
+  '/api/public/hooks/scout-tick': typeof ApiPublicHooksScoutTickRoute
   '/api/public/hooks/sense-tick': typeof ApiPublicHooksSenseTickRoute
   '/api/public/hooks/steward-tick': typeof ApiPublicHooksStewardTickRoute
   '/api/public/hooks/trigger-tick': typeof ApiPublicHooksTriggerTickRoute
@@ -1072,6 +1081,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/scout-tick'
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
@@ -1174,6 +1184,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/scout-tick'
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
@@ -1279,6 +1290,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/researcher-tick'
     | '/api/public/hooks/resume-runs'
     | '/api/public/hooks/retention-tick'
+    | '/api/public/hooks/scout-tick'
     | '/api/public/hooks/sense-tick'
     | '/api/public/hooks/steward-tick'
     | '/api/public/hooks/trigger-tick'
@@ -1325,6 +1337,7 @@ export interface RootRouteChildren {
   ApiPublicHooksResearcherTickRoute: typeof ApiPublicHooksResearcherTickRoute
   ApiPublicHooksResumeRunsRoute: typeof ApiPublicHooksResumeRunsRoute
   ApiPublicHooksRetentionTickRoute: typeof ApiPublicHooksRetentionTickRoute
+  ApiPublicHooksScoutTickRoute: typeof ApiPublicHooksScoutTickRoute
   ApiPublicHooksSenseTickRoute: typeof ApiPublicHooksSenseTickRoute
   ApiPublicHooksStewardTickRoute: typeof ApiPublicHooksStewardTickRoute
   ApiPublicHooksTriggerTickRoute: typeof ApiPublicHooksTriggerTickRoute
@@ -1918,6 +1931,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSenseTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scout-tick': {
+      id: '/api/public/hooks/scout-tick'
+      path: '/api/public/hooks/scout-tick'
+      fullPath: '/api/public/hooks/scout-tick'
+      preLoaderRoute: typeof ApiPublicHooksScoutTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/retention-tick': {
       id: '/api/public/hooks/retention-tick'
       path: '/api/public/hooks/retention-tick'
@@ -2265,6 +2285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksResearcherTickRoute: ApiPublicHooksResearcherTickRoute,
   ApiPublicHooksResumeRunsRoute: ApiPublicHooksResumeRunsRoute,
   ApiPublicHooksRetentionTickRoute: ApiPublicHooksRetentionTickRoute,
+  ApiPublicHooksScoutTickRoute: ApiPublicHooksScoutTickRoute,
   ApiPublicHooksSenseTickRoute: ApiPublicHooksSenseTickRoute,
   ApiPublicHooksStewardTickRoute: ApiPublicHooksStewardTickRoute,
   ApiPublicHooksTriggerTickRoute: ApiPublicHooksTriggerTickRoute,
@@ -2277,13 +2298,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

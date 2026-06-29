@@ -17,7 +17,10 @@ describe("conversationToCandidate", () => {
   it("maps a conversation to a pull_connector candidate, untrusted", () => {
     const cand = conversationToCandidate({
       id: 42,
-      source: { subject: "CSV export please", body: "<p>We need a <b>CSV export</b> of invoices.</p>" },
+      source: {
+        subject: "CSV export please",
+        body: "<p>We need a <b>CSV export</b> of invoices.</p>",
+      },
     });
     expect(cand).not.toBeNull();
     expect(cand!.externalId).toBe("intercom:conv:42");
@@ -30,7 +33,10 @@ describe("conversationToCandidate", () => {
   });
 
   it("falls back to the stripped body when there is no subject", () => {
-    const cand = conversationToCandidate({ id: "abc", source: { body: "<div>App is slow at night</div>" } });
+    const cand = conversationToCandidate({
+      id: "abc",
+      source: { body: "<div>App is slow at night</div>" },
+    });
     expect(cand!.title).toBe("App is slow at night");
     expect(cand!.content).toBe("App is slow at night");
   });
