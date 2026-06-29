@@ -1614,3 +1614,30 @@ _This log is maintained as part of the closed documentation loop. Every session 
 **Status of BLD-04:** Code complete (◐ [~55%]). Pending live test.
 
 **Cross-refs:** `pricing-strategy.md §3.3`, `entitlements.ts`, `connectors/resolve.server.ts`, `connectors/catalog.ts`
+
+---
+
+## 2026-06-29 — BYOK retired from self-serve; credits-first model confirmed
+
+**Decision:** BYOK (Bring Your Own Key) is removed from self-serve tiers. Effective immediately for all new feature design.
+
+**The model:**
+- Individual / SMB: Cadence credits only. User pays Cadence; Cadence pays the model providers. No API keys from the user.
+- Enterprise (standard): Same credits model at volume pricing.
+- Enterprise (compliance / data residency): BYOK available as an explicit enterprise-only, gated option — not the default.
+
+**For OpenHands (BLD-04) specifically:**
+- Cadence uses its own Anthropic key inside OpenHands — one key, one bill, no user friction.
+- Delegation cost to users: flat credits per build task (not per-token). Cadence absorbs the LLM cost inside that flat rate with margin.
+
+**Why:**
+- BYOK creates onboarding friction (users need to get keys, understand rate limits, choose models).
+- Mixed billing (platform fee + own key costs) confuses users and creates monitoring complexity for Cadence.
+- Lovable, Cursor, GitHub Copilot all hide the LLM cost in their product pricing — that is the right model for SMB.
+- BYOK stays available for regulated enterprises with data residency requirements (Azure OpenAI, private Claude deployments).
+
+**Ties to:** WM-M9 (BYOK removal from self-serve, already in dashboard as Gated — this decision is the strategic rationale for that item). BLD-04 (OpenHands uses Cadence's own key). The credit engine (already built dormant — this is the correct activation model).
+
+**Status:** BLD-04 code complete, pending live test with All-Hands Cloud. WM-M9 is the implementation of BYOK removal (chokepoint edit, attended with founder).
+
+**Cross-refs:** [`docs/features/bld04-delegate-out.md`](../features/bld04-delegate-out.md) §LLM key decision. [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md) §Configuring the LLM inside OpenHands.

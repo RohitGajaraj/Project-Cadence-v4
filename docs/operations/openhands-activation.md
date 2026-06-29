@@ -44,6 +44,23 @@ OPENHANDS_API_KEY=<optional — leave blank if your instance has no auth>
 
 `OPENHANDS_API_KEY` is optional. If your OpenHands instance is not protected by auth (local or VPN-only), leave it unset.
 
+### Configuring the LLM inside OpenHands
+
+OpenHands needs to know which LLM to use when it writes code. Configure it to use Cadence's own Anthropic key (already in the runtime) — NOT a user-provided key:
+
+**For All-Hands Cloud:** In your All-Hands Cloud workspace settings, set the LLM provider to Anthropic and enter Cadence's Anthropic API key. This is a one-time setup in the All-Hands Cloud dashboard.
+
+**For self-hosted OpenHands:** Pass additional env vars when starting the container:
+
+```
+LLM_MODEL=anthropic/claude-sonnet-4-5
+LLM_API_KEY=<Cadence's existing ANTHROPIC_API_KEY value>
+```
+
+This keeps one key, one bill. The delegation cost to users is metered as flat credits per task — not raw LLM token costs.
+
+See [`docs/features/bld04-delegate-out.md`](../features/bld04-delegate-out.md) §LLM key decision and [`docs/strategy/session-decisions.md`](../strategy/session-decisions.md) 2026-06-29 entry for the full BYOK→Credits rationale.
+
 ---
 
 ## Step 3 — Verify

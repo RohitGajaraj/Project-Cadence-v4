@@ -103,3 +103,14 @@ The `DelegateProvider` seam supports all three — it is a configuration questio
 ### Immediate next step (the live test)
 
 Use All-Hands Cloud (the managed service run by All-Hands AI, the OpenHands creators) to test the delegation seam end-to-end today. No infrastructure setup. This proves the Cadence seam works before committing to any hosting decision. After the test passes, BLD-04 moves to ✅.
+
+### LLM key decision (2026-06-29)
+
+Cadence uses its OWN Anthropic API key inside OpenHands — not the user's key. This means:
+- Zero additional setup for the user (no "enter your OpenAI key" step)
+- One Anthropic account, one bill, one place to monitor spend
+- The delegation cost to users is a flat credit charge per build task (not per-token), with Cadence absorbing the LLM cost inside the flat rate at a margin
+
+Configure OpenHands with `LLM_MODEL=anthropic/claude-sonnet-4-5` (or the current default Sonnet model) and `LLM_API_KEY=<Cadence's Anthropic key>`. This key is already present in the Cadence runtime environment.
+
+See [[docs/strategy/session-decisions.md]] 2026-06-29 entry for the full BYOK→Credits rationale. Activation steps: [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md).
