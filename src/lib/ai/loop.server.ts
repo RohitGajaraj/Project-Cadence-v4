@@ -30,7 +30,7 @@ const MAX_RUNNING_PER_WORKSPACE = 5;
  * run PAUSES (status 'waiting_approval'); the resume-runs sweeper re-enters
  * it once the operator decides, injecting the outcome.
  */
-const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "studio.pr.merge"]);
+const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "studio.pr.merge", "delegate.openhands"]);
 /** Safety floor (not overridable by the autonomy dial): at least `confirm`. */
 const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
 /** Safety floor: always `review`. */

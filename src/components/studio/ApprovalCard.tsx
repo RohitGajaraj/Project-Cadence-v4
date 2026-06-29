@@ -10,7 +10,15 @@ import { summarizeArgs } from "./studio-format";
 /** Consequence-first approve label — name what really happens per tool. */
 function approveLabel(toolName: string): string {
   if (toolName === "studio.pr.merge") return "Approve · merges the PR";
+  if (toolName === "delegate.openhands") return "Approve · send to OpenHands";
   return `Approve · runs ${toolName}`;
+}
+
+/** Human-readable description shown below the tool name for high-context tools. */
+function toolDescription(toolName: string): string | null {
+  if (toolName === "delegate.openhands")
+    return "This will hand the build task off to an external coding agent (OpenHands). It will clone the repo, implement the changes, and return the result for review. This cannot be undone once sent.";
+  return null;
 }
 
 /**
@@ -69,6 +77,18 @@ export function ApprovalCard({
           {approval.tool_name}
         </code>
       </div>
+      {toolDescription(approval.tool_name) ? (
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: 11.5,
+            lineHeight: 1.55,
+            color: "var(--ink-muted)",
+          }}
+        >
+          {toolDescription(approval.tool_name)}
+        </p>
+      ) : null}
       <div
         style={{
           marginTop: 6,

@@ -234,6 +234,11 @@ export const dispatchStudioSession = createServerFn({ method: "POST" })
     if (data.prompt) {
       sections.push(`Operator intent:\n${data.prompt}`);
       sourceTitle = sourceTitle ?? data.prompt.split(/\r?\n/)[0].slice(0, 80);
+      if (/delegat|external.?agent|openhands/i.test(data.prompt)) {
+        sections.push(
+          "Delegation available: the operator is explicitly requesting external delegation. For the implementation step, prefer `delegate.openhands` over direct Studio commits. Gather evidence first (research, read relevant files), then call `delegate.openhands` with those evidence_ids.",
+        );
+      }
     }
 
     if (!workspaceId) {
