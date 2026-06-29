@@ -27,7 +27,9 @@ export type IngestResult = {
 async function fetchIssueSignals(
   token: string,
   repo: string,
-): Promise<Array<{ externalId: string; title: string; content: string; url: string; source: string }>> {
+): Promise<
+  Array<{ externalId: string; title: string; content: string; url: string; source: string }>
+> {
   const url = `${GH_API}/repos/${repo}/issues?state=closed&per_page=${MAX_ITEMS}&sort=updated&direction=desc`;
   const res = await fetch(url, {
     headers: { ...GH_HEADERS, Authorization: `Bearer ${token}` },
@@ -46,7 +48,9 @@ async function fetchIssueSignals(
     .map((i) => ({
       externalId: `github:issue:${repo}:${i.number}`,
       title: (i.title ?? "").slice(0, 300),
-      content: [(i.title ?? "").slice(0, 300), (i.body ?? "").slice(0, 1200)].filter(Boolean).join("\n\n"),
+      content: [(i.title ?? "").slice(0, 300), (i.body ?? "").slice(0, 1200)]
+        .filter(Boolean)
+        .join("\n\n"),
       url: i.html_url ?? `https://github.com/${repo}/issues/${i.number}`,
       source: "github",
     }));
@@ -56,7 +60,9 @@ async function fetchIssueSignals(
 async function fetchPushSignals(
   token: string,
   repo: string,
-): Promise<Array<{ externalId: string; title: string; content: string; url: string; source: string }>> {
+): Promise<
+  Array<{ externalId: string; title: string; content: string; url: string; source: string }>
+> {
   const url = `${GH_API}/repos/${repo}/events?per_page=30`;
   const res = await fetch(url, {
     headers: { ...GH_HEADERS, Authorization: `Bearer ${token}` },
@@ -66,7 +72,13 @@ async function fetchPushSignals(
     type?: string;
     payload?: { commits?: Array<{ sha?: string; message?: string }> };
   }>;
-  const signals: Array<{ externalId: string; title: string; content: string; url: string; source: string }> = [];
+  const signals: Array<{
+    externalId: string;
+    title: string;
+    content: string;
+    url: string;
+    source: string;
+  }> = [];
   for (const ev of events) {
     if (ev.type !== "PushEvent") continue;
     for (const commit of ev.payload?.commits ?? []) {

@@ -31,9 +31,7 @@ export async function writeSignals(
   if (candidates.length === 0) return { inserted: 0, skipped: 0, quarantined: 0 };
 
   // Fetch already-seen external_ids for this workspace to skip them cheaply.
-  const extIds = candidates
-    .map((c) => c.externalId)
-    .filter((id): id is string => Boolean(id));
+  const extIds = candidates.map((c) => c.externalId).filter((id): id is string => Boolean(id));
   let seen = new Set<string>();
   if (extIds.length > 0) {
     const { data: existing } = await db

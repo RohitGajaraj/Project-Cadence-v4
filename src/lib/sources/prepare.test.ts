@@ -96,7 +96,15 @@ describe("prepareSignalRows", () => {
     const { rows, quarantined } = prepareSignalRows(
       U,
       W,
-      [cand({ title: "Report", source: "web", sourceKind: "web_scout", content: attack, untrusted: true })],
+      [
+        cand({
+          title: "Report",
+          source: "web",
+          sourceKind: "web_scout",
+          content: attack,
+          untrusted: true,
+        }),
+      ],
       new Set(),
     );
     expect(quarantined).toBe(1);
@@ -108,7 +116,15 @@ describe("prepareSignalRows", () => {
     const { rows } = prepareSignalRows(
       U,
       W,
-      [cand({ title: "Report", source: "web", sourceKind: "web_scout", content: lexical, untrusted: true })],
+      [
+        cand({
+          title: "Report",
+          source: "web",
+          sourceKind: "web_scout",
+          content: lexical,
+          untrusted: true,
+        }),
+      ],
       new Set(),
     );
     expect(rows).toHaveLength(1);
