@@ -11,6 +11,21 @@
 
 ---
 
+## 2026-06-30 (eve) — MA-2 scoped: true CONSUMER model-agnostic (gap mapped, build deferred to fresh session)
+
+**Context.** Right after MA-1 shipped, the founder hit the real-world test: the Gemini free token exhausted, and on the live app only Gemini is usable. The founder asked to "attach the Qwen model now so ALL automatic + agentic runs go through it," then sharpened it: **"don't just wire Qwen — keep it truly model-agnostic"** (GLM, Moonshot, Qwen, and whatever ships next). A 4-agent code map (catalog · chokepoint · agentic runs · consumer UI) pinpointed the gap.
+
+**Finding (binding for the next build).** MA-1 made the **engine** genuinely model-agnostic, but the **consumer surface + the agentic-run defaults** are not. Three concrete blockers: (1) the BYO-key form is a closed 7-provider list (`byokeys.functions.ts:7-15`) — Qwen/GLM/Moonshot can't be added; (2) a key can't carry a custom model id (only `{provider,label,api_key,base_url}` is stored); (3) automatic/agentic runs ignore the user's chosen model — the agent loop, `autoReflect`, and `researcher-tick` hardcode `google/gemini-2.5-flash`, and capability routing drops the caller's model on internal surfaces (`capability.ts:172`). The engine is fine (`testApiKey` already accepts a custom model+base_url; `loadBYOKey` returns base_url on live+stream).
+
+**Decisions made.**
+1. **MA-2 is the next build** — a true consumer "add ANY model (provider + model id + base URL + key), test it, select it" registry + an "active model" that ALL automatic + agentic runs honor. Generic, not a Qwen special-case.
+2. **Deferred to a fresh session, not rushed at close.** It touches the **pinned** `runtime.server.ts` chokepoint + a DB migration (`user_api_keys.model_id`) + 5 agentic entry points + RLS, so it must be implemented and verified green as one unit. The founder explicitly asked to close cleanly tonight and pick it up fresh, without looping.
+3. **Open product question to confirm first:** pin-one-model (recommended — matches "all runs through Qwen", deterministic) vs auto-route among the user's added models per task.
+
+**Spec / plan:** [`../features/model-agnostic.md`](../features/model-agnostic.md) "Next: MA-2" (full file:line build plan) · cursor: [`../planning/SOURCE-OF-TRUTH.md`](../planning/SOURCE-OF-TRUTH.md) §0 "PICK UP HERE NEXT — MA-2".
+
+---
+
 ## 2026-06-30 — Platform AI is model-agnostic + capability-routed (MA-1)
 
 **Context.** The founder asked to make the platform genuinely model-agnostic: not locked to ~5 providers, able to plug in ANY model/token (Qwen, MiniMax, etc.) with a base URL, with a full model list in the picker, and to design + build Perplexity-style routing that sends each kind of work to the model best at it. On clarification, the founder scoped this to the **platform's own AI backend** (every internal AI action: bucketing, agents, briefs, research, …), "optimized by us as the platform operator" — **not** a consumer-facing BYOK feature — plus a consumer **Auto** mode.

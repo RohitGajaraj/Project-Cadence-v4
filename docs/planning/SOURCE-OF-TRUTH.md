@@ -48,6 +48,17 @@
 > ---
 
 > [!IMPORTANT]
+> ## 👋 PICK UP HERE NEXT — MA-2: true CONSUMER model-agnostic (mapped 2026-06-30 eve, Lane 2, NOT built — build fresh)
+>
+> **Founder ask (2026-06-30 eve):** the Gemini free token exhausted; "attach the Qwen model now so ALL automatic + agentic runs go through it — and don't just wire Qwen, keep it truly model-agnostic (GLM, Moonshot, Qwen, whatever ships next)." MA-1 made the **engine** agnostic; the **consumer surface + agentic-run defaults** are not yet. A 4-agent code map confirmed the exact gap. **Deferred to a fresh session (founder: close cleanly, no looping) because it touches the pinned `runtime.server.ts` chokepoint + a DB migration + 5 agentic entry points and must land green.**
+>
+> **The 3 gaps (full file:line plan in [`../features/model-agnostic.md`](../features/model-agnostic.md) "Next: MA-2"):** (1) the BYO-key form is a closed 7-provider list (`byokeys.functions.ts:7-15`) — Qwen/GLM/Moonshot not addable; (2) a key can't carry a custom model id (only `{provider,label,api_key,base_url}`); (3) automatic/agentic runs ignore the user's model — the agent loop, `autoReflect`, and `researcher-tick` hardcode `google/gemini-2.5-flash`, and capability routing drops the caller's model on internal surfaces (`capability.ts:172`). The engine itself is fine (`testApiKey` already takes a custom model+base_url; `loadBYOKey` returns base_url on live+stream).
+>
+> **Build order:** A. open the registry (migration `user_api_keys.model_id`; UI accepts any provider + Model ID + Base URL; thread model_id through save/list/test). B. an "active model for all agentic runs" the 5 entry points read instead of hardcoded Gemini + persist `agent_runs.model` + honor a pinned model at the chokepoint. C. (optional) let Auto pick keyed/custom models. **Confirm first:** pin-one-model (recommended, matches "all runs through Qwen") vs auto-route among added models.
+>
+> ---
+
+> [!IMPORTANT]
 > ## ✅ 2026-06-24 (NOW) - LIVE-VERIFICATION CLOSURE PASS (Lane 1, founder-directed): the published app is healthy and the partial board is now honest.
 >
 > **Founder directive:** "the app is live + published, migrations are done - test the live app and close the partial/pending items; we will come to the founder-gated items later." Done as follows.

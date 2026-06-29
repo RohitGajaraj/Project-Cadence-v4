@@ -48,8 +48,28 @@ Before this, the catalog was a closed 7-provider union and the chokepoint resolv
 
 - **Embeddings are untouched** — they run on their own governed 1536-dim pipeline ([`rag/embed.server.ts`](../../src/lib/rag/embed.server.ts)) and must never be routed to a chat model. No per-user embedding provider.
 - **Image generation:** the `image-gen` capability exists but the chat catalog has no image model yet (routes fall back to the default). Extensible via `CAPABILITY_PREFERENCES`.
-- **Custom model registry UI** (per-user custom model ids with pricing/capabilities in a DB table) is designed but not built — the platform path is code+env defined. MiniMax's compat endpoint is non-standard; drive it via an explicit base URL.
+- **Consumer "add any model" + route-all-runs-through-it is NOT built yet** — that is **MA-2** below (the founder's 2026-06-30 follow-up: "don't just wire Qwen, keep it truly model-agnostic"). The *engine* is agnostic; the *consumer surface* and the *agentic-run defaults* are not. MiniMax's compat endpoint is non-standard; drive it via an explicit base URL.
 - Auto-fallback still degrades to the cheapest live model (not yet capability-aware); historical `ai_events` are not backfilled.
+
+## Next: MA-2 — true consumer model-agnostic (gap + plan, mapped 2026-06-30, NOT built)
+
+> Founder ask (2026-06-30): the Gemini free token exhausted; "I want to attach the Qwen model now so all automatic and agentic runs go through that. Don't just wire it for Qwen — keep it really model-agnostic (GLM, Moonshot, Qwen, and whatever ships next)." A 4-agent code map (catalog · chokepoint · agentic runs · consumer UI) confirmed the exact gap. **This is the next build; deferred to a fresh session because it touches the pinned chokepoint + a DB migration + 5 agentic entry points and must land green, not rushed at close.**
+
+**What is already true (no work needed):** the engine is genuinely model-agnostic — `Model.provider` is an open string ([`models.ts:50`](../../src/lib/ai/models.ts)), dispatch is generic OpenAI-compat ([`provider-route.ts`](../../src/lib/ai/provider-route.ts)), `loadBYOKey` returns `base_url` on live+stream, and `testApiKey` already accepts a custom `model` + `base_url` ([`byokeys.functions.ts:112-124,147-185`](../../src/lib/byokeys.functions.ts)). The blockers are all in the consumer surface + the agentic defaults.
+
+**The three gaps (evidence-backed):**
+
+1. **The key form is a closed 7-provider list.** `BYO_PROVIDERS` = `anthropic, deepseek, xai, ollama, openai, google, github_pat` ([`byokeys.functions.ts:7-15`](../../src/lib/byokeys.functions.ts)). Qwen/GLM/Moonshot/MiniMax/Groq/etc. cannot be added in the UI, so `ModelSwitcher`'s `ready = m.live || keyProviders.has(provider)` ([`ModelSwitcher.tsx:62`](../../src/components/chat/ModelSwitcher.tsx)) can never light them up.
+2. **A key cannot carry a custom model id.** `SaveSchema`/`user_api_keys` store only `{provider, label, api_key, base_url}`; the model is a hardcoded `defaultModelFor(provider)` ([`byokeys.functions.ts:66-76,126-145`](../../src/lib/byokeys.functions.ts)). No way to say "use exactly `qwen-max` / `glm-4-plus` / `moonshot-v1-128k`."
+3. **Automatic/agentic runs ignore your selection.** `profiles.default_model` is read only by the chat UI; the agent loop hardcodes `google/gemini-2.5-flash` ([`loop.server.ts:352`](../../src/lib/ai/loop.server.ts), resume at `941-944`), `autoReflect` ([`reflection.server.ts:119`](../../src/lib/ai/reflection.server.ts)) and `researcher-tick` ([`researcher-tick.ts:134`](../../src/routes/api/public/hooks/researcher-tick.ts)) hardcode Gemini with **no routing**, and `agent_runs.model` is never persisted ([`loop.server.ts:237-255`](../../src/lib/ai/loop.server.ts)). Capability routing for internal surfaces also does **not** pass the caller's model through (`capabilityRoutedModel` omits `requested` at [`capability.ts:172-176`](../../src/lib/ai/capability.ts)), so even a pinned model would be overridden by `CAPABILITY_PREFERENCES`.
+
+**The plan (build order):**
+
+- **A. Open registry** — migration: add `model_id` (+ optional `capabilities text[]`) to `user_api_keys`; let the UI add **any** provider (curated list for convenience + a free-form "Custom (OpenAI-compatible)" with a typed provider id), a **Model ID** field, and the existing **Base URL** field; thread `model_id` through `SaveSchema`/`saveApiKey`/`listApiKeys`; wire the model into the existing `testApiKey` from the UI ([`settings.tsx:1345-1357`](../../src/routes/_authenticated.settings.tsx)).
+- **B. Active-model routing** — make a single "active model for all automatic/agentic runs" (reuse `profiles.default_model` or a clearer `agentic_model`) that the 5 entry points read instead of the hardcoded Gemini; persist `agent_runs.model` on insert so resumes are faithful; honor a pinned active model at the chokepoint (pass `requestedModel` into `selectModelForCapability`, which already prefers a capable+available requested model at [`capability.ts:105-108`](../../src/lib/ai/capability.ts), **or** add an "explicit pin wins" short-circuit so a user-pinned custom model is never re-routed). Its `base_url`+key resolve via the vault automatically.
+- **C. (optional) Router-awareness** — add keyed/custom models to the `selectModelForCapability` candidate pool so consumer **Auto** can also pick them.
+
+**One product decision to confirm first (tomorrow):** when multiple models are added, should ALL agentic runs use **one pinned model you choose** (deterministic — matches "all runs through Qwen") **or** auto-route among your added models per task? Recommended: **pin as the primary path**, Auto/routing as the optional secondary.
 
 ## Related
 
