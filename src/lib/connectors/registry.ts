@@ -21,7 +21,18 @@ export type ProviderId =
   | "figma"
   | "jira"
   | "firecrawl"
-  | "intercom";
+  | "intercom"
+  // SF-CONNECTORS (Signal Fabric Phase 2) — the inside-out customer-voice fleet. All
+  // inflow-only pull connectors; each ships on its env-secret token path now and upgrades
+  // to per-user OAuth the moment the gateway client is registered (same as intercom).
+  | "stripe"
+  | "slack"
+  | "zendesk"
+  | "hubspot"
+  | "salesforce"
+  | "canny"
+  | "productboard"
+  | "delighted";
 
 export type AuthMethod =
   | { kind: "github_app"; appSlugEnv: "GITHUB_APP_SLUG"; requiredEnv: string[] }
@@ -100,6 +111,107 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     capabilities: { inflow: true, outflow: false, sync: false },
     envFallback: { tokenEnv: "INTERCOM_ACCESS_TOKEN", resourceKind: "inbox" },
     setupHint: "Register an OAuth app in the Intercom Developer Hub (app.intercom.com/developers).",
+  },
+  // ── SF-CONNECTORS (Signal Fabric Phase 2): inside-out customer-voice fleet ──
+  // Each is inflow-only (read customer voice in; never writes back), so the catalog
+  // derives minTier 'pro'. The env-secret token path ships today; the oauth_gateway
+  // method is the future per-user upgrade and stays "Admin setup required" until the
+  // founder registers each client. Mirrors the intercom spec shape exactly.
+  stripe: {
+    id: "stripe",
+    label: "Stripe",
+    description: "Pull canceled-subscription churn and cancellation reasons as signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "stripe", clientIdEnv: "STRIPE_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "STRIPE_API_KEY" },
+    setupHint: "Create a restricted API key in the Stripe Dashboard (Developers → API keys).",
+  },
+  slack: {
+    id: "slack",
+    label: "Slack",
+    description: "Pull messages from a chosen feedback channel as customer-voice signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "slack", clientIdEnv: "SLACK_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [{ kind: "channel", label: "Channel" }],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "SLACK_BOT_TOKEN", resourceKind: "channel" },
+    setupHint: "Create a Slack app + bot token (api.slack.com/apps); set SLACK_SIGNAL_CHANNEL to the channel id.",
+  },
+  zendesk: {
+    id: "zendesk",
+    label: "Zendesk",
+    description: "Pull recent support tickets as customer-voice signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "zendesk", clientIdEnv: "ZENDESK_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "ZENDESK_API_TOKEN" },
+    setupHint: "Create an API token in Zendesk Admin; set ZENDESK_SUBDOMAIN and ZENDESK_EMAIL.",
+  },
+  hubspot: {
+    id: "hubspot",
+    label: "HubSpot",
+    description: "Pull closed-lost deals and their loss reasons as win/loss signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "hubspot", clientIdEnv: "HUBSPOT_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "HUBSPOT_ACCESS_TOKEN" },
+    setupHint: "Create a private app + access token in HubSpot (Settings → Integrations → Private Apps).",
+  },
+  salesforce: {
+    id: "salesforce",
+    label: "Salesforce",
+    description: "Pull closed-lost opportunities as win/loss signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "salesforce", clientIdEnv: "SALESFORCE_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "SALESFORCE_ACCESS_TOKEN" },
+    setupHint: "Create a connected app in Salesforce Setup; set SALESFORCE_INSTANCE_URL.",
+  },
+  canny: {
+    id: "canny",
+    label: "Canny",
+    description: "Pull recent feature-request posts as feedback signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "canny", clientIdEnv: "CANNY_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "CANNY_API_KEY" },
+    setupHint: "Copy your API key from Canny (Settings → API).",
+  },
+  productboard: {
+    id: "productboard",
+    label: "Productboard",
+    description: "Pull customer notes and insights as feedback signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "productboard", clientIdEnv: "PRODUCTBOARD_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "PRODUCTBOARD_API_TOKEN" },
+    setupHint: "Create an access token in Productboard (Settings → Integrations → Public API).",
+  },
+  delighted: {
+    id: "delighted",
+    label: "Delighted",
+    description: "Pull NPS / CSAT survey responses as customer-voice signals.",
+    authMethods: [
+      { kind: "oauth_gateway", connectorId: "delighted", clientIdEnv: "DELIGHTED_APP_USER_CONNECTOR_CLIENT_ID" },
+    ],
+    resourceTypes: [],
+    capabilities: { inflow: true, outflow: false, sync: false },
+    envFallback: { tokenEnv: "DELIGHTED_API_KEY" },
+    setupHint: "Copy your API key from Delighted (Settings → API).",
   },
   linear: {
     id: "linear",

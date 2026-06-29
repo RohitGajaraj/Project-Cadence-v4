@@ -16,7 +16,18 @@
 import { CONNECTOR_REGISTRY, type ProviderId, type ProviderSpec } from "./registry";
 import type { PlanTier } from "@/lib/entitlements";
 
-export type ConnectorCategory = "code" | "issues" | "docs" | "support" | "calendar" | "design";
+export type ConnectorCategory =
+  | "code"
+  | "issues"
+  | "docs"
+  | "support"
+  // SF-CONNECTORS (Signal Fabric Phase 2): the inside-out customer-voice categories.
+  | "crm"
+  | "revenue"
+  | "feedback"
+  | "chat"
+  | "calendar"
+  | "design";
 
 /** How data moves for a connector, in one plain phrase. */
 export type FlowLabel = "Two-way sync" | "In & out" | "Pulls in" | "Pushes out" | "Reference";
@@ -55,6 +66,10 @@ const CATEGORY_META: Record<ConnectorCategory, { label: string; blurb: string }>
   issues: { label: "Issue tracking", blurb: "Push planned work out and pull issue state back." },
   docs: { label: "Docs & knowledge", blurb: "Read and publish documents and source material." },
   support: { label: "Support", blurb: "Pull customer conversations and tickets in as signals." },
+  crm: { label: "CRM & win/loss", blurb: "Pull closed-lost deals and their reasons in as signals." },
+  revenue: { label: "Revenue & churn", blurb: "Pull cancellations and churn reasons in as signals." },
+  feedback: { label: "Feedback & surveys", blurb: "Pull feature requests, notes, and NPS/CSAT in as signals." },
+  chat: { label: "Team chat", blurb: "Pull messages from a feedback channel in as signals." },
   calendar: { label: "Calendar", blurb: "Two-way sync of meetings and events." },
   design: { label: "Design", blurb: "Reference design files from PRDs and briefs." },
 };
@@ -64,6 +79,10 @@ const CATEGORY_ORDER: ConnectorCategory[] = [
   "issues",
   "docs",
   "support",
+  "crm",
+  "revenue",
+  "feedback",
+  "chat",
   "calendar",
   "design",
 ];
@@ -73,6 +92,15 @@ const CATEGORY_ORDER: ConnectorCategory[] = [
 const PROVIDER_CATEGORY: Record<ProviderId, ConnectorCategory | null> = {
   github: "code",
   intercom: "support",
+  // SF-CONNECTORS (Signal Fabric Phase 2): the inside-out customer-voice fleet.
+  zendesk: "support",
+  stripe: "revenue",
+  hubspot: "crm",
+  salesforce: "crm",
+  canny: "feedback",
+  productboard: "feedback",
+  delighted: "feedback",
+  slack: "chat",
   linear: "issues",
   jira: "issues",
   notion: "docs",

@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEMO_FEED, autoTag, inferSentiment, tagSignalUpdate } from "@/lib/sensing/normalize";
 import { ingestGithubSignals } from "@/lib/connectors/providers/github-ingest.server";
 import { ingestPostHogAnalytics } from "@/lib/analytics-ingest.server";
-import { ingestIntercomSignals } from "@/lib/connectors/providers/intercom-ingest.server";
+import { PULL_INGESTORS } from "@/lib/connectors/providers/pull-ingestors.server";
 import { withJobRun } from "@/lib/observability";
 
 /**
@@ -58,8 +58,9 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
             seeded?: number;
             github_inserted?: number;
             github_source?: string;
-            intercom_inserted?: number;
-            intercom_source?: string;
+            // SF-CONNECTORS: per-provider {inserted, source} for the inside-out fleet,
+            // keyed by provider id (intercom/stripe/slack/zendesk/hubspot/…).
+            connectors?: Record<string, { inserted: number; source: string }>;
             posthog_rows?: number;
             posthog_signals?: number;
             posthog_skipped?: boolean;
@@ -76,7 +77,14 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
               const seeded = await topUpDemoFeed(ws.owner_id, ws.id);
               const gh = await ingestGithubSignals(ws.owner_id, ws.id).catch(() => null);
               const posthog = await ingestPostHogAnalytics(ws.id, ws.owner_id).catch(() => null);
-              const intercom = await ingestIntercomSignals(ws.owner_id, ws.id).catch(() => null);
+              // Inside-out customer-voice fleet: iterate the PULL_INGESTORS registry so a
+              // new connector needs no edit here. Each fails safe (source "none") when the
+              // workspace has no credential or its tier lacks inflow, so this never throws.
+              const connectors: Record<string, { inserted: number; source: string }> = {};
+              for (const c of PULL_INGESTORS) {
+                const r = await c.ingest(ws.owner_id, ws.id).catch(() => null);
+                connectors[c.provider] = { inserted: r?.inserted ?? 0, source: r?.source ?? "none" };
+              }
               await supabaseAdmin
                 .from("workspaces")
                 .update({ last_auto_sense_at: new Date().toISOString() })
@@ -87,8 +95,7 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
                 seeded,
                 github_inserted: gh?.inserted ?? 0,
                 github_source: gh?.source ?? "none",
-                intercom_inserted: intercom?.inserted ?? 0,
-                intercom_source: intercom?.source ?? "none",
+                connectors,
                 posthog_rows: posthog?.rowsUpserted ?? 0,
                 posthog_signals: posthog?.signalsInserted ?? 0,
                 posthog_skipped: posthog?.skipped ?? false,

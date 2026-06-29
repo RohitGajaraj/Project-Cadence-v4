@@ -29,8 +29,8 @@ describe("connector catalog — de-dup + coverage", () => {
     expect(categoryOf("firecrawl")).toBeNull();
   });
 
-  it("catalogEntryCount equals the number of user-facing providers (9)", () => {
-    expect(catalogEntryCount()).toBe(9);
+  it("catalogEntryCount equals the number of user-facing providers (17)", () => {
+    expect(catalogEntryCount()).toBe(17);
     expect(catalogEntryCount()).toBe(allEntries().length);
   });
 });
@@ -47,6 +47,15 @@ describe("connector catalog — categorization", () => {
     expect(cat("google_calendar")).toBe("calendar");
     expect(cat("microsoft_outlook")).toBe("calendar");
     expect(cat("figma")).toBe("design");
+    // SF-CONNECTORS (Phase 2): the inside-out customer-voice fleet.
+    expect(cat("zendesk")).toBe("support");
+    expect(cat("stripe")).toBe("revenue");
+    expect(cat("hubspot")).toBe("crm");
+    expect(cat("salesforce")).toBe("crm");
+    expect(cat("canny")).toBe("feedback");
+    expect(cat("productboard")).toBe("feedback");
+    expect(cat("delighted")).toBe("feedback");
+    expect(cat("slack")).toBe("chat");
   });
 
   it("returns categories in the stable display order, none empty", () => {
@@ -56,6 +65,10 @@ describe("connector catalog — categorization", () => {
       "issues",
       "docs",
       "support",
+      "crm",
+      "revenue",
+      "feedback",
+      "chat",
       "calendar",
       "design",
     ]);

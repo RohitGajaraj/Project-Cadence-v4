@@ -5,6 +5,15 @@
 import type { ProviderId } from "../registry";
 import { githubAdapter } from "./github.server";
 import { intercomAdapter } from "./intercom.server";
+// SF-CONNECTORS (Signal Fabric Phase 2) — the inside-out customer-voice fleet.
+import { stripeAdapter } from "./stripe.server";
+import { slackAdapter } from "./slack.server";
+import { zendeskAdapter } from "./zendesk.server";
+import { hubspotAdapter } from "./hubspot.server";
+import { salesforceAdapter } from "./salesforce.server";
+import { cannyAdapter } from "./canny.server";
+import { productboardAdapter } from "./productboard.server";
+import { delightedAdapter } from "./delighted.server";
 import type { ConnectorAdapter } from "./types.server";
 
 const stubAdapter: ConnectorAdapter = {
@@ -14,6 +23,14 @@ const stubAdapter: ConnectorAdapter = {
 export const CONNECTOR_ADAPTERS: Record<ProviderId, ConnectorAdapter> = {
   github: githubAdapter,
   intercom: intercomAdapter,
+  stripe: stripeAdapter,
+  slack: slackAdapter,
+  zendesk: zendeskAdapter,
+  hubspot: hubspotAdapter,
+  salesforce: salesforceAdapter,
+  canny: cannyAdapter,
+  productboard: productboardAdapter,
+  delighted: delightedAdapter,
   linear: stubAdapter,
   notion: stubAdapter,
   google_docs: stubAdapter,
