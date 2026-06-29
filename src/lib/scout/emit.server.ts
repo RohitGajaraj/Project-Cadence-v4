@@ -22,11 +22,16 @@ import type { SnapshotRow } from "./snapshot.server";
 
 const db = supabaseAdmin as unknown as SupabaseClient;
 
+/** The snapshot fields the emit actually reads — a projection, so the tick can emit
+ *  BEFORE persisting the snapshot row (which has no id yet) and only advance the
+ *  baseline after a successful, idempotent emit. */
+type SnapshotLike = Pick<SnapshotRow, "content_hash" | "excerpt" | "fetched_url">;
+
 /** Emit a single "changed" signal for a target through the sink. Returns the signal
  *  id (when a new row was inserted) and the deterministic external_id. */
 export async function emitChangeSignal(
   t: ScoutTargetRow,
-  snap: SnapshotRow,
+  snap: SnapshotLike,
   diff: DiffResult,
 ): Promise<{ signalId: string | null; externalId: string }> {
   const externalId = `scout:${t.id}:${snap.content_hash.slice(0, 16)}`;

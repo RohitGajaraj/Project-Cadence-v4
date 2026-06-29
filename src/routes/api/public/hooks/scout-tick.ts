@@ -103,8 +103,12 @@ export const Route = createFileRoute("/api/public/hooks/scout-tick")({
 
               for (const t of targets) {
                 if (budget <= 0) break; // daily cap hit mid-workspace
-                budget--;
-                const outcome = await processTarget(t);
+                // Charge the TRUE Firecrawl credit cost (a /search bills per result, a
+                // /scrape bills 1), not a flat per-call unit, so the daily cap bounds
+                // real spend. A search may overshoot the remaining budget by < 1 unit;
+                // the next iteration's budget<=0 guard then stops the loop.
+                const { outcome, cost } = await processTarget(t);
+                budget -= cost;
                 checked++;
                 if (outcome === "first-seen") firstSeen++;
                 else if (outcome === "changed") changed++;
@@ -140,16 +144,25 @@ export const Route = createFileRoute("/api/public/hooks/scout-tick")({
 });
 
 /**
- * One target: fetch → hash → load last → diff → store (ALWAYS) → emit on change → record
- * run → markChecked. Never throws (records an 'error' run + backs the target off instead),
- * so one bad target can't abort the workspace loop. Returns the outcome bucket.
+ * One target: fetch → hash → load last → diff → (on a real change) emit THEN store →
+ * record run → markChecked. Never throws (records an 'error' run + backs the target off
+ * instead), so one bad target can't abort the workspace loop. Returns the outcome bucket
+ * AND the Firecrawl credit cost of the fetch, so the caller charges the daily cap truly.
+ *
+ * Order matters on the changed path: emit BEFORE persisting the new baseline. The emit is
+ * idempotent via external_id (scout:<targetId>:<hash16>), so a store failure AFTER a
+ * successful emit self-heals (the next tick re-detects the change and the sink dedups it),
+ * while an emit failure leaves the OLD baseline intact so the change is re-detected and
+ * re-emitted next tick — never silently dropped. firstSeen/unchanged stay store-only.
  */
-async function processTarget(
-  t: ScoutTargetRow,
-): Promise<"first-seen" | "unchanged" | "changed" | "emitted" | "error"> {
+async function processTarget(t: ScoutTargetRow): Promise<{
+  outcome: "first-seen" | "unchanged" | "changed" | "emitted" | "error";
+  cost: number;
+}> {
   try {
     const surface = await fetchTarget(t);
-    const hash = hashContent(surface.markdown);
+    const cost = surface.creditCost;
+    const hash = hashContent(surface.hashBasis);
     const prev = await loadLastSnapshot(t.id);
     const nextExcerpt = surface.markdown.slice(0, EXCERPT_CHARS);
     const diff = diffSnapshots(
@@ -157,20 +170,27 @@ async function processTarget(
       { content_hash: hash, excerpt: nextExcerpt },
     );
 
-    // ALWAYS store, so the per-target timeline stays complete (even unchanged checks).
-    const snap = await storeSnapshot(t, surface, hash);
-
     let signalId: string | null = null;
     let outcome: "first-seen" | "unchanged" | "changed";
     if (diff.firstSeen) {
       outcome = "first-seen"; // baseline only — emit NOTHING on day 1
     } else if (diff.changed) {
-      const emit = await emitChangeSignal(t, snap, diff);
+      // Emit FIRST (the emit only needs content_hash/excerpt/fetched_url, not the row id),
+      // then advance the baseline below. See the function doc for the idempotency rationale.
+      const emit = await emitChangeSignal(
+        t,
+        { content_hash: hash, excerpt: nextExcerpt, fetched_url: surface.url || null },
+        diff,
+      );
       signalId = emit.signalId;
       outcome = "changed";
     } else {
       outcome = "unchanged";
     }
+
+    // Store the snapshot AFTER the emit, so the per-target timeline stays complete (every
+    // check is recorded) yet the baseline only advances once a real change is emitted.
+    const snap = await storeSnapshot(t, surface, hash);
 
     await recordRun(t.workspace_id, {
       target_id: t.id,
@@ -179,7 +199,7 @@ async function processTarget(
       changed: diff.changed,
       signal_id: signalId,
       snapshot_id: snap.id,
-      fetch_count: 1,
+      fetch_count: cost,
     });
 
     await markChecked(t.id, {
@@ -188,14 +208,14 @@ async function processTarget(
       consecutiveUnchanged: t.consecutive_unchanged,
     });
 
-    return outcome === "changed" && signalId ? "emitted" : outcome;
+    return { outcome: outcome === "changed" && signalId ? "emitted" : outcome, cost };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await recordRun(t.workspace_id, {
       target_id: t.id,
       kind: t.kind,
       outcome: "error",
-      fetch_count: 1, // the fetch was attempted; count it against the cost ledger
+      fetch_count: 1, // the fetch was attempted; count one credit against the cost ledger
       detail: msg.slice(0, 500),
     }).catch(() => {});
     await markChecked(t.id, {
@@ -204,7 +224,7 @@ async function processTarget(
       consecutiveUnchanged: t.consecutive_unchanged,
       error: msg,
     }).catch(() => {});
-    return "error";
+    return { outcome: "error", cost: 1 };
   }
 }
 

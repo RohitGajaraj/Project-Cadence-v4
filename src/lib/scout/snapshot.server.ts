@@ -41,9 +41,18 @@ export interface SnapshotRow {
 export interface FetchedSurface {
   url: string;
   title: string;
+  /** Rich content kept for display (stored as the snapshot excerpt). */
   markdown: string;
+  /** The string the change-hash is taken over. For a URL fetch this IS the markdown;
+   *  for a search it is a STABILIZED projection (the sorted SET of result URLs) so that
+   *  result reordering and snippet/description churn never read as a change — only the
+   *  result SET changing (genuinely new/removed results) does. */
+  hashBasis: string;
   status?: number;
   charCount: number;
+  /** Firecrawl credits this fetch costs: 1 for a single /scrape, N for an N-result
+   *  /search. Lets the daily cap bound real spend rather than raw call count. */
+  creditCost: number;
 }
 
 /**
@@ -67,12 +76,20 @@ export async function fetchTarget(t: ScoutTargetRow): Promise<FetchedSurface> {
     const markdown = top
       .map((r, i) => `[${i + 1}] ${r.title}\n${r.description ?? ""}\n${r.url}`)
       .join("\n\n");
+    // Hash basis = the SORTED SET of result URLs, dropping ordering and snippet churn:
+    // "changed" means the result set actually changed, not that search reordered/reworded.
+    const hashBasis = Array.from(new Set(top.map((r) => r.url).filter(Boolean)))
+      .sort()
+      .join("\n");
     return {
       url: url || top[0]?.url || "",
       title: `Search: ${query.slice(0, 120)}`,
       markdown,
+      hashBasis,
       status: undefined,
       charCount: markdown.length,
+      // /search bills per result returned — charge the true count against the cap.
+      creditCost: top.length,
     };
   }
 
@@ -82,8 +99,10 @@ export async function fetchTarget(t: ScoutTargetRow): Promise<FetchedSurface> {
       url: r.url,
       title: r.title,
       markdown: r.markdown,
+      hashBasis: r.markdown, // a URL fetch hashes its own content directly
       status: r.status,
       charCount: r.markdown.length,
+      creditCost: 1, // a single /scrape = 1 credit
     };
   }
 
