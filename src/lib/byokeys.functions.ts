@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
 import { assertSafeBaseUrl } from "@/lib/url-safety";
-import { listConfiguredPlatformProviders } from "@/lib/ai/platform-keys.server";
+import { listConfiguredPlatformProviders, resolveBestAgentModel } from "@/lib/ai/platform-keys.server";
 
 export const BYO_PROVIDERS = [
   { id: "anthropic", label: "Claude (Anthropic)", placeholder: "sk-ant-…" },
@@ -28,7 +28,10 @@ function maskFromPrefix(prefix: string | null | undefined): string {
 export const listPlatformProviders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    return { providers: listConfiguredPlatformProviders() };
+    return {
+      providers: listConfiguredPlatformProviders(),
+      recommendedModel: resolveBestAgentModel(),
+    };
   });
 
 export const listApiKeys = createServerFn({ method: "GET" })

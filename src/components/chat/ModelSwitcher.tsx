@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, KeyRound, Sparkles } from "lucide-react";
+import { Check, ChevronDown, KeyRound, Sparkles, Zap } from "lucide-react";
 import { MODELS, AUTO_MODEL, modelsByProvider, type Model } from "@/lib/ai/models";
 import { listApiKeys, listPlatformProviders } from "@/lib/byokeys.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -59,6 +59,7 @@ export function ModelSwitcher({
     ...(keys.data?.keys ?? []).map((k) => k.provider),
     ...(platform.data?.providers ?? []),
   ]);
+  const recommendedModelId = platform.data?.recommendedModel ?? "google/gemini-2.5-flash";
 
   const groups = modelsByProvider(MODELS);
   const current = MODELS.find((m) => m.id === value);
@@ -108,6 +109,7 @@ export function ModelSwitcher({
                 {providerLabel(provider)}
               </div>
               {models.map((m) => {
+                const isRecommended = m.id === recommendedModelId;
                 if (ready(m)) {
                   return (
                     <button
@@ -119,7 +121,20 @@ export function ModelSwitcher({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 text-xs text-foreground">
                           {m.label}
-                          {!m.live && (
+                          {isRecommended && (
+                            <span
+                              title="Best available for agentic tasks"
+                              className="inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-[9px] font-medium"
+                              style={{
+                                background: "color-mix(in oklab, var(--ember) 15%, transparent)",
+                                color: "var(--ember)",
+                              }}
+                            >
+                              <Zap className="h-2 w-2" />
+                              Best
+                            </span>
+                          )}
+                          {!m.live && !isRecommended && (
                             <span title="Uses your API key" className="inline-flex">
                               <KeyRound className="h-2.5 w-2.5 text-muted-foreground/70" />
                             </span>

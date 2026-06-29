@@ -63,3 +63,32 @@ export function listConfiguredPlatformProviders(): string[] {
   ];
   return candidates.filter((p) => isPlatformProviderConfigured(p));
 }
+
+/**
+ * Priority-ordered candidates for the agent planning loop.
+ * Ranked by tool-use accuracy and instruction-following quality.
+ * The empty-string provider sentinel represents the Lovable managed gateway
+ * (no key needed; always reachable but quota-limited).
+ */
+const AGENT_MODEL_PRIORITY: Array<{ provider: string; modelId: string }> = [
+  { provider: "anthropic", modelId: "anthropic/claude-haiku-4" },
+  { provider: "openai",    modelId: "openai/gpt-4o-mini" },
+  { provider: "qwen",      modelId: "qwen/qwen-plus" },
+  { provider: "groq",      modelId: "groq/llama-3.3-70b-versatile" },
+  { provider: "deepseek",  modelId: "deepseek/deepseek-chat" },
+  { provider: "",          modelId: "google/gemini-2.5-flash" }, // gateway fallback
+];
+
+/**
+ * Picks the best model available for agentic work at runtime.
+ * Checks platform keys in priority order — whichever provider has a key wins.
+ * Respects DEFAULT_AGENT_MODEL env override so operators can pin without a code deploy.
+ */
+export function resolveBestAgentModel(): string {
+  const override = process.env.DEFAULT_AGENT_MODEL;
+  if (override) return override;
+  for (const { provider, modelId } of AGENT_MODEL_PRIORITY) {
+    if (!provider || isPlatformProviderConfigured(provider)) return modelId;
+  }
+  return "google/gemini-2.5-flash";
+}
