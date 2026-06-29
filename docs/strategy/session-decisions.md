@@ -35,6 +35,22 @@
 
 **Implementation:** WM-M17 + WM-M18 + WM-M19 in [`../planning/workspace-tenancy-and-monetization-plan.md`](../planning/workspace-tenancy-and-monetization-plan.md) §4.2.2. Full strategy: [`pricing-strategy.md`](./pricing-strategy.md).
 
+---
+
+## 2026-06-29 — Founder greenlit BYO-P3 (Autonomous Build → Ship + capture); chokepoint-aware scope split
+
+**Context.** The founder, reviewing the parallel build loop, asked what BYO-P3 / BYO-P5 are and then **greenlit BYO-P3** (the autonomous Build → Ship + deploy-capture + changelog phase), removing its `Gated` mark. BYO-P5 (managed end-to-end runtime) stays founder-gated, sequenced last, and needs its own ops/cost/security plan before any build.
+
+**Decisions made (binding):**
+
+1. **BYO-P3 is greenlit and built; BYO-P5 remains gated.** P3 closes the lifecycle-gap-map seams (deploy blind spot, draft-only ship, the disjoint Build-merge vs PRD-outcome paths). P5 is unchanged: heaviest, latest, requires its own plan + the loop proven.
+
+2. **Chokepoint-aware scope split (the load-bearing call).** P3's six work items divide cleanly along the BYO architecture's two control points — the provider-agnostic `RepoProvider` interface (editable) vs the agent-loop chokepoint (pinned). **Shipped autonomously** (everything expressible as a data shape, a read, or a DB trigger reacting to the merge's `status` write): WI1 deploy capture, WI2 changeset→PRD join (self-healed from `artifact_lineage` by a `BEFORE INSERT` trigger — no pinned edit), WI4 in-app changelog (materialized by a trigger on the merge's status write + a durable TS publish path — no pinned edit), WI6 outcome-tick. **Deferred to a founder-attended edit:** WI3 (loop auto-queue of the single trust-graduated ship-confirm decision) + WI5 (self-correct on red CI) — both must live in the pinned `loop.server.ts`/`registry.server.ts` (merge handler `registry.server.ts:1625`), which the lane ledger forbids autonomous sessions from editing. BYO-P3 therefore lands at `◐` with that pinned remainder explicitly named (per the "touched = fully closed, founder-gated remainder excepted" rule).
+
+3. **Durability + isolation hardening from the adversarial review (all applied).** The 5-finding refute-it review caught: (a) `changelog_entries.changeset_id` FK changed `CASCADE`→`SET NULL` so deleting a build session never wipes durable shipped-history; (b) `listChangelog`/`listDeployments` made active-workspace-scoped (not just RLS-member-scoped) to match the breadcrumb + the `listProjects` convention; (c) the WI6 "Shipped change" memory note gated on `status='merged'` so the moat store never records a ship that did not happen; (d) the `/changelog` "View outcomes" CTA pointed at the real `/impact` screen instead of the mothballed `/learn` redirect.
+
+**Cross-references.** Plan: [`../planning/byo-build-implementation-plan.md`](../planning/byo-build-implementation-plan.md) Phase 3. Spec: [`byo-build-and-cadence-cloud.md`](./byo-build-and-cadence-cloud.md). Lifecycle seams: [`../features/lifecycle-gap-map.md`](../features/lifecycle-gap-map.md). Board: G11 / BYO-P3 in [`../planning/feature-dashboard.md`](../planning/feature-dashboard.md).
+
 
 > **Cross-references.** Versioned positioning: [`archive/v2-positioning.md`](./archive/v2-positioning.md). Feature backlog: [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md). Operating rules: [`../../AGENTS.md`](../../AGENTS.md).
 

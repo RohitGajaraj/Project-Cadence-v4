@@ -61,6 +61,7 @@ import { Route as AuthenticatedDiscoveryRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDelegateRouteImport } from './routes/_authenticated.delegate'
 import { Route as AuthenticatedCockpitRouteImport } from './routes/_authenticated.cockpit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
+import { Route as AuthenticatedChangelogRouteImport } from './routes/_authenticated.changelog'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedBudgetsRouteImport } from './routes/_authenticated.budgets'
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated.briefing'
@@ -376,6 +377,11 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedChangelogRoute = AuthenticatedChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -672,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/briefing': typeof AuthenticatedBriefingRoute
   '/budgets': typeof AuthenticatedBudgetsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/changelog': typeof AuthenticatedChangelogRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
   '/delegate': typeof AuthenticatedDelegateRoute
@@ -774,6 +781,7 @@ export interface FileRoutesByTo {
   '/briefing': typeof AuthenticatedBriefingRoute
   '/budgets': typeof AuthenticatedBudgetsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/changelog': typeof AuthenticatedChangelogRoute
   '/chat': typeof AuthenticatedChatRoute
   '/cockpit': typeof AuthenticatedCockpitRoute
   '/delegate': typeof AuthenticatedDelegateRoute
@@ -878,6 +886,7 @@ export interface FileRoutesById {
   '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
   '/_authenticated/budgets': typeof AuthenticatedBudgetsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/changelog': typeof AuthenticatedChangelogRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/cockpit': typeof AuthenticatedCockpitRoute
   '/_authenticated/delegate': typeof AuthenticatedDelegateRoute
@@ -983,6 +992,7 @@ export interface FileRouteTypes {
     | '/briefing'
     | '/budgets'
     | '/calendar'
+    | '/changelog'
     | '/chat'
     | '/cockpit'
     | '/delegate'
@@ -1085,6 +1095,7 @@ export interface FileRouteTypes {
     | '/briefing'
     | '/budgets'
     | '/calendar'
+    | '/changelog'
     | '/chat'
     | '/cockpit'
     | '/delegate'
@@ -1188,6 +1199,7 @@ export interface FileRouteTypes {
     | '/_authenticated/briefing'
     | '/_authenticated/budgets'
     | '/_authenticated/calendar'
+    | '/_authenticated/changelog'
     | '/_authenticated/chat'
     | '/_authenticated/cockpit'
     | '/_authenticated/delegate'
@@ -1689,6 +1701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/changelog': {
+      id: '/_authenticated/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof AuthenticatedChangelogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/calendar': {
       id: '/_authenticated/calendar'
       path: '/calendar'
@@ -2109,6 +2128,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
   AuthenticatedBudgetsRoute: typeof AuthenticatedBudgetsRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedChangelogRoute: typeof AuthenticatedChangelogRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCockpitRoute: typeof AuthenticatedCockpitRoute
   AuthenticatedDelegateRoute: typeof AuthenticatedDelegateRoute
@@ -2160,6 +2180,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
   AuthenticatedBudgetsRoute: AuthenticatedBudgetsRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedChangelogRoute: AuthenticatedChangelogRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCockpitRoute: AuthenticatedCockpitRoute,
   AuthenticatedDelegateRoute: AuthenticatedDelegateRoute,

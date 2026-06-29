@@ -31,6 +31,7 @@ import { callModel } from "@/lib/ai/runtime.server";
 import { humanizeText } from "@/lib/ai/humanize";
 import { revertChangesetToRevision } from "@/lib/ai/studio-revert.server";
 import { runRollbackRelease, ghHeaders } from "@/lib/studio-rollbacks";
+import { pickChangesetForPrd } from "@/lib/studio-ship";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import { execGateFromChecks, type ExecGate } from "@/lib/exec/provider";
 
@@ -876,6 +877,76 @@ export const getChangesetRevisions = createServerFn({ method: "GET" })
       .order("revision_no", { ascending: false });
     if (error) throw new Error(error.message);
     return { revisions: (rows ?? []) as StudioRevision[] };
+  });
+
+/**
+ * BYO-P3 WI2 — the studio changeset that best represents what shipped for a PRD.
+ * Prefers a direct prd_id link (stamped at creation by the
+ * studio_changeset_link_prd trigger); falls back to resolving the PRD's
+ * dispatched missions via artifact_lineage for changesets that predate the
+ * trigger. Among candidates, picks the one closest to shipped (merged > pr_open
+ * > committed > staged, newest wins). Read-only; RLS scopes to the workspace.
+ */
+export type ChangesetByPrd = {
+  id: string;
+  product_id: string | null;
+  status: string;
+  repo: string | null;
+  branch: string | null;
+  base_sha: string | null;
+  pr_url: string | null;
+  pr_number: number | null;
+  title: string | null;
+  summary: string | null;
+  release_notes: string | null;
+  release_notes_at: string | null;
+  prd_id: string | null;
+  mission_id: string | null;
+  updated_at: string | null;
+};
+
+export const getChangesetByPrd = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ prdId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }): Promise<{ changeset: ChangesetByPrd | null }> => {
+    const db = context.supabase as unknown as SupabaseClient;
+    const cols =
+      "id,product_id,status,repo,branch,base_sha,pr_url,pr_number,title,summary,release_notes,release_notes_at,prd_id,mission_id,updated_at";
+
+    const { data: direct, error: dErr } = await db
+      .from("studio_changesets")
+      .select(cols)
+      .eq("prd_id", data.prdId)
+      .order("updated_at", { ascending: false });
+    if (dErr) throw new Error(dErr.message);
+
+    let candidates = (direct ?? []) as unknown as ChangesetByPrd[];
+
+    // Fallback for changesets whose prd_id was never stamped: resolve via the
+    // dispatch lineage edge (prd → mission), then by mission_id.
+    if (!candidates.length) {
+      const { data: edges } = await db
+        .from("artifact_lineage")
+        .select("child_id")
+        .eq("parent_kind", "prd")
+        .eq("parent_id", data.prdId)
+        .eq("child_kind", "mission");
+      const missionIds = Array.from(
+        new Set((edges ?? []).map((e) => e.child_id as string).filter(Boolean)),
+      );
+      if (missionIds.length) {
+        const { data: byMission, error: mErr } = await db
+          .from("studio_changesets")
+          .select(cols)
+          .in("mission_id", missionIds)
+          .order("updated_at", { ascending: false });
+        if (mErr) throw new Error(mErr.message);
+        candidates = (byMission ?? []) as unknown as ChangesetByPrd[];
+      }
+    }
+
+    const changeset = pickChangesetForPrd(candidates);
+    return { changeset: changeset ?? null };
   });
 
 /**

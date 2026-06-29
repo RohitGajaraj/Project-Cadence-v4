@@ -8,6 +8,12 @@ import { rememberOutcome } from "@/lib/ai/memory.server";
 import { inferSupersession } from "@/lib/ai/supersession.server";
 import { inferDirectEdge } from "@/lib/ai/edge-extractor.server";
 import { callModel } from "@/lib/ai/runtime.server";
+import { pickChangesetForPrd, type ChangesetForPrd } from "@/lib/studio-ship";
+import {
+  changelogRowFor,
+  shouldPublishChangelog,
+  type ChangesetForChangelog,
+} from "@/lib/changelog";
 
 // Outcome surface: read-only roll-ups over existing tables.
 // No new agent logic; surfaces the right-half of the loop (Ship · Launch · Support · Learn)
@@ -185,6 +191,32 @@ export const recordOutcome = createServerFn({ method: "POST" })
     if (prdErr) throw new Error(prdErr.message);
 
     const now = new Date().toISOString();
+
+    // BYO-P3 WI6 — pull what actually shipped for this PRD (the merged studio
+    // changeset's release notes) so the outcome memory records HOW it shipped,
+    // not just the verdict. Best-effort: a missing/failed lookup never blocks
+    // the outcome.
+    type ShippedChangeset = ChangesetForPrd & ChangesetForChangelog;
+    let shippedChangeset: ShippedChangeset | null = null;
+    let shippedNote = "";
+    try {
+      const { data: csRows } = await db
+        .from("studio_changesets")
+        .select(
+          "id,workspace_id,user_id,product_id,prd_id,status,title,summary,release_notes,release_notes_at,pr_number,pr_url,updated_at",
+        )
+        .eq("prd_id", prd.id)
+        .order("updated_at", { ascending: false });
+      shippedChangeset = pickChangesetForPrd((csRows ?? []) as ShippedChangeset[]);
+      // Only assert a ship in the durable memory when the changeset actually
+      // MERGED (the same gate the changelog uses) — never write a "Shipped
+      // change" claim for a still-open changeset that merely has draft notes.
+      if (shippedChangeset && shouldPublishChangelog(shippedChangeset)) {
+        shippedNote = `\n\nShipped change: ${(shippedChangeset.release_notes ?? "").trim().slice(0, 600)}`;
+      }
+    } catch (e) {
+      console.error("recordOutcome shipped-changeset lookup failed (non-fatal):", e);
+    }
     const { error: outErr } = await db
       .from("prds")
       .update({
@@ -257,14 +289,15 @@ export const recordOutcome = createServerFn({ method: "POST" })
       prdId: prd.id,
       opportunityId: (prd.opportunity_id as string | null) ?? null,
       learningId: (learning as { id?: string } | null)?.id ?? null,
-      content: buildOutcomeMemory({
-        prdTitle: (prd.title as string | null) ?? "",
-        oppTitle,
-        verdict: data.verdict,
-        summary: data.summary,
-        priorIce,
-        newIce,
-      }),
+      content:
+        buildOutcomeMemory({
+          prdTitle: (prd.title as string | null) ?? "",
+          oppTitle,
+          verdict: data.verdict,
+          summary: data.summary,
+          priorIce,
+          newIce,
+        }) + shippedNote,
       importance: outcomeImportance(data.verdict),
       verdict: data.verdict,
       priorIce,
@@ -272,6 +305,23 @@ export const recordOutcome = createServerFn({ method: "POST" })
       prdTitle: (prd.title as string | null) ?? null,
       oppTitle,
     });
+
+    // BYO-P3 WI4/WI6 — ensure the shipped change appears in the in-app changelog.
+    // The merge trigger normally materializes it; this is the durable TS fallback
+    // (the TS interface is the BYO source of truth if a sync reverts the trigger).
+    // Written under the current user so RLS WITH CHECK passes. Best-effort.
+    if (shippedChangeset) {
+      try {
+        const row = changelogRowFor(shippedChangeset, now);
+        if (row) {
+          await db
+            .from("changelog_entries")
+            .upsert({ ...row, user_id: userId }, { onConflict: "changeset_id" });
+        }
+      } catch (e) {
+        console.error("recordOutcome changelog publish failed (non-fatal):", e);
+      }
+    }
 
     // DBR-1.5 — supersession engine: best-effort, flag-gated inference of typed
     // supersedes/contradicts edges between this outcome and the account's prior
