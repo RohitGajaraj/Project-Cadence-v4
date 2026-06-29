@@ -60,7 +60,7 @@ Migration `20260630120000_sources_source_kind.sql` adds `signals.source_kind` (n
 ## Phases
 
 - **Phase 0 (shipped):** the `writeSignals` keystone + `source_kind` + GitHub refactor.
-- **Phase 1:** the demoable vertical — the diffing **Scout** (Slice 0+1) on one competitor, **Intercom** live end-to-end, and one scored "Focus on this next" insight on Today (theme scoring + novelty-vs-memory).
+- **Phase 1 (✅ shipped 2026-06-30):** the demoable vertical — the diffing **Scout** (Slice 0; the LLM brief is Slice 1) on a watch-list, **Intercom** live end-to-end, and one scored "Focus on this next" insight on Today (theme scoring + novelty-vs-memory, chokepoint-free via the `copilot` surface). All four (SF-0 / SF-INTERCOM / SF-SCOUT / SF-FOCUS) are on `main`, gated.
 - **Phase 2:** widen Scout to all 6 kinds (deepening the shipped-but-shallow `SEN-04`); the customer-voice connector fleet (Stripe → Slack → Zendesk → CRM win/loss → Canny/Productboard → NPS); the full 2-4 insight set + the 5 agent tools + the 3 Sense agents wired live.
 - **Phase 3:** the `mcp_source` adapter (one adapter absorbs Gong/Granola/Linear via config; HTTP/SSE only, Workers can't spawn processes) + the trust-graduated auto-trigger (`BRAIN_AUTO_TRIGGER`, default OFF, `ambient` arc only).
 
