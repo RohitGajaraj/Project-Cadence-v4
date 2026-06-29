@@ -19,12 +19,23 @@ export const MODEL_PRICING: Record<string, Pricing> = {
   "openai/gpt-5.4": { in_per_mtok: 3.0, out_per_mtok: 12.0 },
   "openai/gpt-5.4-mini": { in_per_mtok: 0.4, out_per_mtok: 1.6 },
   "openai/gpt-5.5-pro": { in_per_mtok: 8.0, out_per_mtok: 24.0 },
-  // BYO Anthropic / DeepSeek / xAI
+  // Adapter-ready providers (platform env key or enterprise BYO). Conservative rates;
+  // tune as providers update. Unlisted models fall back to DEFAULT_PRICING.
   "anthropic/claude-opus-4": { in_per_mtok: 15.0, out_per_mtok: 75.0 },
   "anthropic/claude-sonnet-4": { in_per_mtok: 3.0, out_per_mtok: 15.0 },
   "anthropic/claude-haiku-4": { in_per_mtok: 0.8, out_per_mtok: 4.0 },
   "deepseek/deepseek-v3": { in_per_mtok: 0.27, out_per_mtok: 1.1 },
   "xai/grok-4": { in_per_mtok: 5.0, out_per_mtok: 15.0 },
+  "moonshot/kimi-k2": { in_per_mtok: 0.6, out_per_mtok: 2.5 },
+  "qwen/qwen-2.5-max": { in_per_mtok: 1.6, out_per_mtok: 6.4 },
+  "qwen/qwen-2.5-coder-32b": { in_per_mtok: 0.2, out_per_mtok: 0.6 },
+  "minimax/minimax-text-01": { in_per_mtok: 0.2, out_per_mtok: 1.1 },
+  "mistral/mistral-large-latest": { in_per_mtok: 2.0, out_per_mtok: 6.0 },
+  "groq/llama-3.3-70b-versatile": { in_per_mtok: 0.59, out_per_mtok: 0.79 },
+  "openrouter/auto": { in_per_mtok: 1.0, out_per_mtok: 3.0 },
+  "together/llama-3.3-70b": { in_per_mtok: 0.88, out_per_mtok: 0.88 },
+  // Self-hosted via the customer's own hardware — no third-party API cost.
+  "ollama/llama-3.3-70b": { in_per_mtok: 0.0, out_per_mtok: 0.0 },
 };
 
 const DEFAULT_PRICING: Pricing = { in_per_mtok: 0.5, out_per_mtok: 1.5 };

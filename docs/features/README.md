@@ -91,6 +91,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | Q1-MCP | Read-only Model Context Protocol (MCP) server | ◐ Phases 1-3 shipped 2026-06-17 (Phase 4 future) | MCP server · Settings (token UI) | [`q1-mcp.md`](./q1-mcp.md) |
 | AUTH | Authentication flows (sign in / up / recover / session) | ✅ Shipped | `/login`, `/signup` | [`auth-flows.md`](./auth-flows.md) |
 | AFD | Analytics & Failure Detection (PostHog EU + Sentry EU + Better Stack + in-house views) | 📋 Plan 2026-06-25 (build pending; board G12, founder-gated) | `/admin/ai-costs` · `/admin/incidents` · `/admin/observability` · `status.cadence.app` | [`analytics-and-failure-detection.md`](./analytics-and-failure-detection.md) · façade [`observability-facade.md`](./observability-facade.md) |
+| MA-1 | Model-agnostic AI backend (any provider via base_url + key) + Perplexity-style capability routing + Auto mode | ✅ Engine shipped 2026-06-30 (Lane 2) | chokepoint · `ModelSwitcher` · `/settings?section=ai` | [`model-agnostic.md`](./model-agnostic.md) |
 
 ## Rules
 

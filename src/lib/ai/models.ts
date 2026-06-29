@@ -6,14 +6,55 @@
 
 export type ModelTier = "fast" | "balanced" | "reasoning" | "premium" | "code" | "vision";
 
+/**
+ * Capability axis (orthogonal to ModelTier, which conflates cost/quality). Drives
+ * Perplexity-style capability routing (capability.ts): each task is routed to the
+ * model best at it. `embedding` is deliberately NOT here — embeddings run on their
+ * own governed pipeline (rag/embed.server.ts) and must never be routed to a chat model.
+ */
+export type Capability =
+  | "code"
+  | "vision"
+  | "reasoning"
+  | "image-gen"
+  | "fast-chat"
+  | "long-context";
+
+/**
+ * Built-in providers with a curated catalog entry. MODEL-AGNOSTIC: `Model.provider`
+ * is intentionally an open `string` (not this union) so ANY provider — Qwen, MiniMax,
+ * Mistral, Groq, OpenRouter, Together, a self-hosted vLLM, … — is a first-class catalog
+ * citizen. This list is for documentation + zero-config defaults only.
+ */
+export const BUILTIN_PROVIDERS = [
+  "google",
+  "openai",
+  "anthropic",
+  "deepseek",
+  "xai",
+  "moonshot",
+  "ollama",
+  "qwen",
+  "minimax",
+  "mistral",
+  "groq",
+  "openrouter",
+  "together",
+] as const;
+export type KnownProvider = (typeof BUILTIN_PROVIDERS)[number];
+
 export type Model = {
   id: string;
   label: string;
-  provider: "google" | "openai" | "anthropic" | "deepseek" | "xai" | "moonshot" | "ollama";
+  /** Open by design — any "<provider>/<model>" provider id is valid (see BUILTIN_PROVIDERS). */
+  provider: string;
   tier: ModelTier;
   contextK: number;
   desc: string;
+  /** True = reachable today via the managed Lovable gateway (no key needed). */
   live: boolean;
+  /** What this model is good at — drives capability routing. */
+  capabilities?: Capability[];
   /**
    * MODEL-REGISTRY-DEPRECATION: a model-deprecation playbook (considerations.md #4). When a
    * provider sunsets a model, mark it `deprecated: true` and point `replacement` at the model
@@ -29,7 +70,7 @@ export type Model = {
 };
 
 export const MODELS: Model[] = [
-  // Live — via Lovable AI Gateway
+  // Live — via Lovable AI Gateway (no key needed)
   {
     id: "google/gemini-3-flash-preview",
     label: "Gemini 3 Flash",
@@ -38,6 +79,7 @@ export const MODELS: Model[] = [
     contextK: 1000,
     desc: "Default. Fast, balanced, multimodal.",
     live: true,
+    capabilities: ["fast-chat", "vision", "long-context"],
   },
   {
     id: "google/gemini-2.5-pro",
@@ -47,6 +89,7 @@ export const MODELS: Model[] = [
     contextK: 2000,
     desc: "Deep reasoning, vision, long context.",
     live: true,
+    capabilities: ["reasoning", "vision", "long-context"],
   },
   {
     id: "google/gemini-2.5-flash",
@@ -56,6 +99,7 @@ export const MODELS: Model[] = [
     contextK: 1000,
     desc: "Balanced cost/quality.",
     live: true,
+    capabilities: ["fast-chat", "vision", "long-context"],
   },
   {
     id: "google/gemini-2.5-flash-lite",
@@ -65,6 +109,7 @@ export const MODELS: Model[] = [
     contextK: 1000,
     desc: "Cheapest. High-volume tasks.",
     live: true,
+    capabilities: ["fast-chat"],
   },
   {
     id: "openai/gpt-5",
@@ -74,6 +119,7 @@ export const MODELS: Model[] = [
     contextK: 400,
     desc: "OpenAI all-rounder, top-tier reasoning.",
     live: true,
+    capabilities: ["reasoning", "vision", "code"],
   },
   {
     id: "openai/gpt-5-mini",
@@ -83,6 +129,7 @@ export const MODELS: Model[] = [
     contextK: 400,
     desc: "Balanced GPT-5, lower cost.",
     live: true,
+    capabilities: ["fast-chat", "vision"],
   },
   {
     id: "openai/gpt-5-nano",
@@ -92,6 +139,7 @@ export const MODELS: Model[] = [
     contextK: 400,
     desc: "Cheapest GPT-5, high-volume.",
     live: true,
+    capabilities: ["fast-chat"],
   },
   {
     id: "openai/gpt-5.4",
@@ -101,6 +149,7 @@ export const MODELS: Model[] = [
     contextK: 400,
     desc: "Advanced reasoning + code.",
     live: true,
+    capabilities: ["code", "reasoning"],
   },
   {
     id: "openai/gpt-5.5-pro",
@@ -110,17 +159,20 @@ export const MODELS: Model[] = [
     contextK: 400,
     desc: "Premium reasoning for hardest problems.",
     live: true,
+    capabilities: ["reasoning", "code"],
   },
 
-  // Adapter-ready (BYO key or future gateway support)
+  // Adapter-ready — light up when a platform env key (AI_PROVIDER_<P>_KEY) or an
+  // enterprise BYO key is set; routed generically by provider-route.ts.
   {
     id: "anthropic/claude-opus-4",
     label: "Claude Opus 4",
     provider: "anthropic",
     tier: "premium",
     contextK: 200,
-    desc: "Anthropic's strongest. BYO key.",
+    desc: "Anthropic's strongest reasoning + code.",
     live: false,
+    capabilities: ["code", "reasoning", "vision"],
   },
   {
     id: "anthropic/claude-sonnet-4",
@@ -128,8 +180,9 @@ export const MODELS: Model[] = [
     provider: "anthropic",
     tier: "balanced",
     contextK: 200,
-    desc: "Balanced Anthropic. BYO key.",
+    desc: "Balanced Anthropic for code + chat.",
     live: false,
+    capabilities: ["code", "reasoning"],
   },
   {
     id: "anthropic/claude-haiku-4",
@@ -137,8 +190,9 @@ export const MODELS: Model[] = [
     provider: "anthropic",
     tier: "fast",
     contextK: 200,
-    desc: "Fastest Anthropic. BYO key.",
+    desc: "Fastest Anthropic.",
     live: false,
+    capabilities: ["fast-chat", "code"],
   },
   {
     id: "deepseek/deepseek-v3",
@@ -146,8 +200,9 @@ export const MODELS: Model[] = [
     provider: "deepseek",
     tier: "code",
     contextK: 128,
-    desc: "Strong open code model. BYO key.",
+    desc: "Strong open code model.",
     live: false,
+    capabilities: ["code", "reasoning"],
   },
   {
     id: "xai/grok-4",
@@ -155,8 +210,9 @@ export const MODELS: Model[] = [
     provider: "xai",
     tier: "reasoning",
     contextK: 256,
-    desc: "xAI reasoning. BYO key.",
+    desc: "xAI reasoning.",
     live: false,
+    capabilities: ["reasoning"],
   },
   {
     id: "moonshot/kimi-k2",
@@ -164,8 +220,79 @@ export const MODELS: Model[] = [
     provider: "moonshot",
     tier: "reasoning",
     contextK: 200,
-    desc: "Moonshot long-context. BYO key.",
+    desc: "Moonshot long-context reasoning.",
     live: false,
+    capabilities: ["reasoning", "long-context"],
+  },
+  {
+    id: "qwen/qwen-2.5-max",
+    label: "Qwen 2.5 Max",
+    provider: "qwen",
+    tier: "reasoning",
+    contextK: 128,
+    desc: "Alibaba flagship reasoning.",
+    live: false,
+    capabilities: ["reasoning", "code"],
+  },
+  {
+    id: "qwen/qwen-2.5-coder-32b",
+    label: "Qwen 2.5 Coder 32B",
+    provider: "qwen",
+    tier: "code",
+    contextK: 128,
+    desc: "Open code specialist.",
+    live: false,
+    capabilities: ["code"],
+  },
+  {
+    id: "minimax/minimax-text-01",
+    label: "MiniMax Text-01",
+    provider: "minimax",
+    tier: "reasoning",
+    contextK: 1000,
+    desc: "Very long context reasoning.",
+    live: false,
+    capabilities: ["reasoning", "long-context"],
+  },
+  {
+    id: "mistral/mistral-large-latest",
+    label: "Mistral Large",
+    provider: "mistral",
+    tier: "reasoning",
+    contextK: 128,
+    desc: "Mistral flagship.",
+    live: false,
+    capabilities: ["reasoning", "code"],
+  },
+  {
+    id: "groq/llama-3.3-70b-versatile",
+    label: "Llama 3.3 70B (Groq)",
+    provider: "groq",
+    tier: "fast",
+    contextK: 128,
+    desc: "Ultra-fast inference via Groq.",
+    live: false,
+    capabilities: ["fast-chat", "code"],
+  },
+  {
+    id: "openrouter/auto",
+    label: "OpenRouter Auto",
+    provider: "openrouter",
+    tier: "balanced",
+    contextK: 256,
+    desc: "OpenRouter's own best-model router.",
+    live: false,
+    capabilities: ["reasoning", "code", "fast-chat"],
+  },
+  {
+    id: "together/llama-3.3-70b",
+    label: "Llama 3.3 70B (Together)",
+    provider: "together",
+    tier: "balanced",
+    contextK: 128,
+    desc: "Open model via Together.",
+    live: false,
+    capabilities: ["code", "fast-chat"],
   },
   {
     id: "ollama/llama-3.3-70b",
@@ -175,8 +302,25 @@ export const MODELS: Model[] = [
     contextK: 128,
     desc: "Self-hosted via Ollama. Configure URL.",
     live: false,
+    capabilities: ["fast-chat", "code"],
   },
 ];
+
+/** Models grouped by provider, for an open-ended, provider-grouped picker UI. */
+export function modelsByProvider(
+  catalog: Model[] = MODELS,
+): { provider: string; models: Model[] }[] {
+  const groups = new Map<string, Model[]>();
+  for (const m of catalog) {
+    const g = groups.get(m.provider) ?? [];
+    g.push(m);
+    groups.set(m.provider, g);
+  }
+  return [...groups.entries()].map(([provider, models]) => ({ provider, models }));
+}
+
+/** The sentinel model id for the consumer-facing "Auto / Multimodal" routing mode. */
+export const AUTO_MODEL = "auto";
 
 export const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 

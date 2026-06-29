@@ -82,17 +82,43 @@ const INFRASTRUCTURE_SUBPROCESSORS: readonly SubProcessor[] = [
 
 /**
  * Display metadata per model provider. A `null` entry marks a provider that is NOT a third-party
- * sub-processor (self-hosted), so it is omitted from the disclosure entirely.
+ * sub-processor (self-hosted), so it is omitted from the disclosure entirely. MODEL-AGNOSTIC:
+ * the catalog is open, so this map is open (string-keyed) — any provider NOT listed here is still
+ * disclosed under a humanized fallback name (see `providerMeta`), so a newly-added provider can
+ * never be silently dropped from the legal disclosure.
  */
-const PROVIDER_META: Record<Model["provider"], { name: string } | null> = {
+const PROVIDER_META: Record<string, { name: string } | null> = {
   google: { name: "Google (Gemini API)" },
   openai: { name: "OpenAI" },
   anthropic: { name: "Anthropic" },
   deepseek: { name: "DeepSeek" },
   xai: { name: "xAI (Grok)" },
   moonshot: { name: "Moonshot AI (Kimi)" },
+  qwen: { name: "Alibaba Cloud (Qwen / DashScope)" },
+  minimax: { name: "MiniMax" },
+  mistral: { name: "Mistral AI" },
+  groq: { name: "Groq" },
+  openrouter: { name: "OpenRouter" },
+  together: { name: "Together AI" },
   ollama: null, // self-hosted by the customer; never a third-party sub-processor
 };
+
+/** Humanize an unmapped provider id into a display name (e.g. "fireworks" → "Fireworks"). */
+function humanizeProvider(provider: string): string {
+  return provider
+    .split(/[-_]/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+/**
+ * Display metadata for a provider: the curated entry when present (including an explicit `null`
+ * to exclude a self-hosted provider), otherwise a humanized fallback so nothing is dropped.
+ */
+function providerMeta(provider: string): { name: string } | null {
+  if (provider in PROVIDER_META) return PROVIDER_META[provider];
+  return { name: humanizeProvider(provider) };
+}
 
 const MODEL_PROVIDER_DATA_CATEGORIES = [
   "Prompts and context sent for inference",
@@ -106,13 +132,13 @@ const MODEL_PROVIDER_DATA_CATEGORIES = [
  */
 export function modelProviderSubprocessors(catalog: readonly Model[] = MODELS): SubProcessor[] {
   const liveProviders = new Set(catalog.filter((m) => m.live).map((m) => m.provider));
-  const seen = new Set<Model["provider"]>();
+  const seen = new Set<string>();
   const out: SubProcessor[] = [];
 
   for (const m of catalog) {
     if (seen.has(m.provider)) continue;
     seen.add(m.provider);
-    const meta = PROVIDER_META[m.provider];
+    const meta = providerMeta(m.provider);
     if (!meta) continue; // self-hosted (e.g. ollama) - not a third-party sub-processor
     out.push({
       id: m.provider,

@@ -118,6 +118,9 @@ const TestSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => validateBaseUrl(v) ?? null),
+  // Optional full model id ("<provider>/<model>") to test. For a custom / open
+  // provider, pass the real model the key serves; otherwise a provider default is used.
+  model: z.string().min(1).max(120).optional(),
 });
 
 function defaultModelFor(provider: string): string {
@@ -146,7 +149,9 @@ export const testApiKey = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => TestSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const model = defaultModelFor(data.provider);
+    // Test the caller's real model id when supplied (custom/open providers), else a
+    // provider default. The chokepoint's byoOverride path routes generically to base_url.
+    const model = data.model ?? defaultModelFor(data.provider);
     const t0 = Date.now();
     try {
       const r = await callModel(supabase as never, userId, {

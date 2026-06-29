@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { callModelStream, callModel } from "@/lib/ai/runtime.server";
+import { splitModelId } from "@/lib/ai/provider-route";
+import { isPlatformProviderConfigured } from "@/lib/ai/platform-keys.server";
 import { createMission } from "@/lib/ai/handoff.server";
 import { runAgentLoop } from "@/lib/ai/loop.server";
 import { advanceMissionCore } from "@/lib/ai/mission-advance.server";
@@ -50,19 +52,36 @@ const GENERIC_FAILURE = "I hit a snag answering that. Try again or switch models
 const WEB_UNAVAILABLE_NOTE =
   "Web access unavailable right now; answer from general knowledge and say you could not verify live data.";
 
+// Friendly provider labels for the "needs a key" message.
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: "Anthropic",
+  deepseek: "DeepSeek",
+  xai: "xAI",
+  moonshot: "Moonshot",
+  ollama: "Ollama",
+  qwen: "Qwen",
+  minimax: "MiniMax",
+  mistral: "Mistral",
+  groq: "Groq",
+  openrouter: "OpenRouter",
+  together: "Together",
+};
+
+// Providers that are live via the managed gateway (no key needed). Everything else needs a
+// key (an enterprise BYO key OR a platform env key) to be reachable.
+const GATEWAY_PROVIDERS = new Set(["google", "openai"]);
+
 /**
- * Models that only work through a user-provided (BYO) key — there is no
- * gateway route for these providers. Mirrors byoConfig in runtime.server.ts
- * (openai/* is deliberately excluded: it is live via the gateway).
+ * The provider a model needs a key for, or null if it is gateway-live (or the "auto" sentinel,
+ * which the chokepoint resolves to a concrete gateway-capable model). MODEL-AGNOSTIC: derived
+ * from the model id's provider prefix, not a hardcoded prefix list, so any provider works.
  */
 function byoOnlyProvider(model: string): { id: string; label: string } | null {
-  if (model.startsWith("anthropic/") || model.startsWith("claude"))
-    return { id: "anthropic", label: "Anthropic" };
-  if (model.startsWith("deepseek/")) return { id: "deepseek", label: "DeepSeek" };
-  if (model.startsWith("xai/") || model.startsWith("grok")) return { id: "xai", label: "xAI" };
-  if (model.startsWith("moonshot/")) return { id: "moonshot", label: "Moonshot" };
-  if (model.startsWith("ollama/")) return { id: "ollama", label: "Ollama" };
-  return null;
+  if (!model || model === "auto") return null;
+  const { provider } = splitModelId(model);
+  if (GATEWAY_PROVIDERS.has(provider)) return null;
+  const label = PROVIDER_LABELS[provider] ?? provider.charAt(0).toUpperCase() + provider.slice(1);
+  return { id: provider, label };
 }
 
 function byoKeyMissingMessage(providerLabel: string): string {
@@ -588,8 +607,9 @@ You must output a JSON object EXACTLY in this format:
           return new Response(s, { headers: SSE_HEADERS });
         };
 
-        // F-CHAT-V2 model switching: a BYO-only model without a stored key
-        // cannot work — say so kindly instead of erroring downstream.
+        // F-CHAT-V2 model switching: a non-gateway model with NO reachable key cannot
+        // work — say so kindly instead of erroring downstream. MODEL-AGNOSTIC: a model is
+        // reachable when the user has a BYO key OR the platform has an env key for the provider.
         const byoOnly = byoOnlyProvider(model);
         if (byoOnly) {
           const { data: keyRow } = await supabase
@@ -598,7 +618,7 @@ You must output a JSON object EXACTLY in this format:
             .eq("user_id", userId)
             .eq("provider", byoOnly.id)
             .maybeSingle();
-          if (!keyRow) {
+          if (!keyRow && !isPlatformProviderConfigured(byoOnly.id)) {
             return streamFriendly(byoKeyMissingMessage(byoOnly.label), baseMeta({ via: "byo" }));
           }
         }

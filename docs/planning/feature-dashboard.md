@@ -181,18 +181,18 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 - **Total features = 241** · **Done = 228** · **Not done = 13** (◐ 2 partial + ⬜ 9 open + ⏭️ 2 deferred). **94.6% strict / 95.1% weighted.** _(2026-06-30 lane 1: Signal Fabric & Sense Engine — SF-0 ✅ (the `writeSignals` keystone: one sink, every source inherits dedup + injection-screen + `source_kind`) + SF-INTERCOM ✅ (Intercom support connector through the sink, customer text injection-screened, closes the SEN-01 "2nd live source" P0). Spec: [`../features/signal-fabric.md`](../features/signal-fabric.md). 2026-06-29 lane 1: BYO-P3 ⬜→✅ — founder greenlit + all 6 WIs done; autonomous WI1/2/4/6 (deploy capture, changeset→PRD join, in-app changelog + `/changelog`, outcome-tick) + founder-attended WI3 (trust-graduated `studio.pr.merge` behind default-off `STUDIO_AUTO_SHIP`) + WI5 (emergent self-correct); 5/5 build-review + 5/5 loop-security findings clean; only the `STUDIO_AUTO_SHIP` flip is founder config. 2026-06-28 lane 1: LANDING-PAGE-V11 ✅ — full lifecycle landing page shipped (6-station autonomous loop, orbit ring, flow timeline, trust ledger, contrast cards, scroll reveals, animated signal feed). 2026-06-27: register restored from 5f8e base; FIRECRAWL-FLOOR ◐→✅; AGENT-NATIVE-L1/L2/L3 ✅. Interop 9/9 = 100%. 2026-06-26: WM-M17/M19 ✅. BYO-P1a/b/c/d/P2 ✅. M-C-EXPIRY ✅. SEN-05/F-ANALYTICS-1/2 ✅. DEF-04 ✅. AFD all ✅. 2026-06-25: DEMO-SEED-RICH ✅ + SHIP-V11 ✅ + AMBIENT-SENSE ✅ + AMBIENT-TRIGGER ✅.)_
 - _By priority class (live, 2026-06-30): **Gated = 7** (👤 founder-marked; + SF-MCP + SF-AUTOTRIGGER), Deferred = 2 (⏭️), In Dev = 0, Open = 4 (the SF Tier-1 front: SF-SCOUT/FOCUS/CONNECTORS/INSIGHT-HEAD), Done = 228. **RECONCILED: 226. v11 Tier-1 front COMPLETE. ALL AFD/analytics ✅. WM-S complete. BYO-P1a/b/c/d/P2 ✅. BYO-P3 ✅ (all 6 WIs). M-C-EXPIRY ✅. WM-M17/M19 ✅. AGENT-NATIVE-L1/L2/L3 ✅. INTEROP 9/9 = 100%. LANDING-PAGE-V11 ✅.**_
 
-- **By status (of 233 total), with weighted contribution to the roll-up:**
+- **By status (of 242 total), with weighted contribution to the roll-up:**
 
 | Status | Count | Item % | Weighted contribution |
 | --- | --- | --- | --- |
-| ✅ Done | 228 | 100% | 228.0 |
+| ✅ Done | 229 | 100% | 229.0 |
 | ◐ Partial | 2 | per-row `[~NN%]` | 1.10 |
 | ⏸️ Paused | 0 | 50% | 0.0 |
-| 🔨 In Dev | 0 | 50% | 0.0 |
-| ⬜ Open | 9 | 0% | 0.0 |
+| 🔨 In Dev | 1 | 50% | 0.50 |
+| ⬜ Open | 8 | 0% | 0.0 |
 | ⏭️ Deferred | 2 | 0% | 0.0 |
 | 🚧 Blocked | 0 | 0% | 0.0 |
-| **Total** | **241** | - | **229.10 / 241 = 95.1%** |
+| **Total** | **242** | - | **230.10 / 242 = 95.1%** |
 
 - **By category (Total / Done / Open / Weighted %), most-complete first** - shows which lanes are nearly closed and which are barely started:
 
@@ -207,12 +207,12 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | Governance | 28 | 28 | 0 | 100% |
 | Sense | 21 | 15 | 6 | 71% |
 | Launch | 14 | 14 | 0 | 100% |
-| Foundational | 33 | 33 | 0 | 100% |
+| Foundational | 34 | 34 | 0 | 100% |
 | Cockpit | 32 | 30 | 2 | 94% |
 | Monetization | 35 | 34 | 1 | 97% |
 | Build | 19 | 17 | 2 | 89% |
 | BYO | 8 | 7 | 1 | 88% |
-| **Total** | **241** | **228** | **13** | **94.6%** |
+| **Total** | **242** | **229** | **13** | **94.6%** |
 
 > **Pick-order is THE BUILD SEQUENCE above** (founder ruling 2026-06-21): build the lowest open number, do not deliberate. The tier law (foundation/core/USP, then design, then non-essential, then final polish) and the rationale live in the Build Sequence section + [`../../AGENTS.md`](../../AGENTS.md) §3 "Build Sequence" + the SSOT ([`SOURCE-OF-TRUTH.md`](./SOURCE-OF-TRUTH.md) §0). Positioning rationale: v10 ([`v10-master-blueprint`](../strategy/v10-master-blueprint.md) §15-16) + moat.md. **The TOPMOST priority is the Decision Brain (H1); the monetization + credit + billing + admin block (WM-M*, M-C-*, BYO-P4) is CLOSED 🔒 (build-complete; founder go-live config only — do NOT re-pick, see the 🔒 banner above); the WM tenancy spine (WM-F*) stays Claude-owned; BYO (BYO-*) awaits founder greenlight.** The Priority column on each row is now superseded by the Build Sequence number for pick-order; it stays as a coarse tier hint.
 
@@ -467,6 +467,7 @@ Billing / Stripe: `M-C-PRICE`, `WM-M3`, `WM-M13`. Credit engine (already shipped
 | 239 | ⬜ | SF-INSIGHT-HEAD | Full insight set + Sense agent loop + read tools | The 2-4 ranked insight types (prediction / risk / next-best-action / cost-of-inaction / hidden-connection) + `derive-tick` + InsightRail; the 3 Sense agents (Watch / Research / Listen) wired live; new agent tools `signals.list` / `themes.list` / `cluster.trigger` / `sources.connect` / `sources.status` | Sense | Tier 1 | 2026-06-30 | **Phase 2. Why: the intelligence head + agent participation in discovery. Tool + `CallSurface` edits touch the pinned `registry.server.ts`/`runtime.server.ts` → batched for the core lane.** |
 | 240 | ⬜ | SF-MCP | `mcp_source` adapter (consume external MCP servers as inbound) | One adapter ingests from any hosted (HTTP/SSE) MCP server via a per-server mapping → signals; absorbs Gong / Granola / Enterpret / Linear via config; `mcp_connections` table + trust / SSRF / rate-limit guards | Sense | Gated | 2026-06-30 | **Phase 3. Why: how the source layer SCALES (mirrors the interop moat + the model-agnostic mandate); architected first-class now, built Phase 3. Gate: founder greenlight + per-server tokens. Workers = HTTP/SSE only (no stdio).** |
 | 241 | ⬜ | SF-AUTOTRIGGER | Governed signal→action auto-trigger | Trust-graduated auto-start of a mission from a high-confidence insight, only at `ambient` arc + reversible + score≥threshold, behind `BRAIN_AUTO_TRIGGER` (default OFF); else a proposed mission (HITL) | Sense | Gated | 2026-06-30 | **Phase 3. Why: closes the self-initiating loop safely. Gate: founder flag `BRAIN_AUTO_TRIGGER` + autonomy-posture call. Touches the pinned `loop.server.ts` → batched.** |
+| 242 | ✅ | MODEL-AGNOSTIC | Model-agnostic AI backend + capability routing | Any provider/model (Qwen/MiniMax/Mistral/Groq/OpenRouter/Together/Ollama/vLLM/…) powers the platform's internal AI via base_url + key; generic OpenAI-compatible dispatch on the live AND streaming chokepoint paths (Anthropic special-cased); a Perplexity-style capability router sends each call to the model best at the task across internal surfaces + a consumer "Auto" mode | Foundational | Done | 2026-06-30 | **Engine shipped 2026-06-30 (Lane 2, founder-directed; attended chokepoint edit).** Founder ruling 2026-06-29: make the PLATFORM's own AI model-agnostic + route to the best model per task (not consumer BYOK — WM-M9 preserved; platform keys via env `AI_PROVIDER_<P>_KEY`/`_BASE_URL`). Built: pure `provider-route.ts` (open dispatch resolver, fixes the `byoConfig` null→gateway-400 latent bug incl. moonshot/ollama), `platform-keys.server.ts` (env provider creds), `capability.ts` (CAPABILITY_PREFERENCES policy + `capabilityRoutedModel`, ON by default behind `AI_CAPABILITY_ROUTING`, never overrides an explicit pick, excludes eval/judge); `loadBYOKey` returns base_url (live+stream paths now honor it); catalog opened (`provider: string` + `capabilities[]` + Qwen/MiniMax/Mistral/Groq/OpenRouter/Together); pricing + open subprocessor disclosure; `ModelSwitcher`/Settings "Auto" + full grouped list; chat BYO gate platform-aware. tsc 0 / 1713 tests (+`provider-route.test`, `capability.test`, pricing/subprocessor cases). Spec: [`../features/model-agnostic.md`](../features/model-agnostic.md). Session decision: [`../strategy/session-decisions.md`](../strategy/session-decisions.md) 2026-06-30. Embeddings untouched (separate governed pipeline); custom-model registry UI + capability-aware fallback are noted follow-ons. |
 
 ---
 

@@ -39,6 +39,15 @@
 > ---
 
 > [!IMPORTANT]
+> ## ✅ 2026-06-30 — MODEL-AGNOSTIC (MA-1) shipped: the platform's AI backend is now model-agnostic + capability-routed (Lane 2, founder-directed)
+>
+> **Founder ruling (2026-06-29, clarified 2026-06-30):** make the **platform's own AI** pluggable with ANY model/provider via base URL + key, optimized by us — NOT consumer BYOK (WM-M9 preserved). Plus Perplexity-style routing (best model per task), ON for internal surfaces + a consumer **Auto** mode.
+>
+> **Shipped (engine, attended chokepoint edit):** open dispatch resolver `provider-route.ts` (any OpenAI-compatible provider via base URL; Anthropic special-cased; fixes the `byoConfig` null→gateway-400 latent bug incl. `moonshot`/`ollama`); platform provider keys via env `AI_PROVIDER_<P>_KEY`/`_BASE_URL` (`platform-keys.server.ts`); capability router `capability.ts` (policy `CAPABILITY_PREFERENCES`; `AI_CAPABILITY_ROUTING` ON by default, kill-switch `off`; never overrides an explicit pick; excludes eval/judge); `loadBYOKey` returns `base_url` so the **live + streaming** paths honor a custom endpoint (was test-path only); catalog opened (`provider: string` + `capabilities[]` + Qwen/MiniMax/Mistral/Groq/OpenRouter/Together); pricing + open subprocessor disclosure; `ModelSwitcher`/Settings **Auto** + full grouped list; chat BYO gate platform-aware. **Gate:** tsc 0, 1713 tests pass. No migration (platform path = code + env). Embeddings untouched. **Founder follow-ons (gated/optional):** set `AI_PROVIDER_<P>_KEY` env to light up a provider; per-user custom-model registry UI + capability-aware fallback are noted future work. Spec: [`../features/model-agnostic.md`](../features/model-agnostic.md); decision: [`../strategy/session-decisions.md`](../strategy/session-decisions.md) 2026-06-30; dashboard row MA-1 (#234).
+>
+> ---
+
+> [!IMPORTANT]
 > ## ✅ 2026-06-24 (NOW) - LIVE-VERIFICATION CLOSURE PASS (Lane 1, founder-directed): the published app is healthy and the partial board is now honest.
 >
 > **Founder directive:** "the app is live + published, migrations are done - test the live app and close the partial/pending items; we will come to the founder-gated items later." Done as follows.

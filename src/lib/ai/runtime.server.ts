@@ -11,7 +11,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateCostUsd, creditsForCost, projectCallCredits } from "./pricing";
 import { costRoutedModel, cheapestLiveModel } from "./routing";
 import { resolveFallbackChain } from "./fallback";
-import { activeModelId } from "./models";
+import { activeModelId, type Capability, type Model } from "./models";
+import { providerRoute, splitModelId } from "./provider-route";
+import { resolvePlatformProviderKey, isPlatformProviderConfigured } from "./platform-keys.server";
+import { capabilityRoutedModel } from "./capability";
+import { assertSafeBaseUrl } from "../url-safety";
 import {
   capExceeded,
   creditWindowStartIso,
@@ -42,6 +46,15 @@ const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GOOGLE_OPENAI_GATEWAY =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
+// Mask API-key-shaped tokens out of a provider error body before it is thrown (and later
+// persisted into ai_events.error_message). A 401/4xx body can echo back the caller's own key
+// prefix; this keeps even that out of stored telemetry. Conservative: only known key shapes.
+function maskKeyLike(s: string): string {
+  return s
+    .replace(/\b(sk-ant|sk|xai|gsk|ghp|pk|AIza)[-_]?[A-Za-z0-9_-]{6,}/g, "$1-***")
+    .replace(/(api[_-]?key["':\s]+)[A-Za-z0-9_-]{8,}/gi, "$1***");
+}
+
 function resolveGateway(model: string): { url: string; key: string; model: string } {
   const lovableKey = process.env.LOVABLE_API_KEY;
   if (lovableKey) return { url: GATEWAY, key: lovableKey, model };
@@ -63,6 +76,22 @@ function resolveGateway(model: string): { url: string; key: string; model: strin
 function costRoutingEnabled(): boolean {
   const v = process.env.AI_COST_ROUTING;
   return v === "1" || v === "true";
+}
+
+// AI_CAPABILITY_ROUTING: Perplexity-style capability routing (capability.ts) is ON by
+// default (founder ruling — the platform optimizes every internal AI action AND the
+// consumer "Auto" mode to the best model for the task). Set to "off"/"0"/"false" to disable
+// (then behavior is byte-identical to pinned-model routing). It NEVER overrides an explicit,
+// capable consumer model pick; eval + judge are always excluded (benchmark integrity).
+function capabilityRoutingEnabled(): boolean {
+  const v = (process.env.AI_CAPABILITY_ROUTING ?? "").toLowerCase();
+  return v !== "off" && v !== "0" && v !== "false";
+}
+
+// A model is reachable when it is gateway-live OR the platform operator has configured a key
+// for its provider (AI_PROVIDER_<P>_KEY). Used to keep capability routing to callable models.
+function modelAvailability(): (m: Model) => boolean {
+  return (m) => m.live || isPlatformProviderConfigured(m.provider);
 }
 
 // PROVIDER-FALLBACK: an opt-in (AI_PROVIDER_FALLBACK, default OFF) cross-model degrade. When
@@ -292,6 +321,13 @@ export type CallOpts = {
   retrieval?: boolean | { k?: number; sourceKinds?: string[] };
   /** When set, resolve a prompt template (surface, key) and prepend its system prompt. */
   promptKey?: string;
+  /**
+   * Capability hint for Perplexity-style routing (capability.ts). When set (or when
+   * model === "auto"), the chokepoint routes to the model best at this task instead of
+   * the passed `model`. Internal system surfaces (agent/brief/discovery/scheduler) route
+   * by their default capability even without this. Ignored for eval/judge.
+   */
+  task?: Capability;
 };
 
 export type CallResult = {
@@ -320,39 +356,35 @@ export type CallResult = {
   }[];
 };
 
-function byoConfig(model: string): { provider: string; url: string; model: string } | null {
-  if (model.startsWith("anthropic/") || model.startsWith("claude"))
-    return {
-      provider: "anthropic",
-      url: "https://api.anthropic.com/v1/messages",
-      model: model.replace(/^anthropic\//, ""),
-    };
-  if (model.startsWith("openai/") || model.startsWith("gpt-"))
-    return {
-      provider: "openai",
-      url: "https://api.openai.com/v1/chat/completions",
-      model: model.replace(/^openai\//, ""),
-    };
-  // BYO Gemini: route google/* to Google's OpenAI-compatible endpoint with the user's key, so a
-  // pasted Gemini key bypasses the gateway for completions (no LOVABLE_API_KEY change needed).
-  if (model.startsWith("google/"))
-    return {
-      provider: "google",
-      url: GOOGLE_OPENAI_GATEWAY,
-      model: model.replace(/^google\//, ""),
-    };
-  if (model.startsWith("deepseek/"))
-    return {
-      provider: "deepseek",
-      url: "https://api.deepseek.com/v1/chat/completions",
-      model: model.replace(/^deepseek\//, ""),
-    };
-  if (model.startsWith("xai/") || model.startsWith("grok"))
-    return {
-      provider: "xai",
-      url: "https://api.x.ai/v1/chat/completions",
-      model: model.replace(/^xai\//, ""),
-    };
+/**
+ * MODEL-AGNOSTIC key resolution. Resolve the credential (and its base URL) to use
+ * for a model's provider, in precedence order:
+ *   1. byoOverride       — the Settings "Test" path (a pasted, not-yet-saved key)
+ *   2. user vault        — an enterprise BYO key in user_api_keys (RLS-scoped)
+ *   3. platform env      — the platform operator's own key (AI_PROVIDER_<P>_KEY)
+ * Returns null when none is configured → the caller uses the managed gateway.
+ *
+ * Resolving per-attempt-model (rather than once for the primary) means a cross-provider
+ * fallback uses the RIGHT key for the model it actually tries.
+ */
+async function resolveCallKey(
+  supabase: SupabaseClient,
+  userId: string,
+  provider: string,
+  byoOverride?: { provider: string; apiKey: string; baseUrl?: string },
+): Promise<{
+  apiKey: string;
+  baseUrl: string | null;
+  source: "override" | "vault" | "platform";
+} | null> {
+  if (byoOverride) {
+    return { apiKey: byoOverride.apiKey, baseUrl: byoOverride.baseUrl ?? null, source: "override" };
+  }
+  const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
+  const vault = await loadBYOKey(supabase, userId, provider);
+  if (vault?.api_key) return { apiKey: vault.api_key, baseUrl: vault.base_url, source: "vault" };
+  const plat = resolvePlatformProviderKey(provider);
+  if (plat) return { apiKey: plat.apiKey, baseUrl: plat.baseUrl, source: "platform" };
   return null;
 }
 
@@ -360,11 +392,12 @@ async function callAnthropic(
   apiKey: string,
   model: string,
   msgs: { role: string; content: string }[],
+  url = "https://api.anthropic.com/v1/messages",
 ) {
   const system = msgs.find((m) => m.role === "system")?.content ?? "";
   const rest = msgs.filter((m) => m.role !== "system");
   const t0 = Date.now();
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -374,7 +407,8 @@ async function callAnthropic(
     body: JSON.stringify({ model, max_tokens: 2048, system, messages: rest }),
   });
   const latency = Date.now() - t0;
-  if (!res.ok) throw new Error(`Anthropic (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok)
+    throw new Error(`Anthropic (${res.status}): ${maskKeyLike((await res.text()).slice(0, 200))}`);
   const j = (await res.json()) as {
     content?: { text?: string }[];
     usage?: { input_tokens?: number; output_tokens?: number };
@@ -409,7 +443,8 @@ async function callOpenAICompat(
     }),
   });
   const latency = Date.now() - t0;
-  if (!res.ok) throw new Error(`Provider (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok)
+    throw new Error(`Provider (${res.status}): ${maskKeyLike((await res.text()).slice(0, 200))}`);
   const j = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
     usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -450,7 +485,8 @@ async function callGateway(
     (e as { code?: string }).code = "SERVER_ERROR";
     throw e;
   }
-  if (!res.ok) throw new Error(`AI gateway (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok)
+    throw new Error(`AI gateway (${res.status}): ${maskKeyLike((await res.text()).slice(0, 200))}`);
   const j = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
     usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -1081,14 +1117,24 @@ export async function callModel(
   // 1. Budget
   await checkBudget(supabase, userId);
   await checkSurfaceBudget(supabase, userId, opts.surface);
-  // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
-  // on) up front, so the credit pre-check projects the model that will actually run.
-  // MODEL-REGISTRY-DEPRECATION: resolve a deprecated requested model to its live replacement
-  // first (a no-op when nothing is flagged in the catalog), then apply cost-aware routing.
+  // MODEL-AGNOSTIC effective-model resolution, in order:
+  //  1. activeModelId   — route a deprecated model to its live replacement (no-op when none).
+  //  2. capabilityRouted — Perplexity-style: pick the model best at the task ("auto" mode, a
+  //     task hint, or an internal system surface); never overrides an explicit consumer pick.
+  //  3. costRouted       — WM-M15 cost-aware downgrade of routine surfaces (no-op unless
+  //     AI_COST_ROUTING is on). Resolved up front so the credit pre-check projects the real model.
   const requested = activeModelId(opts.model);
+  const capabilityResolved = capabilityRoutedModel({
+    surface: opts.surface,
+    requestedModel: requested,
+    task: opts.task,
+    messages: opts.messages,
+    isAvailable: modelAvailability(),
+    enabled: capabilityRoutingEnabled(),
+  });
   const effectiveModel = costRoutingEnabled()
-    ? costRoutedModel(opts.surface, requested)
-    : requested;
+    ? costRoutedModel(opts.surface, capabilityResolved)
+    : capabilityResolved;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
   await assertAccountCredits(supabase, userId, opts, effectiveModel);
 
@@ -1157,14 +1203,8 @@ export async function callModel(
   }
 
   // 3. Provider call. effectiveModel (resolved above with the credit pre-check) is used for
-  // byo detection, the provider call, and the recorded modelUsed.
-  const byo = byoConfig(effectiveModel);
-  let keyRow: { api_key: string } | null = null;
-  if (byo && !opts.byoOverride) {
-    const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
-    keyRow = await loadBYOKey(supabase, userId, byo.provider);
-  }
-
+  // dispatch and the recorded modelUsed. Key + endpoint are resolved per-attempt-model
+  // inside attempt() (so a cross-provider fallback uses the right key), see resolveCallKey.
   const t0 = Date.now();
   let providerOut: { text: string; in_tok: number; out_tok: number; latency: number } = {
     text: "",
@@ -1205,26 +1245,18 @@ export async function callModel(
   }
 
   const attempt = async (model: string) => {
-    if (opts.byoOverride) {
-      via = "byo";
-      provider = opts.byoOverride.provider;
-      if (provider === "anthropic") {
-        return callAnthropic(opts.byoOverride.apiKey, model.replace(/^anthropic\//, ""), messages);
+    const { provider: prov } = splitModelId(model);
+    const keyInfo = await resolveCallKey(supabase, userId, prov, opts.byoOverride);
+    if (keyInfo) {
+      const route = providerRoute(model, { baseUrl: keyInfo.baseUrl });
+      if (route) {
+        via = "byo";
+        provider = route.provider;
+        const safeUrl = assertSafeBaseUrl(route.url);
+        return route.style === "anthropic_messages"
+          ? callAnthropic(keyInfo.apiKey, route.model, messages, safeUrl)
+          : callOpenAICompat(safeUrl, keyInfo.apiKey, route.model, messages, opts.responseFormat);
       }
-      return callOpenAICompat(
-        opts.byoOverride.baseUrl ?? byo?.url ?? "https://api.openai.com/v1/chat/completions",
-        opts.byoOverride.apiKey,
-        model.replace(/^[^/]+\//, ""),
-        messages,
-        opts.responseFormat,
-      );
-    }
-    if (byo && keyRow?.api_key) {
-      via = "byo";
-      provider = byo.provider;
-      return byo.provider === "anthropic"
-        ? callAnthropic(keyRow.api_key, byo.model, messages)
-        : callOpenAICompat(byo.url, keyRow.api_key, byo.model, messages, opts.responseFormat);
     }
     via = "gateway";
     provider = "lovable";
@@ -1391,17 +1423,19 @@ export async function callModel(
     try {
       const kind = classifyFailureKind(errMsg);
       if (opts.runId) {
-        await supabase
-          .from("agent_runs")
-          .update({ failure_kind: kind })
-          .eq("id", opts.runId);
+        await supabase.from("agent_runs").update({ failure_kind: kind }).eq("id", opts.runId);
       }
       const { captureError } = await import("@/lib/observability");
       void captureError(new Error(errMsg ?? "AI call failed"), {
         user_id: userId,
         surface: opts.surface,
         failure_kind: kind,
-        extras: { surface_ref: opts.surface_ref ?? null, model: modelUsed, provider, runId: opts.runId ?? null },
+        extras: {
+          surface_ref: opts.surface_ref ?? null,
+          model: modelUsed,
+          provider,
+          runId: opts.runId ?? null,
+        },
       });
     } catch (_e) {
       // Observability must never block user flows.
@@ -1409,23 +1443,30 @@ export async function callModel(
     throw new Error(errMsg ?? "AI call failed");
   }
 
-/**
- * AFD-06: heuristic mapping of AI-call error strings to the agent_runs.failure_kind taxonomy.
- * Keep cheap & string-based — the goal is rough categorisation for dashboards, not certainty.
- */
-function classifyFailureKind(errMsg: string | null | undefined): string {
-  const m = (errMsg ?? "").toLowerCase();
-  if (!m) return "unknown";
-  if (m.includes("timeout") || m.includes("timed out")) return "timeout";
-  if (m.includes("aborted") || m.includes("cancelled") || m.includes("canceled")) return "user_aborted";
-  if (m.includes("budget") || m.includes("cap") || m.includes("credits exhausted") || m.includes("402"))
-    return "budget_kill";
-  if (m.includes("guardrail") || m.includes("blocked")) return "guardrail_block";
-  if (m.includes("injection") || m.includes("prompt injection")) return "injection_block";
-  if (m.includes("rls") || m.includes("permission denied") || m.includes("forbidden")) return "rls_denied";
-  if (m.includes("tool") || m.includes("function call")) return "tool_error";
-  return "model_error";
-}
+  /**
+   * AFD-06: heuristic mapping of AI-call error strings to the agent_runs.failure_kind taxonomy.
+   * Keep cheap & string-based — the goal is rough categorisation for dashboards, not certainty.
+   */
+  function classifyFailureKind(errMsg: string | null | undefined): string {
+    const m = (errMsg ?? "").toLowerCase();
+    if (!m) return "unknown";
+    if (m.includes("timeout") || m.includes("timed out")) return "timeout";
+    if (m.includes("aborted") || m.includes("cancelled") || m.includes("canceled"))
+      return "user_aborted";
+    if (
+      m.includes("budget") ||
+      m.includes("cap") ||
+      m.includes("credits exhausted") ||
+      m.includes("402")
+    )
+      return "budget_kill";
+    if (m.includes("guardrail") || m.includes("blocked")) return "guardrail_block";
+    if (m.includes("injection") || m.includes("prompt injection")) return "injection_block";
+    if (m.includes("rls") || m.includes("permission denied") || m.includes("forbidden"))
+      return "rls_denied";
+    if (m.includes("tool") || m.includes("function call")) return "tool_error";
+    return "model_error";
+  }
 
   let parsedJson: unknown = undefined;
   if (opts.responseFormat === "json_object" && outputText) {
@@ -1552,14 +1593,24 @@ export async function callModelStream(
   // 1. Budget
   await checkBudget(supabase, userId);
   await checkSurfaceBudget(supabase, userId, opts.surface);
-  // WM-M15: resolve the effective model (cost-aware routing; no-op unless AI_COST_ROUTING is
-  // on) up front, so the credit pre-check projects the model that will actually run.
-  // MODEL-REGISTRY-DEPRECATION: resolve a deprecated requested model to its live replacement
-  // first (a no-op when nothing is flagged in the catalog), then apply cost-aware routing.
+  // MODEL-AGNOSTIC effective-model resolution, in order:
+  //  1. activeModelId   — route a deprecated model to its live replacement (no-op when none).
+  //  2. capabilityRouted — Perplexity-style: pick the model best at the task ("auto" mode, a
+  //     task hint, or an internal system surface); never overrides an explicit consumer pick.
+  //  3. costRouted       — WM-M15 cost-aware downgrade of routine surfaces (no-op unless
+  //     AI_COST_ROUTING is on). Resolved up front so the credit pre-check projects the real model.
   const requested = activeModelId(opts.model);
+  const capabilityResolved = capabilityRoutedModel({
+    surface: opts.surface,
+    requestedModel: requested,
+    task: opts.task,
+    messages: opts.messages,
+    isAvailable: modelAvailability(),
+    enabled: capabilityRoutingEnabled(),
+  });
   const effectiveModel = costRoutingEnabled()
-    ? costRoutedModel(opts.surface, requested)
-    : requested;
+    ? costRoutedModel(opts.surface, capabilityResolved)
+    : capabilityResolved;
   // WM-M4: dormant account-level credit pre-check (no-op while credits_enabled() is false).
   await assertAccountCredits(supabase, userId, opts, effectiveModel);
 
@@ -1630,97 +1681,66 @@ export async function callModelStream(
     messages = withHumanizeDirective(messages);
   }
 
-  // 3. Provider call setup. effectiveModel (resolved above with the credit pre-check) is
-  // used for byo detection, the stream, and the recorded modelUsed.
-  const byo = byoConfig(effectiveModel);
-  let keyRow: { api_key: string } | null = null;
-  if (byo && !opts.byoOverride) {
-    const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
-    keyRow = await loadBYOKey(supabase, userId, byo.provider);
-  }
-
+  // 3. Provider call setup. effectiveModel (resolved above with the credit pre-check) is used
+  // for dispatch, the stream, and the recorded modelUsed. Key + endpoint are resolved
+  // per-attempt-model inside attemptStream() (cross-provider-fallback safe), see resolveCallKey.
   let via: "gateway" | "byo" | "cache" = "gateway";
   let provider = "lovable";
+  // The wire shape of the active stream — drives SSE parsing below (Anthropic events vs
+  // OpenAI deltas). Set per attempt; an anthropic-style provider (or proxy) parses as Anthropic.
+  let anthropicWire = false;
   let status: "ok" | "error" | "blocked" = "ok";
   let errMsg: string | undefined;
   let fallback = false;
   let modelUsed = effectiveModel;
 
   const attemptStream = async (model: string): Promise<Response> => {
-    if (opts.byoOverride) {
-      via = "byo";
-      provider = opts.byoOverride.provider;
-      if (provider === "anthropic") {
-        const system = messages.find((m) => m.role === "system")?.content ?? "";
-        const rest = messages.filter((m) => m.role !== "system");
-        return fetch("https://api.anthropic.com/v1/messages", {
+    const { provider: prov } = splitModelId(model);
+    const keyInfo = await resolveCallKey(supabase, userId, prov, opts.byoOverride);
+    if (keyInfo) {
+      const route = providerRoute(model, { baseUrl: keyInfo.baseUrl });
+      if (route) {
+        via = "byo";
+        provider = route.provider;
+        anthropicWire = route.style === "anthropic_messages";
+        const safeUrl = assertSafeBaseUrl(route.url);
+        if (anthropicWire) {
+          const system = messages.find((m) => m.role === "system")?.content ?? "";
+          const rest = messages.filter((m) => m.role !== "system");
+          return fetch(safeUrl, {
+            method: "POST",
+            headers: {
+              "x-api-key": keyInfo.apiKey,
+              "anthropic-version": "2023-06-01",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: route.model,
+              max_tokens: 2048,
+              system,
+              messages: rest,
+              stream: true,
+            }),
+          });
+        }
+        return fetch(safeUrl, {
           method: "POST",
           headers: {
-            "x-api-key": opts.byoOverride.apiKey,
-            "anthropic-version": "2023-06-01",
+            Authorization: `Bearer ${keyInfo.apiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: model.replace(/^anthropic\//, ""),
-            max_tokens: 2048,
-            system,
-            messages: rest,
-            stream: true,
-          }),
-        });
-      }
-      return fetch(
-        opts.byoOverride.baseUrl ?? byo?.url ?? "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${opts.byoOverride.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: model.replace(/^[^/]+\//, ""),
+            model: route.model,
             messages,
             stream: true,
             ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
           }),
-        },
-      );
-    }
-    if (byo && keyRow?.api_key) {
-      via = "byo";
-      provider = byo.provider;
-      if (byo.provider === "anthropic") {
-        const system = messages.find((m) => m.role === "system")?.content ?? "";
-        const rest = messages.filter((m) => m.role !== "system");
-        return fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "x-api-key": keyRow.api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: byo.model,
-            max_tokens: 2048,
-            system,
-            messages: rest,
-            stream: true,
-          }),
         });
       }
-      return fetch(byo.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${keyRow.api_key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: byo.model,
-          messages,
-          stream: true,
-          ...(opts.responseFormat ? { response_format: { type: opts.responseFormat } } : {}),
-        }),
-      });
     }
     via = "gateway";
     provider = "lovable";
+    anthropicWire = false;
     const gw = resolveGateway(model);
     return fetch(gw.url, {
       method: "POST",
@@ -1841,7 +1861,7 @@ export async function callModelStream(
           const { done, value } = await reader.read();
           if (done) break;
 
-          if (provider === "anthropic") {
+          if (anthropicWire) {
             buffer += decoder.decode(value, { stream: true });
             let nl: number;
             while ((nl = buffer.indexOf("\n")) !== -1) {

@@ -25,7 +25,7 @@ import {
 import { getProfile, updateProfile } from "@/lib/profile.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listAgents, setAgentToolCap } from "@/lib/agents.functions";
-import { MODELS } from "@/lib/ai/models";
+import { MODELS, AUTO_MODEL } from "@/lib/ai/models";
 import {
   listIntegrations,
   upsertIntegration,
@@ -1262,10 +1262,16 @@ function ModelsTab() {
               Default · chat and agent runs
             </span>
             <span className="mono-label" style={{ color: "var(--ink)" }}>
-              {current?.label ?? defaultModel}
+              {defaultModel === AUTO_MODEL ? "Auto" : (current?.label ?? defaultModel)}
             </span>
             <span className="mono-label" style={{ fontSize: 9 }}>
-              {current ? (current.live ? "gateway" : "byo") : "unknown"}
+              {defaultModel === AUTO_MODEL
+                ? "routed"
+                : current
+                  ? current.live
+                    ? "gateway"
+                    : "byo"
+                  : "unknown"}
             </span>
             <button className="btn btn-ghost btn-sm" onClick={() => setEditing((v) => !v)}>
               Change
@@ -1280,6 +1286,11 @@ function ModelsTab() {
               onChange={(e) => setDefaultModel(e.target.value)}
               aria-label="Default AI model"
             >
+              <optgroup label="Recommended">
+                <option value={AUTO_MODEL}>
+                  Auto — best model per task, optimized automatically
+                </option>
+              </optgroup>
               <optgroup label="Live (Lovable AI Gateway)">
                 {MODELS.filter((m) => m.live).map((m) => (
                   <option key={m.id} value={m.id}>
@@ -1287,7 +1298,7 @@ function ModelsTab() {
                   </option>
                 ))}
               </optgroup>
-              <optgroup label="Bring your own key (coming soon)">
+              <optgroup label="Adapter-ready (platform / enterprise key)">
                 {MODELS.filter((m) => !m.live).map((m) => (
                   <option key={m.id} value={m.id} disabled>
                     {m.label} — {m.desc}

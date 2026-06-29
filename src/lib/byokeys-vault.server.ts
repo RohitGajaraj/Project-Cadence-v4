@@ -10,20 +10,26 @@ type KeyRow = {
   api_key_cipher: string | null;
   api_key_iv: string | null;
   key_version: number | null;
+  base_url: string | null;
 };
 
 /**
  * Load the plaintext BYO key for a (user, provider) by decrypting the stored
- * cipher columns. Returns null when there is no row or it can't be decrypted.
+ * cipher columns. Returns the decrypted key AND the stored `base_url` (so the live
+ * call path can dispatch to a custom OpenAI-compatible endpoint, not just the
+ * test path), or null when there is no row or it can't be decrypted.
+ *
+ * MODEL-AGNOSTIC: returning `base_url` is additive — existing callers that read
+ * only `.api_key` (e.g. rag/embed.server.ts) are unaffected.
  */
 export async function loadBYOKey(
   supabase: SupabaseClient,
   userId: string,
   provider: string,
-): Promise<{ api_key: string } | null> {
+): Promise<{ api_key: string; base_url: string | null } | null> {
   const { data } = await supabase
     .from("user_api_keys")
-    .select("api_key_cipher,api_key_iv,key_version")
+    .select("api_key_cipher,api_key_iv,key_version,base_url")
     .eq("user_id", userId)
     .eq("provider", provider)
     .maybeSingle();
@@ -36,7 +42,7 @@ export async function loadBYOKey(
         iv: row.api_key_iv,
         keyVersion: row.key_version,
       });
-      return { api_key: pt };
+      return { api_key: pt, base_url: row.base_url ?? null };
     } catch (e) {
       console.error("[byokeys] decrypt failed", e);
     }

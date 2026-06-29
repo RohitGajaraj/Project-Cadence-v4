@@ -8,6 +8,7 @@ import {
   estimateCostUsd,
   estimatePromptTokens,
   projectCallCredits,
+  priceFor,
 } from "./pricing";
 
 describe("CREDIT_COGS_USD", () => {
@@ -109,6 +110,34 @@ describe("actionCreditRange (legibility layer)", () => {
     // equal the direct estimate, proving the range is not an independent number.
     const direct = estimateCreditsForCall("google/gemini-2.5-pro", 3000, 2000);
     expect(actionCreditRange("prd_draft").min).toBe(direct);
+  });
+});
+
+describe("MODEL_PRICING — opened (model-agnostic) catalog", () => {
+  it("prices the newly-added providers explicitly, not the neutral default", () => {
+    const ids = [
+      "qwen/qwen-2.5-max",
+      "groq/llama-3.3-70b-versatile",
+      "mistral/mistral-large-latest",
+      "moonshot/kimi-k2",
+      "minimax/minimax-text-01",
+      "together/llama-3.3-70b",
+    ];
+    for (const id of ids) {
+      const p = priceFor(id);
+      // a real entry differs from the {0.5, 1.5} neutral default on at least one axis
+      expect(p.in_per_mtok !== 0.5 || p.out_per_mtok !== 1.5).toBe(true);
+    }
+  });
+
+  it("self-hosted Ollama has zero third-party API cost", () => {
+    expect(priceFor("ollama/llama-3.3-70b")).toEqual({ in_per_mtok: 0, out_per_mtok: 0 });
+    expect(estimateCostUsd("ollama/llama-3.3-70b", 100_000, 100_000)).toBe(0);
+  });
+
+  it("a truly unknown custom model degrades safely to the neutral default (never crashes)", () => {
+    expect(priceFor("acme/unlisted-model")).toEqual({ in_per_mtok: 0.5, out_per_mtok: 1.5 });
+    expect(estimateCostUsd("acme/unlisted-model", 1000, 1000)).toBeGreaterThan(0);
   });
 });
 

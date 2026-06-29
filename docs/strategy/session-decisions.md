@@ -11,6 +11,24 @@
 
 ---
 
+## 2026-06-30 — Platform AI is model-agnostic + capability-routed (MA-1)
+
+**Context.** The founder asked to make the platform genuinely model-agnostic: not locked to ~5 providers, able to plug in ANY model/token (Qwen, MiniMax, etc.) with a base URL, with a full model list in the picker, and to design + build Perplexity-style routing that sends each kind of work to the model best at it. On clarification, the founder scoped this to the **platform's own AI backend** (every internal AI action: bucketing, agents, briefs, research, …), "optimized by us as the platform operator" — **not** a consumer-facing BYOK feature — plus a consumer **Auto** mode.
+
+**Decisions made (binding):**
+
+1. **Model-agnostic is a PLATFORM capability on OUR keys/config — this reconciles, not contradicts, WM-M9.** WM-M9 (2026-06-19) keeps consumer self-serve BYOK enterprise-only; "model-agnostic on our keys" is explicitly preserved. MA-1 builds exactly that: the platform operator plugs any provider in via env (`AI_PROVIDER_<P>_KEY` / `_BASE_URL`) — no consumer BYOK surface, secrets stay in env/wrangler.
+2. **Any OpenAI-compatible endpoint works generically.** A model id is `provider/model`; an open dispatch resolver routes any provider to its base URL (Anthropic is the one special wire shape). This fixed a latent bug where unknown providers (and even catalog'd `moonshot`/`ollama`) silently fell through to the gateway and 400'd, and made a stored `base_url` work on the live + streaming paths (previously test-path only).
+3. **Capability routing is ON by default (founder picked option 1 + 3 combined).** It runs for the consumer **Auto** mode AND across internal system surfaces (agent/brief/discovery/scheduler) — the "most optimized" version. It NEVER overrides an explicit, capable consumer model pick; `eval`-subject and `judge` are never routed (benchmark integrity). Kill-switch: `AI_CAPABILITY_ROUTING=off`. The policy (`CAPABILITY_PREFERENCES`) is the single control surface, owned by us.
+4. **Platform-added providers ARE Cadence sub-processors** (unlike a hypothetical consumer BYOK provider) and are disclosed; the disclosure registry was opened so no provider is ever silently dropped.
+5. **Embeddings stay out of scope** — a separate governed 1536-dim pipeline; never routed to a chat model. Custom-model registry UI + capability-aware fallback are noted follow-ons.
+
+**Tradeoffs.** Capability routing default-ON changes which model serves internal calls (vs the prior pinned defaults) — accepted for output/cost quality, bounded by availability + the explicit-pick gate + the kill-switch. Unknown custom models price at a neutral default until rates are added (cost math never crashes).
+
+**Spec / build:** [`../features/model-agnostic.md`](../features/model-agnostic.md) · dashboard MA-1 · [`../../plan.md`](../../plan.md) §4. Twin of BLD-04 / [`build-driver-and-dispatch.md`](./build-driver-and-dispatch.md) (the code-gen path).
+
+---
+
 ## 2026-06-26 — 4-tier pricing model + Lovable-style credit dropdown (WM-M17/M19 resolution)
 
 **Context.** The founder reviewed six reference pricing pages (Lovable with credit dropdown, Replit, Bolt.new, Claude Individual, Claude Team & Enterprise) and resolved the open WM-M17/M19 packaging questions.
