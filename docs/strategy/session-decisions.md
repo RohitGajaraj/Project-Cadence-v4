@@ -1599,4 +1599,18 @@ _This log is maintained as part of the closed documentation loop. Every session 
 - `connectors/resolve.server.ts` — `requiredCapability` param added to `resolveProviderAuth`; workspace plan tier checked before credentials materialized; outflow blocked for Free/Pro with a user-readable upgrade prompt
 - `planPresentation()` highlights updated: Pro shows "Read connectors: pull signals from GitHub, Linear, Notion, Jira"; Business shows "Write-back connectors: push decisions to GitHub, Linear, Jira, Notion" — flows through to pricing page and billing tab automatically
 
+## 2026-06-29 — Coding agent delegation model
+
+**Decision:** Hybrid model for BLD-04 / the Build delegation layer.
+
+- **Individual/SMB**: Cadence hosts OpenHands as a managed service. One bill, one platform. Customer does not need their own coding agent.
+- **Enterprise (existing tools)**: BYO endpoint — customer points Cadence at their Devin/Copilot Workspace; Cadence adds the governance and memory layer.
+- **Enterprise (consolidation preference)**: Cadence-managed OpenHands (white-label), tied to BYO-P5 longer-term.
+
+**Why:** OpenHands self-host per customer is operationally unrealistic for enterprise (4 reasons documented in bld04-delegate-out.md §Deployment model decision). The individual/SMB customer cannot afford a $500/month Devin subscription on top of Cadence — they need the coding capability included. The DelegateProvider seam already supports all three modes (configuration only).
+
+**Immediate action:** Live-test the seam using All-Hands Cloud today. BLD-04 closes on successful end-to-end test (delegation fires → approval gate → OpenHands receives task → agent_runs.delegate_meta records external_job_id → result folds back).
+
+**Status of BLD-04:** Code complete (◐ [~55%]). Pending live test.
+
 **Cross-refs:** `pricing-strategy.md §3.3`, `entitlements.ts`, `connectors/resolve.server.ts`, `connectors/catalog.ts`
