@@ -41,6 +41,8 @@ import { PendingApprovalsBar } from "@/components/today/PendingApprovalsBar";
 import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { GettingStartedChecklist } from "@/components/onboarding/GettingStartedChecklist";
 import { MemoryExpiryBanner } from "@/components/plg/MemoryExpiryBanner";
+import { FocusNext } from "@/components/today/FocusNext";
+import { getFocusNext } from "@/lib/brain/insights.functions";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
 import { CostPerOutcomeChip } from "@/components/today/CostPerOutcomeChip";
 import { listOpportunities } from "@/lib/discovery.functions";
@@ -65,6 +67,7 @@ function Dashboard() {
   const fetchRuns = useServerFn(listAgentRuns);
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
+  const fetchFocus = useServerFn(getFocusNext);
   const fetchColdStart = useServerFn(getColdStart);
   const fetchLoopPulse = useServerFn(getLoopPulse);
   const fetchLearnings = useServerFn(listLearnings);
@@ -84,6 +87,12 @@ function Dashboard() {
   const projects = useQuery({ queryKey: ["projects"], queryFn: () => fetchProjects() });
   const runs = useQuery({ queryKey: ["runs"], queryFn: () => fetchRuns() });
   const needsYou = useQuery({ queryKey: ["needs-you"], queryFn: () => fetchNeedsYou() });
+  // SF-FOCUS: the one ranked "Focus on this next" insight. Cheap when cold (no themes -> null).
+  const focus = useQuery({
+    queryKey: ["focus-next"],
+    queryFn: () => fetchFocus(),
+    staleTime: 30 * 60 * 1000,
+  });
   // WEDGE: the first teardown creates the workspace's first opportunity, which
   // would flip isCold → false. A focus/reconnect refetch must NOT unmount the
   // cold-start branch mid-read and throw away the verdict the operator just
@@ -545,6 +554,13 @@ function Dashboard() {
         {/* PLG Phase 3 — memory-retention upgrade nudge (free plan + memory nearing
             the retention window only; renders nothing otherwise). */}
         <MemoryExpiryBanner workspaceId={activeWorkspace?.id ?? null} />
+        {!isCold && (
+          <FocusNext
+            insight={focus.data ?? null}
+            onStart={(goal) => startMission.mutate({ goal })}
+            isStarting={startMission.isPending}
+          />
+        )}
 
         {/* NEEDS YOU — the calls queue */}
         <section className="bento" style={{ padding: "14px var(--card-pad)", marginBottom: 24 }}>

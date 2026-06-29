@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { callModel } from "@/lib/ai/runtime.server";
 import { recordLineage } from "@/lib/lineage.functions";
+import { computeNovelty } from "@/lib/brain/novelty.server";
 
 /**
  * Core signal-clustering logic, shared by the user-triggered `clusterSignals`
@@ -95,6 +96,15 @@ Return STRICT JSON only, no prose, no markdown fences.`;
       (n) => Number.isInteger(n) && n >= 0 && n < sigs.length,
     );
     if (!members.length || !t.title) continue;
+    // SF-FOCUS: embed + score novelty-vs-memory at create time so the theme is immediately
+    // rankable for the "Focus on this next" card, and so future themes can diff against it.
+    // Fail-safe inside computeNovelty (novelty 1, no vector) means an embeddings outage never
+    // breaks clustering.
+    const nov = await computeNovelty(supabase, userId, {
+      title: t.title,
+      summary: t.summary ?? null,
+    });
+    const nowIso = new Date().toISOString();
     const { data: theme, error: tErr } = await supabase
       .from("themes")
       .insert({
@@ -111,6 +121,11 @@ Return STRICT JSON only, no prose, no markdown fences.`;
         severity: Math.min(5, Math.max(1, Math.round(t.severity ?? 3))),
         confidence: Math.min(1, Math.max(0, t.confidence ?? 0.5)),
         frequency: members.length,
+        embedding: nov.embedding ? (nov.embedding as unknown as string) : null,
+        novelty: nov.novelty,
+        novelty_basis: nov.basis,
+        scored_at: nowIso,
+        last_signal_at: nowIso,
       })
       .select()
       .single();
