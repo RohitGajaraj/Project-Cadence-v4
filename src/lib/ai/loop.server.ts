@@ -35,6 +35,15 @@ const PAUSE_ON_APPROVAL_TOOLS = new Set(["studio.commit", "studio.pr.open", "stu
 const HIGH_RISK_MIN_CONFIRM = new Set(["calendar.create", "studio.commit", "studio.pr.open"]);
 /** Safety floor: always `review`. */
 const HIGH_RISK_FORCE_REVIEW = new Set(["studio.pr.merge", "studio.revert", "delegate.openhands"]);
+
+// BYO-P3 WI3 — master switch for the trust-graduated autonomous ship. When set,
+// the single decisive ship gate (studio.pr.merge) follows the agent's trust arc
+// instead of being force-pinned to `review`, so an agent that has earned ambient
+// trust merges auto-silently AFTER the in-tool CI-green + eval-regression gates.
+// Default OFF: auto-merge is a founder-grade security decision, so it stays an
+// explicit opt-in via a wrangler secret. studio.revert + delegate.openhands are
+// NOT graduated — they stay review-pinned regardless of this flag.
+const AUTO_SHIP_ENABLED = process.env.STUDIO_AUTO_SHIP === "1";
 /**
  * Orchestrator control-flow tools that ALWAYS execute inline, exempt from
  * arc-gating and any seeded mode. These four tools are pure internal control
@@ -673,7 +682,20 @@ async function executeLoop(s: LoopState): Promise<LoopResult> {
     // The autonomy dial composes with the tool's own mode. `review` is sticky.
     const dialedMode = resolveApprovalMode(rawToolMode, arc);
     let mode: ToolMode = dialedMode;
-    if (HIGH_RISK_FORCE_REVIEW.has(call.name)) mode = "review";
+    if (HIGH_RISK_FORCE_REVIEW.has(call.name)) {
+      // BYO-P3 WI3 — the trust-graduated single ship decision. studio.pr.merge is
+      // the one decisive ship gate; under AUTO_SHIP it composes from a `confirm`
+      // base through the arc dial (observing→review, proving→confirm,
+      // trusted/ambient→auto) so ambient trust ships auto-silently. The merge
+      // tool's own CI-green + eval-regression gates still run inline, so an auto
+      // merge can never ship red. Default (flag off) keeps the review-pin. The
+      // seeded `review` mode is sticky through resolveApprovalMode, so the dial
+      // must use a `confirm` base here, not rawToolMode.
+      mode =
+        call.name === "studio.pr.merge" && AUTO_SHIP_ENABLED
+          ? resolveApprovalMode("confirm", arc)
+          : "review";
+    }
     // FND-0.5 blast-radius floor: a high-blast-radius tool can never run unattended.
     // The manual set is the curated stricter policy (also floors some medium-external
     // tools like calendar.create / studio.pr.open); `isHighRiskTool` is the SYSTEMATIC
