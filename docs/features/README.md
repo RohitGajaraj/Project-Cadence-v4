@@ -39,6 +39,7 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 | DBR (H1) | The Decision Brain (typed decision knowledge graph; the moat engine) | 📋 Horizon bet 2026-06-20 · TOPMOST priority | engine + Brain surface (`/chat`, `/memory`) | [`decision-brain.md`](./decision-brain.md) |
 | DBR · inc 1 | Ambient Precedent (cross-platform proactive decision-precedent nudge) | 📋 Design spec 2026-06-20 (founder-approved; build next) | opportunity / spec / Critic seams (v1) | [`ambient-precedent.md`](./ambient-precedent.md) |
 | CMD (H2) | The Command Canvas (NL command bar + live preview) | 📋 Horizon bet 2026-06-20 · sequenced behind H1 | `⌘K` + canvas pane | [`command-canvas.md`](./command-canvas.md) |
+| SIGNAL-FABRIC | Signal Fabric & Sense Engine (outside-in + inside-out signal ingestion → "Focus on this next") | 🔨 In build 2026-06-30 (Lane 1; Phase 0 keystone) · founder-directed via `/plan` | Today (`/`) · `/product?tab=signals` · `/sync` | [`signal-fabric.md`](./signal-fabric.md) |
 | C4/E7 | Agent inspector (run history) | ◐ Core shipped 2026-06-18 | `/missions?tab=agents` | [`c4-e7-agent-inspector.md`](./c4-e7-agent-inspector.md) |
 | P7 | Incidents log (read-only) | ✅ Shipped 2026-06-20 | `/govern?tab=incidents` | [`p7-incidents.md`](./p7-incidents.md) |
 | R3 | Notifications (in-app Attention feed) | ✅ Shipped 2026-06-20 | `/govern?tab=attention` | [`r3-notifications.md`](./r3-notifications.md) |
@@ -105,5 +106,6 @@ Internal-only refactors, schema-only changes, and pure infrastructure work do **
 - [`../planning/archive/feature-backlog.md`](../planning/archive/feature-backlog.md), archived ledger (superseded 2026-06-24)
 - [`agent-ecosystem-plan.md`](./archive/agent-ecosystem-plan.md), F-AGENT-1→4 bundle strategy
 - [`agent-experience.md`](./agent-experience.md), the agent roster model, faces, identity, and the relay (the "19 vs 6" resolution, built on the F-AGENT-1→4 substrate)
+- [`signal-fabric.md`](./signal-fabric.md), the Signal Fabric & Sense Engine, outside-in + inside-out signal ingestion → "Focus on this next" (Phase 0 keystone shipped)
 - [`../../architecture/orchestration.md`](../../architecture/orchestration.md), agent orchestration contract
 - [`../../plan.md`](../../plan.md) §4, active build log

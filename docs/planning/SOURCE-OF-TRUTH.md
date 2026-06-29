@@ -26,6 +26,19 @@
 > ---
 
 > [!IMPORTANT]
+> ## 🛰️ 2026-06-30 (NOW) — SIGNAL FABRIC & SENSE ENGINE in build (Lane 1, founder-directed via `/plan`)
+>
+> **Founder directive:** build the outside-in + inside-out **signal ingestion engine** — the USP's "Sense continuously" pillar (v11 moat pillar #2). Approved plan of record: `~/.claude/plans/plan-plan-see-now-generic-whisper.md`. Canonical spec: [`../features/signal-fabric.md`](../features/signal-fabric.md). Build-item list: the **Signal Fabric & Sense Engine** group in [`feature-dashboard.md`](./feature-dashboard.md).
+>
+> **The gap (audit-confirmed):** the signal *pipeline* is real but starved — only GitHub + PostHog-spikes + a demo seed feed it; the outside-in Scout (`researcher-tick`) only re-summarizes, never diffs; no live customer-voice connectors; nothing ranks signals into a proactive "build this next." The ambient scaffolding (reactor, clustering, trust-gate) exists but is dormant.
+>
+> **The build (both lanes in parallel, thin-slice-first):** Phase 0 keystone `writeSignals` sink + `source_kind` (**✅ SHIPPED** Lane 1, 2026-06-30: `src/lib/sources/` + migration `20260630120000` + GitHub refactor, tsc 0 / 12 tests) → Phase 1 diffing Scout + Intercom + one "Focus on this next" on Today → Phase 2 widen Scout kinds / connector fleet / full insight head → Phase 3 `mcp_source` adapter + governed auto-trigger. Closes **SEN-01** (2nd live source), DEEPENS the already-✅ **SEN-04** (the v0 watchtower only re-summarizes; the Scout diffs), extends **BRAIN-UX-V11** onto Today.
+>
+> **MCP ruling:** architect the `mcp_source` lane now (first-class type), ship it Phase 3 — MCP is how the source layer *scales*, not how it starts. **Ultraplan refinement pending** — its enhancements fold into the spec + dashboard when it teleports back.
+>
+> ---
+
+> [!IMPORTANT]
 > ## ✅ 2026-06-24 (NOW) - LIVE-VERIFICATION CLOSURE PASS (Lane 1, founder-directed): the published app is healthy and the partial board is now honest.
 >
 > **Founder directive:** "the app is live + published, migrations are done - test the live app and close the partial/pending items; we will come to the founder-gated items later." Done as follows.

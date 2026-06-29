@@ -4,14 +4,9 @@
 // signals). Designed to be called from sense-tick for any workspace with a GitHub
 // binding; rule-based only, zero AI spend.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveGitHub } from "./github.server";
-import { autoTag, inferSentiment } from "@/lib/sensing/normalize";
-
-// external_id is not yet in the generated Database types; use the generic
-// untyped client — same precedent as outcome.functions.ts / ingest.functions.ts.
-const db = supabaseAdmin as unknown as SupabaseClient;
+import { writeSignals } from "@/lib/sources/sink.server";
+import type { SignalCandidate } from "@/lib/sources/kinds";
 
 const GH_API = "https://api.github.com";
 const GH_HEADERS = {
@@ -113,37 +108,22 @@ export async function ingestGithubSignals(
     fetchPushSignals(gh.token, gh.repo),
   ]);
 
-  const candidates = [...issues, ...pushes];
-  if (candidates.length === 0) return { inserted: 0, skipped: 0, source: gh.repo };
+  const raw = [...issues, ...pushes];
+  if (raw.length === 0) return { inserted: 0, skipped: 0, source: gh.repo };
 
-  // Fetch already-seen external_ids for this workspace to skip them cheaply.
-  const extIds = candidates.map((c) => c.externalId);
-  const { data: existing } = await db
-    .from("signals")
-    .select("external_id")
-    .eq("user_id", userId)
-    .eq("workspace_id", workspaceId)
-    .in("external_id", extIds);
-  const seen = new Set((existing ?? []).map((r) => r.external_id as string));
+  // GitHub is reached via an authed API, so its payloads are trusted (no injection
+  // screen) - matching the prior behavior. The sink handles dedup (external_id),
+  // tag/sentiment derivation, and stamping source_kind="pull_connector".
+  const candidates: SignalCandidate[] = raw.map((c) => ({
+    externalId: c.externalId,
+    source: c.source,
+    sourceKind: "pull_connector",
+    title: c.title,
+    content: c.content,
+    url: c.url,
+    untrusted: false,
+  }));
 
-  const toInsert = candidates
-    .filter((c) => !seen.has(c.externalId))
-    .map((c) => ({
-      user_id: userId,
-      workspace_id: workspaceId,
-      external_id: c.externalId,
-      source: c.source,
-      title: c.title,
-      content: c.content,
-      url: c.url,
-      tags: autoTag(`${c.title} ${c.content}`, c.source),
-      sentiment: inferSentiment(`${c.title} ${c.content}`),
-    }));
-
-  if (toInsert.length === 0) return { inserted: 0, skipped: seen.size, source: gh.repo };
-
-  const { error } = await db.from("signals").insert(toInsert);
-  if (error) throw new Error(`GitHub ingest insert failed: ${error.message}`);
-
-  return { inserted: toInsert.length, skipped: seen.size, source: gh.repo };
+  const res = await writeSignals(userId, workspaceId, candidates);
+  return { inserted: res.inserted, skipped: res.skipped, source: gh.repo };
 }

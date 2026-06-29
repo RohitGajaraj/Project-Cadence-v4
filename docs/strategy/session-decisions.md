@@ -1695,3 +1695,22 @@ _This log is maintained as part of the closed documentation loop. Every session 
 **Status:** BLD-04 code complete, pending live test with All-Hands Cloud. WM-M9 is the implementation of BYOK removal (chokepoint edit, attended with founder).
 
 **Cross-refs:** [`docs/features/bld04-delegate-out.md`](../features/bld04-delegate-out.md) §LLM key decision. [`docs/operations/openhands-activation.md`](../operations/openhands-activation.md) §Configuring the LLM inside OpenHands.
+
+---
+
+## 2026-06-30 — Signal Fabric & Sense Engine (the outside-in signal engine), founder-approved via plan mode
+
+**Decision:** Build the outside-in + inside-out signal engine as one "Signal Fabric": every source kind (web Scout, pull connectors, future MCP sources, webhook, manual) funnels through a single `writeSignals` sink into the existing signals → themes → opportunities pipeline, topped by a novelty-vs-memory "Focus on this next" intelligence head on Today. Founder chose BOTH lanes in parallel + the full source taxonomy. Registered as dashboard rows #234-241 (`SF-0`..`SF-AUTOTRIGGER`, Sense).
+
+**Key calls:**
+- **MCP as a source: architect now, ship in Phase 3.** MCP is how the source layer SCALES, not how it starts. It mirrors the interop moat (Cadence already exposes MCP outward) and the model-agnostic / BYO mandate (MCP-agnostic intake = the data-layer twin of model-agnostic compute). One `mcp_source` adapter + a per-server mapping absorbs Gong / Granola / Enterpret / Linear for the cost of one. Constraint: Cloudflare Workers cannot spawn child processes, so it is HTTP/SSE MCP servers only, no SDK needed (reuse the JSON-RPC types from Cadence's own MCP server).
+- **Autonomy posture:** surface + recommend (HITL "Start it") by default; auto-start a mission only at `ambient` arc behind `BRAIN_AUTO_TRIGGER` (default OFF).
+
+**Reconciliations with the live board (corrections to the first-draft plan):**
+- **SEN-04 / SEN-05 are already ✅** (not cut). `researcher-tick` shipped SEN-04 as a SHALLOW v0 that re-summarizes; the Scout (`SF-SCOUT`) is the diffing ENHANCEMENT, not an un-cut.
+- **Analytics inbound is Lovable-owned** (PostHog / F-ANALYTICS carry a "no autonomous lane may touch these" guard). The analytics connectors (Amplitude / Mixpanel / Segment) overlap Lovable's territory, so coordinate, do not build autonomously. Customer-voice connectors (Intercom / Stripe / Slack) are clear.
+- **Chokepoint pin:** Phase 1/2's `CallSurface` additions (`runtime.server.ts`) and the new agent tools (`registry.server.ts`) live inside the pinned `CHOKEPOINT` claim, so they batch for the core lane.
+
+**Status:** Phase 0 (`SF-0`, the `writeSignals` keystone + `source_kind`) shipped (Lane 1, 2026-06-30, tsc 0 / 12 tests). The detailed phased plan is under refinement in Ultraplan; the remaining rows (`SF-SCOUT`/`SF-INTERCOM`/`SF-FOCUS`/`SF-CONNECTORS`/`SF-INSIGHT-HEAD` Tier-1, `SF-MCP`/`SF-AUTOTRIGGER` Gated) build next. Spec: [`docs/features/signal-fabric.md`](../features/signal-fabric.md).
+
+**Ties to:** SEN-* (Sense lane), CONNECTORS-V11, BRAIN-UX-V11 (the intelligence head extends it), the CHOKEPOINT pin.
