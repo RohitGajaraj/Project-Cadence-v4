@@ -235,7 +235,8 @@ export const Route = createFileRoute("/api/public/hooks/resume-runs")({
               if (!runStatuses.includes("waiting_approval")) continue; // cheap short-circuit
               const pendingGateCount = await pendingGatesOf(cm.id);
               if (
-                classifyMissionGate({ status: cm.status, runStatuses, pendingGateCount }) === "block"
+                classifyMissionGate({ status: cm.status, runStatuses, pendingGateCount }) ===
+                "block"
               ) {
                 const { data: upd } = await admin
                   .from("missions")
