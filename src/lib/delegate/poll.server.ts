@@ -36,7 +36,14 @@ const POLL_TIMEOUT_MS = 15_000;
 // OpenHands 0.38+ conversation statuses. "stopped" is terminal (task finished or
 // user stopped it); we treat it as done and surface last_agent_message as the result.
 const DONE_STATUSES = new Set(["done", "completed", "finished", "success", "stopped"]);
-const RUNNING_STATUSES = new Set(["queued", "running", "pending", "accepted", "started", "awaiting_user_input"]);
+const RUNNING_STATUSES = new Set([
+  "queued",
+  "running",
+  "pending",
+  "accepted",
+  "started",
+  "awaiting_user_input",
+]);
 const FAILED_STATUSES = new Set(["failed", "error", "rejected", "cancelled", "canceled"]);
 
 /**
@@ -53,7 +60,7 @@ export async function pollDelegateJob(externalJobId: string): Promise<DelegatePo
   const endpoint = (process.env.OPENHANDS_ENDPOINT as string).replace(/\/$/, "");
   const apiKey = process.env.OPENHANDS_API_KEY;
   try {
-    const res = await fetch(`${endpoint}/api/v1/tasks/${encodeURIComponent(externalJobId)}`, {
+    const res = await fetch(`${endpoint}/api/conversations/${encodeURIComponent(externalJobId)}`, {
       headers: {
         accept: "application/json",
         ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
@@ -66,8 +73,7 @@ export async function pollDelegateJob(externalJobId: string): Promise<DelegatePo
     const raw = typeof json.status === "string" ? json.status.toLowerCase() : "";
     if (DONE_STATUSES.has(raw)) {
       // OpenHands 0.38+: final agent output is in last_agent_message.
-      const result =
-        typeof json.last_agent_message === "string" ? json.last_agent_message : null;
+      const result = typeof json.last_agent_message === "string" ? json.last_agent_message : null;
       return { status: "done", result };
     }
     if (FAILED_STATUSES.has(raw)) {
