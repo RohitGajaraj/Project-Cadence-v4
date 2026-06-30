@@ -33,26 +33,6 @@ export function delegateEnabled(): boolean {
 /** Bound the outbound call so a hung external agent can't stall the build path. */
 const OPENHANDS_TIMEOUT_MS = 30_000;
 
-type LlmConfig = { model: string; apiKey: string };
-
-/**
- * Resolve the best available LLM from env, priority-ordered.
- * Anthropic → OpenAI → Gemini → Cohere. Returns null when none are set —
- * the caller then relies on account-level settings in the OpenHands instance.
- * Model ids follow LiteLLM convention (provider/model-name).
- */
-function resolveLlmConfig(): LlmConfig | null {
-  if (process.env.ANTHROPIC_API_KEY)
-    return { model: "anthropic/claude-sonnet-4-6", apiKey: process.env.ANTHROPIC_API_KEY };
-  if (process.env.OPENAI_API_KEY)
-    return { model: "openai/gpt-4o", apiKey: process.env.OPENAI_API_KEY };
-  if (process.env.GEMINI_API_KEY)
-    return { model: "gemini/gemini-2.0-flash", apiKey: process.env.GEMINI_API_KEY };
-  if (process.env.COHERE_API_KEY)
-    return { model: "cohere/command-r-plus", apiKey: process.env.COHERE_API_KEY };
-  return null;
-}
-
 function refusal(reason: string): DelegateVerdict {
   return { provider: "openhands", accepted: false, externalJobId: null, reason };
 }
@@ -77,12 +57,7 @@ export const openHandsProvider: DelegateProvider = {
     const endpoint = process.env.OPENHANDS_ENDPOINT as string;
     const apiKey = process.env.OPENHANDS_API_KEY;
     try {
-      const llm = resolveLlmConfig();
-      const body = {
-        ...buildOpenHandsRequest(req),
-        // OpenHands 0.38+ accepts llm_config for per-conversation model override.
-        ...(llm ? { llm_config: { model: llm.model, api_key: llm.apiKey } } : {}),
-      };
+      const body = buildOpenHandsRequest(req);
       const res = await fetch(`${endpoint.replace(/\/$/, "")}/api/conversations`, {
         method: "POST",
         headers: {
