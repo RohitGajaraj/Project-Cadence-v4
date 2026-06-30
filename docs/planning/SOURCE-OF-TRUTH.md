@@ -44,6 +44,8 @@
 > - Activate SF-MCP: apply migration `20260701010000_mcp_connections.sql`, then set per-server env vars in Lovable project settings — `MCP_LINEAR_URL`/`TOKEN`/`TOOL`/`ARGS`, `MCP_GONG_*`, `MCP_GRANOLA_*`, `MCP_ENTERPRET_*` (architecture already built + gate-verified; only activation remains).
 > - Or: unblock SANDBOX / BLD-04 (external coding agent dispatch) for the Build lane.
 >
+> **Next session pickup (2026-07-02):** all code is shipped + gate-green; nothing has been live-tested against the published app yet. The operator script for that is [`../operations/signal-fabric-live-test-playbook.md`](../operations/signal-fabric-live-test-playbook.md) — 6 scenarios (pipeline check, forced tick, connector ingest, HITL Watch/Listen, auto-trigger, SF-MCP), in order, with manual `curl` tick commands so you don't have to wait on cron timing. Start there.
+>
 > ---
 
 > [!IMPORTANT]
