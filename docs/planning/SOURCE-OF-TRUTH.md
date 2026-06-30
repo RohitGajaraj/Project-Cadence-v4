@@ -26,15 +26,22 @@
 > ---
 
 > [!IMPORTANT]
-> ## 🛰️ 2026-06-30 (NOW) — SIGNAL FABRIC & SENSE ENGINE in build (Lane 1, founder-directed via `/plan`)
+> ## ✅ 2026-06-30 — SIGNAL FABRIC & SENSE ENGINE: all autonomous slices shipped (Lane 1, board dry)
 >
-> **Founder directive:** build the outside-in + inside-out **signal ingestion engine** — the USP's "Sense continuously" pillar (v11 moat pillar #2). Approved plan of record: `~/.claude/plans/plan-plan-see-now-generic-whisper.md`. Canonical spec: [`../features/signal-fabric.md`](../features/signal-fabric.md). Build-item list: the **Signal Fabric & Sense Engine** group in [`feature-dashboard.md`](./feature-dashboard.md).
+> **Founder directive:** build the outside-in + inside-out **signal ingestion engine** — the USP's "Sense continuously" pillar (v11 moat pillar #2). Canonical spec: [`../features/signal-fabric.md`](../features/signal-fabric.md). Dashboard group: [`feature-dashboard.md`](./feature-dashboard.md).
 >
-> **The gap (audit-confirmed):** the signal *pipeline* is real but starved — only GitHub + PostHog-spikes + a demo seed feed it; the outside-in Scout (`researcher-tick`) only re-summarizes, never diffs; no live customer-voice connectors; nothing ranks signals into a proactive "build this next." The ambient scaffolding (reactor, clustering, trust-gate) exists but is dormant.
+> **Build status (2026-06-30, Lane 1 — all autonomous work done):**
+> - **Phase 0 ✅ SHIPPED** — `writeSignals` sink + `source_kind` taxonomy (`src/lib/sources/` + migration `20260630120000` + GitHub refactor); tsc 0 / 12 tests.
+> - **Phase 1 ✅ SHIPPED** — SF-SCOUT (outside-in diffing Watchtower, adversarial-reviewed), SF-INTERCOM (Intercom connector, injection-screened), SF-FOCUS (novelty-vs-memory scoring + "Focus on this next" on Today via copilot surface).
+> - **Phase 2 ✅ SHIPPED** — SF-SCOUT-WIDEN (6 WatchKinds auto-seed + researcher→writeSignals), SF-CONNECTORS (8-connector customer-voice fleet: Stripe/Slack/Zendesk/HubSpot/Salesforce/Canny/Productboard/Delighted), SF-INSIGHT-HEAD Phase 2 (`CallSurface += "sense"` + 5 agent tools in registry + 3 surface re-routes).
+> - **Phase 3 ◐ SHIPPED [~90%]** — 4 derive generators (`derivePrediction`, `deriveRisk`, `deriveCostOfInaction`, `deriveHiddenConnection`) in `src/lib/brain/derive-insights.server.ts`; `InsightRail.tsx` on Today; `derive-tick` cron (20/day cap); prompt-injection-safe; 2 security fixes. **Remaining (founder-gated):** Watch/Research/Listen sense agents wired into `loop.server.ts` (CHOKEPOINT), `auto_derive_enabled` migration needs applying, SF-MCP + SF-AUTOTRIGGER (Gated ⬜).
 >
-> **The build (both lanes in parallel, thin-slice-first):** Phase 0 keystone `writeSignals` sink + `source_kind` (**✅ SHIPPED** Lane 1, 2026-06-30: `src/lib/sources/` + migration `20260630120000` + GitHub refactor, tsc 0 / 12 tests) → Phase 1 diffing Scout + Intercom + one "Focus on this next" on Today → Phase 2 widen Scout kinds / connector fleet / full insight head → Phase 3 `mcp_source` adapter + governed auto-trigger. Closes **SEN-01** (2nd live source), DEEPENS the already-✅ **SEN-04** (the v0 watchtower only re-summarizes; the Scout diffs), extends **BRAIN-UX-V11** onto Today.
+> **Board dry** — all remaining Signal Fabric work is founder-gated. `lane.sh next` returns nothing. Dashboard: 233/243 = 95.9% strict.
 >
-> **MCP ruling:** architect the `mcp_source` lane now (first-class type), ship it Phase 3 — MCP is how the source layer *scales*, not how it starts. **Ultraplan refinement pending** — its enhancements fold into the spec + dashboard when it teleports back.
+> **👤 What is yours to unblock:**
+> - Apply migration `20260630122000` (adds `auto_derive_enabled` + `last_auto_derive_at` to workspaces; then Supabase types regenerate and the `auto_sense_enabled` proxy in `derive-tick.ts` can be cleaned up).
+> - Unlock SF-MCP (Gated: `SF-MCP`) and SF-AUTOTRIGGER for the agentic source layer.
+> - Or: unblock SANDBOX / BLD-04 (external coding agent dispatch) for the Build lane.
 >
 > ---
 
