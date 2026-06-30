@@ -101,7 +101,9 @@ export const openHandsProvider: DelegateProvider = {
     }
     const endpoint = (process.env.OPENHANDS_ENDPOINT as string).replace(/\/$/, "");
     const apiKey = process.env.OPENHANDS_API_KEY;
-    const authHeader = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+    const authHeader: Record<string, string> = apiKey
+      ? { authorization: `Bearer ${apiKey}` }
+      : {};
     try {
       // Ensure LLM settings are configured before creating the conversation.
       await configureOpenHandsLlm(endpoint, authHeader);
