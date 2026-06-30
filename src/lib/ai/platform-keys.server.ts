@@ -57,38 +57,77 @@ export function isPlatformProviderConfigured(provider: string): boolean {
  */
 export function listConfiguredPlatformProviders(): string[] {
   const candidates = [
-    "anthropic", "openai", "google", "deepseek", "xai", "qwen",
-    "groq", "mistral", "together", "openrouter", "moonshot", "minimax",
-    "fireworks", "deepinfra", "cerebras", "perplexity", "ollama", "local",
+    "anthropic",
+    "openai",
+    "google",
+    "deepseek",
+    "xai",
+    "qwen",
+    "groq",
+    "mistral",
+    "together",
+    "openrouter",
+    "moonshot",
+    "minimax",
+    "fireworks",
+    "deepinfra",
+    "cerebras",
+    "perplexity",
+    "ollama",
+    "local",
   ];
   return candidates.filter((p) => isPlatformProviderConfigured(p));
 }
 
 /**
- * Priority-ordered candidates for the agent planning loop.
- * Ranked by tool-use accuracy and instruction-following quality.
- * The empty-string provider sentinel represents the Lovable managed gateway
- * (no key needed; always reachable but quota-limited).
+ * Tier-1 priority list for agentic work, ranked by tool-use accuracy + JSON output quality.
+ * Covers every provider that has a known best model for structured agentic tasks.
+ * New providers added here are immediately considered at runtime when their key is set.
  */
 const AGENT_MODEL_PRIORITY: Array<{ provider: string; modelId: string }> = [
-  { provider: "anthropic", modelId: "anthropic/claude-haiku-4" },
-  { provider: "openai",    modelId: "openai/gpt-4o-mini" },
-  { provider: "qwen",      modelId: "qwen/qwen-plus" },
-  { provider: "groq",      modelId: "groq/llama-3.3-70b-versatile" },
-  { provider: "deepseek",  modelId: "deepseek/deepseek-chat" },
-  { provider: "",          modelId: "google/gemini-2.5-flash" }, // gateway fallback
+  { provider: "anthropic",  modelId: "anthropic/claude-haiku-4" },
+  { provider: "openai",     modelId: "openai/gpt-4o-mini" },
+  { provider: "qwen",       modelId: "qwen/qwen-plus" },
+  { provider: "groq",       modelId: "groq/llama-3.3-70b-versatile" },
+  { provider: "deepseek",   modelId: "deepseek/deepseek-chat" },
+  { provider: "xai",        modelId: "xai/grok-2-1212" },
+  { provider: "mistral",    modelId: "mistral/mistral-large-latest" },
+  { provider: "moonshot",   modelId: "moonshot/moonshot-v1-128k" },
+  { provider: "together",   modelId: "together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" },
+  { provider: "openrouter", modelId: "openrouter/openai/gpt-4o-mini" },
+  { provider: "fireworks",  modelId: "fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct" },
+  { provider: "deepinfra",  modelId: "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct" },
+  { provider: "cerebras",   modelId: "cerebras/llama3.1-70b" },
+  { provider: "perplexity", modelId: "perplexity/llama-3.1-sonar-large-128k-online" },
+  { provider: "minimax",    modelId: "minimax/minimax-text-01" },
 ];
 
 /**
  * Picks the best model available for agentic work at runtime.
- * Checks platform keys in priority order — whichever provider has a key wins.
- * Respects DEFAULT_AGENT_MODEL env override so operators can pin without a code deploy.
+ *
+ * Resolution order:
+ *   1. DEFAULT_AGENT_MODEL env var — operator pin, no redeploy needed, beats everything
+ *   2. First provider in AGENT_MODEL_PRIORITY that has a configured key
+ *   3. Any OTHER configured provider not yet in the priority list (future providers auto-work)
+ *   4. Gemini 2.5 Flash via the Lovable managed gateway — zero-config but quota-limited
  */
 export function resolveBestAgentModel(): string {
   const override = process.env.DEFAULT_AGENT_MODEL;
   if (override) return override;
+
+  const prioritySet = new Set(AGENT_MODEL_PRIORITY.map((p) => p.provider));
+
+  // Step 2: walk the curated list
   for (const { provider, modelId } of AGENT_MODEL_PRIORITY) {
-    if (!provider || isPlatformProviderConfigured(provider)) return modelId;
+    if (isPlatformProviderConfigured(provider)) return modelId;
   }
+
+  // Step 3: any provider outside the curated list that has a key configured
+  // (new providers added via env var auto-work without a code change)
+  for (const provider of listConfiguredPlatformProviders()) {
+    if (!prioritySet.has(provider)) return `${provider}/auto`;
+  }
+
+  // Step 4: managed gateway fallback
   return "google/gemini-2.5-flash";
 }
