@@ -33,6 +33,57 @@ export function delegateEnabled(): boolean {
 /** Bound the outbound call so a hung external agent can't stall the build path. */
 const OPENHANDS_TIMEOUT_MS = 30_000;
 
+/**
+ * Push LLM settings to OpenHands before creating a conversation.
+ *
+ * OpenHands 0.38+ requires settings to be POSTed to /api/settings before
+ * /api/conversations can be used — without them the API returns
+ * CONFIGURATION$SETTINGS_NOT_FOUND and then STATUS$ERROR_LLM_AUTHENTICATION.
+ *
+ * We reuse whichever LLM provider Cadence itself is configured with
+ * (env var priority: OPENHANDS_LLM_API_KEY → AI_PROVIDER_QWEN_KEY →
+ * AI_PROVIDER_ANTHROPIC_KEY → AI_PROVIDER_OPENAI_KEY) so there is no
+ * extra secret to manage: the same key that powers Cadence's own agent
+ * loop powers the delegated OpenHands session too.
+ */
+async function configureOpenHandsLlm(endpoint: string, authHeader: Record<string, string>): Promise<void> {
+  // Resolve the best available LLM key + model from Cadence's own env config.
+  const llmCandidates: Array<{ model: string; apiKey: string; baseUrl?: string }> = [
+    // Explicit override (set in Lovable env if the key for OpenHands differs from Cadence's own).
+    ...(process.env.OPENHANDS_LLM_API_KEY
+      ? [{ model: process.env.OPENHANDS_LLM_MODEL ?? "openai/qwen-plus", apiKey: process.env.OPENHANDS_LLM_API_KEY, baseUrl: process.env.OPENHANDS_LLM_BASE_URL }]
+      : []),
+    // Qwen (primary for BLD-04 Railway self-host)
+    ...(process.env.AI_PROVIDER_QWEN_KEY
+      ? [{ model: "openai/qwen-plus", apiKey: process.env.AI_PROVIDER_QWEN_KEY, baseUrl: process.env.AI_PROVIDER_QWEN_BASE_URL ?? "https://dashscope-intl.aliyuncs.com/compatible-mode/v1" }]
+      : []),
+    // OpenAI
+    ...(process.env.AI_PROVIDER_OPENAI_KEY
+      ? [{ model: "gpt-4o-mini", apiKey: process.env.AI_PROVIDER_OPENAI_KEY }]
+      : []),
+    // Anthropic
+    ...(process.env.AI_PROVIDER_ANTHROPIC_KEY
+      ? [{ model: "claude-haiku-4-5-20251001", apiKey: process.env.AI_PROVIDER_ANTHROPIC_KEY }]
+      : []),
+  ];
+
+  const llm = llmCandidates[0];
+  if (!llm) return; // No key available — skip; OpenHands may already have settings configured.
+
+  const settingsBody: Record<string, string> = {
+    llm_model: llm.model,
+    llm_api_key: llm.apiKey,
+  };
+  if (llm.baseUrl) settingsBody.llm_base_url = llm.baseUrl;
+
+  await fetch(`${endpoint}/api/settings`, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...authHeader },
+    body: JSON.stringify(settingsBody),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => { /* best-effort; conversation create will surface the real error */ });
+}
+
 function refusal(reason: string): DelegateVerdict {
   return { provider: "openhands", accepted: false, externalJobId: null, reason };
 }
@@ -54,15 +105,18 @@ export const openHandsProvider: DelegateProvider = {
         "delegate-out is disabled (no DELEGATE_OUTBOUND_ENABLED / endpoint configured)",
       );
     }
-    const endpoint = process.env.OPENHANDS_ENDPOINT as string;
+    const endpoint = (process.env.OPENHANDS_ENDPOINT as string).replace(/\/$/, "");
     const apiKey = process.env.OPENHANDS_API_KEY;
+    const authHeader = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
     try {
+      // Ensure LLM settings are configured before creating the conversation.
+      await configureOpenHandsLlm(endpoint, authHeader);
       const body = buildOpenHandsRequest(req);
-      const res = await fetch(`${endpoint.replace(/\/$/, "")}/api/conversations`, {
+      const res = await fetch(`${endpoint}/api/conversations`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
+          ...authHeader,
         },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(OPENHANDS_TIMEOUT_MS),
