@@ -29,6 +29,8 @@ import { mergeReadinessFromCi, overallFromChecks } from "@/lib/ai/studio-ci";
 import { evalRegressionReadiness, type SuiteScorePair } from "@/lib/ai/eval-gate";
 import { resolveGitHub } from "@/lib/connectors/providers/github.server";
 import { runRollbackRelease } from "@/lib/studio-rollbacks";
+import { clusterSignalsCore } from "@/lib/ai/cluster.server";
+import { CONNECTOR_REGISTRY } from "@/lib/connectors/registry";
 
 export type ToolCtx = {
   supabase: SupabaseClient;
@@ -200,6 +202,142 @@ const logSignal = def({
       .single();
     if (error) throw new Error(error.message);
     return data;
+  },
+});
+
+// ── Signal Fabric read / sense tools ──────────────────────────────────
+const listSignals = def({
+  name: "signals.list",
+  description:
+    "List recent signals ingested into the workspace. Filterable by source_kind, tag, sentiment, and how many days back to look.",
+  category: "read",
+  argsSchema: z.object({
+    source_kind: z.string().max(60).optional(),
+    tag: z.string().max(60).optional(),
+    sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+    lookback_days: z.number().int().min(1).max(90).default(7),
+    limit: z.number().int().min(1).max(50).default(20),
+  }),
+  preview: (a) =>
+    `List signals (${a.lookback_days}d, source=${a.source_kind ?? "any"}, tag=${a.tag ?? "any"})`,
+  run: async (a, { supabase, userId, workspaceId }) => {
+    const cutoff = new Date(Date.now() - a.lookback_days * 86_400_000).toISOString();
+    let q = supabase
+      .from("signals")
+      .select("id, title, content, source, source_kind, sentiment, tags, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(a.limit);
+    if (workspaceId) q = q.eq("workspace_id", workspaceId);
+    if (a.source_kind) q = q.eq("source_kind", a.source_kind);
+    if (a.sentiment) q = q.eq("sentiment", a.sentiment);
+    if (a.tag) q = q.contains("tags", [a.tag]);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+});
+
+const listThemes = def({
+  name: "themes.list",
+  description:
+    "List the current workspace's clustered signal themes (insight clusters). Each theme has a title, summary, severity, confidence, and member count.",
+  category: "read",
+  argsSchema: z.object({
+    min_severity: z.number().int().min(1).max(5).default(1),
+    limit: z.number().int().min(1).max(30).default(10),
+  }),
+  preview: (a) => `List themes (severity >= ${a.min_severity})`,
+  run: async (a, { supabase, userId, workspaceId }) => {
+    let q = supabase
+      .from("signal_themes")
+      .select("id, title, summary, severity, confidence, member_count, updated_at")
+      .eq("user_id", userId)
+      .gte("severity", a.min_severity)
+      .order("severity", { ascending: false })
+      .limit(a.limit);
+    if (workspaceId) q = q.eq("workspace_id", workspaceId);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+});
+
+const sourcesStatus = def({
+  name: "sources.status",
+  description:
+    "Show signal ingestion health: signal counts by source_kind over the last 7 days and the number of active scout targets. Use to understand where signals are (or aren't) coming from.",
+  category: "read",
+  argsSchema: z.object({}),
+  preview: () => "Sources status: signal counts by source_kind (7d)",
+  run: async (_a, { supabase, userId, workspaceId }) => {
+    const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
+    let sigQ = supabase
+      .from("signals")
+      .select("source_kind")
+      .eq("user_id", userId)
+      .gte("created_at", cutoff);
+    if (workspaceId) sigQ = sigQ.eq("workspace_id", workspaceId);
+    const { data: sigRows, error: sigErr } = await sigQ;
+    if (sigErr) throw new Error(sigErr.message);
+
+    const counts: Record<string, number> = {};
+    for (const row of sigRows ?? []) {
+      const k = (row as { source_kind?: string | null }).source_kind ?? "unknown";
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+
+    let targetCount = 0;
+    if (workspaceId) {
+      const { count } = await supabase
+        .from("scout_targets")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+        .eq("enabled", true);
+      targetCount = count ?? 0;
+    }
+
+    return { signals_7d_by_source: counts, active_scout_targets: targetCount };
+  },
+});
+
+const clusterTrigger = def({
+  name: "cluster.trigger",
+  description:
+    "Re-run signal clustering for the current workspace. Groups recent signals into insight themes. Useful after a batch of new signals arrives.",
+  category: "write",
+  argsSchema: z.object({
+    project_id: z.string().uuid().optional(),
+  }),
+  preview: () => "Trigger signal clustering",
+  run: async (a, { supabase, userId, workspaceId }) =>
+    clusterSignalsCore(supabase, userId, workspaceId ?? null, a.project_id ?? null),
+});
+
+const sourcesConnect = def({
+  name: "sources.connect",
+  description:
+    "Look up setup instructions and capabilities for a named data source / connector. Use to guide the user through connecting a new tool (GitHub, Stripe, Slack, etc.).",
+  category: "read",
+  argsSchema: z.object({
+    provider: z.string().min(1).max(60),
+  }),
+  preview: (a) => `Sources connect: ${a.provider}`,
+  run: async (a) => {
+    const spec = CONNECTOR_REGISTRY[a.provider as keyof typeof CONNECTOR_REGISTRY];
+    if (!spec) {
+      const available = Object.keys(CONNECTOR_REGISTRY).join(", ");
+      return { error: `Unknown provider "${a.provider}". Available: ${available}` };
+    }
+    return {
+      id: spec.id,
+      label: spec.label,
+      description: spec.description,
+      capabilities: spec.capabilities,
+      setup_hint: spec.setupHint ?? null,
+    };
   },
 });
 
@@ -2559,6 +2697,11 @@ export const TOOL_REGISTRY: Record<string, ToolDef> = Object.fromEntries(
     createTask,
     updateTaskStatus,
     logSignal,
+    listSignals,
+    listThemes,
+    sourcesStatus,
+    clusterTrigger,
+    sourcesConnect,
     createNote,
     remember,
     memoryReflect,

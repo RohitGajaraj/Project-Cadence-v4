@@ -161,7 +161,7 @@ Return only the bullets, nothing else.`;
               const userMsg = `Search queries: ${queries.join(", ")}\n\nResults:\n${snippets}`;
 
               const res = await callModel(supabaseAdmin as never, ws.owner_id, {
-                surface: "agent",
+                surface: "sense",
                 surface_ref: `researcher:watchtower:${brief.workspace_id}`,
                 model: "google/gemini-2.5-flash",
                 fallbackModel: "anthropic/claude-haiku-4-5-20251001",

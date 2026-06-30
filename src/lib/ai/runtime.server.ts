@@ -278,6 +278,7 @@ export type CallSurface =
   | "judge"
   | "embed"
   | "scheduler"
+  | "sense"
   | "test";
 
 export type CallOpts = {

@@ -63,7 +63,7 @@ Return STRICT JSON only, no prose, no markdown fences.`;
   const user = `Signals:\n${indexed}\n\nReturn JSON:\n{"themes":[{"title":"...","summary":"...","severity":3,"confidence":0.7,"members":[0,2,5]}]}`;
 
   const result = await callModel(supabase, userId, {
-    surface: "discovery",
+    surface: "sense",
     surface_ref: "cluster_signals",
     model: "google/gemini-2.5-pro",
     fallbackModel: "google/gemini-2.5-flash",

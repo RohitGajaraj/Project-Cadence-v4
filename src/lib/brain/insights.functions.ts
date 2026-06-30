@@ -138,9 +138,8 @@ export const getFocusNext = createServerFn({ method: "GET" })
       .maybeSingle();
     if (existing) return toFocusInsight(existing as Record<string, unknown>, top.s);
 
-    // ONE derive call — reuse the "copilot" surface (no chokepoint edit).
     const res = await callModel(supabase as never, userId, {
-      surface: "copilot",
+      surface: "sense",
       surface_ref: "focus_next",
       model: MODEL,
       workspaceId,
