@@ -12,6 +12,7 @@ import {
   EXCERPT_CHARS,
 } from "@/lib/scout/snapshot.server";
 import { emitChangeSignal } from "@/lib/scout/emit.server";
+import { autoSeedTargets } from "@/lib/scout/seed.server";
 
 /**
  * SF-SCOUT (Signal Fabric Phase 1) — scout-tick hook.
@@ -80,6 +81,14 @@ export const Route = createFileRoute("/api/public/hooks/scout-tick")({
 
           for (const ws of workspaces) {
             try {
+              // Auto-seed all 6 WatchKind targets from workspace context for any
+              // kind not yet in the watch list. Idempotent (no-op once seeded).
+              if (ws.owner_id) {
+                await autoSeedTargets(ws.id, ws.owner_id).catch((e) =>
+                  console.warn("[scout-tick] autoSeedTargets failed:", e?.message),
+                );
+              }
+
               const cap = ws.scout_daily_fetch_cap ?? 50;
               const usedToday = await sumTodaysFetches(ws.id);
 

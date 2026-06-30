@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { callModel } from "@/lib/ai/runtime.server";
 import { webSearch } from "@/lib/ai/tools/firecrawl.server";
 import { withJobRun } from "@/lib/observability";
+import { writeSignals } from "@/lib/sources/sink.server";
+import { hashContent } from "@/lib/scout/diff";
 
 /**
  * SEN-04: Researcher Watchtower — researcher-tick hook.
@@ -75,7 +77,8 @@ export const Route = createFileRoute("/api/public/hooks/researcher-tick")({
           const results: Array<{
             workspace_id: string;
             queries?: string[];
-            signal_id?: string;
+            inserted?: number;
+            skipped?: number;
             error?: string;
           }> = [];
 
@@ -177,21 +180,27 @@ Return only the bullets, nothing else.`;
                 continue;
               }
 
-              const title = `Competitive brief: ${queries[0].replace(" latest news product updates", "").replace(" competitor landscape 2025", "").replace(" market alternatives", "")}`;
+              const titleClean = queries[0]
+                .replace(" latest news product updates", "")
+                .replace(" competitor landscape 2025", "")
+                .replace(" market alternatives", "");
+              const title = `Competitive brief: ${titleClean}`;
 
-              const { data: signal, error: sigErr } = await supabaseAdmin
-                .from("signals")
-                .insert({
-                  user_id: ws.owner_id,
-                  workspace_id: brief.workspace_id,
+              // Route through writeSignals so the brief inherits source_kind stamping,
+              // dedup (external_id), and the injection screen — same as every other source.
+              // external_id is stable per-workspace per-query so daily re-runs dedup.
+              const externalId = `researcher:${brief.workspace_id}:${hashContent(queries[0])}`;
+              const writeRes = await writeSignals(ws.owner_id, brief.workspace_id, [
+                {
+                  externalId,
                   source: "competitive_research",
+                  sourceKind: "web_scout",
                   title: title.slice(0, 200),
                   content: briefContent,
-                })
-                .select("id")
-                .single();
-
-              if (sigErr) throw sigErr;
+                  tags: ["scout", "competitor", "brief"],
+                  untrusted: true,
+                },
+              ]);
 
               // Update last_researcher_tick_at
               await supabaseAdmin
@@ -199,7 +208,12 @@ Return only the bullets, nothing else.`;
                 .update({ last_researcher_tick_at: new Date().toISOString() })
                 .eq("workspace_id", brief.workspace_id);
 
-              results.push({ workspace_id: brief.workspace_id, queries, signal_id: signal?.id });
+              results.push({
+                workspace_id: brief.workspace_id,
+                queries,
+                inserted: writeRes.inserted,
+                skipped: writeRes.skipped,
+              });
             } catch (e) {
               results.push({
                 workspace_id: brief.workspace_id,
