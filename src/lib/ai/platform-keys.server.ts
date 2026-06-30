@@ -86,21 +86,21 @@ export function listConfiguredPlatformProviders(): string[] {
  * and are automatically considered by resolveBestAgentModelForUser (vault-aware version).
  */
 export const AGENT_MODEL_PRIORITY: Array<{ provider: string; modelId: string }> = [
-  { provider: "anthropic",  modelId: "anthropic/claude-haiku-4" },
-  { provider: "openai",     modelId: "openai/gpt-4o-mini" },
-  { provider: "qwen",       modelId: "qwen/qwen-plus" },
-  { provider: "groq",       modelId: "groq/llama-3.3-70b-versatile" },
-  { provider: "deepseek",   modelId: "deepseek/deepseek-chat" },
-  { provider: "xai",        modelId: "xai/grok-2-1212" },
-  { provider: "mistral",    modelId: "mistral/mistral-large-latest" },
-  { provider: "moonshot",   modelId: "moonshot/moonshot-v1-128k" },
-  { provider: "together",   modelId: "together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" },
+  { provider: "anthropic", modelId: "anthropic/claude-haiku-4" },
+  { provider: "openai", modelId: "openai/gpt-4o-mini" },
+  { provider: "qwen", modelId: "qwen/qwen-plus" },
+  { provider: "groq", modelId: "groq/llama-3.3-70b-versatile" },
+  { provider: "deepseek", modelId: "deepseek/deepseek-chat" },
+  { provider: "xai", modelId: "xai/grok-2-1212" },
+  { provider: "mistral", modelId: "mistral/mistral-large-latest" },
+  { provider: "moonshot", modelId: "moonshot/moonshot-v1-128k" },
+  { provider: "together", modelId: "together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" },
   { provider: "openrouter", modelId: "openrouter/openai/gpt-4o-mini" },
-  { provider: "fireworks",  modelId: "fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct" },
-  { provider: "deepinfra",  modelId: "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct" },
-  { provider: "cerebras",   modelId: "cerebras/llama3.1-70b" },
+  { provider: "fireworks", modelId: "fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct" },
+  { provider: "deepinfra", modelId: "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct" },
+  { provider: "cerebras", modelId: "cerebras/llama3.1-70b" },
   { provider: "perplexity", modelId: "perplexity/llama-3.1-sonar-large-128k-online" },
-  { provider: "minimax",    modelId: "minimax/minimax-text-01" },
+  { provider: "minimax", modelId: "minimax/minimax-text-01" },
 ];
 
 /**

@@ -236,7 +236,7 @@ export const dispatchStudioSession = createServerFn({ method: "POST" })
       sourceTitle = sourceTitle ?? data.prompt.split(/\r?\n/)[0].slice(0, 80);
       if (/delegat|external.?agent|openhands/i.test(data.prompt)) {
         sections.push(
-          "Delegation available: the operator wants external delegation. Call the `delegate.openhands` TOOL directly (NOT `agent.handoff`). Required args: task (string), repo_url (full GitHub URL), base_branch (e.g. 'main'), evidence_ids (array of {kind, id} pairs citing research or memory that justifies the task). Gather evidence first (repo.search, repo.read), then call `delegate.openhands` with those evidence_ids.",
+          "Delegation available: the operator wants external delegation. Call the `delegate.openhands` TOOL directly (NOT `agent.handoff`). Required args: task (string), repo_url (full GitHub URL), base_branch (e.g. 'main'). evidence_ids (array of {kind, id} pairs) is OPTIONAL: cite research/memory rows when they exist, but if the repo is new or empty there is nothing to cite — pass an empty list and proceed, do NOT manufacture a signal or any other row just to populate it. The human approval gate is the real guardrail. If existing code is present, a quick repo.search/repo.read to ground the task is good practice, but a failed or empty repo.tree (an empty repo returns HTTP 409) is expected for greenfield work and is not a blocker.",
         );
       }
     }

@@ -132,9 +132,7 @@ export function mapOpenHandsResponse(
   resp: OpenHandsTaskResponse | null | undefined,
 ): DelegateVerdict {
   const jobId =
-    typeof resp?.conversation_id === "string" && resp.conversation_id
-      ? resp.conversation_id
-      : null;
+    typeof resp?.conversation_id === "string" && resp.conversation_id ? resp.conversation_id : null;
   return {
     provider: "openhands",
     accepted: jobId != null,

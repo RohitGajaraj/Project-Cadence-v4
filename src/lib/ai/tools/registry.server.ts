@@ -2617,12 +2617,17 @@ const agentSpawn = def({
 const delegateOpenhands = def({
   name: "delegate.openhands",
   description:
-    "Delegate a heavy, well-bounded build task to an EXTERNAL coding agent (OpenHands) working against a repo, UNDER our governance. You MUST cite evidence_ids (the rows that justify the work); the delegation is ALWAYS human-reviewed before it leaves, and the result folds back into the mission. Provide repo_url + base_branch. Use only for build work an external agent is better at; for in-house work hand off to the builder. Requires a mission.",
+    "Delegate a heavy, well-bounded build task to an EXTERNAL coding agent (OpenHands) working against a repo, UNDER our governance. Cite evidence_ids (the rows that justify the work) WHENEVER any exist; greenfield work against a new or empty repo may legitimately have none, in which case pass an empty list rather than manufacturing evidence. The delegation is ALWAYS human-reviewed before it leaves (the real guardrail), and the result folds back into the mission. Provide repo_url + base_branch. Use only for build work an external agent is better at; for in-house work hand off to the builder. Requires a mission.",
   category: "write",
   argsSchema: z.object({
     task: z.string().min(1).max(DELEGATE_TASK_MAX_CHARS),
     repo_url: z.string().min(1).max(400),
     base_branch: z.string().min(1).max(200),
+    // Evidence is cited when it exists, but is NOT mandatory: greenfield work
+    // against an empty repo has nothing to cite, and the human approval gate
+    // (HIGH_RISK_FORCE_REVIEW) is the real guardrail. Defaults to [] so the
+    // model can omit it cleanly instead of fabricating a signal to satisfy a
+    // min-length check. The run fn + ApprovalCard both tolerate an empty list.
     evidence_ids: z
       .array(
         z.object({
@@ -2630,8 +2635,8 @@ const delegateOpenhands = def({
           id: z.string().min(1).max(200),
         }),
       )
-      .min(1)
-      .max(20),
+      .max(20)
+      .default([]),
   }),
   preview: (a) =>
     `Delegate to OpenHands: "${a.task.slice(0, 60)}" on ${a.repo_url}#${a.base_branch}`,
@@ -2648,6 +2653,12 @@ const delegateOpenhands = def({
       },
       "openhands",
     );
+    // Surface honest errors: disabled env, refused by provider, etc.
+    // Without this, executeApproval sees a resolved promise and toasts success
+    // even though no task was ever sent to OpenHands.
+    if (!verdict.accepted) {
+      throw new Error(verdict.reason ?? "delegate.openhands: submission rejected");
+    }
     // Persist the external job id so the poll/fold cycle can locate this run.
     if (verdict.accepted && verdict.externalJobId && runId) {
       await supabase
