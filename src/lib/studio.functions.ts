@@ -236,7 +236,7 @@ export const dispatchStudioSession = createServerFn({ method: "POST" })
       sourceTitle = sourceTitle ?? data.prompt.split(/\r?\n/)[0].slice(0, 80);
       if (/delegat|external.?agent|openhands/i.test(data.prompt)) {
         sections.push(
-          "Delegation available: the operator is explicitly requesting external delegation. For the implementation step, prefer `delegate.openhands` over direct Studio commits. Gather evidence first (research, read relevant files), then call `delegate.openhands` with those evidence_ids.",
+          "Delegation available: the operator wants external delegation. Call the `delegate.openhands` TOOL directly (NOT `agent.handoff`). Required args: task (string), repo_url (full GitHub URL), base_branch (e.g. 'main'), evidence_ids (array of {kind, id} pairs citing research or memory that justifies the task). Gather evidence first (repo.search, repo.read), then call `delegate.openhands` with those evidence_ids.",
         );
       }
     }

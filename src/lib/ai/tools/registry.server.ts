@@ -2325,6 +2325,14 @@ const agentHandoff = def({
     if (!missionId)
       throw new Error("agent.handoff requires a mission_id (start the run with a mission)");
     if (!workspaceId) throw new Error("agent.handoff requires a workspace_id");
+    // Guard: delegate.openhands is a TOOL, not an agent slug. If the model
+    // mistakenly routes here, fail fast with an actionable message so the model
+    // retries with the correct tool call.
+    if (a.to_agent_slug === "delegate.openhands") {
+      throw new Error(
+        "agent.handoff: 'delegate.openhands' is a tool, not an agent slug. Call the `delegate.openhands` tool directly with args: task, repo_url, base_branch, evidence_ids.",
+      );
+    }
     // KI-19: resolveAgent filters to enabled agents only and throws a clear,
     // slug-named error when the target is disabled or off-roster — so a model
     // can never dispatch a child run to a disabled agent. Resolve before the
