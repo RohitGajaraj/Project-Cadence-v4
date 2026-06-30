@@ -350,9 +350,10 @@ export async function runAgentLoop(
     missionId: input.missionId ?? null,
     workspaceId,
   };
-  const model = (!input.model || input.model === "auto")
-    ? await resolveBestAgentModelForUser(supabase, userId)
-    : input.model;
+  const model =
+    !input.model || input.model === "auto"
+      ? await resolveBestAgentModelForUser(supabase, userId)
+      : input.model;
 
   const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {
@@ -877,7 +878,7 @@ export async function resumeAgentLoop(
   const { data: run } = await supabase
     .from("agent_runs")
     .select(
-      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,mission_spend_cap_usd,mission_token_cap",
+      "id,user_id,agent_id,agent_slug,agent_name,input,workspace_id,status,mission_id,mission_spend_cap_usd,mission_token_cap,model",
     )
     .eq("id", runId)
     .maybeSingle();
@@ -946,10 +947,17 @@ export async function resumeAgentLoop(
     .maybeSingle();
 
   const traceId = (cp?.state as { traceId?: string } | undefined)?.traceId ?? crypto.randomUUID();
+  // Model resolution: prefer the stored run.model, then checkpoint state, then vault-aware
+  // resolver (same logic as the fresh-dispatch path). run.model is the user's picker value
+  // ("auto", "qwen/qwen-plus", …); checkpoint state carries the already-resolved model from
+  // the prior step. The vault-aware fallback applies when both are absent or "auto".
+  const storedModel = (run as { model?: string | null }).model;
+  const checkpointModel = (cp?.state as { model?: string } | undefined)?.model;
+  const rawModel = storedModel ?? checkpointModel ?? null;
   const model =
-    (run as { model?: string | null }).model ??
-    (cp?.state as { model?: string } | undefined)?.model ??
-    "google/gemini-2.5-flash";
+    !rawModel || rawModel === "auto"
+      ? await resolveBestAgentModelForUser(supabase, run.user_id)
+      : rawModel;
   const startStep = cp ? cp.step_index : 0;
 
   const { data: toolRows } = await supabase
