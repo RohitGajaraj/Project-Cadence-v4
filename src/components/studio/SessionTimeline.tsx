@@ -123,7 +123,7 @@ function RunBlock({ run, index }: { run: StudioRunDetail; index: number }) {
         <StatusChip status={run.status} />
       </div>
       <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 2 }}>
-        {run.steps.length === 0 ? (
+        {run.steps.length === 0 && !live && (
           <div
             style={{
               ...rail,
@@ -133,10 +133,30 @@ function RunBlock({ run, index }: { run: StudioRunDetail; index: number }) {
               fontStyle: "italic",
             }}
           >
-            {live ? "starting up" : "no recorded steps"}
+            no recorded steps
           </div>
-        ) : (
-          run.steps.map((s, i) => <StepLine key={i} step={s} idx={i} />)
+        )}
+        {run.steps.map((s, i) => <StepLine key={i} step={s} idx={i} />)}
+        {live && (
+          <div style={stepLine}>
+            <span className="tabular-nums" style={stepNum}>
+              {run.steps.length + 1}.
+            </span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontStyle: "italic",
+                color: "var(--ink-faint)",
+              }}
+            >
+              <span className="dot dot-running" style={{ width: 5, height: 5 }} />
+              {run.step_index != null
+                ? `step ${run.step_index + 1} · reasoning`
+                : "starting up"}
+            </span>
+          </div>
         )}
       </div>
       {/* Only the fields a Build run really carries — no judge score exists here. */}

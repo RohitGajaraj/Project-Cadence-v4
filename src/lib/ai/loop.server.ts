@@ -350,7 +350,7 @@ export async function runAgentLoop(
     missionId: input.missionId ?? null,
     workspaceId,
   };
-  const model = input.model ?? resolveBestAgentModel();
+  const model = (!input.model || input.model === "auto") ? resolveBestAgentModel() : input.model;
 
   const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {
