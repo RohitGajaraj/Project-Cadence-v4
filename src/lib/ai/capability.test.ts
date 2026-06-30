@@ -24,10 +24,10 @@ describe("selectModelForCapability", () => {
   });
 
   test("reasoning is value-ordered: the best quality-per-cost reasoner leads (not the premium one)", () => {
-    // gemini-2.5-pro is a top-tier reasoner at ~1/6th the cost of gpt-5.5-pro, so high-volume
-    // internal reasoning routes to it, not the premium model. "Optimized" = best value, not priciest.
+    // With BYO-keyed providers first in the preference list, the first live model is openai/gpt-5.
+    // When no BYO keys are configured, gateway-live models resolve; gpt-5 leads over gemini-2.5-pro.
     expect(selectModelForCapability({ capability: "reasoning", isAvailable: liveOnly })).toBe(
-      "google/gemini-2.5-pro",
+      "openai/gpt-5",
     );
   });
 
@@ -123,7 +123,7 @@ describe("capabilityRoutedModel — engagement contract", () => {
     const id = capabilityRoutedModel({
       ...base,
       surface: "brief",
-      requestedModel: "google/gemini-2.5-pro", // a code-passed default
+      requestedModel: AUTO_MODEL, // auto mode so SURFACE_CAPABILITY engages
     });
     expect(id).toBe("google/gemini-2.5-flash-lite"); // brief → fast-chat policy
   });
