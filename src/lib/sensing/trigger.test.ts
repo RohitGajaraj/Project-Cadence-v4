@@ -4,8 +4,11 @@ import {
   isAutoMissionTitle,
   AUTO_TITLE_PREFIX,
   CLUSTER_FREQUENCY_THRESHOLD,
+  WATCH_SIGNAL_THRESHOLD,
+  LISTEN_SIGNAL_THRESHOLD,
   type ThemeState,
   type OutcomeState,
+  type SignalSenseState,
 } from "./trigger";
 
 const theme = (over: Partial<ThemeState>): ThemeState => ({
@@ -84,5 +87,72 @@ describe("isAutoMissionTitle", () => {
     expect(isAutoMissionTitle(`${AUTO_TITLE_PREFIX} Investigate the "X" cluster`)).toBe(true);
     expect(isAutoMissionTitle("Ship the escalation engine")).toBe(false);
     expect(isAutoMissionTitle(null)).toBe(false);
+  });
+});
+
+describe("evaluateTriggers — Watch (discovery-scout) proposals", () => {
+  const senseOver = (over: Partial<SignalSenseState> = {}): SignalSenseState => ({
+    newSignalCount: WATCH_SIGNAL_THRESHOLD,
+    customerSignalCount: 0,
+    ...over,
+  });
+
+  it("proposes a Watch mission when new signals cross the threshold", () => {
+    const out = evaluateTriggers({ signals: senseOver() });
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe("watch-scan");
+    expect(out[0].agentSlug).toBe("discovery-scout");
+    expect(out[0].title.startsWith(AUTO_TITLE_PREFIX)).toBe(true);
+    expect(out[0].reversible).toBe(true);
+  });
+
+  it("does not propose Watch when signal count is below threshold", () => {
+    const out = evaluateTriggers({ signals: senseOver({ newSignalCount: WATCH_SIGNAL_THRESHOLD - 1 }) });
+    expect(out).toHaveLength(0);
+  });
+
+  it("deduplicates Watch: no second proposal when one is already open", () => {
+    const first = evaluateTriggers({ signals: senseOver() })[0];
+    const again = evaluateTriggers({ signals: senseOver() }, new Set([first.title]));
+    expect(again).toHaveLength(0);
+  });
+});
+
+describe("evaluateTriggers — Listen (customer-insights) proposals", () => {
+  const listenState = (over: Partial<SignalSenseState> = {}): SignalSenseState => ({
+    newSignalCount: 0,
+    customerSignalCount: LISTEN_SIGNAL_THRESHOLD,
+    ...over,
+  });
+
+  it("proposes a Listen mission when customer signals cross the threshold", () => {
+    const out = evaluateTriggers({ signals: listenState() });
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe("customer-listen");
+    expect(out[0].agentSlug).toBe("customer-insights");
+    expect(out[0].reversible).toBe(true);
+  });
+
+  it("does not propose Listen below the threshold", () => {
+    const out = evaluateTriggers({ signals: listenState({ customerSignalCount: LISTEN_SIGNAL_THRESHOLD - 1 }) });
+    expect(out).toHaveLength(0);
+  });
+
+  it("both Watch and Listen can be proposed in the same tick", () => {
+    const out = evaluateTriggers({
+      signals: { newSignalCount: WATCH_SIGNAL_THRESHOLD, customerSignalCount: LISTEN_SIGNAL_THRESHOLD },
+    });
+    const kinds = out.map((p) => p.kind);
+    expect(kinds).toContain("watch-scan");
+    expect(kinds).toContain("customer-listen");
+  });
+
+  it("missed outcome outranks Watch and Listen proposals", () => {
+    const outcome: OutcomeState = { id: "o1", verdict: "missed", summary: "Feature flopped" };
+    const out = evaluateTriggers({
+      outcomes: [outcome],
+      signals: { newSignalCount: WATCH_SIGNAL_THRESHOLD, customerSignalCount: LISTEN_SIGNAL_THRESHOLD },
+    });
+    expect(out[0].kind).toBe("missed-outcome");
   });
 });

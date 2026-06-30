@@ -6,6 +6,7 @@ import {
   isAutoMissionTitle,
   type ThemeState,
   type OutcomeState,
+  type SignalSenseState,
 } from "@/lib/sensing/trigger";
 import { withJobRun } from "@/lib/observability";
 
@@ -83,27 +84,42 @@ export const Route = createFileRoute("/api/public/hooks/trigger-tick")({
 /** Evaluate triggers for one workspace and originate the proposed missions + receipts.
  *  Returns the number of new proposals written. Spend-free (proposed missions never execute). */
 async function runTriggers(ownerId: string, workspaceId: string): Promise<number> {
-  // State in: clusters (themes) + recorded outcomes (learnings).
-  const [{ data: themes }, { data: learnings }, { data: openMissions }] = await Promise.all([
-    supabaseAdmin
-      .from("themes")
-      .select("id, title, frequency, severity, status")
-      .eq("user_id", ownerId)
-      .limit(100),
-    supabaseAdmin
-      .from("learnings")
-      .select("id, verdict, summary, opportunity_id")
-      .eq("user_id", ownerId)
-      .eq("verdict", "missed")
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabaseAdmin
-      .from("missions")
-      .select("title, status")
-      .eq("workspace_id", workspaceId)
-      .in("status", OPEN_MISSION_STATUSES)
-      .limit(200),
-  ]);
+  const cutoff24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+  // State in: clusters (themes) + recorded outcomes (learnings) + signal-volume counts.
+  const [{ data: themes }, { data: learnings }, { data: openMissions }, { count: newSigCount }, { count: customerSigCount }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("themes")
+        .select("id, title, frequency, severity, status")
+        .eq("user_id", ownerId)
+        .limit(100),
+      supabaseAdmin
+        .from("learnings")
+        .select("id, verdict, summary, opportunity_id")
+        .eq("user_id", ownerId)
+        .eq("verdict", "missed")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from("missions")
+        .select("title, status")
+        .eq("workspace_id", workspaceId)
+        .in("status", OPEN_MISSION_STATUSES)
+        .limit(200),
+      // New signals in the last 24h (Watch threshold)
+      supabaseAdmin
+        .from("signals")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+        .gte("created_at", cutoff24h),
+      // Customer feedback signals from pull connectors (Listen threshold)
+      supabaseAdmin
+        .from("signals")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+        .eq("source_kind", "pull_connector"),
+    ]);
 
   const openTitles = new Set(
     (openMissions ?? [])
@@ -111,10 +127,16 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
       .filter((t): t is string => isAutoMissionTitle(t)),
   );
 
+  const senseState: SignalSenseState = {
+    newSignalCount: newSigCount ?? 0,
+    customerSignalCount: customerSigCount ?? 0,
+  };
+
   const proposals = evaluateTriggers(
     {
       themes: (themes ?? []) as ThemeState[],
       outcomes: (learnings ?? []) as OutcomeState[],
+      signals: senseState,
     },
     openTitles,
   );
@@ -122,6 +144,18 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
 
   let written = 0;
   for (const p of proposals) {
+    // Resolve the pre-assigned sense agent UUID when the proposal targets one.
+    let currentAgentId: string | null = null;
+    if (p.agentSlug) {
+      const { data: agentRow } = await supabaseAdmin
+        .from("agents")
+        .select("id")
+        .eq("user_id", ownerId)
+        .eq("slug", p.agentSlug)
+        .maybeSingle();
+      currentAgentId = (agentRow as { id?: string } | null)?.id ?? null;
+    }
+
     // 1. Self-originate the mission in 'proposed' (resume-runs ignores it; no spend, reversible).
     const { data: mission, error: mErr } = await supabaseAdmin
       .from("missions")
@@ -131,6 +165,7 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
         title: p.title,
         goal: p.goal,
         status: "proposed",
+        ...(currentAgentId ? { current_agent_id: currentAgentId } : {}),
       } as never)
       .select("id")
       .single();
@@ -145,7 +180,7 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
       status: "pending",
       source_kind: "mission",
       mission_id: (mission as { id: string }).id,
-      decided_by_agent_slug: "strategist",
+      decided_by_agent_slug: p.agentSlug ?? "strategist",
     } as never);
     written++;
   }

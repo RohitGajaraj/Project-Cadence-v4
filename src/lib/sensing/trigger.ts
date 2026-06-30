@@ -33,8 +33,16 @@ export type OutcomeState = {
   opportunity_id?: string | null;
 };
 
+/** Signal-volume counts passed by trigger-tick for Watch/Listen threshold checks. */
+export type SignalSenseState = {
+  /** Signals inserted in the last 24 hours (all sources). */
+  newSignalCount: number;
+  /** Feedback/support signals from pull connectors (source_kind='pull_connector'). */
+  customerSignalCount: number;
+};
+
 export type TriggerProposal = {
-  kind: "cluster" | "missed-outcome";
+  kind: "cluster" | "missed-outcome" | "watch-scan" | "customer-listen";
   /** Stable identity = the mission title; the tick dedups open missions on this. */
   title: string;
   goal: string;
@@ -45,11 +53,19 @@ export type TriggerProposal = {
   reversible: boolean;
   /** Higher = more urgent; the tick originates the top-N by this. */
   priority: number;
+  /** Pre-assigned agent slug (discovery-scout / customer-insights). Tick looks up the
+   *  UUID and sets current_agent_id so the mission arrives pre-routed to the right
+   *  Sense agent. Absent for cluster/missed-outcome proposals (no default assignment). */
+  agentSlug?: string;
 };
 
 /** A cluster earns a mission when it is unaddressed AND has crossed an attention threshold. */
 export const CLUSTER_FREQUENCY_THRESHOLD = 5;
 export const CLUSTER_SEVERITY_THRESHOLD = 4;
+/** New signals in the last 24h that warrant a Watch (discovery-scout) scan. */
+export const WATCH_SIGNAL_THRESHOLD = 10;
+/** Customer feedback signals (pull_connector) that warrant a Listen (customer-insights) scan. */
+export const LISTEN_SIGNAL_THRESHOLD = 5;
 /** Statuses that mean a theme is still worth acting on (not already handled). */
 const OPEN_THEME_STATUSES = new Set(["new", "open", "active", "investigating"]);
 /** Max proposals one tick will originate, so a backlog spike cannot flood missions. */
@@ -76,12 +92,13 @@ export function isAutoMissionTitle(title: string | null | undefined): boolean {
  * Decide which missions to self-originate. Pure + deterministic.
  *  - themes: clusters with frequency/severity/status.
  *  - outcomes: recorded learnings (verdict).
+ *  - signals: optional Watch/Listen signal-volume counts for sense-agent proposals.
  *  - openTitles: titles of `[auto]` missions already open (any non-terminal status) so a
  *    trigger never double-originates.
  * Returns the top MAX_PROPOSALS_PER_TICK by priority, never throwing on any input shape.
  */
 export function evaluateTriggers(
-  state: { themes?: ThemeState[]; outcomes?: OutcomeState[] },
+  state: { themes?: ThemeState[]; outcomes?: OutcomeState[]; signals?: SignalSenseState },
   openTitles: ReadonlySet<string> = new Set(),
   opts?: { freqThreshold?: number; sevThreshold?: number; max?: number },
 ): TriggerProposal[] {
@@ -123,6 +140,40 @@ export function evaluateTriggers(
       reversible: true,
       priority: 50, // a real miss outranks a merely-large cluster
     });
+  }
+
+  // Watch proposal: enough new signals arrived to warrant a Watch (discovery-scout) scan.
+  const newCount = state.signals?.newSignalCount ?? 0;
+  if (newCount >= WATCH_SIGNAL_THRESHOLD) {
+    const title = autoTitle("Watch: review recent signals");
+    if (!openTitles.has(title)) {
+      out.push({
+        kind: "watch-scan",
+        title,
+        goal: `${newCount} new signals arrived in the last 24 hours. Review and frame what changed — identify emerging clusters, surface framed opportunities, and log anything worth tracking.`,
+        rationale: `Self-initiated: ${newCount} new signals crossed the Watch threshold (${WATCH_SIGNAL_THRESHOLD}). Dispatched to the Watch agent (discovery-scout) for review and framing.`,
+        reversible: true,
+        priority: 30,
+        agentSlug: "discovery-scout",
+      });
+    }
+  }
+
+  // Listen proposal: enough customer feedback signals arrived to warrant clustering.
+  const customerCount = state.signals?.customerSignalCount ?? 0;
+  if (customerCount >= LISTEN_SIGNAL_THRESHOLD) {
+    const title = autoTitle("Listen: cluster customer feedback");
+    if (!openTitles.has(title)) {
+      out.push({
+        kind: "customer-listen",
+        title,
+        goal: `${customerCount} customer feedback signals from connected sources need clustering. Group them into named themes with verbatim quotes and counts, ready for the Strategist to rank.`,
+        rationale: `Self-initiated: ${customerCount} customer feedback signals crossed the Listen threshold (${LISTEN_SIGNAL_THRESHOLD}). Dispatched to the Listen agent (customer-insights) for theme clustering.`,
+        reversible: true,
+        priority: 25,
+        agentSlug: "customer-insights",
+      });
+    }
   }
 
   out.sort((a, b) => b.priority - a.priority);
