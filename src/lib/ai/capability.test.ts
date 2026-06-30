@@ -123,7 +123,7 @@ describe("capabilityRoutedModel — engagement contract", () => {
     const id = capabilityRoutedModel({
       ...base,
       surface: "brief",
-      requestedModel: "google/gemini-2.5-pro", // a code-passed default
+      requestedModel: AUTO_MODEL, // auto mode so SURFACE_CAPABILITY engages
     });
     expect(id).toBe("google/gemini-2.5-flash-lite"); // brief → fast-chat policy
   });
