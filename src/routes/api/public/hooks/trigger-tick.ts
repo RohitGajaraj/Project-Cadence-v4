@@ -113,12 +113,15 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
         .select("id", { count: "exact", head: true })
         .eq("workspace_id", workspaceId)
         .gte("created_at", cutoff24h),
-      // Customer feedback signals from pull connectors (Listen threshold)
+      // Customer feedback signals from pull connectors in the last 24h (Listen threshold).
+      // Bounded to the same 24h window as newSigCount so a workspace with a large
+      // historical backlog doesn't trigger perpetual re-proposals.
       supabaseAdmin
         .from("signals")
         .select("id", { count: "exact", head: true })
         .eq("workspace_id", workspaceId)
-        .eq("source_kind", "pull_connector"),
+        .eq("source_kind", "pull_connector")
+        .gte("created_at", cutoff24h),
     ]);
 
   const openTitles = new Set(

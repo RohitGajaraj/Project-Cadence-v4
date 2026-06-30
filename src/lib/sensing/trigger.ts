@@ -33,11 +33,13 @@ export type OutcomeState = {
   opportunity_id?: string | null;
 };
 
-/** Signal-volume counts passed by trigger-tick for Watch/Listen threshold checks. */
+/** Signal-volume counts passed by trigger-tick for Watch/Listen threshold checks.
+ *  Both fields are bounded to the SAME 24h window so a workspace with a large
+ *  historical backlog does not trigger perpetual re-proposals. */
 export type SignalSenseState = {
   /** Signals inserted in the last 24 hours (all sources). */
   newSignalCount: number;
-  /** Feedback/support signals from pull connectors (source_kind='pull_connector'). */
+  /** Pull-connector signals inserted in the last 24 hours (source_kind='pull_connector'). */
   customerSignalCount: number;
 };
 
