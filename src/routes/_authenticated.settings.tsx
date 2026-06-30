@@ -1335,6 +1335,7 @@ function ByoKeysSection() {
   const [keyLabel, setKeyLabel] = useState<string>("");
   const [keyValue, setKeyValue] = useState<string>("");
   const [keyBase, setKeyBase] = useState<string>("");
+  const [keyModelId, setKeyModelId] = useState<string>("");
   const [testResult, setTestResult] = useState<{
     ok: boolean;
     latency_ms: number;
@@ -1344,7 +1345,7 @@ function ByoKeysSection() {
 
   const mTestKey = useMutation({
     mutationFn: () =>
-      fTestKey({ data: { provider: keyProv, api_key: keyValue, base_url: keyBase || null } }),
+      fTestKey({ data: { provider: keyProv, api_key: keyValue, base_url: keyBase || null, model: keyModelId || undefined } }),
     onSuccess: (r) => {
       setTestResult(r);
       if (r.ok) toast.success(`Key works (${r.latency_ms}ms)`);
@@ -1363,6 +1364,7 @@ function ByoKeysSection() {
           label: keyLabel || null,
           api_key: keyValue,
           base_url: keyBase || null,
+          model_id: keyModelId || null,
         },
       }),
     onSuccess: () => {
@@ -1370,6 +1372,7 @@ function ByoKeysSection() {
       setKeyValue("");
       setKeyLabel("");
       setKeyBase("");
+      setKeyModelId("");
       setTestResult(null);
       toast.success("Key saved");
     },
@@ -1432,6 +1435,15 @@ function ByoKeysSection() {
             placeholder="Base URL (Qwen, Ollama, custom…)"
           />
         </div>
+        {(keyProv === "custom" || keyBase.trim()) ? (
+          <input
+            className="input"
+            style={{ marginTop: 4, width: "100%" }}
+            value={keyModelId}
+            onChange={(e) => setKeyModelId(e.target.value)}
+            placeholder="Model ID — the exact model to use with this key (e.g. qwen/qwen-max, ollama/llama3.2, custom/my-model)"
+          />
+        ) : null}
         <div
           style={{
             display: "flex",
@@ -1516,6 +1528,7 @@ function ByoKeysSection() {
                   }}
                 >
                   {k.preview}
+                  {k.model_id ? ` · ${k.model_id}` : ""}
                   {k.base_url ? ` · ${k.base_url}` : ""}
                 </div>
               </div>

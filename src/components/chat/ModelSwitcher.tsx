@@ -65,6 +65,11 @@ export function ModelSwitcher({
   const current = MODELS.find((m) => m.id === value);
   const label = value === AUTO_MODEL ? "Auto" : (current?.label ?? value);
 
+  // BYO keys with a model_id that isn't already in the catalog get a virtual entry.
+  const byoCustomEntries = (keys.data?.keys ?? []).filter(
+    (k) => k.model_id && !MODELS.some((m) => m.id === k.model_id),
+  );
+
   function select(id: string) {
     onChange(id);
     setOpen(false);
@@ -168,6 +173,35 @@ export function ModelSwitcher({
               })}
             </div>
           ))}
+
+          {byoCustomEntries.length > 0 && (
+            <div>
+              <div className="mt-1 border-t hairline px-2 pb-1 pt-2 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                Custom keys
+              </div>
+              {byoCustomEntries.map((k) => (
+                <button
+                  key={k.id}
+                  type="button"
+                  onClick={() => select(k.model_id!)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors duration-150 hover:bg-secondary/60"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 text-xs text-foreground">
+                      {k.label ?? k.model_id}
+                      <span title="Uses your API key" className="inline-flex">
+                        <KeyRound className="h-2.5 w-2.5 text-muted-foreground/70" />
+                      </span>
+                    </div>
+                    <div className="truncate text-[10px] text-muted-foreground">
+                      {k.model_id}{k.base_url ? ` · ${k.base_url}` : ""}
+                    </div>
+                  </div>
+                  {value === k.model_id && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

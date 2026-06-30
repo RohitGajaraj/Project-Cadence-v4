@@ -71,7 +71,7 @@ export const listApiKeys = createServerFn({ method: "GET" })
       }
     )
       .from("user_api_keys")
-      .select("id, provider, label, base_url, created_at, api_key_prefix")
+      .select("id, provider, label, base_url, model_id, created_at, api_key_prefix")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as Array<{
@@ -79,6 +79,7 @@ export const listApiKeys = createServerFn({ method: "GET" })
       provider: string;
       label: string | null;
       base_url: string | null;
+      model_id: string | null;
       created_at: string;
       api_key_prefix: string | null;
     }>;
@@ -88,6 +89,7 @@ export const listApiKeys = createServerFn({ method: "GET" })
         provider: k.provider,
         label: k.label,
         base_url: k.base_url,
+        model_id: k.model_id,
         created_at: k.created_at,
         preview: maskFromPrefix(k.api_key_prefix),
       })),
@@ -109,6 +111,7 @@ const SaveSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => validateBaseUrl(v) ?? null),
+  model_id: z.string().max(150).nullable().optional(),
 });
 
 export const saveApiKey = createServerFn({ method: "POST" })
@@ -126,6 +129,7 @@ export const saveApiKey = createServerFn({ method: "POST" })
           provider: data.provider,
           label: data.label ?? null,
           base_url: data.base_url ?? null,
+          model_id: data.model_id ?? null,
           ...encrypted,
         } as never,
         { onConflict: "user_id,provider,label" },
