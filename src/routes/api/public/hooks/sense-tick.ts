@@ -83,7 +83,10 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
               const connectors: Record<string, { inserted: number; source: string }> = {};
               for (const c of PULL_INGESTORS) {
                 const r = await c.ingest(ws.owner_id, ws.id).catch(() => null);
-                connectors[c.provider] = { inserted: r?.inserted ?? 0, source: r?.source ?? "none" };
+                connectors[c.provider] = {
+                  inserted: r?.inserted ?? 0,
+                  source: r?.source ?? "none",
+                };
               }
               await supabaseAdmin
                 .from("workspaces")

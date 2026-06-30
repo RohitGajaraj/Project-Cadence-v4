@@ -122,7 +122,11 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "Stripe",
     description: "Pull canceled-subscription churn and cancellation reasons as signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "stripe", clientIdEnv: "STRIPE_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "stripe",
+        clientIdEnv: "STRIPE_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
@@ -134,19 +138,28 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "Slack",
     description: "Pull messages from a chosen feedback channel as customer-voice signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "slack", clientIdEnv: "SLACK_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "slack",
+        clientIdEnv: "SLACK_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [{ kind: "channel", label: "Channel" }],
     capabilities: { inflow: true, outflow: false, sync: false },
     envFallback: { tokenEnv: "SLACK_BOT_TOKEN", resourceKind: "channel" },
-    setupHint: "Create a Slack app + bot token (api.slack.com/apps); set SLACK_SIGNAL_CHANNEL to the channel id.",
+    setupHint:
+      "Create a Slack app + bot token (api.slack.com/apps); set SLACK_SIGNAL_CHANNEL to the channel id.",
   },
   zendesk: {
     id: "zendesk",
     label: "Zendesk",
     description: "Pull recent support tickets as customer-voice signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "zendesk", clientIdEnv: "ZENDESK_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "zendesk",
+        clientIdEnv: "ZENDESK_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
@@ -158,19 +171,28 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "HubSpot",
     description: "Pull closed-lost deals and their loss reasons as win/loss signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "hubspot", clientIdEnv: "HUBSPOT_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "hubspot",
+        clientIdEnv: "HUBSPOT_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
     envFallback: { tokenEnv: "HUBSPOT_ACCESS_TOKEN" },
-    setupHint: "Create a private app + access token in HubSpot (Settings → Integrations → Private Apps).",
+    setupHint:
+      "Create a private app + access token in HubSpot (Settings → Integrations → Private Apps).",
   },
   salesforce: {
     id: "salesforce",
     label: "Salesforce",
     description: "Pull closed-lost opportunities as win/loss signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "salesforce", clientIdEnv: "SALESFORCE_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "salesforce",
+        clientIdEnv: "SALESFORCE_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
@@ -182,7 +204,11 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "Canny",
     description: "Pull recent feature-request posts as feedback signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "canny", clientIdEnv: "CANNY_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "canny",
+        clientIdEnv: "CANNY_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
@@ -194,7 +220,11 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "Productboard",
     description: "Pull customer notes and insights as feedback signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "productboard", clientIdEnv: "PRODUCTBOARD_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "productboard",
+        clientIdEnv: "PRODUCTBOARD_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
@@ -206,7 +236,11 @@ export const CONNECTOR_REGISTRY: Record<ProviderId, ProviderSpec> = {
     label: "Delighted",
     description: "Pull NPS / CSAT survey responses as customer-voice signals.",
     authMethods: [
-      { kind: "oauth_gateway", connectorId: "delighted", clientIdEnv: "DELIGHTED_APP_USER_CONNECTOR_CLIENT_ID" },
+      {
+        kind: "oauth_gateway",
+        connectorId: "delighted",
+        clientIdEnv: "DELIGHTED_APP_USER_CONNECTOR_CLIENT_ID",
+      },
     ],
     resourceTypes: [],
     capabilities: { inflow: true, outflow: false, sync: false },
