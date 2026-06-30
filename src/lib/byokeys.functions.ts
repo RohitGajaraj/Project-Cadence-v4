@@ -3,16 +3,37 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callModel } from "@/lib/ai/runtime.server";
 import { assertSafeBaseUrl } from "@/lib/url-safety";
-import { listConfiguredPlatformProviders, resolveBestAgentModel } from "@/lib/ai/platform-keys.server";
+import {
+  listConfiguredPlatformProviders,
+  resolveBestAgentModel,
+} from "@/lib/ai/platform-keys.server";
 
 export const BYO_PROVIDERS = [
-  { id: "anthropic", label: "Claude (Anthropic)", placeholder: "sk-ant-…" },
-  { id: "deepseek", label: "DeepSeek", placeholder: "sk-…" },
-  { id: "xai", label: "Grok (xAI)", placeholder: "xai-…" },
-  { id: "ollama", label: "Ollama", placeholder: "http://localhost:11434 (base URL)" },
-  { id: "openai", label: "OpenAI (direct)", placeholder: "sk-…" },
-  { id: "google", label: "Gemini (Google)", placeholder: "AIza…" },
-  { id: "github_pat", label: "GitHub PAT", placeholder: "ghp_…" },
+  // Tier 1 — top agentic quality
+  { id: "anthropic",  label: "Claude (Anthropic)",    placeholder: "sk-ant-…" },
+  { id: "openai",     label: "OpenAI",                placeholder: "sk-…" },
+  // Tier 2 — strong open / regional alternatives
+  { id: "qwen",       label: "Qwen (Alibaba Cloud)",  placeholder: "sk-…  ·  set Base URL below" },
+  { id: "deepseek",   label: "DeepSeek",              placeholder: "sk-…" },
+  { id: "groq",       label: "Groq",                  placeholder: "gsk_…" },
+  { id: "xai",        label: "Grok (xAI)",            placeholder: "xai-…" },
+  { id: "mistral",    label: "Mistral",               placeholder: "…" },
+  { id: "moonshot",   label: "Moonshot (Kimi)",       placeholder: "sk-…" },
+  // Tier 3 — meta-routers & fast inference
+  { id: "openrouter", label: "OpenRouter",            placeholder: "sk-or-…" },
+  { id: "together",   label: "Together AI",           placeholder: "…" },
+  { id: "fireworks",  label: "Fireworks AI",          placeholder: "…" },
+  { id: "cerebras",   label: "Cerebras",              placeholder: "…" },
+  { id: "deepinfra",  label: "DeepInfra",             placeholder: "…" },
+  { id: "perplexity", label: "Perplexity",            placeholder: "pplx-…" },
+  { id: "minimax",    label: "MiniMax",               placeholder: "…" },
+  // Local / self-hosted
+  { id: "google",     label: "Gemini (Google)",       placeholder: "AIza…" },
+  { id: "ollama",     label: "Ollama (local)",        placeholder: "any string  ·  set Base URL below" },
+  // Utility
+  { id: "github_pat", label: "GitHub PAT",            placeholder: "ghp_…" },
+  // Anything else — any OpenAI-compatible endpoint
+  { id: "custom",     label: "Custom / OpenAI-compatible", placeholder: "your API key  ·  set Base URL below" },
 ] as const;
 
 function maskFromPrefix(prefix: string | null | undefined): string {
@@ -139,24 +160,27 @@ const TestSchema = z.object({
 });
 
 function defaultModelFor(provider: string): string {
-  switch (provider) {
-    case "anthropic":
-      return "anthropic/claude-3-5-haiku-20241022";
-    case "openai":
-      return "openai/gpt-4o-mini";
-    case "google":
-      return "google/gemini-2.5-flash-lite";
-    case "deepseek":
-      return "deepseek/deepseek-chat";
-    case "xai":
-      return "xai/grok-2-1212";
-    case "ollama":
-      return "ollama/llama3.2";
-    case "github_pat":
-      return "openai/gpt-4o-mini";
-    default:
-      return "openai/gpt-4o-mini";
-  }
+  const defaults: Record<string, string> = {
+    anthropic:  "anthropic/claude-haiku-4",
+    openai:     "openai/gpt-4o-mini",
+    google:     "google/gemini-2.5-flash-lite",
+    deepseek:   "deepseek/deepseek-chat",
+    xai:        "xai/grok-2-1212",
+    qwen:       "qwen/qwen-plus",
+    groq:       "groq/llama-3.3-70b-versatile",
+    mistral:    "mistral/mistral-large-latest",
+    moonshot:   "moonshot/moonshot-v1-128k",
+    openrouter: "openrouter/openai/gpt-4o-mini",
+    together:   "together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+    fireworks:  "fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct",
+    cerebras:   "cerebras/llama3.1-70b",
+    deepinfra:  "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
+    perplexity: "perplexity/llama-3.1-sonar-large-128k-online",
+    minimax:    "minimax/minimax-text-01",
+    ollama:     "ollama/llama3.2",
+    github_pat: "openai/gpt-4o-mini",
+  };
+  return defaults[provider] ?? `${provider}/auto`;
 }
 
 export const testApiKey = createServerFn({ method: "POST" })

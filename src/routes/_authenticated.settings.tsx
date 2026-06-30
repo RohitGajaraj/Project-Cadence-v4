@@ -1389,8 +1389,8 @@ function ByoKeysSection() {
     <div className="bento" style={{ padding: "var(--card-pad)" }}>
       <MonoLabel style={{ marginBottom: 4 }}>Bring your own AI keys</MonoLabel>
       <p style={{ fontSize: 12, color: "var(--ink-subtle)", marginBottom: 12 }}>
-        Connect Claude, DeepSeek, Grok, Ollama, OpenAI direct, Gemini (Google), or a GitHub PAT.
-        Stored encrypted per user.
+        Connect any AI provider — Claude, OpenAI, Qwen, DeepSeek, Groq, Mistral, Moonshot, OpenRouter, and more.
+        Stored encrypted per user. Add a Base URL for providers with custom endpoints (Qwen, Ollama, custom).
       </p>
 
       <form
@@ -1429,7 +1429,7 @@ function ByoKeysSection() {
             className="input"
             value={keyBase}
             onChange={(e) => setKeyBase(e.target.value)}
-            placeholder="Base URL (Ollama only)"
+            placeholder="Base URL (Qwen, Ollama, custom…)"
           />
         </div>
         <div
