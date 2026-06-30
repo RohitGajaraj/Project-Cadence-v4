@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   evaluateTriggers,
   isAutoMissionTitle,
+  shouldAutoPromote,
+  AUTO_TRIGGER_DAILY_CAP,
   type ThemeState,
   type OutcomeState,
   type SignalSenseState,
@@ -11,21 +13,32 @@ import {
 import { withJobRun } from "@/lib/observability";
 
 /**
- * AMBIENT-TRIGGER (v11 #4) trigger-tick: the self-driving policy layer. For every workspace
- * that has opted in (auto_trigger_enabled = true), with NO human start, it evaluates whether
- * accumulated state has crossed a threshold (a signal cluster grew, a recorded outcome missed)
- * and self-originates a mission for each, recording the trigger + rationale as a Trust-Ledger
- * decision receipt.
+ * AMBIENT-TRIGGER (v11 #4) + SF-AUTOTRIGGER (Phase 3) trigger-tick.
  *
- * Reversibility governance (v11): every originated mission is created with status 'proposed' —
- * a status the resume-runs executor IGNORES — so this commits ZERO AI spend and nothing
- * executes until a human/founder promotes it to running. HITL is the promotion step. The
- * pure policy (src/lib/sensing/trigger.ts) is rule-based; no AI call here either.
+ * Two-tier self-driving policy layer:
  *
- * Off by default and bounded (mirrors cluster-tick / sense-tick): ≤5 workspaces per tick,
- * ≤5 proposals per workspace, idempotent (a proposal whose mission title is already open is
- * skipped). The pg_cron schedule that drives this is a founder activation step.
+ * TIER 1 — HITL proposals (always on when auto_trigger_enabled=true):
+ *   For every opted-in workspace, evaluates accumulated state (clusters, missed
+ *   outcomes, signal volumes) and self-originates missions with status='proposed'.
+ *   A proposed mission costs ZERO AI spend; the resume-runs executor ignores it
+ *   until a human promotes it to 'queued'/'running'.
+ *
+ * TIER 2 — Auto-promotion (SF-AUTOTRIGGER, activated by BRAIN_AUTO_TRIGGER=1):
+ *   After creating a proposed mission, if all four conditions hold, it is
+ *   immediately promoted to 'queued' so the resume-runs sweeper picks it up:
+ *     1. BRAIN_AUTO_TRIGGER=1  — founder's circuit breaker (default OFF)
+ *     2. proposal.reversible   — only analysis missions (Watch/Listen), not write ops
+ *     3. ambient arc           — no missions currently running/in_progress in workspace
+ *     4. daily cap             — fewer than AUTO_TRIGGER_DAILY_CAP auto-runs today
+ *   The promotion is recorded via auto_trigger_source='auto' on the mission row
+ *   and annotated on the Trust-Ledger decision receipt for full auditability.
+ *   loop.server.ts is NOT touched — promotion is a DB status write here.
+ *
+ * Bounded: ≤5 workspaces per tick, ≤5 proposals per workspace, idempotent on title.
  */
+
+/** Set BRAIN_AUTO_TRIGGER=1 in Lovable project settings to activate auto-promotion. */
+const BRAIN_AUTO_TRIGGER = process.env.BRAIN_AUTO_TRIGGER === "1";
 
 const MAX_WORKSPACES = 5;
 const OPEN_MISSION_STATUSES = ["proposed", "queued", "running", "in_progress", "waiting_approval"];
@@ -87,42 +100,47 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
   const cutoff24h = new Date(Date.now() - 24 * 3600_000).toISOString();
 
   // State in: clusters (themes) + recorded outcomes (learnings) + signal-volume counts.
-  const [{ data: themes }, { data: learnings }, { data: openMissions }, { count: newSigCount }, { count: customerSigCount }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("themes")
-        .select("id, title, frequency, severity, status")
-        .eq("user_id", ownerId)
-        .limit(100),
-      supabaseAdmin
-        .from("learnings")
-        .select("id, verdict, summary, opportunity_id")
-        .eq("user_id", ownerId)
-        .eq("verdict", "missed")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabaseAdmin
-        .from("missions")
-        .select("title, status")
-        .eq("workspace_id", workspaceId)
-        .in("status", OPEN_MISSION_STATUSES)
-        .limit(200),
-      // New signals in the last 24h (Watch threshold)
-      supabaseAdmin
-        .from("signals")
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .gte("created_at", cutoff24h),
-      // Customer feedback signals from pull connectors in the last 24h (Listen threshold).
-      // Bounded to the same 24h window as newSigCount so a workspace with a large
-      // historical backlog doesn't trigger perpetual re-proposals.
-      supabaseAdmin
-        .from("signals")
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .eq("source_kind", "pull_connector")
-        .gte("created_at", cutoff24h),
-    ]);
+  const [
+    { data: themes },
+    { data: learnings },
+    { data: openMissions },
+    { count: newSigCount },
+    { count: customerSigCount },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("themes")
+      .select("id, title, frequency, severity, status")
+      .eq("user_id", ownerId)
+      .limit(100),
+    supabaseAdmin
+      .from("learnings")
+      .select("id, verdict, summary, opportunity_id")
+      .eq("user_id", ownerId)
+      .eq("verdict", "missed")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabaseAdmin
+      .from("missions")
+      .select("title, status")
+      .eq("workspace_id", workspaceId)
+      .in("status", OPEN_MISSION_STATUSES)
+      .limit(200),
+    // New signals in the last 24h (Watch threshold)
+    supabaseAdmin
+      .from("signals")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .gte("created_at", cutoff24h),
+    // Customer feedback signals from pull connectors in the last 24h (Listen threshold).
+    // Bounded to the same 24h window as newSigCount so a workspace with a large
+    // historical backlog doesn't trigger perpetual re-proposals.
+    supabaseAdmin
+      .from("signals")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .eq("source_kind", "pull_connector")
+      .gte("created_at", cutoff24h),
+  ]);
 
   const openTitles = new Set(
     (openMissions ?? [])
@@ -144,6 +162,36 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
     openTitles,
   );
   if (proposals.length === 0) return 0;
+
+  // SF-AUTOTRIGGER: pre-fetch ambient + daily-cap counts once per workspace tick
+  // (only when the flag is on, to avoid two extra DB round-trips otherwise).
+  let ambientCount = 0;
+  let autoTodayCount = 0;
+  if (BRAIN_AUTO_TRIGGER) {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const [{ count: ac }, { count: atc }] = await Promise.all([
+      // Ambient arc: workspace is not mid-sprint when no mission is actively running.
+      // waiting_approval = paused mid-run for HITL input, so the workspace is still active.
+      supabaseAdmin
+        .from("missions")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+        // queued = scheduled (starts imminently); blocked = stalled mid-sprint on a gate.
+        // Both are active mid-sprint states, same as running/in_progress/waiting_approval.
+        .in("status", ["running", "in_progress", "waiting_approval", "queued", "blocked"]),
+      // Daily cap: count auto-promoted missions created today (created_at is immutable;
+      // updated_at can drift as a mission runs/completes, which would falsely inflate the cap).
+      supabaseAdmin
+        .from("missions")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+        .filter("auto_trigger_source", "eq", "auto")
+        .gte("created_at", todayStart.toISOString()),
+    ]);
+    ambientCount = ac ?? 0;
+    autoTodayCount = atc ?? 0;
+  }
 
   let written = 0;
   for (const p of proposals) {
@@ -174,6 +222,8 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
       .single();
     if (mErr || !mission) continue;
 
+    const missionId = (mission as { id: string }).id;
+
     // 2. Record the trigger + rationale as a Trust-Ledger decision receipt.
     await supabaseAdmin.from("decisions").insert({
       user_id: ownerId,
@@ -182,10 +232,46 @@ async function runTriggers(ownerId: string, workspaceId: string): Promise<number
       rationale: p.rationale,
       status: "pending",
       source_kind: "mission",
-      mission_id: (mission as { id: string }).id,
+      mission_id: missionId,
       decided_by_agent_slug: p.agentSlug ?? "strategist",
     } as never);
     written++;
+
+    // 3. SF-AUTOTRIGGER: auto-promote proposed→queued when all four conditions hold.
+    //    Increment autoTodayCount immediately so the cap is enforced within this tick
+    //    (prevents two proposals in the same tick both seeing count < cap).
+    if (
+      shouldAutoPromote({
+        flagEnabled: BRAIN_AUTO_TRIGGER,
+        reversible: p.reversible,
+        ambientCount,
+        autoTodayCount,
+      })
+    ) {
+      const capNote = `[auto-promoted: ambient + reversible + cap ${autoTodayCount + 1}/${AUTO_TRIGGER_DAILY_CAP}]`;
+      // NOTE(MEDIUM-1): ambient + cap counts are read once per tick with no DB-level lock.
+      // Two concurrent ticks could both pass the cap check (worst-case: 2x cap promotions).
+      // Acceptable for v1 (feature behind BRAIN_AUTO_TRIGGER flag, default OFF).
+      // TODO: use pg_advisory_lock or a DB function for atomic check-and-promote.
+      const [mRes, dRes] = await Promise.all([
+        supabaseAdmin
+          .from("missions")
+          .update({ status: "queued", auto_trigger_source: "auto" } as never)
+          .eq("id", missionId),
+        supabaseAdmin
+          .from("decisions")
+          .update({ status: "approved", rationale: p.rationale + " " + capNote } as never)
+          .eq("mission_id", missionId),
+      ]);
+      if (mRes.error) {
+        console.error("[SF-AUTOTRIGGER] mission status flip failed", { missionId, err: mRes.error.message });
+      } else {
+        autoTodayCount++; // mission IS queued; count even if decision receipt update failed
+        if (dRes.error) {
+          console.error("[SF-AUTOTRIGGER] decision receipt update failed — audit gap", { missionId, err: dRes.error.message });
+        }
+      }
+    }
   }
   return written;
 }
