@@ -46,29 +46,21 @@ const OPENHANDS_TIMEOUT_MS = 30_000;
  * extra secret to manage: the same key that powers Cadence's own agent
  * loop powers the delegated OpenHands session too.
  */
-async function configureOpenHandsLlm(endpoint: string, authHeader: Record<string, string>): Promise<void> {
-  // Resolve the best available LLM key + model from Cadence's own env config.
-  const llmCandidates: Array<{ model: string; apiKey: string; baseUrl?: string }> = [
-    // Explicit override (set in Lovable env if the key for OpenHands differs from Cadence's own).
-    ...(process.env.OPENHANDS_LLM_API_KEY
-      ? [{ model: process.env.OPENHANDS_LLM_MODEL ?? "openai/qwen-plus", apiKey: process.env.OPENHANDS_LLM_API_KEY, baseUrl: process.env.OPENHANDS_LLM_BASE_URL }]
-      : []),
-    // Qwen (primary for BLD-04 Railway self-host)
-    ...(process.env.AI_PROVIDER_QWEN_KEY
-      ? [{ model: "openai/qwen-plus", apiKey: process.env.AI_PROVIDER_QWEN_KEY, baseUrl: process.env.AI_PROVIDER_QWEN_BASE_URL ?? "https://dashscope-intl.aliyuncs.com/compatible-mode/v1" }]
-      : []),
-    // OpenAI
-    ...(process.env.AI_PROVIDER_OPENAI_KEY
-      ? [{ model: "gpt-4o-mini", apiKey: process.env.AI_PROVIDER_OPENAI_KEY }]
-      : []),
-    // Anthropic
-    ...(process.env.AI_PROVIDER_ANTHROPIC_KEY
-      ? [{ model: "claude-haiku-4-5-20251001", apiKey: process.env.AI_PROVIDER_ANTHROPIC_KEY }]
-      : []),
-  ];
+async function configureOpenHandsLlm(
+  endpoint: string,
+  authHeader: Record<string, string>,
+): Promise<void> {
+  // Only override settings when OPENHANDS_LLM_API_KEY is explicitly set.
+  // If Railway's LLM_* env vars are set (the normal self-hosted path), OpenHands
+  // already has correct settings from startup — don't clobber them with Cadence's
+  // AI_PROVIDER_* keys which may point to a different model/endpoint.
+  if (!process.env.OPENHANDS_LLM_API_KEY) return;
 
-  const llm = llmCandidates[0];
-  if (!llm) return; // No key available — skip; OpenHands may already have settings configured.
+  const llm = {
+    model: process.env.OPENHANDS_LLM_MODEL ?? "openai/qwen-plus",
+    apiKey: process.env.OPENHANDS_LLM_API_KEY,
+    baseUrl: process.env.OPENHANDS_LLM_BASE_URL,
+  };
 
   const settingsBody: Record<string, string> = {
     llm_model: llm.model,
@@ -81,7 +73,9 @@ async function configureOpenHandsLlm(endpoint: string, authHeader: Record<string
     headers: { "content-type": "application/json", ...authHeader },
     body: JSON.stringify(settingsBody),
     signal: AbortSignal.timeout(10_000),
-  }).catch(() => { /* best-effort; conversation create will surface the real error */ });
+  }).catch(() => {
+    /* best-effort; conversation create will surface the real error */
+  });
 }
 
 function refusal(reason: string): DelegateVerdict {
