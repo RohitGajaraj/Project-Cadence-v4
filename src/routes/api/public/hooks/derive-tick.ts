@@ -4,8 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { withJobRun } from "@/lib/observability";
 import { deriveAllInsights } from "@/lib/brain/derive-insights.server";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Route = createFileRoute("/api/public/hooks/derive-tick" as any)({
+export const Route = createFileRoute("/api/public/hooks/derive-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {

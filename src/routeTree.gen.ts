@@ -102,8 +102,9 @@ import { Route as ApiPublicHooksIndexerTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEventReactorTickRouteImport } from './routes/api/public/hooks/event-reactor-tick'
 import { Route as ApiPublicHooksEvalTickRouteImport } from './routes/api/public/hooks/eval-tick'
 import { Route as ApiPublicHooksEvalSuiteTickRouteImport } from './routes/api/public/hooks/eval-suite-tick'
-import { Route as ApiPublicHooksDeriveTickRouteImport } from './routes/api/public/hooks/derive-tick'
 import { Route as ApiPublicHooksDriftTickRouteImport } from './routes/api/public/hooks/drift-tick'
+import { Route as ApiPublicHooksDeriveTickRouteImport } from './routes/api/public/hooks/derive-tick'
+import { Route as ApiPublicHooksDelegatePollTickRouteImport } from './routes/api/public/hooks/delegate-poll-tick'
 import { Route as ApiPublicHooksCreditTickRouteImport } from './routes/api/public/hooks/credit-tick'
 import { Route as ApiPublicHooksClusterTickRouteImport } from './routes/api/public/hooks/cluster-tick'
 import { Route as ApiPublicHooksApprovalsTickRouteImport } from './routes/api/public/hooks/approvals-tick'
@@ -607,16 +608,23 @@ const ApiPublicHooksEvalSuiteTickRoute =
     path: '/api/public/hooks/eval-suite-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksDeriveTickRoute = ApiPublicHooksDeriveTickRouteImport.update({
-  id: '/api/public/hooks/derive-tick',
-  path: '/api/public/hooks/derive-tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksDriftTickRoute = ApiPublicHooksDriftTickRouteImport.update({
   id: '/api/public/hooks/drift-tick',
   path: '/api/public/hooks/drift-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksDeriveTickRoute =
+  ApiPublicHooksDeriveTickRouteImport.update({
+    id: '/api/public/hooks/derive-tick',
+    path: '/api/public/hooks/derive-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDelegatePollTickRoute =
+  ApiPublicHooksDelegatePollTickRouteImport.update({
+    id: '/api/public/hooks/delegate-poll-tick',
+    path: '/api/public/hooks/delegate-poll-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCreditTickRoute =
   ApiPublicHooksCreditTickRouteImport.update({
     id: '/api/public/hooks/credit-tick',
@@ -760,6 +768,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
+  '/api/public/hooks/delegate-poll-tick': typeof ApiPublicHooksDelegatePollTickRoute
   '/api/public/hooks/derive-tick': typeof ApiPublicHooksDeriveTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
@@ -864,6 +873,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
+  '/api/public/hooks/delegate-poll-tick': typeof ApiPublicHooksDelegatePollTickRoute
   '/api/public/hooks/derive-tick': typeof ApiPublicHooksDeriveTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
@@ -972,6 +982,7 @@ export interface FileRoutesById {
   '/api/public/hooks/approvals-tick': typeof ApiPublicHooksApprovalsTickRoute
   '/api/public/hooks/cluster-tick': typeof ApiPublicHooksClusterTickRoute
   '/api/public/hooks/credit-tick': typeof ApiPublicHooksCreditTickRoute
+  '/api/public/hooks/delegate-poll-tick': typeof ApiPublicHooksDelegatePollTickRoute
   '/api/public/hooks/derive-tick': typeof ApiPublicHooksDeriveTickRoute
   '/api/public/hooks/drift-tick': typeof ApiPublicHooksDriftTickRoute
   '/api/public/hooks/eval-suite-tick': typeof ApiPublicHooksEvalSuiteTickRoute
@@ -1080,6 +1091,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
+    | '/api/public/hooks/delegate-poll-tick'
     | '/api/public/hooks/derive-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
@@ -1184,6 +1196,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
+    | '/api/public/hooks/delegate-poll-tick'
     | '/api/public/hooks/derive-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
@@ -1291,6 +1304,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/approvals-tick'
     | '/api/public/hooks/cluster-tick'
     | '/api/public/hooks/credit-tick'
+    | '/api/public/hooks/delegate-poll-tick'
     | '/api/public/hooks/derive-tick'
     | '/api/public/hooks/drift-tick'
     | '/api/public/hooks/eval-suite-tick'
@@ -1339,6 +1353,7 @@ export interface RootRouteChildren {
   ApiPublicHooksApprovalsTickRoute: typeof ApiPublicHooksApprovalsTickRoute
   ApiPublicHooksClusterTickRoute: typeof ApiPublicHooksClusterTickRoute
   ApiPublicHooksCreditTickRoute: typeof ApiPublicHooksCreditTickRoute
+  ApiPublicHooksDelegatePollTickRoute: typeof ApiPublicHooksDelegatePollTickRoute
   ApiPublicHooksDeriveTickRoute: typeof ApiPublicHooksDeriveTickRoute
   ApiPublicHooksDriftTickRoute: typeof ApiPublicHooksDriftTickRoute
   ApiPublicHooksEvalSuiteTickRoute: typeof ApiPublicHooksEvalSuiteTickRoute
@@ -2014,6 +2029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEvalSuiteTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/drift-tick': {
+      id: '/api/public/hooks/drift-tick'
+      path: '/api/public/hooks/drift-tick'
+      fullPath: '/api/public/hooks/drift-tick'
+      preLoaderRoute: typeof ApiPublicHooksDriftTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/derive-tick': {
       id: '/api/public/hooks/derive-tick'
       path: '/api/public/hooks/derive-tick'
@@ -2021,11 +2043,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDeriveTickRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/drift-tick': {
-      id: '/api/public/hooks/drift-tick'
-      path: '/api/public/hooks/drift-tick'
-      fullPath: '/api/public/hooks/drift-tick'
-      preLoaderRoute: typeof ApiPublicHooksDriftTickRouteImport
+    '/api/public/hooks/delegate-poll-tick': {
+      id: '/api/public/hooks/delegate-poll-tick'
+      path: '/api/public/hooks/delegate-poll-tick'
+      fullPath: '/api/public/hooks/delegate-poll-tick'
+      preLoaderRoute: typeof ApiPublicHooksDelegatePollTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/credit-tick': {
@@ -2295,6 +2317,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksApprovalsTickRoute: ApiPublicHooksApprovalsTickRoute,
   ApiPublicHooksClusterTickRoute: ApiPublicHooksClusterTickRoute,
   ApiPublicHooksCreditTickRoute: ApiPublicHooksCreditTickRoute,
+  ApiPublicHooksDelegatePollTickRoute: ApiPublicHooksDelegatePollTickRoute,
   ApiPublicHooksDeriveTickRoute: ApiPublicHooksDeriveTickRoute,
   ApiPublicHooksDriftTickRoute: ApiPublicHooksDriftTickRoute,
   ApiPublicHooksEvalSuiteTickRoute: ApiPublicHooksEvalSuiteTickRoute,
