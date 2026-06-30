@@ -2,8 +2,7 @@
 //
 // Ranks the workspace's themes LIVE via the pure scoreTheme (severity x recency x
 // novelty-vs-memory) with NO AI, then makes ONE derive call for the single top theme to turn
-// it into a concrete recommendation. The derive call REUSES the existing "copilot" CallSurface
-// (the same one getBrainAnalysis uses), so this needs ZERO edit to the pinned AI chokepoint.
+// it into a concrete recommendation. Uses the "sense" CallSurface (routed in Phase 2).
 // Dedup'd per (workspace, theme, day) so a Today reload reuses a fresh insight instead of
 // re-spending. Returns null when there is no clear next (calm-front: render nothing).
 
@@ -197,4 +196,68 @@ export const getFocusNext = createServerFn({ method: "GET" })
       .single();
 
     return row ? toFocusInsight(row as Record<string, unknown>, top.s) : null;
+  });
+
+// ---------------------------------------------------------------------------
+// InsightRail — all non-next_best_action open insights, scored DESC, limit 6.
+// getFocusNext owns the single top-ranked action; this rail owns everything else.
+// Returns an empty array (never null) so the caller can hide the rail cleanly.
+// ---------------------------------------------------------------------------
+
+export type InsightRailItem = {
+  id: string;
+  kind: "prediction" | "risk" | "cost_of_inaction" | "hidden_connection";
+  headline: string;
+  detail: string;
+  evidence: Record<string, string | number | boolean | null>;
+  recommendedAction: { agent_slug: string; goal: string } | null;
+  score: number;
+  confidence: number | null;
+  themeId: string | null;
+  createdAt: string;
+};
+
+function toInsightRailItem(row: Record<string, unknown>): InsightRailItem {
+  const ra = (row.recommended_action ?? null) as { agent_slug?: string; goal?: string } | null;
+  return {
+    id: String(row.id),
+    kind: (row.kind as InsightRailItem["kind"]) ?? "prediction",
+    headline: String(row.headline ?? ""),
+    detail: String(row.detail ?? ""),
+    evidence: (row.evidence ?? {}) as Record<string, string | number | boolean | null>,
+    recommendedAction:
+      ra && ra.goal ? { agent_slug: ra.agent_slug ?? "strategist", goal: ra.goal } : null,
+    score: typeof row.score === "number" ? row.score : 0,
+    confidence: (row.confidence as number | null) ?? null,
+    themeId: (row.theme_id as string | null) ?? null,
+    createdAt: String(row.created_at ?? ""),
+  };
+}
+
+export const getInsightRail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<InsightRailItem[]> => {
+    const { supabase, userId } = context as unknown as { supabase: SupabaseClient; userId: string };
+
+    const { data: member } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+    const workspaceId = (member?.workspace_id as string | undefined) ?? null;
+    if (!workspaceId) return [];
+
+    const { data: rows } = await supabase
+      .from("insights")
+      .select(
+        "id,kind,headline,detail,evidence,recommended_action,score,confidence,theme_id,created_at",
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("status", "open")
+      .neq("kind", "next_best_action")
+      .order("score", { ascending: false, nullsFirst: false })
+      .limit(6);
+
+    return ((rows ?? []) as Record<string, unknown>[]).map(toInsightRailItem);
   });

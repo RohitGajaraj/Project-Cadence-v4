@@ -42,7 +42,8 @@ import { ColdStartOnramp } from "@/components/today/ColdStartOnramp";
 import { GettingStartedChecklist } from "@/components/onboarding/GettingStartedChecklist";
 import { MemoryExpiryBanner } from "@/components/plg/MemoryExpiryBanner";
 import { FocusNext } from "@/components/today/FocusNext";
-import { getFocusNext } from "@/lib/brain/insights.functions";
+import { InsightRail } from "@/components/today/InsightRail";
+import { getFocusNext, getInsightRail } from "@/lib/brain/insights.functions";
 import { WedgeTeardown } from "@/components/today/WedgeTeardown";
 import { CostPerOutcomeChip } from "@/components/today/CostPerOutcomeChip";
 import { listOpportunities } from "@/lib/discovery.functions";
@@ -68,6 +69,7 @@ function Dashboard() {
   const fetchGreeting = useServerFn(getGreeting);
   const fetchNeedsYou = useServerFn(getNeedsYou);
   const fetchFocus = useServerFn(getFocusNext);
+  const fetchInsightRail = useServerFn(getInsightRail);
   const fetchColdStart = useServerFn(getColdStart);
   const fetchLoopPulse = useServerFn(getLoopPulse);
   const fetchLearnings = useServerFn(listLearnings);
@@ -91,6 +93,12 @@ function Dashboard() {
   const focus = useQuery({
     queryKey: ["focus-next"],
     queryFn: () => fetchFocus(),
+    staleTime: 30 * 60 * 1000,
+  });
+  // SF-INSIGHT-RAIL: ranked list of supporting insights shown below FocusNext.
+  const insightRail = useQuery({
+    queryKey: ["insight-rail"],
+    queryFn: () => fetchInsightRail(),
     staleTime: 30 * 60 * 1000,
   });
   // WEDGE: the first teardown creates the workspace's first opportunity, which
@@ -557,6 +565,13 @@ function Dashboard() {
         {!isCold && (
           <FocusNext
             insight={focus.data ?? null}
+            onStart={(goal) => startMission.mutate({ goal })}
+            isStarting={startMission.isPending}
+          />
+        )}
+        {!isCold && insightRail.data && insightRail.data.length > 0 && (
+          <InsightRail
+            insights={insightRail.data ?? []}
             onStart={(goal) => startMission.mutate({ goal })}
             isStarting={startMission.isPending}
           />
