@@ -1494,6 +1494,69 @@ export type Database = {
         }
         Relationships: []
       }
+      changelog_entries: {
+        Row: {
+          body: string | null
+          changeset_id: string | null
+          created_at: string
+          id: string
+          pr_number: number | null
+          pr_url: string | null
+          prd_id: string | null
+          product_id: string | null
+          released_at: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string | null
+          changeset_id?: string | null
+          created_at?: string
+          id?: string
+          pr_number?: number | null
+          pr_url?: string | null
+          prd_id?: string | null
+          product_id?: string | null
+          released_at?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string | null
+          changeset_id?: string | null
+          created_at?: string
+          id?: string
+          pr_number?: number | null
+          pr_url?: string | null
+          prd_id?: string | null
+          product_id?: string | null
+          released_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "changelog_entries_changeset_id_fkey"
+            columns: ["changeset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_changesets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "changelog_entries_prd_id_fkey"
+            columns: ["prd_id"]
+            isOneToOne: false
+            referencedRelation: "prds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connection_bindings: {
         Row: {
           config: Json
@@ -2048,6 +2111,65 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deployments: {
+        Row: {
+          changeset_id: string | null
+          commit_sha: string
+          created_at: string
+          deploy_url: string | null
+          deployed_at: string | null
+          environment: string
+          id: string
+          product_id: string | null
+          provider: string
+          status: string
+          triggered_by: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          changeset_id?: string | null
+          commit_sha?: string
+          created_at?: string
+          deploy_url?: string | null
+          deployed_at?: string | null
+          environment?: string
+          id?: string
+          product_id?: string | null
+          provider?: string
+          status?: string
+          triggered_by?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          changeset_id?: string | null
+          commit_sha?: string
+          created_at?: string
+          deploy_url?: string | null
+          deployed_at?: string | null
+          environment?: string
+          id?: string
+          product_id?: string | null
+          provider?: string
+          status?: string
+          triggered_by?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployments_changeset_id_fkey"
+            columns: ["changeset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_changesets"
             referencedColumns: ["id"]
           },
         ]
@@ -3031,6 +3153,85 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      insights: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          dedup_key: string | null
+          detail: string
+          evidence: Json
+          headline: string
+          id: string
+          kind: string
+          product_id: string | null
+          recommended_action: Json | null
+          score: number | null
+          status: string
+          theme_id: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          dedup_key?: string | null
+          detail?: string
+          evidence?: Json
+          headline: string
+          id?: string
+          kind: string
+          product_id?: string | null
+          recommended_action?: Json | null
+          score?: number | null
+          status?: string
+          theme_id?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          dedup_key?: string | null
+          detail?: string
+          evidence?: Json
+          headline?: string
+          id?: string
+          kind?: string
+          product_id?: string | null
+          recommended_action?: Json | null
+          score?: number | null
+          status?: string
+          theme_id?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invitations: {
         Row: {
@@ -4777,6 +4978,196 @@ export type Database = {
           },
         ]
       }
+      scout_runs: {
+        Row: {
+          changed: boolean
+          created_at: string
+          detail: string | null
+          fetch_count: number
+          id: string
+          kind: string | null
+          outcome: string
+          signal_id: string | null
+          snapshot_id: string | null
+          target_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          changed?: boolean
+          created_at?: string
+          detail?: string | null
+          fetch_count?: number
+          id?: string
+          kind?: string | null
+          outcome: string
+          signal_id?: string | null
+          snapshot_id?: string | null
+          target_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          changed?: boolean
+          created_at?: string
+          detail?: string | null
+          fetch_count?: number
+          id?: string
+          kind?: string | null
+          outcome?: string
+          signal_id?: string | null
+          snapshot_id?: string | null
+          target_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_runs_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_runs_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "scout_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_runs_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "scout_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scout_snapshots: {
+        Row: {
+          char_count: number
+          content_hash: string
+          excerpt: string
+          fetched_at: string
+          fetched_url: string | null
+          id: string
+          status: number | null
+          target_id: string
+          workspace_id: string
+        }
+        Insert: {
+          char_count?: number
+          content_hash: string
+          excerpt?: string
+          fetched_at?: string
+          fetched_url?: string | null
+          id?: string
+          status?: number | null
+          target_id: string
+          workspace_id: string
+        }
+        Update: {
+          char_count?: number
+          content_hash?: string
+          excerpt?: string
+          fetched_at?: string
+          fetched_url?: string | null
+          id?: string
+          status?: number | null
+          target_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_snapshots_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "scout_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_snapshots_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scout_targets: {
+        Row: {
+          cadence: string
+          config: Json
+          consecutive_unchanged: number
+          created_at: string
+          enabled: boolean
+          error_count: number
+          id: string
+          kind: string
+          label: string
+          last_checked_at: string | null
+          last_error: string | null
+          next_check_at: string | null
+          query: string | null
+          updated_at: string
+          url: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          cadence?: string
+          config?: Json
+          consecutive_unchanged?: number
+          created_at?: string
+          enabled?: boolean
+          error_count?: number
+          id?: string
+          kind: string
+          label: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          next_check_at?: string | null
+          query?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          cadence?: string
+          config?: Json
+          consecutive_unchanged?: number
+          created_at?: string
+          enabled?: boolean
+          error_count?: number
+          id?: string
+          kind?: string
+          label?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          next_check_at?: string | null
+          query?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_targets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signals: {
         Row: {
           content: string
@@ -4788,6 +5179,7 @@ export type Database = {
           project_id: string | null
           sentiment: string | null
           source: string
+          source_kind: string | null
           tags: string[]
           theme_id: string | null
           title: string | null
@@ -4805,6 +5197,7 @@ export type Database = {
           project_id?: string | null
           sentiment?: string | null
           source?: string
+          source_kind?: string | null
           tags?: string[]
           theme_id?: string | null
           title?: string | null
@@ -4822,6 +5215,7 @@ export type Database = {
           project_id?: string | null
           sentiment?: string | null
           source?: string
+          source_kind?: string | null
           tags?: string[]
           theme_id?: string | null
           title?: string | null
@@ -5020,6 +5414,7 @@ export type Database = {
           mission_id: string | null
           pr_number: number | null
           pr_url: string | null
+          prd_id: string | null
           product_id: string | null
           release_notes: string | null
           release_notes_at: string | null
@@ -5039,6 +5434,7 @@ export type Database = {
           mission_id?: string | null
           pr_number?: number | null
           pr_url?: string | null
+          prd_id?: string | null
           product_id?: string | null
           release_notes?: string | null
           release_notes_at?: string | null
@@ -5058,6 +5454,7 @@ export type Database = {
           mission_id?: string | null
           pr_number?: number | null
           pr_url?: string | null
+          prd_id?: string | null
           product_id?: string | null
           release_notes?: string | null
           release_notes_at?: string | null
@@ -5075,6 +5472,13 @@ export type Database = {
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_changesets_prd_id_fkey"
+            columns: ["prd_id"]
+            isOneToOne: false
+            referencedRelation: "prds"
             referencedColumns: ["id"]
           },
         ]
@@ -5413,10 +5817,15 @@ export type Database = {
         Row: {
           confidence: number
           created_at: string
+          embedding: string | null
           frequency: number
           id: string
+          last_signal_at: string | null
+          novelty: number | null
+          novelty_basis: Json | null
           product_id: string | null
           project_id: string | null
+          scored_at: string | null
           severity: number
           status: string
           summary: string
@@ -5427,10 +5836,15 @@ export type Database = {
         Insert: {
           confidence?: number
           created_at?: string
+          embedding?: string | null
           frequency?: number
           id?: string
+          last_signal_at?: string | null
+          novelty?: number | null
+          novelty_basis?: Json | null
           product_id?: string | null
           project_id?: string | null
+          scored_at?: string | null
           severity?: number
           status?: string
           summary?: string
@@ -5441,10 +5855,15 @@ export type Database = {
         Update: {
           confidence?: number
           created_at?: string
+          embedding?: string | null
           frequency?: number
           id?: string
+          last_signal_at?: string | null
+          novelty?: number | null
+          novelty_basis?: Json | null
           product_id?: string | null
           project_id?: string | null
+          scored_at?: string | null
           severity?: number
           status?: string
           summary?: string
@@ -5535,6 +5954,7 @@ export type Database = {
           id: string
           key_version: number | null
           label: string | null
+          model_id: string | null
           provider: string
           updated_at: string
           user_id: string
@@ -5548,6 +5968,7 @@ export type Database = {
           id?: string
           key_version?: number | null
           label?: string | null
+          model_id?: string | null
           provider: string
           updated_at?: string
           user_id: string
@@ -5561,6 +5982,7 @@ export type Database = {
           id?: string
           key_version?: number | null
           label?: string | null
+          model_id?: string | null
           provider?: string
           updated_at?: string
           user_id?: string
@@ -6014,18 +6436,23 @@ export type Database = {
         Row: {
           account_id: string
           auto_cluster_enabled: boolean
+          auto_derive_enabled: boolean
+          auto_scout_enabled: boolean
           auto_sense_enabled: boolean
           auto_trigger_enabled: boolean
           created_at: string
           deleted_at: string | null
           id: string
           last_auto_cluster_at: string | null
+          last_auto_derive_at: string | null
+          last_auto_scout_at: string | null
           last_auto_sense_at: string | null
           last_auto_trigger_at: string | null
           name: string
           owner_id: string
           plan_tier: string
           plan_updated_at: string | null
+          scout_daily_fetch_cap: number
           slug: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -6034,18 +6461,23 @@ export type Database = {
         Insert: {
           account_id: string
           auto_cluster_enabled?: boolean
+          auto_derive_enabled?: boolean
+          auto_scout_enabled?: boolean
           auto_sense_enabled?: boolean
           auto_trigger_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
+          last_auto_derive_at?: string | null
+          last_auto_scout_at?: string | null
           last_auto_sense_at?: string | null
           last_auto_trigger_at?: string | null
           name: string
           owner_id: string
           plan_tier?: string
           plan_updated_at?: string | null
+          scout_daily_fetch_cap?: number
           slug?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -6054,18 +6486,23 @@ export type Database = {
         Update: {
           account_id?: string
           auto_cluster_enabled?: boolean
+          auto_derive_enabled?: boolean
+          auto_scout_enabled?: boolean
           auto_sense_enabled?: boolean
           auto_trigger_enabled?: boolean
           created_at?: string
           deleted_at?: string | null
           id?: string
           last_auto_cluster_at?: string | null
+          last_auto_derive_at?: string | null
+          last_auto_scout_at?: string | null
           last_auto_sense_at?: string | null
           last_auto_trigger_at?: string | null
           name?: string
           owner_id?: string
           plan_tier?: string
           plan_updated_at?: string | null
+          scout_daily_fetch_cap?: number
           slug?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -6475,6 +6912,10 @@ export type Database = {
         Args: { _enabled: boolean }
         Returns: boolean
       }
+      admin_set_memory_expiry_enabled: {
+        Args: { _enabled: boolean }
+        Returns: boolean
+      }
       admin_set_observability_enabled: {
         Args: { _enabled: boolean }
         Returns: boolean
@@ -6635,6 +7076,10 @@ export type Database = {
           _run_id: string
         }
         Returns: string
+      }
+      connection_owner_in_workspace: {
+        Args: { p_connection_id: string; p_workspace_id: string }
+        Returns: boolean
       }
       create_workspace_invitation: {
         Args: { _email: string; _role?: string; _workspace_id: string }
@@ -6850,6 +7295,20 @@ export type Database = {
           title: string
         }[]
       }
+      match_themes: {
+        Args: {
+          exclude_id?: string
+          for_user: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          similarity: number
+          summary: string
+          title: string
+        }[]
+      }
       memory_expiry_enabled: { Args: never; Returns: boolean }
       move_product: {
         Args: { _dest_workspace_id: string; _product_id: string }
@@ -6888,6 +7347,10 @@ export type Database = {
         }
       }
       observability_enabled: { Args: never; Returns: boolean }
+      product_in_workspace: {
+        Args: { p_product_id: string; p_workspace_id: string }
+        Returns: boolean
+      }
       publish_announcement: {
         Args: { _announcement_id: string; _workspace_id: string }
         Returns: undefined
