@@ -34,40 +34,31 @@ afterEach(() => {
 });
 
 describe("buildOpenHandsRequest (pure mapping)", () => {
-  test("maps the normalized request to the OpenHands task body", () => {
+  test("maps the normalized request to the OpenHands conversation body", () => {
     const body = buildOpenHandsRequest(REQ);
-    expect(body.goal).toBe(REQ.task);
-    expect(body.repo).toBe(REQ.repoUrl);
-    expect(body.branch).toBe(REQ.baseBranch);
-    expect(body.metadata).toEqual({ context: { prdId: "p1" }, cadence_run_id: "run_123" });
+    expect(body.initial_user_msg).toBe(REQ.task);
+    // Full clone URL is extracted to "owner/repo" format OpenHands expects.
+    expect(body.repository).toBe("acme/app");
+    expect(body.selected_branch).toBe(REQ.baseBranch);
   });
 
-  test("bounds the task text and tolerates missing context/run id", () => {
+  test("bounds the task text and omits optional fields when absent", () => {
     const body = buildOpenHandsRequest({
       task: "x".repeat(DELEGATE_TASK_MAX_CHARS + 500),
-      repoUrl: "r",
-      baseBranch: "b",
+      repoUrl: "",
+      baseBranch: "",
     });
-    expect(body.goal.length).toBe(DELEGATE_TASK_MAX_CHARS);
-    expect(body.metadata).toEqual({ context: {}, cadence_run_id: null });
+    expect(body.initial_user_msg.length).toBe(DELEGATE_TASK_MAX_CHARS);
+    expect(body.repository).toBeUndefined();
+    expect(body.selected_branch).toBeUndefined();
   });
 });
 
 describe("mapOpenHandsResponse (pure mapping)", () => {
-  test("accepts only on a known status WITH a task id", () => {
-    const v = mapOpenHandsResponse({ task_id: "t1", status: "queued" });
+  test("accepts when conversation_id is present", () => {
+    const v = mapOpenHandsResponse({ conversation_id: "conv_1" });
     expect(v.accepted).toBe(true);
-    expect(v.externalJobId).toBe("t1");
-  });
-
-  test("a task id without an accepted status is refused", () => {
-    expect(mapOpenHandsResponse({ task_id: "t1", status: "rejected" }).accepted).toBe(false);
-  });
-
-  test("an accepted status without a task id is refused (no phantom acceptance)", () => {
-    const v = mapOpenHandsResponse({ status: "running" });
-    expect(v.accepted).toBe(false);
-    expect(v.externalJobId).toBe(null);
+    expect(v.externalJobId).toBe("conv_1");
   });
 
   test("null / empty / malformed responses are refused, never throw", () => {
@@ -168,16 +159,16 @@ describe("openHandsProvider.submit (fail-safe transport)", () => {
     expect(v.reason).toContain("503");
   });
 
-  test("a well-formed accepted response yields an accepted verdict + job id", async () => {
+  test("a well-formed accepted response yields an accepted verdict + conversation id", async () => {
     process.env.DELEGATE_OUTBOUND_ENABLED = "1";
     process.env.OPENHANDS_ENDPOINT = "https://oh.internal";
     globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ task_id: "oh_42", status: "queued" }), {
+      new Response(JSON.stringify({ conversation_id: "conv_42" }), {
         status: 200,
         headers: { "content-type": "application/json" },
       })) as typeof fetch;
     const v = await openHandsProvider.submit(REQ);
     expect(v.accepted).toBe(true);
-    expect(v.externalJobId).toBe("oh_42");
+    expect(v.externalJobId).toBe("conv_42");
   });
 });

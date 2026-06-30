@@ -62,8 +62,8 @@ describe("pollDelegateJob — terminal status mapping (enabled)", () => {
     process.env.OPENHANDS_ENDPOINT = "https://oh.internal";
   });
 
-  test("maps 'done' status with result text", async () => {
-    mockFetch({ task_id: "j1", status: "done", result: "PR created at #42" });
+  test("maps 'done' status with result text (last_agent_message)", async () => {
+    mockFetch({ conversation_id: "j1", status: "done", last_agent_message: "PR created at #42" });
     const r = await pollDelegateJob("j1");
     expect(r.status).toBe("done");
     expect(r.result).toBe("PR created at #42");

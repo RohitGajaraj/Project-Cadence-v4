@@ -87,58 +87,58 @@ export const RESERVED_DELEGATE_PROVIDER_IDS: readonly DelegateProviderId[] = [
   "swe-agent",
 ];
 
-/** The OpenHands self-host task-submit request body (their `/api/v1/tasks` POST). */
+/**
+ * The OpenHands 0.38+ conversation-create request body (`POST /api/conversations`).
+ * `repository` is in "owner/repo" format (extracted from a full clone URL).
+ */
 export interface OpenHandsTaskRequest {
-  goal: string;
-  repo: string;
-  branch: string;
-  metadata: Record<string, unknown>;
+  initial_user_msg: string;
+  repository?: string;
+  selected_branch?: string;
 }
 
 /** Max chars of task text forwarded to the external agent (bounded, predictable). */
 export const DELEGATE_TASK_MAX_CHARS = 8000;
 
 /**
- * Pure mapping: a normalized {@link DelegateRequest} to the OpenHands task body.
- * Bounded + deterministic, so it is unit-testable with no network.
+ * Pure mapping: a normalized {@link DelegateRequest} to the OpenHands conversation body.
+ * Extracts `owner/repo` from a full clone URL. Bounded + deterministic.
  */
 export function buildOpenHandsRequest(req: DelegateRequest): OpenHandsTaskRequest {
   const task = typeof req.task === "string" ? req.task : "";
-  return {
-    goal: task.slice(0, DELEGATE_TASK_MAX_CHARS),
-    repo: req.repoUrl,
-    branch: req.baseBranch,
-    metadata: {
-      context: req.context ?? {},
-      cadence_run_id: req.cadenceRunId ?? null,
-    },
+  // Strip protocol + host, strip trailing .git → "owner/repo" format OpenHands expects.
+  const repoPath = req.repoUrl
+    ? req.repoUrl.replace(/^https?:\/\/[^/]+\//, "").replace(/\.git$/, "")
+    : undefined;
+  const body: OpenHandsTaskRequest = {
+    initial_user_msg: task.slice(0, DELEGATE_TASK_MAX_CHARS),
   };
+  if (repoPath) body.repository = repoPath;
+  if (req.baseBranch) body.selected_branch = req.baseBranch;
+  return body;
 }
 
-/** The subset of an OpenHands task-submit response the seam reads. */
+/** The subset of an OpenHands conversation-create response the seam reads. */
 export interface OpenHandsTaskResponse {
-  task_id?: string | null;
-  status?: string | null;
+  conversation_id?: string | null;
 }
-
-/** Statuses that mean OpenHands accepted the task (started or queued it). */
-const ACCEPTED_STATUSES = new Set(["queued", "running", "pending", "accepted", "started"]);
 
 /**
- * Pure mapping: an OpenHands task-submit response to a {@link DelegateVerdict}.
- * Accepts only on a known accepted-status WITH a task id (so a malformed/empty
- * response is treated as a refusal, never a phantom acceptance). Deterministic.
+ * Pure mapping: an OpenHands conversation-create response to a {@link DelegateVerdict}.
+ * Accepts only when a `conversation_id` is present (so a malformed/empty response is
+ * treated as a refusal, never a phantom acceptance). Deterministic.
  */
 export function mapOpenHandsResponse(
   resp: OpenHandsTaskResponse | null | undefined,
 ): DelegateVerdict {
-  const status = typeof resp?.status === "string" ? resp.status.toLowerCase() : "";
-  const jobId = typeof resp?.task_id === "string" && resp.task_id ? resp.task_id : null;
-  const accepted = jobId != null && ACCEPTED_STATUSES.has(status);
+  const jobId =
+    typeof resp?.conversation_id === "string" && resp.conversation_id
+      ? resp.conversation_id
+      : null;
   return {
     provider: "openhands",
-    accepted,
-    externalJobId: accepted ? jobId : null,
-    reason: accepted ? `openhands: ${status}` : `openhands refused (status="${status || "none"}")`,
+    accepted: jobId != null,
+    externalJobId: jobId,
+    reason: jobId != null ? "openhands: accepted" : "openhands refused (no conversation_id)",
   };
 }

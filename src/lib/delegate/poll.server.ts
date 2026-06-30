@@ -33,8 +33,10 @@ export interface DelegatePollResult {
 
 const POLL_TIMEOUT_MS = 15_000;
 
-const DONE_STATUSES = new Set(["done", "completed", "finished", "success"]);
-const RUNNING_STATUSES = new Set(["queued", "running", "pending", "accepted", "started"]);
+// OpenHands 0.38+ conversation statuses. "stopped" is terminal (task finished or
+// user stopped it); we treat it as done and surface last_agent_message as the result.
+const DONE_STATUSES = new Set(["done", "completed", "finished", "success", "stopped"]);
+const RUNNING_STATUSES = new Set(["queued", "running", "pending", "accepted", "started", "awaiting_user_input"]);
 const FAILED_STATUSES = new Set(["failed", "error", "rejected", "cancelled", "canceled"]);
 
 /**
@@ -63,16 +65,19 @@ export async function pollDelegateJob(externalJobId: string): Promise<DelegatePo
     if (!json) return { status: "unknown", error: "empty response" };
     const raw = typeof json.status === "string" ? json.status.toLowerCase() : "";
     if (DONE_STATUSES.has(raw)) {
-      return {
-        status: "done",
-        result: typeof json.result === "string" ? json.result : null,
-      };
+      // OpenHands 0.38+: final agent output is in last_agent_message.
+      const result =
+        typeof json.last_agent_message === "string" ? json.last_agent_message : null;
+      return { status: "done", result };
     }
     if (FAILED_STATUSES.has(raw)) {
-      return {
-        status: "failed",
-        error: typeof json.error === "string" ? json.error : `openhands: ${raw}`,
-      };
+      const error =
+        typeof json.error === "string"
+          ? json.error
+          : typeof json.last_agent_message === "string"
+            ? json.last_agent_message
+            : `openhands: ${raw}`;
+      return { status: "failed", error };
     }
     if (RUNNING_STATUSES.has(raw)) return { status: "running" };
     return { status: "unknown" };

@@ -80,9 +80,10 @@ export const openHandsProvider: DelegateProvider = {
       const llm = resolveLlmConfig();
       const body = {
         ...buildOpenHandsRequest(req),
-        ...(llm ? { llm_model: llm.model, llm_api_key: llm.apiKey } : {}),
+        // OpenHands 0.38+ accepts llm_config for per-conversation model override.
+        ...(llm ? { llm_config: { model: llm.model, api_key: llm.apiKey } } : {}),
       };
-      const res = await fetch(`${endpoint.replace(/\/$/, "")}/api/v1/tasks`, {
+      const res = await fetch(`${endpoint.replace(/\/$/, "")}/api/conversations`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
