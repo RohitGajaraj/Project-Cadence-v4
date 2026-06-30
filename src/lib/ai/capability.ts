@@ -35,15 +35,21 @@ export const CAPABILITY_PREFERENCES: Record<Capability, string[]> = {
     "google/gemini-2.5-pro",
   ],
   reasoning: [
-    // Value-ordered: gemini-2.5-pro is a top-tier reasoner at ~1/6th the cost of gpt-5.5-pro,
-    // so it leads the high-volume internal reasoning surfaces (agent steps, discovery clustering)
-    // — "optimized" = best quality-per-token, NOT the most premium model on every routine call.
-    // Premium models stay as later fallbacks (and remain selectable as an explicit pick).
-    "google/gemini-2.5-pro",
-    "openai/gpt-5",
-    "openai/gpt-5.5-pro",
+    // BYO-key providers first: when the platform operator has configured a key, these win
+    // over the managed gateway — higher quality-per-token and no shared quota pressure.
+    "anthropic/claude-haiku-4",
     "anthropic/claude-opus-4",
+    "openai/gpt-4o-mini",
+    "openai/gpt-5",
+    "qwen/qwen-max-latest",
+    "qwen/qwen-plus",
+    "deepseek/deepseek-chat",
+    "groq/llama-3.3-70b-versatile",
+    "xai/grok-2-1212",
     "xai/grok-4",
+    // Managed-gateway fallbacks (no key needed, but shared quota; Gemini is the free floor).
+    "google/gemini-2.5-pro",
+    "google/gemini-2.5-flash",
   ],
   vision: [
     "google/gemini-2.5-pro",
@@ -166,8 +172,11 @@ export function capabilityRoutedModel(opts: {
   let cap: Capability | null = null;
   if (isAuto) cap = detectCapability(opts.messages);
   else if (opts.task) cap = opts.task;
-  else cap = SURFACE_CAPABILITY[opts.surface] ?? null;
-  if (!cap) return fallback; // explicit model on a consumer surface, no task → respected
+  // Explicit non-auto model: always respect it on every surface, including system surfaces
+  // (agent, brief, discovery). SURFACE_CAPABILITY only engages when the caller is in auto mode
+  // and has not committed to a specific model. Overriding a resolved model here is what caused
+  // Qwen/explicit picks to silently degrade to Gemini via the "agent" surface capability route.
+  if (!cap) return fallback;
 
   const picked = selectModelForCapability({
     capability: cap,

@@ -232,7 +232,7 @@ export const MODELS: Model[] = [
     contextK: 131,
     desc: "Alibaba balanced — fast, capable, low cost.",
     live: false,
-    capabilities: ["fast-chat", "code"],
+    capabilities: ["fast-chat", "code", "reasoning"],
   },
   {
     id: "qwen/qwen-max-latest",
