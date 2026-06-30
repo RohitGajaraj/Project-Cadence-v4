@@ -172,3 +172,23 @@ Founder challenged: don't mark ✅ just because asked — validate it works. Did
 ### 2026-06-25 (new session) — board dry confirmed, long-polling
 
 New session started. `bash scripts/lane.sh next` = exit 2 (BOARD DRY). Re-verified: all Tier-1/Tier-3 open items are Gated/Deferred/Parked. No new rows in the dashboard since last session. State: lane-1 branch is 0 commits ahead/behind origin/main after rebase. Remaining founder-gated actions: SANDBOX provider pick, BLD-04 OPENHANDS_ENDPOINT + key, FIRECRAWL-FLOOR SearXNG deploy, Stripe live keys, DBR_ENTITY_ALIASING wrangler secret (already activated per dashboard), EMBED-CHOKEPOINT attended session. Long-polling ~25 min.
+
+### 2026-06-30 (21:00) — board dry confirmed (v11 build front 100% complete), long-polling
+
+New session — loop woke up. `bash scripts/lane.sh next` = exit 2 (BOARD DRY). Re-verified full dashboard: **233/243 = 95.9% strict / 96.7% weighted done.**
+
+**State:** Every Tier-1 and Tier-3 ⬜/◐ item is either ✅, in the DONE ledger, or Gated. The v11 build front (#1-21) is 100% complete. Signal Fabric all autonomous slices shipped (Phase 0-3; SF-INSIGHT-HEAD Phase 3 ◐ [~90%] with Watch/Research/Listen sense agent wiring founder-gated on `loop.server.ts` chokepoint). 0 commits ahead/behind origin/main.
+
+**10 non-done rows:**
+- 5 ⬜ Gated: WM-M9 (chokepoint edit), BYO-P5 (founder strategic call), CMD-H2 (parked), SF-MCP (greenlight + tokens), SF-AUTOTRIGGER (BRAIN_AUTO_TRIGGER flag + autonomy-posture call)
+- 3 ◐ partial: SF-INSIGHT-HEAD [~90%] in DONE ledger (chokepoint-gated); SANDBOX [~55%] Gated (provider pick); BLD-04 [~55%] in DONE ledger (OPENHANDS_ENDPOINT key)
+- 2 ⏭️ Deferred
+
+**Founder unblocks to resume autonomous building:**
+1. Apply migration `20260630122000` to live Supabase → types regenerate → derive-tick proxy workaround cleaned up
+2. Unlock SF-MCP (Gated → Tier 1) — agentic MCP source adapter, architected ready
+3. Unlock SF-AUTOTRIGGER (Gated → Tier 1) — governed auto-trigger, needs `BRAIN_AUTO_TRIGGER` env var call
+4. Ungate SANDBOX (Gated ◐ → autonomous) — Cloudflare Sandbox SDK + OPENHANDS provider pick
+5. Flip `WM-M9` chokepoint removal (attended session, removes BYOK from self-serve) 
+
+Long-polling ~25 min for new rows, founder unlock, or configuration push.
