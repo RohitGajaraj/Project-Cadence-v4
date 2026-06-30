@@ -5,6 +5,7 @@ import { DEMO_FEED, autoTag, inferSentiment, tagSignalUpdate } from "@/lib/sensi
 import { ingestGithubSignals } from "@/lib/connectors/providers/github-ingest.server";
 import { ingestPostHogAnalytics } from "@/lib/analytics-ingest.server";
 import { PULL_INGESTORS } from "@/lib/connectors/providers/pull-ingestors.server";
+import { ingestMcpSignals } from "@/lib/connectors/mcp/ingest.server";
 import { withJobRun } from "@/lib/observability";
 
 /**
@@ -61,6 +62,9 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
             // SF-CONNECTORS: per-provider {inserted, source} for the inside-out fleet,
             // keyed by provider id (intercom/stripe/slack/zendesk/hubspot/…).
             connectors?: Record<string, { inserted: number; source: string }>;
+            // SF-MCP: per-server {inserted, source} for the absorbed hosted MCP fleet
+            // (Linear/Gong/Granola/Enterpret), keyed by server id.
+            mcp_servers?: Record<string, { inserted: number; source: string }>;
             posthog_rows?: number;
             posthog_signals?: number;
             posthog_skipped?: boolean;
@@ -88,6 +92,7 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
                   source: r?.source ?? "none",
                 };
               }
+              const mcp = await ingestMcpSignals(ws.owner_id, ws.id).catch(() => null);
               await supabaseAdmin
                 .from("workspaces")
                 .update({ last_auto_sense_at: new Date().toISOString() })
@@ -99,6 +104,14 @@ export const Route = createFileRoute("/api/public/hooks/sense-tick")({
                 github_inserted: gh?.inserted ?? 0,
                 github_source: gh?.source ?? "none",
                 connectors,
+                mcp_servers: mcp?.servers
+                  ? Object.fromEntries(
+                      Object.entries(mcp.servers).map(([k, v]) => [
+                        k,
+                        { inserted: v.inserted, source: v.source },
+                      ]),
+                    )
+                  : {},
                 posthog_rows: posthog?.rowsUpserted ?? 0,
                 posthog_signals: posthog?.signalsInserted ?? 0,
                 posthog_skipped: posthog?.skipped ?? false,
