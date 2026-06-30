@@ -153,6 +153,16 @@ export const Route = createFileRoute("/api/public/hooks/researcher-tick")({
                 continue;
               }
 
+              // Respect owner's active model preference; fall back to Gemini if not set.
+              const { data: ownerProf } = await supabaseAdmin
+                .from("profiles")
+                .select("default_model")
+                .eq("id", ws.owner_id)
+                .maybeSingle();
+              const agenticModel =
+                (ownerProf as { default_model?: string | null } | null)?.default_model?.trim() ||
+                "google/gemini-2.5-flash";
+
               // Synthesize competitive brief via AI
               const system = `You are a competitive intelligence analyst. Given web search results, write a concise 3-5 bullet competitive brief (plain text, no markdown headers, no em-dashes).
 Each bullet: one signal — a product update, market move, or pricing change worth knowing.
@@ -163,7 +173,7 @@ Return only the bullets, nothing else.`;
               const res = await callModel(supabaseAdmin as never, ws.owner_id, {
                 surface: "sense",
                 surface_ref: `researcher:watchtower:${brief.workspace_id}`,
-                model: "google/gemini-2.5-flash",
+                model: agenticModel,
                 fallbackModel: "anthropic/claude-haiku-4-5-20251001",
                 messages: [
                   { role: "system", content: system },

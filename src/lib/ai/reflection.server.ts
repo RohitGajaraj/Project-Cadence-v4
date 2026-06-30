@@ -113,10 +113,20 @@ export async function autoReflect(
       input.stepSummary,
     );
 
+    // Respect the user's active model preference; fall back to Gemini if not set.
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("default_model")
+      .eq("id", input.userId)
+      .maybeSingle();
+    const agenticModel =
+      (prof as { default_model?: string | null } | null)?.default_model?.trim() ||
+      "google/gemini-2.5-flash";
+
     const res = await callModel(supabase, input.userId, {
       surface: "agent",
       surface_ref: `reflect:${input.agentSlug}`,
-      model: "google/gemini-2.5-flash",
+      model: agenticModel,
       responseFormat: "json_object",
       runId: input.runId,
       workspaceId: input.workspaceId,
