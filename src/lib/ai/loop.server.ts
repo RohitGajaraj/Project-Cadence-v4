@@ -20,7 +20,7 @@ import { consumeInboundHandoff, renderHandoffBlock, maybeCompleteMission } from 
 import { autoReflect, maybeAutoAdvanceArc } from "./reflection.server";
 import { isHighRiskTool, toolRisk } from "@/lib/tool-consequences";
 import { capToolsByRisk } from "@/lib/agent-tool-cap";
-import { resolveBestAgentModel } from "./platform-keys.server";
+import { resolveBestAgentModelForUser } from "./platform-keys.server";
 
 const MAX_RUNNING_PER_WORKSPACE = 5;
 
@@ -350,7 +350,9 @@ export async function runAgentLoop(
     missionId: input.missionId ?? null,
     workspaceId,
   };
-  const model = (!input.model || input.model === "auto") ? resolveBestAgentModel() : input.model;
+  const model = (!input.model || input.model === "auto")
+    ? await resolveBestAgentModelForUser(supabase, userId)
+    : input.model;
 
   const halted: { kind: string; reason: string } | null = null;
   const finalize = async (finalMsg: string) => {

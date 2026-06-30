@@ -82,9 +82,10 @@ export function listConfiguredPlatformProviders(): string[] {
 /**
  * Tier-1 priority list for agentic work, ranked by tool-use accuracy + JSON output quality.
  * Covers every provider that has a known best model for structured agentic tasks.
- * New providers added here are immediately considered at runtime when their key is set.
+ * New providers added here are immediately considered at runtime when their key is set
+ * and are automatically considered by resolveBestAgentModelForUser (vault-aware version).
  */
-const AGENT_MODEL_PRIORITY: Array<{ provider: string; modelId: string }> = [
+export const AGENT_MODEL_PRIORITY: Array<{ provider: string; modelId: string }> = [
   { provider: "anthropic",  modelId: "anthropic/claude-haiku-4" },
   { provider: "openai",     modelId: "openai/gpt-4o-mini" },
   { provider: "qwen",       modelId: "qwen/qwen-plus" },
@@ -130,4 +131,36 @@ export function resolveBestAgentModel(): string {
 
   // Step 4: managed gateway fallback
   return "google/gemini-2.5-flash";
+}
+
+/**
+ * Vault-aware variant of resolveBestAgentModel. When no platform env key is
+ * configured for any priority provider, this also walks the user's BYO vault
+ * (user_api_keys) in AGENT_MODEL_PRIORITY order and picks the first provider the
+ * user has a key for. This is the correct function to call from the agent loop —
+ * it makes "auto" mode work for ANY provider the user has configured, whether that
+ * is a platform-level key OR a per-user BYO key, without any code changes.
+ *
+ * Signature is async because vault lookup hits Supabase.
+ */
+export async function resolveBestAgentModelForUser(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+): Promise<string> {
+  // Platform env keys take priority (shared operator quota, no per-user lookup needed).
+  const platformModel = resolveBestAgentModel();
+  if (!platformModel.startsWith("google/")) return platformModel;
+
+  // No platform key found — fall back to the user's vault keys, same priority order.
+  const { loadBYOKey } = await import("@/lib/byokeys-vault.server");
+  for (const { provider, modelId } of AGENT_MODEL_PRIORITY) {
+    try {
+      const vaultKey = await loadBYOKey(supabase, userId, provider);
+      if (vaultKey?.api_key) return modelId;
+    } catch {
+      // Vault lookup failing for one provider must not block the others.
+    }
+  }
+
+  return platformModel; // Gemini managed gateway — last resort
 }
