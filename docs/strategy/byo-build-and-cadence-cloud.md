@@ -165,6 +165,7 @@ Two guardrails so the ambition stays buildable and honest:
 ---
 
 ## Related
+- [`../planning/byo-p5-managed-runtime-plan.md`](../planning/byo-p5-managed-runtime-plan.md) - the P5 ops/cost/security plan this doc's Section 7 (Phase 5) said was needed before any build; produced 2026-07-01, answers the five open questions in Section 8 of this doc that pertain to hosting.
 - [`build-driver-and-dispatch.md`](./build-driver-and-dispatch.md) - **the code-gen-side twin of this doc.** This doc specced `RepoProvider` (WHERE code lives); that doc specs `BuildDriver` (WHO writes it), so the native loop becomes one adapter and external engines plug in behind one seam. Read both together for the full build picture. (board group G13, founder-gated; decided 2026-06-28).
 - [`../features/lifecycle-gap-map.md`](../planning/lifecycle-gap-map.md) - the Build/Deploy/Review/Ship capture gaps this builds on.
 - [`README.md`](./README.md) - strategy doc role map (link this in when committed).

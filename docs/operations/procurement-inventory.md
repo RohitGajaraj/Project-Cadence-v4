@@ -114,6 +114,12 @@ Cadence is **model-agnostic with BYO-key**, hosted on **Lovable-managed Cloudfla
 - **When to buy:** at AFD activation. Sev-1 phone-call escalation is included on free.
 - _Source: betterstack.com/pricing (2026-06-25)._
 
+### 13. Managed end-to-end runtime hosting (BYO-P5): Cloudflare Workers for Platforms + a dedicated Supabase project · **PROPOSED, not yet purchased**
+- **What & why:** the "Cadence hosts your app, no external accounts needed" tier (BYO-P5). Compute/edge hosting for AI-generated user apps via Cloudflare Workers for Platforms (same vendor as today's own deploy target), plus one pooled, Cadence-owned Supabase project (distinct from Cadence's own product/billing database) for DB + auth. Full plan: [`../planning/byo-p5-managed-runtime-plan.md`](../planning/byo-p5-managed-runtime-plan.md).
+- **Cost:** ~$30/mo Cloudflare ($5 Workers Paid + $25 Workers for Platforms add-on) + ~$25/mo Supabase Pro floor = **~$55/mo floor**, before any hosted-app revenue exists. Scales to roughly $0.55-0.70/app/mo at 100 hosted apps, ~$0.06-0.11/app/mo at 1,000 (pooled model; see the plan's cost table for what's excluded (custom domains, egress, idle tenants)). _Confidence: medium (estimated from public pricing pages, not a vendor quote)._
+- **When to buy:** not yet. Founder-gated on reviewing the plan and, first, opening a directly-owned Cloudflare account and a directly-owned Supabase account (today's hosting is Lovable-managed, so this spend cannot be purchased against the existing account). Sequenced last in the BYO lane, behind the Decision Brain.
+- _Source: developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms, supabase.com/pricing (researched 2026-07-01, see the plan doc for full citations)._
+
 ---
 
 ## Total cost picture
