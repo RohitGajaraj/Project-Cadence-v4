@@ -38,13 +38,11 @@
 >
 > **Board dry** — all remaining Signal Fabric work is founder-gated. `lane.sh next` returns nothing. Dashboard: 237/244 = 97.1% strict.
 >
-> **👤 What is yours to unblock:**
-> - Apply migration `20260630122000` (adds `auto_derive_enabled` + `last_auto_derive_at` to workspaces) + migration `20260701000000_auto_trigger_source.sql` (adds `auto_trigger_source` column — needed before SF-AUTOTRIGGER can go live).
-> - Set `BRAIN_AUTO_TRIGGER=1` in Lovable project settings to activate the auto-trigger.
-> - Activate SF-MCP: apply migration `20260701010000_mcp_connections.sql`, then set per-server env vars in Lovable project settings — `MCP_LINEAR_URL`/`TOKEN`/`TOOL`/`ARGS`, `MCP_GONG_*`, `MCP_GRANOLA_*`, `MCP_ENTERPRET_*` (architecture already built + gate-verified; only activation remains).
-> - Or: unblock SANDBOX / BLD-04 (external coding agent dispatch) for the Build lane.
+> **✅ Unblocked (2026-07-01, live-test session):** all 3 migrations applied directly via `mcp__lovable__query_database` against the published project (`371dd588-1b70-4629-9bb5-9f003f3af373`) after the standalone Supabase MCP proved unauthorized — `20260630122000` (workspaces `auto_derive_enabled`/`last_auto_derive_at` + themes scoring columns + `insights` table + `match_themes` RPC), `20260701000000_auto_trigger_source.sql` (already present), `20260701010000_mcp_connections.sql` (was genuinely missing — created). All 3 versions reconciled into `supabase_migrations.schema_migrations`. `BRAIN_AUTO_TRIGGER=1` already set. SF-CONNECTORS fleet wired this session (free-tier-first): Slack, HubSpot, Salesforce, Canny all live; Stripe blocked (India invite-only + registered-business requirement, see [`../operations/signal-fabric-connector-setup.md`](../operations/signal-fabric-connector-setup.md)). SF-MCP's Linear slot is live (`MCP_LINEAR_TOOL=list_issues`, discovered via a direct `tools/list` call against `mcp.linear.app/mcp`); Gong/Granola/Enterpret remain unconfigured (no verified free/self-serve path for any of the three).
 >
-> **Next session pickup (2026-07-02):** all code is shipped + gate-green; nothing has been live-tested against the published app yet. The operator script for that is [`../operations/signal-fabric-live-test-playbook.md`](../operations/signal-fabric-live-test-playbook.md) — 6 scenarios (pipeline check, forced tick, connector ingest, HITL Watch/Listen, auto-trigger, SF-MCP), in order, with manual `curl` tick commands so you don't have to wait on cron timing. Start there.
+> **👤 Remaining to unblock:** Or: unblock SANDBOX / BLD-04 (external coding agent dispatch) for the Build lane.
+>
+> **Live-test in progress (2026-07-01):** running [`../operations/signal-fabric-live-test-playbook.md`](../operations/signal-fabric-live-test-playbook.md)'s 6 scenarios end to end now that migrations + connectors are unblocked — DB-level checks go through `mcp__lovable__query_database` (the standalone Supabase MCP is unauthorized this session too; needs a `SUPABASE_ACCESS_TOKEN` to fix properly).
 >
 > ---
 
