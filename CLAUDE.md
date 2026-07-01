@@ -76,11 +76,8 @@ You do not wait for the user to ask. "Simple" tasks do not skip this. Full proto
 **Every git interaction — commit, push, pull, merge — requires a clear one-line WHY.** See [`docs/operations/git-discipline.md`](./docs/operations/commits.md) for the canonical cross-tool standard. Hooks enforce this.
 
 - Use a commit skill — `gstack-ship`, `commit-commands:commit`, or similar if available. Always include the WHY in the message, not just the WHAT.
-- Push with explicit refspec AND sync PCV4 immediately after — **both steps are mandatory, every push, no exceptions:**
-  ```bash
-  git push origin parallel/lane-N:main && bash scripts/sync-pcv4.sh
-  ```
-  Bare `git push origin` pushes to the lane branch only (invisible to PCV4). `post-push` is not a real git hook so no automation fires — the sync MUST be explicit. Root cause of repeated stale-dashboard incidents (2026-06-26).
+- Push with explicit refspec, same as before: `git push origin parallel/lane-N:main`. **`scripts/sync-pcv4.sh` is now legacy and does NOT ship your work** — read the correction below before treating anything as live.
+- **CORRECTED 2026-07-02 (supersedes the PCV4 instruction above and the 2026-06-26 root-cause note): `Project-Cadence-v4` (this repo, and every `cadence-lane-N` worktree of it) is NOT connected to Lovable and pushes here never reach the published app.** `project_cadence_v5` (GitHub `RohitGajaraj/project_cadence_v5`, branch `main`, a *separate* local checkout at `/Users/rohitgajaraj/Projects/My Projects/My Builds/project_cadence_v5`) is the ONLY repo Lovable's GitHub integration is connected to. Full detail + the exact porting procedure: [`AGENTS.md`](./AGENTS.md) "Canonical repo law" (search that heading). **The short version:** finish a unit of work in whichever `cadence-lane-N` worktree your session started in as normal, but before calling anything "shipped" or "live", `cd` to `project_cadence_v5`, port the same change there (diff/reconcile — it has its own independent ongoing work, never blind-overwrite), verify (`tsc` + tests) in that checkout, commit, and `git push origin main` from there. Do not report a feature as live on the strength of a `Project-Cadence-v4` push alone.
 - Pull with intent: `git pull — syncing latest; checking active-task.md for conflicts`
 
 ## Conventions & gotchas (so you work faster)

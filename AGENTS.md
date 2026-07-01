@@ -432,7 +432,15 @@ If you hit the same friction twice, add a row here before the third time. The co
 
 ---
 
-### Worktree / primary-checkout law (permanent, founder ruling 2026-06-26)
+### Canonical repo law (permanent, corrected 2026-07-01 — supersedes the 2026-06-26 ruling below)
+
+> [!IMPORTANT]
+> **`project_cadence_v5` (GitHub `RohitGajaraj/project_cadence_v5`, branch `main`) is the ONLY repository connected to Lovable — NOT this repo (`Project-Cadence-v4`).** Confirmed live 2026-07-01 via Lovable's own Git settings page and by observing Lovable auto-pick-up a push within seconds of pushing to v5. Pushes to `Project-Cadence-v4`/this worktree's `origin` never reach the published app, however confident a session feels about it — an entire night (2026-07-01) was lost chasing a "Lovable won't sync" ghost that was actually just this: wrong repo the whole time.
+>
+> **Before treating any change as shipped, run `git remote -v` here and confirm.** If you're working in this repo (or a `cadence-lane-N` worktree of it) because that's where your session/lane started, finish the unit of work normally — but before calling it done, port the same change into `/Users/rohitgajaraj/Projects/My Projects/My Builds/project_cadence_v5` (reconcile by diff, don't blind-overwrite — it has its own independent ongoing work too), verify there (`tsc` + tests), commit, and `git push origin main` from THAT directory. Full detail + a worked example (SF-MCP + a runtime fix ported this exact way): `project_cadence_v5/AGENTS.md` § "Canonical repo law", and `project_cadence_v5/docs/operations/signal-fabric-connector-setup.md`.
+
+<details>
+<summary>Original 2026-06-26 ruling (kept for history — its central claims are superseded above)</summary>
 
 **`Project-Cadence-v4` on branch `main` is the founder's ONE source of truth.** He views code, reads the feature dashboard, and judges progress from there — not from any lane directory.
 
@@ -442,6 +450,8 @@ If you hit the same friction twice, add a row here before the third time. The co
 - **Every agent / session must push to `origin/main` after every commit** (already the standard). The post-push hook then keeps the founder's view live automatically.
 - **CRITICAL — always use the explicit refspec:** `git push origin parallel/lane-N:main` (where N is your lane number). **Never** run bare `git push origin` — without the `:main` destination git defaults to pushing to `origin/parallel/lane-N` (the lane's own remote branch), which is NOT visible in `Project-Cadence-v4`. This is exactly what caused the gap: lane-1 pushed `origin/parallel/lane-1` instead of `origin/main` and the work sat invisible for the whole session.
 - Never tell the founder to run `git pull`. If the hook fails for any reason (dirty tree, conflict), the hook prints a one-line warning so the session notices.
+
+</details>
 
 ### Stale redirect rot (absolute `file://` links to other repos)
 
