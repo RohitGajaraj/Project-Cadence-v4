@@ -8,7 +8,7 @@
 # Usage:  bash scripts/sync-pcv4.sh
 # Exit 0 always — sync failure is a warning, not a blocker.
 
-V4="/Users/rohitgajaraj/Projects/My Projects/My Builds/Project-Cadence-v4"
+V4="/Users/rohitgajaraj/Projects/My Projects/My Builds/project_cadence_v4"
 
 if [[ ! -d "$V4" ]]; then
   echo "[sync-pcv4] WARN: $V4 not found — skipping"
