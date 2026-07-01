@@ -34,14 +34,17 @@
 > - **Phase 0 ✅ SHIPPED** — `writeSignals` sink + `source_kind` taxonomy (`src/lib/sources/` + migration `20260630120000` + GitHub refactor); tsc 0 / 12 tests.
 > - **Phase 1 ✅ SHIPPED** — SF-SCOUT (outside-in diffing Watchtower, adversarial-reviewed), SF-INTERCOM (Intercom connector, injection-screened), SF-FOCUS (novelty-vs-memory scoring + "Focus on this next" on Today via copilot surface).
 > - **Phase 2 ✅ SHIPPED** — SF-SCOUT-WIDEN (6 WatchKinds auto-seed + researcher→writeSignals), SF-CONNECTORS (8-connector customer-voice fleet: Stripe/Slack/Zendesk/HubSpot/Salesforce/Canny/Productboard/Delighted), SF-INSIGHT-HEAD Phase 2 (`CallSurface += "sense"` + 5 agent tools in registry + 3 surface re-routes).
-> - **Phase 3 ◐ SHIPPED [~90%]** — 4 derive generators (`derivePrediction`, `deriveRisk`, `deriveCostOfInaction`, `deriveHiddenConnection`) in `src/lib/brain/derive-insights.server.ts`; `InsightRail.tsx` on Today; `derive-tick` cron (20/day cap); prompt-injection-safe; 2 security fixes. **Remaining (founder-gated):** Watch/Research/Listen sense agents wired into `loop.server.ts` (CHOKEPOINT), `auto_derive_enabled` migration needs applying, SF-MCP + SF-AUTOTRIGGER (Gated ⬜).
+> - **Phase 3 ✅ COMPLETE** — 4 derive generators; `InsightRail.tsx`; `derive-tick` cron. **SF-AUTOTRIGGER ✅ SHIPPED (lane 1, 2026-07-01):** governed auto-trigger — `shouldAutoPromote()` pure policy (4 conditions: `BRAIN_AUTO_TRIGGER=1` + reversible + ambient arc (running/in_progress/waiting_approval/queued/blocked = 0) + daily cap 2/day); `auto_trigger_source` migration; Trust-Ledger auditability; 24 tests; adversarial review applied (ambient check extended to queued+blocked; error-checked Promise.all). Activate: `BRAIN_AUTO_TRIGGER=1` in Lovable project settings. Full doc: [`../features/sf-autotrigger.md`](../features/sf-autotrigger.md). **SF-MCP ✅ SHIPPED (lane 1, 2026-07-01), ships dark:** the `mcp_source` adapter — a generic JSON-RPC-over-HTTP MCP client + 4-slot env-config-driven registry (Linear/Gong/Granola/Enterpret), SSRF-guarded, Pro+ tier-gated, 6 calls/workspace/server/24h rate-limited; migration `20260701010000_mcp_connections.sql` (rate-limit/audit ledger only, no URLs/secrets); 20 new tests. Architecture-complete and gate-verified; inert until the founder sets per-server env vars. Full doc: [`../features/sf-mcp.md`](../features/sf-mcp.md).
 >
-> **Board dry** — all remaining Signal Fabric work is founder-gated. `lane.sh next` returns nothing. Dashboard: 233/243 = 95.9% strict.
+> **Board dry** — all remaining Signal Fabric work is founder-gated. `lane.sh next` returns nothing. Dashboard: 237/244 = 97.1% strict.
 >
 > **👤 What is yours to unblock:**
-> - Apply migration `20260630122000` (adds `auto_derive_enabled` + `last_auto_derive_at` to workspaces; then Supabase types regenerate and the `auto_sense_enabled` proxy in `derive-tick.ts` can be cleaned up).
-> - Unlock SF-MCP (Gated: `SF-MCP`) and SF-AUTOTRIGGER for the agentic source layer.
+> - Apply migration `20260630122000` (adds `auto_derive_enabled` + `last_auto_derive_at` to workspaces) + migration `20260701000000_auto_trigger_source.sql` (adds `auto_trigger_source` column — needed before SF-AUTOTRIGGER can go live).
+> - Set `BRAIN_AUTO_TRIGGER=1` in Lovable project settings to activate the auto-trigger.
+> - Activate SF-MCP: apply migration `20260701010000_mcp_connections.sql`, then set per-server env vars in Lovable project settings — `MCP_LINEAR_URL`/`TOKEN`/`TOOL`/`ARGS`, `MCP_GONG_*`, `MCP_GRANOLA_*`, `MCP_ENTERPRET_*` (architecture already built + gate-verified; only activation remains).
 > - Or: unblock SANDBOX / BLD-04 (external coding agent dispatch) for the Build lane.
+>
+> **Next session pickup (2026-07-02):** all code is shipped + gate-green; nothing has been live-tested against the published app yet. The operator script for that is [`../operations/signal-fabric-live-test-playbook.md`](../operations/signal-fabric-live-test-playbook.md) — 6 scenarios (pipeline check, forced tick, connector ingest, HITL Watch/Listen, auto-trigger, SF-MCP), in order, with manual `curl` tick commands so you don't have to wait on cron timing. Start there.
 >
 > ---
 

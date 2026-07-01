@@ -106,16 +106,19 @@ export const DELEGATE_TASK_MAX_CHARS = 8000;
  */
 export function buildOpenHandsRequest(req: DelegateRequest): OpenHandsTaskRequest {
   const task = typeof req.task === "string" ? req.task : "";
-  // Strip protocol + host, strip trailing .git → "owner/repo" format OpenHands expects.
-  const repoPath = req.repoUrl
-    ? req.repoUrl.replace(/^https?:\/\/[^/]+\//, "").replace(/\.git$/, "")
-    : undefined;
-  const body: OpenHandsTaskRequest = {
-    initial_user_msg: task.slice(0, DELEGATE_TASK_MAX_CHARS),
+  // Include repo + branch in the message rather than the API body fields.
+  // Passing `repository`/`selected_branch` in the body triggers Docker-in-Docker
+  // sandbox initialisation (OpenHands clones into a container at conversation
+  // creation time), which fails on Railway without privileged/DinD support.
+  // The CodeActAgent clones the repo itself as part of task execution when
+  // the URL is in the message — same outcome, no runtime init 500.
+  const repoContext =
+    req.repoUrl
+      ? `\n\nRepository: ${req.repoUrl}${req.baseBranch ? ` (branch: ${req.baseBranch})` : ""}\nClone the repo, implement the task, then open a pull request.`
+      : "";
+  return {
+    initial_user_msg: (task + repoContext).slice(0, DELEGATE_TASK_MAX_CHARS),
   };
-  if (repoPath) body.repository = repoPath;
-  if (req.baseBranch) body.selected_branch = req.baseBranch;
-  return body;
 }
 
 /** The subset of an OpenHands conversation-create response the seam reads. */

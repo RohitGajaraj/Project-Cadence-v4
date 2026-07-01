@@ -34,23 +34,26 @@ afterEach(() => {
 });
 
 describe("buildOpenHandsRequest (pure mapping)", () => {
-  test("maps the normalized request to the OpenHands conversation body", () => {
+  test("embeds repo URL + branch in the message (no body fields)", () => {
     const body = buildOpenHandsRequest(REQ);
-    expect(body.initial_user_msg).toBe(REQ.task);
-    // Full clone URL is extracted to "owner/repo" format OpenHands expects.
-    expect(body.repository).toBe("acme/app");
-    expect(body.selected_branch).toBe(REQ.baseBranch);
+    // Repo context is embedded in the message so OpenHands doesn't try to
+    // init a Docker sandbox at conversation-create time (causes 500 on Railway).
+    expect(body.initial_user_msg).toContain(REQ.task);
+    expect(body.initial_user_msg).toContain("https://github.com/acme/app");
+    expect(body.initial_user_msg).toContain("main");
+    expect((body as Record<string, unknown>).repository).toBeUndefined();
+    expect((body as Record<string, unknown>).selected_branch).toBeUndefined();
   });
 
-  test("bounds the task text and omits optional fields when absent", () => {
+  test("bounds the combined message length and omits repo context when absent", () => {
     const body = buildOpenHandsRequest({
       task: "x".repeat(DELEGATE_TASK_MAX_CHARS + 500),
       repoUrl: "",
       baseBranch: "",
     });
     expect(body.initial_user_msg.length).toBe(DELEGATE_TASK_MAX_CHARS);
-    expect(body.repository).toBeUndefined();
-    expect(body.selected_branch).toBeUndefined();
+    expect((body as Record<string, unknown>).repository).toBeUndefined();
+    expect((body as Record<string, unknown>).selected_branch).toBeUndefined();
   });
 });
 

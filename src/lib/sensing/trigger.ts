@@ -76,6 +76,44 @@ export const MAX_PROPOSALS_PER_TICK = 5;
 /** All auto-originated missions carry this title prefix, so the tick can find + dedup them. */
 export const AUTO_TITLE_PREFIX = "[auto]";
 
+// ---------------------------------------------------------------------------
+// SF-AUTOTRIGGER — auto-promotion policy (pure, no I/O)
+// ---------------------------------------------------------------------------
+
+/** Max missions the auto-trigger may promote in a 24h window per workspace.
+ *  Keeps AI spend bounded (~$0.03 × cap). Founder-confirmed: 2/day. */
+export const AUTO_TRIGGER_DAILY_CAP = 2;
+
+/**
+ * Pure eligibility check: should a just-created proposed mission be
+ * auto-promoted to 'queued' without human approval?
+ *
+ * All four conditions must be true simultaneously:
+ *  1. flagEnabled   — BRAIN_AUTO_TRIGGER=1 in env (default OFF; founder's circuit breaker)
+ *  2. reversible    — the TriggerProposal is marked reversible (Watch/Listen scan kinds)
+ *  3. ambientCount  — no actively mid-sprint missions in this workspace: running / in_progress /
+ *                     waiting_approval (HITL-paused but active) / queued (starts imminently) /
+ *                     blocked (stalled on a gate). Excludes 'proposed' (the status being created).
+ *  4. autoTodayCount < AUTO_TRIGGER_DAILY_CAP — daily spend cap not yet hit
+ *
+ * Extracted as a pure function so it can be unit-tested without DB mocks.
+ * The trigger-tick calls this after creating the proposed mission and, if true,
+ * flips status→'queued' and stamps auto_trigger_source='auto'.
+ */
+export function shouldAutoPromote(opts: {
+  flagEnabled: boolean;
+  reversible: boolean;
+  ambientCount: number; // mid-sprint missions (running/in_progress/waiting_approval/queued/blocked)
+  autoTodayCount: number; // missions already auto-promoted today (created_at >= today UTC)
+}): boolean {
+  return (
+    opts.flagEnabled &&
+    opts.reversible &&
+    opts.ambientCount === 0 &&
+    opts.autoTodayCount < AUTO_TRIGGER_DAILY_CAP
+  );
+}
+
 function autoTitle(label: string): string {
   return `${AUTO_TITLE_PREFIX} ${label}`;
 }

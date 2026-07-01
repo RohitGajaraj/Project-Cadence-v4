@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test";
 import {
   evaluateTriggers,
   isAutoMissionTitle,
+  shouldAutoPromote,
   AUTO_TITLE_PREFIX,
+  AUTO_TRIGGER_DAILY_CAP,
   CLUSTER_FREQUENCY_THRESHOLD,
   WATCH_SIGNAL_THRESHOLD,
   LISTEN_SIGNAL_THRESHOLD,
@@ -71,14 +73,18 @@ describe("evaluateTriggers — dedup + bounds", () => {
   });
 
   it("a missed outcome outranks a cluster, and the count is capped", () => {
-    const themes = Array.from({ length: 10 }, (_, i) => theme({ id: `t${i}`, title: `Cluster ${i}` }));
+    const themes = Array.from({ length: 10 }, (_, i) =>
+      theme({ id: `t${i}`, title: `Cluster ${i}` }),
+    );
     const out = evaluateTriggers({ themes, outcomes: [outcome({})] }, new Set(), { max: 3 });
     expect(out).toHaveLength(3);
     expect(out[0].kind).toBe("missed-outcome"); // priority 50 beats cluster freq+sev
   });
 
   it("never throws on malformed input", () => {
-    expect(evaluateTriggers({ themes: [null as unknown as ThemeState], outcomes: undefined })).toEqual([]);
+    expect(
+      evaluateTriggers({ themes: [null as unknown as ThemeState], outcomes: undefined }),
+    ).toEqual([]);
   });
 });
 
@@ -107,7 +113,9 @@ describe("evaluateTriggers — Watch (discovery-scout) proposals", () => {
   });
 
   it("does not propose Watch when signal count is below threshold", () => {
-    const out = evaluateTriggers({ signals: senseOver({ newSignalCount: WATCH_SIGNAL_THRESHOLD - 1 }) });
+    const out = evaluateTriggers({
+      signals: senseOver({ newSignalCount: WATCH_SIGNAL_THRESHOLD - 1 }),
+    });
     expect(out).toHaveLength(0);
   });
 
@@ -134,13 +142,18 @@ describe("evaluateTriggers — Listen (customer-insights) proposals", () => {
   });
 
   it("does not propose Listen below the threshold", () => {
-    const out = evaluateTriggers({ signals: listenState({ customerSignalCount: LISTEN_SIGNAL_THRESHOLD - 1 }) });
+    const out = evaluateTriggers({
+      signals: listenState({ customerSignalCount: LISTEN_SIGNAL_THRESHOLD - 1 }),
+    });
     expect(out).toHaveLength(0);
   });
 
   it("both Watch and Listen can be proposed in the same tick", () => {
     const out = evaluateTriggers({
-      signals: { newSignalCount: WATCH_SIGNAL_THRESHOLD, customerSignalCount: LISTEN_SIGNAL_THRESHOLD },
+      signals: {
+        newSignalCount: WATCH_SIGNAL_THRESHOLD,
+        customerSignalCount: LISTEN_SIGNAL_THRESHOLD,
+      },
     });
     const kinds = out.map((p) => p.kind);
     expect(kinds).toContain("watch-scan");
@@ -151,8 +164,58 @@ describe("evaluateTriggers — Listen (customer-insights) proposals", () => {
     const outcome: OutcomeState = { id: "o1", verdict: "missed", summary: "Feature flopped" };
     const out = evaluateTriggers({
       outcomes: [outcome],
-      signals: { newSignalCount: WATCH_SIGNAL_THRESHOLD, customerSignalCount: LISTEN_SIGNAL_THRESHOLD },
+      signals: {
+        newSignalCount: WATCH_SIGNAL_THRESHOLD,
+        customerSignalCount: LISTEN_SIGNAL_THRESHOLD,
+      },
     });
     expect(out[0].kind).toBe("missed-outcome");
+  });
+});
+
+describe("shouldAutoPromote — SF-AUTOTRIGGER eligibility", () => {
+  const base = {
+    flagEnabled: true,
+    reversible: true,
+    ambientCount: 0,
+    autoTodayCount: 0,
+  };
+
+  it("promotes when all four conditions are met", () => {
+    expect(shouldAutoPromote(base)).toBe(true);
+  });
+
+  it("blocks when BRAIN_AUTO_TRIGGER flag is off", () => {
+    expect(shouldAutoPromote({ ...base, flagEnabled: false })).toBe(false);
+  });
+
+  it("blocks when the proposal is not reversible", () => {
+    expect(shouldAutoPromote({ ...base, reversible: false })).toBe(false);
+  });
+
+  it("blocks when there are active (running) missions — not ambient arc", () => {
+    expect(shouldAutoPromote({ ...base, ambientCount: 1 })).toBe(false);
+    expect(shouldAutoPromote({ ...base, ambientCount: 3 })).toBe(false);
+  });
+
+  it("blocks when the daily cap is already reached", () => {
+    expect(shouldAutoPromote({ ...base, autoTodayCount: AUTO_TRIGGER_DAILY_CAP })).toBe(false);
+    expect(shouldAutoPromote({ ...base, autoTodayCount: AUTO_TRIGGER_DAILY_CAP + 1 })).toBe(false);
+  });
+
+  it("allows the last slot (cap - 1) but not beyond", () => {
+    expect(shouldAutoPromote({ ...base, autoTodayCount: AUTO_TRIGGER_DAILY_CAP - 1 })).toBe(true);
+    expect(shouldAutoPromote({ ...base, autoTodayCount: AUTO_TRIGGER_DAILY_CAP })).toBe(false);
+  });
+
+  it("requires ALL four conditions — any single failure blocks", () => {
+    // flag off alone blocks
+    expect(shouldAutoPromote({ ...base, flagEnabled: false })).toBe(false);
+    // not reversible alone blocks
+    expect(shouldAutoPromote({ ...base, reversible: false })).toBe(false);
+    // active mission alone blocks
+    expect(shouldAutoPromote({ ...base, ambientCount: 1 })).toBe(false);
+    // cap hit alone blocks
+    expect(shouldAutoPromote({ ...base, autoTodayCount: AUTO_TRIGGER_DAILY_CAP })).toBe(false);
   });
 });
