@@ -104,6 +104,24 @@ function providerFallbackEnabled(): boolean {
   return v === "1" || v === "true";
 }
 
+// Some providers (observed with Qwen/DashScope) don't reliably honor a "no markdown
+// fences" instruction even under responseFormat=json_object, unlike Gemini/OpenAI which
+// always return bare JSON. Strip a wrapping ```/```json fence before giving up, so a
+// caller-model choice doesn't change JSON-mode reliability for every call site that uses it.
+function parseModelJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const fenced = text.trim().match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    if (!fenced) return undefined;
+    try {
+      return JSON.parse(fenced[1]);
+    } catch {
+      return undefined;
+    }
+  }
+}
+
 /**
  * Governance halt — thrown by the chokepoint when a kill-switch is engaged
  * or a per-mission cap would be exceeded. Surfaced as status='blocked' in
@@ -1471,11 +1489,7 @@ export async function callModel(
 
   let parsedJson: unknown = undefined;
   if (opts.responseFormat === "json_object" && outputText) {
-    try {
-      parsedJson = JSON.parse(outputText);
-    } catch {
-      /* leave undefined */
-    }
+    parsedJson = parseModelJson(outputText);
   }
 
   return {
